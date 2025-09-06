@@ -1,64 +1,39 @@
-import { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import DrawingCanvas from '@/components/DrawingCanvas';
 import { useAuth } from '@/hooks/useAuth';
-import { Button } from '@/components/ui/button';
-import { LogOut, User } from 'lucide-react';
+import { Navigate } from 'react-router-dom';
+import { PageLayout } from '@/components/layout/PageLayout';
+import { Container } from '@/components/layout/Container';
+import DrawingCanvas from '@/components/DrawingCanvas';
 
 const Index = () => {
-  const { user, loading, signOut, isAuthenticated } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && !isAuthenticated) {
-      navigate('/auth');
-    }
-  }, [loading, isAuthenticated, navigate]);
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
-  };
+  const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading...</p>
-        </div>
-      </div>
+      <PageLayout>
+        <Container>
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+              <p className="mt-2 text-muted-foreground">Loading...</p>
+            </div>
+          </div>
+        </Container>
+      </PageLayout>
     );
   }
 
   if (!isAuthenticated) {
-    return null; // Will redirect to auth page
+    return <Navigate to="/auth" replace />;
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      {/* User header */}
-      <header className="flex items-center justify-between p-4 border-b border-border bg-card">
-        <div className="flex items-center gap-2">
-          <User className="w-5 h-5 text-primary" />
-          <span className="text-sm text-muted-foreground">{user?.email}</span>
+    <PageLayout title="ABC Illustrations">
+      <Container size="full" className="flex-1">
+        <div className="h-full">
+          <DrawingCanvas />
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleSignOut}
-          className="flex items-center gap-2"
-        >
-          <LogOut className="w-4 h-4" />
-          Sign Out
-        </Button>
-      </header>
-      
-      {/* Drawing canvas */}
-      <div className="flex-1">
-        <DrawingCanvas />
-      </div>
-    </div>
+      </Container>
+    </PageLayout>
   );
 };
 

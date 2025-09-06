@@ -1,5 +1,4 @@
 import { useAuth } from '@/hooks/useAuth';
-import { Navigate } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/button';
@@ -22,15 +21,35 @@ const Index = () => {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
-  }
-
   return (
     <PageLayout>
       <Container>
         <div className="flex flex-col items-center justify-center py-12">
-          
+          <div className="text-center space-y-6">
+            <h1 className="text-4xl font-bold text-foreground">Welcome to My App</h1>
+            <p className="text-lg text-muted-foreground max-w-2xl">
+              {isAuthenticated 
+                ? "You're signed in and ready to explore!" 
+                : "Get started by exploring our features or create an account for the full experience."
+              }
+            </p>
+            <div className="flex gap-4 justify-center">
+              {!isAuthenticated ? (
+                <>
+                  <Button asChild>
+                    <a href="/auth">Sign Up</a>
+                  </Button>
+                  <Button variant="outline" asChild>
+                    <a href="/auth">Sign In</a>
+                  </Button>
+                </>
+              ) : (
+                <Button asChild>
+                  <a href="/profile">View Profile</a>
+                </Button>
+              )}
+            </div>
+          </div>
         </div>
       </Container>
     </PageLayout>

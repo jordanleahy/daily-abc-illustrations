@@ -27,20 +27,10 @@ const Index = () => {
   }
 
   return (
-    <PageLayout title="Welcome">
+    <PageLayout>
       <Container>
         <div className="flex flex-col items-center justify-center py-12">
-          <div className="text-center space-y-6">
-            <h1 className="text-4xl font-bold text-foreground">Welcome</h1>
-            <p className="text-lg text-muted-foreground max-w-2xl">
-              Your authenticated experience awaits. Explore your profile and manage your preferences.
-            </p>
-            <div className="flex gap-4 justify-center">
-              <Button asChild>
-                <a href="/profile">View Profile</a>
-              </Button>
-            </div>
-          </div>
+          
         </div>
       </Container>
     </PageLayout>

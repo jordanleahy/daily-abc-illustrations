@@ -29,16 +29,6 @@ const Index = () => {
             <div className="text-center space-y-8 max-w-2xl">
               {/* Hero Section */}
               <div className="space-y-4">
-                <h1 className="text-4xl md:text-6xl font-bold text-foreground">
-                  ABC Illustrations
-                </h1>
-                <p className="text-xl md:text-2xl text-muted-foreground">
-                  Daily A-Z Learning Adventures
-                </p>
-                <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-                  Get a beautiful illustrated PDF delivered to your phone every day. 
-                  Perfect for teaching kids letters, words, and concepts!
-                </p>
               </div>
 
               {/* Subscription Form */}

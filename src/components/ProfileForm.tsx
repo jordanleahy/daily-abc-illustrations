@@ -34,66 +34,72 @@ export const ProfileForm = ({ profile, onCancel }: ProfileFormProps) => {
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+      <CardHeader className="pb-4 md:pb-6">
+        <CardTitle className="flex items-center gap-2 text-lg md:text-xl">
           <User className="w-5 h-5" />
           Edit Profile
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-4 md:p-6">
         <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Name fields - always stacked on mobile for better UX */}
+          <div className="space-y-4 md:space-y-0 md:grid md:grid-cols-2 md:gap-4">
             <div className="space-y-2">
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName" className="text-sm font-medium">First Name</Label>
               <Input
                 id="firstName"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
                 disabled={updateProfile.isPending}
+                className="h-12 md:h-10"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName" className="text-sm font-medium">Last Name</Label>
               <Input
                 id="lastName"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
                 disabled={updateProfile.isPending}
+                className="h-12 md:h-10"
               />
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Email</Label>
+          {/* Email field */}
+          <div className="space-y-2 pt-4 border-t border-border/50">
+            <Label className="text-sm font-medium">Email</Label>
             <Input
               value={user?.email || ''}
               disabled
-              className="bg-muted"
+              className="bg-muted h-12 md:h-10"
             />
             <p className="text-sm text-muted-foreground">
               Email cannot be changed from this page
             </p>
           </div>
 
-          <div className="space-y-2">
-            <Label className="flex items-center gap-2">
+          {/* Member since field */}
+          <div className="space-y-2 pt-4 border-t border-border/50">
+            <Label className="flex items-center gap-2 text-sm font-medium">
               <Calendar className="w-4 h-4" />
               Member Since
             </Label>
             <Input
               value={new Date(profile.created_at).toLocaleDateString()}
               disabled
-              className="bg-muted"
+              className="bg-muted h-12 md:h-10"
             />
           </div>
 
-          <div className="flex gap-3">
+          {/* Action buttons - stacked on mobile, side by side on desktop */}
+          <div className="flex flex-col md:flex-row gap-3 pt-6">
             <Button
               type="submit"
               disabled={updateProfile.isPending || !isChanged}
-              className="flex-1"
+              className="flex-1 h-12 md:h-10 order-2 md:order-1"
             >
               {updateProfile.isPending && (
                 <Loader2 className="w-4 h-4 mr-2 animate-spin" />
@@ -105,6 +111,7 @@ export const ProfileForm = ({ profile, onCancel }: ProfileFormProps) => {
               variant="outline"
               onClick={onCancel}
               disabled={updateProfile.isPending}
+              className="h-12 md:h-10 md:w-auto order-1 md:order-2"
             >
               Cancel
             </Button>

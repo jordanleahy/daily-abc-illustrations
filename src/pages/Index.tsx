@@ -25,51 +25,7 @@ const Index = () => {
     <PageLayout>
       <Container>
         {!isAuthenticated ? (
-          <div className="flex flex-col items-center justify-center min-h-[80vh] py-12">
-            <div className="text-center space-y-8 max-w-2xl">
-              {/* Hero Section */}
-              <div className="space-y-4">
-              </div>
-
-              {/* Subscription Form */}
-              <div className="bg-card border rounded-lg p-6 md:p-8 shadow-lg">
-                <h2 className="text-2xl font-semibold mb-4 text-card-foreground">
-                  Subscribe for Daily Learning
-                </h2>
-                <p className="text-muted-foreground mb-6">
-                  Enter your phone number to receive daily text messages with an image preview 
-                  and link to download today's PDF.
-                </p>
-                
-                <form className="space-y-4">
-                  <div className="flex flex-col md:flex-row gap-4">
-                    <input
-                      type="tel"
-                      placeholder="Enter your phone number"
-                      className="flex-1 px-4 py-3 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
-                    />
-                    <Button type="submit" size="lg" className="md:px-8">
-                      Subscribe
-                    </Button>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    📱 Free daily texts • 📚 High-quality PDFs • ❌ Cancel anytime
-                  </p>
-                </form>
-              </div>
-
-
-              {/* Sign In Link */}
-              <div className="pt-8 border-t border-border">
-                <p className="text-muted-foreground">
-                  Already have an account?{' '}
-                  <Button variant="link" asChild className="p-0 h-auto">
-                    <a href="/auth">Sign In</a>
-                  </Button>
-                </p>
-              </div>
-            </div>
-          </div>
+          <div></div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-center space-y-6">

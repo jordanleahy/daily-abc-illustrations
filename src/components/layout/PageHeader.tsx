@@ -68,17 +68,28 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
                 />
               </>
             ) : (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setIsMenuOpen(!isMenuOpen)}
-              >
-                {isMenuOpen ? (
-                  <X className="h-5 w-5" />
-                ) : (
-                  <Menu className="h-5 w-5" />
-                )}
-              </Button>
+              <>
+                {/* Desktop Sign In Button */}
+                <div className="hidden md:block">
+                  <SignInButton fallbackRedirectUrl="/">
+                    <Button size="sm">Sign In</Button>
+                  </SignInButton>
+                </div>
+                
+                {/* Mobile Menu Button */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="md:hidden"
+                  onClick={() => setIsMenuOpen(!isMenuOpen)}
+                >
+                  {isMenuOpen ? (
+                    <X className="h-5 w-5" />
+                  ) : (
+                    <Menu className="h-5 w-5" />
+                  )}
+                </Button>
+              </>
             )}
           </div>
         </div>

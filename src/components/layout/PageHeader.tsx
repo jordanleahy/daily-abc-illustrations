@@ -68,27 +68,55 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
                 />
               </>
             ) : (
-              <SignInButton>
-                <Button>Sign In</Button>
-              </SignInButton>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setIsMenuOpen(!isMenuOpen)}
+              >
+                {isMenuOpen ? (
+                  <X className="h-5 w-5" />
+                ) : (
+                  <Menu className="h-5 w-5" />
+                )}
+              </Button>
             )}
           </div>
         </div>
 
         {/* Mobile Navigation Menu */}
-        {isMenuOpen && user && (
+        {isMenuOpen && (
           <div className="md:hidden">
             <div className="space-y-1 pb-3 pt-2">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
-              ))}
+              {user ? (
+                <>
+                  {navigation.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                  <div className="px-3 py-2">
+                    <UserButton 
+                      afterSignOutUrl="/"
+                      appearance={{
+                        elements: {
+                          avatarBox: "w-8 h-8"
+                        }
+                      }}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="px-3 py-2">
+                  <SignInButton>
+                    <Button className="w-full">Sign In</Button>
+                  </SignInButton>
+                </div>
+              )}
             </div>
           </div>
         )}

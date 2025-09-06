@@ -2,9 +2,27 @@ import { useAuth } from '@/hooks/useAuth';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/button';
+import { HeroSection, DailyContent } from '@/components/hero';
 
 const Index = () => {
   const { isAuthenticated, loading } = useAuth();
+
+  // Sample data - this would come from your daily content API/database
+  const dailyContent: DailyContent = {
+    id: '1',
+    title: 'Dora the Explorer A-Z',
+    mainImage: '/lovable-uploads/b29306f4-6cdf-4a40-8f5c-69fa3ddabf60.png',
+    thumbnails: [
+      '/lovable-uploads/b29306f4-6cdf-4a40-8f5c-69fa3ddabf60.png',
+      '/lovable-uploads/2b5adcc1-99cb-42b8-8358-958bc6619d30.png',
+    ],
+    grade: 'PreK - K',
+    subjects: ['Alphabet', 'Vocabulary'],
+    tags: ['Homeschool', 'Parents'],
+    description: 'An A-Z ABC book inspired by Dora the Explorer that turns each letter into a playful learning moment',
+    downloadUrl: '#',
+    price: '$FREE'
+  };
 
   if (loading) {
     return (
@@ -25,15 +43,8 @@ const Index = () => {
     <PageLayout>
       <Container>
         {!isAuthenticated ? (
-          <div className="flex flex-col items-center justify-center min-h-[80vh] py-12">
-            <div className="text-center space-y-6 max-w-4xl">
-              <section className="space-y-4">
-                <h1 className="text-4xl font-bold text-foreground">Welcome to ABC Illustrations</h1>
-                <p className="text-lg text-muted-foreground">
-                  Your daily source for beautiful educational content
-                </p>
-              </section>
-            </div>
+          <div className="min-h-screen">
+            <HeroSection content={dailyContent} />
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12">

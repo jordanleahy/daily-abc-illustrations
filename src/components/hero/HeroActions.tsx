@@ -1,0 +1,37 @@
+import { Button } from '@/components/ui/button';
+import { Download, Edit } from 'lucide-react';
+
+interface HeroActionsProps {
+  price: string;
+  downloadUrl: string;
+  onEditClick?: () => void;
+}
+
+export const HeroActions = ({ price, downloadUrl, onEditClick }: HeroActionsProps) => {
+  const handleDownload = () => {
+    // Handle download logic
+    window.open(downloadUrl, '_blank');
+  };
+
+  return (
+    <div className="flex flex-col gap-3 min-w-[120px]">
+      <Button 
+        onClick={onEditClick}
+        variant="outline" 
+        size="sm"
+        className="w-full justify-center gap-2"
+      >
+        <Edit size={16} />
+        Edit Listing
+      </Button>
+      
+      <Button 
+        onClick={handleDownload}
+        className="w-full justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white"
+      >
+        <Download size={16} />
+        Download
+      </Button>
+    </div>
+  );
+};

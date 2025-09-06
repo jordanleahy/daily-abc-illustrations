@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { HeroSidebar } from './HeroSidebar';
 import { HeroTitleSection } from './HeroTitleSection';
 import { HeroSpecsOnly } from './HeroSpecsOnly';
+import { HeroSpecs } from './HeroSpecs';
 import { DailyContent } from './types';
 
 interface HeroContentProps {
@@ -49,7 +50,11 @@ export const HeroContent = ({ content }: HeroContentProps) => {
 
         {/* Specs Panel - Hidden on mobile and tablet, shown on desktop */}
         <div className="hidden lg:block lg:col-span-3">
-          <HeroSpecsOnly
+          <HeroSpecs
+            title={content.title}
+            price={content.price}
+            downloadUrl={content.downloadUrl}
+            publishedDate={content.publishedDate}
             grade={content.grade}
             subjects={content.subjects}
             tags={content.tags}

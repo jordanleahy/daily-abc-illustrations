@@ -1,22 +1,26 @@
 import { Button } from '@/components/ui/button';
 import { Download, Edit } from 'lucide-react';
 import { HeroActions } from './HeroActions';
+import { format } from 'date-fns';
 
 interface HeroSpecsProps {
   title: string;
   price: string;
   downloadUrl: string;
+  publishedDate: string;
   grade: string;
   subjects: string[];
   tags: string[];
 }
 
-export const HeroSpecs = ({ title, price, downloadUrl, grade, subjects, tags }: HeroSpecsProps) => {
+export const HeroSpecs = ({ title, price, downloadUrl, publishedDate, grade, subjects, tags }: HeroSpecsProps) => {
+  const formattedDate = format(new Date(publishedDate), 'MMMM d, yyyy');
   return (
     <div className="space-y-4 text-sm">
       <div className="mb-4 md:mb-6">
         <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{title}</h1>
-        <p className="text-xl md:text-2xl font-bold text-foreground mb-4">{price}</p>
+        <p className="text-xl md:text-2xl font-bold text-foreground mb-2">{price}</p>
+        <p className="text-sm text-muted-foreground mb-4">Published {formattedDate}</p>
         <HeroActions 
           price={price}
           downloadUrl={downloadUrl}

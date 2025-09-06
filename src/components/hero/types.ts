@@ -9,6 +9,7 @@ export interface DailyContent {
   description: string;
   downloadUrl: string;
   price: string;
+  publishedDate: string;
 }
 
 export interface HeroSectionProps {

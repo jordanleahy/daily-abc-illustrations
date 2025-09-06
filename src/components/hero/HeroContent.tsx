@@ -63,6 +63,7 @@ export const HeroContent = ({ content }: HeroContentProps) => {
           title={content.title}
           price={content.price}
           downloadUrl={content.downloadUrl}
+          publishedDate={content.publishedDate}
         />
       </div>
 

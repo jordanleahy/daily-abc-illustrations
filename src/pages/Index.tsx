@@ -21,7 +21,8 @@ const Index = () => {
     tags: ['Homeschool', 'Parents'],
     description: 'An A-Z ABC book inspired by Dora the Explorer that turns each letter into a playful learning moment',
     downloadUrl: '#',
-    price: '$FREE'
+    price: '$FREE',
+    publishedDate: '2024-01-15'
   };
 
   if (loading) {

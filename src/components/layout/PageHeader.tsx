@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useClerkAuth';
-import { SignInButton, UserButton } from '@clerk/clerk-react';
+import { SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react';
 import { Container } from './Container';
 
 interface PageHeaderProps {
@@ -69,11 +69,14 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
               </>
             ) : (
               <>
-                {/* Desktop Sign In Button */}
-                <div className="hidden md:block">
+                {/* Desktop Sign In and Sign Up Buttons */}
+                <div className="hidden md:flex md:items-center md:space-x-3">
                   <SignInButton fallbackRedirectUrl="/">
-                    <Button size="sm">Sign In</Button>
+                    <Button variant="outline" size="sm">Sign In</Button>
                   </SignInButton>
+                  <SignUpButton fallbackRedirectUrl="/">
+                    <Button size="sm">Sign Up</Button>
+                  </SignUpButton>
                 </div>
                 
                 {/* Mobile Menu Button */}
@@ -122,10 +125,13 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
                   </div>
                 </>
               ) : (
-                <div className="px-3 py-2">
+                <div className="px-3 py-2 space-y-2">
                   <SignInButton fallbackRedirectUrl="/">
-                    <Button className="w-full">Sign In</Button>
+                    <Button variant="outline" className="w-full">Sign In</Button>
                   </SignInButton>
+                  <SignUpButton fallbackRedirectUrl="/">
+                    <Button className="w-full">Sign Up</Button>
+                  </SignUpButton>
                 </div>
               )}
             </div>

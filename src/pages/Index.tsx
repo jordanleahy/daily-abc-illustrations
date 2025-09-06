@@ -25,7 +25,16 @@ const Index = () => {
     <PageLayout>
       <Container>
         {!isAuthenticated ? (
-          <div></div>
+          <div className="flex flex-col items-center justify-center min-h-[80vh] py-12">
+            <div className="text-center space-y-6 max-w-4xl">
+              <section className="space-y-4">
+                <h1 className="text-4xl font-bold text-foreground">Welcome to ABC Illustrations</h1>
+                <p className="text-lg text-muted-foreground">
+                  Your daily source for beautiful educational content
+                </p>
+              </section>
+            </div>
+          </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12">
             <div className="text-center space-y-6">

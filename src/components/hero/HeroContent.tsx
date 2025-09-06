@@ -26,18 +26,12 @@ export const HeroContent = ({ content }: HeroContentProps) => {
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <h1 className="text-3xl font-bold text-foreground">{content.title}</h1>
-        </div>
-        
-        <div className="flex items-center gap-4">
-          <p className="text-2xl font-bold text-foreground">{content.price}</p>
-          <HeroActions 
-            price={content.price}
-            downloadUrl={content.downloadUrl}
-          />
-        </div>
+      <div className="flex items-center justify-end gap-4 mb-6">
+        <p className="text-2xl font-bold text-foreground">{content.price}</p>
+        <HeroActions 
+          price={content.price}
+          downloadUrl={content.downloadUrl}
+        />
       </div>
 
       {/* Main Content Grid */}
@@ -65,6 +59,7 @@ export const HeroContent = ({ content }: HeroContentProps) => {
         {/* Specs Panel */}
         <div className="col-span-3">
           <HeroSpecs
+            title={content.title}
             grade={content.grade}
             subjects={content.subjects}
             tags={content.tags}

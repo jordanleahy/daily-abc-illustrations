@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { User, Edit2, Calendar, Mail } from 'lucide-react';
-import { useAuth } from '@/hooks/useClerkAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { ProfileForm } from '@/components/ProfileForm';
 import { PageLayout } from '@/components/layout/PageLayout';
@@ -13,23 +14,13 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { isAuthenticated, user, loading: authLoading } = useAuth();
   const { data: profile, isLoading, error } = useProfile();
+  const navigate = useNavigate();
 
-  // Redirect unauthenticated users
-  if (!authLoading && !isAuthenticated) {
-    return (
-      <PageLayout title="Profile">
-        <Container size="md" className="py-8">
-          <Card>
-            <CardContent className="pt-6 text-center">
-              <p className="text-muted-foreground mb-4">
-                Please sign in to view your profile
-              </p>
-            </CardContent>
-          </Card>
-        </Container>
-      </PageLayout>
-    );
-  }
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      navigate('/auth');
+    }
+  }, [isAuthenticated, authLoading, navigate]);
 
   if (authLoading || isLoading) {
     return (
@@ -131,7 +122,7 @@ const Profile = () => {
                   Email Address
                 </label>
                 <p className="text-foreground font-medium">
-                  {user?.primaryEmailAddress?.emailAddress}
+                  {user?.email}
                 </p>
               </div>
 

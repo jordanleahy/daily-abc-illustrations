@@ -1,9 +1,15 @@
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/useClerkAuth';
-import { SignInButton, SignUpButton, UserButton } from '@clerk/clerk-react';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/hooks/useAuth';
 import { Container } from './Container';
 
 interface PageHeaderProps {
@@ -12,9 +18,15 @@ interface PageHeaderProps {
 
 export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user, isAuthenticated } = useAuth();
+  const { isAuthenticated, user, signOut } = useAuth();
+  const navigate = useNavigate();
 
-  const navigation = user ? [
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const navigation = isAuthenticated ? [
     { name: 'Canvas', href: '/' },
   ] : [];
 
@@ -42,7 +54,7 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
 
           {/* User Menu / Auth Buttons */}
           <div className="flex items-center space-x-4">
-            {user ? (
+            {isAuthenticated ? (
               <>
                 {/* Mobile Menu Button */}
                 <Button
@@ -58,82 +70,54 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
                   )}
                 </Button>
 
-                <UserButton 
-                  afterSignOutUrl="/"
-                  appearance={{
-                    elements: {
-                      avatarBox: "w-8 h-8"
-                    }
-                  }}
-                />
+                {/* User Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="relative">
+                      <User className="h-4 w-4" />
+                      <span className="sr-only">User menu</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="flex items-center justify-start gap-2 p-2">
+                      <div className="flex flex-col space-y-1 leading-none">
+                        <p className="font-medium text-sm">{user?.email}</p>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => navigate('/profile')}>
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Sign out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </>
             ) : (
-              <>
-                {/* Desktop Sign In and Sign Up Buttons */}
-                <div className="hidden md:flex md:items-center md:space-x-3">
-                  <SignInButton fallbackRedirectUrl="/">
-                    <Button variant="outline" size="sm">Sign In</Button>
-                  </SignInButton>
-                  <SignUpButton fallbackRedirectUrl="/">
-                    <Button size="sm">Sign Up</Button>
-                  </SignUpButton>
-                </div>
-                
-                {/* Mobile Menu Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="md:hidden"
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                >
-                  {isMenuOpen ? (
-                    <X className="h-5 w-5" />
-                  ) : (
-                    <Menu className="h-5 w-5" />
-                  )}
-                </Button>
-              </>
+              <Button asChild variant="default" size="sm">
+                <Link to="/auth">Sign In</Link>
+              </Button>
             )}
           </div>
         </div>
 
         {/* Mobile Navigation Menu */}
-        {isMenuOpen && (
+        {isMenuOpen && isAuthenticated && (
           <div className="md:hidden">
             <div className="space-y-1 pb-3 pt-2">
-              {user ? (
-                <>
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                  <div className="px-3 py-2">
-                    <UserButton 
-                      afterSignOutUrl="/"
-                      appearance={{
-                        elements: {
-                          avatarBox: "w-8 h-8"
-                        }
-                      }}
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="px-3 py-2 space-y-2">
-                  <SignInButton fallbackRedirectUrl="/">
-                    <Button variant="outline" className="w-full">Sign In</Button>
-                  </SignInButton>
-                  <SignUpButton fallbackRedirectUrl="/">
-                    <Button className="w-full">Sign Up</Button>
-                  </SignUpButton>
-                </div>
-              )}
+              {navigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
             </div>
           </div>
         )}

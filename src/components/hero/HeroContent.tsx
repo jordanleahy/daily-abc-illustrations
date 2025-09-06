@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Facebook, Twitter, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HeroSidebar } from './HeroSidebar';
-import { HeroSpecs } from './HeroSpecs';
+import { HeroTitleSection } from './HeroTitleSection';
+import { HeroSpecsOnly } from './HeroSpecsOnly';
 import { DailyContent } from './types';
 
 interface HeroContentProps {
@@ -25,9 +26,9 @@ export const HeroContent = ({ content }: HeroContentProps) => {
   return (
     <div className="w-full">
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
-        {/* Sidebar Thumbnails - Hidden on mobile */}
-        <div className="hidden md:block md:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-6">
+        {/* Sidebar Thumbnails - Hidden on mobile and tablet */}
+        <div className="hidden lg:block lg:col-span-1">
           <HeroSidebar
             thumbnails={content.thumbnails}
             mainImage={content.mainImage}
@@ -36,7 +37,7 @@ export const HeroContent = ({ content }: HeroContentProps) => {
         </div>
 
         {/* Main Image */}
-        <div className="col-span-1 md:col-span-8">
+        <div className="col-span-1 lg:col-span-8">
           <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gradient-to-br from-emerald-400 to-blue-500">
             <img
               src={selectedImage}
@@ -46,17 +47,32 @@ export const HeroContent = ({ content }: HeroContentProps) => {
           </div>
         </div>
 
-        {/* Specs Panel - Stacked below on mobile */}
-        <div className="col-span-1 md:col-span-3">
-          <HeroSpecs
-            title={content.title}
-            price={content.price}
-            downloadUrl={content.downloadUrl}
+        {/* Specs Panel - Hidden on mobile and tablet, shown on desktop */}
+        <div className="hidden lg:block lg:col-span-3">
+          <HeroSpecsOnly
             grade={content.grade}
             subjects={content.subjects}
             tags={content.tags}
           />
         </div>
+      </div>
+
+      {/* Title Section - Below image on mobile and tablet */}
+      <div className="mt-4 lg:hidden">
+        <HeroTitleSection
+          title={content.title}
+          price={content.price}
+          downloadUrl={content.downloadUrl}
+        />
+      </div>
+
+      {/* Specs Section - Below title on mobile and tablet */}
+      <div className="mt-6 lg:hidden">
+        <HeroSpecsOnly
+          grade={content.grade}
+          subjects={content.subjects}
+          tags={content.tags}
+        />
       </div>
 
       {/* Description */}

@@ -1,5 +1,4 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,14 +13,23 @@ const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { isAuthenticated, user, loading: authLoading } = useAuth();
   const { data: profile, isLoading, error } = useProfile();
-  const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
-      // Don't redirect since /auth route no longer exists
-      // Clerk will handle authentication via SignInButton
-    }
-  }, [isAuthenticated, authLoading]);
+  // Redirect unauthenticated users
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <PageLayout title="Profile">
+        <Container size="md" className="py-8">
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="text-muted-foreground mb-4">
+                Please sign in to view your profile
+              </p>
+            </CardContent>
+          </Card>
+        </Container>
+      </PageLayout>
+    );
+  }
 
   if (authLoading || isLoading) {
     return (

@@ -162,31 +162,6 @@ const DrawingCanvas: React.FC = () => {
 
   return (
     <div className="flex flex-col h-screen bg-background">
-      {/* Header */}
-      <header className="flex items-center justify-between p-4 border-b border-toolbar-border bg-toolbar-bg">
-        <h1 className="text-2xl font-bold text-foreground">ABC Illustrations</h1>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={undo}
-            disabled={paths.length === 0}
-            className="tool-button"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            Undo
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={downloadCanvas}
-            className="tool-button"
-          >
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
-        </div>
-      </header>
 
       <div className="flex flex-1 overflow-hidden">
 

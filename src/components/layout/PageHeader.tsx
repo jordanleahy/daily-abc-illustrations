@@ -71,13 +71,13 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
                 <SheetHeader>
                   <SheetTitle>{title}</SheetTitle>
                 </SheetHeader>
-                <div className="mt-6 space-y-4">
+                <div className="mt-6 space-y-2">
                   {/* Navigation Links */}
                   {navigation.map((item) => (
                     <Link
                       key={item.name}
                       to={item.href}
-                      className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     >
                       {item.name}
                     </Link>
@@ -85,10 +85,7 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
                   
                   {/* User Section */}
                   {isAuthenticated ? (
-                    <div className="pt-4 border-t">
-                      <div className="px-3 py-2 mb-2">
-                        <p className="font-medium text-sm text-foreground">{user?.email}</p>
-                      </div>
+                    <>
                       <Link
                         to="/profile"
                         className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -98,21 +95,19 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
                       </Link>
                       <button
                         onClick={handleSignOut}
-                        className="flex items-center w-full rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                       >
                         <LogOut className="mr-2 h-4 w-4" />
                         Sign out
                       </button>
-                    </div>
+                    </>
                   ) : (
-                    <div className="pt-4 border-t">
-                      <Link
-                        to="/auth"
-                        className="block w-full rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                      >
-                        Sign In
-                      </Link>
-                    </div>
+                    <Link
+                      to="/auth"
+                      className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      Sign In
+                    </Link>
                   )}
                 </div>
               </SheetContent>

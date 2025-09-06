@@ -14,9 +14,9 @@ interface HeroSpecsProps {
 export const HeroSpecs = ({ title, price, downloadUrl, grade, subjects, tags }: HeroSpecsProps) => {
   return (
     <div className="space-y-4 text-sm">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-foreground mb-2">{title}</h1>
-        <p className="text-2xl font-bold text-foreground mb-4">{price}</p>
+      <div className="mb-4 md:mb-6">
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">{title}</h1>
+        <p className="text-xl md:text-2xl font-bold text-foreground mb-4">{price}</p>
         <HeroActions 
           price={price}
           downloadUrl={downloadUrl}

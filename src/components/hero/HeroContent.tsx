@@ -25,9 +25,9 @@ export const HeroContent = ({ content }: HeroContentProps) => {
   return (
     <div className="w-full">
       {/* Main Content Grid */}
-      <div className="grid grid-cols-12 gap-6">
-        {/* Sidebar Thumbnails */}
-        <div className="col-span-1">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4 md:gap-6">
+        {/* Sidebar Thumbnails - Hidden on mobile */}
+        <div className="hidden md:block md:col-span-1">
           <HeroSidebar
             thumbnails={content.thumbnails}
             mainImage={content.mainImage}
@@ -36,7 +36,7 @@ export const HeroContent = ({ content }: HeroContentProps) => {
         </div>
 
         {/* Main Image */}
-        <div className="col-span-8">
+        <div className="col-span-1 md:col-span-8">
           <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gradient-to-br from-emerald-400 to-blue-500">
             <img
               src={selectedImage}
@@ -46,8 +46,8 @@ export const HeroContent = ({ content }: HeroContentProps) => {
           </div>
         </div>
 
-        {/* Specs Panel */}
-        <div className="col-span-3">
+        {/* Specs Panel - Stacked below on mobile */}
+        <div className="col-span-1 md:col-span-3">
           <HeroSpecs
             title={content.title}
             price={content.price}

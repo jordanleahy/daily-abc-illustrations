@@ -19,7 +19,12 @@ export const PageLayout = ({
   fullHeight = true
 }: PageLayoutProps) => {
   return (
-    <div className={cn('min-h-screen bg-background flex flex-col', className)}>
+    <div className={cn(
+      'min-h-screen bg-background flex flex-col',
+      // Responsive layout adjustments
+      'overflow-x-hidden', // Prevent horizontal scroll on mobile
+      className
+    )}>
       {showHeader && <PageHeader title={title} />}
       <PageContent fullHeight={fullHeight}>
         {children}

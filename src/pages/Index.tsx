@@ -49,7 +49,7 @@ const Index = () => {
                       className="flex-1 px-4 py-3 rounded-md border border-input bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                     />
                     <Button type="submit" size="lg" className="md:px-8">
-                      Subscribe Now
+                      Subscribe
                     </Button>
                   </div>
                   <p className="text-sm text-muted-foreground">

@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Download, Edit } from 'lucide-react';
+import { AdminOnly } from '@/components/AdminOnly';
 
 interface HeroActionsProps {
   price: string;
@@ -15,15 +16,17 @@ export const HeroActions = ({ price, downloadUrl, onEditClick }: HeroActionsProp
 
   return (
     <div className="flex flex-col sm:flex-row gap-2">
-      <Button 
-        onClick={onEditClick}
-        variant="outline" 
-        size="sm"
-        className="gap-2 min-h-[44px]"
-      >
-        <Edit size={16} />
-        Edit Listing
-      </Button>
+      <AdminOnly>
+        <Button 
+          onClick={onEditClick}
+          variant="outline" 
+          size="sm"
+          className="gap-2 min-h-[44px]"
+        >
+          <Edit size={16} />
+          Edit Listing
+        </Button>
+      </AdminOnly>
       
       <Button 
         onClick={handleDownload}

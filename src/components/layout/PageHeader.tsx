@@ -22,7 +22,7 @@ interface PageHeaderProps {
   title?: string;
 }
 
-export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => {
+export const PageHeader = ({ title = "My App" }: PageHeaderProps) => {
   const { isAuthenticated, user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -31,9 +31,7 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
     navigate('/auth');
   };
 
-  const navigation = isAuthenticated ? [
-    { name: 'Canvas', href: '/' },
-  ] : [];
+  const navigation = isAuthenticated ? [] : [];
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

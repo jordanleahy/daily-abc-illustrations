@@ -37,23 +37,6 @@ All colors MUST be HSL.
     --ring: 222.2 84% 4.9%;
 
     --radius: 0.5rem;
-
-    /* Canvas-specific design tokens */
-    --canvas-bg: 0 0% 100%;
-    --toolbar-bg: 0 0% 98%;
-    --toolbar-border: 220 13% 91%;
-    --tool-active: 220 14.3% 95.9%;
-    --tool-hover: 220 14.3% 95.9%;
-    
-    /* Color palette for drawing */
-    --color-red: 0 72% 51%;
-    --color-orange: 25 95% 53%;
-    --color-yellow: 45 93% 58%;
-    --color-green: 142 76% 36%;
-    --color-blue: 221 83% 53%;
-    --color-purple: 262 83% 58%;
-    --color-pink: 336 84% 68%;
-    --color-black: 0 0% 0%;
     
     /* Shadows */
     --shadow-soft: 0 2px 8px -2px hsl(220 13% 91% / 0.4);
@@ -91,12 +74,6 @@ All colors MUST be HSL.
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
-    
-    --canvas-bg: 0 0% 100%;
-    --toolbar-bg: 222.2 84% 4.9%;
-    --toolbar-border: 217.2 32.6% 17.5%;
-    --tool-active: 217.2 32.6% 25%;
-    --tool-hover: 217.2 32.6% 22%;
   }
 }
 
@@ -107,23 +84,5 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
-  }
-}
-
-@layer components {
-  .canvas-container {
-    @apply bg-canvas-bg shadow-[var(--shadow-medium)] rounded-lg overflow-hidden;
-  }
-  
-  .toolbar {
-    @apply bg-toolbar-bg border-toolbar-border shadow-[var(--shadow-soft)] rounded-lg p-3;
-  }
-  
-  .tool-button {
-    @apply p-2 rounded-md transition-[var(--transition-smooth)] hover:bg-tool-hover data-[active=true]:bg-tool-active;
-  }
-  
-  .color-swatch {
-    @apply w-8 h-8 rounded-full border-2 border-toolbar-border cursor-pointer transition-[var(--transition-smooth)] hover:scale-110;
   }
 }

@@ -85,40 +85,122 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
 
         {/* Mobile Navigation Menu */}
         {isMenuOpen && (
-          <div className="md:hidden">
-            <div className="space-y-1 pb-3 pt-2">
-              {user ? (
-                <>
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                  <div className="px-3 py-2">
-                    <UserButton 
-                      afterSignOutUrl="/"
-                      appearance={{
-                        elements: {
-                          avatarBox: "w-8 h-8"
-                        }
-                      }}
-                    />
-                  </div>
-                </>
-              ) : (
-                <div className="px-3 py-2">
-                  <SignInButton>
-                    <Button className="w-full">Sign In</Button>
-                  </SignInButton>
-                </div>
-              )}
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+              onClick={() => setIsMenuOpen(false)}
+            />
+            
+            {/* Mobile Panel */}
+            <div className="fixed top-14 left-0 right-0 bg-background border-b border-border shadow-lg z-50 md:hidden">
+              <div className="px-4 py-6 space-y-6">
+                {user ? (
+                  <>
+                    {/* User Navigation */}
+                    <nav className="space-y-1">
+                      {navigation.map((item) => (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          className="flex items-center px-3 py-2 text-base font-medium text-foreground rounded-md hover:bg-muted transition-colors"
+                          onClick={() => setIsMenuOpen(false)}
+                        >
+                          {item.name}
+                        </Link>
+                      ))}
+                    </nav>
+                    
+                    {/* Future Navigation Items */}
+                    <nav className="space-y-1 border-t border-border pt-4">
+                      <h3 className="px-3 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                        Platform
+                      </h3>
+                      <Link
+                        to="/newsletter"
+                        className="flex items-center px-3 py-2 text-base font-medium text-foreground rounded-md hover:bg-muted transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Newsletter
+                      </Link>
+                      <Link
+                        to="/archive"
+                        className="flex items-center px-3 py-2 text-base font-medium text-foreground rounded-md hover:bg-muted transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Archive
+                      </Link>
+                      <Link
+                        to="/profile"
+                        className="flex items-center px-3 py-2 text-base font-medium text-foreground rounded-md hover:bg-muted transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Profile
+                      </Link>
+                    </nav>
+
+                    {/* User Account */}
+                    <div className="border-t border-border pt-4">
+                      <div className="px-3">
+                        <UserButton 
+                          afterSignOutUrl="/"
+                          appearance={{
+                            elements: {
+                              avatarBox: "w-8 h-8"
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    {/* Guest Navigation */}
+                    <nav className="space-y-1">
+                      <h3 className="px-3 text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                        Discover
+                      </h3>
+                      <Link
+                        to="/about"
+                        className="flex items-center px-3 py-2 text-base font-medium text-foreground rounded-md hover:bg-muted transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        About ABC
+                      </Link>
+                      <Link
+                        to="/newsletter"
+                        className="flex items-center px-3 py-2 text-base font-medium text-foreground rounded-md hover:bg-muted transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Newsletter
+                      </Link>
+                      <Link
+                        to="/archive"
+                        className="flex items-center px-3 py-2 text-base font-medium text-foreground rounded-md hover:bg-muted transition-colors"
+                        onClick={() => setIsMenuOpen(false)}
+                      >
+                        Archive
+                      </Link>
+                    </nav>
+
+                    {/* Sign In CTA */}
+                    <div className="border-t border-border pt-4">
+                      <div className="px-3">
+                        <SignInButton>
+                          <Button className="w-full" size="lg">
+                            Sign In with Google
+                          </Button>
+                        </SignInButton>
+                        <p className="text-sm text-muted-foreground text-center mt-2">
+                          Get access to premium features
+                        </p>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
             </div>
-          </div>
+          </>
         )}
       </Container>
     </header>

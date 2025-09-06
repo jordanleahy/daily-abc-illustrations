@@ -26,8 +26,7 @@ export const HeroContent = ({ content }: HeroContentProps) => {
   return (
     <div className="w-full">
       {/* Header */}
-      <div className="flex items-center justify-end gap-4 mb-6">
-        <p className="text-2xl font-bold text-foreground">{content.price}</p>
+      <div className="flex items-center justify-end mb-6">
         <HeroActions 
           price={content.price}
           downloadUrl={content.downloadUrl}
@@ -60,6 +59,7 @@ export const HeroContent = ({ content }: HeroContentProps) => {
         <div className="col-span-3">
           <HeroSpecs
             title={content.title}
+            price={content.price}
             grade={content.grade}
             subjects={content.subjects}
             tags={content.tags}

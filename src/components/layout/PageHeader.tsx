@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useClerkAuth';
-import { SignInButton, UserButton } from '@clerk/clerk-react';
+import { UserButton } from '@clerk/clerk-react';
 import { Container } from './Container';
+import { AuthModal } from '@/components/auth/AuthModal';
 
 interface PageHeaderProps {
   title?: string;
@@ -12,6 +13,7 @@ interface PageHeaderProps {
 
 export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const { user, isAuthenticated } = useAuth();
 
   const navigation = user ? [
@@ -111,16 +113,33 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
                   </div>
                 </>
               ) : (
-                <div className="px-3 py-2">
-                  <SignInButton>
-                    <Button className="w-full">Sign In</Button>
-                  </SignInButton>
+                <div className="px-3 py-2 space-y-2">
+                  <Button 
+                    className="w-full" 
+                    onClick={() => {
+                      setIsAuthModalOpen(true);
+                      setIsMenuOpen(false);
+                    }}
+                  >
+                    Sign In
+                  </Button>
+                  <Link to="/sign-up" className="block">
+                    <Button variant="outline" className="w-full">
+                      Create Account
+                    </Button>
+                  </Link>
                 </div>
               )}
             </div>
           </div>
         )}
       </Container>
+
+      <AuthModal 
+        open={isAuthModalOpen}
+        onOpenChange={setIsAuthModalOpen}
+        defaultMode="signin"
+      />
     </header>
   );
 };

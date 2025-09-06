@@ -42,25 +42,9 @@ const Index = () => {
   return (
     <PageLayout>
       <Container>
-        {!isAuthenticated ? (
-          <div className="min-h-screen">
-            <HeroSection content={dailyContent} />
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-12">
-            <div className="text-center space-y-6">
-              <h1 className="text-4xl font-bold text-foreground">Welcome Back!</h1>
-              <p className="text-lg text-muted-foreground max-w-2xl">
-                You're signed in and ready to explore ABC Illustrations!
-              </p>
-              <div className="flex gap-4 justify-center">
-                <Button asChild>
-                  <a href="/profile">View Profile</a>
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+        <div className="min-h-screen">
+          <HeroSection content={dailyContent} />
+        </div>
       </Container>
     </PageLayout>
   );

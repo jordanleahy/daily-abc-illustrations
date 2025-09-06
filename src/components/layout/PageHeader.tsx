@@ -100,12 +100,20 @@ export const PageHeader = ({ title = "My App" }: PageHeaderProps) => {
                       </button>
                     </>
                   ) : (
-                    <Link
-                      to="/auth"
-                      className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    >
-                      Sign In
-                    </Link>
+                    <>
+                      <Link
+                        to="/auth"
+                        className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        Sign In
+                      </Link>
+                      <Link
+                        to="/auth"
+                        className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        Create Account
+                      </Link>
+                    </>
                   )}
                 </div>
               </SheetContent>
@@ -139,11 +147,16 @@ export const PageHeader = ({ title = "My App" }: PageHeaderProps) => {
               </DropdownMenu>
             )}
 
-            {/* Desktop Sign In Button */}
+            {/* Desktop Auth Buttons */}
             {!isAuthenticated && (
-              <Button asChild variant="default" size="sm" className="hidden md:flex">
-                <Link to="/auth">Sign In</Link>
-              </Button>
+              <div className="hidden md:flex md:items-center md:space-x-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/auth">Sign In</Link>
+                </Button>
+                <Button asChild variant="default" size="sm">
+                  <Link to="/auth">Create Account</Link>
+                </Button>
+              </div>
             )}
           </div>
         </div>

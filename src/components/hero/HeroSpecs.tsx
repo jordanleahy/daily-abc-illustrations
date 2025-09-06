@@ -39,7 +39,7 @@ export const HeroSpecs = ({ title, price, downloadUrl, grade, subjects, tags }: 
       </div>
       
       <div>
-        <h4 className="font-semibold text-foreground mb-1">TAGS</h4>
+        <h4 className="font-semibold text-foreground mb-1">CHARACTERS</h4>
         <p className="text-muted-foreground">{tags.join(', ')}</p>
       </div>
     </div>

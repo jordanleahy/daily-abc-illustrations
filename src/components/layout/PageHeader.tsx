@@ -1,6 +1,5 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogOut } from 'lucide-react';
+import { Menu, User, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -9,6 +8,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
 import { Container } from './Container';
 
@@ -17,7 +23,6 @@ interface PageHeaderProps {
 }
 
 export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { isAuthenticated, user, signOut } = useAuth();
   const navigate = useNavigate();
 
@@ -52,75 +57,103 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
             ))}
           </nav>
 
-          {/* User Menu / Auth Buttons */}
+          {/* Mobile Menu / Auth Buttons */}
           <div className="flex items-center space-x-4">
-            {isAuthenticated ? (
-              <>
-                {/* Mobile Menu Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="md:hidden"
-                  onClick={() => setIsMenuOpen(!isMenuOpen)}
-                >
-                  {isMenuOpen ? (
-                    <X className="h-5 w-5" />
-                  ) : (
-                    <Menu className="h-5 w-5" />
-                  )}
+            {/* Mobile Side Panel */}
+            <Sheet>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm" className="md:hidden">
+                  <Menu className="h-5 w-5" />
+                  <span className="sr-only">Open menu</span>
                 </Button>
-
-                {/* User Dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="relative">
-                      <User className="h-4 w-4" />
-                      <span className="sr-only">User menu</span>
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="flex items-center justify-start gap-2 p-2">
-                      <div className="flex flex-col space-y-1 leading-none">
-                        <p className="font-medium text-sm">{user?.email}</p>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80">
+                <SheetHeader>
+                  <SheetTitle>{title}</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 space-y-4">
+                  {/* Navigation Links */}
+                  {navigation.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                  
+                  {/* User Section */}
+                  {isAuthenticated ? (
+                    <div className="pt-4 border-t">
+                      <div className="px-3 py-2 mb-2">
+                        <p className="font-medium text-sm text-foreground">{user?.email}</p>
                       </div>
+                      <Link
+                        to="/profile"
+                        className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center w-full rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Sign out
+                      </button>
                     </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => navigate('/profile')}>
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      Sign out
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </>
-            ) : (
-              <Button asChild variant="default" size="sm">
+                  ) : (
+                    <div className="pt-4 border-t">
+                      <Link
+                        to="/auth"
+                        className="block w-full rounded-md bg-primary px-3 py-2 text-center text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
+                      >
+                        Sign In
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </SheetContent>
+            </Sheet>
+
+            {/* Desktop User Menu */}
+            {isAuthenticated && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm" className="relative hidden md:flex">
+                    <User className="h-4 w-4" />
+                    <span className="sr-only">User menu</span>
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="flex items-center justify-start gap-2 p-2">
+                    <div className="flex flex-col space-y-1 leading-none">
+                      <p className="font-medium text-sm">{user?.email}</p>
+                    </div>
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Sign out
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+
+            {/* Desktop Sign In Button */}
+            {!isAuthenticated && (
+              <Button asChild variant="default" size="sm" className="hidden md:flex">
                 <Link to="/auth">Sign In</Link>
               </Button>
             )}
           </div>
         </div>
-
-        {/* Mobile Navigation Menu */}
-        {isMenuOpen && isAuthenticated && (
-          <div className="md:hidden">
-            <div className="space-y-1 pb-3 pt-2">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="block rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
       </Container>
     </header>
   );

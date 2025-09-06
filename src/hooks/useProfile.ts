@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuth } from './useClerkAuth';
 
 export const useProfile = () => {
   const { user } = useAuth();
@@ -24,8 +24,8 @@ export const useProfile = () => {
           .from('profiles')
           .insert({
             id: user.id,
-            first_name: user.user_metadata?.first_name || '',
-            last_name: user.user_metadata?.last_name || ''
+            first_name: user.firstName || '',
+            last_name: user.lastName || ''
           })
           .select()
           .single();

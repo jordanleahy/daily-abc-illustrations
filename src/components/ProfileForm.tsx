@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, User, Calendar } from 'lucide-react';
 import { useUpdateProfile } from '@/hooks/useUpdateProfile';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useClerkAuth';
 
 interface ProfileFormProps {
   profile: {
@@ -68,7 +68,7 @@ export const ProfileForm = ({ profile, onCancel }: ProfileFormProps) => {
           <div className="space-y-2">
             <Label>Email</Label>
             <Input
-              value={user?.email || ''}
+              value={user?.primaryEmailAddress?.emailAddress || ''}
               disabled
               className="bg-muted"
             />

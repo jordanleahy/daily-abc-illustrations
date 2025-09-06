@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { User, Edit2, Calendar, Mail } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useClerkAuth';
 import { useProfile } from '@/hooks/useProfile';
 import { ProfileForm } from '@/components/ProfileForm';
 import { PageLayout } from '@/components/layout/PageLayout';
@@ -18,9 +18,10 @@ const Profile = () => {
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      navigate('/auth');
+      // Don't redirect since /auth route no longer exists
+      // Clerk will handle authentication via SignInButton
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading]);
 
   if (authLoading || isLoading) {
     return (
@@ -122,7 +123,7 @@ const Profile = () => {
                   Email Address
                 </label>
                 <p className="text-foreground font-medium">
-                  {user?.email}
+                  {user?.primaryEmailAddress?.emailAddress}
                 </p>
               </div>
 

@@ -1,4 +1,4 @@
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/useClerkAuth';
 import { Navigate } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Container } from '@/components/layout/Container';
@@ -23,7 +23,17 @@ const Index = () => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
+    return (
+      <PageLayout>
+        <Container>
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <p className="text-muted-foreground">Please sign in to access the application</p>
+            </div>
+          </div>
+        </Container>
+      </PageLayout>
+    );
   }
 
   return (

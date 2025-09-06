@@ -22,7 +22,7 @@ interface PageHeaderProps {
   title?: string;
 }
 
-export const PageHeader = ({ title = "My App" }: PageHeaderProps) => {
+export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => {
   const { isAuthenticated, user, signOut } = useAuth();
   const navigate = useNavigate();
 

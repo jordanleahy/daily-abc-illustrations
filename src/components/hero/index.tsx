@@ -7,7 +7,7 @@ interface HeroSectionProps {
 
 export const HeroSection = ({ content }: HeroSectionProps) => {
   return (
-    <section className="w-full min-h-[600px] py-8">
+    <section className="w-full min-h-[600px] py-6 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <HeroContent content={content} />
       </div>

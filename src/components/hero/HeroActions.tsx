@@ -14,12 +14,12 @@ export const HeroActions = ({ price, downloadUrl, onEditClick }: HeroActionsProp
   };
 
   return (
-    <div className="flex flex-col gap-3 min-w-[120px]">
+    <div className="flex gap-2">
       <Button 
         onClick={onEditClick}
         variant="outline" 
         size="sm"
-        className="w-full justify-center gap-2"
+        className="gap-2"
       >
         <Edit size={16} />
         Edit Listing
@@ -27,7 +27,8 @@ export const HeroActions = ({ price, downloadUrl, onEditClick }: HeroActionsProp
       
       <Button 
         onClick={handleDownload}
-        className="w-full justify-center gap-2 bg-emerald-500 hover:bg-emerald-600 text-white"
+        size="sm"
+        className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-white"
       >
         <Download size={16} />
         Download

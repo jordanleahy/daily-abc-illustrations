@@ -112,7 +112,7 @@ export const PageHeader = ({ title = "ABC Illustrations" }: PageHeaderProps) => 
                 </>
               ) : (
                 <div className="px-3 py-2">
-                  <SignInButton>
+                  <SignInButton fallbackRedirectUrl="/">
                     <Button className="w-full">Sign In</Button>
                   </SignInButton>
                 </div>

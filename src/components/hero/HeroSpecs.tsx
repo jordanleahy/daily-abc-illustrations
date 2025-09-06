@@ -1,17 +1,26 @@
+import { Button } from '@/components/ui/button';
+import { Download, Edit } from 'lucide-react';
+import { HeroActions } from './HeroActions';
+
 interface HeroSpecsProps {
   title: string;
   price: string;
+  downloadUrl: string;
   grade: string;
   subjects: string[];
   tags: string[];
 }
 
-export const HeroSpecs = ({ title, price, grade, subjects, tags }: HeroSpecsProps) => {
+export const HeroSpecs = ({ title, price, downloadUrl, grade, subjects, tags }: HeroSpecsProps) => {
   return (
     <div className="space-y-4 text-sm">
       <div className="mb-6">
         <h1 className="text-3xl font-bold text-foreground mb-2">{title}</h1>
-        <p className="text-2xl font-bold text-foreground">{price}</p>
+        <p className="text-2xl font-bold text-foreground mb-4">{price}</p>
+        <HeroActions 
+          price={price}
+          downloadUrl={downloadUrl}
+        />
       </div>
       
       <div>

@@ -2,7 +2,6 @@ import { useState } from 'react';
 import { Facebook, Twitter, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { HeroSidebar } from './HeroSidebar';
-import { HeroActions } from './HeroActions';
 import { HeroSpecs } from './HeroSpecs';
 import { DailyContent } from './types';
 
@@ -25,14 +24,6 @@ export const HeroContent = ({ content }: HeroContentProps) => {
 
   return (
     <div className="w-full">
-      {/* Header */}
-      <div className="flex items-center justify-end mb-6">
-        <HeroActions 
-          price={content.price}
-          downloadUrl={content.downloadUrl}
-        />
-      </div>
-
       {/* Main Content Grid */}
       <div className="grid grid-cols-12 gap-6">
         {/* Sidebar Thumbnails */}
@@ -60,6 +51,7 @@ export const HeroContent = ({ content }: HeroContentProps) => {
           <HeroSpecs
             title={content.title}
             price={content.price}
+            downloadUrl={content.downloadUrl}
             grade={content.grade}
             subjects={content.subjects}
             tags={content.tags}

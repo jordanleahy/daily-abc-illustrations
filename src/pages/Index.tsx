@@ -58,30 +58,6 @@ const Index = () => {
                 </form>
               </div>
 
-              {/* Features */}
-              <div className="grid md:grid-cols-3 gap-6 pt-8">
-                <div className="text-center space-y-2">
-                  <div className="text-3xl">📚</div>
-                  <h3 className="font-semibold text-foreground">Daily PDFs</h3>
-                  <p className="text-sm text-muted-foreground">
-                    New A-Z learning content every single day
-                  </p>
-                </div>
-                <div className="text-center space-y-2">
-                  <div className="text-3xl">📱</div>
-                  <h3 className="font-semibold text-foreground">Text Delivery</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Convenient delivery right to your phone
-                  </p>
-                </div>
-                <div className="text-center space-y-2">
-                  <div className="text-3xl">🎨</div>
-                  <h3 className="font-semibold text-foreground">Beautiful Art</h3>
-                  <p className="text-sm text-muted-foreground">
-                    High-quality illustrations kids will love
-                  </p>
-                </div>
-              </div>
 
               {/* Sign In Link */}
               <div className="pt-8 border-t border-border">

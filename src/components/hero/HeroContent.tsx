@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Facebook, Twitter, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 import { HeroSidebar } from './HeroSidebar';
 import { HeroTitleSection } from './HeroTitleSection';
 import { HeroSpecsOnly } from './HeroSpecsOnly';
@@ -9,9 +10,25 @@ import { DailyContent } from './types';
 
 interface HeroContentProps {
   content: DailyContent;
+  isEditing?: boolean;
+  hasChanges?: boolean;
+  onEditClick?: () => void;
+  onSaveClick?: () => void;
+  onCancelClick?: () => void;
+  onUpdateField?: (field: string, value: any) => void;
+  onUpdateArrayField?: (field: 'subjects' | 'tags', value: string) => void;
 }
 
-export const HeroContent = ({ content }: HeroContentProps) => {
+export const HeroContent = ({ 
+  content, 
+  isEditing = false,
+  hasChanges = false,
+  onEditClick,
+  onSaveClick,
+  onCancelClick,
+  onUpdateField,
+  onUpdateArrayField
+}: HeroContentProps) => {
   const [selectedImage, setSelectedImage] = useState(content.mainImage);
 
   const handleShare = () => {
@@ -58,6 +75,13 @@ export const HeroContent = ({ content }: HeroContentProps) => {
             grade={content.grade}
             subjects={content.subjects}
             tags={content.tags}
+            isEditing={isEditing}
+            hasChanges={hasChanges}
+            onEditClick={onEditClick}
+            onSaveClick={onSaveClick}
+            onCancelClick={onCancelClick}
+            onUpdateField={onUpdateField}
+            onUpdateArrayField={onUpdateArrayField}
           />
         </div>
       </div>
@@ -69,6 +93,12 @@ export const HeroContent = ({ content }: HeroContentProps) => {
           price={content.price}
           downloadUrl={content.downloadUrl}
           publishedDate={content.publishedDate}
+          isEditing={isEditing}
+          hasChanges={hasChanges}
+          onEditClick={onEditClick}
+          onSaveClick={onSaveClick}
+          onCancelClick={onCancelClick}
+          onUpdateField={onUpdateField}
         />
       </div>
 
@@ -84,7 +114,16 @@ export const HeroContent = ({ content }: HeroContentProps) => {
       {/* Description */}
       <div className="mt-4">
         <h2 className="text-xl font-bold text-foreground mb-3">Description</h2>
-        <p className="text-muted-foreground leading-relaxed">{content.description}</p>
+        <InlineEditTextarea
+          value={content.description}
+          onSave={(value) => onUpdateField?.('description', value)}
+          isEditing={isEditing}
+          renderDisplay={(value) => (
+            <p className="text-muted-foreground leading-relaxed">{value}</p>
+          )}
+          className="text-muted-foreground leading-relaxed w-full border-none p-0 focus-visible:ring-1 bg-transparent resize-none"
+          placeholder="Enter description..."
+        />
       </div>
 
       {/* Share Section */}

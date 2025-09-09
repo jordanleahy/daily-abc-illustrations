@@ -3,12 +3,13 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { Container } from '@/components/layout/Container';
 import { Button } from '@/components/ui/button';
 import { HeroSection, DailyContent } from '@/components/hero';
+import { useState } from 'react';
 
 const Index = () => {
   const { isAuthenticated, loading } = useAuth();
-
+  
   // Sample data - this would come from your daily content API/database
-  const dailyContent: DailyContent = {
+  const [dailyContent, setDailyContent] = useState<DailyContent>({
     id: '1',
     title: 'Dora the Explorer A-Z',
     mainImage: '/lovable-uploads/b29306f4-6cdf-4a40-8f5c-69fa3ddabf60.png',
@@ -23,6 +24,14 @@ const Index = () => {
     downloadUrl: '#',
     price: '$FREE',
     publishedDate: '2024-01-15'
+  });
+
+  const handleSave = async (updatedContent: DailyContent) => {
+    // This is where you would save to your API/database
+    console.log('Saving content:', updatedContent);
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 500));
+    setDailyContent(updatedContent);
   };
 
   if (loading) {
@@ -44,7 +53,7 @@ const Index = () => {
     <PageLayout>
       <Container>
         <div className="min-h-screen">
-          <HeroSection content={dailyContent} />
+          <HeroSection content={dailyContent} onSave={handleSave} />
         </div>
       </Container>
     </PageLayout>

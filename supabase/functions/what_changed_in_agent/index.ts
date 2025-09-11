@@ -30,15 +30,29 @@ interface CompareRequest {
 }
 
 serve(async (req) => {
+  console.log('Edge function called with method:', req.method);
+  
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { originalConfig, newConfig }: CompareRequest = await req.json();
+    console.log('Parsing request body...');
+    const body = await req.text();
+    console.log('Raw request body:', body);
+    
+    const { originalConfig, newConfig }: CompareRequest = JSON.parse(body);
+    
+    console.log('Parsed originalConfig:', JSON.stringify(originalConfig, null, 2));
+    console.log('Parsed newConfig:', JSON.stringify(newConfig, null, 2));
     
     console.log('Comparing agent configurations...');
+
+    // Validate OpenAI API key
+    if (!openAIApiKey) {
+      throw new Error('OPENAI_API_KEY is not configured');
+    }
 
     // Create detailed comparison prompt
     const prompt = `Compare these two AI agent configurations and describe what changed in a concise, user-friendly way. Focus on meaningful changes that could impact the agent's behavior or performance.
@@ -73,6 +87,8 @@ If no meaningful changes were detected, respond with "Minor configuration update
 
 Avoid mentioning technical parameter names - use user-friendly language.`;
 
+    console.log('Calling OpenAI API with model: gpt-5-mini-2025-08-07');
+    
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -92,13 +108,22 @@ Avoid mentioning technical parameter names - use user-friendly language.`;
       }),
     });
 
+    console.log('OpenAI response status:', response.status);
+    
     if (!response.ok) {
-      console.error('OpenAI API error:', response.statusText);
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('OpenAI API error:', response.status, response.statusText, errorText);
+      throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
-    const whatChanged = data.choices[0].message.content.trim();
+    console.log('OpenAI response data:', JSON.stringify(data, null, 2));
+    
+    const whatChanged = data.choices?.[0]?.message?.content?.trim();
+    
+    if (!whatChanged) {
+      throw new Error('No content received from OpenAI API');
+    }
 
     console.log('Generated change description:', whatChanged);
 

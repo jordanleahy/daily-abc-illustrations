@@ -157,6 +157,8 @@ export const useAgentConfig = () => {
               },
             });
 
+            console.log('Edge function response:', response);
+
             if (response.data?.whatChanged) {
               whatChanged = response.data.whatChanged;
               console.log('Generated change description:', whatChanged);
@@ -164,10 +166,14 @@ export const useAgentConfig = () => {
               setLastChangeDescription(whatChanged);
               const newVersion = incrementVersion(configToSave.version);
               configToSave.version = newVersion;
+              console.log('Updated version to:', newVersion);
+            } else {
+              console.log('No whatChanged in response:', response);
             }
           }
         } catch (error) {
           console.error('Failed to generate change description:', error);
+          console.error('Error details:', JSON.stringify(error, null, 2));
           // Continue with save even if diff generation fails
         }
       }

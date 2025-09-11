@@ -60,6 +60,7 @@ export const useAgentConfig = () => {
         .from('agents')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_latest', true)
         .maybeSingle();
 
       if (error) throw error;
@@ -78,6 +79,9 @@ export const useAgentConfig = () => {
           assistantId: data.assistant_id || undefined,
           instructions: data.instructions,
           whatChanged: (data as any).what_changed || undefined,
+          versionNumber: data.version_number,
+          isLatest: data.is_latest,
+          parentAgentId: data.parent_agent_id || undefined,
           modelSettings: {
             model: data.model,
             maxCompletionTokens: data.max_completion_tokens,
@@ -106,11 +110,12 @@ export const useAgentConfig = () => {
       // Use provided overrides or current config
       const configToSave = configOverrides ? { ...config, ...configOverrides } : config;
 
-      // Check if agent exists to get original config for comparison
+      // Check if agent exists to get original config for comparison and parent ID
       const { data: existingAgent } = await supabase
         .from('agents')
         .select('*')
         .eq('user_id', user.id)
+        .eq('is_latest', true)
         .maybeSingle();
 
       let whatChanged = null;
@@ -178,7 +183,10 @@ export const useAgentConfig = () => {
         }
       }
       
-      // Convert AgentConfig format to database format
+      // Convert AgentConfig format to database format for new record creation
+      const newVersionNumber = existingAgent ? (existingAgent.version_number || 1) + 1 : 1;
+      const parentAgentId = existingAgent ? (existingAgent.parent_agent_id || existingAgent.id) : null;
+      
       const dbData = {
         user_id: user.id,
         name: configToSave.name,
@@ -193,23 +201,50 @@ export const useAgentConfig = () => {
         max_completion_tokens: configToSave.modelSettings.maxCompletionTokens,
         top_p: configToSave.modelSettings.topP,
         what_changed: whatChanged,
+        version_number: newVersionNumber,
+        is_latest: true,
+        parent_agent_id: parentAgentId,
       };
 
+      // Always create a new record (versioning)
       if (existingAgent) {
-        // Update existing agent
-        const { error } = await supabase
+        // Create new version
+        const { data: newRecord, error } = await supabase
           .from('agents')
-          .update(dbData)
-          .eq('id', existingAgent.id);
+          .insert(dbData)
+          .select()
+          .single();
         
         if (error) throw error;
+        
+        // Update local config with new record data
+        setConfig(prev => ({
+          ...prev,
+          id: newRecord.id,
+          versionNumber: newRecord.version_number,
+          isLatest: newRecord.is_latest,
+          parentAgentId: newRecord.parent_agent_id,
+          lastModified: new Date(newRecord.last_modified),
+        }));
       } else {
-        // Create new agent (first time saving)
-        const { error } = await supabase
+        // Create first version (initial creation)
+        const { data: newRecord, error } = await supabase
           .from('agents')
-          .insert({ ...dbData, what_changed: 'Agent created' });
+          .insert({ ...dbData, what_changed: 'Agent created' })
+          .select()
+          .single();
         
         if (error) throw error;
+        
+        // Update local config with new record data
+        setConfig(prev => ({
+          ...prev,
+          id: newRecord.id,
+          versionNumber: newRecord.version_number,
+          isLatest: newRecord.is_latest,
+          parentAgentId: newRecord.parent_agent_id,
+          lastModified: new Date(newRecord.last_modified),
+        }));
       }
       
       // If overrides were provided, update the config state with them

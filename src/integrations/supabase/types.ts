@@ -21,16 +21,20 @@ export type Database = {
           id: string
           instructions: string
           intent: string
+          is_latest: boolean
           last_modified: string
           max_completion_tokens: number
           model: string
           name: string
+          parent_agent_id: string | null
           status: string
           top_p: number
           type: string
           updated_at: string
           user_id: string
           version: string
+          version_number: number
+          what_changed: string | null
         }
         Insert: {
           assistant_id?: string | null
@@ -38,16 +42,20 @@ export type Database = {
           id?: string
           instructions: string
           intent: string
+          is_latest?: boolean
           last_modified?: string
           max_completion_tokens?: number
           model: string
           name: string
+          parent_agent_id?: string | null
           status?: string
           top_p?: number
           type: string
           updated_at?: string
           user_id: string
           version?: string
+          version_number?: number
+          what_changed?: string | null
         }
         Update: {
           assistant_id?: string | null
@@ -55,18 +63,30 @@ export type Database = {
           id?: string
           instructions?: string
           intent?: string
+          is_latest?: boolean
           last_modified?: string
           max_completion_tokens?: number
           model?: string
           name?: string
+          parent_agent_id?: string | null
           status?: string
           top_p?: number
           type?: string
           updated_at?: string
           user_id?: string
           version?: string
+          version_number?: number
+          what_changed?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "agents_parent_agent_id_fkey"
+            columns: ["parent_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {

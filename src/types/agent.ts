@@ -11,6 +11,9 @@ export interface AgentConfig {
   instructions: string;
   whatChanged?: string;
   lastChangeDescription?: string;
+  versionNumber?: number;
+  isLatest?: boolean;
+  parentAgentId?: string;
   modelSettings: {
     model: string;
     maxCompletionTokens: number;

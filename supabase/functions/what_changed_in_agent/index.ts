@@ -1,3 +1,57 @@
+/**
+ * What Changed in Agent Edge Function
+ * 
+ * This function analyzes the differences between two agent configurations and provides
+ * a user-friendly description of what changed using OpenAI's GPT model.
+ * 
+ * Purpose:
+ * - Compares original and new agent configurations
+ * - Uses AI to generate human-readable summaries of changes
+ * - Provides fallback logic if AI analysis fails
+ * - Helps users understand what modifications were made to their agents
+ * 
+ * Features:
+ * - AI-powered change analysis using GPT-5-mini
+ * - Comprehensive fallback system for reliability
+ * - CORS support for web application access
+ * - Detailed logging for debugging
+ * - Always returns success (200) to not interrupt save workflows
+ * 
+ * Usage:
+ * POST request with body: {
+ *   "originalConfig": AgentConfig,
+ *   "newConfig": AgentConfig
+ * }
+ * 
+ * AgentConfig Structure:
+ * {
+ *   name: string,
+ *   type: 'chat' | 'assistant',
+ *   intent: string,
+ *   status: 'online' | 'offline' | 'processing',
+ *   instructions: string,
+ *   modelSettings: {
+ *     model: string,
+ *     maxCompletionTokens: number,
+ *     topP: number
+ *   }
+ * }
+ * 
+ * Environment Variables Required:
+ * - OPENAI_API_KEY: Your OpenAI API key for change analysis
+ * - SUPABASE_URL: Supabase project URL (for future database integration)
+ * - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key (for future use)
+ * 
+ * Returns:
+ * - Success: { "whatChanged": "User-friendly description of changes" }
+ * - With Error: { "whatChanged": "Fallback description", "error": "Error details" }
+ * 
+ * Examples of Generated Descriptions:
+ * - "Instructions expanded and model changed to gpt-5-2025-08-07."
+ * - "Name updated to 'ABC Cards Helper' and status changed to online."
+ * - "Minor configuration updates made."
+ */
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';

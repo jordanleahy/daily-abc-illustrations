@@ -145,8 +145,19 @@ serve(async (req) => {
 
     const data = await response.json();
     console.log('OpenAI response received successfully');
+    console.log('OpenAI response data:', JSON.stringify(data, null, 2));
     
-    const assistantMessage = data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
+    const assistantMessage = data.choices[0]?.message?.content;
+    console.log('Extracted content:', assistantMessage);
+    
+    if (!assistantMessage) {
+      console.error('No content in OpenAI response:', {
+        choices: data.choices,
+        finishReason: data.choices[0]?.finish_reason,
+        usage: data.usage
+      });
+      throw new Error('OpenAI returned empty response content');
+    }
 
     return new Response(JSON.stringify({ content: assistantMessage }), {
       headers: { 

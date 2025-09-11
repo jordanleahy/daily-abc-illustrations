@@ -66,7 +66,7 @@ export const ModelSettingsTab = ({
             value={localSettings.maxCompletionTokens}
             onChange={(e) => {
               const value = parseInt(e.target.value);
-              const validValue = isNaN(value) || value < 1 ? 1000 : Math.min(Math.max(value, 1), 4000);
+              const validValue = isNaN(value) || value < 1 ? 1000 : Math.max(value, 1);
               handleSettingChange('maxCompletionTokens', validValue);
             }}
             className="w-full"

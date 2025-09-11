@@ -29,6 +29,26 @@ interface CompareRequest {
   newConfig: AgentConfig;
 }
 
+// Simple, safe fallback diff in case the OpenAI response is empty or fails
+function computeFallbackChanges(orig: AgentConfig, next: AgentConfig): string {
+  const changes: string[] = [];
+  if (orig.name !== next.name) changes.push(`Name updated to "${next.name}"`);
+  if (orig.type !== next.type) changes.push(`Type changed to ${next.type}`);
+  if (orig.intent !== next.intent) changes.push('Intent updated');
+  if (orig.status !== next.status) changes.push(`Status changed to ${next.status}`);
+  if (orig.modelSettings?.model !== next.modelSettings?.model) changes.push(`Model changed to ${next.modelSettings.model}`);
+  if (orig.modelSettings?.maxCompletionTokens !== next.modelSettings?.maxCompletionTokens) changes.push(`Max tokens set to ${next.modelSettings.maxCompletionTokens}`);
+  if (orig.modelSettings?.topP !== next.modelSettings?.topP) changes.push(`Top P set to ${next.modelSettings.topP}`);
+  if (orig.instructions !== next.instructions) {
+    const delta = (next.instructions?.length || 0) - (orig.instructions?.length || 0);
+    const direction = delta > 0 ? 'expanded' : 'refined';
+    changes.push(`Instructions ${direction}`);
+  }
+  if (changes.length === 0) return 'Minor configuration updates made.';
+  if (changes.length === 1) return changes[0] + '.';
+  const last = changes.pop();
+  return `${changes.join(', ')} and ${last}.`;
+}
 serve(async (req) => {
   console.log('Edge function called with method:', req.method);
   
@@ -37,13 +57,18 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Keep parsed configs available for fallback handling
+  let originalConfig: AgentConfig | null = null;
+  let newConfig: AgentConfig | null = null;
+
   try {
     console.log('Parsing request body...');
     const body = await req.text();
     console.log('Raw request body:', body);
     
-    const { originalConfig, newConfig }: CompareRequest = JSON.parse(body);
-    
+    const parsed: CompareRequest = JSON.parse(body);
+    originalConfig = parsed.originalConfig;
+    newConfig = parsed.newConfig;
     console.log('Parsed originalConfig:', JSON.stringify(originalConfig, null, 2));
     console.log('Parsed newConfig:', JSON.stringify(newConfig, null, 2));
     
@@ -104,7 +129,7 @@ Avoid mentioning technical parameter names - use user-friendly language.`;
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 200, // Note: using max_completion_tokens for GPT-5
+        max_completion_tokens: 400, // Increased to reduce truncation
       }),
     });
 
@@ -119,27 +144,37 @@ Avoid mentioning technical parameter names - use user-friendly language.`;
     const data = await response.json();
     console.log('OpenAI response data:', JSON.stringify(data, null, 2));
     
-    const whatChanged = data.choices?.[0]?.message?.content?.trim();
-    
-    if (!whatChanged) {
-      throw new Error('No content received from OpenAI API');
+    const aiSummary = data.choices?.[0]?.message?.content?.trim();
+    const finalSummary = aiSummary && aiSummary.length > 0
+      ? aiSummary
+      : computeFallbackChanges(originalConfig!, newConfig!);
+
+    if (!aiSummary) {
+      console.warn('OpenAI returned empty content; using fallback diff summary.');
     }
 
-    console.log('Generated change description:', whatChanged);
+    console.log('Change description:', finalSummary);
 
-    return new Response(JSON.stringify({ whatChanged }), {
+    return new Response(JSON.stringify({ whatChanged: finalSummary }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
     console.error('Error in what_changed_in_agent function:', error);
     
-    // Return a generic message if diff generation fails
-    const fallbackMessage = "Agent configuration updated";
+    // Build a safe fallback diff so the UI still shows something meaningful
+    let fallbackMessage = 'Agent configuration updated';
+    try {
+      if (originalConfig && newConfig) {
+        fallbackMessage = computeFallbackChanges(originalConfig, newConfig);
+      }
+    } catch (_e) {
+      // ignore fallback errors
+    }
     
     return new Response(JSON.stringify({ 
       whatChanged: fallbackMessage,
-      error: error.message 
+      error: (error as Error).message 
     }), {
       status: 200, // Return 200 so the save process continues
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

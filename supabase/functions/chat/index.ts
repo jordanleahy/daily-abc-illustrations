@@ -1,3 +1,26 @@
+/**
+ * Chat Edge Function for Supabase
+ * 
+ * This function provides an API endpoint for chat interactions with OpenAI's GPT models.
+ * It accepts an array of messages and returns the AI assistant's response.
+ * 
+ * Features:
+ * - Uses GPT-5 (gpt-5-2025-08-07) model for high-quality responses
+ * - Handles CORS for web application access
+ * - Includes proper error handling and logging
+ * - Supports conversation history through message arrays
+ * 
+ * Usage:
+ * POST request with body: { "messages": [{ "role": "user", "content": "Hello" }] }
+ * 
+ * Environment Variables Required:
+ * - OPENAI_API_KEY: Your OpenAI API key for authentication
+ * 
+ * Returns:
+ * - Success: { "content": "AI response text" }
+ * - Error: { "error": "Error message" }
+ */
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 

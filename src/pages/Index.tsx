@@ -82,7 +82,7 @@ const Index = () => {
       });
 
       if (response.error) {
-        throw new Error(response.error.message);
+        throw new Error(response.error.message || response.error);
       }
 
       const assistantMessage: Message = {

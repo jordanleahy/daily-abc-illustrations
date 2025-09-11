@@ -69,8 +69,6 @@ export const ModelSettingsTab = ({
               const validValue = isNaN(value) || value < 1 ? 1000 : Math.min(Math.max(value, 1), 4000);
               handleSettingChange('maxCompletionTokens', validValue);
             }}
-            min={1}
-            max={4000}
             className="w-full"
           />
           <p className="text-xs text-muted-foreground">

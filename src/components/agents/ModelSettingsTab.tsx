@@ -64,7 +64,11 @@ export const ModelSettingsTab = ({
             id="max-completion-tokens"
             type="number"
             value={localSettings.maxCompletionTokens}
-            onChange={(e) => handleSettingChange('maxCompletionTokens', parseInt(e.target.value) || 1000)}
+            onChange={(e) => {
+              const value = parseInt(e.target.value);
+              const validValue = isNaN(value) || value < 1 ? 1000 : Math.min(Math.max(value, 1), 4000);
+              handleSettingChange('maxCompletionTokens', validValue);
+            }}
             min={1}
             max={4000}
             className="w-full"
@@ -81,7 +85,11 @@ export const ModelSettingsTab = ({
             id="top-p"
             type="number"
             value={localSettings.topP}
-            onChange={(e) => handleSettingChange('topP', parseFloat(e.target.value) || 1.0)}
+            onChange={(e) => {
+              const value = parseFloat(e.target.value);
+              const validValue = isNaN(value) || value < 0 ? 1.0 : Math.min(Math.max(value, 0), 1.0);
+              handleSettingChange('topP', validValue);
+            }}
             min={0.1}
             max={1.0}
             step={0.1}

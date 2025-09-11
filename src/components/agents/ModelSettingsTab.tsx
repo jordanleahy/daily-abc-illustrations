@@ -45,23 +45,15 @@ export const ModelSettingsTab = ({
         {/* Model Selection */}
         <div className="space-y-2">
           <Label htmlFor="model">Model</Label>
-          <Select 
-            value={localSettings.model} 
-            onValueChange={(value) => handleSettingChange('model', value)}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select a model" />
-            </SelectTrigger>
-            <SelectContent>
-              {AVAILABLE_MODELS.map((model) => (
-                <SelectItem key={model.value} value={model.value}>
-                  {model.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Input
+            id="model"
+            value={localSettings.model}
+            onChange={(e) => handleSettingChange('model', e.target.value)}
+            placeholder="Enter model name (e.g., gpt-4o)"
+            className="w-full"
+          />
           <p className="text-xs text-muted-foreground">
-            Choose the AI model for your agent. GPT-4o provides the best performance.
+            Enter the AI model name for your agent. Examples: gpt-4o, gpt-4o-mini, gpt-3.5-turbo
           </p>
         </div>
 

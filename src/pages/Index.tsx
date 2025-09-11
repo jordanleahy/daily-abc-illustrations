@@ -108,7 +108,9 @@ const Index = () => {
       });
 
       if (response.error) {
-        throw new Error(response.error.message || response.error);
+        // Extract the actual error message from the edge function response
+        const errorMessage = response.data?.error || response.error.message || response.error;
+        throw new Error(errorMessage);
       }
 
       const assistantMessage: Message = {
@@ -128,6 +130,13 @@ const Index = () => {
           errorContent = 'Please configure your ABC Cards agent first by visiting the Agents page.';
         } else if (error.message.includes('token')) {
           errorContent = 'Authentication error. Please try signing out and back in.';
+        } else if (error.message.includes('OpenAI returned empty response content')) {
+          errorContent = 'The AI model hit its token limit and returned no content. Try asking a shorter question or configure a higher token limit in your agent settings.';
+        } else if (error.message.includes('OpenAI API error')) {
+          errorContent = `OpenAI API error: ${error.message}`;
+        } else {
+          // Show the actual error message for any other errors
+          errorContent = error.message;
         }
       }
       

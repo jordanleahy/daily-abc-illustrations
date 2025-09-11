@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PageLayout } from '@/components/layout';
+import { useAuth } from '@/hooks/useAuth';
 
 interface Message {
   id: string;
@@ -16,6 +17,37 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { session, isAuthenticated, loading } = useAuth();
+
+  // Show loading state while checking authentication
+  if (loading) {
+    return (
+      <PageLayout title="ABC Cards Chat" showHeader={true} fullHeight={false}>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
+
+  // Show authentication required message
+  if (!isAuthenticated) {
+    return (
+      <PageLayout title="ABC Cards Chat" showHeader={true} fullHeight={false}>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center space-y-4 max-w-md mx-auto p-6">
+            <h2 className="text-xl font-semibold">Authentication Required</h2>
+            <p className="text-muted-foreground">
+              Please sign in to chat with your ABC Cards agent. You can sign in using the profile button in the top navigation.
+            </p>
+          </div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -32,12 +64,20 @@ const Index = () => {
     setIsLoading(true);
 
     try {
+      // Get the access token for authentication
+      if (!session?.access_token) {
+        throw new Error('No valid session found');
+      }
+
       const response = await supabase.functions.invoke('chat', {
         body: { 
           messages: [...messages, userMessage].map(msg => ({
             role: msg.role,
             content: msg.content
           }))
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
 
@@ -54,10 +94,21 @@ const Index = () => {
       setMessages(prev => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Chat error:', error);
+      let errorContent = 'Sorry, there was an error processing your request.';
+      
+      // Provide more specific error messages
+      if (error instanceof Error) {
+        if (error.message.includes('No agent configuration found')) {
+          errorContent = 'Please configure your ABC Cards agent first by visiting the Agents page.';
+        } else if (error.message.includes('token')) {
+          errorContent = 'Authentication error. Please try signing out and back in.';
+        }
+      }
+      
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Sorry, there was an error processing your request.'
+        content: errorContent
       };
       setMessages(prev => [...prev, errorMessage]);
     } finally {

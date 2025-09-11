@@ -34,10 +34,13 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`OpenAI API error: ${response.status} - ${errorText}`);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('OpenAI response:', JSON.stringify(data, null, 2));
     const assistantMessage = data.choices[0]?.message?.content || 'Sorry, I could not generate a response.';
 
     return new Response(JSON.stringify({ content: assistantMessage }), {

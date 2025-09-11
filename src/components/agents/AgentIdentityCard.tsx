@@ -101,12 +101,11 @@ export const AgentIdentityCard = ({
           />
         </div>
 
-        {/* Change Response Panel */}
-        {lastChangeDescription && onClearChangeDescription && (
+        {/* Change Response Panel - Fixed and always visible when there are changes */}
+        {lastChangeDescription && (
           <ChangeResponsePanel
             whatChanged={lastChangeDescription}
             version={config.version}
-            onDismiss={onClearChangeDescription}
           />
         )}
 

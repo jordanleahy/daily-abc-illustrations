@@ -65,9 +65,9 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col">
       {/* Chat Container */}
-      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-4">
+      <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-4 pb-24">
         
         {/* Header */}
         <div className="text-center py-6 border-b border-border mb-4">
@@ -76,8 +76,8 @@ const Index = () => {
         </div>
 
         {/* Messages Area */}
-        <ScrollArea className="flex-1 mb-4">
-          <div className="space-y-4 px-2">
+        <ScrollArea className="flex-1">
+          <div className="space-y-4 px-2 pb-4">
             {messages.length === 0 && (
               <div className="text-center py-12">
                 <p className="text-muted-foreground">Start a conversation by typing a message below</p>
@@ -123,33 +123,37 @@ const Index = () => {
             )}
           </div>
         </ScrollArea>
+      </div>
 
-        {/* Input Area */}
-        <form onSubmit={handleSubmit} className="flex gap-2">
-          <div className="flex-1 relative">
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Type your message..."
-              className="resize-none pr-12 min-h-[50px] max-h-32"
-              rows={1}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSubmit(e);
-                }
-              }}
-            />
-            <Button
-              type="submit"
-              size="sm"
-              disabled={!input.trim() || isLoading}
-              className="absolute right-2 top-2 h-8 w-8 p-0"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
-        </form>
+      {/* Fixed Input Area */}
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4">
+        <div className="max-w-4xl mx-auto">
+          <form onSubmit={handleSubmit} className="flex gap-2">
+            <div className="flex-1 relative">
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Type your message..."
+                className="resize-none pr-12 min-h-[50px] max-h-32"
+                rows={1}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit(e);
+                  }
+                }}
+              />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={!input.trim() || isLoading}
+                className="absolute right-2 top-2 h-8 w-8 p-0"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

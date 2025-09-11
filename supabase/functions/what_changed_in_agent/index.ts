@@ -129,7 +129,7 @@ Avoid mentioning technical parameter names - use user-friendly language.`;
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 400, // Increased to reduce truncation
+        max_completion_tokens: 5000, // Increased to reduce truncation
       }),
     });
 

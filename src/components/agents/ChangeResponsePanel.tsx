@@ -20,13 +20,6 @@ export const ChangeResponsePanel = ({
   useEffect(() => {
     // Fade in animation
     setIsVisible(true);
-
-    // Auto-dismiss after 10 seconds
-    const timer = setTimeout(() => {
-      handleDismiss();
-    }, 10000);
-
-    return () => clearTimeout(timer);
   }, []);
 
   const handleDismiss = () => {

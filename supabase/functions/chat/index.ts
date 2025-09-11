@@ -18,7 +18,7 @@
  * Environment Variables Required:
  * - OPENAI_API_KEY: Your OpenAI API key for authentication
  * - SUPABASE_URL: Supabase project URL
- * - SUPABASE_ANON_KEY: Supabase anonymous key
+ * - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key (bypasses RLS)
  * 
  * Returns:
  * - Success: { "content": "AI response text" }
@@ -46,23 +46,18 @@ serve(async (req) => {
     // Environment variables
     const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY');
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
     if (!OPENAI_API_KEY) {
       throw new Error('OpenAI API key not configured');
     }
 
-    if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('Supabase configuration not found');
     }
 
-    // Initialize Supabase client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    });
+    // Initialize Supabase client with service role (bypasses RLS)
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
     // Get the authorization header
     const authHeader = req.headers.get('authorization');
@@ -70,14 +65,8 @@ serve(async (req) => {
       throw new Error('Authorization header required');
     }
 
-    // Set the JWT token for the request
+    // Verify the JWT token
     const token = authHeader.replace('Bearer ', '');
-    supabase.auth.setSession({
-      access_token: token,
-      refresh_token: ''
-    });
-
-    // Get the authenticated user
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
     if (userError || !user) {
       throw new Error('Invalid or expired token');
@@ -85,7 +74,7 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id);
 
-    // Fetch the agent configuration from database
+    // Fetch the agent configuration from database (using service role, so we filter manually)
     const { data: agent, error: agentError } = await supabase
       .from('agents')
       .select('*')

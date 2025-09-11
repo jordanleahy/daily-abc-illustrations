@@ -46,7 +46,7 @@ export const InstructionsTab = ({
           value={localInstructions}
           onChange={(e) => setLocalInstructions(e.target.value)}
           placeholder="Enter detailed instructions for your agent..."
-          className="min-h-[120px] resize-none"
+          className="w-full"
           maxLength={maxCharacters}
         />
         <div className="flex justify-between items-center mt-2">

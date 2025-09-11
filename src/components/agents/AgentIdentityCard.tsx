@@ -119,7 +119,7 @@ export const AgentIdentityCard = ({
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Last Modified</label>
-            <p className="text-sm">{config.lastModified.toLocaleDateString()}</p>
+            <p className="text-sm">{config.lastModified.toLocaleString()}</p>
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Assistant ID</label>

@@ -9,6 +9,7 @@ export const useAgentConfig = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
+  const [lastChangeDescription, setLastChangeDescription] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -26,6 +27,19 @@ export const useAgentConfig = () => {
       lastModified: new Date(),
     }));
     setHasUnsavedChanges(true);
+  }, []);
+
+  const incrementVersion = useCallback((currentVersion: string): string => {
+    const versionMatch = currentVersion.match(/^v?(\d+)\.(\d+)\.(\d+)$/);
+    if (versionMatch) {
+      const [, major, minor, patch] = versionMatch;
+      return `v${major}.${minor}.${parseInt(patch) + 1}`;
+    }
+    return 'v1.0.1'; // fallback for invalid version format
+  }, []);
+
+  const clearChangeDescription = useCallback(() => {
+    setLastChangeDescription(null);
   }, []);
 
   const updateModelSettings = useCallback((settings: Partial<AgentConfig['modelSettings']>) => {
@@ -63,6 +77,7 @@ export const useAgentConfig = () => {
           lastModified: new Date(data.last_modified),
           assistantId: data.assistant_id || undefined,
           instructions: data.instructions,
+          whatChanged: (data as any).what_changed || undefined,
           modelSettings: {
             model: data.model,
             maxCompletionTokens: data.max_completion_tokens,
@@ -145,6 +160,10 @@ export const useAgentConfig = () => {
             if (response.data?.whatChanged) {
               whatChanged = response.data.whatChanged;
               console.log('Generated change description:', whatChanged);
+              // Set the change description for display and increment version
+              setLastChangeDescription(whatChanged);
+              const newVersion = incrementVersion(configToSave.version);
+              configToSave.version = newVersion;
             }
           }
         } catch (error) {
@@ -223,11 +242,13 @@ export const useAgentConfig = () => {
     isLoading,
     isInitialLoading,
     hasUnsavedChanges,
+    lastChangeDescription,
     updateConfig,
     updateModelSettings,
     saveConfig,
     saveConfigWithOverrides,
     resetConfig,
     loadAgentConfig,
+    clearChangeDescription,
   };
 };

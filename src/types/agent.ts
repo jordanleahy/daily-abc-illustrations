@@ -9,6 +9,8 @@ export interface AgentConfig {
   lastModified: Date;
   assistantId?: string;
   instructions: string;
+  whatChanged?: string;
+  lastChangeDescription?: string;
   modelSettings: {
     model: string;
     maxCompletionTokens: number;

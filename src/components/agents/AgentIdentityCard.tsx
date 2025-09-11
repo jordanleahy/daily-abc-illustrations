@@ -2,6 +2,7 @@ import { Badge } from '@/components/ui/badge';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { ChangeResponsePanel } from '@/components/agents/ChangeResponsePanel';
 import { AgentConfig } from '@/types/agent';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -9,10 +10,18 @@ import { cn } from '@/lib/utils';
 interface AgentIdentityCardProps {
   config: AgentConfig;
   onUpdate: (updates: Partial<AgentConfig>) => void;
+  lastChangeDescription?: string | null;
+  onClearChangeDescription?: () => void;
   className?: string;
 }
 
-export const AgentIdentityCard = ({ config, onUpdate, className }: AgentIdentityCardProps) => {
+export const AgentIdentityCard = ({ 
+  config, 
+  onUpdate, 
+  lastChangeDescription, 
+  onClearChangeDescription,
+  className 
+}: AgentIdentityCardProps) => {
   const [editingField, setEditingField] = useState<string | null>(null);
 
   const getStatusColor = (status: AgentConfig['status']) => {
@@ -91,6 +100,15 @@ export const AgentIdentityCard = ({ config, onUpdate, className }: AgentIdentity
             placeholder="Describe the agent's purpose and capabilities"
           />
         </div>
+
+        {/* Change Response Panel */}
+        {lastChangeDescription && onClearChangeDescription && (
+          <ChangeResponsePanel
+            whatChanged={lastChangeDescription}
+            version={config.version}
+            onDismiss={onClearChangeDescription}
+          />
+        )}
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
           <div>

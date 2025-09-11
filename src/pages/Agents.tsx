@@ -10,10 +10,12 @@ const Agents = () => {
     isLoading,
     isInitialLoading,
     hasUnsavedChanges,
+    lastChangeDescription,
     updateConfig,
     updateModelSettings,
     saveConfig,
     saveConfigWithOverrides,
+    clearChangeDescription,
   } = useAgentConfig();
 
 
@@ -52,6 +54,8 @@ const Agents = () => {
           <AgentIdentityCard
             config={config}
             onUpdate={updateConfig}
+            lastChangeDescription={lastChangeDescription}
+            onClearChangeDescription={clearChangeDescription}
           />
 
           {/* Configuration Tabs */}

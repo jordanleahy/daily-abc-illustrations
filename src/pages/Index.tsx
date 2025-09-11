@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -18,6 +18,32 @@ const Index = () => {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { session, isAuthenticated, loading } = useAuth();
+  
+  // Refs for auto-scroll functionality
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [userScrolledUp, setUserScrolledUp] = useState(false);
+
+  // Auto-scroll to bottom when messages change or loading state changes
+  useEffect(() => {
+    if (!userScrolledUp && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isLoading, userScrolledUp]);
+
+  // Reset scroll tracking when new messages are added
+  useEffect(() => {
+    setUserScrolledUp(false);
+  }, [messages.length]);
+
+  // Handle scroll events to detect if user scrolled up
+  const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const element = event.currentTarget;
+    const isScrolledToBottom = 
+      Math.abs(element.scrollHeight - element.clientHeight - element.scrollTop) < 10;
+    
+    setUserScrolledUp(!isScrolledToBottom);
+  };
 
   // Show loading state while checking authentication
   if (loading) {
@@ -129,8 +155,8 @@ const Index = () => {
           </div>
 
           {/* Messages Area */}
-          <ScrollArea className="flex-1">
-            <div className="space-y-4 px-2 pb-4">
+          <ScrollArea className="flex-1" onScrollCapture={handleScroll}>
+            <div className="space-y-4 px-2 pb-4" ref={scrollAreaRef}>
               {messages.length === 0 && (
                 <div className="text-center py-12">
                   <p className="text-muted-foreground">Start a conversation by typing a message below</p>
@@ -174,6 +200,9 @@ const Index = () => {
                   </div>
                 </div>
               )}
+              
+              {/* Invisible element to scroll to */}
+              <div ref={messagesEndRef} />
             </div>
           </ScrollArea>
         </div>

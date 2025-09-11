@@ -71,7 +71,7 @@ const Index = () => {
         
         {/* Header */}
         <div className="text-center py-6 border-b border-border mb-4">
-          <h1 className="text-2xl font-semibold text-foreground">AI Chat Assistant</h1>
+          <h1 className="text-2xl font-semibold text-foreground">ABC Agent Assistant</h1>
           <p className="text-sm text-muted-foreground mt-1">Ask me anything!</p>
         </div>
 

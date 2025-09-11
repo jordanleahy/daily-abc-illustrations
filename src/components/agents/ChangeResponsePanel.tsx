@@ -3,15 +3,17 @@ import { Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface ChangeResponsePanelProps {
-  whatChanged: string;
+  whatChanged?: string | null;
   version: string;
   className?: string;
+  defaultMessage?: string;
 }
 
 export const ChangeResponsePanel = ({ 
   whatChanged, 
   version, 
-  className 
+  className,
+  defaultMessage = "Agent configuration ready"
 }: ChangeResponsePanelProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -40,10 +42,10 @@ export const ChangeResponsePanel = ({
         
         <div className="space-y-2">
           <p className="text-sm text-green-700 dark:text-green-300">
-            {whatChanged}
+            {whatChanged || defaultMessage}
           </p>
           <p className="text-xs text-green-600 dark:text-green-400 font-medium">
-            Updated to {version}
+            Version {version}
           </p>
         </div>
       </div>

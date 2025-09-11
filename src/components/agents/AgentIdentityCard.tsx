@@ -101,13 +101,12 @@ export const AgentIdentityCard = ({
           />
         </div>
 
-        {/* Change Response Panel - Fixed and always visible when there are changes */}
-        {lastChangeDescription && (
-          <ChangeResponsePanel
-            whatChanged={lastChangeDescription}
-            version={config.version}
-          />
-        )}
+        {/* Change Response Panel - Always visible */}
+        <ChangeResponsePanel
+          whatChanged={lastChangeDescription}
+          version={config.version}
+          defaultMessage="Agent configuration ready"
+        />
 
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
           <div>

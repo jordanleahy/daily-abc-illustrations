@@ -13,10 +13,15 @@ export const useAgentConfig = () => {
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Load agent config from database on mount
+  // Load agent config from database on mount and restore last change description
   useEffect(() => {
     if (user) {
       loadAgentConfig();
+      // Restore last change description from localStorage
+      const storedChange = localStorage.getItem(`agent-last-change-${user.id}`);
+      if (storedChange) {
+        setLastChangeDescription(storedChange);
+      }
     }
   }, [user]);
 
@@ -169,6 +174,10 @@ export const useAgentConfig = () => {
               console.log('Generated change description:', whatChanged);
               // Set the change description for display and increment version
               setLastChangeDescription(whatChanged);
+              // Persist to localStorage
+              if (user) {
+                localStorage.setItem(`agent-last-change-${user.id}`, whatChanged);
+              }
               const newVersion = incrementVersion(configToSave.version);
               configToSave.version = newVersion;
               console.log('Updated version to:', newVersion);
@@ -245,6 +254,12 @@ export const useAgentConfig = () => {
           parentAgentId: newRecord.parent_agent_id,
           lastModified: new Date(newRecord.last_modified),
         }));
+        
+        // Set initial change description for new agents
+        setLastChangeDescription('Agent created');
+        if (user) {
+          localStorage.setItem(`agent-last-change-${user.id}`, 'Agent created');
+        }
       }
       
       // If overrides were provided, update the config state with them

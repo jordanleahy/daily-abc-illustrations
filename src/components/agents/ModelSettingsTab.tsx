@@ -66,7 +66,7 @@ export const ModelSettingsTab = ({
             value={localSettings.maxCompletionTokens}
             onChange={(e) => {
               const value = parseInt(e.target.value);
-              const validValue = isNaN(value) || value < 1 ? 1000 : Math.max(value, 1);
+              const validValue = isNaN(value) ? 1000 : value;
               handleSettingChange('maxCompletionTokens', validValue);
             }}
             className="w-full"
@@ -85,12 +85,9 @@ export const ModelSettingsTab = ({
             value={localSettings.topP}
             onChange={(e) => {
               const value = parseFloat(e.target.value);
-              const validValue = isNaN(value) || value < 0 ? 1.0 : Math.min(Math.max(value, 0), 1.0);
+              const validValue = isNaN(value) ? 1.0 : value;
               handleSettingChange('topP', validValue);
             }}
-            min={0.1}
-            max={1.0}
-            step={0.1}
             className="w-full"
           />
           <p className="text-xs text-muted-foreground">

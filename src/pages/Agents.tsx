@@ -13,6 +13,7 @@ const Agents = () => {
     updateConfig,
     updateModelSettings,
     saveConfig,
+    saveConfigWithOverrides,
   } = useAgentConfig();
 
 
@@ -59,6 +60,7 @@ const Agents = () => {
             onUpdate={updateConfig}
             onUpdateModelSettings={updateModelSettings}
             onSave={saveConfig}
+            onSaveWithOverrides={saveConfigWithOverrides}
             isLoading={isLoading}
             hasUnsavedChanges={hasUnsavedChanges}
           />

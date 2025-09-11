@@ -9,6 +9,7 @@ interface ConfigurationTabsProps {
   onUpdate: (updates: Partial<AgentConfig>) => void;
   onUpdateModelSettings: (settings: Partial<AgentConfig['modelSettings']>) => void;
   onSave: () => void;
+  onSaveWithOverrides: (configOverrides?: Partial<AgentConfig>) => Promise<void>;
   isLoading: boolean;
   hasUnsavedChanges: boolean;
 }
@@ -18,6 +19,7 @@ export const ConfigurationTabs = ({
   onUpdate,
   onUpdateModelSettings,
   onSave,
+  onSaveWithOverrides,
   isLoading,
   hasUnsavedChanges,
 }: ConfigurationTabsProps) => {
@@ -35,6 +37,7 @@ export const ConfigurationTabs = ({
               config={config}
               onUpdate={onUpdate}
               onSave={onSave}
+              onSaveWithOverrides={onSaveWithOverrides}
               isLoading={isLoading}
               hasUnsavedChanges={hasUnsavedChanges}
             />

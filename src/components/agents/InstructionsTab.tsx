@@ -7,6 +7,7 @@ interface InstructionsTabProps {
   config: AgentConfig;
   onUpdate: (updates: Partial<AgentConfig>) => void;
   onSave: () => void;
+  onSaveWithOverrides: (configOverrides?: Partial<AgentConfig>) => Promise<void>;
   isLoading: boolean;
   hasUnsavedChanges: boolean;
 }
@@ -15,14 +16,15 @@ export const InstructionsTab = ({
   config, 
   onUpdate, 
   onSave, 
+  onSaveWithOverrides,
   isLoading, 
   hasUnsavedChanges 
 }: InstructionsTabProps) => {
   const [localInstructions, setLocalInstructions] = useState(config.instructions);
 
   const handleSave = () => {
-    onUpdate({ instructions: localInstructions });
-    onSave();
+    // Save directly with the new instructions, bypassing state timing issues
+    onSaveWithOverrides({ instructions: localInstructions });
   };
 
   const handleReset = () => {

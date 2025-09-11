@@ -83,25 +83,28 @@ export const useAgentConfig = () => {
     }
   }, [user, toast]);
 
-  const saveConfig = useCallback(async () => {
+  const saveConfigWithOverrides = useCallback(async (configOverrides?: Partial<AgentConfig>) => {
     if (!user) return;
     
     setIsLoading(true);
     try {
+      // Use provided overrides or current config
+      const configToSave = configOverrides ? { ...config, ...configOverrides } : config;
+      
       // Convert AgentConfig format to database format
       const dbData = {
         user_id: user.id,
-        name: config.name,
-        type: config.type,
-        intent: config.intent,
-        status: config.status,
-        version: config.version,
+        name: configToSave.name,
+        type: configToSave.type,
+        intent: configToSave.intent,
+        status: configToSave.status,
+        version: configToSave.version,
         last_modified: new Date().toISOString(),
-        assistant_id: config.assistantId || null,
-        instructions: config.instructions,
-        model: config.modelSettings.model,
-        max_completion_tokens: config.modelSettings.maxCompletionTokens,
-        top_p: config.modelSettings.topP,
+        assistant_id: configToSave.assistantId || null,
+        instructions: configToSave.instructions,
+        model: configToSave.modelSettings.model,
+        max_completion_tokens: configToSave.modelSettings.maxCompletionTokens,
+        top_p: configToSave.modelSettings.topP,
       };
 
       // Check if agent exists
@@ -128,6 +131,11 @@ export const useAgentConfig = () => {
         if (error) throw error;
       }
       
+      // If overrides were provided, update the config state with them
+      if (configOverrides) {
+        setConfig(prev => ({ ...prev, ...configOverrides, lastModified: new Date() }));
+      }
+      
       setHasUnsavedChanges(false);
       toast({
         title: "Success",
@@ -145,6 +153,10 @@ export const useAgentConfig = () => {
     }
   }, [config, user, toast]);
 
+  const saveConfig = useCallback(async () => {
+    return saveConfigWithOverrides();
+  }, [saveConfigWithOverrides]);
+
   const resetConfig = useCallback(() => {
     setConfig(DEFAULT_AGENT_CONFIG);
     setHasUnsavedChanges(false);
@@ -158,6 +170,7 @@ export const useAgentConfig = () => {
     updateConfig,
     updateModelSettings,
     saveConfig,
+    saveConfigWithOverrides,
     resetConfig,
     loadAgentConfig,
   };

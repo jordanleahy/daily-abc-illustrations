@@ -11,9 +11,7 @@ export interface AgentConfig {
   instructions: string;
   modelSettings: {
     model: string;
-    temperature?: number;
-    useTemperature: boolean;
-    maxTokens: number;
+    maxCompletionTokens: number;
     topP: number;
   };
 }
@@ -38,9 +36,7 @@ export const DEFAULT_AGENT_CONFIG: AgentConfig = {
   instructions: 'You are ABC Cards, a helpful AI assistant focused on providing accurate and helpful responses about ABC Cards products and services. Be friendly, professional, and always aim to be helpful.',
   modelSettings: {
     model: 'gpt-4o',
-    temperature: 0.7,
-    useTemperature: false,
-    maxTokens: 1000,
+    maxCompletionTokens: 1000,
     topP: 1.0,
   },
 };

@@ -90,6 +90,68 @@ export const useAgentConfig = () => {
     try {
       // Use provided overrides or current config
       const configToSave = configOverrides ? { ...config, ...configOverrides } : config;
+
+      // Check if agent exists to get original config for comparison
+      const { data: existingAgent } = await supabase
+        .from('agents')
+        .select('*')
+        .eq('user_id', user.id)
+        .maybeSingle();
+
+      let whatChanged = null;
+
+      // Generate change description if agent exists and config has meaningful changes
+      if (existingAgent) {
+        try {
+          // Convert existing agent to AgentConfig format for comparison
+          const originalConfig: AgentConfig = {
+            id: existingAgent.id,
+            name: existingAgent.name,
+            type: existingAgent.type as 'chat' | 'assistant',
+            intent: existingAgent.intent,
+            status: existingAgent.status as 'online' | 'offline' | 'processing',
+            version: existingAgent.version,
+            createdAt: new Date(existingAgent.created_at),
+            lastModified: new Date(existingAgent.last_modified),
+            assistantId: existingAgent.assistant_id || undefined,
+            instructions: existingAgent.instructions,
+            modelSettings: {
+              model: existingAgent.model,
+              maxCompletionTokens: existingAgent.max_completion_tokens,
+              topP: existingAgent.top_p,
+            },
+          };
+
+          // Only call diff function if there are actual changes
+          const hasChanges = 
+            originalConfig.name !== configToSave.name ||
+            originalConfig.type !== configToSave.type ||
+            originalConfig.intent !== configToSave.intent ||
+            originalConfig.status !== configToSave.status ||
+            originalConfig.instructions !== configToSave.instructions ||
+            originalConfig.modelSettings.model !== configToSave.modelSettings.model ||
+            originalConfig.modelSettings.maxCompletionTokens !== configToSave.modelSettings.maxCompletionTokens ||
+            originalConfig.modelSettings.topP !== configToSave.modelSettings.topP;
+
+          if (hasChanges) {
+            console.log('Generating change description...');
+            const response = await supabase.functions.invoke('what_changed_in_agent', {
+              body: {
+                originalConfig,
+                newConfig: configToSave,
+              },
+            });
+
+            if (response.data?.whatChanged) {
+              whatChanged = response.data.whatChanged;
+              console.log('Generated change description:', whatChanged);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to generate change description:', error);
+          // Continue with save even if diff generation fails
+        }
+      }
       
       // Convert AgentConfig format to database format
       const dbData = {
@@ -105,14 +167,8 @@ export const useAgentConfig = () => {
         model: configToSave.modelSettings.model,
         max_completion_tokens: configToSave.modelSettings.maxCompletionTokens,
         top_p: configToSave.modelSettings.topP,
+        what_changed: whatChanged,
       };
-
-      // Check if agent exists
-      const { data: existingAgent } = await supabase
-        .from('agents')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
 
       if (existingAgent) {
         // Update existing agent
@@ -123,10 +179,10 @@ export const useAgentConfig = () => {
         
         if (error) throw error;
       } else {
-        // Create new agent
+        // Create new agent (first time saving)
         const { error } = await supabase
           .from('agents')
-          .insert(dbData);
+          .insert({ ...dbData, what_changed: 'Agent created' });
         
         if (error) throw error;
       }

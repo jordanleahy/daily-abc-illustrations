@@ -56,3 +56,6 @@ ip_version = "ipv4"
 
 [functions.chat]
 verify_jwt = false
+
+[functions.what_changed_in_agent]
+verify_jwt = true

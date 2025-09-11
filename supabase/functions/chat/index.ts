@@ -50,9 +50,9 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
+        model: 'gpt-5-nano-2025-08-07',
         messages: messages,
-        max_completion_tokens: 2000,
+        max_completion_tokens: 4000,
       }),
     });
 

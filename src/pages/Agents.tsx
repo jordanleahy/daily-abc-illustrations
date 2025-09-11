@@ -3,9 +3,6 @@ import { Container } from '@/components/layout';
 import { AgentIdentityCard } from '@/components/agents/AgentIdentityCard';
 import { ConfigurationTabs } from '@/components/agents/ConfigurationTabs';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
-import { Button } from '@/components/ui/button';
-import { testAgentIntegration, testRLSPolicies } from '@/utils/testAgentIntegration';
-import { useToast } from '@/hooks/use-toast';
 
 const Agents = () => {
   const {
@@ -17,25 +14,7 @@ const Agents = () => {
     updateModelSettings,
     saveConfig,
   } = useAgentConfig();
-  const { toast } = useToast();
 
-  const runIntegrationTest = async () => {
-    const result = await testAgentIntegration();
-    toast({
-      title: result.success ? "Integration Test Passed" : "Integration Test Failed",
-      description: result.message,
-      variant: result.success ? "default" : "destructive",
-    });
-  };
-
-  const runRLSTest = async () => {
-    const result = await testRLSPolicies();
-    toast({
-      title: result.success ? "RLS Test Passed" : "RLS Test Failed", 
-      description: result.message,
-      variant: result.success ? "default" : "destructive",
-    });
-  };
 
   if (isInitialLoading) {
     return (
@@ -64,22 +43,6 @@ const Agents = () => {
                 <p className="text-muted-foreground">
                   Configure and manage your ABC Cards agent settings, instructions, and model parameters.
                 </p>
-              </div>
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={runRLSTest}
-                  size="sm"
-                >
-                  Test RLS
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={runIntegrationTest}
-                  size="sm"
-                >
-                  Test Backend
-                </Button>
               </div>
             </div>
           </div>

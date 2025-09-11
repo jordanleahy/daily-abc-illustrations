@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      agents: {
+        Row: {
+          assistant_id: string | null
+          created_at: string
+          id: string
+          instructions: string
+          intent: string
+          last_modified: string
+          max_completion_tokens: number
+          model: string
+          name: string
+          status: string
+          top_p: number
+          type: string
+          updated_at: string
+          user_id: string
+          version: string
+        }
+        Insert: {
+          assistant_id?: string | null
+          created_at?: string
+          id?: string
+          instructions: string
+          intent: string
+          last_modified?: string
+          max_completion_tokens?: number
+          model: string
+          name: string
+          status?: string
+          top_p?: number
+          type: string
+          updated_at?: string
+          user_id: string
+          version?: string
+        }
+        Update: {
+          assistant_id?: string | null
+          created_at?: string
+          id?: string
+          instructions?: string
+          intent?: string
+          last_modified?: string
+          max_completion_tokens?: number
+          model?: string
+          name?: string
+          status?: string
+          top_p?: number
+          type?: string
+          updated_at?: string
+          user_id?: string
+          version?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

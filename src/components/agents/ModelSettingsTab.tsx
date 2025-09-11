@@ -57,55 +57,20 @@ export const ModelSettingsTab = ({
           </p>
         </div>
 
-        {/* Temperature Control */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="temperature-toggle">Temperature Control</Label>
-            <Switch
-              id="temperature-toggle"
-              checked={localSettings.useTemperature}
-              onCheckedChange={(checked) => handleSettingChange('useTemperature', checked)}
-            />
-          </div>
-          
-          {localSettings.useTemperature ? (
-            <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Temperature: {localSettings.temperature?.toFixed(1)}</span>
-              </div>
-              <Slider
-                value={[localSettings.temperature || 0.7]}
-                onValueChange={([value]) => handleSettingChange('temperature', value)}
-                max={1}
-                min={0}
-                step={0.1}
-                className="w-full"
-              />
-              <p className="text-xs text-muted-foreground">
-                Lower values (0.0-0.3) for focused responses, higher values (0.7-1.0) for creative responses.
-              </p>
-            </div>
-          ) : (
-            <p className="text-xs text-muted-foreground">
-              Using default temperature settings optimized for your selected model.
-            </p>
-          )}
-        </div>
-
-        {/* Max Tokens */}
+        {/* Maximum Completion Tokens */}
         <div className="space-y-2">
-          <Label htmlFor="max-tokens">Maximum Response Length (tokens)</Label>
+          <Label htmlFor="max-completion-tokens">Maximum Completion Tokens</Label>
           <Input
-            id="max-tokens"
+            id="max-completion-tokens"
             type="number"
-            value={localSettings.maxTokens}
-            onChange={(e) => handleSettingChange('maxTokens', parseInt(e.target.value) || 1000)}
+            value={localSettings.maxCompletionTokens}
+            onChange={(e) => handleSettingChange('maxCompletionTokens', parseInt(e.target.value) || 1000)}
             min={1}
             max={4000}
             className="w-full"
           />
           <p className="text-xs text-muted-foreground">
-            Maximum number of tokens in the response. Approximate: 1 token ≈ 0.75 words.
+            Maximum number of tokens in the completion response. Approximate: 1 token ≈ 0.75 words.
           </p>
         </div>
 

@@ -108,13 +108,13 @@ serve(async (req) => {
       ?.map((msg: any) => `${msg.role}: ${msg.content}`)
       .join('\n') || '';
 
-    // Use agent's instructions as base prompt and append JSON output requirements
-    const jsonOutputRequirements = `
+    // Append conversation context and JSON output requirements to agent's instructions
+    const conversationAndFormatRequirements = `
 
 CONVERSATION CONTEXT:
 ${conversationContext}
 
-OUTPUT FORMAT (JSON only, no other text):
+REQUIRED OUTPUT FORMAT (JSON only, no other text):
 {
   "book": {
     "book_name": "Creative title based on the conversation theme",
@@ -138,14 +138,9 @@ OUTPUT FORMAT (JSON only, no other text):
   ]
 }
 
-IMPORTANT: 
-- Generate exactly 26 pages (A-Z)
-- Keep content age-appropriate for young children
-- Make it educational and engaging
-- Ensure consistency with the conversation theme
-- Return ONLY valid JSON, no additional text`;
+CRITICAL: Return ONLY valid JSON, no additional text.`;
 
-    const bookCreationPrompt = agentConfig.instructions + jsonOutputRequirements;
+    const bookCreationPrompt = agentConfig.instructions + conversationAndFormatRequirements;
 
     console.log('Calling OpenAI API for book generation with model:', agentConfig.model);
 

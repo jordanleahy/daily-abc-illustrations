@@ -335,7 +335,7 @@ Book Information:
         });
 
         sendEvent({ 
-          step: 'Style Guide Generation Complete', 
+          step: 'Style Guide Generation', 
           message: `Style guide generated successfully! (${(totalDuration / 1000).toFixed(1)}s total)`, 
           timestamp: new Date().toISOString(),
           status: ProcessStatus.COMPLETE,

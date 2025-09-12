@@ -144,6 +144,36 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
 
     console.log('Calling OpenAI API for book generation with model:', agentConfig.model);
 
+    // Prepare OpenAI API parameters based on model
+    const isLegacyModel = agentConfig.model === 'gpt-4o' || agentConfig.model === 'gpt-4o-mini';
+    const apiParams: any = {
+      model: agentConfig.model,
+      messages: [
+        { 
+          role: 'system', 
+          content: bookCreationPrompt 
+        },
+        { 
+          role: 'user', 
+          content: 'Please create the ABC book based on our conversation.' 
+        }
+      ],
+    };
+
+    // Use correct token parameter based on model
+    if (isLegacyModel) {
+      apiParams.max_tokens = agentConfig.max_completion_tokens;
+    } else {
+      apiParams.max_completion_tokens = agentConfig.max_completion_tokens;
+    }
+
+    // Add top_p if it's not the default
+    if (agentConfig.top_p && agentConfig.top_p !== 1.0) {
+      apiParams.top_p = agentConfig.top_p;
+    }
+
+    console.log('OpenAI API parameters:', apiParams);
+
     // Call OpenAI API with the Book Creation Agent's configuration
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -151,21 +181,7 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: agentConfig.model,
-        messages: [
-          { 
-            role: 'system', 
-            content: bookCreationPrompt 
-          },
-          { 
-            role: 'user', 
-            content: 'Please create the ABC book based on our conversation.' 
-          }
-        ],
-        max_completion_tokens: agentConfig.max_completion_tokens,
-        top_p: agentConfig.top_p,
-      }),
+      body: JSON.stringify(apiParams),
     });
 
     if (!response.ok) {

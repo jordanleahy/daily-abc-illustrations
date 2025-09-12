@@ -5,6 +5,7 @@ import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Shimmer } from '@/components/ui/shimmer';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { BookWithPages } from '@/types/book';
@@ -191,18 +192,15 @@ export default function BookDetail() {
                   )}
                 </CardHeader>
                 <CardContent className="p-4">
-                  <div 
-                    className={`
-                      w-full h-48 bg-muted rounded-lg cursor-pointer transition-all duration-300
-                      hover:bg-muted/80 flex items-center justify-center
-                      ${shimmeringPage === page.id ? 'animate-pulse bg-gradient-to-r from-muted via-muted/50 to-muted' : ''}
-                    `}
+                  <Shimmer 
+                    isShimmering={shimmeringPage === page.id}
+                    className="w-full h-48 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 flex items-center justify-center"
                     onClick={() => handleImageClick(page.id)}
                   >
                     <div className="text-muted-foreground text-sm">
                       Tap to generate image
                     </div>
-                  </div>
+                  </Shimmer>
                 </CardContent>
               </Card>
             ))}

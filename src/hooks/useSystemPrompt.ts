@@ -25,7 +25,7 @@ const mockSystemPrompts: Record<string, SystemPrompt> = {
     id: 'prompt-1',
     content: `You are an AI illustration director for children's alphabet books. Create detailed, consistent visual descriptions for book illustrations.
 
-## Visual Style Guidelines:
+## Visual Guidelines:
 - Illustration Style: Watercolor with soft, dreamy qualities
 - Color Palette: Warm, inviting colors with high contrast for readability
 - Character Design: Friendly, approachable characters with expressive faces

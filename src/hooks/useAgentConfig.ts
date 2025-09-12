@@ -17,7 +17,6 @@
  * - `'chat'`: Conversational AI agents for interactive chat experiences
  * - `'assistant'`: Task-oriented AI assistants with specific capabilities  
  * - `'book-creation'`: Specialized agents for generating educational content
- * - `'illustration-director'`: Creates visual style guides for consistent book illustrations
  * 
  * ## Configuration Structure:
  * Each agent configuration includes:
@@ -73,7 +72,7 @@
  * - Batches database operations to minimize API calls
  * - Caches loaded configurations to reduce redundant queries
  * 
- * @param agentType - The type of agent to manage ('chat' | 'assistant' | 'book-creation' | 'illustration-director')
+ * @param agentType - The type of agent to manage ('chat' | 'assistant' | 'book-creation')
  * @returns Object containing configuration state, loading states, and management functions
  */
 

@@ -82,7 +82,7 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
               </div>
               <CardDescription>
                 {hasPrompt 
-                  ? "Manage your book's illustration style guide and system prompt"
+                  ? "Manage your book's system prompt for illustrations"
                   : "No system prompt generated yet. Generate one to start creating illustrations."
                 }
               </CardDescription>
@@ -133,7 +133,7 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
             <div className="text-center py-8 text-muted-foreground">
               <FileText className="w-12 h-12 mx-auto mb-4 opacity-40" />
               <p className="mb-2">No system prompt available</p>
-              <p className="text-sm">Generate a style guide first to create the system prompt</p>
+              <p className="text-sm">Create a system prompt to start generating illustrations</p>
             </div>
           ) : isEditing ? (
             <SystemPromptEditor

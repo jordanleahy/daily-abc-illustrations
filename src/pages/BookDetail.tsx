@@ -6,14 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shimmer } from '@/components/ui/shimmer';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { SystemPromptSection } from '@/components/book/SystemPromptSection';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
-import { ProcessStatus } from '@/types/process';
 import { BookWithPages } from '@/types/book';
-import { ArrowLeft, Calendar, Users, Palette, ChevronDown, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BookDetail() {
@@ -23,9 +20,6 @@ export default function BookDetail() {
   const [book, setBook] = useState<BookWithPages | null>(null);
   const [loading, setLoading] = useState(true);
   const [shimmeringPage, setShimmeringPage] = useState<string | null>(null);
-  const [styleGuideLoading, setStyleGuideLoading] = useState(false);
-  const [styleGuide, setStyleGuide] = useState<string | null>(null);
-  const [showStyleGuide, setShowStyleGuide] = useState(false);
 
   useEffect(() => {
     // Wait for auth loading to complete before checking user status
@@ -103,122 +97,6 @@ export default function BookDetail() {
   const handleBack = () => {
     navigate('/books');
   };
-
-  const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
-  const [isProgressExpanded, setIsProgressExpanded] = useState(true);
-
-  const generateStyleGuide = async () => {
-    if (!book || !user) return;
-    
-    setStyleGuideLoading(true);
-    setProgressMessages([]);
-    setIsProgressExpanded(true);
-
-    const bookMetadata = {
-      book_name: book.book_name,
-      book_description: book.book_description,
-      category: book.category,
-      total_pages: book.total_pages,
-      pages: book.pages.map(page => ({
-        letter: page.letter,
-        title: page.title,
-        description: page.description,
-        content: page.content
-      }))
-    };
-    
-    // Use SSE for streaming progress - construct URL from window location
-    const baseUrl = window.location.origin.includes('localhost') 
-      ? 'http://localhost:54321'
-      : 'https://foxdnspwzhjxjxuicute.supabase.co';
-
-    // Clear previous messages and let backend handle all progress
-    setProgressMessages([]);
-    
-    let receivedAnyEvents = false;
-    
-    try {
-      const response = await fetch(
-        `${baseUrl}/functions/v1/generate-style-guide?stream=true`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            bookId: book.id,
-            userId: user.id,
-            bookMetadata
-          }),
-        }
-      );
-
-      if (response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-  
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-  
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
-  
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                receivedAnyEvents = true;
-                setProgressMessages(prev => [...prev, data]);
-  
-                // Handle completion - check both status and step for completion
-                if ((data.status === ProcessStatus.COMPLETE || data.step === 'complete') && data.styleGuide) {
-                  setStyleGuide(data.styleGuide);
-                  setShowStyleGuide(true);
-                  toast.success('Style guide generated successfully!');
-                }
-                
-                // Handle errors
-                if (data.status === ProcessStatus.ERROR) {
-                  toast.error(`Error: ${data.message}`);
-                }
-              } catch {
-                // Ignore JSON parse errors for partial chunks
-              }
-            }
-          }
-        }
-      }
-
-      // Fallback: if we didn't receive any SSE event, call non-streaming function
-      if (!receivedAnyEvents) {
-        const { data, error } = await supabase.functions.invoke('generate-style-guide', {
-          body: { bookId: book.id, userId: user.id, bookMetadata },
-        });
-        if (error) throw error;
-        if (data?.styleGuide) {
-          setStyleGuide(data.styleGuide);
-          setShowStyleGuide(true);
-          toast.success('Style guide generated successfully!');
-        } else {
-          throw new Error('No style guide returned');
-        }
-      }
-    } catch (error: any) {
-      console.error('Error:', error);
-      toast.error('An error occurred while generating the style guide');
-      setProgressMessages(prev => [...prev, {
-        step: 'error',
-        message: `Network error: ${error.message}`,
-        timestamp: new Date().toISOString(),
-        status: ProcessStatus.ERROR
-      }]);
-    } finally {
-      setStyleGuideLoading(false);
-    }
-  };
   if (authLoading || loading) {
     return (
       <PageLayout>
@@ -271,24 +149,6 @@ export default function BookDetail() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={generateStyleGuide}
-                    disabled={styleGuideLoading}
-                    className="flex items-center gap-2"
-                  >
-                    {styleGuideLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Palette className="w-4 h-4" />
-                        Call Illustration Director
-                      </>
-                    )}
-                  </Button>
                   <Badge variant={book.is_published ? "default" : "secondary"}>
                     {book.is_published ? 'Published' : 'Draft'}
                   </Badge>
@@ -306,43 +166,10 @@ export default function BookDetail() {
                 </div>
               </div>
             </CardHeader>
-            
-          {/* Style Guide Section */}
-          {styleGuide && (
-            <CardContent className="pt-0">
-              <Collapsible open={showStyleGuide} onOpenChange={setShowStyleGuide}>
-                <CollapsibleTrigger asChild>
-                  <Button variant="ghost" className="flex items-center gap-2 w-full justify-start p-0 h-auto font-medium">
-                    <ChevronDown className={`w-4 h-4 transition-transform ${showStyleGuide ? 'rotate-180' : ''}`} />
-                    Style Guide Generated
-                    <Badge variant="secondary" className="ml-2">New</Badge>
-                  </Button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="mt-4">
-                  <div className="bg-muted rounded-lg p-4">
-                    <h4 className="font-medium mb-2">Visual Style Guidelines</h4>
-                    <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                      {styleGuide}
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </CardContent>
-          )}
         </Card>
 
         {/* System Prompt Section */}
         <SystemPromptSection bookId={id!} />
-
-        {/* Progress Console */}
-        {progressMessages.length > 0 && (
-          <ProgressConsole
-            messages={progressMessages}
-            isExpanded={isProgressExpanded}
-            onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
-            isActive={styleGuideLoading}
-          />
-        )}
 
           {/* Pages Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -373,17 +200,7 @@ export default function BookDetail() {
                     onClick={() => handleImageClick(page.id)}
                   >
                     <div className="text-muted-foreground text-sm text-center">
-                      {styleGuide ? (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-center gap-1">
-                            <Palette className="w-3 h-3" />
-                            Style guide ready
-                          </div>
-                          <div className="text-xs">Tap to generate image</div>
-                        </div>
-                      ) : (
-                        "Tap to generate image"
-                      )}
+                      Tap to generate image
                     </div>
                   </Shimmer>
                 </CardContent>

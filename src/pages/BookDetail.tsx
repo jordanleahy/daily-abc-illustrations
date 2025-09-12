@@ -13,8 +13,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
 import { BookWithPages } from '@/types/book';
-import { ArrowLeft, Calendar, Users, Palette, ChevronDown, Loader2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Palette, ChevronDown, Loader2, Clock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { SafeLocalStorage, StyleGuideStorage, StyleGuideData } from '@/utils/storage';
 
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +29,12 @@ export default function BookDetail() {
   const [showStyleGuide, setShowStyleGuide] = useState(false);
   const [imagePrompts, setImagePrompts] = useState<Record<string, string>>({});
   const [imagePromptLoading, setImagePromptLoading] = useState<Record<string, boolean>>({});
+  const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
+  const [isProgressExpanded, setIsProgressExpanded] = useState(true);
+  const [cachedStyleGuideInfo, setCachedStyleGuideInfo] = useState<{
+    data: StyleGuideData;
+    timeLeft: string;
+  } | null>(null);
 
   useEffect(() => {
     // Wait for auth loading to complete before checking user status
@@ -96,6 +103,37 @@ export default function BookDetail() {
     fetchBook();
   }, [user, id, navigate, authLoading]);
 
+  // Check for cached style guide on mount and set up periodic updates
+  useEffect(() => {
+    if (!id) return;
+
+    const checkCachedStyleGuide = () => {
+      const cached = StyleGuideStorage.load(id);
+      const expiration = StyleGuideStorage.getExpiration(id);
+      
+      if (cached && expiration) {
+        // Set the style guide from cache
+        setStyleGuide(cached.styleGuide);
+        setShowStyleGuide(true);
+        
+        // Update cached info display
+        setCachedStyleGuideInfo({
+          data: cached,
+          timeLeft: StyleGuideStorage.formatTimeLeft(expiration.timeLeft)
+        });
+      } else {
+        setCachedStyleGuideInfo(null);
+      }
+    };
+
+    // Check on mount
+    checkCachedStyleGuide();
+
+    // Update time left every 30 seconds
+    const interval = setInterval(checkCachedStyleGuide, 30000);
+    return () => clearInterval(interval);
+  }, [id]);
+
   const handleImageClick = async (pageId: string) => {
     if (!styleGuide) {
       toast.error('Please generate a style guide first');
@@ -138,9 +176,6 @@ export default function BookDetail() {
   const handleBack = () => {
     navigate('/books');
   };
-
-  const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
-  const [isProgressExpanded, setIsProgressExpanded] = useState(true);
 
   const generateStyleGuide = async () => {
     if (!book || !user) return;
@@ -212,6 +247,25 @@ export default function BookDetail() {
                 if ((data.status === ProcessStatus.COMPLETE || data.step === 'complete') && data.styleGuide) {
                   setStyleGuide(data.styleGuide);
                   setShowStyleGuide(true);
+                  
+                  // Save to local storage for 48 hours
+                  const styleGuideData: StyleGuideData = {
+                    styleGuide: data.styleGuide,
+                    bookId: id!,
+                    agentUsed: data.agentUsed,
+                    generatedAt: new Date().toISOString()
+                  };
+                  StyleGuideStorage.save(id!, styleGuideData);
+                  
+                  // Update cached info display
+                  const expiration = StyleGuideStorage.getExpiration(id!);
+                  if (expiration) {
+                    setCachedStyleGuideInfo({
+                      data: styleGuideData,
+                      timeLeft: StyleGuideStorage.formatTimeLeft(expiration.timeLeft)
+                    });
+                  }
+                  
                   toast.success('Style guide generated successfully!');
                 }
                 
@@ -236,6 +290,25 @@ export default function BookDetail() {
         if (data?.styleGuide) {
           setStyleGuide(data.styleGuide);
           setShowStyleGuide(true);
+          
+          // Save to local storage for 48 hours
+          const styleGuideData: StyleGuideData = {
+            styleGuide: data.styleGuide,
+            bookId: id!,
+            agentUsed: data.agentUsed,
+            generatedAt: new Date().toISOString()
+          };
+          StyleGuideStorage.save(id!, styleGuideData);
+          
+          // Update cached info display
+          const expiration = StyleGuideStorage.getExpiration(id!);
+          if (expiration) {
+            setCachedStyleGuideInfo({
+              data: styleGuideData,
+              timeLeft: StyleGuideStorage.formatTimeLeft(expiration.timeLeft)
+            });
+          }
+          
           toast.success('Style guide generated successfully!');
         } else {
           throw new Error('No style guide returned');
@@ -354,6 +427,42 @@ export default function BookDetail() {
                   </Button>
                 </CollapsibleTrigger>
                 <CollapsibleContent className="mt-4">
+                  {/* Cache Information */}
+                  {cachedStyleGuideInfo && (
+                    <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2 text-sm text-blue-700">
+                          <Clock className="w-4 h-4" />
+                          Cached Style Guide
+                        </div>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            if (id) {
+                              StyleGuideStorage.remove(id);
+                              setCachedStyleGuideInfo(null);
+                              toast.success('Cache cleared');
+                            }
+                          }}
+                          className="h-7 px-2 text-xs"
+                        >
+                          <Trash2 className="w-3 h-3 mr-1" />
+                          Clear Cache
+                        </Button>
+                      </div>
+                      <div className="text-xs text-blue-600 space-y-1">
+                        {cachedStyleGuideInfo.data.agentUsed && (
+                          <div>
+                            Agent: {cachedStyleGuideInfo.data.agentUsed.name} ({cachedStyleGuideInfo.data.agentUsed.model})
+                          </div>
+                        )}
+                        <div>Generated: {new Date(cachedStyleGuideInfo.data.generatedAt).toLocaleString()}</div>
+                        <div>Expires in: {cachedStyleGuideInfo.timeLeft}</div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="bg-muted rounded-lg p-4">
                     <h4 className="font-medium mb-2">Visual Style Guidelines</h4>
                     <div className="text-sm text-muted-foreground whitespace-pre-wrap">

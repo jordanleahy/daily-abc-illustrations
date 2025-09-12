@@ -66,7 +66,7 @@ export const AgentIdentityCard = ({
               placeholder="Enter agent name"
             />
             <Badge variant="secondary" className="capitalize">
-              {config.type} Agent
+              {config.type === 'book-creation' ? 'Book Creation' : config.type} Agent
             </Badge>
           </div>
           <div className="flex items-center gap-2">

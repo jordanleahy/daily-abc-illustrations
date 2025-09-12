@@ -6,10 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shimmer } from '@/components/ui/shimmer';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { BookWithPages } from '@/types/book';
-import { ArrowLeft, Calendar, Users } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Palette, ChevronDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BookDetail() {
@@ -19,6 +20,9 @@ export default function BookDetail() {
   const [book, setBook] = useState<BookWithPages | null>(null);
   const [loading, setLoading] = useState(true);
   const [shimmeringPage, setShimmeringPage] = useState<string | null>(null);
+  const [styleGuideLoading, setStyleGuideLoading] = useState(false);
+  const [styleGuide, setStyleGuide] = useState<string | null>(null);
+  const [showStyleGuide, setShowStyleGuide] = useState(false);
 
   useEffect(() => {
     // Wait for auth loading to complete before checking user status
@@ -97,6 +101,53 @@ export default function BookDetail() {
     navigate('/books');
   };
 
+  const generateStyleGuide = async () => {
+    if (!book || !user) return;
+    
+    setStyleGuideLoading(true);
+    try {
+      const bookMetadata = {
+        book_name: book.book_name,
+        book_description: book.book_description,
+        category: book.category,
+        total_pages: book.total_pages,
+        pages: book.pages.map(page => ({
+          letter: page.letter,
+          title: page.title,
+          description: page.description,
+          content: page.content
+        }))
+      };
+
+      const { data, error } = await supabase.functions.invoke('generate-style-guide', {
+        body: {
+          bookId: book.id,
+          userId: user.id,
+          bookMetadata
+        }
+      });
+
+      if (error) {
+        console.error('Error generating style guide:', error);
+        toast.error('Failed to generate style guide');
+        return;
+      }
+
+      if (data?.styleGuide) {
+        setStyleGuide(data.styleGuide);
+        setShowStyleGuide(true);
+        toast.success('Style guide generated successfully!');
+      } else {
+        toast.error('No style guide was generated');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      toast.error('An error occurred while generating the style guide');
+    } finally {
+      setStyleGuideLoading(false);
+    }
+  };
+
   if (authLoading || loading) {
     return (
       <PageLayout>
@@ -148,9 +199,29 @@ export default function BookDetail() {
                     </CardDescription>
                   )}
                 </div>
-                <Badge variant={book.is_published ? "default" : "secondary"}>
-                  {book.is_published ? 'Published' : 'Draft'}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={generateStyleGuide}
+                    disabled={styleGuideLoading}
+                    className="flex items-center gap-2"
+                  >
+                    {styleGuideLoading ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Palette className="w-4 h-4" />
+                        Call Illustration Director
+                      </>
+                    )}
+                  </Button>
+                  <Badge variant={book.is_published ? "default" : "secondary"}>
+                    {book.is_published ? 'Published' : 'Draft'}
+                  </Badge>
+                </div>
               </div>
               
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
@@ -164,6 +235,29 @@ export default function BookDetail() {
                 </div>
               </div>
             </CardHeader>
+            
+            {/* Style Guide Section */}
+            {styleGuide && (
+              <CardContent className="pt-0">
+                <Collapsible open={showStyleGuide} onOpenChange={setShowStyleGuide}>
+                  <CollapsibleTrigger asChild>
+                    <Button variant="ghost" className="flex items-center gap-2 w-full justify-start p-0 h-auto font-medium">
+                      <ChevronDown className={`w-4 h-4 transition-transform ${showStyleGuide ? 'rotate-180' : ''}`} />
+                      Style Guide Generated
+                      <Badge variant="secondary" className="ml-2">New</Badge>
+                    </Button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-4">
+                    <div className="bg-muted rounded-lg p-4">
+                      <h4 className="font-medium mb-2">Visual Style Guidelines</h4>
+                      <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                        {styleGuide}
+                      </div>
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </CardContent>
+            )}
           </Card>
 
           {/* Pages Grid */}
@@ -195,7 +289,17 @@ export default function BookDetail() {
                     onClick={() => handleImageClick(page.id)}
                   >
                     <div className="text-muted-foreground text-sm text-center">
-                      Tap to generate image
+                      {styleGuide ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-center gap-1">
+                            <Palette className="w-3 h-3" />
+                            Style guide ready
+                          </div>
+                          <div className="text-xs">Tap to generate image</div>
+                        </div>
+                      ) : (
+                        "Tap to generate image"
+                      )}
                     </div>
                   </Shimmer>
                 </CardContent>

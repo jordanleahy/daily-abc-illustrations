@@ -245,7 +245,25 @@ ${pageContent}`
     }
 
     const data = await response.json();
-    const imagePrompt = data.choices[0].message.content;
+    
+    // Handle both string and array content from GPT-5
+    let imagePrompt = data.choices[0].message.content;
+    if (Array.isArray(imagePrompt)) {
+      // GPT-5 returns content as array, extract text content
+      imagePrompt = imagePrompt.find(item => item.type === 'text')?.text || '';
+    }
+
+    // Validate that we got a prompt
+    if (!imagePrompt || imagePrompt.trim().length === 0) {
+      const errorMsg = 'OpenAI returned empty image prompt';
+      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
+        requestId, 
+        duration: aiDuration,
+        rawContent: data.choices[0].message.content,
+        letter: pageData.letter
+      });
+      throw new Error(errorMsg);
+    }
 
     log('INFO', ProcessStatus.COMPLETE, currentStep, 'Image prompt generated successfully', { 
       requestId, 

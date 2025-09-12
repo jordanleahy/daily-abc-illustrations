@@ -161,6 +161,11 @@ export default function BookDetail() {
 
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to generate image prompt');
+      
+      // Check if imagePrompt is empty or invalid
+      if (!data.imagePrompt || data.imagePrompt.trim().length === 0) {
+        throw new Error('Failed to generate image prompt - empty response');
+      }
 
       setImagePrompts(prev => ({ ...prev, [pageId]: data.imagePrompt }));
       toast.success('Image prompt generated! Click again to copy.');

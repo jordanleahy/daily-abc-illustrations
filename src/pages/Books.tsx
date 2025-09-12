@@ -159,6 +159,10 @@ export default function Books() {
                         {new Date(book.created_at).toLocaleDateString()}
                       </div>
                     </div>
+                    
+                    <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
+                      <BookOpen className="w-8 h-8 text-muted-foreground" />
+                    </div>
                   </CardContent>
                 </Card>
               ))}

@@ -246,20 +246,33 @@ ${pageContent}`
 
     const data = await response.json();
     
-    // Handle both string and array content from GPT-5
-    let imagePrompt = data.choices[0].message.content;
-    if (Array.isArray(imagePrompt)) {
-      // GPT-5 returns content as array, extract text content
-      imagePrompt = imagePrompt.find(item => item.type === 'text')?.text || '';
+    // Robustly extract text from GPT-5 response
+    const choice = data?.choices?.[0] ?? {};
+    const msg = choice.message ?? {};
+    let imagePrompt = '';
+
+    if (Array.isArray(msg.content)) {
+      imagePrompt = msg.content
+        .map((part: any) => {
+          if (typeof part === 'string') return part;
+          if (typeof part?.text === 'string') return part.text;
+          if (part?.type && (part.type === 'text' || part.type === 'output_text')) return part.text || '';
+          if (typeof part?.content === 'string') return part.content;
+          return '';
+        })
+        .join('')
+        .trim();
+    } else if (typeof msg.content === 'string') {
+      imagePrompt = (msg.content as string).trim();
     }
 
     // Validate that we got a prompt
-    if (!imagePrompt || imagePrompt.trim().length === 0) {
+    if (!imagePrompt) {
       const errorMsg = 'OpenAI returned empty image prompt';
-      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
-        requestId, 
+      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, {
+        requestId,
         duration: aiDuration,
-        rawContent: data.choices[0].message.content,
+        rawMessage: choice,
         letter: pageData.letter
       });
       throw new Error(errorMsg);
@@ -268,6 +281,10 @@ ${pageContent}`
     log('INFO', ProcessStatus.COMPLETE, currentStep, 'Image prompt generated successfully', { 
       requestId, 
       duration: aiDuration,
+      promptLength: imagePrompt.length,
+      tokensUsed: data.usage?.total_tokens,
+      letter: pageData.letter
+    });
       promptLength: imagePrompt.length,
       tokensUsed: data.usage?.total_tokens,
       letter: pageData.letter

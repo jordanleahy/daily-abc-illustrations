@@ -113,26 +113,36 @@ export default function BookDetail() {
     setStyleGuideLoading(true);
     setProgressMessages([]);
     setIsProgressExpanded(true);
+
+    const bookMetadata = {
+      book_name: book.book_name,
+      book_description: book.book_description,
+      category: book.category,
+      total_pages: book.total_pages,
+      pages: book.pages.map(page => ({
+        letter: page.letter,
+        title: page.title,
+        description: page.description,
+        content: page.content
+      }))
+    };
+    
+    // Use SSE for streaming progress - construct URL from window location
+    const baseUrl = window.location.origin.includes('localhost') 
+      ? 'http://localhost:54321'
+      : 'https://foxdnspwzhjxjxuicute.supabase.co';
+
+    // Add an immediate UI message so users see activity
+    setProgressMessages(prev => [...prev, {
+      step: 'request',
+      message: 'Starting style guide generation... ',
+      timestamp: new Date().toISOString(),
+      status: ProcessStatus.IN_PROGRESS,
+    }]);
+    
+    let receivedAnyEvents = false;
     
     try {
-      const bookMetadata = {
-        book_name: book.book_name,
-        book_description: book.book_description,
-        category: book.category,
-        total_pages: book.total_pages,
-        pages: book.pages.map(page => ({
-          letter: page.letter,
-          title: page.title,
-          description: page.description,
-          content: page.content
-        }))
-      };
-
-      // Use SSE for streaming progress - construct URL from window location
-      const baseUrl = window.location.origin.includes('localhost') 
-        ? 'http://localhost:54321'
-        : 'https://foxdnspwzhjxjxuicute.supabase.co';
-      
       const response = await fetch(
         `${baseUrl}/functions/v1/generate-style-guide?stream=true`,
         {
@@ -150,44 +160,58 @@ export default function BookDetail() {
         }
       );
 
-      if (!response.body) {
-        throw new Error('No response body');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n');
-
-        for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              setProgressMessages(prev => [...prev, data]);
-
-              // Handle completion
-              if (data.status === ProcessStatus.COMPLETE && data.styleGuide) {
-                setStyleGuide(data.styleGuide);
-                setShowStyleGuide(true);
-                toast.success('Style guide generated successfully!');
+      if (response.body) {
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+  
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+  
+          const chunk = decoder.decode(value, { stream: true });
+          const lines = chunk.split('\n');
+  
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              try {
+                const data = JSON.parse(line.slice(6));
+                receivedAnyEvents = true;
+                setProgressMessages(prev => [...prev, data]);
+  
+                // Handle completion
+                if (data.status === ProcessStatus.COMPLETE && data.styleGuide) {
+                  setStyleGuide(data.styleGuide);
+                  setShowStyleGuide(true);
+                  toast.success('Style guide generated successfully!');
+                }
+                
+                // Handle errors
+                if (data.status === ProcessStatus.ERROR) {
+                  toast.error(`Error: ${data.message}`);
+                }
+              } catch {
+                // Ignore JSON parse errors for partial chunks
               }
-              
-              // Handle errors
-              if (data.status === ProcessStatus.ERROR) {
-                toast.error(`Error: ${data.message}`);
-              }
-            } catch (e) {
-              // Ignore JSON parse errors for partial chunks
             }
           }
         }
       }
-    } catch (error) {
+
+      // Fallback: if we didn't receive any SSE event, call non-streaming function
+      if (!receivedAnyEvents) {
+        const { data, error } = await supabase.functions.invoke('generate-style-guide', {
+          body: { bookId: book.id, userId: user.id, bookMetadata },
+        });
+        if (error) throw error;
+        if (data?.styleGuide) {
+          setStyleGuide(data.styleGuide);
+          setShowStyleGuide(true);
+          toast.success('Style guide generated successfully!');
+        } else {
+          throw new Error('No style guide returned');
+        }
+      }
+    } catch (error: any) {
       console.error('Error:', error);
       toast.error('An error occurred while generating the style guide');
       setProgressMessages(prev => [...prev, {
@@ -200,7 +224,6 @@ export default function BookDetail() {
       setStyleGuideLoading(false);
     }
   };
-
   if (authLoading || loading) {
     return (
       <PageLayout>

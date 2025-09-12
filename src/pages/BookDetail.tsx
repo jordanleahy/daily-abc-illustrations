@@ -539,7 +539,7 @@ export default function BookDetail() {
                         <div className="space-y-1">
                           <div className="flex items-center justify-center gap-1">
                             <Palette className="w-3 h-3" />
-                            Prompt ready
+                            Ready to create image
                           </div>
                           <div className="text-xs">Tap to copy prompt</div>
                         </div>

@@ -170,14 +170,14 @@ export default function BookDetail() {
               setProgressMessages(prev => [...prev, data]);
 
               // Handle completion
-              if (data.step === 'complete' && data.styleGuide) {
+              if (data.status === ProcessStatus.COMPLETE && data.styleGuide) {
                 setStyleGuide(data.styleGuide);
                 setShowStyleGuide(true);
                 toast.success('Style guide generated successfully!');
               }
               
               // Handle errors
-              if (data.step === 'error') {
+              if (data.status === ProcessStatus.ERROR) {
                 toast.error(`Error: ${data.message}`);
               }
             } catch (e) {

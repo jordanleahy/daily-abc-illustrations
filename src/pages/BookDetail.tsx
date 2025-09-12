@@ -26,6 +26,8 @@ export default function BookDetail() {
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [styleGuide, setStyleGuide] = useState<string | null>(null);
   const [showStyleGuide, setShowStyleGuide] = useState(false);
+  const [imagePrompts, setImagePrompts] = useState<Record<string, string>>({});
+  const [imagePromptLoading, setImagePromptLoading] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     // Wait for auth loading to complete before checking user status
@@ -94,10 +96,43 @@ export default function BookDetail() {
     fetchBook();
   }, [user, id, navigate, authLoading]);
 
-  const handleImageClick = (pageId: string) => {
+  const handleImageClick = async (pageId: string) => {
+    if (!styleGuide) {
+      toast.error('Please generate a style guide first');
+      return;
+    }
+
+    if (imagePrompts[pageId]) {
+      // If prompt already exists, copy to clipboard
+      navigator.clipboard.writeText(imagePrompts[pageId]);
+      toast.success('Image prompt copied to clipboard!');
+      return;
+    }
+
     setShimmeringPage(pageId);
-    // Stop shimmer after 2 seconds
-    setTimeout(() => setShimmeringPage(null), 2000);
+    setImagePromptLoading(prev => ({ ...prev, [pageId]: true }));
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-image-prompt', {
+        body: {
+          pageId,
+          userId: user?.id,
+          styleGuide
+        }
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to generate image prompt');
+
+      setImagePrompts(prev => ({ ...prev, [pageId]: data.imagePrompt }));
+      toast.success('Image prompt generated! Click again to copy.');
+    } catch (error: any) {
+      console.error('Error generating image prompt:', error);
+      toast.error('Failed to generate image prompt');
+    } finally {
+      setShimmeringPage(null);
+      setImagePromptLoading(prev => ({ ...prev, [pageId]: false }));
+    }
   };
 
   const handleBack = () => {
@@ -366,26 +401,49 @@ export default function BookDetail() {
                     </CardDescription>
                   )}
                 </CardHeader>
-                <CardContent className="p-4">
+                <CardContent className="p-4 space-y-3">
                   <Shimmer 
                     isShimmering={shimmeringPage === page.id}
                     className="w-full aspect-square bg-muted rounded-lg cursor-pointer hover:bg-muted/80 flex items-center justify-center"
                     onClick={() => handleImageClick(page.id)}
                   >
                     <div className="text-muted-foreground text-sm text-center">
-                      {styleGuide ? (
+                      {!styleGuide ? (
+                        "Generate style guide first"
+                      ) : imagePrompts[page.id] ? (
+                        <div className="space-y-1">
+                          <div className="flex items-center justify-center gap-1">
+                            <Palette className="w-3 h-3" />
+                            Prompt ready
+                          </div>
+                          <div className="text-xs">Tap to copy prompt</div>
+                        </div>
+                      ) : imagePromptLoading[page.id] ? (
+                        <div className="space-y-1">
+                          <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                          <div className="text-xs">Generating prompt...</div>
+                        </div>
+                      ) : (
                         <div className="space-y-1">
                           <div className="flex items-center justify-center gap-1">
                             <Palette className="w-3 h-3" />
                             Style guide ready
                           </div>
-                          <div className="text-xs">Tap to generate image</div>
+                          <div className="text-xs">Tap to generate prompt</div>
                         </div>
-                      ) : (
-                        "Tap to generate image"
                       )}
                     </div>
                   </Shimmer>
+
+                  {/* Show generated image prompt */}
+                  {imagePrompts[page.id] && (
+                    <div className="bg-muted rounded-lg p-3">
+                      <h5 className="text-xs font-medium mb-1">Image Prompt:</h5>
+                      <p className="text-xs text-muted-foreground line-clamp-3">
+                        {imagePrompts[page.id]}
+                      </p>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             ))}

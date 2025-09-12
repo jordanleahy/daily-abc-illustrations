@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AGENT_TYPE_CONFIGS, AgentConfig } from '@/types/agent';
-import { BookOpen, MessageCircle, Bot } from 'lucide-react';
+import { BookOpen, MessageCircle, Bot, Palette } from 'lucide-react';
 import { useState } from 'react';
 
 const Agents = () => {
@@ -59,7 +59,7 @@ const Agents = () => {
           </div>
 
           {/* Agent Type Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedAgentType === 'chat' ? 'ring-2 ring-primary' : ''}`}>
               <CardHeader>
                 <div className="flex items-center gap-3">
@@ -110,6 +110,33 @@ const Agents = () => {
                   onClick={() => setSelectedAgentType('book-creation')}
                 >
                   {selectedAgentType === 'book-creation' ? 'Currently Active' : 'Switch to Book Agent'}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedAgentType === 'illustration-director' ? 'ring-2 ring-primary' : ''}`}>
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-purple-500/10">
+                    <Palette className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Illustration Director</CardTitle>
+                    <Badge variant="secondary" className="text-xs">New</Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Creates visual style guides and system prompts for book illustrations to ensure consistency.
+                </p>
+                <Button 
+                  variant={selectedAgentType === 'illustration-director' ? 'default' : 'outline'} 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => setSelectedAgentType('illustration-director')}
+                >
+                  {selectedAgentType === 'illustration-director' ? 'Currently Active' : 'Switch to Director'}
                 </Button>
               </CardContent>
             </Card>

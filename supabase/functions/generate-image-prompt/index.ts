@@ -285,10 +285,6 @@ ${pageContent}`
       tokensUsed: data.usage?.total_tokens,
       letter: pageData.letter
     });
-      promptLength: imagePrompt.length,
-      tokensUsed: data.usage?.total_tokens,
-      letter: pageData.letter
-    });
 
     const totalDuration = Date.now() - startTime;
     log('INFO', ProcessStatus.COMPLETE, 'COMPLETE', 'Image prompt generation completed successfully!', { 

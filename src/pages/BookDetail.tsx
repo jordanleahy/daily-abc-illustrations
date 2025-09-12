@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shimmer } from '@/components/ui/shimmer';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { SystemPromptSection } from '@/components/book/SystemPromptSection';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
@@ -288,39 +289,42 @@ export default function BookDetail() {
               </div>
             </CardHeader>
             
-            {/* Style Guide Section */}
-            {styleGuide && (
-              <CardContent className="pt-0">
-                <Collapsible open={showStyleGuide} onOpenChange={setShowStyleGuide}>
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2 w-full justify-start p-0 h-auto font-medium">
-                      <ChevronDown className={`w-4 h-4 transition-transform ${showStyleGuide ? 'rotate-180' : ''}`} />
-                      Style Guide Generated
-                      <Badge variant="secondary" className="ml-2">New</Badge>
-                    </Button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="mt-4">
-                    <div className="bg-muted rounded-lg p-4">
-                      <h4 className="font-medium mb-2">Visual Style Guidelines</h4>
-                      <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                        {styleGuide}
-                      </div>
+          {/* Style Guide Section */}
+          {styleGuide && (
+            <CardContent className="pt-0">
+              <Collapsible open={showStyleGuide} onOpenChange={setShowStyleGuide}>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="flex items-center gap-2 w-full justify-start p-0 h-auto font-medium">
+                    <ChevronDown className={`w-4 h-4 transition-transform ${showStyleGuide ? 'rotate-180' : ''}`} />
+                    Style Guide Generated
+                    <Badge variant="secondary" className="ml-2">New</Badge>
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="mt-4">
+                  <div className="bg-muted rounded-lg p-4">
+                    <h4 className="font-medium mb-2">Visual Style Guidelines</h4>
+                    <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                      {styleGuide}
                     </div>
-                  </CollapsibleContent>
-                </Collapsible>
-              </CardContent>
-            )}
-          </Card>
-
-          {/* Progress Console */}
-          {progressMessages.length > 0 && (
-            <ProgressConsole
-              messages={progressMessages}
-              isExpanded={isProgressExpanded}
-              onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
-              isActive={styleGuideLoading}
-            />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            </CardContent>
           )}
+        </Card>
+
+        {/* System Prompt Section */}
+        <SystemPromptSection bookId={id!} />
+
+        {/* Progress Console */}
+        {progressMessages.length > 0 && (
+          <ProgressConsole
+            messages={progressMessages}
+            isExpanded={isProgressExpanded}
+            onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
+            isActive={styleGuideLoading}
+          />
+        )}
 
           {/* Pages Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

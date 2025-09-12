@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { AgentConfig } from '@/types/agent';
@@ -21,6 +21,11 @@ export const InstructionsTab = ({
   hasUnsavedChanges 
 }: InstructionsTabProps) => {
   const [localInstructions, setLocalInstructions] = useState(config.instructions);
+
+  // Sync local state when config changes
+  useEffect(() => {
+    setLocalInstructions(config.instructions);
+  }, [config.instructions]);
 
   const handleSave = () => {
     // Save directly with the new instructions, bypassing state timing issues

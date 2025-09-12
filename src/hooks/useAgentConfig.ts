@@ -76,7 +76,7 @@ export const useAgentConfig = (agentType: AgentConfig['type']) => {
         const agentConfig: AgentConfig = {
           id: data.id,
           name: data.name,
-          type: data.type as 'chat' | 'assistant',
+          type: data.type as 'chat' | 'assistant' | 'book-creation',
           intent: data.intent,
           status: data.status as 'online' | 'offline' | 'processing',
           version: data.version,
@@ -138,7 +138,7 @@ export const useAgentConfig = (agentType: AgentConfig['type']) => {
           const originalConfig: AgentConfig = {
             id: existingAgent.id,
             name: existingAgent.name,
-            type: existingAgent.type as 'chat' | 'assistant',
+            type: existingAgent.type as 'chat' | 'assistant' | 'book-creation',
             intent: existingAgent.intent,
             status: existingAgent.status as 'online' | 'offline' | 'processing',
             version: existingAgent.version,

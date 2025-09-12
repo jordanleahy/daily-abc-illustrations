@@ -9,6 +9,7 @@ import { Shimmer } from '@/components/ui/shimmer';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { BookWithPages } from '@/types/book';
 import { ArrowLeft, Calendar, Users, Palette, ChevronDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -101,10 +102,16 @@ export default function BookDetail() {
     navigate('/books');
   };
 
+  const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
+  const [isProgressExpanded, setIsProgressExpanded] = useState(true);
+
   const generateStyleGuide = async () => {
     if (!book || !user) return;
     
     setStyleGuideLoading(true);
+    setProgressMessages([]);
+    setIsProgressExpanded(true);
+    
     try {
       const bookMetadata = {
         book_name: book.book_name,
@@ -119,30 +126,73 @@ export default function BookDetail() {
         }))
       };
 
-      const { data, error } = await supabase.functions.invoke('generate-style-guide', {
-        body: {
-          bookId: book.id,
-          userId: user.id,
-          bookMetadata
+      // Use SSE for streaming progress - construct URL from window location
+      const baseUrl = window.location.origin.includes('localhost') 
+        ? 'http://localhost:54321'
+        : 'https://foxdnspwzhjxjxuicute.supabase.co';
+      
+      const response = await fetch(
+        `${baseUrl}/functions/v1/generate-style-guide?stream=true`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            bookId: book.id,
+            userId: user.id,
+            bookMetadata
+          }),
         }
-      });
+      );
 
-      if (error) {
-        console.error('Error generating style guide:', error);
-        toast.error('Failed to generate style guide');
-        return;
+      if (!response.body) {
+        throw new Error('No response body');
       }
 
-      if (data?.styleGuide) {
-        setStyleGuide(data.styleGuide);
-        setShowStyleGuide(true);
-        toast.success('Style guide generated successfully!');
-      } else {
-        toast.error('No style guide was generated');
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n');
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            try {
+              const data = JSON.parse(line.slice(6));
+              setProgressMessages(prev => [...prev, data]);
+
+              // Handle completion
+              if (data.step === 'complete' && data.styleGuide) {
+                setStyleGuide(data.styleGuide);
+                setShowStyleGuide(true);
+                toast.success('Style guide generated successfully!');
+              }
+              
+              // Handle errors
+              if (data.step === 'error') {
+                toast.error(`Error: ${data.message}`);
+              }
+            } catch (e) {
+              // Ignore JSON parse errors for partial chunks
+            }
+          }
+        }
       }
     } catch (error) {
       console.error('Error:', error);
       toast.error('An error occurred while generating the style guide');
+      setProgressMessages(prev => [...prev, {
+        step: 'error',
+        message: `Network error: ${error.message}`,
+        timestamp: new Date().toISOString()
+      }]);
     } finally {
       setStyleGuideLoading(false);
     }
@@ -259,6 +309,16 @@ export default function BookDetail() {
               </CardContent>
             )}
           </Card>
+
+          {/* Progress Console */}
+          {progressMessages.length > 0 && (
+            <ProgressConsole
+              messages={progressMessages}
+              isExpanded={isProgressExpanded}
+              onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
+              isActive={styleGuideLoading}
+            />
+          )}
 
           {/* Pages Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

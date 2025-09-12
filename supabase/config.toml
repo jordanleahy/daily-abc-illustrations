@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.what_changed_in_agent]
 verify_jwt = true
+
+[functions.create-book]
+verify_jwt = false

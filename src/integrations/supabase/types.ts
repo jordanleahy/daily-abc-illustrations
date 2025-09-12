@@ -88,6 +88,86 @@ export type Database = {
           },
         ]
       }
+      books: {
+        Row: {
+          book_description: string | null
+          book_name: string
+          category: string | null
+          created_at: string
+          id: string
+          is_published: boolean | null
+          total_pages: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_description?: string | null
+          book_name: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean | null
+          total_pages?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_description?: string | null
+          book_name?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_published?: boolean | null
+          total_pages?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      pages: {
+        Row: {
+          book_id: string
+          content: Json | null
+          created_at: string
+          description: string | null
+          id: string
+          letter: string
+          page_number: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          content?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          letter: string
+          page_number: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          content?: Json | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          letter?: string
+          page_number?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pages_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string

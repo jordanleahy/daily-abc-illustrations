@@ -127,7 +127,8 @@ serve(async (req) => {
 
     console.log('OpenAI API parameters:', apiParams);
 
-    // Call OpenAI API
+    // Make API call to OpenAI
+    console.log('Making OpenAI API call...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -138,32 +139,83 @@ serve(async (req) => {
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`OpenAI API error: ${response.status} - ${errorText}`);
-      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+      const errorData = await response.json();
+      console.error('OpenAI API error:', errorData);
+      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
-    console.log('OpenAI response received successfully');
-    console.log('OpenAI response data:', JSON.stringify(data, null, 2));
-    
-    const assistantMessage = data.choices[0]?.message?.content;
-    console.log('Extracted content:', assistantMessage);
-    
-    if (!assistantMessage) {
-      console.error('No content in OpenAI response:', {
-        choices: data.choices,
-        finishReason: data.choices[0]?.finish_reason,
-        usage: data.usage
-      });
-      throw new Error('OpenAI returned empty response content');
+    const assistantMessage = data.choices[0].message.content;
+
+    console.log('OpenAI response received');
+
+    // Check if the user is ready to create a book
+    const bookCreationKeywords = [
+      'create the book',
+      'make the book',
+      'generate the book', 
+      'build the book',
+      'yes, create it',
+      'yes create',
+      'create it',
+      'make it',
+      'build it',
+      'let\'s create',
+      'let\'s make',
+      'i\'m ready',
+      'ready to create',
+      'go ahead'
+    ];
+
+    const userMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
+    const shouldCreateBook = bookCreationKeywords.some(keyword => 
+      userMessage.includes(keyword.toLowerCase())
+    );
+
+    // If user wants to create a book, trigger the create-book function
+    if (shouldCreateBook) {
+      console.log('Book creation intent detected, calling create-book function...');
+      
+      try {
+        // Call the create-book edge function
+        const createBookResponse = await supabase.functions.invoke('create-book', {
+          body: {
+            conversationHistory: messages,
+            userId: user.id
+          }
+        });
+
+        if (createBookResponse.error) {
+          console.error('Error calling create-book function:', createBookResponse.error);
+          throw new Error('Failed to create book');
+        }
+
+        const bookResult = createBookResponse.data;
+        
+        if (bookResult.success) {
+          console.log('Book created successfully:', bookResult.bookId);
+          
+          return new Response(JSON.stringify({ 
+            response: assistantMessage,
+            bookCreated: true,
+            bookId: bookResult.bookId,
+            bookMessage: bookResult.message
+          }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        } else {
+          console.error('Book creation failed:', bookResult.error);
+        }
+      } catch (bookError) {
+        console.error('Error creating book:', bookError);
+        // Continue with normal response even if book creation fails
+      }
     }
 
-    return new Response(JSON.stringify({ content: assistantMessage }), {
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'application/json' 
-      },
+    return new Response(JSON.stringify({ 
+      response: assistantMessage 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {

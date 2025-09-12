@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Send, BookOpen, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PageLayout } from '@/components/layout';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface Message {
   id: string;
@@ -14,10 +17,12 @@ interface Message {
 }
 
 const Index = () => {
+  const { session, isAuthenticated, loading } = useAuth();
+  const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { session, isAuthenticated, loading } = useAuth();
+  const [bookCreated, setBookCreated] = useState<{ id: string; message: string } | null>(null);
   
   // Refs for auto-scroll functionality
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -113,13 +118,37 @@ const Index = () => {
         throw new Error(errorMessage);
       }
 
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: 'assistant',
-        content: response.data?.content || 'Sorry, I could not generate a response.'
-      };
+      const data = response.data;
+      
+      if (data.response) {
+        const assistantMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: data.response,
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
 
-      setMessages(prev => [...prev, assistantMessage]);
+        // Check if a book was created
+        if (data.bookCreated && data.bookId) {
+          setBookCreated({
+            id: data.bookId,
+            message: data.bookMessage || 'Your book has been created!'
+          });
+          toast.success('Book created successfully!');
+        }
+      } else if (data.content) {
+        // Handle legacy response format
+        const assistantMessage: Message = {
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: data.content,
+        };
+        
+        setMessages(prev => [...prev, assistantMessage]);
+      } else {
+        throw new Error('No response received from assistant');
+      }
     } catch (error) {
       console.error('Chat error:', error);
       let errorContent = 'Sorry, there was an error processing your request.';
@@ -194,6 +223,28 @@ const Index = () => {
                 </div>
               ))}
               
+              {/* Book Created Notification */}
+              {bookCreated && (
+                <div className="flex justify-center">
+                  <Card className="max-w-md bg-primary/10 border-primary/20">
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <BookOpen className="w-5 h-5 text-primary mt-0.5" />
+                        <div className="flex-1 space-y-2">
+                          <p className="text-sm font-medium">{bookCreated.message}</p>
+                          <Button 
+                            size="sm" 
+                            onClick={() => navigate(`/books/${bookCreated.id}`)}
+                            className="flex items-center gap-1"
+                          >
+                            View Book <ExternalLink className="w-3 h-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
               {isLoading && (
                 <div className="flex justify-start">
                   <div className="bg-muted text-foreground rounded-lg px-4 py-3 mr-12">

@@ -2,6 +2,15 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'
 
+enum ProcessStatus {
+  NOT_STARTED = 'not-started',
+  IN_PROGRESS = 'in-progress', 
+  COMPLETE = 'complete',
+  ERROR = 'error',
+  WARNING = 'warning',
+  SKIPPED = 'skipped'
+}
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -38,13 +47,13 @@ serve(async (req) => {
         const { bookId, userId, bookMetadata } = await req.json();
 
         if (!bookId || !userId || !bookMetadata) {
-          sendEvent({ step: 'error', message: 'Missing required parameters: bookId, userId, or bookMetadata', timestamp: new Date().toISOString(), status: 'error' });
+          sendEvent({ step: 'error', message: 'Missing required parameters: bookId, userId, or bookMetadata', timestamp: new Date().toISOString(), status: ProcessStatus.ERROR });
           return;
         }
 
-        sendEvent({ step: 'init', message: 'Starting style guide generation...', timestamp: new Date().toISOString(), status: 'in-progress' });
+        sendEvent({ step: 'init', message: 'Starting style guide generation...', timestamp: new Date().toISOString(), status: ProcessStatus.IN_PROGRESS });
 
-        sendEvent({ step: 'config', message: 'Fetching Illustration Director Agent configuration...', timestamp: new Date().toISOString(), status: 'in-progress' });
+        sendEvent({ step: 'config', message: 'Fetching Illustration Director Agent configuration...', timestamp: new Date().toISOString(), status: ProcessStatus.IN_PROGRESS });
 
         // Fetch user's Illustration Director Agent configuration
         const { data: agentConfig, error: agentError } = await supabase
@@ -56,13 +65,13 @@ serve(async (req) => {
           .single();
 
         if (agentError || !agentConfig) {
-          sendEvent({ step: 'error', message: 'No Illustration Director Agent configuration found', timestamp: new Date().toISOString(), status: 'error' });
+          sendEvent({ step: 'error', message: 'No Illustration Director Agent configuration found', timestamp: new Date().toISOString(), status: ProcessStatus.ERROR });
           return;
         }
 
-        sendEvent({ step: 'config', message: `Found agent config: ${agentConfig.name}`, timestamp: new Date().toISOString(), status: 'complete' });
+        sendEvent({ step: 'config', message: `Found agent config: ${agentConfig.name}`, timestamp: new Date().toISOString(), status: ProcessStatus.COMPLETE });
 
-        sendEvent({ step: 'prompt', message: 'Preparing style guide prompt...', timestamp: new Date().toISOString(), status: 'in-progress' });
+        sendEvent({ step: 'prompt', message: 'Preparing style guide prompt...', timestamp: new Date().toISOString(), status: ProcessStatus.IN_PROGRESS });
 
         // Prepare the prompt for OpenAI - Let the agent use its specialized instructions
         const styleGuidePrompt = `Please create your visual style guide for this ABC book:
@@ -72,7 +81,7 @@ Book Information:
 - Category: ${bookMetadata.category || 'General'}
 - Description: ${bookMetadata.book_description || 'ABC learning book'}`;
 
-        sendEvent({ step: 'ai', message: 'Calling OpenAI API to generate style guide...', timestamp: new Date().toISOString(), status: 'in-progress' });
+        sendEvent({ step: 'ai', message: 'Calling OpenAI API to generate style guide...', timestamp: new Date().toISOString(), status: ProcessStatus.IN_PROGRESS });
 
         // Call OpenAI API using the agent's model settings
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -94,16 +103,16 @@ Book Information:
 
         if (!response.ok) {
           const errorData = await response.json();
-          sendEvent({ step: 'error', message: `OpenAI API error: ${errorData.error?.message}`, timestamp: new Date().toISOString(), status: 'error' });
+          sendEvent({ step: 'error', message: `OpenAI API error: ${errorData.error?.message}`, timestamp: new Date().toISOString(), status: ProcessStatus.ERROR });
           return;
         }
 
         const data = await response.json();
         const styleGuide = data.choices[0].message.content;
 
-        sendEvent({ step: 'ai', message: `Generated style guide (${styleGuide.length} characters)`, timestamp: new Date().toISOString(), status: 'complete' });
+        sendEvent({ step: 'ai', message: `Generated style guide (${styleGuide.length} characters)`, timestamp: new Date().toISOString(), status: ProcessStatus.COMPLETE });
 
-        sendEvent({ step: 'save', message: 'Updating book metadata...', timestamp: new Date().toISOString(), status: 'in-progress' });
+        sendEvent({ step: 'save', message: 'Updating book metadata...', timestamp: new Date().toISOString(), status: ProcessStatus.IN_PROGRESS });
 
         // Store the generated style guide in the book's metadata or pages
         const { error: updateError } = await supabase
@@ -116,16 +125,16 @@ Book Information:
           .eq('id', bookId);
 
         if (updateError) {
-          sendEvent({ step: 'warning', message: 'Failed to update book metadata', timestamp: new Date().toISOString(), status: 'warning' });
+          sendEvent({ step: 'warning', message: 'Failed to update book metadata', timestamp: new Date().toISOString(), status: ProcessStatus.WARNING });
         } else {
-          sendEvent({ step: 'save', message: 'Book metadata updated successfully', timestamp: new Date().toISOString(), status: 'complete' });
+          sendEvent({ step: 'save', message: 'Book metadata updated successfully', timestamp: new Date().toISOString(), status: ProcessStatus.COMPLETE });
         }
 
         sendEvent({ 
           step: 'complete', 
           message: 'Style guide generated successfully!', 
           timestamp: new Date().toISOString(),
-          status: 'complete',
+          status: ProcessStatus.COMPLETE,
           styleGuide: styleGuide,
           agentUsed: {
             name: agentConfig.name,
@@ -135,7 +144,7 @@ Book Information:
         });
 
       } catch (error) {
-        sendEvent({ step: 'error', message: error.message, timestamp: new Date().toISOString(), status: 'error' });
+        sendEvent({ step: 'error', message: error.message, timestamp: new Date().toISOString(), status: ProcessStatus.ERROR });
       } finally {
         writer.close();
       }

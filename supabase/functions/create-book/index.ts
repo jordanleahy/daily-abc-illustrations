@@ -71,7 +71,7 @@ serve(async (req) => {
       .eq('user_id', userId)
       .eq('type', 'book-creation')
       .eq('is_latest', true)
-      .single();
+      .maybeSingle();
 
     if (agentError) {
       console.error('Error fetching agent config:', agentError);
@@ -80,6 +80,20 @@ serve(async (req) => {
 
     if (!agentConfig) {
       throw new Error('No Book Creation Agent configuration found for user. Please configure your agent first.');
+    }
+
+    // Validate agent configuration data
+    if (!agentConfig.instructions || typeof agentConfig.instructions !== 'string') {
+      throw new Error('Invalid agent configuration: missing or invalid instructions');
+    }
+
+    if (!agentConfig.model || typeof agentConfig.model !== 'string') {
+      throw new Error('Invalid agent configuration: missing or invalid model');
+    }
+
+    // Additional security: verify user ownership (defense in depth)
+    if (agentConfig.user_id !== userId) {
+      throw new Error('Unauthorized: Agent configuration does not belong to user');
     }
 
     console.log('Using agent configuration:', {

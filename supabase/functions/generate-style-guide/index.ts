@@ -64,17 +64,13 @@ serve(async (req) => {
 
         sendEvent({ step: 'prompt', message: 'Preparing style guide prompt...', timestamp: new Date().toISOString(), status: 'in-progress' });
 
-        // Prepare the prompt for OpenAI
-        const styleGuidePrompt = `
+        // Prepare the prompt for OpenAI - Let the agent use its specialized instructions
+        const styleGuidePrompt = `Please create your visual style guide for this ABC book:
+
 Book Information:
 - Name: ${bookMetadata.book_name}
 - Category: ${bookMetadata.category || 'General'}
-- Description: ${bookMetadata.book_description || 'ABC learning book'}
-
-Generate a comprehensive visual style guide system prompt that will be used by a Graphics Agent to create consistent illustrations for this ABC book. The style guide should be specific, detailed, and ready to use as instructions for image generation.
-
-Focus on creating a cohesive visual identity that works well for all 26 letters of the alphabet while being appropriate for children aged 3-6.
-        `;
+- Description: ${bookMetadata.book_description || 'ABC learning book'}`;
 
         sendEvent({ step: 'ai', message: 'Calling OpenAI API to generate style guide...', timestamp: new Date().toISOString(), status: 'in-progress' });
 
@@ -85,14 +81,14 @@ Focus on creating a cohesive visual identity that works well for all 26 letters 
             'Authorization': `Bearer ${openAIApiKey}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({
+            body: JSON.stringify({
             model: agentConfig.model,
             messages: [
               { role: 'system', content: agentConfig.instructions },
               { role: 'user', content: styleGuidePrompt }
             ],
             max_completion_tokens: agentConfig.max_completion_tokens,
-            top_p: agentConfig.top_p,
+            top_p: parseFloat(agentConfig.top_p),
           }),
         });
 
@@ -181,17 +177,13 @@ Focus on creating a cohesive visual identity that works well for all 26 letters 
 
     console.log('Found agent config:', agentConfig.name);
 
-    // Prepare the prompt for OpenAI
-    const styleGuidePrompt = `
+    // Prepare the prompt for OpenAI - Let the agent use its specialized instructions
+    const styleGuidePrompt = `Please create your visual style guide for this ABC book:
+
 Book Information:
 - Name: ${bookMetadata.book_name}
 - Category: ${bookMetadata.category || 'General'}
-- Description: ${bookMetadata.book_description || 'ABC learning book'}
-
-Generate a comprehensive visual style guide system prompt that will be used by a Graphics Agent to create consistent illustrations for this ABC book. The style guide should be specific, detailed, and ready to use as instructions for image generation.
-
-Focus on creating a cohesive visual identity that works well for all 26 letters of the alphabet while being appropriate for children aged 3-6.
-    `;
+- Description: ${bookMetadata.book_description || 'ABC learning book'}`;
 
     // Call OpenAI API using the agent's model settings
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -207,7 +199,7 @@ Focus on creating a cohesive visual identity that works well for all 26 letters 
           { role: 'user', content: styleGuidePrompt }
         ],
         max_completion_tokens: agentConfig.max_completion_tokens,
-        top_p: agentConfig.top_p,
+        top_p: parseFloat(agentConfig.top_p),
       }),
     });
 

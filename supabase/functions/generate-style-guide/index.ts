@@ -38,13 +38,13 @@ serve(async (req) => {
         const { bookId, userId, bookMetadata } = await req.json();
 
         if (!bookId || !userId || !bookMetadata) {
-          sendEvent({ step: 'error', message: 'Missing required parameters: bookId, userId, or bookMetadata', timestamp: new Date().toISOString() });
+          sendEvent({ step: 'error', message: 'Missing required parameters: bookId, userId, or bookMetadata', timestamp: new Date().toISOString(), status: 'error' });
           return;
         }
 
-        sendEvent({ step: 'init', message: 'Starting style guide generation...', timestamp: new Date().toISOString() });
+        sendEvent({ step: 'init', message: 'Starting style guide generation...', timestamp: new Date().toISOString(), status: 'in-progress' });
 
-        sendEvent({ step: 'config', message: 'Fetching Illustration Director Agent configuration...', timestamp: new Date().toISOString() });
+        sendEvent({ step: 'config', message: 'Fetching Illustration Director Agent configuration...', timestamp: new Date().toISOString(), status: 'in-progress' });
 
         // Fetch user's Illustration Director Agent configuration
         const { data: agentConfig, error: agentError } = await supabase
@@ -56,13 +56,13 @@ serve(async (req) => {
           .single();
 
         if (agentError || !agentConfig) {
-          sendEvent({ step: 'error', message: 'No Illustration Director Agent configuration found', timestamp: new Date().toISOString() });
+          sendEvent({ step: 'error', message: 'No Illustration Director Agent configuration found', timestamp: new Date().toISOString(), status: 'error' });
           return;
         }
 
-        sendEvent({ step: 'config', message: `Found agent config: ${agentConfig.name}`, timestamp: new Date().toISOString() });
+        sendEvent({ step: 'config', message: `Found agent config: ${agentConfig.name}`, timestamp: new Date().toISOString(), status: 'complete' });
 
-        sendEvent({ step: 'prompt', message: 'Preparing style guide prompt...', timestamp: new Date().toISOString() });
+        sendEvent({ step: 'prompt', message: 'Preparing style guide prompt...', timestamp: new Date().toISOString(), status: 'in-progress' });
 
         // Prepare the prompt for OpenAI
         const styleGuidePrompt = `
@@ -76,7 +76,7 @@ Generate a comprehensive visual style guide system prompt that will be used by a
 Focus on creating a cohesive visual identity that works well for all 26 letters of the alphabet while being appropriate for children aged 3-6.
         `;
 
-        sendEvent({ step: 'ai', message: 'Calling OpenAI API to generate style guide...', timestamp: new Date().toISOString() });
+        sendEvent({ step: 'ai', message: 'Calling OpenAI API to generate style guide...', timestamp: new Date().toISOString(), status: 'in-progress' });
 
         // Call OpenAI API using the agent's model settings
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -98,16 +98,16 @@ Focus on creating a cohesive visual identity that works well for all 26 letters 
 
         if (!response.ok) {
           const errorData = await response.json();
-          sendEvent({ step: 'error', message: `OpenAI API error: ${errorData.error?.message}`, timestamp: new Date().toISOString() });
+          sendEvent({ step: 'error', message: `OpenAI API error: ${errorData.error?.message}`, timestamp: new Date().toISOString(), status: 'error' });
           return;
         }
 
         const data = await response.json();
         const styleGuide = data.choices[0].message.content;
 
-        sendEvent({ step: 'ai', message: `Generated style guide (${styleGuide.length} characters)`, timestamp: new Date().toISOString() });
+        sendEvent({ step: 'ai', message: `Generated style guide (${styleGuide.length} characters)`, timestamp: new Date().toISOString(), status: 'complete' });
 
-        sendEvent({ step: 'save', message: 'Updating book metadata...', timestamp: new Date().toISOString() });
+        sendEvent({ step: 'save', message: 'Updating book metadata...', timestamp: new Date().toISOString(), status: 'in-progress' });
 
         // Store the generated style guide in the book's metadata or pages
         const { error: updateError } = await supabase
@@ -120,15 +120,16 @@ Focus on creating a cohesive visual identity that works well for all 26 letters 
           .eq('id', bookId);
 
         if (updateError) {
-          sendEvent({ step: 'warning', message: 'Failed to update book metadata', timestamp: new Date().toISOString() });
+          sendEvent({ step: 'warning', message: 'Failed to update book metadata', timestamp: new Date().toISOString(), status: 'warning' });
         } else {
-          sendEvent({ step: 'save', message: 'Book metadata updated successfully', timestamp: new Date().toISOString() });
+          sendEvent({ step: 'save', message: 'Book metadata updated successfully', timestamp: new Date().toISOString(), status: 'complete' });
         }
 
         sendEvent({ 
           step: 'complete', 
           message: 'Style guide generated successfully!', 
           timestamp: new Date().toISOString(),
+          status: 'complete',
           styleGuide: styleGuide,
           agentUsed: {
             name: agentConfig.name,
@@ -138,7 +139,7 @@ Focus on creating a cohesive visual identity that works well for all 26 letters 
         });
 
       } catch (error) {
-        sendEvent({ step: 'error', message: error.message, timestamp: new Date().toISOString() });
+        sendEvent({ step: 'error', message: error.message, timestamp: new Date().toISOString(), status: 'error' });
       } finally {
         writer.close();
       }

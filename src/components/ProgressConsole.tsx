@@ -1,12 +1,14 @@
 import { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, ChevronUp, CheckCircle, AlertCircle, Loader2, Info } from 'lucide-react';
+import { ChevronDown, ChevronUp, CheckCircle, AlertCircle, Loader2, Info, SkipForward, AlertTriangle } from 'lucide-react';
+import { ProcessStatus } from '@/types/process';
 
 export interface ProgressMessage {
   step: string;
   message: string;
   timestamp: string;
+  status: ProcessStatus;
   styleGuide?: string;
   agentUsed?: {
     name: string;
@@ -22,18 +24,19 @@ interface ProgressConsoleProps {
   isActive: boolean;
 }
 
-const getStepIcon = (step: string) => {
-  switch (step) {
-    case 'complete':
+const getStatusIcon = (status: ProcessStatus) => {
+  switch (status) {
+    case ProcessStatus.COMPLETE:
       return <CheckCircle className="w-4 h-4 text-emerald-600" />;
-    case 'error':
+    case ProcessStatus.ERROR:
       return <AlertCircle className="w-4 h-4 text-red-600" />;
-    case 'init':
-    case 'config':
-    case 'prompt':
-    case 'ai':
-    case 'save':
+    case ProcessStatus.WARNING:
+      return <AlertTriangle className="w-4 h-4 text-yellow-600" />;
+    case ProcessStatus.IN_PROGRESS:
       return <Loader2 className="w-4 h-4 text-blue-600 animate-spin" />;
+    case ProcessStatus.SKIPPED:
+      return <SkipForward className="w-4 h-4 text-muted-foreground" />;
+    case ProcessStatus.NOT_STARTED:
     default:
       return <Info className="w-4 h-4 text-muted-foreground" />;
   }
@@ -80,7 +83,7 @@ export const ProgressConsole = ({ messages, isExpanded, onToggle, isActive }: Pr
         
         {latestMessage && !isExpanded && (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            {getStepIcon(latestMessage.step)}
+            {getStatusIcon(latestMessage.status)}
             <span>{latestMessage.message}</span>
             <span className="text-xs opacity-60">
               {formatTime(latestMessage.timestamp)}
@@ -99,13 +102,15 @@ export const ProgressConsole = ({ messages, isExpanded, onToggle, isActive }: Pr
                     {formatTime(msg.timestamp)}
                   </span>
                   <div className="shrink-0 mt-0.5">
-                    {getStepIcon(msg.step)}
+                    {getStatusIcon(msg.status)}
                   </div>
                   <span className={`leading-tight ${
-                    msg.step === 'error' 
+                    msg.status === ProcessStatus.ERROR 
                       ? 'text-red-600' 
-                      : msg.step === 'complete' 
-                        ? 'text-emerald-600' 
+                      : msg.status === ProcessStatus.COMPLETE 
+                        ? 'text-emerald-600'
+                        : msg.status === ProcessStatus.WARNING
+                          ? 'text-yellow-600'
                         : 'text-foreground'
                   }`}>
                     {msg.message}

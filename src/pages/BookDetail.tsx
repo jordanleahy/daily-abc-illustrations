@@ -10,6 +10,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
+import { ProcessStatus } from '@/types/process';
 import { BookWithPages } from '@/types/book';
 import { ArrowLeft, Calendar, Users, Palette, ChevronDown, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -191,7 +192,8 @@ export default function BookDetail() {
       setProgressMessages(prev => [...prev, {
         step: 'error',
         message: `Network error: ${error.message}`,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        status: ProcessStatus.ERROR
       }]);
     } finally {
       setStyleGuideLoading(false);

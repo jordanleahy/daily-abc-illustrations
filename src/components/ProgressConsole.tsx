@@ -97,7 +97,7 @@ export const ProgressConsole = ({ messages, isExpanded, onToggle, isActive }: Pr
           <div className="bg-muted/30 rounded-md p-3 max-h-64 overflow-y-auto">
             <div className="space-y-2 font-mono text-sm">
               {messages.map((msg, index) => (
-                <div key={index} className="flex items-start gap-2 group">
+                <div key={`${msg.step}-${msg.timestamp}`} className="flex items-start gap-2 group">
                   <span className="text-xs text-muted-foreground mt-0.5 shrink-0">
                     {formatTime(msg.timestamp)}
                   </span>

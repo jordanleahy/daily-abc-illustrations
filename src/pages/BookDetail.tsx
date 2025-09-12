@@ -132,13 +132,8 @@ export default function BookDetail() {
       ? 'http://localhost:54321'
       : 'https://foxdnspwzhjxjxuicute.supabase.co';
 
-    // Add an immediate UI message so users see activity
-    setProgressMessages(prev => [...prev, {
-      step: 'request',
-      message: 'Starting style guide generation... ',
-      timestamp: new Date().toISOString(),
-      status: ProcessStatus.IN_PROGRESS,
-    }]);
+    // Clear previous messages and let backend handle all progress
+    setProgressMessages([]);
     
     let receivedAnyEvents = false;
     

@@ -11,12 +11,15 @@ import { BookOpen, Calendar, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function Books() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Wait for auth to finish loading before checking user
+    if (authLoading) return;
+    
     if (!user) {
       navigate('/auth');
       return;
@@ -46,7 +49,7 @@ export default function Books() {
     };
 
     fetchBooks();
-  }, [user, navigate]);
+  }, [user, navigate, authLoading]);
 
   const handleViewBook = (bookId: string) => {
     navigate(`/books/${bookId}`);
@@ -55,6 +58,17 @@ export default function Books() {
   const handleCreateNewBook = () => {
     navigate('/');
   };
+
+  // Show loading while auth is being checked
+  if (authLoading) {
+    return (
+      <PageLayout title="My Books">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-pulse text-muted-foreground">Loading...</div>
+        </div>
+      </PageLayout>
+    );
+  }
 
   if (!user) {
     return null;

@@ -122,7 +122,11 @@ export default function Books() {
           ) : (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {books.map((book) => (
-                <Card key={book.id} className="hover:shadow-md transition-shadow">
+                <Card 
+                  key={book.id} 
+                  className="hover:shadow-md transition-shadow cursor-pointer hover:shadow-lg" 
+                  onClick={() => handleViewBook(book.id)}
+                >
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-xl line-clamp-2">
@@ -155,14 +159,6 @@ export default function Books() {
                         {new Date(book.created_at).toLocaleDateString()}
                       </div>
                     </div>
-
-                    <Button 
-                      onClick={() => handleViewBook(book.id)}
-                      className="w-full"
-                      variant="outline"
-                    >
-                      View Book
-                    </Button>
                   </CardContent>
                 </Card>
               ))}

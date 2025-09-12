@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { BookWithPages } from '@/types/book';
-import { ArrowLeft, Calendar, Users, Lightbulb, Activity } from 'lucide-react';
+import { ArrowLeft, Calendar, Users } from 'lucide-react';
 import { toast } from 'sonner';
 
 export default function BookDetail() {
@@ -17,6 +17,7 @@ export default function BookDetail() {
   const navigate = useNavigate();
   const [book, setBook] = useState<BookWithPages | null>(null);
   const [loading, setLoading] = useState(true);
+  const [shimmeringPage, setShimmeringPage] = useState<string | null>(null);
 
   useEffect(() => {
     // Wait for auth loading to complete before checking user status
@@ -84,6 +85,12 @@ export default function BookDetail() {
 
     fetchBook();
   }, [user, id, navigate, authLoading]);
+
+  const handleImageClick = (pageId: string) => {
+    setShimmeringPage(pageId);
+    // Stop shimmer after 2 seconds
+    setTimeout(() => setShimmeringPage(null), 2000);
+  };
 
   const handleBack = () => {
     navigate('/books');
@@ -183,41 +190,19 @@ export default function BookDetail() {
                     </CardDescription>
                   )}
                 </CardHeader>
-                <CardContent className="space-y-3">
-                  {page.content.mainConcept && (
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm font-medium">
-                        <Lightbulb className="w-3 h-3" />
-                        Main Concept
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {page.content.mainConcept}
-                      </p>
+                <CardContent className="p-4">
+                  <div 
+                    className={`
+                      w-full h-48 bg-muted rounded-lg cursor-pointer transition-all duration-300
+                      hover:bg-muted/80 flex items-center justify-center
+                      ${shimmeringPage === page.id ? 'animate-pulse bg-gradient-to-r from-muted via-muted/50 to-muted' : ''}
+                    `}
+                    onClick={() => handleImageClick(page.id)}
+                  >
+                    <div className="text-muted-foreground text-sm">
+                      Tap to generate image
                     </div>
-                  )}
-                  
-                  {page.content.funFact && (
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm font-medium">
-                        🎯 Fun Fact
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {page.content.funFact}
-                      </p>
-                    </div>
-                  )}
-                  
-                  {page.content.activity && (
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 text-sm font-medium">
-                        <Activity className="w-3 h-3" />
-                        Activity
-                      </div>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {page.content.activity}
-                      </p>
-                    </div>
-                  )}
+                  </div>
                 </CardContent>
               </Card>
             ))}

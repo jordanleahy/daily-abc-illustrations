@@ -74,11 +74,12 @@ serve(async (req) => {
 
     console.log('Authenticated user:', user.id);
 
-    // Fetch the latest agent configuration from database (using service role, so we filter manually)
+    // Fetch the latest chat agent configuration from database (using service role, so we filter manually)
     const { data: agent, error: agentError } = await supabase
       .from('agents')
       .select('*')
       .eq('user_id', user.id)
+      .eq('type', 'chat')
       .eq('is_latest', true)
       .maybeSingle();
 

@@ -154,9 +154,6 @@ export default function BookDetail() {
               </div>
               
               <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                {book.category && (
-                  <Badge variant="outline">{book.category}</Badge>
-                )}
                 <div className="flex items-center gap-1">
                   <Users className="w-4 h-4" />
                   {book.total_pages} pages

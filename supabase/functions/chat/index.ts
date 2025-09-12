@@ -150,28 +150,15 @@ serve(async (req) => {
 
     console.log('OpenAI response received');
 
-    // Check if the user is ready to create a book
-    const bookCreationKeywords = [
-      'create the book',
-      'make the book',
-      'generate the book', 
-      'build the book',
-      'yes, create it',
-      'yes create',
-      'create it',
-      'make it',
-      'build it',
-      'let\'s create',
-      'let\'s make',
-      'i\'m ready',
-      'ready to create',
-      'go ahead'
-    ];
+    // Enhanced natural intent detection - look for agent's confirmation request and user's positive response
+    const lastAssistantMessage = messages[messages.length - 2];
+    const isConfirmationRequest = lastAssistantMessage?.content?.includes('create this as a printable book now?');
 
-    const userMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
-    const shouldCreateBook = bookCreationKeywords.some(keyword => 
-      userMessage.includes(keyword.toLowerCase())
-    );
+    // Look for positive confirmation from user
+    const userResponse = messages[messages.length - 1]?.content?.toLowerCase() || '';
+    const confirmationPattern = /^(yes|ok|sure|go ahead|create it|do it|proceed|confirmed)\b/i;
+
+    const shouldCreateBook = isConfirmationRequest && confirmationPattern.test(userResponse.trim());
 
     // If user wants to create a book, trigger the create-book function
     if (shouldCreateBook) {

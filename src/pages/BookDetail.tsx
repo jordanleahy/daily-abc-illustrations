@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shimmer } from '@/components/ui/shimmer';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { SystemPromptSection } from '@/components/book/SystemPromptSection';
+
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
@@ -493,8 +493,6 @@ export default function BookDetail() {
           )}
         </Card>
 
-        {/* System Prompt Section */}
-        <SystemPromptSection bookId={id!} />
 
         {/* Progress Console */}
         {progressMessages.length > 0 && (

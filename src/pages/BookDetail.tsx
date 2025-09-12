@@ -536,12 +536,15 @@ export default function BookDetail() {
                       {!styleGuide ? (
                         "Generate style guide first"
                       ) : imagePrompts[page.id] ? (
-                        <div className="space-y-1">
+                        <div className="space-y-2 px-2">
                           <div className="flex items-center justify-center gap-1">
                             <Palette className="w-3 h-3" />
-                            Ready to create image
+                            <span className="text-xs font-medium">Image Prompt</span>
                           </div>
-                          <div className="text-xs">Tap to copy prompt</div>
+                          <div className="text-xs leading-relaxed max-h-24 overflow-y-auto">
+                            {imagePrompts[page.id]}
+                          </div>
+                          <div className="text-xs opacity-70">Tap to copy prompt</div>
                         </div>
                       ) : imagePromptLoading[page.id] ? (
                         <div className="space-y-1">
@@ -559,16 +562,6 @@ export default function BookDetail() {
                       )}
                     </div>
                   </Shimmer>
-
-                  {/* Show generated image prompt */}
-                  {imagePrompts[page.id] && (
-                    <div className="bg-muted rounded-lg p-3">
-                      <h5 className="text-xs font-medium mb-1">Image Prompt:</h5>
-                      <p className="text-xs text-muted-foreground line-clamp-3">
-                        {imagePrompts[page.id]}
-                      </p>
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             ))}

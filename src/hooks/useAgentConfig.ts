@@ -1,3 +1,81 @@
+/**
+ * useAgentConfig - Advanced Agent Configuration Management Hook
+ * 
+ * A comprehensive React hook that manages AI agent configurations with automatic versioning,
+ * change tracking, and database persistence. Provides a complete solution for creating,
+ * updating, and managing different types of AI agents (chat, assistant, book-creation).
+ * 
+ * ## Key Features:
+ * - **Automatic Versioning**: Creates new versions when configurations change
+ * - **Change Tracking**: Generates human-readable descriptions of what changed between versions
+ * - **Database Persistence**: Stores configurations in Supabase with full audit trail
+ * - **Real-time Updates**: Syncs configuration changes across components
+ * - **Type Safety**: Fully typed with TypeScript for different agent types
+ * - **Optimistic Updates**: Provides immediate UI feedback while persisting changes
+ * 
+ * ## Agent Types Supported:
+ * - `'chat'`: Conversational AI agents for interactive chat experiences
+ * - `'assistant'`: Task-oriented AI assistants with specific capabilities
+ * - `'book-creation'`: Specialized agents for generating educational content
+ * 
+ * ## Configuration Structure:
+ * Each agent configuration includes:
+ * - Basic metadata (name, type, intent, status)
+ * - System instructions (behavior and personality)
+ * - Model settings (OpenAI model, tokens, parameters)
+ * - Versioning information (version number, change history)
+ * 
+ * ## Usage Example:
+ * ```tsx
+ * const {
+ *   config,
+ *   isLoading,
+ *   hasUnsavedChanges,
+ *   updateConfig,
+ *   saveConfig,
+ *   resetConfig
+ * } = useAgentConfig('chat');
+ * 
+ * // Update configuration
+ * updateConfig({
+ *   name: 'My Chat Assistant',
+ *   instructions: 'You are a helpful AI assistant...'
+ * });
+ * 
+ * // Save changes (creates new version automatically)
+ * await saveConfig();
+ * ```
+ * 
+ * ## Change Detection & Versioning:
+ * - Automatically detects meaningful changes in configuration
+ * - Generates semantic version numbers (v1.0.1, v1.0.2, etc.)
+ * - Uses AI to create human-readable change descriptions
+ * - Maintains parent-child relationships between versions
+ * - Preserves complete audit trail of all changes
+ * 
+ * ## Database Schema:
+ * Integrates with the `agents` table which includes:
+ * - Configuration data (name, type, instructions, model settings)
+ * - Versioning fields (version, version_number, is_latest, parent_agent_id)
+ * - Metadata (created_at, updated_at, last_modified, what_changed)
+ * - User association (user_id for multi-tenant support)
+ * 
+ * ## Error Handling:
+ * - Graceful fallbacks to default configurations
+ * - Toast notifications for user feedback
+ * - Detailed console logging for debugging
+ * - Continues operation even if change detection fails
+ * 
+ * ## Performance Considerations:
+ * - Uses localStorage for change description persistence
+ * - Implements optimistic updates for immediate UI feedback
+ * - Batches database operations to minimize API calls
+ * - Caches loaded configurations to reduce redundant queries
+ * 
+ * @param agentType - The type of agent to manage ('chat' | 'assistant' | 'book-creation')
+ * @returns Object containing configuration state, loading states, and management functions
+ */
+
 import { useState, useCallback, useEffect } from 'react';
 import { AgentConfig, DEFAULT_AGENT_CONFIG, AGENT_TYPE_CONFIGS } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';

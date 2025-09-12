@@ -63,25 +63,42 @@ serve(async (req) => {
     // Initialize Supabase client with service role key
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+    // Fetch the user's Book Creation Agent configuration
+    console.log('Fetching Book Creation Agent configuration for user:', userId);
+    const { data: agentConfig, error: agentError } = await supabase
+      .from('agents')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('type', 'book-creation')
+      .eq('is_latest', true)
+      .single();
+
+    if (agentError) {
+      console.error('Error fetching agent config:', agentError);
+      throw new Error(`Failed to fetch Book Creation Agent configuration: ${agentError.message}`);
+    }
+
+    if (!agentConfig) {
+      throw new Error('No Book Creation Agent configuration found for user. Please configure your agent first.');
+    }
+
+    console.log('Using agent configuration:', {
+      id: agentConfig.id,
+      name: agentConfig.name,
+      model: agentConfig.model,
+      version: agentConfig.version
+    });
+
     // Prepare conversation context for the Book Creation Agent
     const conversationContext = conversationHistory
       ?.map((msg: any) => `${msg.role}: ${msg.content}`)
       .join('\n') || '';
 
-    // Book Creation Agent system prompt
-    const bookCreationPrompt = `You are a specialized Book Creation Agent that converts educational conversations into structured ABC books for children.
-
-TASK: Analyze the conversation and create a themed ABC book with exactly 26 pages (A-Z).
+    // Use agent's instructions as base prompt and append JSON output requirements
+    const jsonOutputRequirements = `
 
 CONVERSATION CONTEXT:
 ${conversationContext}
-
-REQUIREMENTS:
-1. Extract the main educational theme from the conversation
-2. Create a book title and description based on the theme
-3. Generate exactly 26 pages, one for each letter A-Z
-4. Each page should be age-appropriate and educational
-5. Content should be consistent with the conversation theme
 
 OUTPUT FORMAT (JSON only, no other text):
 {
@@ -114,9 +131,11 @@ IMPORTANT:
 - Ensure consistency with the conversation theme
 - Return ONLY valid JSON, no additional text`;
 
-    console.log('Calling OpenAI API for book generation...');
+    const bookCreationPrompt = agentConfig.instructions + jsonOutputRequirements;
 
-    // Call OpenAI API with the Book Creation Agent
+    console.log('Calling OpenAI API for book generation with model:', agentConfig.model);
+
+    // Call OpenAI API with the Book Creation Agent's configuration
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -124,7 +143,7 @@ IMPORTANT:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini-2025-08-07',
+        model: agentConfig.model,
         messages: [
           { 
             role: 'system', 
@@ -135,8 +154,8 @@ IMPORTANT:
             content: 'Please create the ABC book based on our conversation.' 
           }
         ],
-        max_completion_tokens: 4000,
-        top_p: 1.0,
+        max_completion_tokens: agentConfig.max_completion_tokens,
+        top_p: agentConfig.top_p,
       }),
     });
 

@@ -266,12 +266,17 @@ export default function BookDetail() {
                     });
                   }
                   
+                  // Stop the loading state when generation completes
+                  setStyleGuideLoading(false);
+                  
                   toast.success('Style guide generated successfully!');
                 }
                 
-                // Handle errors
+                // Handle errors  
                 if (data.status === ProcessStatus.ERROR) {
                   toast.error(`Error: ${data.message}`);
+                  // Also stop loading on error
+                  setStyleGuideLoading(false);
                 }
               } catch {
                 // Ignore JSON parse errors for partial chunks

@@ -3,7 +3,7 @@
  * 
  * A comprehensive React hook that manages AI agent configurations with automatic versioning,
  * change tracking, and database persistence. Provides a complete solution for creating,
- * updating, and managing different types of AI agents (chat, assistant, book-creation).
+ * updating, and managing different types of AI agents (chat, assistant, book-creation, illustration-director).
  * 
  * ## Key Features:
  * - **Automatic Versioning**: Creates new versions when configurations change
@@ -15,8 +15,9 @@
  * 
  * ## Agent Types Supported:
  * - `'chat'`: Conversational AI agents for interactive chat experiences
- * - `'assistant'`: Task-oriented AI assistants with specific capabilities
+ * - `'assistant'`: Task-oriented AI assistants with specific capabilities  
  * - `'book-creation'`: Specialized agents for generating educational content
+ * - `'illustration-director'`: Creates visual style guides for consistent book illustrations
  * 
  * ## Configuration Structure:
  * Each agent configuration includes:
@@ -72,7 +73,7 @@
  * - Batches database operations to minimize API calls
  * - Caches loaded configurations to reduce redundant queries
  * 
- * @param agentType - The type of agent to manage ('chat' | 'assistant' | 'book-creation')
+ * @param agentType - The type of agent to manage ('chat' | 'assistant' | 'book-creation' | 'illustration-director')
  * @returns Object containing configuration state, loading states, and management functions
  */
 
@@ -154,7 +155,7 @@ export const useAgentConfig = (agentType: AgentConfig['type']) => {
         const agentConfig: AgentConfig = {
           id: data.id,
           name: data.name,
-          type: data.type as 'chat' | 'assistant' | 'book-creation',
+          type: data.type as AgentConfig['type'],
           intent: data.intent,
           status: data.status as 'online' | 'offline' | 'processing',
           version: data.version,
@@ -216,7 +217,7 @@ export const useAgentConfig = (agentType: AgentConfig['type']) => {
           const originalConfig: AgentConfig = {
             id: existingAgent.id,
             name: existingAgent.name,
-            type: existingAgent.type as 'chat' | 'assistant' | 'book-creation',
+            type: existingAgent.type as AgentConfig['type'],
             intent: existingAgent.intent,
             status: existingAgent.status as 'online' | 'offline' | 'processing',
             version: existingAgent.version,

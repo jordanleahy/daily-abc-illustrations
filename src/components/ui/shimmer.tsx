@@ -17,7 +17,7 @@ export const Shimmer = ({ className, children, isShimmering = false, ...props }:
     >
       {children}
       {isShimmering && (
-        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shimmer bg-[length:200%_100%]" />
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/60 to-transparent animate-shimmer bg-[length:200%_100%]" />
       )}
     </div>
   );

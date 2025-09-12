@@ -6,10 +6,13 @@ import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AGENT_TYPE_CONFIGS } from '@/types/agent';
+import { AGENT_TYPE_CONFIGS, AgentConfig } from '@/types/agent';
 import { BookOpen, MessageCircle, Bot } from 'lucide-react';
+import { useState } from 'react';
 
 const Agents = () => {
+  const [selectedAgentType, setSelectedAgentType] = useState<AgentConfig['type']>('chat');
+  
   const {
     config,
     isLoading,
@@ -21,7 +24,7 @@ const Agents = () => {
     saveConfig,
     saveConfigWithOverrides,
     clearChangeDescription,
-  } = useAgentConfig();
+  } = useAgentConfig(selectedAgentType);
 
 
   if (isInitialLoading) {
@@ -57,7 +60,7 @@ const Agents = () => {
 
           {/* Agent Type Selection */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className={`cursor-pointer transition-all hover:shadow-md ${config.type === 'chat' ? 'ring-2 ring-primary' : ''}`}>
+            <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedAgentType === 'chat' ? 'ring-2 ring-primary' : ''}`}>
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-full bg-primary/10">
@@ -74,17 +77,17 @@ const Agents = () => {
                   General purpose conversational AI for answering questions and providing assistance.
                 </p>
                 <Button 
-                  variant={config.type === 'chat' ? 'default' : 'outline'} 
+                  variant={selectedAgentType === 'chat' ? 'default' : 'outline'} 
                   size="sm" 
                   className="w-full"
-                  onClick={() => updateConfig({ type: 'chat', ...AGENT_TYPE_CONFIGS.chat })}
+                  onClick={() => setSelectedAgentType('chat')}
                 >
-                  {config.type === 'chat' ? 'Currently Active' : 'Switch to Chat Agent'}
+                  {selectedAgentType === 'chat' ? 'Currently Active' : 'Switch to Chat Agent'}
                 </Button>
               </CardContent>
             </Card>
 
-            <Card className={`cursor-pointer transition-all hover:shadow-md ${config.type === 'book-creation' ? 'ring-2 ring-primary' : ''}`}>
+            <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedAgentType === 'book-creation' ? 'ring-2 ring-primary' : ''}`}>
               <CardHeader>
                 <div className="flex items-center gap-3">
                   <div className="p-2 rounded-full bg-green-500/10">
@@ -101,12 +104,12 @@ const Agents = () => {
                   Specialized AI that converts conversations into educational ABC books for children.
                 </p>
                 <Button 
-                  variant={config.type === 'book-creation' ? 'default' : 'outline'} 
+                  variant={selectedAgentType === 'book-creation' ? 'default' : 'outline'} 
                   size="sm" 
                   className="w-full"
-                  onClick={() => updateConfig({ type: 'book-creation', ...AGENT_TYPE_CONFIGS['book-creation'] })}
+                  onClick={() => setSelectedAgentType('book-creation')}
                 >
-                  {config.type === 'book-creation' ? 'Currently Active' : 'Switch to Book Agent'}
+                  {selectedAgentType === 'book-creation' ? 'Currently Active' : 'Switch to Book Agent'}
                 </Button>
               </CardContent>
             </Card>

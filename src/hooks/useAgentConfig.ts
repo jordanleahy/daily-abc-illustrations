@@ -1,11 +1,11 @@
 import { useState, useCallback, useEffect } from 'react';
-import { AgentConfig, DEFAULT_AGENT_CONFIG } from '@/types/agent';
+import { AgentConfig, DEFAULT_AGENT_CONFIG, AGENT_TYPE_CONFIGS } from '@/types/agent';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
-export const useAgentConfig = () => {
-  const [config, setConfig] = useState<AgentConfig>(DEFAULT_AGENT_CONFIG);
+export const useAgentConfig = (agentType: AgentConfig['type']) => {
+  const [config, setConfig] = useState<AgentConfig>(AGENT_TYPE_CONFIGS[agentType] || DEFAULT_AGENT_CONFIG);
   const [isLoading, setIsLoading] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(true);
@@ -18,12 +18,12 @@ export const useAgentConfig = () => {
     if (user) {
       loadAgentConfig();
       // Restore last change description from localStorage
-      const storedChange = localStorage.getItem(`agent-last-change-${user.id}`);
+      const storedChange = localStorage.getItem(`agent-last-change-${user.id}-${agentType}`);
       if (storedChange) {
         setLastChangeDescription(storedChange);
       }
     }
-  }, [user]);
+  }, [user, agentType]);
 
   const updateConfig = useCallback((updates: Partial<AgentConfig>) => {
     setConfig(prev => ({
@@ -65,6 +65,7 @@ export const useAgentConfig = () => {
         .from('agents')
         .select('*')
         .eq('user_id', user.id)
+        .eq('type', agentType)
         .eq('is_latest', true)
         .maybeSingle();
 
@@ -94,6 +95,10 @@ export const useAgentConfig = () => {
           },
         };
         setConfig(agentConfig);
+      } else {
+        // No existing config found, use default for this agent type
+        const defaultConfig = AGENT_TYPE_CONFIGS[agentType] || DEFAULT_AGENT_CONFIG;
+        setConfig(defaultConfig);
       }
     } catch (error) {
       console.error('Error loading agent config:', error);
@@ -105,7 +110,7 @@ export const useAgentConfig = () => {
     } finally {
       setIsInitialLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, agentType]);
 
   const saveConfigWithOverrides = useCallback(async (configOverrides?: Partial<AgentConfig>) => {
     if (!user) return;
@@ -120,6 +125,7 @@ export const useAgentConfig = () => {
         .from('agents')
         .select('*')
         .eq('user_id', user.id)
+        .eq('type', agentType)
         .eq('is_latest', true)
         .maybeSingle();
 
@@ -176,7 +182,7 @@ export const useAgentConfig = () => {
               setLastChangeDescription(whatChanged);
               // Persist to localStorage
               if (user) {
-                localStorage.setItem(`agent-last-change-${user.id}`, whatChanged);
+                localStorage.setItem(`agent-last-change-${user.id}-${agentType}`, whatChanged);
               }
               const newVersion = incrementVersion(configToSave.version);
               configToSave.version = newVersion;
@@ -258,7 +264,7 @@ export const useAgentConfig = () => {
         // Set initial change description for new agents
         setLastChangeDescription('Agent created');
         if (user) {
-          localStorage.setItem(`agent-last-change-${user.id}`, 'Agent created');
+          localStorage.setItem(`agent-last-change-${user.id}-${agentType}`, 'Agent created');
         }
       }
       
@@ -282,16 +288,17 @@ export const useAgentConfig = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [config, user, toast]);
+  }, [config, user, toast, agentType]);
 
   const saveConfig = useCallback(async () => {
     return saveConfigWithOverrides();
   }, [saveConfigWithOverrides]);
 
   const resetConfig = useCallback(() => {
-    setConfig(DEFAULT_AGENT_CONFIG);
+    const defaultConfig = AGENT_TYPE_CONFIGS[agentType] || DEFAULT_AGENT_CONFIG;
+    setConfig(defaultConfig);
     setHasUnsavedChanges(false);
-  }, []);
+  }, [agentType]);
 
   return {
     config,

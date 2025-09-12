@@ -241,7 +241,20 @@ export default function BookDetail() {
               try {
                 const data = JSON.parse(line.slice(6));
                 receivedAnyEvents = true;
-                setProgressMessages(prev => [...prev, data]);
+                
+                // Update existing message for same step or add new one
+                setProgressMessages(prev => {
+                  const existingIndex = prev.findIndex(msg => msg.step === data.step);
+                  if (existingIndex >= 0) {
+                    // Update existing message for this step
+                    const updated = [...prev];
+                    updated[existingIndex] = data;
+                    return updated;
+                  } else {
+                    // Add new message
+                    return [...prev, data];
+                  }
+                });
   
                 // Handle completion - check both status and step for completion
                 if ((data.status === ProcessStatus.COMPLETE || data.step === 'complete') && data.styleGuide) {

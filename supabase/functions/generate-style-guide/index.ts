@@ -89,14 +89,39 @@ serve(async (req) => {
           return;
         }
 
-        currentStep = 'INIT';
-        const initTimestamp = log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Starting style guide generation...', { requestId });
-        sendEvent({ step: 'init', message: 'Starting style guide generation...', timestamp: initTimestamp, status: ProcessStatus.IN_PROGRESS });
+        // Send initialization event
+        currentStep = 'INITIALIZATION';
+        const initTimestamp = log('INFO', ProcessStatus.NOT_STARTED, currentStep, 'Initializing style guide generation process', { requestId });
+        sendEvent({ 
+          step: 'Style Guide Generation', 
+          message: 'Initializing style guide generation process', 
+          timestamp: initTimestamp, 
+          status: ProcessStatus.NOT_STARTED,
+          progress: 0,
+          totalSteps: 4
+        });
+
+        log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Starting style guide generation process (Step 1 of 4)', { requestId });
+        sendEvent({ 
+          step: 'Style Guide Generation', 
+          message: 'Starting style guide generation process (Step 1 of 4)', 
+          timestamp: new Date().toISOString(), 
+          status: ProcessStatus.IN_PROGRESS,
+          progress: 10,
+          totalSteps: 4
+        });
 
         currentStep = 'FETCH_CONFIG';
         const configStartTime = Date.now();
-        log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Fetching Illustration Director Agent configuration...', { requestId });
-        sendEvent({ step: 'config', message: 'Fetching Illustration Director Agent configuration...', timestamp: new Date().toISOString(), status: ProcessStatus.IN_PROGRESS });
+        log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Fetching Illustration Director Agent configuration (Step 2 of 4)...', { requestId });
+        sendEvent({ 
+          step: 'Agent Configuration', 
+          message: 'Fetching Illustration Director Agent configuration (Step 2 of 4)...', 
+          timestamp: new Date().toISOString(), 
+          status: ProcessStatus.IN_PROGRESS,
+          progress: 25,
+          totalSteps: 4
+        });
 
         // Fetch user's Illustration Director Agent configuration
         const { data: agentConfig, error: agentError } = await supabase
@@ -128,12 +153,26 @@ serve(async (req) => {
           model: agentConfig.model,
           version: agentConfig.version
         });
-        sendEvent({ step: 'config', message: `Found agent config: ${agentConfig.name}`, timestamp: new Date().toISOString(), status: ProcessStatus.COMPLETE });
+        sendEvent({ 
+          step: 'Agent Configuration', 
+          message: `Found agent: ${agentConfig.name} (${agentConfig.model})`, 
+          timestamp: new Date().toISOString(), 
+          status: ProcessStatus.COMPLETE,
+          progress: 35,
+          totalSteps: 4
+        });
 
         currentStep = 'PREPARE_PROMPT';
         const promptStartTime = Date.now();
-        log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Preparing style guide prompt...', { requestId });
-        sendEvent({ step: 'prompt', message: 'Preparing style guide prompt...', timestamp: new Date().toISOString(), status: ProcessStatus.IN_PROGRESS });
+        log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Preparing style guide prompt (Step 3 of 4)...', { requestId });
+        sendEvent({ 
+          step: 'Prompt Preparation', 
+          message: 'Preparing style guide prompt (Step 3 of 4)...', 
+          timestamp: new Date().toISOString(), 
+          status: ProcessStatus.IN_PROGRESS,
+          progress: 45,
+          totalSteps: 4
+        });
 
         // Prepare the prompt for OpenAI - Let the agent use its specialized instructions
         const styleGuidePrompt = `Please create your visual style guide for this ABC book:
@@ -150,16 +189,31 @@ Book Information:
           promptLength: styleGuidePrompt.length,
           bookName: bookMetadata.book_name?.substring(0, 20) + '...'
         });
+        sendEvent({ 
+          step: 'Prompt Preparation', 
+          message: `Prompt prepared (${styleGuidePrompt.length} characters)`, 
+          timestamp: new Date().toISOString(), 
+          status: ProcessStatus.COMPLETE,
+          progress: 55,
+          totalSteps: 4
+        });
 
         currentStep = 'OPENAI_API';
         const aiStartTime = Date.now();
-        log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling OpenAI API to generate style guide...', { 
+        log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling OpenAI API to generate style guide (Step 4 of 4)...', { 
           requestId,
           model: agentConfig.model,
           maxTokens: agentConfig.max_completion_tokens,
           topP: agentConfig.top_p
         });
-        sendEvent({ step: 'ai', message: 'Calling OpenAI API to generate style guide...', timestamp: new Date().toISOString(), status: ProcessStatus.IN_PROGRESS });
+        sendEvent({ 
+          step: 'AI Generation', 
+          message: `Generating style guide with ${agentConfig.model} (Step 4 of 4)...`, 
+          timestamp: new Date().toISOString(), 
+          status: ProcessStatus.IN_PROGRESS,
+          progress: 65,
+          totalSteps: 4
+        });
 
         // Call OpenAI API using the agent's model settings
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -205,12 +259,26 @@ Book Information:
           tokensUsed: data.usage?.total_tokens,
           model: agentConfig.model
         });
-        sendEvent({ step: 'ai', message: `Generated style guide (${styleGuide.length} characters)`, timestamp: new Date().toISOString(), status: ProcessStatus.COMPLETE });
+        sendEvent({ 
+          step: 'AI Generation', 
+          message: `Style guide generated successfully (${styleGuide.length} characters, ${data.usage?.total_tokens || 'N/A'} tokens)`, 
+          timestamp: new Date().toISOString(), 
+          status: ProcessStatus.COMPLETE,
+          progress: 85,
+          totalSteps: 4
+        });
 
         currentStep = 'SAVE_METADATA';
         const saveStartTime = Date.now();
         log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Updating book metadata...', { requestId });
-        sendEvent({ step: 'save', message: 'Updating book metadata...', timestamp: new Date().toISOString(), status: ProcessStatus.IN_PROGRESS });
+        sendEvent({ 
+          step: 'Save Metadata', 
+          message: 'Saving book metadata...', 
+          timestamp: new Date().toISOString(), 
+          status: ProcessStatus.IN_PROGRESS,
+          progress: 90,
+          totalSteps: 4
+        });
 
         // Store the generated style guide in the book's metadata or pages
         const { error: updateError } = await supabase
@@ -231,13 +299,27 @@ Book Information:
             error: updateError.message,
             bookId: bookId?.substring(0, 8) + '...'
           });
-          sendEvent({ step: 'warning', message: 'Failed to update book metadata', timestamp: new Date().toISOString(), status: ProcessStatus.WARNING });
+          sendEvent({ 
+            step: 'Save Metadata', 
+            message: 'Warning: Failed to update book metadata but style guide was generated', 
+            timestamp: new Date().toISOString(), 
+            status: ProcessStatus.WARNING,
+            progress: 95,
+            totalSteps: 4
+          });
         } else {
           log('INFO', ProcessStatus.COMPLETE, currentStep, 'Book metadata updated successfully', { 
             requestId, 
             duration: saveDuration
           });
-          sendEvent({ step: 'save', message: 'Book metadata updated successfully', timestamp: new Date().toISOString(), status: ProcessStatus.COMPLETE });
+          sendEvent({ 
+            step: 'Save Metadata', 
+            message: 'Book metadata saved successfully', 
+            timestamp: new Date().toISOString(), 
+            status: ProcessStatus.COMPLETE,
+            progress: 95,
+            totalSteps: 4
+          });
         }
 
         const totalDuration = Date.now() - startTime;
@@ -253,10 +335,12 @@ Book Information:
         });
 
         sendEvent({ 
-          step: 'complete', 
-          message: 'Style guide generated successfully!', 
+          step: 'Style Guide Generation Complete', 
+          message: `Style guide generated successfully! (${(totalDuration / 1000).toFixed(1)}s total)`, 
           timestamp: new Date().toISOString(),
           status: ProcessStatus.COMPLETE,
+          progress: 100,
+          totalSteps: 4,
           styleGuide: styleGuide,
           agentUsed: {
             name: agentConfig.name,

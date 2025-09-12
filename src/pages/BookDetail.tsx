@@ -178,8 +178,8 @@ export default function BookDetail() {
                 receivedAnyEvents = true;
                 setProgressMessages(prev => [...prev, data]);
   
-                // Handle completion
-                if (data.status === ProcessStatus.COMPLETE && data.styleGuide) {
+                // Handle completion - check both status and step for completion
+                if ((data.status === ProcessStatus.COMPLETE || data.step === 'complete') && data.styleGuide) {
                   setStyleGuide(data.styleGuide);
                   setShowStyleGuide(true);
                   toast.success('Style guide generated successfully!');

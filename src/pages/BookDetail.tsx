@@ -194,10 +194,10 @@ export default function BookDetail() {
                 <CardContent className="p-4">
                   <Shimmer 
                     isShimmering={shimmeringPage === page.id}
-                    className="w-full h-48 bg-muted rounded-lg cursor-pointer hover:bg-muted/80 flex items-center justify-center"
+                    className="w-full aspect-square bg-muted rounded-lg cursor-pointer hover:bg-muted/80 flex items-center justify-center"
                     onClick={() => handleImageClick(page.id)}
                   >
-                    <div className="text-muted-foreground text-sm">
+                    <div className="text-muted-foreground text-sm text-center">
                       Tap to generate image
                     </div>
                   </Shimmer>

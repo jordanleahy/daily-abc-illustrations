@@ -34,6 +34,68 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function detectBookCreationIntent(messages: any[]): boolean {
+  if (messages.length < 2) return false;
+  
+  const lastAssistantMessage = messages[messages.length - 2];
+  const userResponse = messages[messages.length - 1]?.content?.toLowerCase()?.trim() || '';
+  
+  // Multiple patterns the agent might use to ask for book creation
+  const confirmationPhrases = [
+    'create this as a printable book now?',
+    'create the card examples for you',
+    'make this into a book',
+    'create the book'
+  ];
+  
+  const hasConfirmationRequest = confirmationPhrases.some(phrase => 
+    lastAssistantMessage?.content?.toLowerCase()?.includes(phrase)
+  );
+  
+  const confirmationPattern = /^(yes|ok|sure|go ahead|create it|do it|proceed|confirmed)\b/i;
+  
+  return hasConfirmationRequest && confirmationPattern.test(userResponse);
+}
+
+async function handleBookCreation(supabase: any, messages: any[], userId: string, assistantMessage: string, corsHeaders: any) {
+  console.log('Book creation intent detected, calling create-book function...');
+  
+  try {
+    const createBookResponse = await supabase.functions.invoke('create-book', {
+      body: { conversationHistory: messages, userId }
+    });
+
+    if (createBookResponse.error) {
+      console.error('Error calling create-book function:', createBookResponse.error);
+      throw new Error('Failed to create book');
+    }
+
+    const bookResult = createBookResponse.data;
+    
+    if (bookResult.success) {
+      console.log('Book created successfully:', bookResult.bookId);
+      
+      return new Response(JSON.stringify({ 
+        response: assistantMessage,
+        bookCreated: true,
+        bookId: bookResult.bookId,
+        bookMessage: bookResult.message
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } else {
+      console.error('Book creation failed:', bookResult.error);
+    }
+  } catch (bookError) {
+    console.error('Error creating book:', bookError);
+  }
+  
+  // Fallback to normal response if book creation fails
+  return new Response(JSON.stringify({ response: assistantMessage }), {
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+  });
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -150,54 +212,12 @@ serve(async (req) => {
 
     console.log('OpenAI response received');
 
-    // Enhanced natural intent detection - look for agent's confirmation request and user's positive response
-    const lastAssistantMessage = messages[messages.length - 2];
-    const isConfirmationRequest = lastAssistantMessage?.content?.includes('create this as a printable book now?');
-
-    // Look for positive confirmation from user
-    const userResponse = messages[messages.length - 1]?.content?.toLowerCase() || '';
-    const confirmationPattern = /^(yes|ok|sure|go ahead|create it|do it|proceed|confirmed)\b/i;
-
-    const shouldCreateBook = isConfirmationRequest && confirmationPattern.test(userResponse.trim());
+    // Enhanced natural intent detection with flexible phrase matching
+    const shouldCreateBook = detectBookCreationIntent(messages);
 
     // If user wants to create a book, trigger the create-book function
     if (shouldCreateBook) {
-      console.log('Book creation intent detected, calling create-book function...');
-      
-      try {
-        // Call the create-book edge function
-        const createBookResponse = await supabase.functions.invoke('create-book', {
-          body: {
-            conversationHistory: messages,
-            userId: user.id
-          }
-        });
-
-        if (createBookResponse.error) {
-          console.error('Error calling create-book function:', createBookResponse.error);
-          throw new Error('Failed to create book');
-        }
-
-        const bookResult = createBookResponse.data;
-        
-        if (bookResult.success) {
-          console.log('Book created successfully:', bookResult.bookId);
-          
-          return new Response(JSON.stringify({ 
-            response: assistantMessage,
-            bookCreated: true,
-            bookId: bookResult.bookId,
-            bookMessage: bookResult.message
-          }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        } else {
-          console.error('Book creation failed:', bookResult.error);
-        }
-      } catch (bookError) {
-        console.error('Error creating book:', bookError);
-        // Continue with normal response even if book creation fails
-      }
+      return await handleBookCreation(supabase, messages, user.id, assistantMessage, corsHeaders);
     }
 
     return new Response(JSON.stringify({ 

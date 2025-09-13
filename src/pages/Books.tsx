@@ -1,56 +1,23 @@
-import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
-import { Book } from '@/types/book';
+import { useBooks } from '@/hooks/useBooks';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { Container } from '@/components/layout/Container';
-import { toast } from 'sonner';
 
 export default function Books() {
   const { user, loading: authLoading } = useAuth();
+  const { books, loading } = useBooks();
   const navigate = useNavigate();
-  const [books, setBooks] = useState<Book[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // Wait for auth to finish loading before checking user
-    if (authLoading) return;
-    
-    if (!user) {
-      navigate('/auth');
-      return;
-    }
-
-    const fetchBooks = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('books')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching books:', error);
-          toast.error('Failed to load books');
-          return;
-        }
-
-        setBooks(data || []);
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error('An error occurred while loading books');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBooks();
-  }, [user, navigate, authLoading]);
+  // Redirect to auth if not authenticated
+  if (!authLoading && !user) {
+    navigate('/auth');
+    return null;
+  }
 
   const handleViewBook = (bookId: string) => {
     navigate(`/books/${bookId}`);

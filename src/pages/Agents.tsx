@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AGENT_TYPE_CONFIGS, AgentConfig } from '@/types/agent';
-import { BookOpen, MessageCircle, Bot, Palette } from 'lucide-react';
+import { BookOpen, MessageCircle, PenTool, Palette } from 'lucide-react';
 import { useState } from 'react';
 
 const Agents = () => {
@@ -141,24 +141,29 @@ const Agents = () => {
               </CardContent>
             </Card>
 
-            <Card className="cursor-pointer transition-all hover:shadow-md">
+            <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedAgentType === 'graphic-designer' ? 'ring-2 ring-primary' : ''}`}>
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-blue-500/10">
-                    <Bot className="h-5 w-5 text-blue-600" />
+                  <div className="p-2 rounded-full bg-amber-500/10">
+                    <PenTool className="h-5 w-5 text-amber-600" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Assistant Agent</CardTitle>
-                    <Badge variant="outline" className="text-xs">Coming Soon</Badge>
+                    <CardTitle className="text-lg">Graphics Designer</CardTitle>
+                    <Badge variant="secondary" className="text-xs">New</Badge>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Advanced AI assistant with enhanced capabilities for complex tasks and workflows.
+                  Generates detailed image prompts from style guides and page content for consistent illustrations.
                 </p>
-                <Button variant="outline" size="sm" className="w-full" disabled>
-                  Available Soon
+                <Button 
+                  variant={selectedAgentType === 'graphic-designer' ? 'default' : 'outline'} 
+                  size="sm" 
+                  className="w-full"
+                  onClick={() => setSelectedAgentType('graphic-designer')}
+                >
+                  {selectedAgentType === 'graphic-designer' ? 'Currently Active' : 'Switch to Graphics Designer'}
                 </Button>
               </CardContent>
             </Card>

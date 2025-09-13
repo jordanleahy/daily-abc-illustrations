@@ -1,9 +1,10 @@
 /**
- * Process status enum for frontend components
+ * Shared types for Supabase Edge Functions
  * 
- * NOTE: This enum is duplicated in supabase/functions/_shared/types.ts for edge functions.
+ * NOTE: This enum is duplicated in src/types/process.ts for frontend use.
  * Keep both enums synchronized when making changes.
  */
+
 export enum ProcessStatus {
   NOT_STARTED = 'not-started',
   IN_PROGRESS = 'in-progress', 

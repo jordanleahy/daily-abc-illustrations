@@ -1,16 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
-
-// ProcessStatus enum for consistent status tracking
-enum ProcessStatus {
-  NOT_STARTED = 'not-started',
-  IN_PROGRESS = 'in-progress', 
-  COMPLETE = 'complete',
-  ERROR = 'error',
-  WARNING = 'warning',
-  SKIPPED = 'skipped'
-}
+import { ProcessStatus } from '../_shared/types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',

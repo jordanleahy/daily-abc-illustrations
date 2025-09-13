@@ -22,7 +22,7 @@ export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { currentPrompt } = useSystemPrompt(id || '');
+  const { currentPrompt, refreshData } = useSystemPrompt(id || '');
   const [book, setBook] = useState<BookWithPages | null>(null);
   const [loading, setLoading] = useState(true);
   const [shimmeringPage, setShimmeringPage] = useState<string | null>(null);
@@ -235,6 +235,11 @@ export default function BookDetail() {
                   // Stop the loading state when generation completes
                   setStyleGuideLoading(false);
                   
+                  // Refresh system prompt data from database
+                  setTimeout(() => {
+                    refreshData();
+                  }, 1000); // Give database time to process
+                  
                   toast.success('Style guide generated successfully!');
                 }
                 
@@ -259,6 +264,11 @@ export default function BookDetail() {
         });
         if (error) throw error;
         if (data?.styleGuide) {
+          // Refresh system prompt data from database
+          setTimeout(() => {
+            refreshData();
+          }, 1000); // Give database time to process
+          
           toast.success('Style guide generated successfully!');
         } else {
           throw new Error('No style guide returned');

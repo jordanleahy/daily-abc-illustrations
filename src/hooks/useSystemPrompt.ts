@@ -33,70 +33,71 @@ export const useSystemPrompt = (bookId: string) => {
   const [editedContent, setEditedContent] = useState('');
   const { toast } = useToast();
 
+  // Load data function that can be called externally
+  const loadData = async () => {
+    if (!bookId) return;
+    
+    setIsLoading(true);
+    
+    try {
+      // Fetch current prompt (latest version)
+      const { data: currentData, error: currentError } = await supabase
+        .from('book_system_prompts')
+        .select('*')
+        .eq('book_id', bookId)
+        .eq('is_latest', true)
+        .maybeSingle();
+
+      if (currentError) {
+        console.error('Error fetching current prompt:', currentError);
+      } else if (currentData) {
+        setCurrentPrompt({
+          id: currentData.id,
+          content: currentData.content,
+          versionNumber: currentData.version_number,
+          isDeployed: currentData.is_deployed,
+          lastModified: currentData.updated_at,
+          deployedAt: currentData.deployed_at || undefined,
+          sourceType: currentData.source_type as 'generated' | 'manual',
+          generationMetadata: currentData.generation_metadata
+        });
+      }
+
+      // Fetch all versions
+      const { data: versionsData, error: versionsError } = await supabase
+        .from('book_system_prompts')
+        .select('*')
+        .eq('book_id', bookId)
+        .order('version_number', { ascending: false });
+
+      if (versionsError) {
+        console.error('Error fetching versions:', versionsError);
+      } else {
+        setVersions(versionsData.map(v => ({
+          id: v.id,
+          content: v.content,
+          versionNumber: v.version_number,
+          createdAt: v.created_at,
+          isDeployed: v.is_deployed,
+          deployedAt: v.deployed_at || undefined,
+          sourceType: v.source_type as 'generated' | 'manual',
+          generationMetadata: v.generation_metadata
+        })));
+      }
+    } catch (error) {
+      console.error('Error loading system prompt data:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load system prompt data",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Load initial data
   useEffect(() => {
-    const loadData = async () => {
-      if (!bookId) return;
-      
-      setIsLoading(true);
-      
-      try {
-        // Fetch current prompt (latest version)
-        const { data: currentData, error: currentError } = await supabase
-          .from('book_system_prompts')
-          .select('*')
-          .eq('book_id', bookId)
-          .eq('is_latest', true)
-          .maybeSingle();
-
-        if (currentError) {
-          console.error('Error fetching current prompt:', currentError);
-        } else if (currentData) {
-          setCurrentPrompt({
-            id: currentData.id,
-            content: currentData.content,
-            versionNumber: currentData.version_number,
-            isDeployed: currentData.is_deployed,
-            lastModified: currentData.updated_at,
-            deployedAt: currentData.deployed_at || undefined,
-            sourceType: currentData.source_type as 'generated' | 'manual',
-            generationMetadata: currentData.generation_metadata
-          });
-        }
-
-        // Fetch all versions
-        const { data: versionsData, error: versionsError } = await supabase
-          .from('book_system_prompts')
-          .select('*')
-          .eq('book_id', bookId)
-          .order('version_number', { ascending: false });
-
-        if (versionsError) {
-          console.error('Error fetching versions:', versionsError);
-        } else {
-          setVersions(versionsData.map(v => ({
-            id: v.id,
-            content: v.content,
-            versionNumber: v.version_number,
-            createdAt: v.created_at,
-            isDeployed: v.is_deployed,
-            deployedAt: v.deployed_at || undefined,
-            sourceType: v.source_type as 'generated' | 'manual',
-            generationMetadata: v.generation_metadata
-          })));
-        }
-      } catch (error) {
-        console.error('Error loading system prompt data:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load system prompt data",
-          variant: "destructive"
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     loadData();
   }, [bookId, toast]);
 
@@ -342,5 +343,6 @@ export const useSystemPrompt = (bookId: string) => {
     deployVersion,
     revertToVersion,
     updateEditedContent,
+    refreshData: loadData,
   };
 };

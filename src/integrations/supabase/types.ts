@@ -188,11 +188,60 @@ export type Database = {
           },
         ]
       }
+      page_system_prompts: {
+        Row: {
+          book_id: string
+          content: string
+          created_at: string
+          deployed_at: string | null
+          generation_metadata: Json | null
+          id: string
+          is_deployed: boolean
+          is_latest: boolean
+          page_id: string
+          source_type: string
+          updated_at: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          book_id: string
+          content: string
+          created_at?: string
+          deployed_at?: string | null
+          generation_metadata?: Json | null
+          id?: string
+          is_deployed?: boolean
+          is_latest?: boolean
+          page_id: string
+          source_type?: string
+          updated_at?: string
+          user_id: string
+          version_number?: number
+        }
+        Update: {
+          book_id?: string
+          content?: string
+          created_at?: string
+          deployed_at?: string | null
+          generation_metadata?: Json | null
+          id?: string
+          is_deployed?: boolean
+          is_latest?: boolean
+          page_id?: string
+          source_type?: string
+          updated_at?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: []
+      }
       pages: {
         Row: {
           book_id: string
           content: Json | null
           created_at: string
+          current_system_prompt_id: string | null
           description: string | null
           id: string
           letter: string
@@ -204,6 +253,7 @@ export type Database = {
           book_id: string
           content?: Json | null
           created_at?: string
+          current_system_prompt_id?: string | null
           description?: string | null
           id?: string
           letter: string
@@ -215,6 +265,7 @@ export type Database = {
           book_id?: string
           content?: Json | null
           created_at?: string
+          current_system_prompt_id?: string | null
           description?: string | null
           id?: string
           letter?: string
@@ -288,6 +339,10 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_next_page_prompt_version_number: {
+        Args: { p_page_id: string }
+        Returns: number
       }
       get_next_version_number: {
         Args: { p_book_id: string }

@@ -23,6 +23,7 @@ export interface Page {
     funFact: string;
     activity: string;
   };
+  current_system_prompt_id?: string;
   created_at: string;
   updated_at: string;
 }

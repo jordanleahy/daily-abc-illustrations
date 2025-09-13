@@ -1,3 +1,76 @@
+/**
+ * Generate Style Guide Edge Function
+ * 
+ * This Supabase Edge Function generates a visual style guide for ABC books using OpenAI.
+ * It fetches the user's Illustration Director Agent configuration and creates a comprehensive
+ * style guide that is then used to update the Graphics Design Agent's instructions.
+ * 
+ * @function generateStyleGuide
+ * 
+ * @description
+ * The function supports both streaming and non-streaming modes:
+ * - Streaming mode: Returns Server-Sent Events (SSE) with real-time progress updates
+ * - Non-streaming mode: Returns a standard JSON response with the final result
+ * 
+ * @param {Object} requestBody - The request payload
+ * @param {string} requestBody.bookId - UUID of the book to generate style guide for
+ * @param {string} requestBody.userId - UUID of the user creating the style guide
+ * @param {Object} requestBody.bookMetadata - Book information
+ * @param {string} requestBody.bookMetadata.book_name - Name of the book
+ * @param {string} [requestBody.bookMetadata.category] - Book category (optional)
+ * @param {string} [requestBody.bookMetadata.book_description] - Book description (optional)
+ * 
+ * @param {URLSearchParams} queryParams - URL query parameters
+ * @param {boolean} [queryParams.stream=false] - Whether to use streaming mode
+ * 
+ * @returns {Response} 
+ * - Streaming mode: Server-Sent Events stream with progress updates
+ * - Non-streaming mode: JSON response with style guide and agent info
+ * 
+ * @example
+ * // Non-streaming request
+ * POST /functions/v1/generate-style-guide
+ * {
+ *   "bookId": "123e4567-e89b-12d3-a456-426614174000",
+ *   "userId": "456e7890-e89b-12d3-a456-426614174000", 
+ *   "bookMetadata": {
+ *     "book_name": "My ABC Book",
+ *     "category": "Educational",
+ *     "book_description": "A fun learning book for children"
+ *   }
+ * }
+ * 
+ * @example
+ * // Streaming request
+ * POST /functions/v1/generate-style-guide?stream=true
+ * // Returns SSE stream with events like:
+ * // data: {"step":"Agent Configuration","message":"Found agent: Illustration Director (gpt-4o)","status":"complete","progress":35}
+ * // data: {"step":"Style Guide Generation","message":"Style guide generated successfully!","status":"complete","styleGuide":"..."}
+ * 
+ * @workflow
+ * 1. Parse and validate request parameters
+ * 2. Fetch user's Illustration Director Agent configuration from database
+ * 3. Prepare style guide prompt using book metadata
+ * 4. Call OpenAI API using agent's model settings and instructions
+ * 5. Update Graphics Design Agent's instructions with generated style guide
+ * 6. Update book metadata in database
+ * 7. Return result (streaming events or JSON response)
+ * 
+ * @dependencies
+ * - OpenAI API (requires OPENAI_API_KEY environment variable)
+ * - Supabase database (agents and books tables)
+ * - User must have an active Illustration Director Agent configuration
+ * 
+ * @errors
+ * - 400: Missing required parameters (bookId, userId, bookMetadata)
+ * - 404: No Illustration Director Agent found for user
+ * - 500: OpenAI API errors, database errors, or other server errors
+ * 
+ * @author Lovable AI Assistant
+ * @version 1.0.0
+ * @since 2024-01-01
+ */
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0'

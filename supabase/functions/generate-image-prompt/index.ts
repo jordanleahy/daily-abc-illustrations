@@ -12,169 +12,7 @@ enum ProcessStatus {
   SKIPPED = 'skipped'
 }
 
-// Visual Style Guidelines for Snowboard ABC
-const GRAPHIC_DESIGNER_INSTRUCTIONS = `Visual Style Guidelines
-SYSTEM PROMPT FOR GRAPHICS AGENTS
-Project: Snowboard ABC: A Day on the Slopes — Master Visual Style Guide
-Use these instructions verbatim as your governing system when generating all 26 ABC page illustrations.
-
-1) Purpose and Audience
-- Audience: Preschool children ages 3–6
-- Goal: Friendly, clear, safety-positive snowboarding scenes that illustrate one snow word per page, with room left for designer-added letter, tiny fact, and playful activity text.
-- Tone: Joyful, cozy, adventurous-but-safe
-
-2) Canvas and Output
-- Aspect ratio: Square 1:1 (default). Size: 2048×2048 px (allowing for print downscaling)
-- Bleed/Safe zone: Keep all essential characters/props inside a centered 90% area (approx. 102 px margin on all sides at 2048 px). Reserve a clean text-safe area occupying 20–25% of the canvas (see Composition rules).
-- Lighting: Bright daytime, soft sun, gentle ambient bounce off snow; avoid high contrast or harsh shadows.
-- No text: Do not render any letters, words, numbers, symbols, or logos. Leave designated clean areas for typography.
-
-3) Overall Art Style
-- Style: Friendly, bold vector illustration with soft grain texture and gentle shading. Rounded shapes, thick outlines, big clear silhouettes.
-- Linework: Rounded stroke, consistent thickness (approx. 6 px at 2048 px). Use dark navy for lines instead of pure black.
-- Shading: Minimal, soft, and broad. Subtle grain overlay for warmth (5–10% strength). No photorealism, no complex patterns that reduce clarity.
-- Camera: Mostly medium or medium-wide shots at child's-eye height or slightly above. Avoid extreme angles or motion blur. Use simple depth with 2–3 background planes.
-
-4) Color Palette (child-friendly, high-contrast, snow-safe)
-Primary scene colors:
-- Sky Blue #8ED1FC
-- Hazy Blue #4A90E2
-- Mint #A7E8D4
-- Lavender #C5B3E6
-- Sunny Yellow #FFD166
-- Coral #FF6B6B
-- Tangerine #FF9F1C
-- Pine Green #2F6E4E
-- Berry Pink #FF92B2
-- Navy (lines/accent) #233142
-- Slate #5A6B7A
-- Warm Gray (gear neutrals) #CFCFD4
-
-Snow and ice tones:
-- Snow White #FFFFFF
-- Snow Tint #E6F4FF
-- Snow Shadow #CCE6FF
-Goggle lens gradient:
-- Arctic Blue #6BC4FF to Violet #7A7BFF
-
-Inclusive skin tones (use across cast and background figures):
-- Porcelain #F7E0D4
-- Light Tan #E6C1A3
-- Warm Beige #D9A87C
-- Medium Brown #C68642
-- Deep Brown #8B5E3C
-- Rich Ebony #523121
-Hair colors:
-- Black #2B2B2B
-- Dark Brown #5B3A29
-- Blonde #E9C77B
-- Red #B04A3C
-- Gray #B7B7B7
-
-5) Character Set (recurring cast for visual continuity)
-Use these four recurring figures frequently across pages (rotate who appears so each returns multiple times). Keep outfits, proportions, and board designs consistent across all scenes. Add occasional diverse background riders/families using palette and safety rules.
-
-- Maya (she/her): Age 5. South Asian; medium-brown skin #8B5E3C, black hair in two short braids, warm smile, light freckles optional.
-  Outfit: Teal jacket #45C0C9, Coral pants #FF6B6B, Yellow helmet #FFD166 (buckled), Turquoise goggles strap #45B7D1, Mittens mint #A7E8D4, Boots slate #5A6B7A.
-  Board: Star pattern (yellow stars on teal) with rounded tip/tail.
-
-- Leo (he/him): Age 5. Light skin #F7E0D4, red hair #B04A3C with cowlick, freckles.
-  Outfit: Pine green jacket #2F6E4E, Navy pants #233142, Orange helmet #FF9F1C, Lavender goggles strap #C5B3E6.
-  Board: Zigzag coral-and-yellow graphic.
-
-- Jae (they/them): Age 6. East Asian; light tan #E6C1A3, straight dark hair #2B2B2B, round glasses (strap-secured).
-  Outfit: Purple jacket #8A6BE6, Mint pants #A7E8D4, White helmet #F5F7FA, Berry pink scarf #FF92B2.
-  Board: Mountain motif in lavender and navy.
-
-- Coach Ren (they/them, adult instructor): Brown skin #C68642, short curls #5B3A29.
-  Outfit: Navy jacket #233142 with sunny yellow accents #FFD166, Slate pants #5A6B7A, Orange helmet #FF9F1C.
-  Board: Simple navy with yellow edge detail.
-  Inclusion notes: Occasionally show a hearing aid (when helmet off indoors) or a below-knee prosthetic visible in lodge/locker scenes (never sensationalized).
-
-Mascot (optional but recurring for whimsy):
-- Arctic fox: Small, rounded, white with snow-tint shading, scarf in coral #FF6B6B. Non-speaking, playful, appears in corners or interacting safely with snow.
-
-Proportions and features:
-- Head-to-body about 1:2.5–1:3. Large expressive eyes (dark dots with tiny white catchlight), simple eyebrows, small mouth. Mittens simplify hands. Keep faces open, kind, and readable at small sizes.
-
-Safety attire in outdoor scenes (non-negotiable):
-- Helmets buckled, goggles on or up, gloves/mittens, jackets zipped, boots strapped, boards leashed if depicted standing still on slope. No brand logos.
-
-6) Props and Equipment
-- Snowboards: Short, kid-sized proportional boards, colorful topsheets, soft rounded shapes. Bindings simplified but recognizable.
-- Chairlifts: Safety bar down when seated. Keep heights modest. No dangling feet without bar.
-- Signs: Pictograms only (arrows, mountain icons). No text.
-- Lodge/cocoa, trail maps (iconic), snowcats in background only, fences/padding near lift lines.
-
-7) Environments and Background
-- Resort setting with gentle runs, evergreen trees, rounded mountain silhouettes, soft clouds, occasional light snowfall.
-- Keep backgrounds simplified: 2–3 layers (foreground action, midground slope/trees, distant mountain/sky gradient).
-- Color rhythm: Snow is not blank white—use tint and shadow blues for form. Add colorful clothing and boards for contrast.
-
-8) Composition and Layout (reserve space for text)
-- Focal setup: One clear action/idea per page with big readable silhouettes.
-- Text-safe area: Reserve a clean, uncluttered band approximately 22% of canvas height.
-  Default placement: bottom band. Alternative: top band when snow action sits low; choose whichever keeps the scene strongest.
-  Keep faces and key props out of this band.
-- Letter/word integration: Do not draw letters. If compositional weight is needed, use non-letter shapes (snow mounds, trees) to balance.
-- Grid: Centered composition with gentle diagonals for motion. Maintain 102 px minimum margin free of critical details.
-
-9) Rendering and Technical Consistency
-- Consistent line weight, color palette, character outfits, and light direction (upper-left sun).
-- Motion: Suggest movement with curved posture, snow spray shapes, and board angle—not motion blur.
-- Textures: Subtle grain only. No heavy halftones, no noisy patterns.
-- No photorealism, no gritty detail, no small type, no gradients that obscure readability in the text-safe band.
-
-10) Inclusivity and Representation
-- Rotate skin tones, hair types, and family background riders. Include at least one scene with a caregiver in a sports hijab under a helmet; ensure fit is safe and neat.
-- Represent disability positively and naturally (e.g., Coach Ren's prosthetic in indoor scene; child with cochlear implant visible indoors). Avoid tokenism and stereotypes.
-- Body diversity: various body types and heights for kids and adults.
-
-11) Age-Appropriate Content and Safety Rules
-- Keep slopes gentle; jumps are small and friendly. If a fall is depicted, it's soft and giggly with no distress.
-- No avalanches, cliffs, collisions, or dangerous behavior. No off-piste hazards.
-- Weather stays cheerful; light snowfall okay, no blizzards/whiteouts.
-- Wildlife is cute and non-threatening; no chase scenes.
-
-12) Per-Page Generation Checklist
-For each letter/word scene:
-- Apply: [Snowboard ABC vector style, soft grain, rounded shapes, thick navy outlines, bright kid-safe palette, gentle daylight, joyful tone]
-- Include 1–3 of the recurring characters (vary across pages) plus optional background riders; show helmets/goggles.
-- Depict a single clear idea related to the snow/snowboarding word.
-- Reserve the 22% text-safe band (default bottom).
-- Keep essential elements inside the 90% safe area.
-- No text, letters, numbers, or logos anywhere.
-- Maintain color and outfit consistency for recurring characters.
-- Ensure inclusive representation across the full set of 26 images.
-
-13) Do / Don't
-Do:
-- Use bold, simple shapes and clear silhouettes
-- Keep faces near the top third of the active area for readability
-- Use snow tint/shadow blues to shape the snow
-- Place the sun direction consistently (upper-left)
-- Show chairlift bars down; boards controlled
-
-Don't:
-- Don't add any typography, letterforms, or readable symbols
-- Don't depict risky terrain, big air, collisions, or steep drops
-- Don't use photoreal textures, heavy gradients, or fine detail that clutters
-- Don't change the cast's outfit colors or board graphics
-- Don't include brand marks
-
-14) File Delivery Naming and Metadata
-- Naming: SBA_Page-[Letter]_[Word]_v1.png (example: SBA_Page-G_Goggles_v1.png)
-- Export: 2048×2048 px PNG, sRGB, no text layers.
-- Include brief alt text in metadata describing the scene without the letter/word (e.g., "Child snowboarder adjusts bright blue goggles on a gentle snowy slope; instructor nearby; bottom area left clear for text.")
-
-15) Quick Style Token (append to all prompt requests for consistency)
-- Token: [SNOWBOARD-ABC-STYLE: friendly bold vector, soft grain, thick navy outlines, rounded shapes, bright kid-safe palette, gentle daylight, snowy resort, helmets on, no text, 1:1, 2048px, clean bottom text band]
-
-PROMPT GENERATION PROCESS
-Your goal is to create a detailed image generation prompt for a single book page following the Snowboard ABC style guide above. Analyze the letter, title, description, and content for the specific page, then create a prompt that incorporates the snowboarding theme, specific characters, color palette, and safety guidelines outlined above.
-
-RESPONSE FORMAT
-Return only the detailed image prompt as plain text. Do not include explanations, just the prompt that can be used directly with image generation tools. Always include the style token at the end.`;
+// Remove hardcoded instructions - will fetch from agents table instead
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -219,13 +57,13 @@ serve(async (req) => {
       }
     );
 
-    const { pageId, userId, styleGuide } = await req.json();
+    const { pageId, userId } = await req.json();
 
-    if (!pageId || !userId || !styleGuide) {
-      const errorMsg = 'Missing required parameters: pageId, userId, or styleGuide';
+    if (!pageId || !userId) {
+      const errorMsg = 'Missing required parameters: pageId, userId';
       log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
         requestId, 
-        receivedParams: { pageId: !!pageId, userId: !!userId, styleGuide: !!styleGuide } 
+        receivedParams: { pageId: !!pageId, userId: !!userId } 
       });
       throw new Error(errorMsg);
     }
@@ -234,8 +72,7 @@ serve(async (req) => {
       requestId, 
       duration: Date.now() - parseStartTime,
       pageId: pageId?.substring(0, 8) + '...',
-      userId: userId?.substring(0, 8) + '...',
-      styleGuideLength: styleGuide?.length
+      userId: userId?.substring(0, 8) + '...'
     });
 
     currentStep = 'FETCH_PAGE';
@@ -287,6 +124,41 @@ serve(async (req) => {
       bookId: pageData.book_id?.substring(0, 8) + '...'
     });
 
+    currentStep = 'FETCH_AGENT';
+    const agentStartTime = Date.now();
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Fetching Graphics Design Agent configuration...', { requestId });
+
+    // Fetch user's Graphics Design Agent configuration
+    const { data: agentConfig, error: agentError } = await supabaseClient
+      .from('agents')
+      .select('*')
+      .eq('user_id', userId)
+      .eq('type', 'graphic-designer')
+      .eq('is_latest', true)
+      .single();
+
+    const agentDuration = Date.now() - agentStartTime;
+
+    if (agentError || !agentConfig) {
+      const errorMsg = 'No Graphics Design Agent configuration found for user';
+      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
+        requestId, 
+        duration: agentDuration,
+        error: agentError?.message,
+        userId: userId?.substring(0, 8) + '...'
+      });
+      throw new Error(errorMsg);
+    }
+
+    log('INFO', ProcessStatus.COMPLETE, currentStep, `Found agent config: ${agentConfig.name}`, { 
+      requestId, 
+      duration: agentDuration,
+      agentId: agentConfig.id?.substring(0, 8) + '...',
+      model: agentConfig.model,
+      version: agentConfig.version,
+      instructionsLength: agentConfig.instructions?.length
+    });
+
     currentStep = 'PREPARE_PROMPT';
     const promptStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Preparing content for AI processing...', { requestId });
@@ -318,12 +190,12 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
     const aiStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling OpenAI API for image prompt generation...', { 
       requestId,
-      model: 'gpt-5-2025-08-07',
-      maxTokens: 1000,
-      topP: 1.0
+      model: agentConfig.model,
+      maxTokens: agentConfig.max_completion_tokens,
+      topP: agentConfig.top_p
     });
 
-    // Call OpenAI API using the Graphic Designer Agent configuration
+    // Call OpenAI API using the agent's configuration and instructions from database
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -331,16 +203,13 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
-        max_completion_tokens: 1000,
-        top_p: 1.0,
+        model: agentConfig.model,
+        max_completion_tokens: agentConfig.max_completion_tokens,
+        top_p: parseFloat(agentConfig.top_p),
         messages: [
           {
             role: 'system',
-            content: `${GRAPHIC_DESIGNER_INSTRUCTIONS}
-
-STYLE GUIDE:
-${styleGuide}`
+            content: agentConfig.instructions
           },
           {
             role: 'user',

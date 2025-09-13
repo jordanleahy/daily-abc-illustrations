@@ -6,6 +6,7 @@ export interface Book {
   book_description?: string;
   total_pages: number;
   is_published: boolean;
+  current_system_prompt_id?: string;
   created_at: string;
   updated_at: string;
 }

@@ -147,6 +147,7 @@ export type Database = {
           book_name: string
           category: string | null
           created_at: string
+          current_system_prompt_id: string | null
           id: string
           is_published: boolean | null
           total_pages: number | null
@@ -158,6 +159,7 @@ export type Database = {
           book_name: string
           category?: string | null
           created_at?: string
+          current_system_prompt_id?: string | null
           id?: string
           is_published?: boolean | null
           total_pages?: number | null
@@ -169,13 +171,22 @@ export type Database = {
           book_name?: string
           category?: string | null
           created_at?: string
+          current_system_prompt_id?: string | null
           id?: string
           is_published?: boolean | null
           total_pages?: number | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "books_current_system_prompt_id_fkey"
+            columns: ["current_system_prompt_id"]
+            isOneToOne: false
+            referencedRelation: "book_system_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pages: {
         Row: {

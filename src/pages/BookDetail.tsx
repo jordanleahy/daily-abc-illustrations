@@ -16,11 +16,13 @@ import { ArrowLeft, Calendar, Users, Palette, Loader2} from 'lucide-react';
 import { toast } from 'sonner';
 
 import { SystemPromptSection } from '@/components/book';
+import { useSystemPrompt } from '@/hooks/useSystemPrompt';
 
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const { currentPrompt } = useSystemPrompt(id || '');
   const [book, setBook] = useState<BookWithPages | null>(null);
   const [loading, setLoading] = useState(true);
   const [shimmeringPage, setShimmeringPage] = useState<string | null>(null);
@@ -99,12 +101,13 @@ export default function BookDetail() {
 
 
   const handleImageClick = async (pageId: string) => {
-    // TODO: Get style guide from current system prompt
-    const styleGuide = null; // This will need to be updated to get from system prompt
-    if (!styleGuide) {
-      toast.error('Please generate a style guide first');
+    // Get style guide from current deployed system prompt
+    if (!currentPrompt?.isDeployed || !currentPrompt?.content) {
+      toast.error('Please generate and deploy a style guide first');
       return;
     }
+    
+    const styleGuide = currentPrompt.content;
 
     if (imagePrompts[pageId]) {
       // If prompt already exists, copy to clipboard
@@ -407,8 +410,8 @@ export default function BookDetail() {
                     onClick={() => handleImageClick(page.id)}
                   >
                     <div className="text-muted-foreground text-sm text-center">
-                      {!book.current_system_prompt_id ? (
-                        "Generate style guide first"
+                      {!currentPrompt?.isDeployed ? (
+                        "Generate and deploy style guide first"
                       ) : imagePrompts[page.id] ? (
                         <div className="space-y-2 px-2">
                           <div className="flex items-center justify-center gap-1">

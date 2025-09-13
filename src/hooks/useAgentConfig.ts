@@ -104,6 +104,107 @@ export const useAgentConfig = (agentType: AgentConfig['type']) => {
     }
   }, [user, agentType]);
 
+  // Set up real-time subscription for agent changes
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel(`agent-${agentType}-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'agents',
+          filter: `user_id=eq.${user.id} AND type=eq.${agentType}`
+        },
+        (payload) => {
+          console.log('Agent inserted:', payload.new);
+          const data = payload.new;
+          if (data.is_latest) {
+            const agentConfig: AgentConfig = {
+              id: data.id,
+              name: data.name,
+              type: data.type as AgentConfig['type'],
+              intent: data.intent,
+              status: data.status as 'online' | 'offline' | 'processing',
+              version: data.version,
+              createdAt: new Date(data.created_at),
+              lastModified: new Date(data.last_modified),
+              assistantId: data.assistant_id || undefined,
+              instructions: data.instructions,
+              whatChanged: data.what_changed || undefined,
+              versionNumber: data.version_number,
+              isLatest: data.is_latest,
+              parentAgentId: data.parent_agent_id || undefined,
+              modelSettings: {
+                model: data.model,
+                maxCompletionTokens: data.max_completion_tokens,
+                topP: data.top_p,
+              },
+            };
+            setConfig(agentConfig);
+            setHasUnsavedChanges(false);
+            
+            // Update last change description if available
+            if (data.what_changed) {
+              setLastChangeDescription(data.what_changed);
+              localStorage.setItem(`agent-last-change-${user.id}-${agentType}`, data.what_changed);
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'agents',
+          filter: `user_id=eq.${user.id} AND type=eq.${agentType}`
+        },
+        (payload) => {
+          console.log('Agent updated:', payload.new);
+          const data = payload.new;
+          if (data.is_latest && data.id === config.id) {
+            const agentConfig: AgentConfig = {
+              id: data.id,
+              name: data.name,
+              type: data.type as AgentConfig['type'],
+              intent: data.intent,
+              status: data.status as 'online' | 'offline' | 'processing',
+              version: data.version,
+              createdAt: new Date(data.created_at),
+              lastModified: new Date(data.last_modified),
+              assistantId: data.assistant_id || undefined,
+              instructions: data.instructions,
+              whatChanged: data.what_changed || undefined,
+              versionNumber: data.version_number,
+              isLatest: data.is_latest,
+              parentAgentId: data.parent_agent_id || undefined,
+              modelSettings: {
+                model: data.model,
+                maxCompletionTokens: data.max_completion_tokens,
+                topP: data.top_p,
+              },
+            };
+            setConfig(agentConfig);
+            setHasUnsavedChanges(false);
+            
+            // Update last change description if available
+            if (data.what_changed) {
+              setLastChangeDescription(data.what_changed);
+              localStorage.setItem(`agent-last-change-${user.id}-${agentType}`, data.what_changed);
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, agentType, config.id]);
+
   const updateConfig = useCallback((updates: Partial<AgentConfig>) => {
     setConfig(prev => ({
       ...prev,

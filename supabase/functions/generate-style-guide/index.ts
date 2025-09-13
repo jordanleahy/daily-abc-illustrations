@@ -332,27 +332,47 @@ Book Information:
           totalSteps: 4
         });
 
-        // Update the user's Graphics Design Agent with the generated style guide as instructions
-        const { error: agentUpdateError } = await supabase
-          .from('agents')
-          .update({
-            instructions: styleGuide,
-            updated_at: new Date().toISOString(),
-            last_modified: new Date().toISOString()
-          })
-          .eq('user_id', userId)
-          .eq('type', 'graphic-designer')
-          .eq('is_latest', true);
+        // Save the style guide to the book_system_prompts table
+        const nextVersionResult = await supabase.rpc('get_next_version_number', { 
+          p_book_id: bookId 
+        });
+        
+        const nextVersion = nextVersionResult.data || 1;
+        
+        const { data: promptData, error: promptError } = await supabase
+          .from('book_system_prompts')
+          .insert({
+            book_id: bookId,
+            user_id: userId,
+            content: `You are a creative director and graphic designer specializing in children's ABC books. Your role is to create beautiful, engaging illustrations that help children learn letters and words.
 
-        if (agentUpdateError) {
-          log('WARN', ProcessStatus.WARNING, 'UPDATE_AGENT', 'Failed to update Graphics Design Agent', { 
-            requestId, 
-            error: agentUpdateError.message,
-            userId: userId?.substring(0, 8) + '...'
-          });
-        } else {
-          log('INFO', ProcessStatus.COMPLETE, 'UPDATE_AGENT', 'Graphics Design Agent updated with style guide', { requestId });
+Style Guide for "${bookMetadata.book_name}":
+${styleGuide}
+
+Use this style guide consistently across all illustrations for this book. Each illustration should be educational, age-appropriate, and aligned with the visual style described above.`,
+            version_number: nextVersion,
+            source_type: 'generated',
+            is_latest: true,
+            is_deployed: true,
+            generation_metadata: {
+              model: agentConfig.model,
+              generated_at: new Date().toISOString(),
+              book_metadata: {
+                name: bookMetadata.book_name,
+                description: bookMetadata.book_description,
+                category: bookMetadata.category,
+                total_pages: bookMetadata.total_pages
+              }
+            }
+          })
+          .select()
+          .single();
+
+        if (promptError) {
+          throw new Error(`Failed to save style guide: ${promptError.message}`);
         }
+
+        log('INFO', ProcessStatus.COMPLETE, 'save-style-guide', `Style guide saved as version ${nextVersion} for book ${bookId}`);
 
         // Store the generated style guide in the book's metadata or pages
         const { error: updateError } = await supabase
@@ -416,10 +436,13 @@ Book Information:
           progress: 100,
           totalSteps: 4,
           styleGuide: styleGuide,
-          agentUsed: {
-            name: agentConfig.name,
-            model: agentConfig.model,
-            version: agentConfig.version
+          systemPrompt: {
+            id: promptData.id,
+            version_number: promptData.version_number,
+            content: promptData.content,
+            source_type: promptData.source_type,
+            is_deployed: promptData.is_deployed,
+            created_at: promptData.created_at
           }
         });
 
@@ -575,29 +598,49 @@ Book Information:
     });
 
     const saveStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, 'SAVE_METADATA', 'Updating book metadata and Graphics Design Agent...', { requestId });
+    log('INFO', ProcessStatus.IN_PROGRESS, 'SAVE_METADATA', 'Saving style guide and updating book metadata...', { requestId });
 
-    // Update the user's Graphics Design Agent with the generated style guide as instructions
-    const { error: agentUpdateError } = await supabase
-      .from('agents')
-      .update({
-        instructions: styleGuide,
-        updated_at: new Date().toISOString(),
-        last_modified: new Date().toISOString()
+    // Save the style guide to the book_system_prompts table
+    const nextVersionResult = await supabase.rpc('get_next_version_number', { 
+      p_book_id: bookId 
+    });
+    
+    const nextVersion = nextVersionResult.data || 1;
+    
+    const { data: promptData, error: promptError } = await supabase
+      .from('book_system_prompts')
+      .insert({
+        book_id: bookId,
+        user_id: userId,
+        content: `You are a creative director and graphic designer specializing in children's ABC books. Your role is to create beautiful, engaging illustrations that help children learn letters and words.
+
+Style Guide for "${bookMetadata.book_name}":
+${styleGuide}
+
+Use this style guide consistently across all illustrations for this book. Each illustration should be educational, age-appropriate, and aligned with the visual style described above.`,
+        version_number: nextVersion,
+        source_type: 'generated',
+        is_latest: true,
+        is_deployed: true,
+        generation_metadata: {
+          model: agentConfig.model,
+          generated_at: new Date().toISOString(),
+          book_metadata: {
+            name: bookMetadata.book_name,
+            description: bookMetadata.book_description,
+            category: bookMetadata.category,
+            total_pages: bookMetadata.total_pages
+          }
+        }
       })
-      .eq('user_id', userId)
-      .eq('type', 'graphic-designer')
-      .eq('is_latest', true);
+      .select()
+      .single();
 
-    if (agentUpdateError) {
-      log('WARN', ProcessStatus.WARNING, 'UPDATE_AGENT', 'Failed to update Graphics Design Agent', { 
-        requestId, 
-        error: agentUpdateError.message,
-        userId: userId?.substring(0, 8) + '...'
-      });
-    } else {
-      log('INFO', ProcessStatus.COMPLETE, 'UPDATE_AGENT', 'Graphics Design Agent updated with style guide', { requestId });
+    if (promptError) {
+      throw new Error(`Failed to save style guide: ${promptError.message}`);
     }
+
+    log('INFO', ProcessStatus.COMPLETE, 'save-style-guide', `Style guide saved as version ${nextVersion} for book ${bookId}`);
 
     // Store the generated style guide in the book's metadata
     const { error: updateError } = await supabase
@@ -640,10 +683,13 @@ Book Information:
     return new Response(JSON.stringify({ 
       success: true,
       styleGuide: styleGuide,
-      agentUsed: {
-        name: agentConfig.name,
-        model: agentConfig.model,
-        version: agentConfig.version
+      systemPrompt: {
+        id: promptData.id,
+        version_number: promptData.version_number,
+        content: promptData.content,
+        source_type: promptData.source_type,
+        is_deployed: promptData.is_deployed,
+        created_at: promptData.created_at
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

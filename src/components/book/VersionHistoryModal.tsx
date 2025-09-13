@@ -21,13 +21,15 @@ import {
   Trash2
 } from 'lucide-react';
 
-export interface SystemPromptVersion {
+interface SystemPromptVersion {
   id: string;
   content: string;
   versionNumber: number;
   createdAt: string;
   isDeployed: boolean;
   deployedAt?: string;
+  sourceType: 'generated' | 'manual';
+  generationMetadata?: any;
 }
 
 interface VersionHistoryModalProps {
@@ -120,6 +122,16 @@ export const VersionHistoryModal = ({
                                 Deployed
                               </Badge>
                             )}
+                            <Badge 
+                              variant="outline" 
+                              className={`text-xs ${
+                                version.sourceType === 'generated' 
+                                  ? 'text-blue-600 border-blue-600 bg-blue-50' 
+                                  : 'text-purple-600 border-purple-600 bg-purple-50'
+                              }`}
+                            >
+                              {version.sourceType === 'generated' ? 'AI Generated' : 'Manual'}
+                            </Badge>
                           </div>
                         </div>
                         <CardDescription className="text-xs">
@@ -213,6 +225,16 @@ export const VersionHistoryModal = ({
                           Deployed
                         </Badge>
                       )}
+                      <Badge 
+                        variant="outline" 
+                        className={`${
+                          selectedVersion.sourceType === 'generated' 
+                            ? 'text-blue-600 border-blue-600 bg-blue-50' 
+                            : 'text-purple-600 border-purple-600 bg-purple-50'
+                        }`}
+                      >
+                        {selectedVersion.sourceType === 'generated' ? 'AI Generated' : 'Manual'}
+                      </Badge>
                     </div>
                     <div className="text-xs text-muted-foreground">
                       {selectedVersion.content.length.toLocaleString()} characters

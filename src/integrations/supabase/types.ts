@@ -88,6 +88,59 @@ export type Database = {
           },
         ]
       }
+      book_system_prompts: {
+        Row: {
+          book_id: string
+          content: string
+          created_at: string
+          deployed_at: string | null
+          generation_metadata: Json | null
+          id: string
+          is_deployed: boolean
+          is_latest: boolean
+          source_type: string
+          updated_at: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          book_id: string
+          content: string
+          created_at?: string
+          deployed_at?: string | null
+          generation_metadata?: Json | null
+          id?: string
+          is_deployed?: boolean
+          is_latest?: boolean
+          source_type?: string
+          updated_at?: string
+          user_id: string
+          version_number?: number
+        }
+        Update: {
+          book_id?: string
+          content?: string
+          created_at?: string
+          deployed_at?: string | null
+          generation_metadata?: Json | null
+          id?: string
+          is_deployed?: boolean
+          is_latest?: boolean
+          source_type?: string
+          updated_at?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_system_prompts_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       books: {
         Row: {
           book_description: string | null
@@ -224,6 +277,10 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_next_version_number: {
+        Args: { p_book_id: string }
+        Returns: number
       }
       has_role: {
         Args: {

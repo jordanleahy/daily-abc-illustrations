@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
+// Define the structure of a system prompt
 export interface SystemPrompt {
   id: string;
   content: string;
@@ -8,6 +10,8 @@ export interface SystemPrompt {
   isDeployed: boolean;
   lastModified: string;
   deployedAt?: string;
+  sourceType: 'generated' | 'manual';
+  generationMetadata?: any;
 }
 
 export interface SystemPromptVersion {
@@ -17,77 +21,9 @@ export interface SystemPromptVersion {
   createdAt: string;
   isDeployed: boolean;
   deployedAt?: string;
+  sourceType: 'generated' | 'manual';
+  generationMetadata?: any;
 }
-
-// Mock data for development - this will be replaced with real API calls
-const mockSystemPrompts: Record<string, SystemPrompt> = {
-  'book-1': {
-    id: 'prompt-1',
-    content: `You are an AI illustration director for children's alphabet books. Create detailed, consistent visual descriptions for book illustrations.
-
-## Visual Style Guidelines:
-- Illustration Style: Watercolor with soft, dreamy qualities
-- Color Palette: Warm, inviting colors with high contrast for readability
-- Character Design: Friendly, approachable characters with expressive faces
-- Background Style: Simple, uncluttered backgrounds that support the main subject
-- Composition: Centered subjects with plenty of white space around edges
-
-## Technical Requirements:
-- High resolution suitable for print (300 DPI equivalent)
-- Safe margins for text overlay
-- Consistent lighting and shadow direction
-- Child-safe content only
-
-## Content Guidelines:
-- Each letter should be prominently featured
-- Objects should be easily recognizable by young children
-- Avoid scary, violent, or inappropriate imagery
-- Include diverse representation when featuring people
-- Maintain educational value while being entertaining
-
-When creating prompts, always specify:
-1. The letter being illustrated
-2. The main object/concept
-3. Specific style elements from the guidelines above
-4. Composition and framing details
-5. Any special visual elements that reinforce learning`,
-    versionNumber: 2,
-    isDeployed: true,
-    lastModified: '2024-01-15T10:30:00Z',
-    deployedAt: '2024-01-15T10:45:00Z'
-  }
-};
-
-const mockVersions: Record<string, SystemPromptVersion[]> = {
-  'book-1': [
-    {
-      id: 'prompt-1',
-      content: mockSystemPrompts['book-1'].content,
-      versionNumber: 2,
-      createdAt: '2024-01-15T10:30:00Z',
-      isDeployed: true,
-      deployedAt: '2024-01-15T10:45:00Z'
-    },
-    {
-      id: 'prompt-0',
-      content: `You are an AI illustration director. Create visual descriptions for children's alphabet book illustrations.
-
-Style: Watercolor
-Colors: Bright and cheerful
-Characters: Friendly and approachable
-Background: Simple
-
-For each illustration:
-- Show the letter clearly
-- Make objects recognizable
-- Keep content child-appropriate
-- Use consistent style`,
-      versionNumber: 1,
-      createdAt: '2024-01-12T14:20:00Z',
-      isDeployed: false
-    }
-  ]
-};
 
 export const useSystemPrompt = (bookId: string) => {
   const [currentPrompt, setCurrentPrompt] = useState<SystemPrompt | null>(null);
@@ -95,155 +31,298 @@ export const useSystemPrompt = (bookId: string) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedContent, setEditedContent] = useState('');
+  const { toast } = useToast();
 
   // Load initial data
   useEffect(() => {
-    const loadSystemPrompt = async () => {
+    const loadData = async () => {
+      if (!bookId) return;
+      
       setIsLoading(true);
+      
       try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
-        // Load current prompt
-        const prompt = mockSystemPrompts[bookId] || null;
-        setCurrentPrompt(prompt);
-        
-        // Load versions
-        const versionHistory = mockVersions[bookId] || [];
-        setVersions(versionHistory);
-        
-        if (prompt) {
-          setEditedContent(prompt.content);
+        // Fetch current prompt (latest version)
+        const { data: currentData, error: currentError } = await supabase
+          .from('book_system_prompts')
+          .select('*')
+          .eq('book_id', bookId)
+          .eq('is_latest', true)
+          .maybeSingle();
+
+        if (currentError) {
+          console.error('Error fetching current prompt:', currentError);
+        } else if (currentData) {
+          setCurrentPrompt({
+            id: currentData.id,
+            content: currentData.content,
+            versionNumber: currentData.version_number,
+            isDeployed: currentData.is_deployed,
+            lastModified: currentData.updated_at,
+            deployedAt: currentData.deployed_at || undefined,
+            sourceType: currentData.source_type as 'generated' | 'manual',
+            generationMetadata: currentData.generation_metadata
+          });
+        }
+
+        // Fetch all versions
+        const { data: versionsData, error: versionsError } = await supabase
+          .from('book_system_prompts')
+          .select('*')
+          .eq('book_id', bookId)
+          .order('version_number', { ascending: false });
+
+        if (versionsError) {
+          console.error('Error fetching versions:', versionsError);
+        } else {
+          setVersions(versionsData.map(v => ({
+            id: v.id,
+            content: v.content,
+            versionNumber: v.version_number,
+            createdAt: v.created_at,
+            isDeployed: v.is_deployed,
+            deployedAt: v.deployed_at || undefined,
+            sourceType: v.source_type as 'generated' | 'manual',
+            generationMetadata: v.generation_metadata
+          })));
         }
       } catch (error) {
-        toast.error('Failed to load system prompt');
-        console.error('Error loading system prompt:', error);
+        console.error('Error loading system prompt data:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load system prompt data",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadSystemPrompt();
-  }, [bookId]);
+    loadData();
+  }, [bookId, toast]);
 
   const startEdit = () => {
-    if (currentPrompt) {
-      setEditedContent(currentPrompt.content);
-      setIsEditing(true);
-    }
+    setIsEditing(true);
+    setEditedContent(currentPrompt?.content || '');
   };
 
   const cancelEdit = () => {
-    if (currentPrompt) {
-      setEditedContent(currentPrompt.content);
-    }
     setIsEditing(false);
+    setEditedContent('');
   };
 
   const saveEdit = async () => {
+    if (!editedContent.trim()) return;
+    
+    setIsLoading(true);
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Get next version number
+      const { data: nextVersionData } = await supabase.rpc('get_next_version_number', {
+        p_book_id: bookId
+      });
       
-      const now = new Date().toISOString();
-      const newVersionNumber = (currentPrompt?.versionNumber || 0) + 1;
+      const nextVersion = nextVersionData || 1;
       
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
       // Create new version
-      const newPrompt: SystemPrompt = {
-        id: `prompt-${newVersionNumber}`,
-        content: editedContent,
-        versionNumber: newVersionNumber,
-        isDeployed: false,
-        lastModified: now
+      const { data: newPrompt, error } = await supabase
+        .from('book_system_prompts')
+        .insert({
+          book_id: bookId,
+          user_id: user.id,
+          content: editedContent,
+          version_number: nextVersion,
+          source_type: 'manual',
+          is_latest: true,
+          is_deployed: false
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      // Update state
+      const updatedPrompt: SystemPrompt = {
+        id: newPrompt.id,
+        content: newPrompt.content,
+        versionNumber: newPrompt.version_number,
+        isDeployed: newPrompt.is_deployed,
+        lastModified: newPrompt.updated_at,
+        sourceType: newPrompt.source_type as 'generated' | 'manual',
+        generationMetadata: newPrompt.generation_metadata
       };
-      
-      // Add to versions history
+
       const newVersion: SystemPromptVersion = {
         id: newPrompt.id,
         content: newPrompt.content,
-        versionNumber: newPrompt.versionNumber,
-        createdAt: now,
-        isDeployed: false
+        versionNumber: newPrompt.version_number,
+        createdAt: newPrompt.created_at,
+        isDeployed: newPrompt.is_deployed,
+        sourceType: newPrompt.source_type as 'generated' | 'manual',
+        generationMetadata: newPrompt.generation_metadata
       };
-      
-      setCurrentPrompt(newPrompt);
-      setVersions(prev => [newVersion, ...prev]);
+
+      setCurrentPrompt(updatedPrompt);
+      setVersions(prev => [newVersion, ...prev.map(v => ({ ...v, isLatest: false }))]);
       setIsEditing(false);
+      setEditedContent('');
       
-      toast.success('System prompt saved successfully');
+      toast({
+        title: "Success",
+        description: "System prompt saved successfully"
+      });
     } catch (error) {
-      toast.error('Failed to save system prompt');
-      console.error('Error saving system prompt:', error);
+      console.error('Error saving prompt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save system prompt",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const deployVersion = async (versionId: string) => {
+    setIsLoading(true);
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const now = new Date().toISOString();
-      
-      // Update current prompt
-      if (currentPrompt && currentPrompt.id === versionId) {
-        setCurrentPrompt(prev => prev ? {
-          ...prev,
-          isDeployed: true,
-          deployedAt: now
-        } : null);
+      const { error } = await supabase
+        .from('book_system_prompts')
+        .update({ is_deployed: true })
+        .eq('id', versionId);
+
+      if (error) {
+        throw error;
       }
-      
-      // Update versions
-      setVersions(prev => prev.map(version => 
-        version.id === versionId 
-          ? { ...version, isDeployed: true, deployedAt: now }
-          : { ...version, isDeployed: false, deployedAt: undefined }
-      ));
-      
-      toast.success('Version deployed successfully');
+
+      // Refresh data
+      const { data: updatedPrompt } = await supabase
+        .from('book_system_prompts')
+        .select('*')
+        .eq('id', versionId)
+        .single();
+
+      if (updatedPrompt) {
+        setCurrentPrompt({
+          id: updatedPrompt.id,
+          content: updatedPrompt.content,
+          versionNumber: updatedPrompt.version_number,
+          isDeployed: updatedPrompt.is_deployed,
+          lastModified: updatedPrompt.updated_at,
+          deployedAt: updatedPrompt.deployed_at || undefined,
+          sourceType: updatedPrompt.source_type as 'generated' | 'manual',
+          generationMetadata: updatedPrompt.generation_metadata
+        });
+
+        setVersions(prev => prev.map(v => ({
+          ...v,
+          isDeployed: v.id === versionId,
+          deployedAt: v.id === versionId ? updatedPrompt.deployed_at : v.deployedAt
+        })));
+      }
+
+      toast({
+        title: "Success",
+        description: "Version deployed successfully"
+      });
     } catch (error) {
-      toast.error('Failed to deploy version');
       console.error('Error deploying version:', error);
+      toast({
+        title: "Error",
+        description: "Failed to deploy version",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const revertToVersion = async (versionId: string) => {
+    setIsLoading(true);
+    
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const versionToRevert = versions.find(v => v.id === versionId);
+      if (!versionToRevert) {
+        throw new Error('Version not found');
+      }
+
+      // Get next version number
+      const { data: nextVersionData } = await supabase.rpc('get_next_version_number', {
+        p_book_id: bookId
+      });
       
-      const targetVersion = versions.find(v => v.id === versionId);
-      if (!targetVersion) return;
-      
-      const now = new Date().toISOString();
-      const newVersionNumber = (currentPrompt?.versionNumber || 0) + 1;
-      
-      // Create new prompt based on target version
-      const newPrompt: SystemPrompt = {
-        id: `prompt-${newVersionNumber}`,
-        content: targetVersion.content,
-        versionNumber: newVersionNumber,
-        isDeployed: false,
-        lastModified: now
+      const nextVersion = nextVersionData || 1;
+
+      // Get current user ID
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // Create new version based on the reverted version
+      const { data: newPrompt, error } = await supabase
+        .from('book_system_prompts')
+        .insert({
+          book_id: bookId,
+          user_id: user.id,
+          content: versionToRevert.content,
+          version_number: nextVersion,
+          source_type: 'manual',
+          is_latest: true,
+          is_deployed: false
+        })
+        .select()
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      // Update state
+      const updatedPrompt: SystemPrompt = {
+        id: newPrompt.id,
+        content: newPrompt.content,
+        versionNumber: newPrompt.version_number,
+        isDeployed: newPrompt.is_deployed,
+        lastModified: newPrompt.updated_at,
+        sourceType: newPrompt.source_type as 'generated' | 'manual',
+        generationMetadata: newPrompt.generation_metadata
       };
-      
-      // Add to versions history
+
       const newVersion: SystemPromptVersion = {
         id: newPrompt.id,
         content: newPrompt.content,
-        versionNumber: newPrompt.versionNumber,
-        createdAt: now,
-        isDeployed: false
+        versionNumber: newPrompt.version_number,
+        createdAt: newPrompt.created_at,
+        isDeployed: newPrompt.is_deployed,
+        sourceType: newPrompt.source_type as 'generated' | 'manual',
+        generationMetadata: newPrompt.generation_metadata
       };
-      
-      setCurrentPrompt(newPrompt);
+
+      setCurrentPrompt(updatedPrompt);
       setVersions(prev => [newVersion, ...prev]);
-      setEditedContent(newPrompt.content);
       
-      toast.success(`Reverted to version ${targetVersion.versionNumber}`);
+      toast({
+        title: "Success",
+        description: `Reverted to version ${versionToRevert.versionNumber}`
+      });
     } catch (error) {
-      toast.error('Failed to revert to version');
-      console.error('Error reverting to version:', error);
+      console.error('Error reverting version:', error);
+      toast({
+        title: "Error",
+        description: "Failed to revert to version",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -262,6 +341,6 @@ export const useSystemPrompt = (bookId: string) => {
     saveEdit,
     deployVersion,
     revertToVersion,
-    updateEditedContent
+    updateEditedContent,
   };
 };

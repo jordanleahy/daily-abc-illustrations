@@ -235,10 +235,8 @@ export default function BookDetail() {
                   // Stop the loading state when generation completes
                   setStyleGuideLoading(false);
                   
-                  // Refresh system prompt data from database
-                  setTimeout(() => {
-                    refreshData();
-                  }, 1000); // Give database time to process
+                  // Real-time subscription will automatically update the UI
+                  console.log('Style guide generation completed, real-time subscription will update UI');
                   
                   toast.success('Style guide generated successfully!');
                 }
@@ -264,10 +262,8 @@ export default function BookDetail() {
         });
         if (error) throw error;
         if (data?.styleGuide) {
-          // Refresh system prompt data from database
-          setTimeout(() => {
-            refreshData();
-          }, 1000); // Give database time to process
+          // Real-time subscription will automatically update the UI
+          console.log('Style guide generation completed via fallback, real-time subscription will update UI');
           
           toast.success('Style guide generated successfully!');
         } else {

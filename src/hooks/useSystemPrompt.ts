@@ -96,9 +96,111 @@ export const useSystemPrompt = (bookId: string) => {
     }
   };
 
-  // Load initial data
+  // Load initial data and set up real-time subscription
   useEffect(() => {
-    loadData();
+    if (bookId) {
+      loadData();
+      
+      // Set up real-time subscription for book system prompts
+      const channel = supabase
+        .channel('book-system-prompts-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+            schema: 'public',
+            table: 'book_system_prompts',
+            filter: `book_id=eq.${bookId}`
+          },
+          (payload) => {
+            console.log('Real-time update received:', payload);
+            
+            if (payload.eventType === 'INSERT') {
+              const newPrompt = payload.new as any;
+              const newVersion: SystemPromptVersion = {
+                id: newPrompt.id,
+                content: newPrompt.content,
+                versionNumber: newPrompt.version_number,
+                createdAt: newPrompt.created_at,
+                isDeployed: newPrompt.is_deployed,
+                deployedAt: newPrompt.deployed_at || undefined,
+                sourceType: newPrompt.source_type as 'generated' | 'manual',
+                generationMetadata: newPrompt.generation_metadata
+              };
+              
+              setVersions(prev => [newVersion, ...prev]);
+              
+              // If this is the latest version, update current prompt
+              if (newPrompt.is_latest) {
+                setCurrentPrompt({
+                  id: newPrompt.id,
+                  content: newPrompt.content,
+                  versionNumber: newPrompt.version_number,
+                  isDeployed: newPrompt.is_deployed,
+                  lastModified: newPrompt.updated_at,
+                  deployedAt: newPrompt.deployed_at || undefined,
+                  sourceType: newPrompt.source_type as 'generated' | 'manual',
+                  generationMetadata: newPrompt.generation_metadata
+                });
+              }
+            } else if (payload.eventType === 'UPDATE') {
+              const updatedPrompt = payload.new as any;
+              const updatedVersion: SystemPromptVersion = {
+                id: updatedPrompt.id,
+                content: updatedPrompt.content,
+                versionNumber: updatedPrompt.version_number,
+                createdAt: updatedPrompt.created_at,
+                isDeployed: updatedPrompt.is_deployed,
+                deployedAt: updatedPrompt.deployed_at || undefined,
+                sourceType: updatedPrompt.source_type as 'generated' | 'manual',
+                generationMetadata: updatedPrompt.generation_metadata
+              };
+              
+              setVersions(prev => 
+                prev.map(version => 
+                  version.id === updatedPrompt.id ? updatedVersion : version
+                )
+              );
+              
+              // Update current prompt if this is the latest or deployed version
+              if (updatedPrompt.is_latest || updatedPrompt.is_deployed) {
+                setCurrentPrompt(prev => {
+                  if (prev && prev.id === updatedPrompt.id) {
+                    return {
+                      id: updatedPrompt.id,
+                      content: updatedPrompt.content,
+                      versionNumber: updatedPrompt.version_number,
+                      isDeployed: updatedPrompt.is_deployed,
+                      lastModified: updatedPrompt.updated_at,
+                      deployedAt: updatedPrompt.deployed_at || undefined,
+                      sourceType: updatedPrompt.source_type as 'generated' | 'manual',
+                      generationMetadata: updatedPrompt.generation_metadata
+                    };
+                  }
+                  return prev;
+                });
+              }
+            } else if (payload.eventType === 'DELETE') {
+              const deletedId = payload.old.id;
+              setVersions(prev => prev.filter(version => version.id !== deletedId));
+              
+              // If the deleted prompt was the current one, clear it
+              setCurrentPrompt(prev => {
+                if (prev && prev.id === deletedId) {
+                  return null;
+                }
+                return prev;
+              });
+            }
+          }
+        )
+        .subscribe();
+
+      // Cleanup subscription on unmount or bookId change
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
   }, [bookId, toast]);
 
   const startEdit = () => {

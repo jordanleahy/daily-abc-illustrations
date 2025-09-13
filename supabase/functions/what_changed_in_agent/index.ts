@@ -55,33 +55,12 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { corsHeaders, AgentConfig, CompareRequest } from '../_shared/types.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
 const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
-
-interface AgentConfig {
-  name: string;
-  type: 'chat' | 'assistant';
-  intent: string;
-  status: 'online' | 'offline' | 'processing';
-  instructions: string;
-  modelSettings: {
-    model: string;
-    maxCompletionTokens: number;
-    topP: number;
-  };
-}
-
-interface CompareRequest {
-  originalConfig: AgentConfig;
-  newConfig: AgentConfig;
-}
 
 // Simple, safe fallback diff in case the OpenAI response is empty or fails
 function computeFallbackChanges(orig: AgentConfig, next: AgentConfig): string {

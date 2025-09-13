@@ -28,11 +28,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, isLegacyModel } from '../_shared/types.ts';
 
 function detectBookCreationIntent(messages: any[]): boolean {
   if (messages.length < 2) return false;
@@ -170,14 +166,13 @@ serve(async (req) => {
     const allMessages = [systemMessage, ...messages];
 
     // Prepare OpenAI API parameters based on model
-    const isLegacyModel = agent.model === 'gpt-4o' || agent.model === 'gpt-4o-mini';
     const apiParams: any = {
       model: agent.model,
       messages: allMessages,
     };
 
     // Use correct token parameter based on model
-    if (isLegacyModel) {
+    if (isLegacyModel(agent.model)) {
       apiParams.max_tokens = agent.max_completion_tokens;
     } else {
       apiParams.max_completion_tokens = agent.max_completion_tokens;

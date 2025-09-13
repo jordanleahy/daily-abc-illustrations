@@ -74,12 +74,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
-import { ProcessStatus } from '../_shared/types.ts';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { ProcessStatus, corsHeaders, log, generateRequestId } from '../_shared/types.ts';
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -87,16 +82,8 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-// Helper function for structured logging
-const log = (level: string, status: ProcessStatus, step: string, message: string, extra?: any) => {
-  const timestamp = new Date().toISOString();
-  const logMessage = `[${timestamp}] [${level}] [${status}] [${step}] - ${message}`;
-  console.log(logMessage, extra ? JSON.stringify(extra, null, 2) : '');
-  return timestamp;
-};
-
 serve(async (req) => {
-  const requestId = `req-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  const requestId = generateRequestId();
   const startTime = Date.now();
   
   log('INFO', ProcessStatus.IN_PROGRESS, 'REQUEST', `Starting request processing`, { requestId, method: req.method });

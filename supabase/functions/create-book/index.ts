@@ -33,11 +33,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, isLegacyModel } from '../_shared/types.ts';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -145,7 +141,6 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
     console.log('Calling OpenAI API for book generation with model:', agentConfig.model);
 
     // Prepare OpenAI API parameters based on model
-    const isLegacyModel = agentConfig.model === 'gpt-4o' || agentConfig.model === 'gpt-4o-mini';
     const apiParams: any = {
       model: agentConfig.model,
       messages: [
@@ -161,7 +156,7 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
     };
 
     // Use correct token parameter based on model
-    if (isLegacyModel) {
+    if (isLegacyModel(agentConfig.model)) {
       apiParams.max_tokens = agentConfig.max_completion_tokens;
     } else {
       apiParams.max_completion_tokens = agentConfig.max_completion_tokens;

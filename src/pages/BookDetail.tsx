@@ -115,12 +115,12 @@ export default function BookDetail() {
         if (error) throw error;
         if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
         
-        if (!data.imageData) {
+        if (!data.image) {
           throw new Error('No image data returned');
         }
 
         // Store the generated image (base64 data)
-        setGeneratedImages(prev => ({ ...prev, [pageId]: data.imageData }));
+        setGeneratedImages(prev => ({ ...prev, [pageId]: data.image }));
         toast.success('Image generated successfully!');
       } catch (error: any) {
         console.error('Error generating image:', error);

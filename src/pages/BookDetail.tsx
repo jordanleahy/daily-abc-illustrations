@@ -16,6 +16,7 @@ import { BookWithPages } from '@/types/book';
 import { ArrowLeft, Calendar, Users, Palette, ChevronDown, Loader2, Clock, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { SafeLocalStorage, StyleGuideStorage, StyleGuideData } from '@/utils/storage';
+import { SystemPromptSection } from '@/components/book';
 
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
@@ -499,7 +500,10 @@ export default function BookDetail() {
         </Card>
 
 
-        {/* Progress Console */}
+          {/* System Prompt Section */}
+          <SystemPromptSection bookId={book.id} />
+
+          {/* Progress Console */}
         {progressMessages.length > 0 && (
           <ProgressConsole
             messages={progressMessages}

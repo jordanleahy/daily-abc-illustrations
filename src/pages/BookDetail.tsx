@@ -32,6 +32,8 @@ export default function BookDetail() {
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [imagePrompts, setImagePrompts] = useState<Record<string, string>>({});
   const [imagePromptLoading, setImagePromptLoading] = useState<Record<string, boolean>>({});
+  const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
+  const [imageGenerationLoading, setImageGenerationLoading] = useState<Record<string, boolean>>({});
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
   const [expandedPagePrompts, setExpandedPagePrompts] = useState<Record<string, boolean>>({});
@@ -91,13 +93,45 @@ export default function BookDetail() {
     
     const styleGuide = currentPrompt.content;
 
-    if (imagePrompts[pageId]) {
-      // If prompt already exists, copy to clipboard
-      navigator.clipboard.writeText(imagePrompts[pageId]);
-      toast.success('Image prompt copied to clipboard!');
+    // If image already exists, show it in a modal or something (for now just show success)
+    if (generatedImages[pageId]) {
+      toast.success('Image already generated!');
       return;
     }
 
+    // If prompt exists, generate image
+    if (imagePrompts[pageId]) {
+      setImageGenerationLoading(prev => ({ ...prev, [pageId]: true }));
+      
+      try {
+        const { data, error } = await supabase.functions.invoke('generate-image', {
+          body: {
+            prompt: imagePrompts[pageId],
+            pageId,
+            userId: user?.id
+          }
+        });
+
+        if (error) throw error;
+        if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
+        
+        if (!data.imageData) {
+          throw new Error('No image data returned');
+        }
+
+        // Store the generated image (base64 data)
+        setGeneratedImages(prev => ({ ...prev, [pageId]: data.imageData }));
+        toast.success('Image generated successfully!');
+      } catch (error: any) {
+        console.error('Error generating image:', error);
+        toast.error('Failed to generate image');
+      } finally {
+        setImageGenerationLoading(prev => ({ ...prev, [pageId]: false }));
+      }
+      return;
+    }
+
+    // Generate prompt if none exists
     setShimmeringPage(pageId);
     setImagePromptLoading(prev => ({ ...prev, [pageId]: true }));
 
@@ -119,7 +153,7 @@ export default function BookDetail() {
       }
 
       setImagePrompts(prev => ({ ...prev, [pageId]: data.imagePrompt }));
-      toast.success('Image prompt generated! Click again to copy.');
+      toast.success('Image prompt generated! Click again to generate image.');
     } catch (error: any) {
       console.error('Error generating image prompt:', error);
       toast.error('Failed to generate image prompt');
@@ -426,38 +460,55 @@ export default function BookDetail() {
                   
                   <Shimmer 
                     isShimmering={shimmeringPage === page.id}
-                    className="w-full aspect-square bg-muted rounded-lg cursor-pointer hover:bg-muted/80 flex items-center justify-center"
+                    className="w-full aspect-square bg-muted rounded-lg cursor-pointer hover:bg-muted/80 flex items-center justify-center overflow-hidden"
                     onClick={() => handleImageClick(page.id)}
                   >
-                    <div className="text-muted-foreground text-sm text-center">
-                      {!currentPrompt?.isDeployed ? (
-                        "Generate and deploy style guide first"
-                      ) : imagePrompts[page.id] ? (
-                        <div className="space-y-2 px-2">
-                          <div className="flex items-center justify-center gap-1">
-                            <Palette className="w-3 h-3" />
-                            <span className="text-xs font-medium">Image Prompt</span>
+                    {generatedImages[page.id] ? (
+                      // Show generated image
+                      <img 
+                        src={generatedImages[page.id]} 
+                        alt={`Generated image for ${page.title}`}
+                        className="w-full h-full object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="text-muted-foreground text-sm text-center">
+                        {!currentPrompt?.isDeployed ? (
+                          "Generate and deploy style guide first"
+                        ) : imagePrompts[page.id] ? (
+                          // Prompt exists, ready to generate image
+                          imageGenerationLoading[page.id] ? (
+                            <div className="space-y-2">
+                              <Loader2 className="w-6 h-6 animate-spin mx-auto" />
+                              <div className="text-xs">Generating image...</div>
+                            </div>
+                          ) : (
+                            <div className="space-y-2 px-2">
+                              <div className="flex items-center justify-center gap-1">
+                                <Palette className="w-4 h-4" />
+                                <span className="text-sm font-medium">Ready to Generate</span>
+                              </div>
+                              <div className="text-xs leading-relaxed max-h-16 overflow-y-auto opacity-70">
+                                {imagePrompts[page.id].substring(0, 100)}...
+                              </div>
+                              <div className="text-xs font-medium text-primary">Tap to generate image</div>
+                            </div>
+                          )
+                        ) : imagePromptLoading[page.id] ? (
+                          <div className="space-y-1">
+                            <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                            <div className="text-xs">Generating prompt...</div>
                           </div>
-                          <div className="text-xs leading-relaxed max-h-24 overflow-y-auto">
-                            {imagePrompts[page.id]}
+                        ) : (
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-center gap-1">
+                              <Palette className="w-3 h-3" />
+                              Style guide ready
+                            </div>
+                            <div className="text-xs">Tap to generate prompt</div>
                           </div>
-                          <div className="text-xs opacity-70">Tap to copy prompt</div>
-                        </div>
-                      ) : imagePromptLoading[page.id] ? (
-                        <div className="space-y-1">
-                          <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                          <div className="text-xs">Generating prompt...</div>
-                        </div>
-                      ) : (
-                        <div className="space-y-1">
-                          <div className="flex items-center justify-center gap-1">
-                            <Palette className="w-3 h-3" />
-                            Style guide ready
-                          </div>
-                          <div className="text-xs">Tap to generate prompt</div>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
                   </Shimmer>
                 </CardContent>
               </Card>

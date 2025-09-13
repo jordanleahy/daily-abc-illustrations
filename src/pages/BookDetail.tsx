@@ -8,10 +8,11 @@ import { Badge } from '@/components/ui/badge';
 import { Shimmer } from '@/components/ui/shimmer';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useBookPages } from '@/hooks/useBookPages';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
-import { BookWithPages } from '@/types/book';
+import { Book } from '@/types/book';
 import { ArrowLeft, Calendar, Users, Palette, Loader2} from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,7 +24,8 @@ export default function BookDetail() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { currentPrompt, refreshData } = useSystemPrompt(id || '');
-  const [book, setBook] = useState<BookWithPages | null>(null);
+  const { pages } = useBookPages(id);
+  const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [shimmeringPage, setShimmeringPage] = useState<string | null>(null);
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
@@ -64,29 +66,7 @@ export default function BookDetail() {
           return;
         }
 
-        const { data: pagesData, error: pagesError } = await supabase
-          .from('pages')
-          .select('*')
-          .eq('book_id', id)
-          .order('page_number');
-
-        if (pagesError) {
-          console.error('Error fetching pages:', pagesError);
-          toast.error('Failed to load book pages');
-          return;
-        }
-
-        setBook({
-          ...bookData,
-          pages: (pagesData || []).map(page => ({
-            ...page,
-            content: page.content as {
-              mainConcept: string;
-              funFact: string;
-              activity: string;
-            }
-          }))
-        });
+        setBook(bookData);
       } catch (error) {
         console.error('Error:', error);
         toast.error('An error occurred while loading the book');
@@ -163,7 +143,7 @@ export default function BookDetail() {
       book_description: book.book_description,
       category: book.category,
       total_pages: book.total_pages,
-      pages: book.pages.map(page => ({
+      pages: pages.map(page => ({
         letter: page.letter,
         title: page.title,
         description: page.description,
@@ -389,7 +369,7 @@ export default function BookDetail() {
 
           {/* Pages Grid */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {book.pages.map((page) => (
+            {pages.map((page) => (
               <Card key={page.id} className="hover:shadow-md transition-shadow">
                 <CardHeader className="pb-3">
                   <div className="flex justify-between items-center">

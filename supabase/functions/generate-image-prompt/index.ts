@@ -57,7 +57,7 @@ serve(async (req) => {
     const fetchStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Fetching page data and system prompt from database...', { requestId });
 
-    // Fetch the specific page data along with deployed system prompt
+    // Fetch the specific page data along with book system prompt
     const { data: pageData, error: pageError } = await supabaseClient
       .from('pages')
       .select(`
@@ -67,12 +67,13 @@ serve(async (req) => {
         description,
         content,
         book_id,
-        books!inner(user_id),
-        current_system_prompt_id,
-        page_system_prompts!page_system_prompts_page_id_fkey(
-          id,
-          content,
-          is_deployed
+        books!inner(
+          user_id,
+          book_system_prompts!book_system_prompts_book_id_fkey(
+            id,
+            content,
+            is_deployed
+          )
         )
       `)
       .eq('id', pageId)
@@ -100,19 +101,20 @@ serve(async (req) => {
       throw new Error('Page not found or access denied');
     }
 
-    // Find the deployed system prompt
-    const deployedPrompt = pageData.page_system_prompts?.find((prompt: any) => prompt.is_deployed);
+    // Find the deployed book system prompt
+    const deployedPrompt = pageData.books.book_system_prompts?.find((prompt: any) => prompt.is_deployed);
     if (!deployedPrompt) {
-      log('ERROR', ProcessStatus.ERROR, currentStep, 'No deployed page system prompt found', { 
+      log('ERROR', ProcessStatus.ERROR, currentStep, 'No deployed book system prompt found', { 
         requestId, 
         duration: fetchDuration,
         pageId: pageId?.substring(0, 8) + '...',
-        availablePrompts: pageData.page_system_prompts?.length || 0
+        bookId: pageData.book_id?.substring(0, 8) + '...',
+        availablePrompts: pageData.books.book_system_prompts?.length || 0
       });
-      throw new Error('No deployed page system prompt found. Please create and deploy a system prompt for this page first.');
+      throw new Error('No deployed book system prompt found. Please create and deploy a system prompt for this book first.');
     }
 
-    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Page data and system prompt fetched successfully', { 
+    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Page data and book system prompt fetched successfully', { 
       requestId, 
       duration: fetchDuration,
       letter: pageData.letter,
@@ -161,9 +163,9 @@ serve(async (req) => {
     const promptStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Preparing content for AI processing...', { requestId });
 
-    // Prepare the content for the AI using the page system prompt
+    // Prepare the content for the AI using the book system prompt
     const pageContent = `
-Page System Prompt:
+Book System Prompt:
 ${deployedPrompt.content}
 
 Page Details:
@@ -215,11 +217,11 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
           },
           {
             role: 'user',
-            content: `Using the page system prompt as context, create a detailed image prompt for this ABC book page:
+            content: `Using the book system prompt as context, create a detailed image prompt for this ABC book page:
 
 ${pageContent}
 
-Please generate a specific, detailed image prompt that captures the visual elements described in the page system prompt and incorporates the page details (letter, title, description, content).`
+Please generate a specific, detailed image prompt that captures the visual elements described in the book system prompt and incorporates the page details (letter, title, description, content).`
           }
         ],
       }),

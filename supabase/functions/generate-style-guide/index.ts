@@ -154,6 +154,39 @@ serve(async (req) => {
           totalSteps: 4
         });
 
+        // Create initial prompt record with in-progress status
+        currentStep = 'CREATE_RECORD';
+        const { data: nextVersionNumber } = await supabase.rpc('get_next_version_number', { p_book_id: bookId });
+        
+        const { data: newPrompt, error: createError } = await supabase
+          .from('book_system_prompts')
+          .insert({
+            book_id: bookId,
+            user_id: userId,
+            content: 'Style guide generation in progress...',
+            version_number: nextVersionNumber || 1,
+            is_latest: true,
+            is_deployed: false,
+            status: ProcessStatus.IN_PROGRESS,
+            source_type: 'generated',
+            generation_metadata: {
+              started_at: new Date().toISOString(),
+              request_id: requestId
+            }
+          })
+          .select()
+          .single();
+
+        if (createError || !newPrompt) {
+          const errorMsg = `Failed to create style guide record: ${createError?.message}`;
+          log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { requestId, error: createError });
+          sendEvent({ step: 'error', message: errorMsg, timestamp: new Date().toISOString(), status: ProcessStatus.ERROR });
+          return;
+        }
+
+        promptId = newPrompt.id;
+        log('INFO', ProcessStatus.COMPLETE, currentStep, 'Created style guide record', { requestId, promptId: promptId?.substring(0, 8) + '...' });
+
         log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Starting style guide generation process (Step 1 of 4)', { requestId });
         sendEvent({ 
           step: 'Style Guide Generation', 

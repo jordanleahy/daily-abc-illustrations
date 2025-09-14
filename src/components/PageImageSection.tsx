@@ -10,19 +10,34 @@ import { ProcessStatus } from "@/types/process";
 interface PageImageSectionProps {
   pageId: string;
   bookId: string;
-  imagePrompt?: string;
 }
 
-export function PageImageSection({ pageId, bookId, imagePrompt }: PageImageSectionProps) {
+export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const { user } = useAuth();
   const { currentImage, versions, isLoading, createImageRecord, refreshData } = usePageImageUrls(pageId);
 
   const handleGenerateImage = async () => {
-    if (!user || !imagePrompt) return;
+    if (!user) return;
 
     try {
-      // Create image record
-      const record = await createImageRecord(bookId, imagePrompt);
+      // First, generate the image prompt using the page system prompt
+      const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-image-prompt', {
+        body: {
+          pageId,
+          userId: user.id
+        }
+      });
+
+      if (promptError) throw promptError;
+      if (!promptData?.success) throw new Error(promptData?.error || 'Failed to generate image prompt');
+      
+      const generatedPrompt = promptData.imagePrompt;
+      if (!generatedPrompt || generatedPrompt.trim().length === 0) {
+        throw new Error('No image prompt could be generated. Please ensure a page system prompt is deployed.');
+      }
+
+      // Create image record with the generated prompt
+      const record = await createImageRecord(bookId, generatedPrompt);
       if (!record) {
         throw new Error('Failed to create image record');
       }
@@ -54,7 +69,6 @@ export function PageImageSection({ pageId, bookId, imagePrompt }: PageImageSecti
     );
   }
 
-  const hasPrompt = !!imagePrompt && imagePrompt !== "Generating image prompt...";
   const isGenerating = currentImage?.generation_status === 'in_progress';
   const hasImage = currentImage?.generation_status === 'complete' && currentImage?.image_url;
   const hasError = currentImage?.generation_status === 'error';
@@ -91,25 +105,20 @@ export function PageImageSection({ pageId, bookId, imagePrompt }: PageImageSecti
           <p className="text-xs text-muted-foreground">
             {currentImage?.error_message || 'Unknown error occurred'}
           </p>
-          {hasPrompt && (
-            <Button 
-              onClick={handleGenerateImage}
-              size="sm"
-              variant="outline"
-            >
-              Try Again
-            </Button>
-          )}
+          <Button 
+            onClick={handleGenerateImage}
+            size="sm"
+            variant="outline"
+          >
+            Try Again
+          </Button>
         </div>
-      ) : hasPrompt ? (
-        // Show ready to generate state
+      ) : (
+        // Show initial state with generate button
         <div className="flex flex-col items-center justify-center h-full space-y-3 p-4 text-center">
-          <div className="space-y-2">
-            <p className="text-sm font-medium">Prompt Ready</p>
-            <p className="text-xs text-muted-foreground line-clamp-3">
-              {imagePrompt.substring(0, 120)}...
-            </p>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            Click to generate page image
+          </p>
           <Button 
             onClick={handleGenerateImage}
             size="sm"
@@ -117,13 +126,6 @@ export function PageImageSection({ pageId, bookId, imagePrompt }: PageImageSecti
           >
             Generate Image
           </Button>
-        </div>
-      ) : (
-        // Show initial state
-        <div className="flex flex-col items-center justify-center h-full space-y-2 p-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            Generate a style guide first, then create image prompts for this page.
-          </p>
         </div>
       )}
 

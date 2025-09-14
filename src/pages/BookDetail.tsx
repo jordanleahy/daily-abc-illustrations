@@ -29,7 +29,7 @@ export default function BookDetail() {
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
-  const [imagePrompts, setImagePrompts] = useState<Record<string, string>>({});
+  
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
   const [expandedPagePrompts, setExpandedPagePrompts] = useState<Record<string, boolean>>({});
@@ -80,45 +80,6 @@ export default function BookDetail() {
   }, [user, id, navigate, authLoading]);
 
 
-  const handleImageClick = async (pageId: string) => {
-    // Get style guide from current deployed system prompt
-    if (!currentPrompt?.isDeployed || !currentPrompt?.content) {
-      toast.error('Please generate and deploy a style guide first');
-      return;
-    }
-    
-    const styleGuide = currentPrompt.content;
-
-    // Generate prompt if none exists
-    if (!imagePrompts[pageId]) {
-      setImagePrompts(prev => ({ ...prev, [pageId]: "Generating image prompt..." }));
-
-      try {
-        const { data, error } = await supabase.functions.invoke('generate-image-prompt', {
-          body: {
-            pageId,
-            userId: user?.id,
-            styleGuide
-          }
-        });
-
-        if (error) throw error;
-        if (!data?.success) throw new Error(data?.error || 'Failed to generate image prompt');
-        
-        // Check if imagePrompt is empty or invalid
-        if (!data.imagePrompt || data.imagePrompt.trim().length === 0) {
-          throw new Error('Failed to generate image prompt - empty response');
-        }
-
-        setImagePrompts(prev => ({ ...prev, [pageId]: data.imagePrompt }));
-        toast.success('Image prompt generated! Now you can generate the image.');
-      } catch (error: any) {
-        console.error('Error generating image prompt:', error);
-        toast.error('Failed to generate image prompt');
-        setImagePrompts(prev => ({ ...prev, [pageId]: "" }));
-      }
-    }
-  };
 
   const handleBack = () => {
     navigate('/books');
@@ -418,7 +379,6 @@ export default function BookDetail() {
                   <PageImageSection 
                     pageId={page.id}
                     bookId={book.id}
-                    imagePrompt={imagePrompts[page.id]}
                   />
                 </CardContent>
               </Card>

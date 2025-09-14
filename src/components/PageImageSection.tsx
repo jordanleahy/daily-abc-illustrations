@@ -167,7 +167,7 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
             size="sm"
             className="w-full"
           >
-            Generate Image
+            Generate Prompt
           </Button>
         </div>
       )}

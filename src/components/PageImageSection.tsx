@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/process";
+import { useState } from "react";
 
 interface PageImageSectionProps {
   pageId: string;
@@ -15,12 +16,15 @@ interface PageImageSectionProps {
 export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const { user } = useAuth();
   const { currentImage, versions, isLoading, createImageRecord, refreshData } = usePageImageUrls(pageId);
+  const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
 
-  const handleGenerateImage = async () => {
+  const handleGeneratePrompt = async () => {
     if (!user) return;
 
+    setIsGeneratingPrompt(true);
     try {
-      // First, generate the image prompt using the page system prompt
+      // Generate the image prompt using the page system prompt
       const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-image-prompt', {
         body: {
           pageId,
@@ -31,11 +35,25 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
       if (promptError) throw promptError;
       if (!promptData?.success) throw new Error(promptData?.error || 'Failed to generate image prompt');
       
-      const generatedPrompt = promptData.imagePrompt;
-      if (!generatedPrompt || generatedPrompt.trim().length === 0) {
+      const prompt = promptData.imagePrompt;
+      if (!prompt || prompt.trim().length === 0) {
         throw new Error('No image prompt could be generated. Please ensure a page system prompt is deployed.');
       }
 
+      setGeneratedPrompt(prompt);
+      toast.success('Prompt generated successfully!');
+    } catch (error: any) {
+      console.error('Error generating prompt:', error);
+      toast.error(error.message || 'Failed to generate prompt');
+    } finally {
+      setIsGeneratingPrompt(false);
+    }
+  };
+
+  const handleGenerateImage = async () => {
+    if (!user || !generatedPrompt) return;
+
+    try {
       // Create image record with the generated prompt
       const record = await createImageRecord(bookId, generatedPrompt);
       if (!record) {
@@ -53,7 +71,8 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
 
-      toast.success('Image generated successfully!');
+      toast.success('Image generation started!');
+      setGeneratedPrompt(null); // Clear the prompt state
       refreshData();
     } catch (error: any) {
       console.error('Error generating image:', error);
@@ -74,10 +93,10 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const hasError = currentImage?.generation_status === 'error';
 
   return (
-    <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden">
+    <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden relative">
       {hasImage && currentImage?.image_url ? (
         // Show generated image
-        <div className="relative w-full h-full">
+        <div className="w-full h-full">
           <img 
             src={currentImage.image_url} 
             alt="Generated page image"
@@ -106,21 +125,45 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
             {currentImage?.error_message || 'Unknown error occurred'}
           </p>
           <Button 
-            onClick={handleGenerateImage}
+            onClick={() => {
+              setGeneratedPrompt(null);
+              handleGeneratePrompt();
+            }}
             size="sm"
             variant="outline"
           >
             Try Again
           </Button>
         </div>
+      ) : generatedPrompt ? (
+        // Show prompt preview with generate image button
+        <div className="flex flex-col h-full p-4 space-y-3">
+          <div className="flex-1 overflow-auto">
+            <p className="text-xs text-muted-foreground mb-2">Generated Prompt:</p>
+            <p className="text-sm leading-relaxed">{generatedPrompt}</p>
+          </div>
+          <Button 
+            onClick={handleGenerateImage}
+            size="sm"
+            className="w-full"
+          >
+            Generate Image
+          </Button>
+        </div>
+      ) : isGeneratingPrompt ? (
+        // Show prompt generation state
+        <div className="flex flex-col items-center justify-center h-full space-y-3">
+          <Shimmer className="w-16 h-16" />
+          <p className="text-sm text-muted-foreground">Generating prompt...</p>
+        </div>
       ) : (
-        // Show initial state with generate button
+        // Show initial state with generate prompt button
         <div className="flex flex-col items-center justify-center h-full space-y-3 p-4 text-center">
           <p className="text-sm text-muted-foreground">
             Click to generate page image
           </p>
           <Button 
-            onClick={handleGenerateImage}
+            onClick={handleGeneratePrompt}
             size="sm"
             className="w-full"
           >

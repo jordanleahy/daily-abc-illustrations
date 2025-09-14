@@ -5,6 +5,17 @@ import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useBookPages } from '@/hooks/useBookPages';
@@ -12,7 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
 import { Book } from '@/types/book';
-import { ArrowLeft, Calendar, Users, Palette, Loader2, Edit3, ChevronDown, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Palette, Loader2, Edit3, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
@@ -29,6 +40,7 @@ export default function BookDetail() {
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
@@ -224,6 +236,33 @@ export default function BookDetail() {
       setStyleGuideLoading(false);
     }
   };
+
+  const handleDeleteBook = async () => {
+    if (!book || !user) return;
+    
+    setDeleteLoading(true);
+    try {
+      const { error } = await supabase
+        .from('books')
+        .delete()
+        .eq('id', book.id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting book:', error);
+        toast.error('Failed to delete book');
+        return;
+      }
+
+      toast.success('Book deleted successfully');
+      navigate('/books');
+    } catch (error: any) {
+      console.error('Error:', error);
+      toast.error('An error occurred while deleting the book');
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
   if (authLoading || loading) {
     return (
       <PageLayout>
@@ -294,6 +333,41 @@ export default function BookDetail() {
                       </>
                     )}
                   </Button>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={deleteLoading}
+                        className="flex items-center gap-2 text-destructive hover:text-destructive"
+                      >
+                        {deleteLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Book</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{book.book_name}"? This action cannot be undone and will permanently delete the book and all its pages, prompts, and images.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                          onClick={handleDeleteBook}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                          Delete Book
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                  
                   <Badge variant={book.is_published ? "default" : "secondary"}>
                     {book.is_published ? 'Published' : 'Draft'}
                   </Badge>

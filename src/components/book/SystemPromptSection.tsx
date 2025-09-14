@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { SystemPromptEditor } from './SystemPromptEditor';
 import { VersionHistoryModal } from './VersionHistoryModal';
 import { useSystemPrompt } from '@/hooks/useSystemPrompt';
+import { ProcessStatus } from '@/types/process';
 import { 
   Edit, 
   History, 
@@ -12,7 +13,8 @@ import {
   FileText, 
   Clock,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 
 interface SystemPromptSectionProps {
@@ -35,6 +37,30 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
   } = useSystemPrompt(bookId);
 
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+
+  const getStatusIcon = (status?: string) => {
+    switch (status) {
+      case ProcessStatus.IN_PROGRESS:
+        return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
+      case ProcessStatus.ERROR:
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case ProcessStatus.COMPLETE:
+      default:
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+    }
+  };
+
+  const getStatusBadge = (status?: string) => {
+    switch (status) {
+      case ProcessStatus.IN_PROGRESS:
+        return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Generating...</Badge>;
+      case ProcessStatus.ERROR:
+        return <Badge variant="destructive">Error</Badge>;
+      case ProcessStatus.COMPLETE:
+      default:
+        return <Badge variant="secondary" className="text-green-600 bg-green-50">Complete</Badge>;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -62,22 +88,25 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
                 <FileText className="w-5 h-5" />
                 <CardTitle>System Prompt</CardTitle>
                 {hasPrompt && (
-                  <Badge 
-                    variant={currentPrompt?.isDeployed ? "default" : "secondary"}
-                    className="flex items-center gap-1"
-                  >
-                    {currentPrompt?.isDeployed ? (
-                      <>
-                        <CheckCircle className="w-3 h-3" />
-                        Deployed
-                      </>
-                    ) : (
-                      <>
-                        <AlertCircle className="w-3 h-3" />
-                        Draft
-                      </>
-                    )}
-                  </Badge>
+                  <>
+                    <Badge 
+                      variant={currentPrompt?.isDeployed ? "default" : "secondary"}
+                      className="flex items-center gap-1"
+                    >
+                      {currentPrompt?.isDeployed ? (
+                        <>
+                          <CheckCircle className="w-3 h-3" />
+                          Deployed
+                        </>
+                      ) : (
+                        <>
+                          <AlertCircle className="w-3 h-3" />
+                          Draft
+                        </>
+                      )}
+                    </Badge>
+                    {currentPrompt?.status && getStatusBadge(currentPrompt.status)}
+                  </>
                 )}
               </div>
               <CardDescription>
@@ -102,16 +131,18 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
                       <History className="w-4 h-4" />
                       History ({versions.length})
                     </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={startEdit}
-                      className="flex items-center gap-2"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit
-                    </Button>
-                    {!currentPrompt?.isDeployed && (
+                    {currentPrompt?.status !== ProcessStatus.IN_PROGRESS && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={startEdit}
+                        className="flex items-center gap-2"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Edit
+                      </Button>
+                    )}
+                    {!currentPrompt?.isDeployed && currentPrompt?.status === ProcessStatus.COMPLETE && (
                       <Button
                         size="sm"
                         onClick={() => deployVersion(currentPrompt!.id)}
@@ -144,18 +175,33 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
             />
           ) : (
             <div className="space-y-4">
-              <div className="bg-muted/50 rounded-lg p-4">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium">Current Version</h4>
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Clock className="w-3 h-3" />
-                    {currentPrompt?.lastModified ? new Date(currentPrompt.lastModified).toLocaleDateString() : 'Unknown'}
+              {currentPrompt?.status === ProcessStatus.IN_PROGRESS ? (
+                <div className="flex items-center justify-center py-8 space-x-2">
+                  <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                  <span className="text-sm text-muted-foreground">Generating system prompt...</span>
+                </div>
+              ) : currentPrompt?.status === ProcessStatus.ERROR ? (
+                <div className="flex items-center justify-center py-8 space-x-2 text-red-500">
+                  <AlertCircle className="h-6 w-6" />
+                  <span className="text-sm">Generation failed. Please try again.</span>
+                </div>
+              ) : (
+                <div className="bg-muted/50 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h4 className="font-medium flex items-center gap-2">
+                      Current Version
+                      {getStatusIcon(currentPrompt?.status)}
+                    </h4>
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Clock className="w-3 h-3" />
+                      {currentPrompt?.lastModified ? new Date(currentPrompt.lastModified).toLocaleDateString() : 'Unknown'}
+                    </div>
+                  </div>
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
+                    {currentPrompt?.content || 'No content available'}
                   </div>
                 </div>
-                <div className="text-sm leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
-                  {currentPrompt?.content || 'No content available'}
-                </div>
-              </div>
+              )}
             </div>
           )}
         </CardContent>

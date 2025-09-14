@@ -122,6 +122,7 @@ serve(async (req) => {
     (async () => {
       const stepStartTime = Date.now();
       let currentStep = 'INIT';
+      let promptId: string | undefined = undefined;
       
       try {
         currentStep = 'PARSE_REQUEST';
@@ -332,47 +333,41 @@ Book Information:
           totalSteps: 4
         });
 
-        // Save the style guide to the book_system_prompts table
-        const nextVersionResult = await supabase.rpc('get_next_version_number', { 
-          p_book_id: bookId 
-        });
-        
-        const nextVersion = nextVersionResult.data || 1;
-        
-        const { data: promptData, error: promptError } = await supabase
+        // Update the existing prompt record with completion
+        const { data: savedPrompt, error: saveError } = await supabase
           .from('book_system_prompts')
-          .insert({
-            book_id: bookId,
-            user_id: userId,
+          .update({
             content: `You are a creative director and graphic designer specializing in children's ABC books. Your role is to create beautiful, engaging illustrations that help children learn letters and words.
 
 Style Guide for "${bookMetadata.book_name}":
 ${styleGuide}
 
 Use this style guide consistently across all illustrations for this book. Each illustration should be educational, age-appropriate, and aligned with the visual style described above.`,
-            version_number: nextVersion,
-            source_type: 'generated',
-            is_latest: true,
+            status: ProcessStatus.COMPLETE,
             is_deployed: true,
             generation_metadata: {
               model: agentConfig.model,
-              generated_at: new Date().toISOString(),
-              book_metadata: {
-                name: bookMetadata.book_name,
-                description: bookMetadata.book_description,
-                category: bookMetadata.category,
-                total_pages: bookMetadata.total_pages
-              }
+              agent_name: agentConfig.name,
+              agent_version: agentConfig.version,
+              prompt_length: styleGuidePrompt.length,
+              style_guide_length: styleGuide.length,
+              generation_duration_ms: aiDuration,
+              tokens_used: data.usage?.total_tokens || null,
+              completion_tokens: data.usage?.completion_tokens || null,
+              prompt_tokens: data.usage?.prompt_tokens || null,
+              completed_at: new Date().toISOString(),
+              request_id: requestId
             }
           })
+          .eq('id', promptId)
           .select()
           .single();
 
-        if (promptError) {
-          throw new Error(`Failed to save style guide: ${promptError.message}`);
+        if (saveError) {
+          throw new Error(`Failed to save style guide: ${saveError.message}`);
         }
 
-        log('INFO', ProcessStatus.COMPLETE, 'save-style-guide', `Style guide saved as version ${nextVersion} for book ${bookId}`);
+        log('INFO', ProcessStatus.COMPLETE, 'save-style-guide', `Style guide updated for book ${bookId}`);
 
         // Store the generated style guide in the book's metadata or pages
         const { error: updateError } = await supabase
@@ -447,6 +442,27 @@ Use this style guide consistently across all illustrations for this book. Each i
         });
 
       } catch (error) {
+        console.error('Streaming error:', error);
+        
+        // Update prompt record with error status if we have the promptId
+        if (typeof promptId !== 'undefined') {
+          try {
+            await supabase
+              .from('book_system_prompts')
+              .update({
+                status: ProcessStatus.ERROR,
+                generation_metadata: {
+                  error_message: error.message,
+                  failed_at: new Date().toISOString(),
+                  request_id: requestId
+                }
+              })
+              .eq('id', promptId);
+          } catch (updateError) {
+            console.error('Error updating prompt with error status:', updateError);
+          }
+        }
+        
         const totalDuration = Date.now() - startTime;
         log('ERROR', ProcessStatus.ERROR, currentStep || 'UNKNOWN', 'Streaming process failed', { 
           requestId,
@@ -622,6 +638,7 @@ Use this style guide consistently across all illustrations for this book. Each i
         source_type: 'generated',
         is_latest: true,
         is_deployed: true,
+        status: ProcessStatus.COMPLETE,
         generation_metadata: {
           model: agentConfig.model,
           generated_at: new Date().toISOString(),

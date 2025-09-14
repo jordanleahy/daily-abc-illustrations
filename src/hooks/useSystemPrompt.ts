@@ -12,6 +12,7 @@ export interface SystemPrompt {
   deployedAt?: string;
   sourceType: 'generated' | 'manual';
   generationMetadata?: any;
+  status?: string;
 }
 
 export interface SystemPromptVersion {
@@ -23,6 +24,7 @@ export interface SystemPromptVersion {
   deployedAt?: string;
   sourceType: 'generated' | 'manual';
   generationMetadata?: any;
+  status?: string;
 }
 
 export const useSystemPrompt = (bookId: string) => {
@@ -59,7 +61,8 @@ export const useSystemPrompt = (bookId: string) => {
           lastModified: currentData.updated_at,
           deployedAt: currentData.deployed_at || undefined,
           sourceType: currentData.source_type as 'generated' | 'manual',
-          generationMetadata: currentData.generation_metadata
+          generationMetadata: currentData.generation_metadata,
+          status: currentData.status
         });
       }
 
@@ -81,7 +84,8 @@ export const useSystemPrompt = (bookId: string) => {
           isDeployed: v.is_deployed,
           deployedAt: v.deployed_at || undefined,
           sourceType: v.source_type as 'generated' | 'manual',
-          generationMetadata: v.generation_metadata
+          generationMetadata: v.generation_metadata,
+          status: v.status
         })));
       }
     } catch (error) {
@@ -125,7 +129,8 @@ export const useSystemPrompt = (bookId: string) => {
                 isDeployed: newPrompt.is_deployed,
                 deployedAt: newPrompt.deployed_at || undefined,
                 sourceType: newPrompt.source_type as 'generated' | 'manual',
-                generationMetadata: newPrompt.generation_metadata
+                generationMetadata: newPrompt.generation_metadata,
+                status: newPrompt.status
               };
               
               setVersions(prev => [newVersion, ...prev]);
@@ -140,7 +145,8 @@ export const useSystemPrompt = (bookId: string) => {
                   lastModified: newPrompt.updated_at,
                   deployedAt: newPrompt.deployed_at || undefined,
                   sourceType: newPrompt.source_type as 'generated' | 'manual',
-                  generationMetadata: newPrompt.generation_metadata
+                  generationMetadata: newPrompt.generation_metadata,
+                  status: newPrompt.status
                 });
               }
             } else if (payload.eventType === 'UPDATE') {

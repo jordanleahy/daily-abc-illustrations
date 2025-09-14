@@ -23,12 +23,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
 import { Book } from '@/types/book';
-import { ArrowLeft, Calendar, Users, Palette, Loader2, Edit3, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
+import { ArrowLeft, Calendar, Users, Palette, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
-import { PageSystemPromptSection } from "@/components/page-prompts";
+
 import { PageImageSection } from "@/components/PageImageSection";
 
 export default function BookDetail() {
@@ -44,7 +44,7 @@ export default function BookDetail() {
   
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
-  const [expandedPagePrompts, setExpandedPagePrompts] = useState<Record<string, boolean>>({});
+  
 
   useEffect(() => {
     // Wait for auth loading to complete before checking user status
@@ -97,12 +97,6 @@ export default function BookDetail() {
     navigate('/books');
   };
 
-  const togglePagePrompt = (pageId: string) => {
-    setExpandedPagePrompts(prev => ({
-      ...prev,
-      [pageId]: !prev[pageId]
-    }));
-  };
 
   const generateStyleGuide = async () => {
     if (!book || !user) return;
@@ -411,24 +405,9 @@ export default function BookDetail() {
                     <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
                       {page.letter}
                     </Badge>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => togglePagePrompt(page.id)}
-                        className="flex items-center gap-1"
-                      >
-                        <Edit3 className="w-3 h-3" />
-                        {expandedPagePrompts[page.id] ? (
-                          <ChevronDown className="w-3 h-3" />
-                        ) : (
-                          <ChevronRight className="w-3 h-3" />
-                        )}
-                      </Button>
-                      <span className="text-sm text-muted-foreground">
-                        Page {page.page_number}
-                      </span>
-                    </div>
+                    <span className="text-sm text-muted-foreground">
+                      Page {page.page_number}
+                    </span>
                   </div>
                   <CardTitle className="text-lg line-clamp-2">
                     {page.title}
@@ -440,15 +419,6 @@ export default function BookDetail() {
                   )}
                 </CardHeader>
                 <CardContent className="p-4 space-y-3">
-                  {/* Page Prompt Management - Expandable */}
-                  {expandedPagePrompts[page.id] && (
-                    <div className="border-t pt-4">
-                      <PageSystemPromptSection 
-                        pageId={page.id} 
-                        pageTitle={page.title}
-                      />
-                    </div>
-                  )}
                   
                   <PageImageSection 
                     pageId={page.id}

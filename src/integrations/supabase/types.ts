@@ -188,6 +188,60 @@ export type Database = {
           },
         ]
       }
+      page_image_urls: {
+        Row: {
+          book_id: string
+          created_at: string
+          error_message: string | null
+          generation_completed_at: string | null
+          generation_duration_ms: number | null
+          generation_started_at: string | null
+          generation_status: string
+          id: string
+          image_url: string | null
+          is_latest: boolean
+          page_id: string
+          prompt_used: string | null
+          updated_at: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          error_message?: string | null
+          generation_completed_at?: string | null
+          generation_duration_ms?: number | null
+          generation_started_at?: string | null
+          generation_status?: string
+          id?: string
+          image_url?: string | null
+          is_latest?: boolean
+          page_id: string
+          prompt_used?: string | null
+          updated_at?: string
+          user_id: string
+          version_number?: number
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          error_message?: string | null
+          generation_completed_at?: string | null
+          generation_duration_ms?: number | null
+          generation_started_at?: string | null
+          generation_status?: string
+          id?: string
+          image_url?: string | null
+          is_latest?: boolean
+          page_id?: string
+          prompt_used?: string | null
+          updated_at?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: []
+      }
       page_system_prompts: {
         Row: {
           book_id: string
@@ -339,6 +393,10 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_next_page_image_version_number: {
+        Args: { p_page_id: string }
+        Returns: number
       }
       get_next_page_prompt_version_number: {
         Args: { p_page_id: string }

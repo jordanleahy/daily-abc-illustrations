@@ -16,9 +16,10 @@ import { Book } from '@/types/book';
 import { ArrowLeft, Calendar, Users, Palette, Loader2, Edit3, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { SystemPromptSection } from '@/components/book';
-import { PageSystemPromptSection } from '@/components/page-prompts';
-import { useSystemPrompt } from '@/hooks/useSystemPrompt';
+import { useSystemPrompt } from "@/hooks/useSystemPrompt";
+import { SystemPromptSection } from "@/components/book";
+import { PageSystemPromptSection } from "@/components/page-prompts";
+import { PageImageSection } from "@/components/PageImageSection";
 
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
@@ -31,9 +32,7 @@ export default function BookDetail() {
   const [shimmeringPage, setShimmeringPage] = useState<string | null>(null);
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [imagePrompts, setImagePrompts] = useState<Record<string, string>>({});
-  const [imagePromptLoading, setImagePromptLoading] = useState<Record<string, boolean>>({});
-  const [generatedImages, setGeneratedImages] = useState<Record<string, string>>({});
-  const [imageGenerationLoading, setImageGenerationLoading] = useState<Record<string, boolean>>({});
+  // Removed generatedImages state - now using usePageImageUrls hook
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
   const [expandedPagePrompts, setExpandedPagePrompts] = useState<Record<string, boolean>>({});
@@ -93,73 +92,34 @@ export default function BookDetail() {
     
     const styleGuide = currentPrompt.content;
 
-    // If image already exists, show it in a modal or something (for now just show success)
-    if (generatedImages[pageId]) {
-      toast.success('Image already generated!');
-      return;
-    }
+    // Generate prompt if none exists
+    if (!imagePrompts[pageId]) {
+      setImagePrompts(prev => ({ ...prev, [pageId]: "Generating image prompt..." }));
 
-    // If prompt exists, generate image
-    if (imagePrompts[pageId]) {
-      setImageGenerationLoading(prev => ({ ...prev, [pageId]: true }));
-      
       try {
-        const { data, error } = await supabase.functions.invoke('generate-image', {
+        const { data, error } = await supabase.functions.invoke('generate-image-prompt', {
           body: {
-            prompt: imagePrompts[pageId],
             pageId,
-            userId: user?.id
+            userId: user?.id,
+            styleGuide
           }
         });
 
         if (error) throw error;
-        if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
+        if (!data?.success) throw new Error(data?.error || 'Failed to generate image prompt');
         
-        if (!data.image) {
-          throw new Error('No image data returned');
+        // Check if imagePrompt is empty or invalid
+        if (!data.imagePrompt || data.imagePrompt.trim().length === 0) {
+          throw new Error('Failed to generate image prompt - empty response');
         }
 
-        // Store the generated image (base64 data)
-        setGeneratedImages(prev => ({ ...prev, [pageId]: data.image }));
-        toast.success('Image generated successfully!');
+        setImagePrompts(prev => ({ ...prev, [pageId]: data.imagePrompt }));
+        toast.success('Image prompt generated! Now you can generate the image.');
       } catch (error: any) {
-        console.error('Error generating image:', error);
-        toast.error('Failed to generate image');
-      } finally {
-        setImageGenerationLoading(prev => ({ ...prev, [pageId]: false }));
+        console.error('Error generating image prompt:', error);
+        toast.error('Failed to generate image prompt');
+        setImagePrompts(prev => ({ ...prev, [pageId]: "" }));
       }
-      return;
-    }
-
-    // Generate prompt if none exists
-    setShimmeringPage(pageId);
-    setImagePromptLoading(prev => ({ ...prev, [pageId]: true }));
-
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-image-prompt', {
-        body: {
-          pageId,
-          userId: user?.id,
-          styleGuide
-        }
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate image prompt');
-      
-      // Check if imagePrompt is empty or invalid
-      if (!data.imagePrompt || data.imagePrompt.trim().length === 0) {
-        throw new Error('Failed to generate image prompt - empty response');
-      }
-
-      setImagePrompts(prev => ({ ...prev, [pageId]: data.imagePrompt }));
-      toast.success('Image prompt generated! Click again to generate image.');
-    } catch (error: any) {
-      console.error('Error generating image prompt:', error);
-      toast.error('Failed to generate image prompt');
-    } finally {
-      setShimmeringPage(null);
-      setImagePromptLoading(prev => ({ ...prev, [pageId]: false }));
     }
   };
 
@@ -458,58 +418,11 @@ export default function BookDetail() {
                     </div>
                   )}
                   
-                  <Shimmer 
-                    isShimmering={shimmeringPage === page.id}
-                    className="w-full aspect-square bg-muted rounded-lg cursor-pointer hover:bg-muted/80 flex items-center justify-center overflow-hidden"
-                    onClick={() => handleImageClick(page.id)}
-                  >
-                    {generatedImages[page.id] ? (
-                      // Show generated image
-                      <img 
-                        src={generatedImages[page.id]} 
-                        alt={`Generated image for ${page.title}`}
-                        className="w-full h-full object-cover rounded-lg"
-                      />
-                    ) : (
-                      <div className="text-muted-foreground text-sm text-center">
-                        {!currentPrompt?.isDeployed ? (
-                          "Generate and deploy style guide first"
-                        ) : imagePrompts[page.id] ? (
-                          // Prompt exists, ready to generate image
-                          imageGenerationLoading[page.id] ? (
-                            <div className="space-y-2">
-                              <Loader2 className="w-6 h-6 animate-spin mx-auto" />
-                              <div className="text-xs">Generating image...</div>
-                            </div>
-                          ) : (
-                            <div className="space-y-2 px-2">
-                              <div className="flex items-center justify-center gap-1">
-                                <Palette className="w-4 h-4" />
-                                <span className="text-sm font-medium">Ready to Generate</span>
-                              </div>
-                              <div className="text-xs leading-relaxed max-h-16 overflow-y-auto opacity-70">
-                                {imagePrompts[page.id].substring(0, 100)}...
-                              </div>
-                              <div className="text-xs font-medium text-primary">Tap to generate image</div>
-                            </div>
-                          )
-                        ) : imagePromptLoading[page.id] ? (
-                          <div className="space-y-1">
-                            <Loader2 className="w-4 h-4 animate-spin mx-auto" />
-                            <div className="text-xs">Generating prompt...</div>
-                          </div>
-                        ) : (
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-center gap-1">
-                              <Palette className="w-3 h-3" />
-                              Style guide ready
-                            </div>
-                            <div className="text-xs">Tap to generate prompt</div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </Shimmer>
+                  <PageImageSection 
+                    pageId={page.id}
+                    bookId={book.id}
+                    imagePrompt={imagePrompts[page.id]}
+                  />
                 </CardContent>
               </Card>
             ))}

@@ -1,210 +1,301 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
-import { ProcessStatus, corsHeaders, log, generateRequestId } from '../_shared/types.ts';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 serve(async (req) => {
-  const requestId = generateRequestId();
-  const startTime = Date.now();
-  
-  log('INFO', ProcessStatus.IN_PROGRESS, 'REQUEST', `Starting image generation`, { requestId, method: req.method });
+  const requestId = crypto.randomUUID();
+  console.log(`[${requestId}] Starting generate-image request`);
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    log('INFO', ProcessStatus.COMPLETE, 'CORS', 'Handling CORS preflight request', { requestId });
     return new Response(null, { headers: corsHeaders });
   }
 
-  let currentStep = 'INIT';
-  
   try {
-    currentStep = 'PARSE_REQUEST';
-    const parseStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Parsing request parameters...', { requestId });
+    // Parse request
+    const { recordId, userId } = await req.json();
     
-    // Initialize Supabase client
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization') ?? '' },
-        },
-      }
-    );
-
-    const { prompt, pageId, userId, size = "1024x1024", quality = "high" } = await req.json();
-
-    if (!prompt || !pageId || !userId) {
-      const errorMsg = 'Missing required parameters: prompt, pageId, or userId';
-      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
-        requestId, 
-        receivedParams: { prompt: !!prompt, pageId: !!pageId, userId: !!userId } 
-      });
-      throw new Error(errorMsg);
-    }
-
-    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Request parsed successfully', { 
-      requestId, 
-      duration: Date.now() - parseStartTime,
-      pageId: pageId?.substring(0, 8) + '...',
-      userId: userId?.substring(0, 8) + '...',
-      promptLength: prompt?.length,
-      size,
-      quality
+    console.log(`[${requestId}] Request params:`, {
+      recordId,
+      userId
     });
 
-    currentStep = 'VERIFY_PAGE_ACCESS';
-    const verifyStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Verifying page access...', { requestId });
+    if (!recordId || !userId) {
+      console.log(`[${requestId}] Missing required parameters`);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Missing required parameters: recordId and userId are required'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
 
-    // Verify user has access to this page
-    const { data: pageData, error: pageError } = await supabaseClient
-      .from('pages')
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl || !supabaseKey) {
+      console.log(`[${requestId}] Missing Supabase environment variables`);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Server configuration error'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: {
+        storage: undefined,
+        persistSession: false,
+        autoRefreshToken: false,
+      },
+    });
+
+    console.log(`[${requestId}] Fetching image record`);
+    
+    // Get the image record and verify access
+    const { data: imageRecord, error: recordError } = await supabase
+      .from('page_image_urls')
       .select(`
-        id,
-        book_id,
-        books!inner(user_id)
+        *,
+        pages!inner (
+          id,
+          book_id,
+          books!inner (
+            user_id
+          )
+        )
       `)
-      .eq('id', pageId)
+      .eq('id', recordId)
+      .eq('pages.books.user_id', userId)
       .single();
 
-    const verifyDuration = Date.now() - verifyStartTime;
-
-    if (pageError) {
-      log('ERROR', ProcessStatus.ERROR, currentStep, 'Failed to verify page access', { 
-        requestId, 
-        duration: verifyDuration,
-        error: pageError.message,
-        pageId: pageId?.substring(0, 8) + '...'
+    if (recordError || !imageRecord) {
+      console.log(`[${requestId}] Image record fetch failed:`, recordError);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Access denied or record not found'
+      }), {
+        status: 403,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
-      throw new Error(`Failed to verify page access: ${pageError.message}`);
     }
 
-    if (!pageData || pageData.books.user_id !== userId) {
-      log('ERROR', ProcessStatus.ERROR, currentStep, 'Page not found or access denied', { 
-        requestId, 
-        duration: verifyDuration,
-        pageExists: !!pageData,
-        userIdMatch: pageData?.books?.user_id === userId
-      });
-      throw new Error('Page not found or access denied');
-    }
+    // Update status to in_progress
+    const startTime = new Date().toISOString();
+    await supabase
+      .from('page_image_urls')
+      .update({
+        generation_status: 'in_progress',
+        generation_started_at: startTime
+      })
+      .eq('id', recordId);
 
-    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Page access verified successfully', { 
-      requestId, 
-      duration: verifyDuration,
-      bookId: pageData.book_id?.substring(0, 8) + '...'
-    });
-
-    currentStep = 'OPENAI_IMAGE_API';
-    const imageStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling OpenAI Image API...', { 
-      requestId,
-      model: 'gpt-image-1',
-      size,
-      quality,
-      promptLength: prompt.length
-    });
+    console.log(`[${requestId}] Updated status to in_progress`);
 
     // Get OpenAI API key
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      log('ERROR', ProcessStatus.ERROR, currentStep, 'OpenAI API key not configured', { requestId });
-      throw new Error('OpenAI API key not configured');
+    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
+    if (!openaiApiKey) {
+      console.log(`[${requestId}] OpenAI API key not configured`);
+      
+      await supabase
+        .from('page_image_urls')
+        .update({
+          generation_status: 'error',
+          error_message: 'OpenAI API key not configured'
+        })
+        .eq('id', recordId);
+
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'OpenAI API key not configured'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
     }
 
+    console.log(`[${requestId}] Calling OpenAI Image Generation API`);
+
+    const generationStartTime = Date.now();
+
     // Call OpenAI Image Generation API
-    const response = await fetch('https://api.openai.com/v1/images/generations', {
+    const openaiResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${openaiApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
         model: 'gpt-image-1',
-        prompt: prompt,
+        prompt: imageRecord.prompt_used,
         n: 1,
-        size: size,
-        quality: quality,
-        output_format: 'png'
+        size: '1024x1024',
+        quality: 'high'
       }),
     });
 
-    const imageDuration = Date.now() - imageStartTime;
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMsg = `OpenAI Image API error: ${errorData.error?.message || response.statusText}`;
-      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
-        requestId, 
-        duration: imageDuration,
-        statusCode: response.status,
-        error: errorData
-      });
-      throw new Error(errorMsg);
-    }
-
-    const imageData = await response.json();
-    
-    // gpt-image-1 returns base64 encoded images
-    const generatedImage = imageData.data[0];
-    
-    if (!generatedImage || !generatedImage.b64_json) {
-      const errorMsg = 'No image data returned from OpenAI';
-      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
-        requestId, 
-        duration: imageDuration,
-        responseData: imageData
-      });
-      throw new Error(errorMsg);
-    }
-
-    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Image generated successfully', { 
-      requestId, 
-      duration: imageDuration,
-      imageSize: generatedImage.b64_json.length,
-      revised_prompt: generatedImage.revised_prompt ? 'Revised prompt provided' : 'No revision'
-    });
-
-    const totalDuration = Date.now() - startTime;
-    log('INFO', ProcessStatus.COMPLETE, 'COMPLETE', 'Image generation completed successfully!', { 
-      requestId,
-      totalDuration,
-      imageGenerated: true,
-      pageId: pageId?.substring(0, 8) + '...'
-    });
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        image: generatedImage.b64_json,
-        revised_prompt: generatedImage.revised_prompt || null,
-        pageId 
-      }),
-      {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
-
-  } catch (error) {
-    const totalDuration = Date.now() - startTime;
-    log('ERROR', ProcessStatus.ERROR, currentStep || 'UNKNOWN', 'Image generation failed', { 
-      requestId,
-      totalDuration,
-      error: error.message,
-      stack: error.stack
-    });
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        error: error.message 
-      }),
-      {
+    if (!openaiResponse.ok) {
+      const errorText = await openaiResponse.text();
+      console.log(`[${requestId}] OpenAI API error:`, errorText);
+      
+      const errorMessage = 'Failed to generate image';
+      await supabase
+        .from('page_image_urls')
+        .update({
+          generation_status: 'error',
+          error_message: errorMessage
+        })
+        .eq('id', recordId);
+      
+      return new Response(JSON.stringify({
+        success: false,
+        error: errorMessage
+      }), {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      }
-    );
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const imageData = await openaiResponse.json();
+    console.log(`[${requestId}] OpenAI response received successfully`);
+
+    if (!imageData.data || !imageData.data[0]) {
+      console.log(`[${requestId}] No image data returned from OpenAI`);
+      
+      await supabase
+        .from('page_image_urls')
+        .update({
+          generation_status: 'error',
+          error_message: 'No image data returned from OpenAI'
+        })
+        .eq('id', recordId);
+
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'No image data returned from OpenAI'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // For gpt-image-1, the response contains base64 data in the b64_json field
+    const base64Data = imageData.data[0].b64_json;
+
+    if (!base64Data) {
+      console.log(`[${requestId}] No base64 data in OpenAI response`);
+      
+      await supabase
+        .from('page_image_urls')
+        .update({
+          generation_status: 'error',
+          error_message: 'No image data in OpenAI response'
+        })
+        .eq('id', recordId);
+
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'No image data in OpenAI response'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log(`[${requestId}] Uploading image to Supabase Storage`);
+
+    // Convert base64 to blob for upload
+    const imageBuffer = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    const fileName = `${userId}/${imageRecord.book_id}/${imageRecord.page_id}/v${imageRecord.version_number}.png`;
+
+    // Upload to Supabase Storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('page-images')
+      .upload(fileName, imageBuffer, {
+        contentType: 'image/png',
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.log(`[${requestId}] Storage upload error:`, uploadError);
+      
+      await supabase
+        .from('page_image_urls')
+        .update({
+          generation_status: 'error',
+          error_message: 'Failed to upload image to storage'
+        })
+        .eq('id', recordId);
+
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to upload image to storage'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Get public URL
+    const { data: urlData } = supabase.storage
+      .from('page-images')
+      .getPublicUrl(fileName);
+
+    const generationEndTime = Date.now();
+    const generationDuration = generationEndTime - generationStartTime;
+
+    console.log(`[${requestId}] Image uploaded successfully, updating record`);
+
+    // Update the record with the image URL and completion status
+    const { data: updatedRecord, error: updateError } = await supabase
+      .from('page_image_urls')
+      .update({
+        image_url: urlData.publicUrl,
+        generation_status: 'complete',
+        generation_completed_at: new Date().toISOString(),
+        generation_duration_ms: generationDuration
+      })
+      .eq('id', recordId)
+      .select()
+      .single();
+
+    if (updateError) {
+      console.log(`[${requestId}] Failed to update record:`, updateError);
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Failed to update image record'
+      }), {
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log(`[${requestId}] Successfully generated and stored image`);
+
+    return new Response(JSON.stringify({
+      success: true,
+      record: updatedRecord
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error: any) {
+    console.error(`[${requestId}] Error in generate-image function:`, error);
+    return new Response(JSON.stringify({
+      success: false,
+      error: error.message || 'Internal server error'
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 });

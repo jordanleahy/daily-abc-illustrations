@@ -64,25 +64,27 @@ serve(async (req) => {
     // Get the image record and verify access
     const { data: imageRecord, error: recordError } = await supabase
       .from('page_image_urls')
-      .select(`
-        *,
-        pages!inner (
-          id,
-          book_id,
-          books!inner (
-            user_id
-          )
-        )
-      `)
+      .select('*')
       .eq('id', recordId)
-      .eq('pages.books.user_id', userId)
       .single();
 
     if (recordError || !imageRecord) {
       console.log(`[${requestId}] Image record fetch failed:`, recordError);
       return new Response(JSON.stringify({
         success: false,
-        error: 'Access denied or record not found'
+        error: 'Record not found'
+      }), {
+        status: 404,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Verify the requesting user owns this record
+    if (imageRecord.user_id !== userId) {
+      console.log(`[${requestId}] Access denied: user mismatch`, { requestUserId: userId, ownerUserId: imageRecord.user_id });
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'Access denied'
       }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

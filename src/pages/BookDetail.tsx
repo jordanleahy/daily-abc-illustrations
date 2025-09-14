@@ -5,7 +5,6 @@ import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Shimmer } from '@/components/ui/shimmer';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useBookPages } from '@/hooks/useBookPages';
@@ -29,10 +28,8 @@ export default function BookDetail() {
   const { pages } = useBookPages(id);
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
-  const [shimmeringPage, setShimmeringPage] = useState<string | null>(null);
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [imagePrompts, setImagePrompts] = useState<Record<string, string>>({});
-  // Removed generatedImages state - now using usePageImageUrls hook
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
   const [expandedPagePrompts, setExpandedPagePrompts] = useState<Record<string, boolean>>({});

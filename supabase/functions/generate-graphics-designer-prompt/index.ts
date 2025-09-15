@@ -1,6 +1,32 @@
+/**
+ * Generate Graphics Designer System Prompt Edge Function
+ * 
+ * This edge function generates a comprehensive system prompt for the Graphics Designer Agent
+ * based on book metadata (name, category, description) using the user's Illustration Director Agent.
+ * 
+ * @requires OPENAI_API_KEY - OpenAI API key for GPT model access
+ * @requires SUPABASE_URL - Supabase project URL
+ * @requires SUPABASE_ANON_KEY - Supabase anonymous key for database access
+ */
+
+// XMLHttpRequest polyfill - Required for OpenAI API calls in Deno runtime
+// Provides browser-compatible XMLHttpRequest functionality that some libraries expect
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+
+// Deno HTTP server - Core server functionality for handling HTTP requests
+// Used to create the edge function endpoint that responds to HTTP requests
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+// Supabase JavaScript client - Database and auth operations
+// Provides type-safe access to Supabase database, auth, and other services
+// Version pinned to ensure consistent behavior across deployments
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+
+// Shared utilities and types - Common functionality across edge functions
+// ProcessStatus: Enum for tracking operation states (IN_PROGRESS, COMPLETE, ERROR)
+// corsHeaders: CORS headers for browser compatibility
+// log: Structured logging utility for debugging and monitoring
+// generateRequestId: Creates unique identifiers for request tracking
 import { ProcessStatus, corsHeaders, log, generateRequestId } from '../_shared/types.ts';
 
 serve(async (req) => {

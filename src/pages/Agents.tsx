@@ -185,7 +185,6 @@ const Agents = () => {
               config={config}
               onUpdate={updateConfig}
               onUpdateModelSettings={updateModelSettings}
-              onSave={saveConfig}
               onSaveWithOverrides={saveConfigWithOverrides}
               isLoading={isLoading}
               hasUnsavedChanges={hasUnsavedChanges}

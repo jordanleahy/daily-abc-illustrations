@@ -1,16 +1,12 @@
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { Slider } from '@/components/ui/slider';
-import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { AgentConfig, AVAILABLE_MODELS } from '@/types/agent';
-import { useEffect, useState } from 'react';
+import { AgentConfig } from '@/types/agent';
 
 interface ModelSettingsTabProps {
   config: AgentConfig;
   onUpdate: (settings: Partial<AgentConfig['modelSettings']>) => void;
-  onSave: () => void;
+  onSaveWithOverrides: (configOverrides?: Partial<AgentConfig>) => Promise<void>;
   isLoading: boolean;
   hasUnsavedChanges: boolean;
 }
@@ -18,7 +14,7 @@ interface ModelSettingsTabProps {
 export const ModelSettingsTab = ({ 
   config, 
   onUpdate, 
-  onSave, 
+  onSaveWithOverrides, 
   isLoading, 
   hasUnsavedChanges 
 }: ModelSettingsTabProps) => {
@@ -33,8 +29,8 @@ export const ModelSettingsTab = ({
     onUpdate({ [key]: value });
   };
 
-  const handleSave = () => {
-    onSave();
+  const handleSave = async () => {
+    await onSaveWithOverrides();
   };
 
   const handleReset = () => {

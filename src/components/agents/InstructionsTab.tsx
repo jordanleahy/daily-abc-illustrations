@@ -8,7 +8,6 @@ import { BookSystemPromptDisplay } from './BookSystemPromptDisplay';
 interface InstructionsTabProps {
   config: AgentConfig;
   onUpdate: (updates: Partial<AgentConfig>) => void;
-  onSave: () => void;
   onSaveWithOverrides: (configOverrides?: Partial<AgentConfig>) => Promise<void>;
   isLoading: boolean;
   hasUnsavedChanges: boolean;
@@ -18,7 +17,6 @@ interface InstructionsTabProps {
 export const InstructionsTab = ({ 
   config, 
   onUpdate, 
-  onSave, 
   onSaveWithOverrides,
   isLoading, 
   hasUnsavedChanges,

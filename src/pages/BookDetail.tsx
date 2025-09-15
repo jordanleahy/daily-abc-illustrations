@@ -303,6 +303,28 @@ export default function BookDetail() {
           {/* Book Info */}
           <Card>
             <CardHeader>
+              {/* Call Illustration Director Button - Above Title */}
+              <div className="mb-4">
+                <Button
+                  variant="outline"
+                  onClick={generateStyleGuide}
+                  disabled={styleGuideLoading}
+                  className="flex items-center gap-2"
+                >
+                  {styleGuideLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <Palette className="w-4 h-4" />
+                      Call Illustration Director
+                    </>
+                  )}
+                </Button>
+              </div>
+
               <div className="flex justify-between items-start">
                 <div className="space-y-2">
                   <CardTitle className="text-2xl">{book.book_name}</CardTitle>
@@ -313,24 +335,6 @@ export default function BookDetail() {
                   )}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={generateStyleGuide}
-                    disabled={styleGuideLoading}
-                    className="flex items-center gap-2"
-                  >
-                    {styleGuideLoading ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Generating...
-                      </>
-                    ) : (
-                      <>
-                        <Palette className="w-4 h-4" />
-                        Call Illustration Director
-                      </>
-                    )}
-                  </Button>
                   
                   <AlertDialog>
                     <AlertDialogTrigger asChild>

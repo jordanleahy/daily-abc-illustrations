@@ -69,5 +69,8 @@ verify_jwt = true
 [functions.generate-image-prompt]
 verify_jwt = true
 
+[functions.generate-graphics-designer-prompt]
+verify_jwt = true
+
 [functions.generate-image]
 verify_jwt = true

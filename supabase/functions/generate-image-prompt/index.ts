@@ -139,11 +139,43 @@ serve(async (req) => {
       promptLength: deployedPrompt.content?.length || 0
     });
 
+    currentStep = 'GENERATE_SYSTEM_PROMPT';
+    const systemPromptStartTime = Date.now();
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Generating dynamic system prompt for Graphics Designer...', { requestId });
+
+    // Call the generate-graphics-designer-prompt function to get dynamic system prompt
+    const systemPromptResponse = await supabaseClient.functions.invoke('generate-graphics-designer-prompt', {
+      body: {
+        bookId: pageData.book_id,
+        userId: userId
+      }
+    });
+
+    const systemPromptDuration = Date.now() - systemPromptStartTime;
+
+    if (systemPromptResponse.error || !systemPromptResponse.data?.success) {
+      const errorMsg = `Failed to generate dynamic system prompt: ${systemPromptResponse.error?.message || 'Unknown error'}`;
+      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
+        requestId, 
+        duration: systemPromptDuration,
+        error: systemPromptResponse.error
+      });
+      throw new Error(errorMsg);
+    }
+
+    const dynamicSystemPrompt = systemPromptResponse.data.systemPrompt;
+
+    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Dynamic system prompt generated successfully', { 
+      requestId, 
+      duration: systemPromptDuration,
+      promptLength: dynamicSystemPrompt.length
+    });
+
     currentStep = 'FETCH_AGENT';
     const agentStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Fetching Graphics Design Agent configuration...', { requestId });
 
-    // Fetch user's Graphics Design Agent configuration
+    // Fetch user's Graphics Design Agent configuration (now just for model settings)
     const { data: agentConfig, error: agentError } = await supabaseClient
       .from('agents')
       .select('*')
@@ -170,8 +202,7 @@ serve(async (req) => {
       duration: agentDuration,
       agentId: agentConfig.id?.substring(0, 8) + '...',
       model: agentConfig.model,
-      version: agentConfig.version,
-      instructionsLength: agentConfig.instructions?.length
+      version: agentConfig.version
     });
 
     currentStep = 'PREPARE_PROMPT';
@@ -228,15 +259,15 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
         messages: [
           {
             role: 'system',
-            content: agentConfig.instructions
+            content: dynamicSystemPrompt
           },
           {
             role: 'user',
-            content: `Using the book system prompt as context, create a detailed image prompt for this ABC book page:
+            content: `Create a detailed image prompt for this ABC book page:
 
 ${pageContent}
 
-Please generate a specific, detailed image prompt that captures the visual elements described in the book system prompt and incorporates the page details (letter, title, description, content).`
+Please generate a specific, detailed image prompt that captures the visual elements and incorporates the page details (letter, title, description, content).`
           }
         ],
       }),

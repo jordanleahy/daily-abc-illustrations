@@ -84,13 +84,11 @@ export function PageCard({ page, bookId }: PageCardProps) {
             </Button>
           </div>
           <div className="flex items-center gap-2">
+            <Toggle size="sm" className="h-6 w-6 p-0" />
             {currentPrompt && (
-              <>
-                <Toggle size="sm" className="h-6 w-6 p-0" />
-                <Badge variant="secondary" className="text-xs">
-                  Version {currentPrompt.version_number}
-                </Badge>
-              </>
+              <Badge variant="secondary" className="text-xs">
+                Version {currentPrompt.version_number}
+              </Badge>
             )}
             <span className="text-sm text-muted-foreground">
               Page {page.page_number}

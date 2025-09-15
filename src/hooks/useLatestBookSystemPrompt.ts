@@ -36,7 +36,7 @@ export const useLatestBookSystemPrompt = () => {
           version_number,
           created_at,
           source_type,
-          books!inner(
+          books!book_system_prompts_book_id_fkey(
             book_name,
             category
           )

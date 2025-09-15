@@ -141,6 +141,7 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
             }}
             size="sm"
             variant="outline"
+            disabled={isGeneratingPrompt || isGenerating}
           >
             Try Again
           </Button>
@@ -156,6 +157,7 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
             onClick={handleGenerateImage}
             size="sm"
             className="w-full"
+            disabled={isGenerating || !generatedPrompt}
           >
             Generate Image
           </Button>
@@ -176,6 +178,7 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
             onClick={handleGeneratePrompt}
             size="sm"
             className="w-full"
+            disabled={isGeneratingPrompt || isGenerating}
           >
             Generate Prompt
           </Button>

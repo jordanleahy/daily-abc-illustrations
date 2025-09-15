@@ -25,7 +25,7 @@ export const ModelSettingsTab = ({
     topP: 1.0
   };
 
-  const handleSettingChange = (key: keyof AgentConfig['modelSettings'], value: any) => {
+  const handleSettingChange = (key: keyof AgentConfig['modelSettings'], value: string | number) => {
     onUpdate({ [key]: value });
   };
 

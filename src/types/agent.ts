@@ -44,18 +44,6 @@ export interface AgentConfig {
   };
 }
 
-/**
- * Available OpenAI models for agent configuration
- * Models are ordered by capability and performance, with newer models first
- */
-export const AVAILABLE_MODELS = [
-  { value: 'gpt-5-2025-08-07', label: 'GPT-5' },
-  { value: 'gpt-5-mini-2025-08-07', label: 'GPT-5 Mini' },
-  { value: 'gpt-4o', label: 'GPT-4o' },
-  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-  { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
-  { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
-];
 
 export const DEFAULT_AGENT_CONFIG: AgentConfig = {
   id: 'abc-cards-001',

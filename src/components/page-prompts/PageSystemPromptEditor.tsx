@@ -23,9 +23,13 @@ export function PageSystemPromptEditor({
   const maxCharacters = 4000;
 
   const handleSave = async () => {
+    if (isSaving || !content.trim() || characterCount > maxCharacters) return;
+    
     setIsSaving(true);
     try {
       await onSave();
+    } catch (error) {
+      console.error('Error saving page system prompt:', error);
     } finally {
       setIsSaving(false);
     }

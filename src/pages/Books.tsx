@@ -99,8 +99,8 @@ export default function Books() {
                       <CardTitle className="text-xl line-clamp-2">
                         {book.book_name}
                       </CardTitle>
-                      <Badge variant={book.is_published ? "default" : "secondary"}>
-                        {book.is_published ? 'Published' : 'Draft'}
+                      <Badge variant={book.status === 'published' ? "default" : "secondary"}>
+                        {book.status === 'published' ? 'Published' : book.status === 'draft' ? 'Draft' : 'Archived'}
                       </Badge>
                     </div>
                     {book.category && (

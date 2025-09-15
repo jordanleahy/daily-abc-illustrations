@@ -15,8 +15,8 @@ export interface Book {
   book_description?: string;
   /** Total number of pages in the book (typically 26 for A-Z) */
   total_pages: number;
-  /** Whether the book has been published and is ready for use */
-  is_published: boolean;
+  /** Publication status of the book */
+  status: 'draft' | 'published' | 'archived';
   /** ID of the currently deployed system prompt for AI operations */
   current_system_prompt_id?: string;
   /** ISO timestamp when the book was created */

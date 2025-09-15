@@ -74,3 +74,6 @@ verify_jwt = true
 
 [functions.generate-image]
 verify_jwt = true
+
+[functions.generate-pdf]
+verify_jwt = true

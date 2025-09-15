@@ -55,16 +55,11 @@ serve(async (req) => {
       .select(`
         id, book_name, book_description, category,
         pages (
-          id, letter, title, page_number, content,
-          page_image_urls!inner (
-            image_url, is_latest, generation_status
-          )
+          id, letter, title, page_number, content
         )
       `)
       .eq('id', exportRecord.content_id)
       .eq('user_id', exportRecord.user_id)
-      .eq('pages.page_image_urls.is_latest', true)
-      .eq('pages.page_image_urls.generation_status', 'complete')
       .single();
 
     if (bookError || !bookData) {
@@ -82,6 +77,24 @@ serve(async (req) => {
         JSON.stringify({ error: 'Failed to fetch book data' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // Fetch images for all pages separately
+    let pageImages = new Map();
+    if (bookData.pages && bookData.pages.length > 0) {
+      const pageIds = bookData.pages.map(p => p.id);
+      const { data: imagesData } = await supabase
+        .from('page_image_urls')
+        .select('page_id, image_url')
+        .in('page_id', pageIds)
+        .eq('is_latest', true)
+        .eq('generation_status', 'complete');
+
+      if (imagesData) {
+        imagesData.forEach(img => {
+          pageImages.set(img.page_id, img.image_url);
+        });
+      }
     }
 
     console.log('Creating PDF document...');
@@ -139,9 +152,10 @@ serve(async (req) => {
       let yPosition = 700;
 
       // Add image if available
-      if (pageData.page_image_urls?.[0]?.image_url) {
+      const imageUrl = pageImages.get(pageData.id);
+      if (imageUrl) {
         try {
-          const imageResponse = await fetch(pageData.page_image_urls[0].image_url);
+          const imageResponse = await fetch(imageUrl);
           if (imageResponse.ok) {
             const imageBytes = await imageResponse.arrayBytes();
             let image;

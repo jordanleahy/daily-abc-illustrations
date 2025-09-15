@@ -152,6 +152,7 @@ export type Database = {
           created_at: string
           current_system_prompt_id: string | null
           id: string
+          pdf_url: string | null
           status: Database["public"]["Enums"]["publication_status"]
           total_pages: number | null
           updated_at: string
@@ -164,6 +165,7 @@ export type Database = {
           created_at?: string
           current_system_prompt_id?: string | null
           id?: string
+          pdf_url?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
           total_pages?: number | null
           updated_at?: string
@@ -176,6 +178,7 @@ export type Database = {
           created_at?: string
           current_system_prompt_id?: string | null
           id?: string
+          pdf_url?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
           total_pages?: number | null
           updated_at?: string
@@ -190,6 +193,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      exports: {
+        Row: {
+          completed_at: string | null
+          content_id: string
+          content_type: string
+          created_at: string
+          error_message: string | null
+          export_config: Json | null
+          export_status: string
+          export_type: string
+          export_url: string | null
+          file_size_bytes: number | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          error_message?: string | null
+          export_config?: Json | null
+          export_status?: string
+          export_type: string
+          export_url?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          error_message?: string | null
+          export_config?: Json | null
+          export_status?: string
+          export_type?: string
+          export_url?: string | null
+          file_size_bytes?: number | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       page_image_urls: {
         Row: {

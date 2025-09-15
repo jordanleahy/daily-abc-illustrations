@@ -1,0 +1,341 @@
+import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { PDFDocument, rgb, StandardFonts } from 'https://cdn.skypack.dev/pdf-lib@1.17.1';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === 'OPTIONS') {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { exportId } = await req.json();
+    console.log('Starting PDF generation for export:', exportId);
+
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Get export record and verify ownership
+    const { data: exportRecord, error: exportError } = await supabase
+      .from('exports')
+      .select('*')
+      .eq('id', exportId)
+      .single();
+
+    if (exportError || !exportRecord) {
+      console.error('Export not found:', exportError);
+      return new Response(
+        JSON.stringify({ error: 'Export not found' }),
+        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Update status to in-progress
+    await supabase
+      .from('exports')
+      .update({ 
+        export_status: 'in-progress',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', exportId);
+
+    console.log('Fetching book data for:', exportRecord.content_id);
+
+    // Fetch book data with pages and images
+    const { data: bookData, error: bookError } = await supabase
+      .from('books')
+      .select(`
+        id, book_name, book_description, category,
+        pages (
+          id, letter, title, page_number, content,
+          page_image_urls!inner (
+            image_url, is_latest, generation_status
+          )
+        )
+      `)
+      .eq('id', exportRecord.content_id)
+      .eq('user_id', exportRecord.user_id)
+      .eq('pages.page_image_urls.is_latest', true)
+      .eq('pages.page_image_urls.generation_status', 'complete')
+      .single();
+
+    if (bookError || !bookData) {
+      console.error('Error fetching book data:', bookError);
+      await supabase
+        .from('exports')
+        .update({ 
+          export_status: 'error',
+          error_message: 'Failed to fetch book data',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', exportId);
+
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch book data' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    console.log('Creating PDF document...');
+
+    // Create PDF document
+    const pdfDoc = await PDFDocument.create();
+    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
+    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+
+    // Title page
+    const titlePage = pdfDoc.addPage([612, 792]); // Letter size
+    titlePage.drawText(bookData.book_name || 'ABC Book', {
+      x: 50,
+      y: 700,
+      size: 32,
+      font: boldFont,
+      color: rgb(0.2, 0.2, 0.2),
+    });
+
+    if (bookData.book_description) {
+      titlePage.drawText(bookData.book_description, {
+        x: 50,
+        y: 650,
+        size: 14,
+        font: font,
+        color: rgb(0.4, 0.4, 0.4),
+        maxWidth: 500,
+      });
+    }
+
+    titlePage.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
+      x: 50,
+      y: 100,
+      size: 10,
+      font: font,
+      color: rgb(0.6, 0.6, 0.6),
+    });
+
+    // Add pages with content
+    const pages = bookData.pages || [];
+    console.log(`Processing ${pages.length} pages...`);
+
+    for (const pageData of pages.sort((a, b) => a.page_number - b.page_number)) {
+      const page = pdfDoc.addPage([612, 792]);
+      
+      // Page header
+      page.drawText(`${pageData.letter?.toUpperCase()} - ${pageData.title}`, {
+        x: 50,
+        y: 750,
+        size: 24,
+        font: boldFont,
+        color: rgb(0.2, 0.2, 0.2),
+      });
+
+      let yPosition = 700;
+
+      // Add image if available
+      if (pageData.page_image_urls?.[0]?.image_url) {
+        try {
+          const imageResponse = await fetch(pageData.page_image_urls[0].image_url);
+          if (imageResponse.ok) {
+            const imageBytes = await imageResponse.arrayBytes();
+            let image;
+            
+            // Try to embed as JPEG first, then PNG
+            try {
+              image = await pdfDoc.embedJpg(imageBytes);
+            } catch {
+              try {
+                image = await pdfDoc.embedPng(imageBytes);
+              } catch (e) {
+                console.log('Failed to embed image:', e);
+              }
+            }
+
+            if (image) {
+              const imageDims = image.scale(0.5);
+              page.drawImage(image, {
+                x: 50,
+                y: yPosition - imageDims.height,
+                width: imageDims.width,
+                height: imageDims.height,
+              });
+              yPosition -= imageDims.height + 20;
+            }
+          }
+        } catch (e) {
+          console.log('Error processing image for page:', pageData.letter, e);
+        }
+      }
+
+      // Add content
+      if (pageData.content) {
+        const content = pageData.content as any;
+        
+        if (content.mainConcept) {
+          page.drawText('Main Concept:', {
+            x: 50,
+            y: yPosition,
+            size: 14,
+            font: boldFont,
+            color: rgb(0.2, 0.2, 0.2),
+          });
+          yPosition -= 20;
+          
+          page.drawText(content.mainConcept, {
+            x: 50,
+            y: yPosition,
+            size: 12,
+            font: font,
+            color: rgb(0.3, 0.3, 0.3),
+            maxWidth: 500,
+          });
+          yPosition -= 40;
+        }
+
+        if (content.funFact) {
+          page.drawText('Fun Fact:', {
+            x: 50,
+            y: yPosition,
+            size: 14,
+            font: boldFont,
+            color: rgb(0.2, 0.2, 0.2),
+          });
+          yPosition -= 20;
+          
+          page.drawText(content.funFact, {
+            x: 50,
+            y: yPosition,
+            size: 12,
+            font: font,
+            color: rgb(0.3, 0.3, 0.3),
+            maxWidth: 500,
+          });
+          yPosition -= 40;
+        }
+
+        if (content.activity) {
+          page.drawText('Activity:', {
+            x: 50,
+            y: yPosition,
+            size: 14,
+            font: boldFont,
+            color: rgb(0.2, 0.2, 0.2),
+          });
+          yPosition -= 20;
+          
+          page.drawText(content.activity, {
+            x: 50,
+            y: yPosition,
+            size: 12,
+            font: font,
+            color: rgb(0.3, 0.3, 0.3),
+            maxWidth: 500,
+          });
+        }
+      }
+
+      // Page number
+      page.drawText(`Page ${pageData.page_number}`, {
+        x: 520,
+        y: 50,
+        size: 10,
+        font: font,
+        color: rgb(0.6, 0.6, 0.6),
+      });
+    }
+
+    console.log('Saving PDF...');
+
+    // Generate PDF bytes
+    const pdfBytes = await pdfDoc.save();
+    const fileName = `${exportRecord.user_id}/${exportRecord.content_id}/book-${Date.now()}.pdf`;
+
+    // Upload to storage
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('exports')
+      .upload(fileName, pdfBytes, {
+        contentType: 'application/pdf',
+        upsert: true
+      });
+
+    if (uploadError) {
+      console.error('Error uploading PDF:', uploadError);
+      await supabase
+        .from('exports')
+        .update({ 
+          export_status: 'error',
+          error_message: 'Failed to upload PDF',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', exportId);
+
+      return new Response(
+        JSON.stringify({ error: 'Failed to upload PDF' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('exports')
+      .getPublicUrl(fileName);
+
+    // Update export record with completion
+    await supabase
+      .from('exports')
+      .update({ 
+        export_status: 'complete',
+        export_url: publicUrlData.publicUrl,
+        file_size_bytes: pdfBytes.length,
+        completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', exportId);
+
+    console.log('PDF generation completed successfully');
+
+    return new Response(JSON.stringify({ 
+      success: true,
+      exportUrl: publicUrlData.publicUrl,
+      fileSize: pdfBytes.length
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+
+  } catch (error) {
+    console.error('Error in generate-pdf function:', error);
+    
+    // Try to update export status to error if we have the exportId
+    try {
+      const { exportId } = await req.json();
+      if (exportId) {
+        const supabase = createClient(
+          Deno.env.get('SUPABASE_URL')!, 
+          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+        );
+        
+        await supabase
+          .from('exports')
+          .update({ 
+            export_status: 'error',
+            error_message: error.message || 'Unknown error occurred',
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', exportId);
+      }
+    } catch (updateError) {
+      console.error('Failed to update export status:', updateError);
+    }
+
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+});

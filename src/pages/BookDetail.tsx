@@ -29,6 +29,7 @@ import { toast } from 'sonner';
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
+import { ExportsSection } from '@/components/exports/ExportsSection';
 
 import { PageImageSection } from "@/components/PageImageSection";
 
@@ -446,6 +447,13 @@ export default function BookDetail() {
 
           {/* System Prompt Section */}
           <SystemPromptSection bookId={book.id} />
+
+          {/* Exports Section */}
+          <ExportsSection 
+            contentType="book" 
+            contentId={book.id} 
+            contentName={book.book_name} 
+          />
 
           {/* Progress Console */}
         {progressMessages.length > 0 && (

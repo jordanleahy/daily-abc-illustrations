@@ -1,5 +1,26 @@
+/**
+ * Generate Image Edge Function
+ * 
+ * This edge function generates images using OpenAI's gpt-image-1 model based on prompts
+ * stored in the page_image_urls table. It handles the complete workflow from API call
+ * to storage upload and database updates.
+ * 
+ * @requires OPENAI_API_KEY - OpenAI API key for image generation
+ * @requires SUPABASE_URL - Supabase project URL
+ * @requires SUPABASE_SERVICE_ROLE_KEY - Supabase service role key for database/storage access
+ */
+
+// XMLHttpRequest polyfill - Required for OpenAI API calls in Deno runtime
+// Provides browser-compatible XMLHttpRequest functionality that some libraries expect
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+
+// Deno HTTP server - Core server functionality for handling HTTP requests
+// Used to create the edge function endpoint that responds to HTTP requests
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+// Supabase JavaScript client - Database and storage operations
+// Provides type-safe access to Supabase database, auth, and storage services
+// Used for fetching image records, updating status, and uploading generated images
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1'
 
 const corsHeaders = {

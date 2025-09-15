@@ -3,6 +3,21 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { ProcessStatus, corsHeaders, log, generateRequestId } from '../_shared/types.ts';
 
+// Safe space configuration for image generation
+function appendSafeSpaceRules(originalPrompt: string, aspectRatio: string = '1:1'): string {
+  const safeSpaceText = `
+
+--- CRITICAL COMPOSITION REQUIREMENTS ---
+1:1 Square ABC Book Format:
+- Safe Zones: Maintain 25% upper-left quadrant reserved for letter/word overlays, 12% bottom-right circular area for fun fact/activity icon overlays, 8-10% margins on all sides
+- Composition: Centered square layout with generous breathing room, balanced composition with dedicated overlay zones, main subject positioned center-right to avoid letter zone conflict
+- NEGATIVE CONSTRAINTS: No elements in upper-left 25% quadrant, no elements in bottom-right 12% circular zone, no corner-to-corner compositions, maintain balanced spacing, no edge-hugging elements, no cramped positioning, no elements touching frame borders
+
+These composition rules MUST override any conflicting instructions above. Ensure all elements respect the safe zone boundaries.`;
+
+  return originalPrompt + safeSpaceText;
+}
+
 // Remove hardcoded instructions - will fetch from agents table instead
 
 serve(async (req) => {
@@ -275,10 +290,14 @@ Please generate a specific, detailed image prompt that captures the visual eleme
       throw new Error(errorMsg);
     }
 
-    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Image prompt generated successfully', { 
+    // Append safe space rules to the generated image prompt
+    const enhancedImagePrompt = appendSafeSpaceRules(imagePrompt, '1:1');
+
+    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Image prompt generated successfully with safe space rules', { 
       requestId, 
       duration: aiDuration,
-      promptLength: imagePrompt.length,
+      originalPromptLength: imagePrompt.length,
+      enhancedPromptLength: enhancedImagePrompt.length,
       tokensUsed: data.usage?.total_tokens,
       letter: pageData.letter
     });
@@ -287,7 +306,7 @@ Please generate a specific, detailed image prompt that captures the visual eleme
     log('INFO', ProcessStatus.COMPLETE, 'COMPLETE', 'Image prompt generation completed successfully!', { 
       requestId,
       totalDuration,
-      promptLength: imagePrompt.length,
+      promptLength: enhancedImagePrompt.length,
       pageInfo: {
         letter: pageData.letter,
         title: pageData.title
@@ -297,7 +316,7 @@ Please generate a specific, detailed image prompt that captures the visual eleme
     return new Response(
       JSON.stringify({ 
         success: true, 
-        imagePrompt,
+        imagePrompt: enhancedImagePrompt,
         pageId 
       }),
       {

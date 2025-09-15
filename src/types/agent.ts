@@ -157,26 +157,6 @@ Lens 3: Cultural Inclusivity & Child Safety Considerations
 - Confirm absence of scary, inappropriate, or potentially triggering content
 - Assess universal appeal and accessibility
 
-🎯 Children's ABC Books Visual Framework
-
-Foreground Elements (Always Include)
-- Main subject clearly representing the target letter/vocabulary word
-- Child-appropriate character(s) when relevant (diverse representation)
-- Key learning objects that reinforce letter association
-- Clean, simple shapes with bold outlines for easy recognition
-
-Mid-ground Context
-- Supporting educational elements that enhance understanding
-- Interactive or exploratory elements that encourage engagement
-- Contextual objects that build vocabulary and scene understanding
-- Visual connections between character actions and learning concepts
-
-Background Foundation
-- Simple, uncluttered environments that don't compete with foreground
-- Warm, inviting color palettes using child-safe, high-contrast colors
-- Generous whitespace to prevent visual overwhelm
-- Soft gradients and textures appropriate for early childhood aesthetics
-
 🎨 Children's ABC Books-Specific Style Requirements
 
 🌈 Children's ABC Books Color Palette
@@ -195,7 +175,6 @@ Background Foundation
 - Generate comprehensive style guides that ensure 26-page visual consistency
 - Include specific character design guidelines for recurring elements
 - Provide detailed color specifications with hex codes
-- Create clear composition rules for letter integration and text placement
 - Establish safety guidelines for child-appropriate content
 
 ✅ Safety & Generation Guidelines
@@ -233,7 +212,7 @@ Your goal is to create a detailed image generation prompt for a single book page
 
 1. STYLE GUIDE ANALYSIS
    - Review the provided style guide carefully
-   - Extract key visual elements (art style, colors, composition rules)
+   - Extract key visual elements (art style, colors, character guidelines)
    - Identify consistency requirements and visual guidelines
    - Note age-appropriate content specifications
 
@@ -246,7 +225,7 @@ Your goal is to create a detailed image generation prompt for a single book page
 3. PROMPT CREATION
    - Create a detailed, specific image prompt combining style guide + page content
    - Include specific artistic style directions from the style guide
-   - Incorporate color palette and composition guidelines
+   - Incorporate color palette and character guidelines
    - Ensure the letter is prominently displayed and easily readable
    - Make the main concept visually clear and engaging for children
 
@@ -255,8 +234,7 @@ Your image prompt should include:
 - Art style specification (from style guide)
 - Color palette usage (specific colors from style guide)
 - Main subject/concept for the page
-- Letter prominence and placement
-- Composition and layout guidance
+- Letter prominence and visual integration
 - Age-appropriate visual complexity
 - Consistency elements that match other pages
 
@@ -264,7 +242,7 @@ RESPONSE FORMAT
 Return only the detailed image prompt as plain text. Do not include explanations, just the prompt that can be used directly with image generation tools.
 
 EXAMPLE OUTPUT FORMAT
-"Soft watercolor illustration of a bright red Apple with the large letter 'A' prominently displayed in the upper left corner. The apple should be rendered in warm reds (#FF6B6B) and greens (#4ECDC4) from the established palette. Simple, clean composition with white background and gentle shadows. Child-friendly, educational style suitable for ages 3-6. The apple should look inviting and realistic enough for learning while maintaining the book's consistent watercolor artistic approach."`,
+"Soft watercolor illustration of a bright red Apple with the large letter 'A' prominently displayed. The apple should be rendered in warm reds (#FF6B6B) and greens (#4ECDC4) from the established palette. Child-friendly, educational style suitable for ages 3-6. The apple should look inviting and realistic enough for learning while maintaining the book's consistent watercolor artistic approach."`,
   modelSettings: {
     model: 'gpt-5-2025-08-07',
     maxCompletionTokens: 1000,

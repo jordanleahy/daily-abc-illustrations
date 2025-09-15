@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/process";
 import { useState, useEffect } from "react";
+import { RefreshCw } from "lucide-react";
 
 interface PageImageSectionProps {
   pageId: string;
@@ -19,6 +20,7 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isLocalGenerating, setIsLocalGenerating] = useState(false);
+  const [isRegenerating, setIsRegenerating] = useState(false);
 
   // Clear local generating state when backend status updates to complete or error
   useEffect(() => {
@@ -92,6 +94,56 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
     }
   };
 
+  const handleRegenerateImage = async () => {
+    if (!user) return;
+
+    setIsRegenerating(true);
+    setIsLocalGenerating(true);
+    try {
+      // First generate a new prompt
+      const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-image-prompt', {
+        body: {
+          pageId,
+          userId: user.id
+        }
+      });
+
+      if (promptError) throw promptError;
+      if (!promptData?.success) throw new Error(promptData?.error || 'Failed to generate image prompt');
+      
+      const prompt = promptData.imagePrompt;
+      if (!prompt || prompt.trim().length === 0) {
+        throw new Error('No image prompt could be generated. Please ensure a page system prompt is deployed.');
+      }
+
+      // Create new image record with the generated prompt
+      const record = await createImageRecord(bookId, prompt);
+      if (!record) {
+        throw new Error('Failed to create image record');
+      }
+
+      // Start image generation
+      const { data, error } = await supabase.functions.invoke('generate-image', {
+        body: { 
+          recordId: record.id,
+          userId: user.id
+        }
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
+
+      toast.success('Image regeneration started!');
+      refreshData();
+    } catch (error: any) {
+      console.error('Error regenerating image:', error);
+      toast.error(error.message || 'Failed to regenerate image');
+      setIsLocalGenerating(false);
+    } finally {
+      setIsRegenerating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
@@ -107,13 +159,37 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   return (
     <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden relative">
       {hasImage && currentImage?.image_url ? (
-        // Show generated image
-        <div className="w-full h-full">
+        // Show generated image with hover regenerate button
+        <div className="w-full h-full relative group">
           <img 
             src={currentImage.image_url} 
             alt="Generated page image"
             className="w-full h-full object-cover"
           />
+          
+          {/* Hover overlay with regenerate button */}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+            <Button
+              onClick={handleRegenerateImage}
+              disabled={isRegenerating || isLocalGenerating}
+              size="sm"
+              variant="secondary"
+              className="animate-scale-in"
+            >
+              {isRegenerating ? (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                  Regenerating...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4 mr-2" />
+                  Regenerate
+                </>
+              )}
+            </Button>
+          </div>
+          
           <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-2">
             v{currentImage.version_number} • {currentImage.generation_duration_ms}ms
           </div>

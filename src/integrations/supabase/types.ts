@@ -98,6 +98,7 @@ export type Database = {
           id: string
           is_deployed: boolean
           is_latest: boolean
+          prompt_status: string
           source_type: string
           status: string
           updated_at: string
@@ -113,6 +114,7 @@ export type Database = {
           id?: string
           is_deployed?: boolean
           is_latest?: boolean
+          prompt_status?: string
           source_type?: string
           status?: string
           updated_at?: string
@@ -128,6 +130,7 @@ export type Database = {
           id?: string
           is_deployed?: boolean
           is_latest?: boolean
+          prompt_status?: string
           source_type?: string
           status?: string
           updated_at?: string

@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/process";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 interface PageImageSectionProps {
   pageId: string;
@@ -18,6 +18,14 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const { currentImage, versions, isLoading, createImageRecord, refreshData } = usePageImageUrls(pageId);
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+  const [isLocalGenerating, setIsLocalGenerating] = useState(false);
+
+  // Clear local generating state when backend status updates
+  useEffect(() => {
+    if (currentImage?.generation_status && isLocalGenerating) {
+      setIsLocalGenerating(false);
+    }
+  }, [currentImage?.generation_status, isLocalGenerating]);
 
   const handleGeneratePrompt = async () => {
     if (!user) return;
@@ -53,6 +61,7 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const handleGenerateImage = async () => {
     if (!user || !generatedPrompt) return;
 
+    setIsLocalGenerating(true); // Start shimmer immediately
     try {
       // Create image record with the generated prompt
       const record = await createImageRecord(bookId, generatedPrompt);
@@ -77,6 +86,7 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
     } catch (error: any) {
       console.error('Error generating image:', error);
       toast.error(error.message || 'Failed to generate image');
+      setIsLocalGenerating(false); // Clear local generating on error
     }
   };
 
@@ -88,7 +98,7 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
     );
   }
 
-  const isGenerating = currentImage?.generation_status === 'in_progress';
+  const isGenerating = currentImage?.generation_status === 'in_progress' || isLocalGenerating;
   const hasImage = currentImage?.generation_status === 'complete' && currentImage?.image_url;
   const hasError = currentImage?.generation_status === 'error';
 

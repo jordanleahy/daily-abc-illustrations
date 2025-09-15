@@ -1,7 +1,38 @@
+/**
+ * Generate Image Prompt Edge Function
+ * 
+ * This edge function generates detailed image prompts for individual ABC book pages using
+ * the user's Graphics Design Agent configuration and applies safe space rules. It fetches
+ * page data, calls OpenAI to generate contextual image prompts, and saves them to the database.
+ * 
+ * @requires OPENAI_API_KEY - OpenAI API key for GPT model access
+ * @requires SUPABASE_URL - Supabase project URL
+ * @requires SUPABASE_ANON_KEY - Supabase anonymous key for database access
+ */
+
+// XMLHttpRequest polyfill - Required for OpenAI API calls in Deno runtime
+// Provides browser-compatible XMLHttpRequest functionality that some libraries expect
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+
+// Deno HTTP server - Core server functionality for handling HTTP requests
+// Used to create the edge function endpoint that responds to HTTP requests
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+
+// Supabase JavaScript client - Database and auth operations
+// Provides type-safe access to Supabase database, auth, and other services
+// Version pinned to ensure consistent behavior across deployments
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+
+// Shared utilities and types - Common functionality across edge functions
+// ProcessStatus: Enum for tracking operation states (IN_PROGRESS, COMPLETE, ERROR)
+// corsHeaders: CORS headers for browser compatibility
+// log: Structured logging utility for debugging and monitoring
+// generateRequestId: Creates unique identifiers for request tracking
 import { ProcessStatus, corsHeaders, log, generateRequestId } from '../_shared/types.ts';
+
+// Safe space configuration - Content moderation and safety rules
+// appendSafeSpaceRules: Applies family-friendly content guidelines to generated prompts
+// Ensures all image prompts meet content safety standards for children's books
 import { appendSafeSpaceRules } from '../_shared/safeSpaceConfig.ts';
 
 // Remove hardcoded instructions - will fetch from agents table instead

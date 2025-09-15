@@ -2,21 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { ProcessStatus, corsHeaders, log, generateRequestId } from '../_shared/types.ts';
-
-// Safe space configuration for image generation
-function appendSafeSpaceRules(originalPrompt: string, aspectRatio: string = '1:1'): string {
-  const safeSpaceText = `
-
---- CRITICAL COMPOSITION REQUIREMENTS ---
-1:1 Square ABC Book Format:
-- Safe Zones: Maintain 25% upper-left quadrant reserved for letter/word overlays, 12% bottom-right circular area for fun fact/activity icon overlays, 8-10% margins on all sides
-- Composition: Centered square layout with generous breathing room, balanced composition with dedicated overlay zones, main subject positioned center-right to avoid letter zone conflict
-- NEGATIVE CONSTRAINTS: No elements in upper-left 25% quadrant, no elements in bottom-right 12% circular zone, no corner-to-corner compositions, maintain balanced spacing, no edge-hugging elements, no cramped positioning, no elements touching frame borders
-
-These composition rules MUST override any conflicting instructions above. Ensure all elements respect the safe zone boundaries.`;
-
-  return originalPrompt + safeSpaceText;
-}
+import { appendSafeSpaceRules } from '../../src/lib/safeSpaceConfig.ts';
 
 // Remove hardcoded instructions - will fetch from agents table instead
 

@@ -1,10 +1,10 @@
 /**
- * Safe Space Configuration for ABC Book Image Generation
+ * Safe Space Configuration for Image Generation
  * Defines aspect-ratio-specific composition rules to prevent edge-touching elements
  * 
  * USER EXPERIENCE:
- * As a user, when generating ABC book images, this system automatically
- * appends the appropriate composition rules to prompts, eliminating the need
+ * As a user, when I request an aspect ratio image type, this system automatically
+ * appends the appropriate composition rules to my prompt, eliminating the need
  * to manually specify safe margins and preventing prompt bloat.
  * 
  * ANTI-BLOAT BENEFITS:
@@ -14,10 +14,15 @@
  * - Ensures consistent margin enforcement across all image generation workflows
  * 
  * WORKFLOW:
- * 1. System generates base prompt for ABC book page content
+ * 1. User provides base prompt with desired aspect ratio
  * 2. System automatically appends safe space rules via appendSafeSpaceRules()
  * 3. Enhanced prompt sent to image generation API with proper composition constraints
  * 4. Generated images respect safe boundaries without manual specification
+ * 
+ * INTEGRATION POINTS:
+ * - bulk-generate-prompts: Applied to generated prompts before return
+ * - bulk-image-generation: Applied during batch processing
+ * - All image generation workflows: Ensures consistent safe space enforcement
  */
 
 export interface SafeSpaceConfig {
@@ -30,11 +35,11 @@ export interface SafeSpaceConfig {
 
 const SAFE_SPACE_CONFIGS: Record<string, SafeSpaceConfig> = {
   '1:1': {
-    aspectRatio: '1:1 Square ABC Book Format',
-    description: 'Optimized for children\'s ABC book pages with letter and activity zones',
-    safeZones: 'Maintain 25% upper-left quadrant reserved for letter/word overlays, 12% bottom-right circular area for fun fact/activity icon overlays, 8-10% margins on all sides',
-    composition: 'Centered square layout with generous breathing room, balanced composition with dedicated overlay zones, main subject positioned center-right to avoid letter zone conflict',
-    negativePrompts: 'No elements in upper-left 25% quadrant, no elements in bottom-right 12% circular zone, no corner-to-corner compositions, maintain balanced spacing, no edge-hugging elements, no cramped positioning, no elements touching frame borders'
+    aspectRatio: '1:1 Square Format',
+    description: 'Centered layout with balanced margins on all sides',
+    safeZones: 'Maintain balanced 18-20% margins on all sides, especially TOP MARGIN for letter-based content',
+    composition: 'Centered layout with generous breathing room from top edge, well-framed central focus',
+    negativePrompts: 'No corner-to-corner compositions, maintain balanced spacing, no edge-hugging elements, NEVER allow letters to touch or get close to the top edge, no cramped letter positioning'
   },
   '16:9': {
     aspectRatio: '16:9 Landscape Format',

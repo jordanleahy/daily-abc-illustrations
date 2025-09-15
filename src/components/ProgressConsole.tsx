@@ -4,15 +4,28 @@ import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, CheckCircle, AlertCircle, Loader2, Info, SkipForward, AlertTriangle } from 'lucide-react';
 import { ProcessStatus } from '@/types/process';
 
+/**
+ * Message structure for progress tracking in console displays
+ * Used to show step-by-step progress of long-running operations like book generation
+ */
 export interface ProgressMessage {
+  /** Identifier for the current operation step */
   step: string;
+  /** Human-readable description of what's happening */
   message: string;
+  /** ISO timestamp when this message was generated */
   timestamp: string;
+  /** Current status of this step in the process */
   status: ProcessStatus;
+  /** Optional style guide content generated during the process */
   styleGuide?: string;
+  /** Information about the AI agent used for this step */
   agentUsed?: {
+    /** Display name of the agent */
     name: string;
+    /** AI model identifier used by the agent */
     model: string;
+    /** Version of the agent configuration */
     version: string;
   };
 }

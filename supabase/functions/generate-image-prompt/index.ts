@@ -382,6 +382,7 @@ Please generate a specific, detailed image prompt that captures the visual eleme
         is_latest: true,
         is_deployed: true,
         deployed_at: new Date().toISOString(),
+        prompt_status: 'complete',
         // Individual metadata columns
         prompt_type: 'image_generation',
         model: agentConfig.model,

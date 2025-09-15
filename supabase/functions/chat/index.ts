@@ -31,18 +31,11 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, isLegacyModel } from '../_shared/types.ts';
 
 function detectBookCreationIntent(messages: any[]): boolean {
-  if (messages.length < 2) {
-    console.log('Book detection: Not enough messages');
-    return false;
-  }
+  if (messages.length < 2) return false;
 
   const lastAssistantMessage = messages[messages.length - 2];
   const userResponse = messages[messages.length - 1]?.content?.toLowerCase()?.trim() || '';
   const assistantText = (lastAssistantMessage?.content || '').toLowerCase();
-
-  console.log('Book detection: Assistant message:', assistantText);
-  console.log('Book detection: User response:', userResponse);
-  console.log('Book detection: Last assistant role:', lastAssistantMessage?.role);
 
   // Flexible patterns the agent might use to ask for book creation
   const askPatterns: RegExp[] = [
@@ -55,24 +48,12 @@ function detectBookCreationIntent(messages: any[]): boolean {
     /make this into a book\??/i
   ];
 
-  const hasConfirmationRequest = askPatterns.some((re) => {
-    const matches = re.test(assistantText);
-    if (matches) {
-      console.log('Book detection: Pattern matched:', re.toString());
-    }
-    return matches;
-  });
-
-  console.log('Book detection: Has confirmation request:', hasConfirmationRequest);
+  const hasConfirmationRequest = askPatterns.some((re) => re.test(assistantText));
 
   // Common affirmative confirmations
   const confirmationPattern = /^(yes|ok|okay|sure|yup|yep|yeah|y|go ahead|create it|do it|proceed|confirmed)\b/i;
-  const hasConfirmation = confirmationPattern.test(userResponse);
-  
-  console.log('Book detection: Has confirmation:', hasConfirmation);
-  console.log('Book detection: Final result:', hasConfirmationRequest && hasConfirmation);
 
-  return hasConfirmationRequest && hasConfirmation;
+  return hasConfirmationRequest && confirmationPattern.test(userResponse);
 }
 
 async function handleBookCreation(supabase: any, messages: any[], userId: string, assistantMessage: string, corsHeaders: any) {

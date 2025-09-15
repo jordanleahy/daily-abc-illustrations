@@ -216,7 +216,6 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
         category: bookData.book.category,
         book_description: bookData.book.book_description,
         total_pages: bookData.book.total_pages,
-        is_published: false,
       })
       .select()
       .single();

@@ -84,7 +84,7 @@ export const useAgentConfig = (agentType: AgentConfig['type']) => {
       setLocalConfig({});
       setHasUnsavedChanges(false);
     }
-  }, [config?.version]); // Only reset when version changes
+  }, [config?.version, hasUnsavedChanges]); // Include hasUnsavedChanges as dependency
 
   const clearChangeDescription = useCallback(() => {
     setLastChangeDescription(null);

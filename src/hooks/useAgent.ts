@@ -175,15 +175,30 @@ export const useAgentMutations = (agentType: AgentConfig['type']) => {
       return { newRecord, whatChanged: whatChanged || (existingAgent ? null : 'Agent created') };
     },
     onSuccess: ({ newRecord, whatChanged }) => {
-      // Update cache
-      queryClient.setQueryData(['agent', user?.id, agentType], (oldData: AgentConfig | undefined) => ({
-        ...(oldData || {}),
+      // Optimistically update cache with complete new data
+      const updatedConfig = {
         id: newRecord.id,
+        name: newRecord.name,
+        type: newRecord.type as AgentConfig['type'],
+        intent: newRecord.intent,
+        status: newRecord.operational_status as 'online' | 'offline' | 'processing',
+        version: newRecord.version,
+        createdAt: new Date(newRecord.created_at),
+        lastModified: new Date(newRecord.last_modified),
+        assistantId: newRecord.assistant_id || undefined,
+        instructions: newRecord.instructions,
+        whatChanged: newRecord.what_changed || undefined,
         versionNumber: newRecord.version_number,
         isLatest: newRecord.is_latest,
-        parentAgentId: newRecord.parent_agent_id,
-        lastModified: new Date(newRecord.last_modified),
-      }));
+        parentAgentId: newRecord.parent_agent_id || undefined,
+        modelSettings: {
+          model: newRecord.model,
+          maxCompletionTokens: newRecord.max_completion_tokens,
+          topP: newRecord.top_p,
+        },
+      } as AgentConfig;
+      
+      queryClient.setQueryData(['agent', user?.id, agentType], updatedConfig);
 
       // Store change description
       if (whatChanged && user) {
@@ -230,6 +245,14 @@ export const useAgentRealtime = (agentType: AgentConfig['type']) => {
         },
         (payload) => {
           const data = payload.new as any;
+          
+          // Handle all events properly
+          if (payload.eventType === 'DELETE') {
+            // If an agent was deleted, invalidate cache
+            queryClient.invalidateQueries({ queryKey: ['agent', user.id, agentType] });
+            return;
+          }
+          
           if (data && data.is_latest) {
             const agentConfig: AgentConfig = {
               id: data.id,

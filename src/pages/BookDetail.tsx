@@ -56,21 +56,18 @@ export default function BookDetail() {
       navigate('/auth');
       return;
     }
+  }, [user, id, navigate, authLoading]);
 
-    // Handle book not found or error cases
-    if (bookError) {
-      console.error('Error fetching book:', bookError);
-      toast.error('Failed to load book');
-      navigate('/books');
-      return;
+  // Handle book not found only after auth and query have both completed
+  useEffect(() => {
+    if (!authLoading && user && id && !bookLoading && !book) {
+      // Only show error if we've actually tried to fetch and failed
+      if (!bookError) {
+        toast.error('Book not found');
+        navigate('/books');
+      }
     }
-
-    if (!bookLoading && !book && id) {
-      toast.error('Book not found');
-      navigate('/books');
-      return;
-    }
-  }, [user, id, navigate, authLoading, book, bookLoading, bookError]);
+  }, [authLoading, user, id, bookLoading, book, bookError, navigate]);
 
 
 
@@ -265,7 +262,7 @@ export default function BookDetail() {
       setDeleteLoading(false);
     }
   };
-  if (authLoading || bookLoading) {
+  if (authLoading || (user && bookLoading)) {
     return (
       <PageLayout>
         <Container>

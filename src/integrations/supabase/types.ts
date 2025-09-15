@@ -265,6 +265,7 @@ export type Database = {
           page_id: string
           page_letter: string | null
           page_title: string | null
+          prompt_status: string | null
           prompt_type: string | null
           request_id: string | null
           safe_space_rules_applied: boolean | null
@@ -294,6 +295,7 @@ export type Database = {
           page_id: string
           page_letter?: string | null
           page_title?: string | null
+          prompt_status?: string | null
           prompt_type?: string | null
           request_id?: string | null
           safe_space_rules_applied?: boolean | null
@@ -323,6 +325,7 @@ export type Database = {
           page_id?: string
           page_letter?: string | null
           page_title?: string | null
+          prompt_status?: string | null
           prompt_type?: string | null
           request_id?: string | null
           safe_space_rules_applied?: boolean | null

@@ -27,6 +27,8 @@ export interface PageSystemPrompt {
   generation_metadata: any;
   /** Current status of the prompt ('complete' | 'processing' | 'error') */
   status?: string;
+  /** New prompt status field (replaces status) */
+  prompt_status?: string;
   /** ISO timestamp when the prompt was created */
   created_at: string;
   /** ISO timestamp when the prompt was last modified */

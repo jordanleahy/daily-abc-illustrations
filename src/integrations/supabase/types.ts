@@ -100,7 +100,6 @@ export type Database = {
           is_latest: boolean
           prompt_status: string
           source_type: string
-          status: string
           updated_at: string
           user_id: string
           version_number: number
@@ -116,7 +115,6 @@ export type Database = {
           is_latest?: boolean
           prompt_status?: string
           source_type?: string
-          status?: string
           updated_at?: string
           user_id: string
           version_number?: number
@@ -132,7 +130,6 @@ export type Database = {
           is_latest?: boolean
           prompt_status?: string
           source_type?: string
-          status?: string
           updated_at?: string
           user_id?: string
           version_number?: number

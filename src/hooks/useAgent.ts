@@ -255,9 +255,13 @@ export const useAgentRealtime = (agentType: AgentConfig['type']) => {
             
             queryClient.setQueryData(['agent', user.id, agentType], agentConfig);
             
-            // Update change description
+            // Update change description in localStorage for immediate UI updates
             if (data.what_changed) {
               localStorage.setItem(`agent-last-change-${user.id}-${agentType}`, data.what_changed);
+              // Trigger a custom event to notify components
+              window.dispatchEvent(new CustomEvent('agent-change-updated', { 
+                detail: { agentType, whatChanged: data.what_changed } 
+              }));
             }
           }
         }

@@ -55,7 +55,7 @@ export function usePageSystemPrompt(pageId: string) {
     staleTime: 2 * 60 * 1000,
   });
 
-  // Save mutation
+  // Save mutation with optimized cache updates
   const saveMutation = useMutation({
     mutationFn: async (content: string) => {
       if (!pageId || !content.trim()) throw new Error('Invalid content');
@@ -65,9 +65,10 @@ export function usePageSystemPrompt(pageId: string) {
         .from('pages')
         .select('book_id, books!inner(user_id)')
         .eq('id', pageId)
-        .single();
+        .maybeSingle();
 
       if (pageError) throw pageError;
+      if (!pageData) throw new Error('Page not found');
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -97,8 +98,9 @@ export function usePageSystemPrompt(pageId: string) {
       if (insertError) throw insertError;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['pageSystemPrompt', pageId] });
+    onSuccess: (newPrompt) => {
+      // Optimistically update cache with new data
+      queryClient.setQueryData(['pageSystemPrompt', pageId], newPrompt);
       queryClient.invalidateQueries({ queryKey: ['pageSystemPromptVersions', pageId] });
       setIsEditing(false);
       setEditedContent('');
@@ -201,7 +203,7 @@ export function usePageSystemPrompt(pageId: string) {
     },
   });
 
-  // Real-time subscription
+  // Real-time subscription with optimized cache updates
   useEffect(() => {
     if (!pageId) return;
 
@@ -215,10 +217,16 @@ export function usePageSystemPrompt(pageId: string) {
           table: 'page_system_prompts',
           filter: `page_id=eq.${pageId}`
         },
-        () => {
-          // Invalidate queries to refetch data
-          queryClient.invalidateQueries({ queryKey: ['pageSystemPrompt', pageId] });
-          queryClient.invalidateQueries({ queryKey: ['pageSystemPromptVersions', pageId] });
+        (payload) => {
+          const data = payload.new as any;
+          // Only invalidate if this affects current page's latest prompt
+          if (data && (data.is_latest || data.is_deployed)) {
+            queryClient.invalidateQueries({ queryKey: ['pageSystemPrompt', pageId] });
+            queryClient.invalidateQueries({ queryKey: ['pageSystemPromptVersions', pageId] });
+          } else if (payload.eventType !== 'UPDATE') {
+            // For INSERT/DELETE events, always invalidate versions list
+            queryClient.invalidateQueries({ queryKey: ['pageSystemPromptVersions', pageId] });
+          }
         }
       )
       .subscribe();

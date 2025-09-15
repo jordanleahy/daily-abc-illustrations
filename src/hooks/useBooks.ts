@@ -18,6 +18,7 @@ export const useBooks = () => {
         .from('books')
         .select('*')
         .eq('user_id', user.id)
+        .neq('status', 'archived')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -67,11 +68,17 @@ export const useBooks = () => {
         },
         (payload) => {
           console.log('Book updated:', payload.new);
-          setBooks(current =>
-            current.map(book =>
-              book.id === payload.new.id ? (payload.new as Book) : book
-            )
-          );
+          const updatedBook = payload.new as Book;
+          setBooks(current => {
+            // If book is archived, remove it from the list
+            if (updatedBook.status === 'archived') {
+              return current.filter(book => book.id !== updatedBook.id);
+            }
+            // Otherwise update it normally
+            return current.map(book =>
+              book.id === updatedBook.id ? updatedBook : book
+            );
+          });
         }
       )
       .on(

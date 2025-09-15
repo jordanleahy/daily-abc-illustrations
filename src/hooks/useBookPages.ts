@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Page } from '@/types/book';
 import { toast } from 'sonner';
 
 export const useBookPages = (bookId: string | undefined) => {
-  const [pages, setPages] = useState<Page[]>([]);
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
+  const { data: pages = [], isLoading, error } = useQuery({
     queryKey: ['book-pages', bookId],
     queryFn: async () => {
       if (!bookId) return [];
@@ -36,13 +36,6 @@ export const useBookPages = (bookId: string | undefined) => {
     enabled: !!bookId,
   });
 
-  // Set initial data when query succeeds
-  useEffect(() => {
-    if (data) {
-      setPages(data);
-    }
-  }, [data]);
-
   // Set up real-time subscription for pages
   useEffect(() => {
     if (!bookId) return;
@@ -59,7 +52,7 @@ export const useBookPages = (bookId: string | undefined) => {
         },
         (payload) => {
           console.log('Page inserted:', payload.new);
-          setPages(current => {
+          queryClient.setQueryData(['book-pages', bookId], (old: Page[] = []) => {
             const newPage = {
               ...payload.new,
               content: payload.new.content as {
@@ -69,8 +62,7 @@ export const useBookPages = (bookId: string | undefined) => {
               }
             } as Page;
             // Insert in correct order by page_number
-            const newPages = [...current, newPage].sort((a, b) => a.page_number - b.page_number);
-            return newPages;
+            return [...old, newPage].sort((a, b) => a.page_number - b.page_number);
           });
         }
       )
@@ -84,8 +76,8 @@ export const useBookPages = (bookId: string | undefined) => {
         },
         (payload) => {
           console.log('Page updated:', payload.new);
-          setPages(current =>
-            current.map(page =>
+          queryClient.setQueryData(['book-pages', bookId], (old: Page[] = []) =>
+            old.map(page =>
               page.id === payload.new.id ? {
                 ...payload.new,
                 content: payload.new.content as {
@@ -108,8 +100,8 @@ export const useBookPages = (bookId: string | undefined) => {
         },
         (payload) => {
           console.log('Page deleted:', payload.old);
-          setPages(current =>
-            current.filter(page => page.id !== payload.old.id)
+          queryClient.setQueryData(['book-pages', bookId], (old: Page[] = []) =>
+            old.filter(page => page.id !== payload.old.id)
           );
         }
       )

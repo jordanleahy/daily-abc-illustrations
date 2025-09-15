@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { Export, CreateExportRequest } from '@/types/export';
@@ -8,9 +8,9 @@ import { toast } from '@/hooks/use-toast';
 
 export const useExports = (contentType?: string, contentId?: string) => {
   const { user } = useAuth();
-  const [exports, setExports] = useState<Export[]>([]);
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const { data: exports = [], isLoading, error, refetch } = useQuery({
     queryKey: ['exports', user?.id, contentType, contentId],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -44,12 +44,94 @@ export const useExports = (contentType?: string, contentId?: string) => {
     enabled: !!user?.id,
   });
 
-  // Set initial data when query succeeds
-  useEffect(() => {
-    if (data) {
-      setExports(data);
+  // Create export mutation
+  const createExportMutation = useMutation({
+    mutationFn: async (request: CreateExportRequest): Promise<Export> => {
+      if (!user?.id) throw new Error('User not authenticated');
+
+      const { data, error } = await supabase
+        .from('exports')
+        .insert({
+          ...request,
+          user_id: user.id,
+          export_status: ProcessStatus.NOT_STARTED
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating export:', error);
+        toast({
+          variant: "destructive",
+          title: "Failed to create export",
+          description: error.message
+        });
+        throw error;
+      }
+
+      return data as Export;
+    },
+    onSuccess: (newExport) => {
+      const queryKey = ['exports', user?.id, contentType, contentId];
+      queryClient.setQueryData(queryKey, (old: Export[] = []) => [newExport, ...old]);
     }
-  }, [data]);
+  });
+
+  // Update export mutation
+  const updateExportMutation = useMutation({
+    mutationFn: async ({ exportId, updates }: { exportId: string; updates: Partial<Export> }): Promise<Export> => {
+      const { data, error } = await supabase
+        .from('exports')
+        .update(updates)
+        .eq('id', exportId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating export:', error);
+        toast({
+          variant: "destructive",
+          title: "Failed to update export",
+          description: error.message
+        });
+        throw error;
+      }
+
+      return data as Export;
+    },
+    onSuccess: (updatedExport) => {
+      const queryKey = ['exports', user?.id, contentType, contentId];
+      queryClient.setQueryData(queryKey, (old: Export[] = []) =>
+        old.map(exp => exp.id === updatedExport.id ? updatedExport : exp)
+      );
+    }
+  });
+
+  // Delete export mutation
+  const deleteExportMutation = useMutation({
+    mutationFn: async (exportId: string): Promise<void> => {
+      const { error } = await supabase
+        .from('exports')
+        .delete()
+        .eq('id', exportId);
+
+      if (error) {
+        console.error('Error deleting export:', error);
+        toast({
+          variant: "destructive",
+          title: "Failed to delete export",
+          description: error.message
+        });
+        throw error;
+      }
+    },
+    onSuccess: (_, deletedId) => {
+      const queryKey = ['exports', user?.id, contentType, contentId];
+      queryClient.setQueryData(queryKey, (old: Export[] = []) =>
+        old.filter(exp => exp.id !== deletedId)
+      );
+    }
+  });
 
   // Set up real-time subscription
   useEffect(() => {
@@ -72,7 +154,8 @@ export const useExports = (contentType?: string, contentId?: string) => {
         },
         (payload) => {
           console.log('Export inserted:', payload.new);
-          setExports(current => [payload.new as Export, ...current]);
+          const queryKey = ['exports', user.id, contentType, contentId];
+          queryClient.setQueryData(queryKey, (old: Export[] = []) => [payload.new as Export, ...old]);
         }
       )
       .on(
@@ -86,8 +169,9 @@ export const useExports = (contentType?: string, contentId?: string) => {
         (payload) => {
           console.log('Export updated:', payload.new);
           const updatedExport = payload.new as Export;
-          setExports(current => 
-            current.map(exp => exp.id === updatedExport.id ? updatedExport : exp)
+          const queryKey = ['exports', user.id, contentType, contentId];
+          queryClient.setQueryData(queryKey, (old: Export[] = []) =>
+            old.map(exp => exp.id === updatedExport.id ? updatedExport : exp)
           );
         }
       )
@@ -101,8 +185,9 @@ export const useExports = (contentType?: string, contentId?: string) => {
         },
         (payload) => {
           console.log('Export deleted:', payload.old);
-          setExports(current => 
-            current.filter(exp => exp.id !== payload.old.id)
+          const queryKey = ['exports', user.id, contentType, contentId];
+          queryClient.setQueryData(queryKey, (old: Export[] = []) =>
+            old.filter(exp => exp.id !== payload.old.id)
           );
         }
       )
@@ -113,77 +198,14 @@ export const useExports = (contentType?: string, contentId?: string) => {
     };
   }, [user?.id, contentType, contentId]);
 
-  const createExport = async (request: CreateExportRequest): Promise<Export> => {
-    if (!user?.id) throw new Error('User not authenticated');
-
-    const { data, error } = await supabase
-      .from('exports')
-      .insert({
-        ...request,
-        user_id: user.id,
-        export_status: ProcessStatus.NOT_STARTED
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating export:', error);
-      toast({
-        variant: "destructive",
-        title: "Failed to create export",
-        description: error.message
-      });
-      throw error;
-    }
-
-    return data as Export;
-  };
-
-  const updateExport = async (exportId: string, updates: Partial<Export>): Promise<Export> => {
-    const { data, error } = await supabase
-      .from('exports')
-      .update(updates)
-      .eq('id', exportId)
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error updating export:', error);
-      toast({
-        variant: "destructive",
-        title: "Failed to update export",
-        description: error.message
-      });
-      throw error;
-    }
-
-    return data as Export;
-  };
-
-  const deleteExport = async (exportId: string): Promise<void> => {
-    const { error } = await supabase
-      .from('exports')
-      .delete()
-      .eq('id', exportId);
-
-    if (error) {
-      console.error('Error deleting export:', error);
-      toast({
-        variant: "destructive",
-        title: "Failed to delete export",
-        description: error.message
-      });
-      throw error;
-    }
-  };
-
   return {
     exports,
     loading: isLoading,
     error,
-    createExport,
-    updateExport,
-    deleteExport,
+    createExport: createExportMutation.mutateAsync,
+    updateExport: (exportId: string, updates: Partial<Export>) => 
+      updateExportMutation.mutateAsync({ exportId, updates }),
+    deleteExport: deleteExportMutation.mutateAsync,
     refetch
   };
 };

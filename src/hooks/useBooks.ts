@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { Book } from '@/types/book';
@@ -7,9 +7,9 @@ import { toast } from 'sonner';
 
 export const useBooks = () => {
   const { user } = useAuth();
-  const [books, setBooks] = useState<Book[]>([]);
+  const queryClient = useQueryClient();
 
-  const { data, isLoading, error } = useQuery({
+  const { data: books = [], isLoading, error } = useQuery({
     queryKey: ['books', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -69,13 +69,6 @@ export const useBooks = () => {
     enabled: !!user?.id,
   });
 
-  // Set initial data when query succeeds
-  useEffect(() => {
-    if (data) {
-      setBooks(data);
-    }
-  }, [data]);
-
   // Set up real-time subscription
   useEffect(() => {
     if (!user?.id) return;
@@ -92,7 +85,10 @@ export const useBooks = () => {
         },
         (payload) => {
           console.log('Book inserted:', payload.new);
-          setBooks(current => [payload.new as Book, ...current]);
+          // Use queryClient to update cache instead of local state
+          queryClient.setQueryData(['books', user.id], (old: Book[] = []) => 
+            [payload.new as Book, ...old]
+          );
         }
       )
       .on(
@@ -106,13 +102,13 @@ export const useBooks = () => {
         (payload) => {
           console.log('Book updated:', payload.new);
           const updatedBook = payload.new as Book;
-          setBooks(current => {
+          queryClient.setQueryData(['books', user.id], (old: Book[] = []) => {
             // If book is archived, remove it from the list
             if (updatedBook.status === 'archived') {
-              return current.filter(book => book.id !== updatedBook.id);
+              return old.filter(book => book.id !== updatedBook.id);
             }
             // Otherwise update it normally
-            return current.map(book =>
+            return old.map(book =>
               book.id === updatedBook.id ? updatedBook : book
             );
           });
@@ -128,8 +124,8 @@ export const useBooks = () => {
         },
         (payload) => {
           console.log('Book deleted:', payload.old);
-          setBooks(current =>
-            current.filter(book => book.id !== payload.old.id)
+          queryClient.setQueryData(['books', user.id], (old: Book[] = []) =>
+            old.filter(book => book.id !== payload.old.id)
           );
         }
       )

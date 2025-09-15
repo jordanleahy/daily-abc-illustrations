@@ -18,11 +18,11 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
-import { Book } from '@/types/book';
 import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -39,8 +39,7 @@ export default function BookDetail() {
   const navigate = useNavigate();
   const { currentPrompt, refreshData } = useSystemPrompt(id || '');
   const { pages } = useBookPages(id);
-  const [book, setBook] = useState<Book | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { data: book, isLoading: bookLoading, error: bookError } = useBook(id);
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -58,41 +57,20 @@ export default function BookDetail() {
       return;
     }
 
-    const fetchBook = async () => {
-      try {
-        // Fetch book with pages
-        const { data: bookData, error: bookError } = await supabase
-          .from('books')
-          .select('*')
-          .eq('id', id)
-          .eq('user_id', user.id)
-          .maybeSingle();
+    // Handle book not found or error cases
+    if (bookError) {
+      console.error('Error fetching book:', bookError);
+      toast.error('Failed to load book');
+      navigate('/books');
+      return;
+    }
 
-        if (bookError) {
-          console.error('Error fetching book:', bookError);
-          toast.error('Failed to load book');
-          navigate('/books');
-          return;
-        }
-
-        if (!bookData) {
-          toast.error('Book not found');
-          navigate('/books');
-          return;
-        }
-
-        setBook(bookData);
-      } catch (error) {
-        console.error('Error:', error);
-        toast.error('An error occurred while loading the book');
-        navigate('/books');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchBook();
-  }, [user, id, navigate, authLoading]);
+    if (!bookLoading && !book && id) {
+      toast.error('Book not found');
+      navigate('/books');
+      return;
+    }
+  }, [user, id, navigate, authLoading, book, bookLoading, bookError]);
 
 
 
@@ -287,7 +265,7 @@ export default function BookDetail() {
       setDeleteLoading(false);
     }
   };
-  if (authLoading || loading) {
+  if (authLoading || bookLoading) {
     return (
       <PageLayout>
         <Container>

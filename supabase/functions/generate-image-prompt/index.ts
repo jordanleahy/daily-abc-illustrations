@@ -352,27 +352,7 @@ Please generate a specific, detailed image prompt that captures the visual eleme
 
     const versionNumber = versionData || 1;
 
-    // Prepare metadata
-    const generationMetadata = {
-      prompt_type: "image_generation",
-      model: agentConfig.model,
-      agent_name: agentConfig.name,
-      agent_version: agentConfig.version,
-      request_id: requestId,
-      tokens_used: data.usage?.total_tokens || 0,
-      generation_duration_ms: aiDuration,
-      generated_at: new Date().toISOString(),
-      page_info: {
-        letter: pageData.letter,
-        title: pageData.title,
-        book_id: pageData.book_id
-      },
-      safe_space_rules_applied: true,
-      original_prompt_length: imagePrompt.length,
-      enhanced_prompt_length: enhancedImagePrompt.length
-    };
-
-    // Insert the generated prompt into page_system_prompts table
+    // Insert the generated prompt into page_system_prompts table with individual metadata columns
     const { error: insertError } = await supabaseClient
       .from('page_system_prompts')
       .insert({
@@ -382,10 +362,23 @@ Please generate a specific, detailed image prompt that captures the visual eleme
         content: enhancedImagePrompt,
         version_number: versionNumber,
         source_type: 'image_generation',
-        generation_metadata: generationMetadata,
         is_latest: true,
         is_deployed: true,
-        deployed_at: new Date().toISOString()
+        deployed_at: new Date().toISOString(),
+        // Individual metadata columns
+        prompt_type: 'image_generation',
+        model: agentConfig.model,
+        agent_name: agentConfig.name,
+        agent_version: agentConfig.version,
+        request_id: requestId,
+        tokens_used: data.usage?.total_tokens || 0,
+        generation_duration_ms: aiDuration,
+        generated_at: new Date().toISOString(),
+        page_letter: pageData.letter,
+        page_title: pageData.title,
+        safe_space_rules_applied: true,
+        original_prompt_length: imagePrompt.length,
+        enhanced_prompt_length: enhancedImagePrompt.length
       });
 
     if (insertError) {

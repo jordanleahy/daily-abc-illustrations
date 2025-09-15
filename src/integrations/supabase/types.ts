@@ -247,46 +247,85 @@ export type Database = {
       }
       page_system_prompts: {
         Row: {
+          agent_name: string | null
+          agent_version: string | null
           book_id: string
           content: string
           created_at: string
           deployed_at: string | null
+          enhanced_prompt_length: number | null
+          generated_at: string | null
+          generation_duration_ms: number | null
           generation_metadata: Json | null
           id: string
           is_deployed: boolean
           is_latest: boolean
+          model: string | null
+          original_prompt_length: number | null
           page_id: string
+          page_letter: string | null
+          page_title: string | null
+          prompt_type: string | null
+          request_id: string | null
+          safe_space_rules_applied: boolean | null
           source_type: string
+          tokens_used: number | null
           updated_at: string
           user_id: string
           version_number: number
         }
         Insert: {
+          agent_name?: string | null
+          agent_version?: string | null
           book_id: string
           content: string
           created_at?: string
           deployed_at?: string | null
+          enhanced_prompt_length?: number | null
+          generated_at?: string | null
+          generation_duration_ms?: number | null
           generation_metadata?: Json | null
           id?: string
           is_deployed?: boolean
           is_latest?: boolean
+          model?: string | null
+          original_prompt_length?: number | null
           page_id: string
+          page_letter?: string | null
+          page_title?: string | null
+          prompt_type?: string | null
+          request_id?: string | null
+          safe_space_rules_applied?: boolean | null
           source_type?: string
+          tokens_used?: number | null
           updated_at?: string
           user_id: string
           version_number?: number
         }
         Update: {
+          agent_name?: string | null
+          agent_version?: string | null
           book_id?: string
           content?: string
           created_at?: string
           deployed_at?: string | null
+          enhanced_prompt_length?: number | null
+          generated_at?: string | null
+          generation_duration_ms?: number | null
           generation_metadata?: Json | null
           id?: string
           is_deployed?: boolean
           is_latest?: boolean
+          model?: string | null
+          original_prompt_length?: number | null
           page_id?: string
+          page_letter?: string | null
+          page_title?: string | null
+          prompt_type?: string | null
+          request_id?: string | null
+          safe_space_rules_applied?: boolean | null
           source_type?: string
+          tokens_used?: number | null
           updated_at?: string
           user_id?: string
           version_number?: number

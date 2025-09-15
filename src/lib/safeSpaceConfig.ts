@@ -97,7 +97,7 @@ export function getSafeSpaceRules(aspectRatio: string): SafeSpaceConfig {
 /**
  * Append safe space rules to an image generation prompt
  */
-export function appendSafeSpaceRules(originalPrompt: string, aspectRatio: string): string {
+export function appendSafeSpaceRules(originalPrompt: string, aspectRatio: string = '1:1'): string {
   const safeSpaceConfig = getSafeSpaceRules(aspectRatio);
   
   const safeSpaceText = `

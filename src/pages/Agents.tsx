@@ -186,6 +186,7 @@ const Agents = () => {
             onSaveWithOverrides={saveConfigWithOverrides}
             isLoading={isLoading}
             hasUnsavedChanges={hasUnsavedChanges}
+            agentType={selectedAgentType}
           />
 
           {/* Status Footer */}

@@ -12,6 +12,7 @@ interface ConfigurationTabsProps {
   onSaveWithOverrides: (configOverrides?: Partial<AgentConfig>) => Promise<void>;
   isLoading: boolean;
   hasUnsavedChanges: boolean;
+  agentType?: string;
 }
 
 export const ConfigurationTabs = ({
@@ -22,6 +23,7 @@ export const ConfigurationTabs = ({
   onSaveWithOverrides,
   isLoading,
   hasUnsavedChanges,
+  agentType,
 }: ConfigurationTabsProps) => {
   return (
     <Card className="w-full">
@@ -50,6 +52,7 @@ export const ConfigurationTabs = ({
               onSaveWithOverrides={onSaveWithOverrides}
               isLoading={isLoading}
               hasUnsavedChanges={hasUnsavedChanges}
+              agentType={agentType}
             />
           </TabsContent>
           

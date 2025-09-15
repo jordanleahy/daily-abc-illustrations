@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { AgentConfig } from '@/types/agent';
+import { useLatestBookSystemPrompt } from '@/hooks/useLatestBookSystemPrompt';
+import { BookSystemPromptDisplay } from './BookSystemPromptDisplay';
 
 interface InstructionsTabProps {
   config: AgentConfig;
@@ -10,6 +12,7 @@ interface InstructionsTabProps {
   onSaveWithOverrides: (configOverrides?: Partial<AgentConfig>) => Promise<void>;
   isLoading: boolean;
   hasUnsavedChanges: boolean;
+  agentType?: string;
 }
 
 export const InstructionsTab = ({ 
@@ -18,9 +21,20 @@ export const InstructionsTab = ({
   onSave, 
   onSaveWithOverrides,
   isLoading, 
-  hasUnsavedChanges 
+  hasUnsavedChanges,
+  agentType 
 }: InstructionsTabProps) => {
   const [localInstructions, setLocalInstructions] = useState(config.instructions);
+  const { promptData, isLoading: promptLoading, refetch } = useLatestBookSystemPrompt();
+
+  // Show book system prompt display for graphics-designer agent
+  if (agentType === 'graphics-designer') {
+    return <BookSystemPromptDisplay 
+      promptData={promptData} 
+      isLoading={promptLoading} 
+      onRefresh={refetch} 
+    />;
+  }
 
   // Sync local state when config changes
   useEffect(() => {

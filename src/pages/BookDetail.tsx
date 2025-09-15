@@ -307,20 +307,16 @@ export default function BookDetail() {
               <div className="mb-4">
                 <Button
                   variant="outline"
+                  size="icon"
                   onClick={generateStyleGuide}
                   disabled={styleGuideLoading}
-                  className="flex items-center gap-2"
+                  title="Call Illustration Director"
+                  aria-label="Call Illustration Director"
                 >
                   {styleGuideLoading ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating...
-                    </>
+                    <Loader2 className="w-4 h-4 animate-spin" />
                   ) : (
-                    <>
-                      <Palette className="w-4 h-4" />
-                      Call Illustration Director
-                    </>
+                    <Palette className="w-4 h-4" />
                   )}
                 </Button>
               </div>
@@ -340,16 +336,16 @@ export default function BookDetail() {
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
                         disabled={archiveLoading || book?.status === 'archived'}
-                        className="flex items-center gap-2"
+                        title="Archive book"
+                        aria-label="Archive book"
                       >
                         {archiveLoading ? (
                           <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
                           <Archive className="w-4 h-4" />
                         )}
-                        Archive
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
@@ -372,9 +368,11 @@ export default function BookDetail() {
                     <AlertDialogTrigger asChild>
                       <Button
                         variant="outline"
-                        size="sm"
+                        size="icon"
                         disabled={deleteLoading}
-                        className="flex items-center gap-2 text-destructive hover:text-destructive"
+                        title="Delete book"
+                        aria-label="Delete book"
+                        className="text-destructive hover:text-destructive"
                       >
                         {deleteLoading ? (
                           <Loader2 className="w-4 h-4 animate-spin" />

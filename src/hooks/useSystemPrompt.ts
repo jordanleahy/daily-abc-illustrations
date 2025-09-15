@@ -36,7 +36,7 @@ export const useSystemPrompt = (bookId: string) => {
   const [editedContent, setEditedContent] = useState('');
 
   // Fetch current prompt (latest version)
-  const { data: currentPrompt = null } = useQuery({
+  const { data: currentPrompt = null, refetch: refetchCurrent } = useQuery({
     queryKey: ['book-system-prompt-current', bookId],
     queryFn: async (): Promise<SystemPrompt | null> => {
       if (!bookId) return null;
@@ -75,13 +75,17 @@ export const useSystemPrompt = (bookId: string) => {
       };
     },
     enabled: !!bookId,
+    refetchInterval: 5000, // Poll every 5 seconds as fallback
+    refetchIntervalInBackground: false,
   });
 
   // Fetch all versions
-  const { data: versions = [], isLoading } = useQuery({
+  const { data: versions = [], isLoading, refetch: refetchVersions } = useQuery({
     queryKey: ['book-system-prompt-versions', bookId],
     queryFn: async (): Promise<SystemPromptVersion[]> => {
       if (!bookId) return [];
+      
+      console.log(`[useSystemPrompt] Fetching versions for book ${bookId}`);
       
       const { data: versionsData, error: versionsError } = await supabase
         .from('book_system_prompts')
@@ -93,6 +97,8 @@ export const useSystemPrompt = (bookId: string) => {
         console.error('Error fetching versions:', versionsError);
         throw versionsError;
       }
+
+      console.log(`[useSystemPrompt] Found ${versionsData.length} versions for book ${bookId}`);
 
       return versionsData.map(v => ({
         id: v.id,
@@ -107,6 +113,8 @@ export const useSystemPrompt = (bookId: string) => {
       }));
     },
     enabled: !!bookId,
+    refetchInterval: 5000, // Poll every 5 seconds as fallback
+    refetchIntervalInBackground: false,
   });
 
   // Save edit mutation
@@ -377,6 +385,11 @@ export const useSystemPrompt = (bookId: string) => {
               };
               console.log(`[useSystemPrompt] Setting new current prompt via real-time:`, newCurrentPrompt);
               queryClient.setQueryData(['book-system-prompt-current', bookId], newCurrentPrompt);
+              
+              // Force refetch to ensure data consistency
+              setTimeout(() => {
+                refetchCurrent();
+              }, 1000);
             }
           } else if (payload.eventType === 'UPDATE') {
             const updatedPrompt = payload.new as any;
@@ -434,7 +447,14 @@ export const useSystemPrompt = (bookId: string) => {
     };
   }, [bookId, queryClient]);
 
-  const refreshData = () => {
+  const refreshData = async () => {
+    console.log(`[useSystemPrompt] Manual refresh triggered for book ${bookId}`);
+    // Force refetch both queries
+    await Promise.all([
+      refetchCurrent(),
+      refetchVersions()
+    ]);
+    // Also invalidate to ensure cache is fresh
     queryClient.invalidateQueries({ queryKey: ['book-system-prompt-current', bookId] });
     queryClient.invalidateQueries({ queryKey: ['book-system-prompt-versions', bookId] });
   };

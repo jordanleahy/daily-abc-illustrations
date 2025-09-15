@@ -158,7 +158,7 @@ export default function BookDetail() {
                   setStyleGuideLoading(false);
                   
                   // Force refresh the system prompt data
-                  refreshData();
+                  await refreshData();
                   console.log('Style guide generation completed, forcing cache refresh');
                   
                   toast.success('Style guide generated successfully!');
@@ -186,7 +186,7 @@ export default function BookDetail() {
         if (error) throw error;
         if (data?.styleGuide) {
           // Force refresh the system prompt data
-          refreshData();
+          await refreshData();
           console.log('Style guide generation completed via fallback, forcing cache refresh');
           
           toast.success('Style guide generated successfully!');

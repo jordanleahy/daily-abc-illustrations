@@ -59,7 +59,8 @@ export function usePageImageUrls(pageId: string) {
         schema: 'public',
         table: 'page_image_urls',
         filter: `page_id=eq.${pageId}`
-      }, () => {
+      }, (payload) => {
+        console.log('Real-time update received:', payload);
         loadData();
       })
       .subscribe();

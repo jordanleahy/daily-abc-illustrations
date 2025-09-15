@@ -20,9 +20,11 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isLocalGenerating, setIsLocalGenerating] = useState(false);
 
-  // Clear local generating state when backend status updates
+  // Clear local generating state when backend status updates to complete or error
   useEffect(() => {
-    if (currentImage?.generation_status && isLocalGenerating) {
+    console.log('Image status changed:', currentImage?.generation_status, 'isLocalGenerating:', isLocalGenerating);
+    if (currentImage?.generation_status && ['complete', 'error'].includes(currentImage.generation_status) && isLocalGenerating) {
+      console.log('Clearing local generating state');
       setIsLocalGenerating(false);
     }
   }, [currentImage?.generation_status, isLocalGenerating]);

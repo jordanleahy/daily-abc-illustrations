@@ -17,12 +17,14 @@ export function usePageSystemPrompt(pageId: string) {
     try {
       setIsLoading(true);
 
-      // Get current latest prompt
+      // Get current latest prompt (order by version_number desc to handle multiple is_latest=true cases)
       const { data: currentData, error: currentError } = await supabase
         .from('page_system_prompts')
         .select('*')
         .eq('page_id', pageId)
         .eq('is_latest', true)
+        .order('version_number', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (currentError) throw currentError;

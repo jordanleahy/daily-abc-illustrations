@@ -269,6 +269,7 @@ export type Database = {
           request_id: string | null
           safe_space_rules_applied: boolean | null
           source_type: string
+          status: string
           tokens_used: number | null
           updated_at: string
           user_id: string
@@ -297,6 +298,7 @@ export type Database = {
           request_id?: string | null
           safe_space_rules_applied?: boolean | null
           source_type?: string
+          status?: string
           tokens_used?: number | null
           updated_at?: string
           user_id: string
@@ -325,6 +327,7 @@ export type Database = {
           request_id?: string | null
           safe_space_rules_applied?: boolean | null
           source_type?: string
+          status?: string
           tokens_used?: number | null
           updated_at?: string
           user_id?: string

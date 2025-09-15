@@ -115,15 +115,19 @@ export const AgentIdentityCard = ({
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
           <div>
             <label className="text-xs font-medium text-muted-foreground">Version</label>
-            <p className="text-sm font-mono">{config.version}</p>
+            <p className="text-sm font-mono">{config.version || '1.0'}</p>
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Created</label>
-            <p className="text-sm">{config.createdAt.toLocaleDateString()}</p>
+            <p className="text-sm">
+              {config.createdAt ? new Date(config.createdAt).toLocaleDateString() : 'Unknown'}
+            </p>
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Last Modified</label>
-            <p className="text-sm">{config.lastModified.toLocaleString()}</p>
+            <p className="text-sm">
+              {config.lastModified ? new Date(config.lastModified).toLocaleString() : 'Unknown'}
+            </p>
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Assistant ID</label>

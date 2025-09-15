@@ -26,11 +26,6 @@ export function usePageSystemPrompt(pageId: string) {
         .maybeSingle();
 
       if (currentError) throw currentError;
-      
-      // Normalize the status field - use prompt_status if available, otherwise fall back to status
-      if (currentData) {
-        currentData.status = currentData.prompt_status || currentData.status || 'complete';
-      }
       setCurrentPrompt(currentData);
 
       // Get all versions
@@ -41,13 +36,7 @@ export function usePageSystemPrompt(pageId: string) {
         .order('created_at', { ascending: false });
 
       if (versionsError) throw versionsError;
-      
-      // Normalize status for all versions
-      const normalizedVersions = (versionsData || []).map(version => ({
-        ...version,
-        status: version.prompt_status || version.status || 'complete'
-      }));
-      setVersions(normalizedVersions);
+      setVersions(versionsData || []);
 
     } catch (error) {
       console.error('Error loading page system prompt:', error);
@@ -78,9 +67,6 @@ export function usePageSystemPrompt(pageId: string) {
         (payload) => {
           console.log('Page system prompt INSERT:', payload);
           const newPrompt = payload.new as PageSystemPrompt;
-          // Normalize the status field
-          newPrompt.status = newPrompt.prompt_status || newPrompt.status || 'complete';
-          
           if (newPrompt.is_latest) {
             setCurrentPrompt(newPrompt);
           }
@@ -98,8 +84,6 @@ export function usePageSystemPrompt(pageId: string) {
         (payload) => {
           console.log('Page system prompt UPDATE:', payload);
           const updatedPrompt = payload.new as PageSystemPrompt;
-          // Normalize the status field
-          updatedPrompt.status = updatedPrompt.prompt_status || updatedPrompt.status || 'complete';
           
           setVersions(prev => 
             prev.map(version => 

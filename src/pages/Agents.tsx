@@ -170,24 +170,28 @@ const Agents = () => {
           </div>
 
           {/* Agent Identity Card */}
-          <AgentIdentityCard
-            config={config}
-            onUpdate={updateConfig}
-            lastChangeDescription={lastChangeDescription}
-            onClearChangeDescription={clearChangeDescription}
-          />
+          {config && (
+            <AgentIdentityCard
+              config={config}
+              onUpdate={updateConfig}
+              lastChangeDescription={lastChangeDescription}
+              onClearChangeDescription={clearChangeDescription}
+            />
+          )}
 
           {/* Configuration Tabs */}
-          <ConfigurationTabs
-            config={config}
-            onUpdate={updateConfig}
-            onUpdateModelSettings={updateModelSettings}
-            onSave={saveConfig}
-            onSaveWithOverrides={saveConfigWithOverrides}
-            isLoading={isLoading}
-            hasUnsavedChanges={hasUnsavedChanges}
-            agentType={selectedAgentType}
-          />
+          {config && (
+            <ConfigurationTabs
+              config={config}
+              onUpdate={updateConfig}
+              onUpdateModelSettings={updateModelSettings}
+              onSave={saveConfig}
+              onSaveWithOverrides={saveConfigWithOverrides}
+              isLoading={isLoading}
+              hasUnsavedChanges={hasUnsavedChanges}
+              agentType={selectedAgentType}
+            />
+          )}
 
           {/* Status Footer */}
           {hasUnsavedChanges && (

@@ -26,6 +26,7 @@ export type Database = {
           max_completion_tokens: number
           model: string
           name: string
+          operational_status: string
           parent_agent_id: string | null
           status: string
           top_p: number
@@ -47,6 +48,7 @@ export type Database = {
           max_completion_tokens?: number
           model: string
           name: string
+          operational_status?: string
           parent_agent_id?: string | null
           status?: string
           top_p?: number
@@ -68,6 +70,7 @@ export type Database = {
           max_completion_tokens?: number
           model?: string
           name?: string
+          operational_status?: string
           parent_agent_id?: string | null
           status?: string
           top_p?: number

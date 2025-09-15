@@ -14,7 +14,8 @@ import {
   Clock,
   CheckCircle,
   AlertCircle,
-  Loader2
+  Loader2,
+  RefreshCw
 } from 'lucide-react';
 
 interface SystemPromptSectionProps {
@@ -33,7 +34,8 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
     saveEdit,
     deployVersion,
     revertToVersion,
-    updateEditedContent
+    updateEditedContent,
+    refreshData
   } = useSystemPrompt(bookId);
 
   const [showVersionHistory, setShowVersionHistory] = useState(false);
@@ -119,6 +121,16 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
             
             {!isEditing && (
               <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={refreshData}
+                  className="flex items-center gap-2"
+                  title="Refresh prompt data"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                  Refresh
+                </Button>
                 {hasPrompt && (
                   <>
                     <Button

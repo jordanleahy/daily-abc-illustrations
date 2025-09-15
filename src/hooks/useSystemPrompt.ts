@@ -41,6 +41,8 @@ export const useSystemPrompt = (bookId: string) => {
     queryFn: async (): Promise<SystemPrompt | null> => {
       if (!bookId) return null;
       
+      console.log(`[useSystemPrompt] Fetching current prompt for book ${bookId}`);
+      
       const { data: currentData, error: currentError } = await supabase
         .from('book_system_prompts')
         .select('*')
@@ -53,7 +55,12 @@ export const useSystemPrompt = (bookId: string) => {
         throw currentError;
       }
 
-      if (!currentData) return null;
+      if (!currentData) {
+        console.log(`[useSystemPrompt] No current prompt found for book ${bookId}`);
+        return null;
+      }
+      
+      console.log(`[useSystemPrompt] Found current prompt:`, currentData);
 
       return {
         id: currentData.id,
@@ -335,7 +342,7 @@ export const useSystemPrompt = (bookId: string) => {
           filter: `book_id=eq.${bookId}`
         },
         (payload) => {
-          console.log('Real-time update received:', payload);
+          console.log(`[useSystemPrompt] Real-time update received for book ${bookId}:`, payload);
           
           if (payload.eventType === 'INSERT') {
             const newPrompt = payload.new as any;
@@ -368,6 +375,7 @@ export const useSystemPrompt = (bookId: string) => {
                 generationMetadata: newPrompt.generation_metadata,
                 promptStatus: newPrompt.prompt_status
               };
+              console.log(`[useSystemPrompt] Setting new current prompt via real-time:`, newCurrentPrompt);
               queryClient.setQueryData(['book-system-prompt-current', bookId], newCurrentPrompt);
             }
           } else if (payload.eventType === 'UPDATE') {

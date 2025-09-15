@@ -26,10 +26,10 @@ export const AgentIdentityCard = ({
 
   const getStatusColor = (status: AgentConfig['status']) => {
     switch (status) {
-      case 'online': return 'bg-green-500';
-      case 'processing': return 'bg-yellow-500';
-      case 'offline': return 'bg-gray-500';
-      default: return 'bg-gray-500';
+      case 'online': return 'bg-success';
+      case 'processing': return 'bg-warning'; 
+      case 'offline': return 'bg-muted-foreground';
+      default: return 'bg-muted-foreground';
     }
   };
 
@@ -48,7 +48,7 @@ export const AgentIdentityCard = ({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <InlineEditInput
-              value={config.name}
+              value={config.name || ''}
               onSave={(name) => {
                 onUpdate({ name });
                 setEditingField(null);
@@ -59,7 +59,7 @@ export const AgentIdentityCard = ({
                   className="text-2xl font-semibold cursor-pointer hover:text-primary transition-colors"
                   onClick={() => setEditingField('name')}
                 >
-                  {value}
+                  {value || 'Unnamed Agent'}
                 </h2>
               )}
               className="text-2xl font-semibold"
@@ -85,30 +85,30 @@ export const AgentIdentityCard = ({
       <CardContent className="space-y-4">
         <div>
           <label className="text-sm font-medium text-muted-foreground">Agent Intent</label>
-          <InlineEditTextarea
-            value={config.intent}
-            onSave={(intent) => {
-              onUpdate({ intent });
-              setEditingField(null);
-            }}
-            isEditing={editingField === 'intent'}
-            renderDisplay={(value) => (
-              <p 
-                className="text-sm cursor-pointer hover:text-primary transition-colors mt-1 p-2 rounded-md hover:bg-muted/50"
-                onClick={() => setEditingField('intent')}
-              >
-                {value}
-              </p>
-            )}
-            className="min-h-[60px] text-sm"
-            placeholder="Describe the agent's purpose and capabilities"
-          />
+            <InlineEditTextarea
+              value={config.intent || ''}
+              onSave={(intent) => {
+                onUpdate({ intent });
+                setEditingField(null);
+              }}
+              isEditing={editingField === 'intent'}
+              renderDisplay={(value) => (
+                <p 
+                  className="text-sm cursor-pointer hover:text-primary transition-colors mt-1 p-2 rounded-md hover:bg-muted/50"
+                  onClick={() => setEditingField('intent')}
+                >
+                  {value || 'No description provided'}
+                </p>
+              )}
+              className="min-h-[60px] text-sm"
+              placeholder="Describe the agent's purpose and capabilities"
+            />
         </div>
 
         {/* Change Response Panel - Always visible */}
         <ChangeResponsePanel
           whatChanged={lastChangeDescription}
-          version={config.version}
+          version={config.version || '1.0'}
           defaultMessage="Agent configuration ready"
         />
 

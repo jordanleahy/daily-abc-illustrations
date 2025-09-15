@@ -20,7 +20,7 @@ export const SystemPromptEditor = ({
   const [isSaving, setIsSaving] = useState(false);
   
   const characterCount = content.length;
-  const maxCharacters = 5000; // Reasonable limit for system prompts
+  const maxCharacters = 10000; // Reasonable limit for system prompts
   
   const handleSave = async () => {
     setIsSaving(true);

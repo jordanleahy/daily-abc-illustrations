@@ -28,7 +28,6 @@ export type Database = {
           name: string
           operational_status: string
           parent_agent_id: string | null
-          status: string
           top_p: number
           type: string
           updated_at: string
@@ -50,7 +49,6 @@ export type Database = {
           name: string
           operational_status?: string
           parent_agent_id?: string | null
-          status?: string
           top_p?: number
           type: string
           updated_at?: string
@@ -72,7 +70,6 @@ export type Database = {
           name?: string
           operational_status?: string
           parent_agent_id?: string | null
-          status?: string
           top_p?: number
           type?: string
           updated_at?: string

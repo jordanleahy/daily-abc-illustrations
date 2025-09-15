@@ -10,6 +10,7 @@ export interface PageSystemPrompt {
   deployed_at: string | null;
   source_type: string; // 'manual' | 'generated' but allow database flexibility
   generation_metadata: any;
+  status?: string;
   created_at: string;
   updated_at: string;
 }

@@ -59,14 +59,59 @@ export function usePageSystemPrompt(pageId: string) {
       .on(
         'postgres_changes' as any,
         {
-          event: '*',
+          event: 'INSERT',
           schema: 'public',
           table: 'page_system_prompts',
           filter: `page_id=eq.${pageId}`
         },
         (payload) => {
-          console.log('Page system prompt change:', payload);
-          loadData();
+          console.log('Page system prompt INSERT:', payload);
+          const newPrompt = payload.new as PageSystemPrompt;
+          if (newPrompt.is_latest) {
+            setCurrentPrompt(newPrompt);
+          }
+          setVersions(prev => [newPrompt, ...prev]);
+        }
+      )
+      .on(
+        'postgres_changes' as any,
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'page_system_prompts',
+          filter: `page_id=eq.${pageId}`
+        },
+        (payload) => {
+          console.log('Page system prompt UPDATE:', payload);
+          const updatedPrompt = payload.new as PageSystemPrompt;
+          
+          setVersions(prev => 
+            prev.map(version => 
+              version.id === updatedPrompt.id ? updatedPrompt : version
+            )
+          );
+          
+          if (updatedPrompt.is_latest) {
+            setCurrentPrompt(updatedPrompt);
+          }
+        }
+      )
+      .on(
+        'postgres_changes' as any,
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'page_system_prompts',
+          filter: `page_id=eq.${pageId}`
+        },
+        (payload) => {
+          console.log('Page system prompt DELETE:', payload);
+          const deletedId = payload.old.id;
+          setVersions(prev => prev.filter(version => version.id !== deletedId));
+          
+          if (currentPrompt?.id === deletedId) {
+            setCurrentPrompt(null);
+          }
         }
       )
       .subscribe();

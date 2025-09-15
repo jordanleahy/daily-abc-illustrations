@@ -159,7 +159,8 @@ export const useSystemPrompt = (bookId: string) => {
                 isDeployed: updatedPrompt.is_deployed,
                 deployedAt: updatedPrompt.deployed_at || undefined,
                 sourceType: updatedPrompt.source_type as 'generated' | 'manual',
-                generationMetadata: updatedPrompt.generation_metadata
+                generationMetadata: updatedPrompt.generation_metadata,
+                status: updatedPrompt.status
               };
               
               setVersions(prev => 
@@ -180,7 +181,8 @@ export const useSystemPrompt = (bookId: string) => {
                       lastModified: updatedPrompt.updated_at,
                       deployedAt: updatedPrompt.deployed_at || undefined,
                       sourceType: updatedPrompt.source_type as 'generated' | 'manual',
-                      generationMetadata: updatedPrompt.generation_metadata
+                      generationMetadata: updatedPrompt.generation_metadata,
+                      status: updatedPrompt.status
                     };
                   }
                   return prev;

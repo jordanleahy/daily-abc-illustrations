@@ -167,7 +167,7 @@ serve(async (req) => {
             version_number: nextVersionNumber || 1,
             is_latest: true,
             is_deployed: false,
-            status: ProcessStatus.IN_PROGRESS,
+            prompt_status: ProcessStatus.IN_PROGRESS,
             source_type: 'generated',
             generation_metadata: {
               started_at: new Date().toISOString(),
@@ -376,7 +376,7 @@ Style Guide for "${bookMetadata.book_name}":
 ${styleGuide}
 
 Use this style guide consistently across all illustrations for this book. Each illustration should be educational, age-appropriate, and aligned with the visual style described above.`,
-            status: ProcessStatus.COMPLETE,
+            prompt_status: ProcessStatus.COMPLETE,
             is_deployed: true,
             generation_metadata: {
               model: agentConfig.model,

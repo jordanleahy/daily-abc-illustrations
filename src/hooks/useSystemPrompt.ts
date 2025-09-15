@@ -12,7 +12,7 @@ export interface SystemPrompt {
   deployedAt?: string;
   sourceType: 'generated' | 'manual';
   generationMetadata?: any;
-  status?: string;
+  promptStatus?: string;
 }
 
 export interface SystemPromptVersion {
@@ -24,7 +24,7 @@ export interface SystemPromptVersion {
   deployedAt?: string;
   sourceType: 'generated' | 'manual';
   generationMetadata?: any;
-  status?: string;
+  promptStatus?: string;
 }
 
 export const useSystemPrompt = (bookId: string) => {
@@ -62,7 +62,7 @@ export const useSystemPrompt = (bookId: string) => {
           deployedAt: currentData.deployed_at || undefined,
           sourceType: currentData.source_type as 'generated' | 'manual',
           generationMetadata: currentData.generation_metadata,
-          status: currentData.status
+          promptStatus: currentData.prompt_status
         });
       }
 
@@ -85,7 +85,7 @@ export const useSystemPrompt = (bookId: string) => {
           deployedAt: v.deployed_at || undefined,
           sourceType: v.source_type as 'generated' | 'manual',
           generationMetadata: v.generation_metadata,
-          status: v.status
+          promptStatus: v.prompt_status
         })));
       }
     } catch (error) {
@@ -130,7 +130,7 @@ export const useSystemPrompt = (bookId: string) => {
                 deployedAt: newPrompt.deployed_at || undefined,
                 sourceType: newPrompt.source_type as 'generated' | 'manual',
                 generationMetadata: newPrompt.generation_metadata,
-                status: newPrompt.status
+                promptStatus: newPrompt.prompt_status
               };
               
               setVersions(prev => [newVersion, ...prev]);
@@ -146,7 +146,7 @@ export const useSystemPrompt = (bookId: string) => {
                   deployedAt: newPrompt.deployed_at || undefined,
                   sourceType: newPrompt.source_type as 'generated' | 'manual',
                   generationMetadata: newPrompt.generation_metadata,
-                  status: newPrompt.status
+                  promptStatus: newPrompt.prompt_status
                 });
               }
             } else if (payload.eventType === 'UPDATE') {
@@ -160,7 +160,7 @@ export const useSystemPrompt = (bookId: string) => {
                 deployedAt: updatedPrompt.deployed_at || undefined,
                 sourceType: updatedPrompt.source_type as 'generated' | 'manual',
                 generationMetadata: updatedPrompt.generation_metadata,
-                status: updatedPrompt.status
+                promptStatus: updatedPrompt.prompt_status
               };
               
               setVersions(prev => 
@@ -182,7 +182,7 @@ export const useSystemPrompt = (bookId: string) => {
                       deployedAt: updatedPrompt.deployed_at || undefined,
                       sourceType: updatedPrompt.source_type as 'generated' | 'manual',
                       generationMetadata: updatedPrompt.generation_metadata,
-                      status: updatedPrompt.status
+                      promptStatus: updatedPrompt.prompt_status
                     };
                   }
                   return prev;

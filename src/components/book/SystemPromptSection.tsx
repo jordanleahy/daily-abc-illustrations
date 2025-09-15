@@ -38,8 +38,8 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
 
   const [showVersionHistory, setShowVersionHistory] = useState(false);
 
-  const getStatusIcon = (status?: string) => {
-    switch (status) {
+  const getStatusIcon = (promptStatus?: string) => {
+    switch (promptStatus) {
       case ProcessStatus.IN_PROGRESS:
         return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
       case ProcessStatus.ERROR:
@@ -50,8 +50,8 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
     }
   };
 
-  const getStatusBadge = (status?: string) => {
-    switch (status) {
+  const getStatusBadge = (promptStatus?: string) => {
+    switch (promptStatus) {
       case ProcessStatus.IN_PROGRESS:
         return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Generating...</Badge>;
       case ProcessStatus.ERROR:
@@ -105,7 +105,7 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
                         </>
                       )}
                     </Badge>
-                    {currentPrompt?.status && getStatusBadge(currentPrompt.status)}
+                    {currentPrompt?.promptStatus && getStatusBadge(currentPrompt.promptStatus)}
                   </>
                 )}
               </div>
@@ -131,7 +131,7 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
                       <History className="w-4 h-4" />
                       History ({versions.length})
                     </Button>
-                    {currentPrompt?.status !== ProcessStatus.IN_PROGRESS && (
+                    {currentPrompt?.promptStatus !== ProcessStatus.IN_PROGRESS && (
                       <Button
                         variant="outline"
                         size="sm"
@@ -142,7 +142,7 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
                         Edit
                       </Button>
                     )}
-                    {!currentPrompt?.isDeployed && currentPrompt?.status === ProcessStatus.COMPLETE && (
+                    {!currentPrompt?.isDeployed && currentPrompt?.promptStatus === ProcessStatus.COMPLETE && (
                       <Button
                         size="sm"
                         onClick={() => deployVersion(currentPrompt!.id)}
@@ -175,12 +175,12 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
             />
           ) : (
             <div className="space-y-4">
-              {currentPrompt?.status === ProcessStatus.IN_PROGRESS ? (
+              {currentPrompt?.promptStatus === ProcessStatus.IN_PROGRESS ? (
                 <div className="flex items-center justify-center py-8 space-x-2">
                   <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
                   <span className="text-sm text-muted-foreground">Generating system prompt...</span>
                 </div>
-              ) : currentPrompt?.status === ProcessStatus.ERROR ? (
+              ) : currentPrompt?.promptStatus === ProcessStatus.ERROR ? (
                 <div className="flex items-center justify-center py-8 space-x-2 text-red-500">
                   <AlertCircle className="h-6 w-6" />
                   <span className="text-sm">Generation failed. Please try again.</span>
@@ -190,7 +190,7 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
                   <div className="flex items-center justify-between mb-3">
                     <h4 className="font-medium flex items-center gap-2">
                       Current Version
-                      {getStatusIcon(currentPrompt?.status)}
+                      {getStatusIcon(currentPrompt?.promptStatus)}
                     </h4>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Clock className="w-3 h-3" />

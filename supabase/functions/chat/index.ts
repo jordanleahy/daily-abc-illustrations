@@ -32,24 +32,27 @@ import { corsHeaders, isLegacyModel } from '../_shared/types.ts';
 
 function detectBookCreationIntent(messages: any[]): boolean {
   if (messages.length < 2) return false;
-  
+
   const lastAssistantMessage = messages[messages.length - 2];
   const userResponse = messages[messages.length - 1]?.content?.toLowerCase()?.trim() || '';
-  
-  // Multiple patterns the agent might use to ask for book creation
-  const confirmationPhrases = [
-    'create this as a printable book now?',
-    'create the card examples for you',
-    'make this into a book',
-    'create the book'
+  const assistantText = (lastAssistantMessage?.content || '').toLowerCase();
+
+  // Flexible patterns the agent might use to ask for book creation
+  const askPatterns: RegExp[] = [
+    /would you like me to create (this|it)?\s*(as )?(a )?(printable )?book( now)?\?/i,
+    /should i create (this|it)?\s*(as )?(a )?(printable )?book/i,
+    /do you want me to (make|create) (this|it)?\s*(into|as)?\s*(a )?(printable )?book/i,
+    /shall i create .*book/i,
+    /ready to create .*book/i,
+    /create (the|this) book\??/i,
+    /make this into a book\??/i
   ];
-  
-  const hasConfirmationRequest = confirmationPhrases.some(phrase => 
-    lastAssistantMessage?.content?.toLowerCase()?.includes(phrase)
-  );
-  
-  const confirmationPattern = /^(yes|ok|sure|go ahead|create it|do it|proceed|confirmed)\b/i;
-  
+
+  const hasConfirmationRequest = askPatterns.some((re) => re.test(assistantText));
+
+  // Common affirmative confirmations
+  const confirmationPattern = /^(yes|ok|okay|sure|yup|yep|yeah|go ahead|create it|do it|proceed|confirmed)\b/i;
+
   return hasConfirmationRequest && confirmationPattern.test(userResponse);
 }
 

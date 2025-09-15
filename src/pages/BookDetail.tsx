@@ -23,7 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
 import { Book } from '@/types/book';
-import { ArrowLeft, Calendar, Users, Palette, Loader2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
@@ -40,6 +40,7 @@ export default function BookDetail() {
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
+  const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
@@ -231,6 +232,34 @@ export default function BookDetail() {
     }
   };
 
+  const handleArchiveBook = async () => {
+    if (!book || !user) return;
+    
+    setArchiveLoading(true);
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({ status: 'archived' })
+        .eq('id', book.id)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error archiving book:', error);
+        toast.error('Failed to archive book');
+        return;
+      }
+
+      toast.success('Book archived successfully');
+      // Update local state
+      setBook(prev => prev ? { ...prev, status: 'archived' } : null);
+    } catch (error: any) {
+      console.error('Error:', error);
+      toast.error('An error occurred while archiving the book');
+    } finally {
+      setArchiveLoading(false);
+    }
+  };
+
   const handleDeleteBook = async () => {
     if (!book || !user) return;
     
@@ -327,6 +356,38 @@ export default function BookDetail() {
                       </>
                     )}
                   </Button>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={archiveLoading || book?.status === 'archived'}
+                        className="flex items-center gap-2"
+                      >
+                        {archiveLoading ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Archive className="w-4 h-4" />
+                        )}
+                        Archive
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Archive Book</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to archive "{book?.book_name}"? Archived books will be hidden from your main book list but can be restored later.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleArchiveBook}>
+                          Archive Book
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                   
                   <AlertDialog>
                     <AlertDialogTrigger asChild>

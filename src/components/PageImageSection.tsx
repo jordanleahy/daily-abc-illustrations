@@ -7,7 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/process";
 import { useState, useEffect } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, Loader2 } from "lucide-react";
 
 interface PageImageSectionProps {
   pageId: string;
@@ -166,6 +166,27 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
             alt="Generated page image"
             className="w-full h-full object-cover"
           />
+          
+          {/* Debug info and refresh button - only show in dev mode */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="absolute top-2 right-2 flex gap-2">
+              <Button
+                onClick={() => {
+                  console.log('Current image data:', currentImage);
+                  refreshData();
+                }}
+                size="sm"
+                variant="outline"
+                className="bg-white/90 text-xs"
+              >
+                <RefreshCw className="w-3 h-3 mr-1" />
+                Refresh
+              </Button>
+              <div className="bg-white/90 text-xs px-2 py-1 rounded text-black">
+                v{currentImage.version_number} • {currentImage.generation_status}
+              </div>
+            </div>
+          )}
           
           {/* Hover overlay with regenerate button */}
           <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">

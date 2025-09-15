@@ -278,14 +278,15 @@ serve(async (req) => {
 
     console.log(`[${requestId}] Image uploaded successfully, updating record`);
 
-    // Update the record with the image URL and completion status
+    // Update the record with the image URL, completion status, and set as latest
     const { data: updatedRecord, error: updateError } = await supabase
       .from('page_image_urls')
       .update({
         image_url: urlData.publicUrl,
         generation_status: 'complete',
         generation_completed_at: new Date().toISOString(),
-        generation_duration_ms: generationDuration
+        generation_duration_ms: generationDuration,
+        is_latest: true // This will trigger the database trigger to mark others as not latest
       })
       .eq('id', recordId)
       .select()

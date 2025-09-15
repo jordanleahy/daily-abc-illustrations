@@ -14,6 +14,8 @@ export function usePageImageUrls(pageId: string) {
     queryFn: async (): Promise<PageImageUrl | null> => {
       if (!user || !pageId) return null;
 
+      console.log(`[usePageImageUrls] Fetching current image for page ${pageId}`);
+
       const { data, error } = await supabase
         .from('page_image_urls')
         .select('*')
@@ -25,6 +27,14 @@ export function usePageImageUrls(pageId: string) {
         console.error('Error fetching latest page image:', error);
         throw error;
       }
+
+      console.log(`[usePageImageUrls] Current image result:`, data ? {
+        id: data.id,
+        version: data.version_number,
+        status: data.generation_status,
+        hasUrl: !!data.image_url,
+        isLatest: data.is_latest
+      } : 'No current image found');
 
       return data as PageImageUrl | null;
     },
@@ -118,6 +128,8 @@ export function usePageImageUrls(pageId: string) {
   useEffect(() => {
     if (!pageId || !user) return;
 
+    console.log(`[usePageImageUrls] Setting up real-time subscription for page ${pageId}`);
+
     const channel = supabase
       .channel('page_image_urls_changes')
       .on('postgres_changes', {
@@ -126,42 +138,73 @@ export function usePageImageUrls(pageId: string) {
         table: 'page_image_urls',
         filter: `page_id=eq.${pageId}`
       }, (payload) => {
-        console.log('Real-time update received:', payload);
+        console.log(`[usePageImageUrls] Real-time update received for page ${pageId}:`, payload);
         
         if (payload.eventType === 'INSERT') {
           const newImage = payload.new as PageImageUrl;
+          console.log(`[usePageImageUrls] INSERT: New image version ${newImage.version_number}, is_latest: ${newImage.is_latest}`);
+          
           queryClient.setQueryData(['page-image-versions', pageId], (old: PageImageUrlVersion[] = []) => 
-            [newImage as PageImageUrlVersion, ...old]
+            [newImage as PageImageUrlVersion, ...old.filter(img => img.id !== newImage.id)]
           );
           if (newImage.is_latest) {
+            console.log(`[usePageImageUrls] Setting new image as current (version ${newImage.version_number})`);
             queryClient.setQueryData(['page-image-latest', pageId], newImage);
           }
         } else if (payload.eventType === 'UPDATE') {
           const updatedImage = payload.new as PageImageUrl;
+          const oldImage = payload.old as PageImageUrl;
+          
+          console.log(`[usePageImageUrls] UPDATE: Image ${updatedImage.id} updated`, {
+            versionNumber: updatedImage.version_number,
+            isLatest: updatedImage.is_latest,
+            wasLatest: oldImage.is_latest,
+            status: updatedImage.generation_status,
+            hasImageUrl: !!updatedImage.image_url
+          });
+          
+          // Update versions cache
           queryClient.setQueryData(['page-image-versions', pageId], (old: PageImageUrlVersion[] = []) =>
             old.map(img => img.id === updatedImage.id ? updatedImage as PageImageUrlVersion : img)
           );
+          
+          // Update current image cache
           if (updatedImage.is_latest) {
+            console.log(`[usePageImageUrls] Updated image is now latest (version ${updatedImage.version_number})`);
             queryClient.setQueryData(['page-image-latest', pageId], updatedImage);
+          } else if (oldImage.is_latest && !updatedImage.is_latest) {
+            // This image was latest but no longer is - need to find the new latest
+            console.log(`[usePageImageUrls] Image was latest but no longer is, refreshing current image`);
+            queryClient.invalidateQueries({ queryKey: ['page-image-latest', pageId] });
           }
         } else if (payload.eventType === 'DELETE') {
           const deletedId = payload.old.id;
+          const deletedImage = payload.old as PageImageUrl;
+          
+          console.log(`[usePageImageUrls] DELETE: Image ${deletedId} deleted (version ${deletedImage.version_number})`);
+          
           queryClient.setQueryData(['page-image-versions', pageId], (old: PageImageUrlVersion[] = []) =>
             old.filter(img => img.id !== deletedId)
           );
-          queryClient.setQueryData(['page-image-latest', pageId], (old: PageImageUrl | null) =>
-            old?.id === deletedId ? null : old
-          );
+          
+          if (deletedImage.is_latest) {
+            console.log(`[usePageImageUrls] Deleted image was latest, clearing current image`);
+            queryClient.setQueryData(['page-image-latest', pageId], null);
+            // Also invalidate to refetch in case there's another latest image
+            queryClient.invalidateQueries({ queryKey: ['page-image-latest', pageId] });
+          }
         }
       })
       .subscribe();
 
     return () => {
+      console.log(`[usePageImageUrls] Cleaning up real-time subscription for page ${pageId}`);
       supabase.removeChannel(channel);
     };
-  }, [pageId, user]);
+  }, [pageId, user, queryClient]);
 
   const refreshData = () => {
+    console.log(`[usePageImageUrls] Manual refresh requested for page ${pageId}`);
     queryClient.invalidateQueries({ queryKey: ['page-image-latest', pageId] });
     queryClient.invalidateQueries({ queryKey: ['page-image-versions', pageId] });
   };

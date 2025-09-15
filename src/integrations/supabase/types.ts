@@ -152,7 +152,7 @@ export type Database = {
           created_at: string
           current_system_prompt_id: string | null
           id: string
-          is_published: boolean | null
+          status: Database["public"]["Enums"]["publication_status"]
           total_pages: number | null
           updated_at: string
           user_id: string
@@ -164,7 +164,7 @@ export type Database = {
           created_at?: string
           current_system_prompt_id?: string | null
           id?: string
-          is_published?: boolean | null
+          status?: Database["public"]["Enums"]["publication_status"]
           total_pages?: number | null
           updated_at?: string
           user_id: string
@@ -176,7 +176,7 @@ export type Database = {
           created_at?: string
           current_system_prompt_id?: string | null
           id?: string
-          is_published?: boolean | null
+          status?: Database["public"]["Enums"]["publication_status"]
           total_pages?: number | null
           updated_at?: string
           user_id?: string
@@ -265,12 +265,11 @@ export type Database = {
           page_id: string
           page_letter: string | null
           page_title: string | null
-          prompt_status: string | null
+          prompt_status: string
           prompt_type: string | null
           request_id: string | null
           safe_space_rules_applied: boolean | null
           source_type: string
-          status: string
           tokens_used: number | null
           updated_at: string
           user_id: string
@@ -295,12 +294,11 @@ export type Database = {
           page_id: string
           page_letter?: string | null
           page_title?: string | null
-          prompt_status?: string | null
+          prompt_status: string
           prompt_type?: string | null
           request_id?: string | null
           safe_space_rules_applied?: boolean | null
           source_type?: string
-          status?: string
           tokens_used?: number | null
           updated_at?: string
           user_id: string
@@ -325,12 +323,11 @@ export type Database = {
           page_id?: string
           page_letter?: string | null
           page_title?: string | null
-          prompt_status?: string | null
+          prompt_status?: string
           prompt_type?: string | null
           request_id?: string | null
           safe_space_rules_applied?: boolean | null
           source_type?: string
-          status?: string
           tokens_used?: number | null
           updated_at?: string
           user_id?: string
@@ -472,6 +469,7 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "moderator" | "admin"
+      publication_status: "draft" | "published" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -600,6 +598,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "moderator", "admin"],
+      publication_status: ["draft", "published", "archived"],
     },
   },
 } as const

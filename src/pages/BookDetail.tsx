@@ -250,8 +250,7 @@ export default function BookDetail() {
       }
 
       toast.success('Book archived successfully');
-      // Update local state
-      setBook(prev => prev ? { ...prev, status: 'archived' } : null);
+      navigate('/books');
     } catch (error: any) {
       console.error('Error:', error);
       toast.error('An error occurred while archiving the book');

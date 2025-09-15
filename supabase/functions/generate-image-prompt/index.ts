@@ -2,7 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { ProcessStatus, corsHeaders, log, generateRequestId } from '../_shared/types.ts';
-import { appendSafeSpaceRules } from '../../src/lib/safeSpaceConfig.ts';
+import { appendSafeSpaceRules } from '../_shared/safeSpaceConfig.ts';
 
 // Remove hardcoded instructions - will fetch from agents table instead
 

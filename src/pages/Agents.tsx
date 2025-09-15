@@ -90,8 +90,8 @@ const Agents = () => {
             <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedAgentType === 'book-creation' ? 'ring-2 ring-primary' : ''}`}>
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-green-500/10">
-                    <BookOpen className="h-5 w-5 text-green-600" />
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <BookOpen className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">Book Creation Agent</CardTitle>
@@ -117,8 +117,8 @@ const Agents = () => {
             <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedAgentType === 'illustration-director' ? 'ring-2 ring-primary' : ''}`}>
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-purple-500/10">
-                    <Palette className="h-5 w-5 text-purple-600" />
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <Palette className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">Illustration Director</CardTitle>
@@ -144,8 +144,8 @@ const Agents = () => {
             <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedAgentType === 'graphic-designer' ? 'ring-2 ring-primary' : ''}`}>
               <CardHeader>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-full bg-amber-500/10">
-                    <PenTool className="h-5 w-5 text-amber-600" />
+                  <div className="p-2 rounded-full bg-primary/10">
+                    <PenTool className="h-5 w-5 text-primary" />
                   </div>
                   <div>
                     <CardTitle className="text-lg">Graphics Designer</CardTitle>

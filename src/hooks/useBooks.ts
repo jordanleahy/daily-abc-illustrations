@@ -14,20 +14,57 @@ export const useBooks = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      const { data, error } = await supabase
+      // First, get all books
+      const { data: booksData, error: booksError } = await supabase
         .from('books')
         .select('*')
         .eq('user_id', user.id)
         .neq('status', 'archived')
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching books:', error);
+      if (booksError) {
+        console.error('Error fetching books:', booksError);
         toast.error('Failed to load books');
-        throw error;
+        throw booksError;
       }
 
-      return data || [];
+      if (!booksData || booksData.length === 0) {
+        return [];
+      }
+
+      // Get the first image for each book
+      const bookIds = booksData.map(book => book.id);
+      const { data: imagesData, error: imagesError } = await supabase
+        .from('page_image_urls')
+        .select('book_id, image_url, created_at')
+        .in('book_id', bookIds)
+        .not('image_url', 'is', null)
+        .eq('generation_status', 'complete')
+        .order('book_id')
+        .order('created_at', { ascending: true });
+
+      if (imagesError) {
+        console.error('Error fetching images:', imagesError);
+        // Don't throw error here, just continue without images
+      }
+
+      // Create a map of book_id to first image URL
+      const bookImageMap = new Map<string, string>();
+      if (imagesData) {
+        imagesData.forEach(image => {
+          if (!bookImageMap.has(image.book_id)) {
+            bookImageMap.set(image.book_id, image.image_url);
+          }
+        });
+      }
+
+      // Combine books with their first image URLs
+      const processedBooks = booksData.map(book => ({
+        ...book,
+        firstPageImageUrl: bookImageMap.get(book.id) || undefined
+      }));
+      
+      return processedBooks;
     },
     enabled: !!user?.id,
   });

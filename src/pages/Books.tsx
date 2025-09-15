@@ -127,8 +127,16 @@ export default function Books() {
                       </div>
                     </div>
                     
-                    <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-                      <BookOpen className="w-8 h-8 text-muted-foreground" />
+                    <div className="aspect-square bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+                      {book.firstPageImageUrl ? (
+                        <img 
+                          src={book.firstPageImageUrl} 
+                          alt={`Preview of ${book.book_name}`}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <BookOpen className="w-8 h-8 text-muted-foreground" />
+                      )}
                     </div>
                   </CardContent>
                 </Card>

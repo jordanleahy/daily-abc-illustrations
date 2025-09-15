@@ -19,6 +19,8 @@ export interface Book {
   status: 'draft' | 'published' | 'archived';
   /** ID of the currently deployed system prompt for AI operations */
   current_system_prompt_id?: string;
+  /** URL of the first created page image (if any) */
+  firstPageImageUrl?: string;
   /** ISO timestamp when the book was created */
   created_at: string;
   /** ISO timestamp when the book was last modified */

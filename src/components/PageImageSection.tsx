@@ -2,13 +2,12 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Shimmer } from "@/components/ui/shimmer";
 import { usePageImageUrls } from "@/hooks/usePageImageUrls";
-import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/process";
 import { useState, useEffect } from "react";
-import { RefreshCw, Loader2, Eye, EyeOff } from "lucide-react";
+import { RefreshCw, Loader2 } from "lucide-react";
 
 interface PageImageSectionProps {
   pageId: string;
@@ -18,12 +17,10 @@ interface PageImageSectionProps {
 export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const { user } = useAuth();
   const { currentImage, versions, isLoading, createImageRecord, refreshData } = usePageImageUrls(pageId);
-  const { currentPrompt } = usePageSystemPrompt(pageId);
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isLocalGenerating, setIsLocalGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [showPagePrompt, setShowPagePrompt] = useState(false);
 
   // Clear local generating state when backend status updates to complete or error
   useEffect(() => {
@@ -191,21 +188,8 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
             </div>
           )}
           
-          {/* Hover overlay with toggle and regenerate buttons */}
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-2">
-            <Button
-              onClick={() => setShowPagePrompt(!showPagePrompt)}
-              size="sm"
-              variant="secondary"
-              className="animate-scale-in"
-              title="Toggle page prompt"
-            >
-              {showPagePrompt ? (
-                <EyeOff className="w-4 h-4" />
-              ) : (
-                <Eye className="w-4 h-4" />
-              )}
-            </Button>
+          {/* Hover overlay with regenerate button */}
+          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
             <Button
               onClick={handleRegenerateImage}
               disabled={isRegenerating || isLocalGenerating}
@@ -226,33 +210,6 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
               )}
             </Button>
           </div>
-
-          {/* Page prompt overlay */}
-          {showPagePrompt && (
-            <div className="absolute inset-0 bg-black/90 flex items-center justify-center p-4 overflow-auto">
-              <div className="bg-background border rounded-lg p-4 max-w-md max-h-full overflow-auto">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-sm">Page System Prompt</h3>
-                  <Button
-                    onClick={() => setShowPagePrompt(false)}
-                    size="sm"
-                    variant="ghost"
-                  >
-                    <EyeOff className="w-4 h-4" />
-                  </Button>
-                </div>
-                {currentPrompt ? (
-                  <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                    {currentPrompt.content}
-                  </div>
-                ) : (
-                  <div className="text-sm text-muted-foreground italic">
-                    No system prompt available for this page
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
           
           <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-2">
             v{currentImage.version_number} • {currentImage.generation_duration_ms}ms

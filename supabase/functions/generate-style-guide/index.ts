@@ -367,7 +367,7 @@ Book Information:
         });
 
         // Update the existing prompt record with completion
-        const { data: savedPrompt, error: saveError } = await supabase
+        const { data: promptData, error: saveError } = await supabase
           .from('book_system_prompts')
           .update({
             content: `You are a creative director and graphic designer specializing in children's ABC books. Your role is to create beautiful, engaging illustrations that help children learn letters and words.

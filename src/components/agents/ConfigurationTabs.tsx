@@ -30,12 +30,12 @@ export const ConfigurationTabs = ({
       <CardContent className="p-6">
         <Tabs defaultValue="instructions" className="w-full">
           {hasUnsavedChanges && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3 mb-4 dark:bg-yellow-950/20 dark:border-yellow-800/30">
-              <p className="text-sm text-yellow-800 dark:text-yellow-200 font-medium">
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mb-4">
+              <p className="text-sm text-warning-foreground font-medium">
                 ⚠️ Unsaved Changes Detected
               </p>
-              <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                Click "Save Instructions" to apply changes and see what was modified with automatic version increment.
+              <p className="text-xs text-muted-foreground mt-1">
+                Click "Save Instructions" or "Save Settings" to apply changes and see what was modified with automatic version increment.
               </p>
             </div>
           )}

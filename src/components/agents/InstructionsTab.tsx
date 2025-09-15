@@ -24,7 +24,7 @@ export const InstructionsTab = ({
   hasUnsavedChanges,
   agentType 
 }: InstructionsTabProps) => {
-  const [localInstructions, setLocalInstructions] = useState(config.instructions);
+  const [localInstructions, setLocalInstructions] = useState(config?.instructions || '');
   const { promptData, isLoading: promptLoading, refetch } = useLatestBookSystemPrompt();
 
   // Show book system prompt display for graphics-designer agent
@@ -36,22 +36,32 @@ export const InstructionsTab = ({
     />;
   }
 
-  // Sync local state when config changes
+  // Sync local state when config changes from server
   useEffect(() => {
-    setLocalInstructions(config.instructions);
-  }, [config.instructions]);
+    if (config?.instructions !== undefined) {
+      setLocalInstructions(config.instructions);
+    }
+  }, [config?.instructions]);
+
+  const handleInstructionsChange = (value: string) => {
+    setLocalInstructions(value);
+    onUpdate({ instructions: value });
+  };
 
   const handleSave = () => {
-    // Save directly with the new instructions, bypassing state timing issues
+    // Use current local instructions to avoid timing issues
     onSaveWithOverrides({ instructions: localInstructions });
   };
 
   const handleReset = () => {
-    setLocalInstructions(config.instructions);
+    const originalInstructions = config?.instructions || '';
+    setLocalInstructions(originalInstructions);
+    onUpdate({ instructions: originalInstructions });
   };
 
   const characterCount = localInstructions.length;
   const maxCharacters = 8000;
+  const hasLocalChanges = localInstructions !== (config?.instructions || '');
 
   return (
     <div className="space-y-4">
@@ -65,7 +75,7 @@ export const InstructionsTab = ({
         <Textarea
           id="instructions"
           value={localInstructions}
-          onChange={(e) => setLocalInstructions(e.target.value)}
+          onChange={(e) => handleInstructionsChange(e.target.value)}
           placeholder="Enter detailed instructions for your agent..."
           className="w-full min-h-0 resize-none"
           style={{ height: 'auto', minHeight: 'auto' }}
@@ -77,7 +87,7 @@ export const InstructionsTab = ({
             {characterCount}/{maxCharacters} characters
           </span>
           <div className="flex gap-2">
-            {localInstructions !== config.instructions && (
+            {hasLocalChanges && (
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -90,7 +100,7 @@ export const InstructionsTab = ({
             <Button 
               size="sm" 
               onClick={handleSave}
-              disabled={isLoading || localInstructions === config.instructions}
+              disabled={isLoading || !hasLocalChanges}
             >
               {isLoading ? 'Saving...' : 'Save Instructions'}
             </Button>
@@ -99,8 +109,8 @@ export const InstructionsTab = ({
       </div>
 
       {hasUnsavedChanges && (
-        <div className="p-3 rounded-md bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+        <div className="p-3 rounded-md bg-warning/10 border border-warning/20">
+          <p className="text-sm text-warning-foreground">
             You have unsaved changes. Don't forget to save your instructions.
           </p>
         </div>

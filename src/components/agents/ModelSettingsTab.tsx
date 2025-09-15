@@ -5,7 +5,7 @@ import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { AgentConfig, AVAILABLE_MODELS } from '@/types/agent';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 interface ModelSettingsTabProps {
   config: AgentConfig;
@@ -22,12 +22,15 @@ export const ModelSettingsTab = ({
   isLoading, 
   hasUnsavedChanges 
 }: ModelSettingsTabProps) => {
-  const [localSettings, setLocalSettings] = useState(config.modelSettings);
+  // Use parent's state management instead of local duplication
+  const modelSettings = config?.modelSettings || {
+    model: 'gpt-4o',
+    maxCompletionTokens: 1000,
+    topP: 1.0
+  };
 
   const handleSettingChange = (key: keyof AgentConfig['modelSettings'], value: any) => {
-    const newSettings = { ...localSettings, [key]: value };
-    setLocalSettings(newSettings);
-    onUpdate(newSettings);
+    onUpdate({ [key]: value });
   };
 
   const handleSave = () => {
@@ -35,8 +38,14 @@ export const ModelSettingsTab = ({
   };
 
   const handleReset = () => {
-    setLocalSettings(config.modelSettings);
-    onUpdate(config.modelSettings);
+    // Reset to original values by calling onUpdate with original model settings
+    if (config?.modelSettings) {
+      onUpdate({
+        model: config.modelSettings.model,
+        maxCompletionTokens: config.modelSettings.maxCompletionTokens,
+        topP: config.modelSettings.topP
+      });
+    }
   };
 
   return (
@@ -47,7 +56,7 @@ export const ModelSettingsTab = ({
           <Label htmlFor="model">Model</Label>
           <Input
             id="model"
-            value={localSettings.model}
+            value={modelSettings.model}
             onChange={(e) => handleSettingChange('model', e.target.value)}
             placeholder="Enter model name (e.g., gpt-4o)"
             className="w-full"
@@ -63,13 +72,15 @@ export const ModelSettingsTab = ({
           <Input
             id="max-completion-tokens"
             type="number"
-            value={localSettings.maxCompletionTokens}
+            value={modelSettings.maxCompletionTokens}
             onChange={(e) => {
               const value = parseInt(e.target.value);
-              const validValue = isNaN(value) ? 1000 : value;
+              const validValue = isNaN(value) ? 1000 : Math.max(1, Math.min(32000, value));
               handleSettingChange('maxCompletionTokens', validValue);
             }}
             className="w-full"
+            min="1"
+            max="32000"
           />
           <p className="text-xs text-muted-foreground">
             Maximum number of tokens in the completion response. Approximate: 1 token ≈ 0.75 words.
@@ -82,13 +93,16 @@ export const ModelSettingsTab = ({
           <Input
             id="top-p"
             type="number"
-            value={localSettings.topP}
+            value={modelSettings.topP}
             onChange={(e) => {
               const value = parseFloat(e.target.value);
-              const validValue = isNaN(value) ? 1.0 : value;
+              const validValue = isNaN(value) ? 1.0 : Math.max(0.01, Math.min(1.0, value));
               handleSettingChange('topP', validValue);
             }}
             className="w-full"
+            min="0.01"
+            max="1.0"
+            step="0.01"
           />
           <p className="text-xs text-muted-foreground">
             Controls diversity via nucleus sampling. 1.0 means no restrictions.
@@ -116,8 +130,8 @@ export const ModelSettingsTab = ({
       </div>
 
       {hasUnsavedChanges && (
-        <div className="p-3 rounded-md bg-yellow-50 border border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800">
-          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+        <div className="p-3 rounded-md bg-warning/10 border border-warning/20">
+          <p className="text-sm text-warning-foreground">
             You have unsaved model settings changes.
           </p>
         </div>

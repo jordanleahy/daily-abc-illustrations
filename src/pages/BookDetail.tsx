@@ -39,7 +39,7 @@ export default function BookDetail() {
   const navigate = useNavigate();
   const { currentPrompt, refreshData } = useSystemPrompt(id || '');
   const { pages } = useBookPages(id);
-  const { data: book, isLoading: bookLoading, error: bookError } = useBook(id);
+  const { data: book, isLoading: bookLoading, error: bookError, isFetched: bookFetched } = useBook(id);
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -60,14 +60,11 @@ export default function BookDetail() {
 
   // Handle book not found only after auth and query have both completed
   useEffect(() => {
-    if (!authLoading && user && id && !bookLoading && !book) {
-      // Only show error if we've actually tried to fetch and failed
-      if (!bookError) {
-        toast.error('Book not found');
-        navigate('/books');
-      }
+    if (!authLoading && user && id && bookFetched && !book) {
+      toast.error('Book not found');
+      navigate('/books');
     }
-  }, [authLoading, user, id, bookLoading, book, bookError, navigate]);
+  }, [authLoading, user, id, bookFetched, book, navigate]);
 
 
 
@@ -262,7 +259,7 @@ export default function BookDetail() {
       setDeleteLoading(false);
     }
   };
-  if (authLoading || (user && bookLoading)) {
+  if (authLoading || (user && !bookFetched)) {
     return (
       <PageLayout>
         <Container>

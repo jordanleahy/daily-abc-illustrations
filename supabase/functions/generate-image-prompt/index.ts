@@ -333,6 +333,77 @@ Please generate a specific, detailed image prompt that captures the visual eleme
       letter: pageData.letter
     });
 
+    // Save the generated prompt to page_system_prompts table
+    currentStep = 'SAVE_TO_DATABASE';
+    const saveStartTime = Date.now();
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Saving generated prompt to database...', { requestId });
+
+    // Get the next version number for this page
+    const { data: versionData, error: versionError } = await supabaseClient
+      .rpc('get_next_page_prompt_version_number', { p_page_id: pageId });
+
+    if (versionError) {
+      log('ERROR', ProcessStatus.ERROR, currentStep, 'Failed to get version number', { 
+        requestId, 
+        error: versionError.message 
+      });
+      throw new Error(`Failed to get version number: ${versionError.message}`);
+    }
+
+    const versionNumber = versionData || 1;
+
+    // Prepare metadata
+    const generationMetadata = {
+      prompt_type: "image_generation",
+      model: agentConfig.model,
+      agent_name: agentConfig.name,
+      agent_version: agentConfig.version,
+      request_id: requestId,
+      tokens_used: data.usage?.total_tokens || 0,
+      generation_duration_ms: aiDuration,
+      generated_at: new Date().toISOString(),
+      page_info: {
+        letter: pageData.letter,
+        title: pageData.title,
+        book_id: pageData.book_id
+      },
+      safe_space_rules_applied: true,
+      original_prompt_length: imagePrompt.length,
+      enhanced_prompt_length: enhancedImagePrompt.length
+    };
+
+    // Insert the generated prompt into page_system_prompts table
+    const { error: insertError } = await supabaseClient
+      .from('page_system_prompts')
+      .insert({
+        page_id: pageId,
+        book_id: pageData.book_id,
+        user_id: userId,
+        content: enhancedImagePrompt,
+        version_number: versionNumber,
+        source_type: 'image_generation',
+        generation_metadata: generationMetadata,
+        is_latest: true,
+        is_deployed: true,
+        deployed_at: new Date().toISOString()
+      });
+
+    if (insertError) {
+      log('ERROR', ProcessStatus.ERROR, currentStep, 'Failed to save prompt to database', { 
+        requestId, 
+        error: insertError.message 
+      });
+      throw new Error(`Failed to save prompt to database: ${insertError.message}`);
+    }
+
+    const saveDuration = Date.now() - saveStartTime;
+    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Generated prompt saved to database successfully', { 
+      requestId, 
+      duration: saveDuration,
+      versionNumber,
+      promptLength: enhancedImagePrompt.length
+    });
+
     const totalDuration = Date.now() - startTime;
     log('INFO', ProcessStatus.COMPLETE, 'COMPLETE', 'Image prompt generation completed successfully!', { 
       requestId,

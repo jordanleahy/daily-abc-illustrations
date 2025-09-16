@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { PageImageSection } from '@/components/PageImageSection';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
@@ -39,17 +39,6 @@ export function FocusedPageView({
       {/* Focused page card */}
       <div className="flex-1 max-w-md mx-auto w-full">
         <Card className="h-full overflow-hidden shadow-lg">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-2xl font-bold text-foreground text-center">
-              {page.title}
-            </CardTitle>
-            {page.description && (
-              <p className="text-base text-muted-foreground leading-relaxed text-center">
-                {page.description}
-              </p>
-            )}
-          </CardHeader>
-          
           <CardContent className="p-0 flex-1">
             {/* Large illustration area */}
             <div className="aspect-square bg-gradient-to-br from-background to-muted/50">

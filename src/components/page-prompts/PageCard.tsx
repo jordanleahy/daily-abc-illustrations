@@ -118,10 +118,14 @@ export function PageCard({ page, bookId }: PageCardProps) {
       </CardHeader>
       <CardContent className="p-4 space-y-3">
         {showPrompt && currentPrompt ? (
-          <div className="space-y-2">
-            <div className="text-sm font-medium text-foreground">System Prompt:</div>
-            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md max-h-48 overflow-y-auto whitespace-pre-wrap">
-              {currentPrompt.content}
+          <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden flex flex-col">
+            <div className="text-sm font-medium text-foreground p-3 pb-2 border-b border-border/50">
+              System Prompt:
+            </div>
+            <div className="flex-1 p-3 overflow-y-auto">
+              <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                {currentPrompt.content}
+              </div>
             </div>
           </div>
         ) : (

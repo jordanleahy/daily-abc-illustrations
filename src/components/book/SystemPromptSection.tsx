@@ -82,92 +82,90 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
 
   return (
     <>
+      {/* Action buttons above the header */}
+      {!isEditing && (
+        <div className="flex items-center justify-end gap-2 mb-3 px-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={refreshData}
+            title="Refresh prompt data"
+            className="h-8 w-8"
+          >
+            <RefreshCw className="w-4 h-4" />
+          </Button>
+          {hasPrompt && (
+            <>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowVersionHistory(true)}
+                disabled={!hasVersions}
+                title={`Version history (${versions.length})`}
+                className="h-8 w-8"
+              >
+                <History className="w-4 h-4" />
+              </Button>
+              {currentPrompt?.promptStatus !== ProcessStatus.IN_PROGRESS && (
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={startEdit}
+                  title="Edit prompt"
+                  className="h-8 w-8"
+                >
+                  <Edit className="w-4 h-4" />
+                </Button>
+              )}
+              {!currentPrompt?.isDeployed && currentPrompt?.promptStatus === ProcessStatus.COMPLETE && (
+                <Button
+                  size="icon"
+                  onClick={() => deployVersion(currentPrompt!.id)}
+                  title="Deploy prompt"
+                  className="h-8 w-8"
+                >
+                  <Rocket className="w-4 h-4" />
+                </Button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <FileText className="w-5 h-5" />
-                <CardTitle>System Prompt</CardTitle>
-                {hasPrompt && (
-                  <>
-                    <Badge 
-                      variant={currentPrompt?.isDeployed ? "default" : "secondary"}
-                      className="flex items-center gap-1"
-                    >
-                      {currentPrompt?.isDeployed ? (
-                        <>
-                          <CheckCircle className="w-3 h-3" />
-                          Deployed
-                        </>
-                      ) : (
-                        <>
-                          <AlertCircle className="w-3 h-3" />
-                          Draft
-                        </>
-                      )}
-                    </Badge>
-                    {currentPrompt?.promptStatus && getStatusBadge(currentPrompt.promptStatus)}
-                  </>
-                )}
-              </div>
-              <CardDescription>
-                {hasPrompt 
-                  ? "Manage your book's illustration style guide and system prompt"
-                  : "No system prompt generated yet. Generate one to start creating illustrations."
-                }
-              </CardDescription>
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <FileText className="w-5 h-5" />
+              <CardTitle>System Prompt</CardTitle>
+              {hasPrompt && (
+                <>
+                  <Badge 
+                    variant={currentPrompt?.isDeployed ? "default" : "secondary"}
+                    className="flex items-center gap-1"
+                  >
+                    {currentPrompt?.isDeployed ? (
+                      <>
+                        <CheckCircle className="w-3 h-3" />
+                        Deployed
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="w-3 h-3" />
+                        Draft
+                      </>
+                    )}
+                  </Badge>
+                  {currentPrompt?.promptStatus && getStatusBadge(currentPrompt.promptStatus)}
+                </>
+              )}
             </div>
-            
-            {!isEditing && (
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={refreshData}
-                  className="flex items-center gap-2"
-                  title="Refresh prompt data"
-                >
-                  <RefreshCw className="w-4 h-4" />
-                  Refresh
-                </Button>
-                {hasPrompt && (
-                  <>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowVersionHistory(true)}
-                      disabled={!hasVersions}
-                      className="flex items-center gap-2"
-                    >
-                      <History className="w-4 h-4" />
-                      History ({versions.length})
-                    </Button>
-                    {currentPrompt?.promptStatus !== ProcessStatus.IN_PROGRESS && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={startEdit}
-                        className="flex items-center gap-2"
-                      >
-                        <Edit className="w-4 h-4" />
-                        Edit
-                      </Button>
-                    )}
-                    {!currentPrompt?.isDeployed && currentPrompt?.promptStatus === ProcessStatus.COMPLETE && (
-                      <Button
-                        size="sm"
-                        onClick={() => deployVersion(currentPrompt!.id)}
-                        className="flex items-center gap-2"
-                      >
-                        <Rocket className="w-4 h-4" />
-                        Deploy
-                      </Button>
-                    )}
-                  </>
-                )}
-              </div>
-            )}
+            <CardDescription>
+              {hasPrompt 
+                ? "Manage your book's illustration style guide and system prompt"
+                : "No system prompt generated yet. Generate one to start creating illustrations."
+              }
+            </CardDescription>
           </div>
         </CardHeader>
         

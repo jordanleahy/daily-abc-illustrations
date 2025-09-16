@@ -9,7 +9,7 @@
  * - Returns the created book ID for navigation
  * 
  * Purpose:
- * - Convert educational conversations into structured ABC books
+ * - Convert educational conversations into structured learning books
  * - Generate age-appropriate content based on conversation themes
  * - Create consistent, themed learning materials with flexible page counts
  * - Provide seamless integration with the chat interface
@@ -130,11 +130,11 @@ REQUIRED OUTPUT FORMAT (JSON only, no other text):
         "activity": "Simple activity or question for engagement"
       }
     }
-    // ... create pages for letters relevant to the conversation theme (could be full A-Z or subset based on content richness)
+    // ... create pages for letters relevant to the conversation theme
   ]
 }
 
-IMPORTANT: Analyze the conversation and determine how many alphabet letters have meaningful, distinct concepts to teach. Create pages only for letters that have substantial educational content related to the conversation theme. This could be anywhere from 10-26 pages depending on the conversation scope.
+IMPORTANT: Analyze the conversation and determine how many letters have meaningful, distinct concepts to teach. Create pages only for letters that have substantial educational content related to the conversation theme. This could be anywhere from 10-26 pages depending on the conversation scope.
 
 CRITICAL: Return ONLY valid JSON, no additional text.`;
 
@@ -152,7 +152,7 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
         },
         { 
           role: 'user', 
-          content: 'Please create the ABC book based on our conversation.' 
+          content: 'Please create the book based on our conversation.' 
         }
       ],
     };

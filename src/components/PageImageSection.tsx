@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Shimmer } from "@/components/ui/shimmer";
 import { usePageImageUrls } from "@/hooks/usePageImageUrls";
+import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
@@ -17,10 +18,14 @@ interface PageImageSectionProps {
 export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const { user } = useAuth();
   const { currentImage, versions, isLoading, createImageRecord, refreshData } = usePageImageUrls(pageId);
+  const { currentPrompt } = usePageSystemPrompt(pageId);
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isLocalGenerating, setIsLocalGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+
+  // Check if there's a deployed page system prompt
+  const hasDeployedPrompt = currentPrompt?.is_deployed === true;
 
   // Clear local generating state when backend status updates to complete or error
   useEffect(() => {
@@ -86,6 +91,53 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
 
       toast.success('Image generation started!');
       setGeneratedPrompt(null); // Clear the prompt state
+      refreshData();
+    } catch (error: any) {
+      console.error('Error generating image:', error);
+      toast.error(error.message || 'Failed to generate image');
+      setIsLocalGenerating(false); // Clear local generating on error
+    }
+  };
+
+  const handleGenerateImageDirectly = async () => {
+    if (!user || !hasDeployedPrompt) return;
+
+    setIsLocalGenerating(true); // Start shimmer immediately
+    try {
+      // Generate the image prompt using the page system prompt
+      const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-image-prompt', {
+        body: {
+          pageId,
+          userId: user.id
+        }
+      });
+
+      if (promptError) throw promptError;
+      if (!promptData?.success) throw new Error(promptData?.error || 'Failed to generate image prompt');
+      
+      const prompt = promptData.imagePrompt;
+      if (!prompt || prompt.trim().length === 0) {
+        throw new Error('No image prompt could be generated. Please ensure a page system prompt is deployed.');
+      }
+
+      // Create image record with the generated prompt
+      const record = await createImageRecord(bookId, prompt);
+      if (!record) {
+        throw new Error('Failed to create image record');
+      }
+
+      // Start image generation
+      const { data, error } = await supabase.functions.invoke('generate-image', {
+        body: { 
+          recordId: record.id,
+          userId: user.id
+        }
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
+
+      toast.success('Image generation started!');
       refreshData();
     } catch (error: any) {
       console.error('Error generating image:', error);
@@ -186,7 +238,11 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
           <Button 
             onClick={() => {
               setGeneratedPrompt(null);
-              handleGeneratePrompt();
+              if (hasDeployedPrompt) {
+                handleGenerateImageDirectly();
+              } else {
+                handleGeneratePrompt();
+              }
             }}
             size="sm"
             variant="outline"
@@ -218,18 +274,18 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
           <p className="text-sm text-muted-foreground">Generating prompt...</p>
         </div>
       ) : (
-        // Show initial state with generate prompt button
+        // Show initial state - check if we have a deployed prompt
         <div className="flex flex-col items-center justify-center h-full space-y-3 p-4 text-center">
           <p className="text-sm text-muted-foreground">
             Click to generate page image
           </p>
           <Button 
-            onClick={handleGeneratePrompt}
+            onClick={hasDeployedPrompt ? handleGenerateImageDirectly : handleGeneratePrompt}
             size="sm"
             className="w-full"
             disabled={isGeneratingPrompt || isGenerating}
           >
-            Generate Prompt
+            {hasDeployedPrompt ? 'Generate Image' : 'Generate Prompt'}
           </Button>
         </div>
       )}

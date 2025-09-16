@@ -30,70 +30,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders, isLegacyModel } from '../_shared/types.ts';
 
-function detectBookCreationIntent(messages: any[]): boolean {
-  if (messages.length < 2) return false;
-
-  const lastAssistantMessage = messages[messages.length - 2];
-  const userResponse = messages[messages.length - 1]?.content?.toLowerCase()?.trim() || '';
-  const assistantText = (lastAssistantMessage?.content || '').toLowerCase();
-
-  // Flexible patterns the agent might use to ask for book creation
-  const askPatterns: RegExp[] = [
-    /would you like me to create (this|it)?\s*(as )?(a )?(printable )?book( now)?\?/i,
-    /should i create (this|it)?\s*(as )?(a )?(printable )?book/i,
-    /do you want me to (make|create) (this|it)?\s*(into|as)?\s*(a )?(printable )?book/i,
-    /shall i create .*book/i,
-    /ready to create .*book/i,
-    /create (the|this) book\??/i,
-    /make this into a book\??/i
-  ];
-
-  const hasConfirmationRequest = askPatterns.some((re) => re.test(assistantText));
-
-  // Common affirmative confirmations
-  const confirmationPattern = /^(yes|ok|okay|sure|yup|yep|yeah|y|go ahead|create it|do it|proceed|confirmed)\b/i;
-
-  return hasConfirmationRequest && confirmationPattern.test(userResponse);
-}
-
-async function handleBookCreation(supabase: any, messages: any[], userId: string, assistantMessage: string, corsHeaders: any) {
-  console.log('Book creation intent detected, calling create-book function...');
-  
-  try {
-    const createBookResponse = await supabase.functions.invoke('create-book', {
-      body: { conversationHistory: messages, userId }
-    });
-
-    if (createBookResponse.error) {
-      console.error('Error calling create-book function:', createBookResponse.error);
-      throw new Error('Failed to create book');
-    }
-
-    const bookResult = createBookResponse.data;
-    
-    if (bookResult.success) {
-      console.log('Book created successfully:', bookResult.bookId);
-      
-      return new Response(JSON.stringify({ 
-        response: assistantMessage,
-        bookCreated: true,
-        bookId: bookResult.bookId,
-        bookMessage: bookResult.message
-      }), {
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
-    } else {
-      console.error('Book creation failed:', bookResult.error);
-    }
-  } catch (bookError) {
-    console.error('Error creating book:', bookError);
-  }
-  
-  // Fallback to normal response if book creation fails
-  return new Response(JSON.stringify({ response: assistantMessage }), {
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-  });
-}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -209,14 +145,6 @@ serve(async (req) => {
     const assistantMessage = data.choices[0].message.content;
 
     console.log('OpenAI response received');
-
-    // Enhanced natural intent detection with flexible phrase matching
-    const shouldCreateBook = detectBookCreationIntent(messages);
-
-    // If user wants to create a book, trigger the create-book function
-    if (shouldCreateBook) {
-      return await handleBookCreation(supabase, messages, user.id, assistantMessage, corsHeaders);
-    }
 
     return new Response(JSON.stringify({ 
       response: assistantMessage 

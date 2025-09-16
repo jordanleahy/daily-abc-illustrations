@@ -22,6 +22,7 @@ const Index = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isCreatingBook, setIsCreatingBook] = useState(false);
   const [bookCreated, setBookCreated] = useState<{ id: string; message: string } | null>(null);
   
   // Refs for auto-scroll functionality
@@ -129,14 +130,7 @@ const Index = () => {
         
         setMessages(prev => [...prev, assistantMessage]);
 
-        // Check if a book was created
-        if (data.bookCreated && data.bookId) {
-          setBookCreated({
-            id: data.bookId,
-            message: data.bookMessage || 'Your book has been created!'
-          });
-          toast.success('Book created successfully!');
-        }
+        // Automatic book creation removed - use manual button instead
       } else if (data.content) {
         // Handle legacy response format
         const assistantMessage: Message = {
@@ -177,6 +171,48 @@ const Index = () => {
       setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleCreateBook = async () => {
+    if (!session?.access_token || messages.length === 0 || isCreatingBook) return;
+
+    setIsCreatingBook(true);
+    
+    try {
+      const response = await supabase.functions.invoke('create-book', {
+        body: { 
+          conversationHistory: messages.map(msg => ({
+            role: msg.role,
+            content: msg.content
+          })),
+          userId: session.user.id
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.data?.error || response.error.message);
+      }
+
+      const data = response.data;
+      
+      if (data.success) {
+        setBookCreated({
+          id: data.bookId,
+          message: data.message || 'Your book has been created!'
+        });
+        toast.success('Book created successfully!');
+      } else {
+        throw new Error(data.error || 'Failed to create book');
+      }
+    } catch (error) {
+      console.error('Book creation error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to create book');
+    } finally {
+      setIsCreatingBook(false);
     }
   };
 
@@ -269,7 +305,20 @@ const Index = () => {
 
         {/* Fixed Input Area */}
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border p-4">
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-4xl mx-auto space-y-3">
+            {/* Book Creation Button */}
+            <div className="flex justify-center">
+              <Button
+                onClick={handleCreateBook}
+                disabled={messages.length === 0 || isCreatingBook || isLoading}
+                variant="outline"
+                className="gap-2"
+              >
+                <BookOpen className="h-4 w-4" />
+                {isCreatingBook ? 'Creating Book...' : 'Give to Book Creation Agent'}
+              </Button>
+            </div>
+            
             <form onSubmit={handleSubmit} className="flex gap-2">
               <div className="flex-1 relative">
                 <Textarea

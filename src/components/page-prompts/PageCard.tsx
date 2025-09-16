@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
-import { RefreshCw, FileText, Copy, Trash2 } from 'lucide-react';
+import { RefreshCw, FileText, Copy, Trash2, Edit3 } from 'lucide-react';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useAuth } from '@/hooks/useAuth';
@@ -24,6 +24,9 @@ export function PageCard({ page, bookId }: PageCardProps) {
   const deletePage = useDeletePage();
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(page.title);
+  const [editDescription, setEditDescription] = useState(page.description || '');
 
   const handleRegeneratePrompt = async () => {
     if (!user) {
@@ -64,6 +67,58 @@ export function PageCard({ page, bookId }: PageCardProps) {
     } finally {
       setIsRegenerating(false);
     }
+  };
+
+  const handleEditPage = () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to edit pages",
+        variant: "destructive",
+      });
+      return;
+    }
+    setIsEditing(true);
+  };
+
+  const handleSaveEdit = async () => {
+    const confirmSave = confirm(
+      `Save changes to "${page.title}"?\n\nTitle: ${editTitle}\nDescription: ${editDescription}`
+    );
+
+    if (!confirmSave) return;
+
+    try {
+      const { error } = await supabase
+        .from('pages')
+        .update({
+          title: editTitle.trim(),
+          description: editDescription.trim() || null,
+        })
+        .eq('id', page.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Page Updated",
+        description: "Page title and description have been updated successfully.",
+      });
+
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Error updating page:', error);
+      toast({
+        title: "Update Failed",
+        description: "Failed to update the page. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditTitle(page.title);
+    setEditDescription(page.description || '');
+    setIsEditing(false);
   };
 
   const handleDeletePage = async () => {
@@ -127,6 +182,17 @@ export function PageCard({ page, bookId }: PageCardProps) {
               variant="ghost"
               size="icon"
               className="w-6 h-6"
+              onClick={handleEditPage}
+              disabled={isEditing}
+              title="Edit page title and description"
+              aria-label="Edit page title and description"
+            >
+              <Edit3 className="w-3 h-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-6 h-6"
               onClick={handleDeletePage}
               disabled={deletePage.isPending}
               title="Delete page"
@@ -158,13 +224,38 @@ export function PageCard({ page, bookId }: PageCardProps) {
             </span>
           </div>
         </div>
-        <CardTitle className="text-lg line-clamp-2">
-          {page.title}
-        </CardTitle>
-        {page.description && (
-          <CardDescription className="line-clamp-2">
-            {page.description}
-          </CardDescription>
+        {isEditing ? (
+          <div className="space-y-2">
+            <input
+              type="text"
+              value={editTitle}
+              onChange={(e) => setEditTitle(e.target.value)}
+              className="w-full text-lg font-semibold bg-transparent border-b border-border focus:border-primary outline-none"
+              placeholder="Enter page title"
+            />
+            <textarea
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+              className="w-full text-sm text-muted-foreground bg-transparent border-b border-border focus:border-primary outline-none resize-none"
+              placeholder="Enter page description"
+              rows={2}
+            />
+            <div className="flex gap-2 pt-2">
+              <Button size="sm" onClick={handleSaveEdit}>Save</Button>
+              <Button size="sm" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
+            </div>
+          </div>
+        ) : (
+          <>
+            <CardTitle className="text-lg line-clamp-2">
+              {page.title}
+            </CardTitle>
+            {page.description && (
+              <CardDescription className="line-clamp-2">
+                {page.description}
+              </CardDescription>
+            )}
+          </>
         )}
       </CardHeader>
       <CardContent className="p-4 space-y-3">

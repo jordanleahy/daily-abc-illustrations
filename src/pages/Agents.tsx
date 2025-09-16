@@ -3,10 +3,11 @@ import { Container } from '@/components/layout';
 import { AgentIdentityCard } from '@/components/agents/AgentIdentityCard';
 import { ConfigurationTabs } from '@/components/agents/ConfigurationTabs';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
+import { useAgentCreation } from '@/hooks/useAgentCreation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AGENT_TYPE_CONFIGS, AgentConfig } from '@/types/agent';
+import { AgentConfig } from '@/types/agent';
 import { BookOpen, MessageCircle, PenTool, Palette } from 'lucide-react';
 import { useState } from 'react';
 
@@ -25,6 +26,16 @@ const Agents = () => {
     saveConfigWithOverrides,
     clearChangeDescription,
   } = useAgentConfig(selectedAgentType);
+
+  const { createAgent, isCreating } = useAgentCreation();
+
+  const handleCreateAgent = async () => {
+    try {
+      await createAgent(selectedAgentType);
+    } catch (error) {
+      console.error('Failed to create agent:', error);
+    }
+  };
 
 
   if (isInitialLoading) {
@@ -169,27 +180,38 @@ const Agents = () => {
             </Card>
           </div>
 
-          {/* Agent Identity Card */}
-          {config && (
-            <AgentIdentityCard
-              config={config}
-              onUpdate={updateConfig}
-              lastChangeDescription={lastChangeDescription}
-              onClearChangeDescription={clearChangeDescription}
-            />
-          )}
-
-          {/* Configuration Tabs */}
-          {config && (
-            <ConfigurationTabs
-              config={config}
-              onUpdate={updateConfig}
-              onUpdateModelSettings={updateModelSettings}
-              onSaveWithOverrides={saveConfigWithOverrides}
-              isLoading={isLoading}
-              hasUnsavedChanges={hasUnsavedChanges}
-              agentType={selectedAgentType}
-            />
+          {/* Agent Configuration Content */}
+          {config ? (
+            <>
+              <AgentIdentityCard
+                config={config}
+                onUpdate={updateConfig}
+                lastChangeDescription={lastChangeDescription}
+                onClearChangeDescription={clearChangeDescription}
+              />
+              
+              <ConfigurationTabs
+                config={config}
+                onUpdate={updateConfig}
+                onUpdateModelSettings={updateModelSettings}
+                onSaveWithOverrides={saveConfigWithOverrides}
+                isLoading={isLoading}
+                hasUnsavedChanges={hasUnsavedChanges}
+                agentType={selectedAgentType}
+              />
+            </>
+          ) : (
+            <div className="text-center space-y-4 py-8">
+              <div className="space-y-2">
+                <h3 className="text-xl font-semibold">No Agent Configuration Found</h3>
+                <p className="text-muted-foreground">
+                  No agent of this type exists in your database. Create one to get started.
+                </p>
+              </div>
+              <Button onClick={handleCreateAgent} disabled={isCreating}>
+                {isCreating ? 'Creating...' : `Create ${selectedAgentType.charAt(0).toUpperCase() + selectedAgentType.slice(1)} Agent`}
+              </Button>
+            </div>
           )}
 
           {/* Status Footer */}

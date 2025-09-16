@@ -286,6 +286,39 @@ export type Database = {
         }
         Relationships: []
       }
+      instagram_shared: {
+        Row: {
+          book_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          shared_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          shared_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          shared_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       page_image_urls: {
         Row: {
           book_id: string
@@ -543,6 +576,21 @@ export type Database = {
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_daily_published_pages: {
+        Args: { p_book_id: string }
+        Returns: {
+          book_id: string
+          content: Json
+          created_at: string
+          current_system_prompt_id: string
+          description: string
+          id: string
+          letter: string
+          page_number: number
+          title: string
+          updated_at: string
+        }[]
+      }
+      get_instagram_shared_pages: {
         Args: { p_book_id: string }
         Returns: {
           book_id: string

@@ -3,9 +3,9 @@
  * 
  * This function implements a specialized Book Creation Agent that:
  * - Takes conversation history as context
- * - Uses AI to extract A-Z learning concepts from the conversation
+ * - Uses AI to extract relevant learning concepts from the conversation
  * - Generates structured book and pages data as JSON
- * - Saves the book and all 26 pages directly to the database
+ * - Saves the book and appropriate number of pages directly to the database
  * - Returns the created book ID for navigation
  * 
  * Purpose:
@@ -116,7 +116,7 @@ REQUIRED OUTPUT FORMAT (JSON only, no other text):
     "book_name": "Creative title based on the conversation theme",
     "category": "Educational category (e.g., Animals, Science, Nature, etc.)",
     "book_description": "Brief description of what children will learn",
-    "total_pages": "Number of pages you decided to create (should equal the number of pages in the pages array)"
+    "total_pages": 15
   },
   "pages": [
     {
@@ -214,6 +214,7 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
     }
 
     console.log('Book data validated, saving to database...');
+    console.log('AI determined page count:', bookData.pages.length, 'pages for theme:', bookData.book.book_name);
 
     // Save the book to the database
     const { data: book, error: bookError } = await supabase

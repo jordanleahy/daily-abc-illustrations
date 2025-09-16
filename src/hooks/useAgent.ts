@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { AgentConfig, DEFAULT_AGENT_CONFIG, AGENT_TYPE_CONFIGS } from '@/types/agent';
+import { AgentConfig, AGENT_TYPE_CONFIGS } from '@/types/agent';
 import { useEffect } from 'react';
 
 /**
@@ -28,7 +28,11 @@ export const useAgent = (agentType: AgentConfig['type']) => {
 
       if (!data) {
         // Return default config if no agent exists
-        return AGENT_TYPE_CONFIGS[agentType] || DEFAULT_AGENT_CONFIG;
+        const defaultConfig = AGENT_TYPE_CONFIGS[agentType];
+        if (!defaultConfig) {
+          throw new Error(`Unsupported agent type: ${agentType}`);
+        }
+        return defaultConfig;
       }
 
       // Convert database format to AgentConfig format

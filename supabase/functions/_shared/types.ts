@@ -93,7 +93,7 @@ export interface AgentConfig {
   /** Display name of the agent */
   name: string;
   /** Agent type - determines behavior and capabilities */
-  type: 'chat' | 'assistant';
+  type: 'chat' | 'book-creation' | 'illustration-director' | 'graphic-designer';
   /** Purpose or goal description of the agent */
   intent: string;
   /** Current operational status */

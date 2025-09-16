@@ -26,7 +26,7 @@
  * AgentConfig Structure:
  * {
  *   name: string,
- *   type: 'chat' | 'assistant',
+ *   type: 'chat' | 'book-creation' | 'illustration-director' | 'graphic-designer',
  *   intent: string,
  *   status: 'online' | 'offline' | 'processing',
  *   instructions: string,

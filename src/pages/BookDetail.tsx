@@ -343,14 +343,6 @@ export default function BookDetail() {
           {(!isAdmin || (isAdmin && viewMode === 'user')) ? (
             // User view or admin preview mode - show user-friendly page cards
             <div className="space-y-6">
-              {/* Book title and description */}
-              <div className="text-center">
-                <h1 className="text-3xl font-bold text-foreground mb-2">{book.book_name}</h1>
-                {book.book_description && (
-                  <p className="text-muted-foreground text-lg">{book.book_description}</p>
-                )}
-              </div>
-              
               {pages.length > 0 ? (
                 <>
                   <Button 

@@ -14,16 +14,14 @@ export default function DailyPublished() {
   const { user } = useAuth();
   const isInstagramShare = location.pathname.includes('/instagram-shared/');
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useDailyPublishedById(id);
-  const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(
-    user ? dailyContent?.book_id : undefined
-  );
-  const { data: pagesPublic = [], isLoading: isLoadingPagesPublic } = useDailyPublishedPagesPublic(
-    !user ? dailyContent?.book_id : undefined
+  // Always use the public function that validates active daily publication
+  const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPagesPublic(
+    dailyContent?.book_id
   );
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
 
-  const isLoading = isLoadingDaily || isLoadingPages || isLoadingPagesPublic;
-  const currentPages = user ? pages : pagesPublic;
+  const isLoading = isLoadingDaily || isLoadingPages;
+  const currentPages = pages;
 
   if (isLoading) {
     return (

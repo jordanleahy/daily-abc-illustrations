@@ -256,7 +256,7 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
           },
           {
             role: 'user',
-            content: `Create a detailed image prompt for this ABC book page:
+            content: `Create a detailed image prompt for this learning book page:
 
 ${pageContent}
 

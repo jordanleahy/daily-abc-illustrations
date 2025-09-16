@@ -86,7 +86,7 @@ export const InstructionsTab = ({
             {characterCount}/{maxCharacters} characters
           </span>
           <div className="flex gap-2">
-            {hasLocalChanges && (
+            {hasUnsavedChanges && (
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -99,7 +99,7 @@ export const InstructionsTab = ({
             <Button 
               size="sm" 
               onClick={handleSave}
-              disabled={isLoading || !hasLocalChanges}
+              disabled={isLoading || !hasUnsavedChanges}
             >
               {isLoading ? 'Saving...' : 'Save Instructions'}
             </Button>

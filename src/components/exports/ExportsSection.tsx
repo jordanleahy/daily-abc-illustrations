@@ -7,6 +7,7 @@ import { useExports } from '@/hooks/useExports';
 import { Export } from '@/types/export';
 import { ProcessStatus } from '@/types/process';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 
 interface ExportsSectionProps {
@@ -20,6 +21,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   contentId,
   contentName
 }) => {
+  const { user } = useAuth();
   const { exports, createExport, deleteExport } = useExports(contentType, contentId);
 
   const pdfExports = exports.filter(exp => exp.export_type === 'pdf');
@@ -116,11 +118,60 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   };
 
   const handlePublishDaily = async () => {
-    // TODO: Implement publish daily functionality
-    toast({
-      title: "Publish Daily",
-      description: "Daily publishing functionality will be implemented soon."
-    });
+    if (!user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to publish daily content.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // First deactivate any existing daily publications
+      const { error: deactivateError } = await supabase
+        .from('daily_published')
+        .update({ is_active: false })
+        .eq('is_active', true);
+
+      if (deactivateError) {
+        console.error('Error deactivating previous daily publications:', deactivateError);
+        throw deactivateError;
+      }
+
+      // Create new daily publication
+      const { error: insertError } = await supabase
+        .from('daily_published')
+        .insert({
+          book_id: contentId,
+          title: contentName,
+          description: `Daily ABC Illustrations featuring ${contentName}`,
+          published_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48 hours from now
+          is_active: true
+        });
+
+      if (insertError) {
+        console.error('Error creating daily publication:', insertError);
+        throw insertError;
+      }
+
+      toast({
+        title: "Published Daily!",
+        description: `${contentName} is now available as daily content for 48 hours.`,
+      });
+
+      // Optional: Open the daily published page in a new tab
+      window.open('/daily-published', '_blank');
+
+    } catch (error) {
+      console.error('Error publishing daily:', error);
+      toast({
+        title: "Publishing Failed",
+        description: "There was an error publishing your content. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const { text, action, disabled, icon: Icon } = getButtonState();

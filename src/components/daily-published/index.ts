@@ -1,0 +1,1 @@
+export { DailyPublishedPageView } from './DailyPublishedPageView';

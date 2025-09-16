@@ -194,6 +194,50 @@ export type Database = {
           },
         ]
       }
+      daily_published: {
+        Row: {
+          book_id: string
+          created_at: string
+          description: string | null
+          expires_at: string
+          id: string
+          is_active: boolean
+          published_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          description?: string | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          published_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          description?: string | null
+          expires_at?: string
+          id?: string
+          is_active?: boolean
+          published_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_published_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       exports: {
         Row: {
           completed_at: string | null

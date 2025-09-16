@@ -3,12 +3,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
-import { RefreshCw, FileText, Copy } from 'lucide-react';
+import { RefreshCw, FileText, Copy, Trash2 } from 'lucide-react';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useDeletePage } from '@/hooks/useDeletePage';
 import type { Page } from '@/types/book';
 
 interface PageCardProps {
@@ -20,6 +21,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
   const { currentPrompt, refreshData } = usePageSystemPrompt(page.id);
   const { user } = useAuth();
   const { toast } = useToast();
+  const deletePage = useDeletePage();
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
 
@@ -64,6 +66,25 @@ export function PageCard({ page, bookId }: PageCardProps) {
     }
   };
 
+  const handleDeletePage = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to delete pages",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const confirmDelete = confirm(
+      `Are you sure you want to delete "${page.title}"?\n\nThis action is permanent and will also delete all associated images and prompts.`
+    );
+
+    if (confirmDelete) {
+      deletePage.mutate(page.id);
+    }
+  };
+
   const handleCopyPrompt = async () => {
     if (!currentPrompt?.content) return;
 
@@ -101,6 +122,17 @@ export function PageCard({ page, bookId }: PageCardProps) {
               aria-label="Regenerate page prompt"
             >
               <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-6 h-6"
+              onClick={handleDeletePage}
+              disabled={deletePage.isPending}
+              title="Delete page"
+              aria-label="Delete page"
+            >
+              <Trash2 className="w-3 h-3 text-destructive" />
             </Button>
             {currentPrompt && (
               <Toggle

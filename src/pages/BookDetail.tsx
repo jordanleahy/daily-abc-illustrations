@@ -32,7 +32,7 @@ import { SystemPromptSection } from "@/components/book";
 import { ExportsSection } from '@/components/exports/ExportsSection';
 
 import { PageImageSection } from "@/components/PageImageSection";
-import { PageCard } from '@/components/page-prompts';
+import { PageCard, UserPageCard } from '@/components/page-prompts';
 
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
@@ -315,12 +315,33 @@ export default function BookDetail() {
 
           {/* Content based on role and view mode */}
           {(!isAdmin || (isAdmin && viewMode === 'user')) ? (
-            // User view or admin preview mode - show blank page
-            <Card>
-              <CardContent className="flex items-center justify-center h-64">
-                <p className="text-muted-foreground">This page is available for administrators only.</p>
-              </CardContent>
-            </Card>
+            // User view or admin preview mode - show user-friendly page cards
+            <div className="space-y-6">
+              <div className="text-center">
+                <h1 className="text-3xl font-bold text-foreground mb-2">{book.book_name}</h1>
+                {book.book_description && (
+                  <p className="text-muted-foreground text-lg">{book.book_description}</p>
+                )}
+              </div>
+              
+              {pages.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {pages.map((page) => (
+                    <UserPageCard 
+                      key={page.id} 
+                      page={page} 
+                      bookId={book.id}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Card>
+                  <CardContent className="flex items-center justify-center h-32">
+                    <p className="text-muted-foreground">No pages created yet.</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
           ) : (
             // Admin view mode - show full content
             <>

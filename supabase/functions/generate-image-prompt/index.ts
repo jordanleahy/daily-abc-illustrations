@@ -156,37 +156,6 @@ serve(async (req) => {
       promptLength: deployedPrompt.content?.length || 0
     });
 
-    currentStep = 'GENERATE_SYSTEM_PROMPT';
-    const systemPromptStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Generating dynamic system prompt for Graphics Designer...', { requestId });
-
-    // Call the generate-graphics-designer-prompt function to get dynamic system prompt
-    const systemPromptResponse = await supabaseClient.functions.invoke('generate-graphics-designer-prompt', {
-      body: {
-        bookId: pageData.book_id,
-        userId: userId
-      }
-    });
-
-    const systemPromptDuration = Date.now() - systemPromptStartTime;
-
-    if (systemPromptResponse.error || !systemPromptResponse.data?.success) {
-      const errorMsg = `Failed to generate dynamic system prompt: ${systemPromptResponse.error?.message || 'Unknown error'}`;
-      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
-        requestId, 
-        duration: systemPromptDuration,
-        error: systemPromptResponse.error
-      });
-      throw new Error(errorMsg);
-    }
-
-    const dynamicSystemPrompt = systemPromptResponse.data.systemPrompt;
-
-    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Dynamic system prompt generated successfully', { 
-      requestId, 
-      duration: systemPromptDuration,
-      promptLength: dynamicSystemPrompt.length
-    });
 
     currentStep = 'FETCH_AGENT';
     const agentStartTime = Date.now();
@@ -226,17 +195,24 @@ serve(async (req) => {
     const promptStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Preparing content for AI processing...', { requestId });
 
-    // Prepare the content for the AI using the book system prompt
+    // Prepare the content for the AI using the book system prompt directly
     const pageContent = `
-Book System Prompt:
-${deployedPrompt.content}
-
 Page Details:
 Letter: ${pageData.letter}
 Title: ${pageData.title}
 Description: ${pageData.description || 'No description'}
 Content: ${JSON.stringify(pageData.content, null, 2)}
     `.trim();
+
+    // Extract aspect ratio from the book system prompt if specified
+    const extractAspectRatio = (prompt: string): string => {
+      const aspectRatioMatches = prompt.match(/aspect[_\s]*ratio[:\s]*([0-9]+:[0-9]+)/i) || 
+                                prompt.match(/([0-9]+:[0-9]+)\s*(aspect|format|ratio)/i) ||
+                                prompt.match(/\b([0-9]+:[0-9]+)\b/);
+      return aspectRatioMatches ? aspectRatioMatches[1] : '1:1';
+    };
+
+    const aspectRatio = extractAspectRatio(deployedPrompt.content);
 
     // Get OpenAI API key
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -276,7 +252,7 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
         messages: [
           {
             role: 'system',
-            content: dynamicSystemPrompt
+            content: deployedPrompt.content
           },
           {
             role: 'user',
@@ -338,8 +314,8 @@ Please generate a specific, detailed image prompt that captures the visual eleme
       throw new Error(errorMsg);
     }
 
-    // Append safe space rules to the generated image prompt
-    const enhancedImagePrompt = appendSafeSpaceRules(imagePrompt, '1:1');
+    // Append safe space rules to the generated image prompt using extracted aspect ratio
+    const enhancedImagePrompt = appendSafeSpaceRules(imagePrompt, aspectRatio);
 
     log('INFO', ProcessStatus.COMPLETE, currentStep, 'Image prompt generated successfully with safe space rules', { 
       requestId, 
@@ -347,7 +323,8 @@ Please generate a specific, detailed image prompt that captures the visual eleme
       originalPromptLength: imagePrompt.length,
       enhancedPromptLength: enhancedImagePrompt.length,
       tokensUsed: data.usage?.total_tokens,
-      letter: pageData.letter
+      letter: pageData.letter,
+      aspectRatio: aspectRatio
     });
 
     // Save the generated prompt to page_system_prompts table

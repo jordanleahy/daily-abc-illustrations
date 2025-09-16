@@ -68,6 +68,13 @@ const SAFE_SPACE_CONFIGS: Record<string, SafeSpaceConfig> = {
     safeZones: 'Maintain 10-12% margins on top and bottom, 8% margins on left and right sides',
     composition: 'Optimized for social media viewing with proper vertical spacing',
     negativePrompts: 'No elements touching edges, maintain social media safe zones, no cramped vertical content'
+  },
+  '4:5': {
+    aspectRatio: '4:5 Portrait Format',
+    description: 'Moderately tall portrait layout ideal for print and digital display',
+    safeZones: 'Maintain 12-15% margins on top and bottom, 10% margins on left and right sides',
+    composition: 'Moderately tall portrait with well-balanced vertical composition',
+    negativePrompts: 'No elements touching top/bottom edges, maintain balanced vertical spacing, no cramped portrait layouts'
   }
 };
 

@@ -21,6 +21,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';
 import { useHasRole } from '@/hooks/useUserRole';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
@@ -42,6 +43,7 @@ export default function BookDetail() {
   const { pages } = useBookPages(id);
   const { data: book, isLoading: bookLoading, error: bookError, isFetched: bookFetched } = useBook(id);
   const isAdmin = useHasRole('admin');
+  const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<'admin' | 'user'>('admin');
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
@@ -385,8 +387,8 @@ export default function BookDetail() {
               {/* Book Info */}
               <Card>
                 <CardHeader>
-                  {/* Call Illustration Director Button - Above Title */}
-                  <div className="mb-4">
+                  {/* Call Illustration Director Button and Archive Button (mobile only) - Above Title */}
+                  <div className="mb-4 flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="icon"
@@ -401,19 +403,9 @@ export default function BookDetail() {
                         <Palette className="w-4 h-4" />
                       )}
                     </Button>
-                  </div>
-
-                  <div className="flex justify-between items-start">
-                    <div className="space-y-2">
-                      <CardTitle className="text-2xl">{book.book_name}</CardTitle>
-                      {book.book_description && (
-                        <CardDescription className="text-base">
-                          {book.book_description}
-                        </CardDescription>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      
+                    
+                    {/* Archive button on mobile only */}
+                    {isMobile && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button
@@ -445,6 +437,54 @@ export default function BookDetail() {
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <CardTitle className="text-2xl">{book.book_name}</CardTitle>
+                      {book.book_description && (
+                        <CardDescription className="text-base">
+                          {book.book_description}
+                        </CardDescription>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      
+                      {/* Archive button on desktop only */}
+                      {!isMobile && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              disabled={archiveLoading || book?.status === 'archived'}
+                              title="Archive book"
+                              aria-label="Archive book"
+                            >
+                              {archiveLoading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Archive className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Archive Book</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to archive "{book?.book_name}"? Archived books will be hidden from your main book list but can be restored later.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleArchiveBook}>
+                                Archive Book
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
                       
                       <AlertDialog>
                         <AlertDialogTrigger asChild>

@@ -30,11 +30,11 @@ export function DailyPublishedPageView({
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
 
-  // Update countdown every minute
+  // Update countdown every second for real-time display
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeRemaining(formatTimeRemaining(expiresAt));
-    }, 60000); // Update every minute
+    }, 1000); // Update every second
 
     return () => clearInterval(interval);
   }, [expiresAt]);

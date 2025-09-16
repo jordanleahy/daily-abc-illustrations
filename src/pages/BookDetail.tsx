@@ -301,11 +301,15 @@ export default function BookDetail() {
         bookId={book.id}
         pageNumber={currentPageIndex + 1}
         totalPages={pages.length}
+        previousPage={currentPageIndex > 0 ? pages[currentPageIndex - 1] : undefined}
         onNext={() => {
           if (currentPageIndex < pages.length - 1) {
             setCurrentPageIndex(currentPageIndex + 1);
           }
         }}
+        onPrevious={currentPageIndex > 0 ? () => {
+          setCurrentPageIndex(currentPageIndex - 1);
+        } : undefined}
         onExit={() => setIsClassView(false)}
       />
     );

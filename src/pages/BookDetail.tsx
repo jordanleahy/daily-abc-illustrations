@@ -592,34 +592,32 @@ export default function BookDetail() {
                )}
 
               {/* Pages Section */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Pages ({pages.length}/{book.total_pages})</CardTitle>
-                  <CardDescription>
+              <div>
+                <div className="mb-6">
+                  <h3 className="text-2xl font-semibold leading-none tracking-tight">Pages ({pages.length}/{book.total_pages})</h3>
+                  <p className="text-sm text-muted-foreground mt-1.5">
                     Manage and edit the pages of your book.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {pages.length > 0 ? (
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                      {pages.map((page) => (
-                        <PageCard 
-                          key={page.id} 
-                          page={page} 
-                          bookId={book.id}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <p className="text-muted-foreground mb-4">No pages created yet.</p>
-                      <p className="text-sm text-muted-foreground">
-                        Pages will be created automatically when you generate the book content.
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                  </p>
+                </div>
+                {pages.length > 0 ? (
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {pages.map((page) => (
+                      <PageCard 
+                        key={page.id} 
+                        page={page} 
+                        bookId={book.id}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground mb-4">No pages created yet.</p>
+                    <p className="text-sm text-muted-foreground">
+                      Pages will be created automatically when you generate the book content.
+                    </p>
+                  </div>
+                )}
+              </div>
             </>
           )}
         </div>

@@ -32,7 +32,7 @@ import { SystemPromptSection } from "@/components/book";
 import { ExportsSection } from '@/components/exports/ExportsSection';
 
 import { PageImageSection } from "@/components/PageImageSection";
-import { PageCard, UserPageCard } from '@/components/page-prompts';
+import { PageCard, UserPageCard, FocusedPageView } from '@/components/page-prompts';
 
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
@@ -49,6 +49,8 @@ export default function BookDetail() {
   
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
+  const [isClassView, setIsClassView] = useState(false);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
 
   useEffect(() => {
@@ -325,23 +327,42 @@ export default function BookDetail() {
               </div>
               
               {pages.length > 0 ? (
-                <>
-                  <Button 
-                    size="lg" 
-                    className="w-full mb-6"
-                  >
-                    Start
-                  </Button>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {pages.map((page) => (
-                      <UserPageCard 
-                        key={page.id} 
-                        page={page} 
-                        bookId={book.id}
-                      />
-                    ))}
-                  </div>
-                </>
+                isClassView ? (
+                  <FocusedPageView
+                    page={pages[currentPageIndex]}
+                    bookId={book.id}
+                    pageNumber={currentPageIndex + 1}
+                    totalPages={pages.length}
+                    onNext={() => {
+                      if (currentPageIndex < pages.length - 1) {
+                        setCurrentPageIndex(currentPageIndex + 1);
+                      }
+                    }}
+                    onExit={() => setIsClassView(false)}
+                  />
+                ) : (
+                  <>
+                    <Button 
+                      size="lg" 
+                      className="w-full mb-6"
+                      onClick={() => {
+                        setIsClassView(true);
+                        setCurrentPageIndex(0);
+                      }}
+                    >
+                      Start
+                    </Button>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {pages.map((page) => (
+                        <UserPageCard 
+                          key={page.id} 
+                          page={page} 
+                          bookId={book.id}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )
               ) : (
                 <Card>
                   <CardContent className="flex items-center justify-center h-32">

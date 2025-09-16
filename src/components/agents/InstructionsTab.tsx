@@ -34,12 +34,13 @@ export const InstructionsTab = ({
     />;
   }
 
-  // Sync local state when config changes from server
+  // Sync local state with config changes - only when instructions actually change
   useEffect(() => {
-    if (config?.instructions !== undefined) {
+    if (config?.instructions !== undefined && config.instructions !== localInstructions) {
+      console.log('📝 InstructionsTab: Syncing instructions from config:', config.instructions.substring(0, 50) + '...');
       setLocalInstructions(config.instructions);
     }
-  }, [config?.instructions]);
+  }, [config?.instructions, localInstructions]);
 
   const handleInstructionsChange = (value: string) => {
     setLocalInstructions(value);

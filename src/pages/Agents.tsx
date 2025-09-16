@@ -67,14 +67,14 @@ const Agents = () => {
                     <MessageCircle className="h-5 w-5 text-primary" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Chat Agent</CardTitle>
+                    <CardTitle className="text-lg">ABC Cards Agent (Chat)</CardTitle>
                     <Badge variant="secondary" className="text-xs">Active</Badge>
                   </div>
                 </div>
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  General purpose conversational AI for answering questions and providing assistance.
+                  Your main ABC Cards conversational AI that helps users create educational content and provides assistance.
                 </p>
                 <Button 
                   variant={selectedAgentType === 'chat' ? 'default' : 'outline'} 

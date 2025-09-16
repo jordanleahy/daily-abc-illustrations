@@ -78,13 +78,8 @@ export const useAgentConfig = (agentType: AgentConfig['type']) => {
     return () => window.removeEventListener('agent-change-updated', handleChangeUpdate);
   }, [agentType]);
 
-  // Clear local changes when config changes (new version from server)
-  useEffect(() => {
-    if (config && hasUnsavedChanges) {
-      setLocalConfig({});
-      setHasUnsavedChanges(false);
-    }
-  }, [config?.version, hasUnsavedChanges]); // Include hasUnsavedChanges as dependency
+  // Note: Removed aggressive local state clearing to allow proper editing
+  // Local changes are now only cleared on successful save or explicit reset
 
   const clearChangeDescription = useCallback(() => {
     setLastChangeDescription(null);

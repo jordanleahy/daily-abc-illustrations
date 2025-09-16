@@ -293,81 +293,80 @@ export default function BookDetail() {
     );
   }
 
+  // Render focused view without header when in class view
+  if (isClassView && pages.length > 0) {
+    return (
+      <FocusedPageView
+        page={pages[currentPageIndex]}
+        bookId={book.id}
+        pageNumber={currentPageIndex + 1}
+        totalPages={pages.length}
+        onNext={() => {
+          if (currentPageIndex < pages.length - 1) {
+            setCurrentPageIndex(currentPageIndex + 1);
+          }
+        }}
+        onExit={() => setIsClassView(false)}
+      />
+    );
+  }
+
   return (
     <PageLayout>
       <Container>
         <div className="space-y-6">
-          {/* Header - only show when not in focused class view */}
-          {!isClassView && (
-            <div className="flex items-center gap-4">
-              <Button variant="ghost" onClick={handleBack} className="flex items-center gap-2">
-                <ArrowLeft className="w-4 h-4" />
-                Back to Books
+          {/* Header */}
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" onClick={handleBack} className="flex items-center gap-2">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Books
+            </Button>
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                onClick={() => setViewMode(viewMode === 'admin' ? 'user' : 'admin')}
+                className="flex items-center gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                {viewMode === 'admin' ? 'Preview User View' : 'Back to Admin View'}
               </Button>
-              {isAdmin && (
-                <Button 
-                  variant="outline" 
-                  onClick={() => setViewMode(viewMode === 'admin' ? 'user' : 'admin')}
-                  className="flex items-center gap-2"
-                >
-                  <Eye className="w-4 h-4" />
-                  {viewMode === 'admin' ? 'Preview User View' : 'Back to Admin View'}
-                </Button>
-              )}
-            </div>
-          )}
+            )}
+          </div>
 
           {/* Content based on role and view mode */}
           {(!isAdmin || (isAdmin && viewMode === 'user')) ? (
             // User view or admin preview mode - show user-friendly page cards
             <div className="space-y-6">
-              {/* Book title and description - only show when not in focused class view */}
-              {!isClassView && (
-                <div className="text-center">
-                  <h1 className="text-3xl font-bold text-foreground mb-2">{book.book_name}</h1>
-                  {book.book_description && (
-                    <p className="text-muted-foreground text-lg">{book.book_description}</p>
-                  )}
-                </div>
-              )}
+              {/* Book title and description */}
+              <div className="text-center">
+                <h1 className="text-3xl font-bold text-foreground mb-2">{book.book_name}</h1>
+                {book.book_description && (
+                  <p className="text-muted-foreground text-lg">{book.book_description}</p>
+                )}
+              </div>
               
               {pages.length > 0 ? (
-                isClassView ? (
-                  <FocusedPageView
-                    page={pages[currentPageIndex]}
-                    bookId={book.id}
-                    pageNumber={currentPageIndex + 1}
-                    totalPages={pages.length}
-                    onNext={() => {
-                      if (currentPageIndex < pages.length - 1) {
-                        setCurrentPageIndex(currentPageIndex + 1);
-                      }
+                <>
+                  <Button 
+                    size="lg" 
+                    className="w-full mb-6"
+                    onClick={() => {
+                      setIsClassView(true);
+                      setCurrentPageIndex(0);
                     }}
-                    onExit={() => setIsClassView(false)}
-                  />
-                ) : (
-                  <>
-                    <Button 
-                      size="lg" 
-                      className="w-full mb-6"
-                      onClick={() => {
-                        setIsClassView(true);
-                        setCurrentPageIndex(0);
-                      }}
-                    >
-                      Start
-                    </Button>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {pages.map((page) => (
-                        <UserPageCard 
-                          key={page.id} 
-                          page={page} 
-                          bookId={book.id}
-                        />
-                      ))}
-                    </div>
-                  </>
-                )
+                  >
+                    Start
+                  </Button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {pages.map((page) => (
+                      <UserPageCard 
+                        key={page.id} 
+                        page={page} 
+                        bookId={book.id}
+                      />
+                    ))}
+                  </div>
+                </>
               ) : (
                 <Card>
                   <CardContent className="flex items-center justify-center h-32">
@@ -469,67 +468,83 @@ export default function BookDetail() {
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={handleDeleteBook}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
+                            <AlertDialogAction onClick={handleDeleteBook} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                               Delete Book
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>
                       </AlertDialog>
-                      
-                      <Badge variant={book.status === 'published' ? "default" : "secondary"}>
-                        {book.status === 'published' ? 'Published' : book.status === 'draft' ? 'Draft' : 'Archived'}
-                      </Badge>
                     </div>
                   </div>
-                  
-                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      {book.total_pages} pages
-                    </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Calendar className="w-4 h-4" />
                       Created {new Date(book.created_at).toLocaleDateString()}
                     </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="w-4 h-4" />
+                      {book.category}
+                    </div>
+                     <Badge variant={book?.status === 'published' ? 'default' : 'secondary'}>
+                       {book?.status}
+                     </Badge>
                   </div>
+                </CardContent>
+              </Card>
+
+               {/* System Prompt Section */}
+               <SystemPromptSection 
+                 bookId={book.id}
+               />
+
+               {/* Export & Action Section */}
+               <ExportsSection 
+                 contentType="book"
+                 contentId={book.id}
+                 contentName={book.book_name}
+               />
+
+               {/* Progress Console */}
+               {progressMessages.length > 0 && (
+                 <ProgressConsole 
+                   messages={progressMessages}
+                   isExpanded={isProgressExpanded}
+                   onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
+                   isActive={styleGuideLoading}
+                 />
+               )}
+
+              {/* Pages Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pages ({pages.length}/{book.total_pages})</CardTitle>
+                  <CardDescription>
+                    Manage and edit the pages of your book.
+                  </CardDescription>
                 </CardHeader>
-                
-            </Card>
-
-
-              {/* System Prompt Section */}
-              <SystemPromptSection bookId={book.id} />
-
-              {/* Exports Section */}
-              <ExportsSection 
-                contentType="book" 
-                contentId={book.id} 
-                contentName={book.book_name} 
-              />
-
-              {/* Progress Console */}
-            {progressMessages.length > 0 && (
-              <ProgressConsole
-                messages={progressMessages}
-                isExpanded={isProgressExpanded}
-                onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
-                isActive={styleGuideLoading}
-              />
-            )}
-
-              {/* Pages Grid */}
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {pages.map((page) => (
-                  <PageCard 
-                    key={page.id} 
-                    page={page} 
-                    bookId={book.id} 
-                  />
-                ))}
-              </div>
+                <CardContent>
+                  {pages.length > 0 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {pages.map((page) => (
+                        <PageCard 
+                          key={page.id} 
+                          page={page} 
+                          bookId={book.id}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <p className="text-muted-foreground mb-4">No pages created yet.</p>
+                      <p className="text-sm text-muted-foreground">
+                        Pages will be created automatically when you generate the book content.
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             </>
           )}
         </div>

@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, RotateCcw, Trash2 } from 'lucide-react';
+import { Download, FileText, RotateCcw, Trash2, Globe } from 'lucide-react';
 import { useExports } from '@/hooks/useExports';
 import { Export } from '@/types/export';
 import { ProcessStatus } from '@/types/process';
@@ -115,6 +115,14 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
+  const handlePublishDaily = async () => {
+    // TODO: Implement publish daily functionality
+    toast({
+      title: "Publish Daily",
+      description: "Daily publishing functionality will be implemented soon."
+    });
+  };
+
   const { text, action, disabled, icon: Icon } = getButtonState();
 
   return (
@@ -193,6 +201,23 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             )}
           </div>
         )}
+
+        <div className="flex items-center justify-between pt-4 border-t">
+          <div className="space-y-1">
+            <h4 className="text-sm font-medium">Publish Daily</h4>
+            <p className="text-sm text-muted-foreground">
+              Publish your {contentType} to the daily publication
+            </p>
+          </div>
+          <Button 
+            onClick={handlePublishDaily}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Globe className="h-4 w-4" />
+            Publish Daily
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

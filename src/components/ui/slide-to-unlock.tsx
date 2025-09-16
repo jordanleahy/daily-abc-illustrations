@@ -1,6 +1,7 @@
 import React, { useState, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 
 interface SlideToUnlockProps {
   onUnlock: () => void;
@@ -12,6 +13,7 @@ export function SlideToUnlock({ onUnlock, disabled = false, className }: SlideTo
   const [isDragging, setIsDragging] = useState(false);
   const [dragProgress, setDragProgress] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [hasVibrated, setHasVibrated] = useState(false); // Track if we've vibrated for completion threshold
   
   const containerRef = useRef<HTMLDivElement>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
@@ -25,18 +27,27 @@ export function SlideToUnlock({ onUnlock, disabled = false, className }: SlideTo
     setDragProgress(0);
     setIsDragging(false);
     setIsCompleted(false);
+    setHasVibrated(false);
     currentX.current = 0;
   }, []);
 
-  const handleStart = useCallback((clientX: number) => {
+  const handleStart = useCallback(async (clientX: number) => {
     if (disabled) return;
+    
+    // Light vibration on drag start for tactile confirmation
+    try {
+      await Haptics.impact({ style: ImpactStyle.Light });
+    } catch (error) {
+      // Haptics not available (web/desktop), fail silently
+    }
     
     setIsDragging(true);
     startX.current = clientX;
     currentX.current = 0;
+    setHasVibrated(false); // Reset vibration flag when starting new drag
   }, [disabled]);
 
-  const handleMove = useCallback((clientX: number) => {
+  const handleMove = useCallback(async (clientX: number) => {
     if (!isDragging || disabled || !containerRef.current) return;
 
     const containerWidth = containerRef.current.offsetWidth;
@@ -47,8 +58,19 @@ export function SlideToUnlock({ onUnlock, disabled = false, className }: SlideTo
     const progress = currentX.current / maxDistance;
     
     setDragProgress(progress);
-    setIsCompleted(progress >= COMPLETION_THRESHOLD);
-  }, [isDragging, disabled]);
+    const wasCompleted = progress >= COMPLETION_THRESHOLD;
+    setIsCompleted(wasCompleted);
+    
+    // Vibrate when reaching completion threshold (only once per drag)
+    if (wasCompleted && !hasVibrated) {
+      try {
+        await Haptics.impact({ style: ImpactStyle.Medium });
+        setHasVibrated(true);
+      } catch (error) {
+        // Haptics not available (web/desktop), fail silently
+      }
+    }
+  }, [isDragging, disabled, hasVibrated]);
 
   const handleEnd = useCallback(() => {
     if (!isDragging) return;

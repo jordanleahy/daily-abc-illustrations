@@ -24,9 +24,9 @@ export function FocusedPageView({
   const isLastPage = pageNumber >= totalPages;
 
   return (
-    <div className="min-h-screen bg-background p-4 flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col relative">
       {/* Header with exit button and page number */}
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex justify-between items-center p-4 pb-2">
         <Button variant="ghost" onClick={onExit} className="flex items-center gap-2">
           <ArrowLeft className="w-4 h-4" />
           Exit
@@ -37,22 +37,24 @@ export function FocusedPageView({
       </div>
 
       {/* Focused page card */}
-      <div className="flex-1 max-w-md mx-auto w-full">
-        <Card className="h-full overflow-hidden shadow-lg">
-          <CardContent className="p-0 flex-1">
-            {/* Large illustration area */}
-            <div className="aspect-square bg-gradient-to-br from-background to-muted/50">
-              <PageImageSection 
-                pageId={page.id}
-                bookId={bookId}
-              />
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex-1 px-4 pb-24 flex items-center justify-center">
+        <div className="max-w-md w-full">
+          <Card className="overflow-hidden shadow-lg">
+            <CardContent className="p-0">
+              {/* Large illustration area */}
+              <div className="aspect-square bg-gradient-to-br from-background to-muted/50">
+                <PageImageSection 
+                  pageId={page.id}
+                  bookId={bookId}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
-      {/* Slide button at bottom - sticky */}
-      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur-sm border-t">
+      {/* Slide button at bottom - sticky with proper mobile support */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
         <Button 
           size="lg" 
           className="w-full h-16 text-lg font-semibold"

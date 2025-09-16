@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useLocation } from 'react-router-dom';
 import { generateDefaultOpenGraph, generateBookOpenGraph } from '@/utils/openGraph';
+import { SITE_CONFIG, getAbsoluteUrl as getConfigAbsoluteUrl } from '@/config/site';
 import type { SEOMetadata } from '@/types/openGraph';
 
 /**
@@ -24,9 +25,9 @@ export const useOpenGraph = (
     
     if (image) {
       metadata.image = {
-        url: image.startsWith('http') ? image : `${window.location.origin}${image}`,
-        width: 1200,
-        height: 630,
+        url: image.startsWith('http') ? image : getConfigAbsoluteUrl(image),
+        width: SITE_CONFIG.defaultImage.width,
+        height: SITE_CONFIG.defaultImage.height,
         alt: title || metadata.title
       };
       

@@ -185,7 +185,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
       toast({
         title: "Published Daily!",
-        description: `${contentName} is now available as daily content for 48 hours.`,
+        description: `${contentName} is now available as daily content for ${SITE_CONFIG.dailyContent.expirationHours} hours.`,
       });
 
       // Update local state

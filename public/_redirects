@@ -1,0 +1,8 @@
+# SPA routing - redirect all routes to index.html for client-side routing
+/*    /index.html   200
+
+# Handle specific API routes if needed (these won't be redirected)
+/api/*  200
+
+# Supabase functions (if any are accessed directly)
+/.netlify/functions/*  200

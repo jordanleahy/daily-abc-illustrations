@@ -542,6 +542,21 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_daily_published_pages: {
+        Args: { p_book_id: string }
+        Returns: {
+          book_id: string
+          content: Json
+          created_at: string
+          current_system_prompt_id: string
+          description: string
+          id: string
+          letter: string
+          page_number: number
+          title: string
+          updated_at: string
+        }[]
+      }
       get_next_page_image_version_number: {
         Args: { p_page_id: string }
         Returns: number

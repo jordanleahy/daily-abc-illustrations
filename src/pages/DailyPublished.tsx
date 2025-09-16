@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { useDailyPublishedById } from '@/hooks/useDailyPublishedById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
+import { useDailyPublishedPagesPublic } from '@/hooks/useDailyPublishedPagesPublic';
+import { useAuth } from '@/hooks/useAuth';
 import { DailyPublishedPageView } from '@/components/daily-published';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, Instagram } from 'lucide-react';
@@ -9,12 +11,19 @@ import { Calendar, Clock, Instagram } from 'lucide-react';
 export default function DailyPublished() {
   const { id } = useParams<{ id: string }>();
   const location = useLocation();
+  const { user } = useAuth();
   const isInstagramShare = location.pathname.includes('/instagram-shared/');
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useDailyPublishedById(id);
-  const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
+  const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(
+    user ? dailyContent?.book_id : undefined
+  );
+  const { data: pagesPublic = [], isLoading: isLoadingPagesPublic } = useDailyPublishedPagesPublic(
+    !user ? dailyContent?.book_id : undefined
+  );
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
 
-  const isLoading = isLoadingDaily || isLoadingPages;
+  const isLoading = isLoadingDaily || isLoadingPages || isLoadingPagesPublic;
+  const currentPages = user ? pages : pagesPublic;
 
   if (isLoading) {
     return (
@@ -71,7 +80,7 @@ export default function DailyPublished() {
     );
   }
 
-  if (!pages || pages.length === 0) {
+  if (!currentPages || currentPages.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -89,9 +98,9 @@ export default function DailyPublished() {
     );
   }
 
-  const currentPage = pages[currentPageIndex];
-  const previousPage = currentPageIndex > 0 ? pages[currentPageIndex - 1] : undefined;
-  const isLastPage = currentPageIndex >= pages.length - 1;
+  const currentPage = currentPages[currentPageIndex];
+  const previousPage = currentPageIndex > 0 ? currentPages[currentPageIndex - 1] : undefined;
+  const isLastPage = currentPageIndex >= currentPages.length - 1;
 
   const handleNext = () => {
     if (!isLastPage) {
@@ -110,7 +119,7 @@ export default function DailyPublished() {
       page={currentPage}
       bookId={dailyContent.book_id}
       pageNumber={currentPageIndex + 1}
-      totalPages={pages.length}
+      totalPages={currentPages.length}
       previousPage={previousPage}
       onNext={handleNext}
       onPrevious={currentPageIndex > 0 ? handlePrevious : undefined}

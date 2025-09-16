@@ -22,8 +22,11 @@ export const useDailyPublishedOpenGraph = (
   // Get current page
   const currentPage = pages[currentPageIndex];
   
-  // Fetch image for the current page (for OpenGraph image)
-  const { currentImage } = usePageImageUrls(currentPage?.id);
+  // Get first page for consistent OpenGraph image (always use first page for social sharing)
+  const firstPage = pages[0];
+  
+  // Fetch image for the first page (for OpenGraph image)
+  const { currentImage: firstPageImage } = usePageImageUrls(firstPage?.id);
 
   // Generate OpenGraph metadata
   const openGraphMetadata: SEOMetadata | null = useMemo(() => {
@@ -35,8 +38,8 @@ export const useDailyPublishedOpenGraph = (
     const pageNumber = currentPageIndex + 1;
     const totalPages = pages.length;
     
-    // Use current page image, or fallback to first page if we don't have current page image
-    const ogImage = currentImage?.image_url || null;
+    // Use first page image for consistent OpenGraph sharing
+    const ogImage = firstPageImage?.image_url || null;
 
     return generateDailyPublishedOpenGraph(
       dailyContent.title,
@@ -47,7 +50,7 @@ export const useDailyPublishedOpenGraph = (
       ogImage,
       timeRemaining
     );
-  }, [dailyContent, pages, currentPageIndex, currentImage]);
+  }, [dailyContent, pages, currentPageIndex, firstPageImage]);
 
   return {
     openGraphMetadata,

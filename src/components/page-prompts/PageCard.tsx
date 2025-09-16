@@ -10,6 +10,16 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeletePage } from '@/hooks/useDeletePage';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import type { Page } from '@/types/book';
 
 interface PageCardProps {
@@ -27,6 +37,8 @@ export function PageCard({ page, bookId }: PageCardProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editTitle, setEditTitle] = useState(page.title);
   const [editDescription, setEditDescription] = useState(page.description || '');
+  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleRegeneratePrompt = async () => {
     if (!user) {
@@ -82,12 +94,6 @@ export function PageCard({ page, bookId }: PageCardProps) {
   };
 
   const handleSaveEdit = async () => {
-    const confirmSave = confirm(
-      `Save changes to "${page.title}"?\n\nTitle: ${editTitle}\nDescription: ${editDescription}`
-    );
-
-    if (!confirmSave) return;
-
     try {
       const { error } = await supabase
         .from('pages')
@@ -105,6 +111,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
       });
 
       setIsEditing(false);
+      setShowSaveConfirm(false);
     } catch (error) {
       console.error('Error updating page:', error);
       toast({
@@ -113,6 +120,10 @@ export function PageCard({ page, bookId }: PageCardProps) {
         variant: "destructive",
       });
     }
+  };
+
+  const handleConfirmSave = () => {
+    setShowSaveConfirm(true);
   };
 
   const handleCancelEdit = () => {
@@ -131,13 +142,12 @@ export function PageCard({ page, bookId }: PageCardProps) {
       return;
     }
 
-    const confirmDelete = confirm(
-      `Are you sure you want to delete "${page.title}"?\n\nThis action is permanent and will also delete all associated images and prompts.`
-    );
+    setShowDeleteConfirm(true);
+  };
 
-    if (confirmDelete) {
-      deletePage.mutate(page.id);
-    }
+  const handleConfirmDelete = () => {
+    deletePage.mutate(page.id);
+    setShowDeleteConfirm(false);
   };
 
   const handleCopyPrompt = async () => {
@@ -241,7 +251,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
               rows={2}
             />
             <div className="flex gap-2 pt-2">
-              <Button size="sm" onClick={handleSaveEdit}>Save</Button>
+              <Button size="sm" onClick={handleConfirmSave}>Save</Button>
               <Button size="sm" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
             </div>
           </div>
@@ -287,6 +297,50 @@ export function PageCard({ page, bookId }: PageCardProps) {
           />
         )}
       </CardContent>
+
+      {/* Save Confirmation Dialog */}
+      <AlertDialog open={showSaveConfirm} onOpenChange={setShowSaveConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Save changes to "{page.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <div className="space-y-2 mt-4">
+                <div>
+                  <span className="font-medium">Title:</span> {editTitle}
+                </div>
+                <div>
+                  <span className="font-medium">Description:</span> {editDescription || '(No description)'}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSaveEdit}>OK</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete "{page.title}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action is permanent and will also delete all associated images and prompts.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

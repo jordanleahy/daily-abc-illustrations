@@ -92,6 +92,7 @@ export default function DailyPublished() {
       pageNumber={currentPageIndex + 1}
       totalPages={pages.length}
       previousPage={previousPage}
+      expiresAt={dailyContent.expires_at}
       onNext={handleNext}
       onPrevious={currentPageIndex > 0 ? handlePrevious : undefined}
     />

@@ -2,7 +2,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
 import { PageImageSection } from '@/components/PageImageSection';
+import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { Page } from '@/types/book';
+import { useState, useEffect } from 'react';
 
 interface DailyPublishedPageViewProps {
   page: Page;
@@ -10,6 +12,7 @@ interface DailyPublishedPageViewProps {
   pageNumber: number;
   totalPages: number;
   previousPage?: Page;
+  expiresAt: string;
   onNext: () => void;
   onPrevious?: () => void;
 }
@@ -20,17 +23,28 @@ export function DailyPublishedPageView({
   pageNumber, 
   totalPages,
   previousPage,
+  expiresAt,
   onNext, 
   onPrevious
 }: DailyPublishedPageViewProps) {
   const isLastPage = pageNumber >= totalPages;
+  const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
+
+  // Update countdown every minute
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTimeRemaining(formatTimeRemaining(expiresAt));
+    }, 60000); // Update every minute
+
+    return () => clearInterval(interval);
+  }, [expiresAt]);
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden" style={{ touchAction: 'none' }}>
-      {/* Fixed Header with branding and page number */}
+      {/* Fixed Header with countdown and page number */}
       <div className="fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-background/95 backdrop-blur-sm border-b">
         <div className="text-sm font-medium text-muted-foreground">
-          Daily ABC Illustrations
+          {timeRemaining}
         </div>
         
         {/* Center section with previous page thumbnail and page indicator */}

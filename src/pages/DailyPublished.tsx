@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { useDailyPublishedById } from '@/hooks/useDailyPublishedById';
+import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { DailyPublishedPageView, useDailyPublishedPages } from '@/components/daily-published';
+import { MetaHead } from '@/components/common';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock } from 'lucide-react';
 
@@ -10,6 +12,9 @@ export default function DailyPublished() {
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useDailyPublishedById(id);
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  
+  // Generate OpenGraph metadata for the current page
+  const { openGraphMetadata } = useDailyPublishedOpenGraph(id, currentPageIndex);
 
   const isLoading = isLoadingDaily || isLoadingPages;
 
@@ -86,15 +91,21 @@ export default function DailyPublished() {
   };
 
   return (
-    <DailyPublishedPageView
+    <div className="min-h-screen bg-background">
+      {/* Dynamic meta tags for social sharing */}
+      {openGraphMetadata && <MetaHead metadata={openGraphMetadata} />}
+      
+      <DailyPublishedPageView
       page={currentPage}
       bookId={dailyContent.book_id}
       pageNumber={currentPageIndex + 1}
       totalPages={pages.length}
       previousPage={previousPage}
-      expiresAt={dailyContent.expires_at}
-      onNext={handleNext}
-      onPrevious={currentPageIndex > 0 ? handlePrevious : undefined}
-    />
+        expiresAt={dailyContent.expires_at}
+        onNext={handleNext}
+        onPrevious={currentPageIndex > 0 ? handlePrevious : undefined}
+        openGraphMetadata={openGraphMetadata}
+      />
+    </div>
   );
 }

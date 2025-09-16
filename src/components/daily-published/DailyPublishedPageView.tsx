@@ -4,7 +4,9 @@ import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
 import { PageImageSection } from '@/components/PageImageSection';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { Page } from '@/types/book';
+import type { SEOMetadata } from '@/types/openGraph';
 import { useState, useEffect } from 'react';
+import { MetaHead } from '@/components/common';
 
 interface DailyPublishedPageViewProps {
   page: Page;
@@ -15,6 +17,8 @@ interface DailyPublishedPageViewProps {
   expiresAt: string;
   onNext: () => void;
   onPrevious?: () => void;
+  /** OpenGraph metadata for this specific page view */
+  openGraphMetadata?: SEOMetadata;
 }
 
 export function DailyPublishedPageView({ 
@@ -25,7 +29,8 @@ export function DailyPublishedPageView({
   previousPage,
   expiresAt,
   onNext, 
-  onPrevious
+  onPrevious,
+  openGraphMetadata
 }: DailyPublishedPageViewProps) {
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
@@ -41,6 +46,8 @@ export function DailyPublishedPageView({
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden" style={{ touchAction: 'none' }}>
+      {/* Dynamic meta tags for this specific page */}
+      {openGraphMetadata && <MetaHead metadata={openGraphMetadata} />}
       {/* Fixed Header with countdown and page number */}
       <div className="fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-background/95 backdrop-blur-sm border-b">
         <div className="text-sm font-medium text-muted-foreground">

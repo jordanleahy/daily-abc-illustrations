@@ -1,5 +1,6 @@
 import type { OpenGraphMetadata, SEOMetadata, OpenGraphImage } from '@/types/openGraph';
 import { SITE_CONFIG, getAbsoluteUrl as getConfigAbsoluteUrl } from '@/config/site';
+import { supabase } from '@/integrations/supabase/client';
 
 /**
  * Generate absolute URL for the current environment
@@ -97,6 +98,44 @@ export function generateBookOpenGraph(
 }
 
 /**
+ * Optimize OpenGraph title and description using AI
+ */
+export async function optimizeOpenGraphContent(
+  contentTitle: string,
+  bookDescription?: string,
+  category?: string,
+  timeRemaining?: string,
+  currentPage?: number,
+  totalPages?: number
+): Promise<{ optimizedTitle?: string; optimizedDescription?: string } | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke('optimize-opengraph', {
+      body: {
+        contentTitle,
+        bookDescription,
+        category,
+        timeRemaining,
+        currentPage,
+        totalPages,
+      },
+    });
+
+    if (error) {
+      console.error('Error optimizing OpenGraph content:', error);
+      return null;
+    }
+
+    return {
+      optimizedTitle: data?.optimizedTitle,
+      optimizedDescription: data?.optimizedDescription,
+    };
+  } catch (error) {
+    console.error('Failed to optimize OpenGraph content:', error);
+    return null;
+  }
+}
+
+/**
  * Generate OpenGraph metadata for daily published content
  */
 export function generateDailyPublishedOpenGraph(
@@ -106,14 +145,29 @@ export function generateDailyPublishedOpenGraph(
   totalPages?: number,
   contentId?: string,
   pageImage?: string,
-  timeRemaining?: string
+  timeRemaining?: string,
+  optimizedTitle?: string,
+  optimizedDescription?: string
 ): SEOMetadata {
-  const pageInfo = currentPage && totalPages ? ` (Page ${currentPage}/${totalPages})` : '';
-  const title = `${contentTitle}${pageInfo} | ${SITE_CONFIG.dailyContent.title}`;
+  // Use optimized title if available, otherwise create engaging title with pagination
+  let title = optimizedTitle || contentTitle;
   
-  let description = contentDescription || `Experience "${contentTitle}" - today's featured illustrated content`;
-  if (timeRemaining) {
-    description += ` • Available for ${timeRemaining}`;
+  // Add page info if we have multiple pages and no optimized title
+  if (!optimizedTitle && currentPage && totalPages && totalPages > 1) {
+    title = `${contentTitle} (Page ${currentPage}/${totalPages})`;
+  }
+  
+  // Add site branding if not using optimized title
+  if (!optimizedTitle) {
+    title = `${title} | ${SITE_CONFIG.dailyContent.title}`;
+  }
+  
+  // Use optimized description if available, otherwise create compelling description
+  let description = optimizedDescription || contentDescription || `Experience "${contentTitle}" - today's featured illustrated content`;
+  
+  // Add urgency if time-limited and no optimized description
+  if (!optimizedDescription && timeRemaining) {
+    description = `${description} • Available for ${timeRemaining}`;
   }
   
   const path = contentId ? `/daily-published/${contentId}` : undefined;

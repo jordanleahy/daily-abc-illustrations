@@ -77,3 +77,6 @@ verify_jwt = true
 
 [functions.generate-pdf]
 verify_jwt = true
+
+[functions.optimize-opengraph]
+verify_jwt = false

@@ -25,6 +25,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const { user } = useAuth();
   const { exports, createExport, deleteExport } = useExports(contentType, contentId);
   const { data: dailyPublications = [] } = useDailyPublished(contentType === 'book' ? contentId : undefined);
+  
+  // Ensure dailyPublications is always an array
+  const publications = Array.isArray(dailyPublications) ? dailyPublications : [];
 
   const pdfExports = exports.filter(exp => exp.export_type === 'pdf');
   const latestPdfExport = pdfExports[0];
@@ -130,7 +133,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
 
     // Check if already published
-    const existingDaily = dailyPublications?.find(pub => 
+    const existingDaily = publications.find(pub => 
       pub.expires_at && new Date(pub.expires_at) > new Date()
     );
     
@@ -189,7 +192,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
 
     // Check if already shared for Instagram
-    const existingInstagram = dailyPublications?.find(pub => 
+    const existingInstagram = publications.find(pub => 
       pub.expires_at === null
     );
     
@@ -240,12 +243,12 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const { text, action, disabled, icon: Icon } = getButtonState();
   
   // Check if already published daily (with expiration)
-  const existingDaily = dailyPublications?.find(pub => 
+  const existingDaily = publications.find(pub => 
     pub.expires_at && new Date(pub.expires_at) > new Date()
   );
   
   // Check if already shared for Instagram (no expiration)
-  const existingInstagram = dailyPublications?.find(pub => 
+  const existingInstagram = publications.find(pub => 
     pub.expires_at === null
   );
 

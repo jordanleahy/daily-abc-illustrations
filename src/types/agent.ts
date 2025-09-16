@@ -172,11 +172,12 @@ Style:
 - Tone: [gentle, supportive, etc.]
 - Color Palette: [primary, secondary, accent]
 
-Output Instructions:
-- Key message
-- Call to action
-- File formats (SVG, PNG, PDF)
-- Typography and accessibility requirements
+Style Guide Instructions:
+- Create vivid, engaging descriptions that capture the visual essence
+- Focus on educational content and child-friendly imagery
+- Emphasize colors, textures, and visual elements that support learning
+- Include guidance for emotional tone and atmosphere
+- Specify composition and focal points for effective illustration
 
 Safety Guidelines:
 - No IP or trademark use

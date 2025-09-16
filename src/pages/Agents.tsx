@@ -3,7 +3,6 @@ import { Container } from '@/components/layout';
 import { AgentIdentityCard } from '@/components/agents/AgentIdentityCard';
 import { ConfigurationTabs } from '@/components/agents/ConfigurationTabs';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
-import { useAgentCreation } from '@/hooks/useAgentCreation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -26,16 +25,6 @@ const Agents = () => {
     saveConfigWithOverrides,
     clearChangeDescription,
   } = useAgentConfig(selectedAgentType);
-
-  const { createAgent, isCreating } = useAgentCreation();
-
-  const handleCreateAgent = async () => {
-    try {
-      await createAgent(selectedAgentType);
-    } catch (error) {
-      console.error('Failed to create agent:', error);
-    }
-  };
 
 
   if (isInitialLoading) {
@@ -205,12 +194,9 @@ const Agents = () => {
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">No Agent Configuration Found</h3>
                 <p className="text-muted-foreground">
-                  No agent of this type exists in your database. Create one to get started.
+                  No {selectedAgentType} agent exists in your database.
                 </p>
               </div>
-              <Button onClick={handleCreateAgent} disabled={isCreating}>
-                {isCreating ? 'Creating...' : `Create ${selectedAgentType.charAt(0).toUpperCase() + selectedAgentType.slice(1)} Agent`}
-              </Button>
             </div>
           )}
 

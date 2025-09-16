@@ -297,34 +297,39 @@ export default function BookDetail() {
     <PageLayout>
       <Container>
         <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={handleBack} className="flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" />
-              Back to Books
-            </Button>
-            {isAdmin && (
-              <Button 
-                variant="outline" 
-                onClick={() => setViewMode(viewMode === 'admin' ? 'user' : 'admin')}
-                className="flex items-center gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                {viewMode === 'admin' ? 'Preview User View' : 'Back to Admin View'}
+          {/* Header - only show when not in focused class view */}
+          {!isClassView && (
+            <div className="flex items-center gap-4">
+              <Button variant="ghost" onClick={handleBack} className="flex items-center gap-2">
+                <ArrowLeft className="w-4 h-4" />
+                Back to Books
               </Button>
-            )}
-          </div>
+              {isAdmin && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setViewMode(viewMode === 'admin' ? 'user' : 'admin')}
+                  className="flex items-center gap-2"
+                >
+                  <Eye className="w-4 h-4" />
+                  {viewMode === 'admin' ? 'Preview User View' : 'Back to Admin View'}
+                </Button>
+              )}
+            </div>
+          )}
 
           {/* Content based on role and view mode */}
           {(!isAdmin || (isAdmin && viewMode === 'user')) ? (
             // User view or admin preview mode - show user-friendly page cards
             <div className="space-y-6">
-              <div className="text-center">
-                <h1 className="text-3xl font-bold text-foreground mb-2">{book.book_name}</h1>
-                {book.book_description && (
-                  <p className="text-muted-foreground text-lg">{book.book_description}</p>
-                )}
-              </div>
+              {/* Book title and description - only show when not in focused class view */}
+              {!isClassView && (
+                <div className="text-center">
+                  <h1 className="text-3xl font-bold text-foreground mb-2">{book.book_name}</h1>
+                  {book.book_description && (
+                    <p className="text-muted-foreground text-lg">{book.book_description}</p>
+                  )}
+                </div>
+              )}
               
               {pages.length > 0 ? (
                 isClassView ? (

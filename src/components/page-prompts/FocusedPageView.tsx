@@ -1,7 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
 import { PageImageSection } from '@/components/PageImageSection';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import type { Page } from '@/types/book';
 
 interface FocusedPageViewProps {
@@ -53,21 +54,13 @@ export function FocusedPageView({
         </div>
       </div>
 
-      {/* Slide button at bottom - sticky with proper mobile support */}
+      {/* Slide to unlock at bottom - sticky with proper mobile support */}
       <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
-        <Button 
-          size="lg" 
-          className="w-full h-16 text-lg font-semibold"
-          onClick={onNext}
+        <SlideToUnlock 
+          onUnlock={onNext}
           disabled={isLastPage}
-        >
-          {isLastPage ? 'The End!' : (
-            <>
-              Slide
-              <ArrowRight className="w-5 h-5 ml-2" />
-            </>
-          )}
-        </Button>
+          className="w-full"
+        />
       </div>
     </div>
   );

@@ -1,8 +1,8 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, RotateCcw, Trash2, Globe } from 'lucide-react';
+import { Download, FileText, RotateCcw, Trash2, Globe, Eye } from 'lucide-react';
 import { useExports } from '@/hooks/useExports';
 import { Export } from '@/types/export';
 import { ProcessStatus } from '@/types/process';
@@ -23,9 +23,38 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 }) => {
   const { user } = useAuth();
   const { exports, createExport, deleteExport } = useExports(contentType, contentId);
+  const [existingPublication, setExistingPublication] = useState<any>(null);
+  const [isCheckingPublication, setIsCheckingPublication] = useState(false);
 
   const pdfExports = exports.filter(exp => exp.export_type === 'pdf');
   const latestPdfExport = pdfExports[0];
+
+  // Check for existing daily publication on mount
+  useEffect(() => {
+    const checkExistingPublication = async () => {
+      if (contentType !== 'book') return;
+      
+      setIsCheckingPublication(true);
+      try {
+        const { data, error } = await supabase
+          .from('daily_published')
+          .select('*')
+          .eq('book_id', contentId)
+          .eq('is_active', true)
+          .maybeSingle();
+
+        if (!error && data) {
+          setExistingPublication(data);
+        }
+      } catch (error) {
+        console.error('Error checking publication:', error);
+      } finally {
+        setIsCheckingPublication(false);
+      }
+    };
+
+    checkExistingPublication();
+  }, [contentId, contentType]);
 
   const handleCreatePdf = async () => {
     try {
@@ -117,6 +146,12 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
+  const handleViewPublication = () => {
+    if (existingPublication) {
+      window.open(`/daily-published/${existingPublication.id}`, '_blank');
+    }
+  };
+
   const handlePublishDaily = async () => {
     if (!user?.id) {
       toast({
@@ -151,6 +186,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         title: "Published Daily!",
         description: `${contentName} is now available as daily content for 48 hours.`,
       });
+
+      // Update local state
+      setExistingPublication(newPublication);
 
       // Open the daily published page with the new publication ID
       window.open(`/daily-published/${newPublication.id}`, '_blank');
@@ -262,12 +300,13 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             </p>
           </div>
           <Button 
-            onClick={handlePublishDaily}
+            onClick={existingPublication ? handleViewPublication : handlePublishDaily}
             variant="outline"
             className="flex items-center gap-2"
+            disabled={isCheckingPublication}
           >
-            <Globe className="h-4 w-4" />
-            Publish Daily
+            {existingPublication ? <Eye className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+            {isCheckingPublication ? 'Checking...' : existingPublication ? 'View' : 'Publish Daily'}
           </Button>
         </div>
       </CardContent>

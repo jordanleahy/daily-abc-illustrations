@@ -128,19 +128,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
 
     try {
-      // First deactivate any existing daily publications
-      const { error: deactivateError } = await supabase
-        .from('daily_published')
-        .update({ is_active: false })
-        .eq('is_active', true);
-
-      if (deactivateError) {
-        console.error('Error deactivating previous daily publications:', deactivateError);
-        throw deactivateError;
-      }
-
       // Create new daily publication
-      const { error: insertError } = await supabase
+      const { data: newPublication, error: insertError } = await supabase
         .from('daily_published')
         .insert({
           book_id: contentId,
@@ -149,7 +138,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           published_at: new Date().toISOString(),
           expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48 hours from now
           is_active: true
-        });
+        })
+        .select()
+        .single();
 
       if (insertError) {
         console.error('Error creating daily publication:', insertError);
@@ -161,8 +152,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         description: `${contentName} is now available as daily content for 48 hours.`,
       });
 
-      // Optional: Open the daily published page in a new tab
-      window.open('/daily-published', '_blank');
+      // Open the daily published page with the new publication ID
+      window.open(`/daily-published/${newPublication.id}`, '_blank');
 
     } catch (error) {
       console.error('Error publishing daily:', error);

@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { useDailyPublished } from '@/hooks/useDailyPublished';
+import { useParams } from 'react-router-dom';
+import { useDailyPublishedById } from '@/hooks/useDailyPublishedById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { DailyPublishedPageView } from '@/components/daily-published';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock } from 'lucide-react';
 
 export default function DailyPublished() {
-  const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useDailyPublished();
+  const { id } = useParams<{ id: string }>();
+  const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useDailyPublishedById(id);
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
 

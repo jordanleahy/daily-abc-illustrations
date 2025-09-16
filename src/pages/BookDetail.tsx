@@ -325,15 +325,23 @@ export default function BookDetail() {
               </div>
               
               {pages.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {pages.map((page) => (
-                    <UserPageCard 
-                      key={page.id} 
-                      page={page} 
-                      bookId={book.id}
-                    />
-                  ))}
-                </div>
+                <>
+                  <Button 
+                    size="lg" 
+                    className="w-full mb-6"
+                  >
+                    Start
+                  </Button>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {pages.map((page) => (
+                      <UserPageCard 
+                        key={page.id} 
+                        page={page} 
+                        bookId={book.id}
+                      />
+                    ))}
+                  </div>
+                </>
               ) : (
                 <Card>
                   <CardContent className="flex items-center justify-center h-32">

@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PageImageSection } from '@/components/PageImageSection';
+import { useIsMobile } from '@/hooks/use-mobile';
 import type { Page } from '@/types/book';
 
 interface UserPageCardProps {
@@ -8,7 +9,9 @@ interface UserPageCardProps {
 }
 
 export function UserPageCard({ page, bookId }: UserPageCardProps) {
-  return (
+  const isMobile = useIsMobile();
+  
+  const cardContent = (
     <Card className="overflow-hidden shadow-sm hover:shadow-md transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
@@ -36,5 +39,13 @@ export function UserPageCard({ page, bookId }: UserPageCardProps) {
         </div>
       </CardContent>
     </Card>
+  );
+
+  return isMobile ? (
+    <section>
+      {cardContent}
+    </section>
+  ) : (
+    cardContent
   );
 }

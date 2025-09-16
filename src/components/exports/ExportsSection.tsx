@@ -62,12 +62,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
   const handleDownload = (exportRecord: Export) => {
     if (exportRecord.export_url) {
-      const link = document.createElement('a');
-      link.href = exportRecord.export_url;
-      link.download = `${contentName}-${exportRecord.export_type}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      window.open(exportRecord.export_url, '_blank');
     }
   };
 

@@ -125,11 +125,27 @@ export function PageCard({ page, bookId }: PageCardProps) {
 
       if (createError) throw createError;
 
-      // Now call generate-image with the record ID
+      // Now call generate-image with the record ID, ensuring auth header is present
+      const { data: sessionRes } = await supabase.auth.getSession();
+      const token = sessionRes.session?.access_token;
+
+      if (!token) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in again to regenerate images",
+          variant: "destructive",
+        });
+        setIsRegeneratingImage(false);
+        return;
+      }
+
       const { error: generateError } = await supabase.functions.invoke('generate-image', {
         body: {
           recordId: newImageRecord.id,
           userId: user.id,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
       });
 

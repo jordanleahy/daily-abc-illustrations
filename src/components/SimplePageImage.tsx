@@ -1,5 +1,4 @@
-import { usePageImageUrls } from "@/hooks/usePageImageUrls";
-import { Shimmer } from "@/components/ui/shimmer";
+import { usePageImageUrlsPublic } from "@/hooks/usePageImageUrlsPublic";
 
 interface SimplePageImageProps {
   pageId: string;
@@ -7,37 +6,27 @@ interface SimplePageImageProps {
 }
 
 export function SimplePageImage({ pageId, bookId }: SimplePageImageProps) {
-  const { currentImage, isLoading } = usePageImageUrls(pageId);
+  const { data: currentImage, isLoading } = usePageImageUrlsPublic(pageId);
 
   if (isLoading) {
     return (
       <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
-        <Shimmer className="w-full h-full" />
+        <div className="animate-pulse bg-muted-foreground/20 w-full h-full rounded-lg" />
       </div>
     );
   }
 
-  const hasImage = currentImage?.generation_status === 'complete' && currentImage?.image_url;
-  const isGenerating = currentImage?.generation_status === 'in_progress';
-
-  if (hasImage && currentImage?.image_url) {
+  if (currentImage?.image_url) {
     return (
       <img 
         src={currentImage.image_url} 
         alt="Page illustration"
-        className="w-full h-full object-cover"
+        className="w-full h-full object-cover rounded-lg"
+        onError={(e) => {
+          console.error('Image failed to load:', currentImage.image_url);
+          e.currentTarget.style.display = 'none';
+        }}
       />
-    );
-  }
-
-  if (isGenerating) {
-    return (
-      <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
-        <div className="flex flex-col items-center space-y-2">
-          <Shimmer className="w-16 h-16" />
-          <p className="text-xs text-muted-foreground">Generating...</p>
-        </div>
-      </div>
     );
   }
 

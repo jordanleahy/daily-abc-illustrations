@@ -36,11 +36,11 @@ export const InstructionsTab = ({
 
   // Sync local state with config changes - only when instructions actually change
   useEffect(() => {
-    if (config?.instructions !== undefined && config.instructions !== localInstructions) {
-      console.log('📝 InstructionsTab: Syncing instructions from config:', config.instructions.substring(0, 50) + '...');
+    if (!hasUnsavedChanges && config?.instructions !== undefined && config.instructions !== localInstructions) {
+      console.log('📝 InstructionsTab: Syncing instructions from config:', (config.instructions || '').substring(0, 50) + '...');
       setLocalInstructions(config.instructions);
     }
-  }, [config?.instructions, localInstructions]);
+  }, [config?.instructions, hasUnsavedChanges]);
 
   const handleInstructionsChange = (value: string) => {
     setLocalInstructions(value);

@@ -34,25 +34,6 @@ export function UserPageCard({ page, bookId }: UserPageCardProps) {
             bookId={bookId}
           />
         </div>
-        
-        {/* Content area with letter and concept */}
-        <div className="p-4 space-y-2">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-2xl font-bold">
-              {page.letter}
-            </div>
-            <div className="flex-1">
-              <h3 className="font-semibold text-lg text-foreground">
-                {page.content.mainConcept}
-              </h3>
-              {page.content.funFact && (
-                <p className="text-sm text-muted-foreground mt-1">
-                  {page.content.funFact}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

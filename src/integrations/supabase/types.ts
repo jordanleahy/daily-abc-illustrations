@@ -199,7 +199,7 @@ export type Database = {
           book_id: string
           created_at: string
           description: string | null
-          expires_at: string
+          expires_at: string | null
           id: string
           is_active: boolean
           published_at: string
@@ -210,7 +210,7 @@ export type Database = {
           book_id: string
           created_at?: string
           description?: string | null
-          expires_at?: string
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           published_at?: string
@@ -221,7 +221,7 @@ export type Database = {
           book_id?: string
           created_at?: string
           description?: string | null
-          expires_at?: string
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           published_at?: string

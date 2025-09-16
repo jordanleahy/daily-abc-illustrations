@@ -1,13 +1,15 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useLocation } from 'react-router-dom';
 import { useDailyPublishedById } from '@/hooks/useDailyPublishedById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { DailyPublishedPageView } from '@/components/daily-published';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, Instagram } from 'lucide-react';
 
 export default function DailyPublished() {
   const { id } = useParams<{ id: string }>();
+  const location = useLocation();
+  const isInstagramShare = location.pathname.includes('/instagram-shared/');
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useDailyPublishedById(id);
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -31,21 +33,38 @@ export default function DailyPublished() {
         <Card className="max-w-md w-full">
           <CardHeader className="text-center">
             <CardTitle className="flex items-center justify-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Daily ABC Illustrations
+              {isInstagramShare ? (
+                <>
+                  <Instagram className="h-5 w-5" />
+                  Instagram Subscribers
+                </>
+              ) : (
+                <>
+                  <Calendar className="h-5 w-5" />
+                  Daily ABC Illustrations
+                </>
+              )}
             </CardTitle>
             <CardDescription>
-              No daily content is currently available
+              {isInstagramShare 
+                ? "This Instagram subscriber content is not available"
+                : "No daily content is currently available"
+              }
             </CardDescription>
           </CardHeader>
           <CardContent className="text-center space-y-4">
             <p className="text-sm text-muted-foreground">
-              Check back tomorrow for new illustrated content, or the current daily publication may have expired.
+              {isInstagramShare 
+                ? "This link may be invalid or the content may have been removed."
+                : "Check back tomorrow for new illustrated content, or the current daily publication may have expired."
+              }
             </p>
-            <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <Clock className="h-4 w-4" />
-              Daily content expires after 48 hours
-            </div>
+            {!isInstagramShare && (
+              <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
+                <Clock className="h-4 w-4" />
+                Daily content expires after 48 hours
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

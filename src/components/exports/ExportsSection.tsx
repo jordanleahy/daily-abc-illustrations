@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, RotateCcw, Trash2, Globe } from 'lucide-react';
+import { Download, FileText, RotateCcw, Trash2, Globe, Instagram } from 'lucide-react';
 import { useExports } from '@/hooks/useExports';
 import { Export } from '@/types/export';
 import { ProcessStatus } from '@/types/process';
@@ -165,6 +165,54 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
+  const handlePublishInstagram = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to share for Instagram subscribers.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Create new Instagram share (non-expiring)
+      const { data: newPublication, error: insertError } = await supabase
+        .from('daily_published')
+        .insert({
+          book_id: contentId,
+          title: contentName,
+          description: `Instagram: ${contentName}`,
+          published_at: new Date().toISOString(),
+          expires_at: null, // Never expires
+          is_active: true
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error creating Instagram share:', insertError);
+        throw insertError;
+      }
+
+      toast({
+        title: "Shared for Instagram!",
+        description: `${contentName} is now permanently available for Instagram subscribers.`,
+      });
+
+      // Open the Instagram shared page with the new publication ID
+      window.open(`/daily-published/instagram-shared/${newPublication.id}`, '_blank');
+
+    } catch (error) {
+      console.error('Error sharing for Instagram:', error);
+      toast({
+        title: "Sharing Failed",
+        description: "There was an error sharing your content. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const { text, action, disabled, icon: Icon } = getButtonState();
 
   return (
@@ -258,6 +306,23 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           >
             <Globe className="h-4 w-4" />
             Publish Daily
+          </Button>
+        </div>
+
+        <div className="flex items-center justify-between pt-4 border-t">
+          <div className="space-y-1">
+            <h4 className="text-sm font-medium">Share for Instagram Subscribers</h4>
+            <p className="text-sm text-muted-foreground">
+              Create a permanent link for Instagram subscribers
+            </p>
+          </div>
+          <Button 
+            onClick={handlePublishInstagram}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Instagram className="h-4 w-4" />
+            Share for Instagram
           </Button>
         </div>
       </CardContent>

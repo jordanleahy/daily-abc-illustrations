@@ -20,10 +20,11 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';
+import { useHasRole } from '@/hooks/useUserRole';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
-import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
@@ -32,7 +33,6 @@ import { ExportsSection } from '@/components/exports/ExportsSection';
 
 import { PageImageSection } from "@/components/PageImageSection";
 import { PageCard } from '@/components/page-prompts';
-import { AdminOnly } from '@/components/AdminOnly';
 
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
@@ -41,6 +41,8 @@ export default function BookDetail() {
   const { currentPrompt, refreshData } = useSystemPrompt(id || '');
   const { pages } = useBookPages(id);
   const { data: book, isLoading: bookLoading, error: bookError, isFetched: bookFetched } = useBook(id);
+  const isAdmin = useHasRole('admin');
+  const [viewMode, setViewMode] = useState<'admin' | 'user'>('admin');
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
@@ -299,170 +301,182 @@ export default function BookDetail() {
               <ArrowLeft className="w-4 h-4" />
               Back to Books
             </Button>
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                onClick={() => setViewMode(viewMode === 'admin' ? 'user' : 'admin')}
+                className="flex items-center gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                {viewMode === 'admin' ? 'Preview User View' : 'Back to Admin View'}
+              </Button>
+            )}
           </div>
 
-          {/* Admin-only content */}
-          <AdminOnly 
-            fallback={
-              <Card>
-                <CardContent className="flex items-center justify-center h-64">
-                  <p className="text-muted-foreground">This page is available for administrators only.</p>
-                </CardContent>
-              </Card>
-            }
-          >
-            {/* Book Info */}
+          {/* Content based on role and view mode */}
+          {(!isAdmin || (isAdmin && viewMode === 'user')) ? (
+            // User view or admin preview mode - show blank page
             <Card>
-              <CardHeader>
-                {/* Call Illustration Director Button - Above Title */}
-                <div className="mb-4">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={generateStyleGuide}
-                    disabled={styleGuideLoading}
-                    title="Call Illustration Director"
-                    aria-label="Call Illustration Director"
-                  >
-                    {styleGuideLoading ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Palette className="w-4 h-4" />
-                    )}
-                  </Button>
-                </div>
-
-                <div className="flex justify-between items-start">
-                  <div className="space-y-2">
-                    <CardTitle className="text-2xl">{book.book_name}</CardTitle>
-                    {book.book_description && (
-                      <CardDescription className="text-base">
-                        {book.book_description}
-                      </CardDescription>
-                    )}
+              <CardContent className="flex items-center justify-center h-64">
+                <p className="text-muted-foreground">This page is available for administrators only.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            // Admin view mode - show full content
+            <>
+              {/* Book Info */}
+              <Card>
+                <CardHeader>
+                  {/* Call Illustration Director Button - Above Title */}
+                  <div className="mb-4">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={generateStyleGuide}
+                      disabled={styleGuideLoading}
+                      title="Call Illustration Director"
+                      aria-label="Call Illustration Director"
+                    >
+                      {styleGuideLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Palette className="w-4 h-4" />
+                      )}
+                    </Button>
                   </div>
-                  <div className="flex items-center gap-2">
-                    
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          disabled={archiveLoading || book?.status === 'archived'}
-                          title="Archive book"
-                          aria-label="Archive book"
-                        >
-                          {archiveLoading ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Archive className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Archive Book</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to archive "{book?.book_name}"? Archived books will be hidden from your main book list but can be restored later.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={handleArchiveBook}>
-                            Archive Book
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                    
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="icon"
-                          disabled={deleteLoading}
-                          title="Delete book"
-                          aria-label="Delete book"
-                          className="text-destructive hover:text-destructive"
-                        >
-                          {deleteLoading ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Book</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            Are you sure you want to delete "{book.book_name}"? This action cannot be undone and will permanently delete the book and all its pages, prompts, and images.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction
-                            onClick={handleDeleteBook}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+
+                  <div className="flex justify-between items-start">
+                    <div className="space-y-2">
+                      <CardTitle className="text-2xl">{book.book_name}</CardTitle>
+                      {book.book_description && (
+                        <CardDescription className="text-base">
+                          {book.book_description}
+                        </CardDescription>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            disabled={archiveLoading || book?.status === 'archived'}
+                            title="Archive book"
+                            aria-label="Archive book"
                           >
-                            Delete Book
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                    
-                    <Badge variant={book.status === 'published' ? "default" : "secondary"}>
-                      {book.status === 'published' ? 'Published' : book.status === 'draft' ? 'Draft' : 'Archived'}
-                    </Badge>
+                            {archiveLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Archive className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Archive Book</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to archive "{book?.book_name}"? Archived books will be hidden from your main book list but can be restored later.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleArchiveBook}>
+                              Archive Book
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            disabled={deleteLoading}
+                            title="Delete book"
+                            aria-label="Delete book"
+                            className="text-destructive hover:text-destructive"
+                          >
+                            {deleteLoading ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Book</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Are you sure you want to delete "{book.book_name}"? This action cannot be undone and will permanently delete the book and all its pages, prompts, and images.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={handleDeleteBook}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            >
+                              Delete Book
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                      
+                      <Badge variant={book.status === 'published' ? "default" : "secondary"}>
+                        {book.status === 'published' ? 'Published' : book.status === 'draft' ? 'Draft' : 'Archived'}
+                      </Badge>
+                    </div>
                   </div>
-                </div>
+                  
+                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Users className="w-4 h-4" />
+                      {book.total_pages} pages
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      Created {new Date(book.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                </CardHeader>
                 
-                <div className="flex items-center gap-6 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Users className="w-4 h-4" />
-                    {book.total_pages} pages
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    Created {new Date(book.created_at).toLocaleDateString()}
-                  </div>
-                </div>
-              </CardHeader>
-              
-          </Card>
+            </Card>
 
 
-            {/* System Prompt Section */}
-            <SystemPromptSection bookId={book.id} />
+              {/* System Prompt Section */}
+              <SystemPromptSection bookId={book.id} />
 
-            {/* Exports Section */}
-            <ExportsSection 
-              contentType="book" 
-              contentId={book.id} 
-              contentName={book.book_name} 
-            />
+              {/* Exports Section */}
+              <ExportsSection 
+                contentType="book" 
+                contentId={book.id} 
+                contentName={book.book_name} 
+              />
 
-            {/* Progress Console */}
-          {progressMessages.length > 0 && (
-            <ProgressConsole
-              messages={progressMessages}
-              isExpanded={isProgressExpanded}
-              onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
-              isActive={styleGuideLoading}
-            />
+              {/* Progress Console */}
+            {progressMessages.length > 0 && (
+              <ProgressConsole
+                messages={progressMessages}
+                isExpanded={isProgressExpanded}
+                onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
+                isActive={styleGuideLoading}
+              />
+            )}
+
+              {/* Pages Grid */}
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {pages.map((page) => (
+                  <PageCard 
+                    key={page.id} 
+                    page={page} 
+                    bookId={book.id} 
+                  />
+                ))}
+              </div>
+            </>
           )}
-
-            {/* Pages Grid */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {pages.map((page) => (
-                <PageCard 
-                  key={page.id} 
-                  page={page} 
-                  bookId={book.id} 
-                />
-              ))}
-            </div>
-          </AdminOnly>
         </div>
       </Container>
     </PageLayout>

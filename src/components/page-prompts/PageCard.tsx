@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
-import { RefreshCw, FileText, Copy, Trash2, Edit3 } from 'lucide-react';
+import { RefreshCw, FileText, Copy, Trash2, Edit3, Image } from 'lucide-react';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useAuth } from '@/hooks/useAuth';
@@ -39,6 +39,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
   const [editDescription, setEditDescription] = useState(page.description || '');
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
 
   const handleRegeneratePrompt = async () => {
     if (!user) {
@@ -78,6 +79,45 @@ export function PageCard({ page, bookId }: PageCardProps) {
       });
     } finally {
       setIsRegenerating(false);
+    }
+  };
+
+  const handleRegenerateImage = async () => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please log in to regenerate images",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsRegeneratingImage(true);
+      
+      const { error } = await supabase.functions.invoke('generate-image', {
+        body: {
+          pageId: page.id,
+          userId: user.id,
+        },
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Image regeneration started successfully",
+      });
+
+    } catch (error) {
+      console.error('Error regenerating image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to regenerate image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRegeneratingImage(false);
     }
   };
 
@@ -187,6 +227,17 @@ export function PageCard({ page, bookId }: PageCardProps) {
               aria-label="Regenerate page prompt"
             >
               <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-6 h-6"
+              onClick={handleRegenerateImage}
+              disabled={isRegeneratingImage}
+              title="Regenerate page image"
+              aria-label="Regenerate page image"
+            >
+              <Image className={`w-3 h-3 ${isRegeneratingImage ? 'animate-pulse' : ''}`} />
             </Button>
             <Button
               variant="ghost"

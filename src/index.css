@@ -40,7 +40,7 @@ All colors MUST be HSL.
     
     /* Status colors */
     --success: 142.1 76.2% 36.3%;
-    --success-foreground: 210 40% 98%;
+    --success-foreground: 142.1 76.2% 16.3%;
     --warning: 47.9 95.8% 53.1%;
     --warning-foreground: 26 83.3% 14.1%;
     

@@ -10,8 +10,8 @@
  * 
  * Purpose:
  * - Convert educational conversations into structured ABC books
- * - Generate age-appropriate content for each letter A-Z
- * - Create consistent, themed learning materials
+ * - Generate age-appropriate content based on conversation themes
+ * - Create consistent, themed learning materials with flexible page counts
  * - Provide seamless integration with the chat interface
  * 
  * Usage:

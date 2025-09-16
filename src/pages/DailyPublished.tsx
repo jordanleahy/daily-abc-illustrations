@@ -6,6 +6,7 @@ import { DailyPublishedPageView, useDailyPublishedPages } from '@/components/dai
 import { MetaHead } from '@/components/common';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock } from 'lucide-react';
+import { SITE_CONFIG } from '@/config/site';
 
 export default function DailyPublished() {
   const { id } = useParams<{ id: string }>();
@@ -36,7 +37,7 @@ export default function DailyPublished() {
           <CardHeader className="text-center">
             <CardTitle className="flex items-center justify-center gap-2">
               <Calendar className="h-5 w-5" />
-              Daily ABC Illustrations
+              {SITE_CONFIG.dailyContent.title}
             </CardTitle>
             <CardDescription>
               No daily content is currently available
@@ -48,7 +49,7 @@ export default function DailyPublished() {
             </p>
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-4 w-4" />
-              Daily content expires after 48 hours
+              Daily content expires after {SITE_CONFIG.dailyContent.expirationHours} hours
             </div>
           </CardContent>
         </Card>

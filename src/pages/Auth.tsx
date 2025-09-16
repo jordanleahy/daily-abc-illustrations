@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Container } from '@/components/layout/Container';
+import { SITE_CONFIG } from '@/config/site';
 
 const Auth = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -104,7 +105,7 @@ const Auth = () => {
       <Container size="sm" className="flex items-center justify-center min-h-screen py-8">
         <Card className="w-full">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">ABC Illustrations</CardTitle>
+            <CardTitle className="text-2xl font-bold">{SITE_CONFIG.name}</CardTitle>
             <CardDescription>
               {isLogin ? 'Sign in to your account' : 'Create a new account'}
             </CardDescription>

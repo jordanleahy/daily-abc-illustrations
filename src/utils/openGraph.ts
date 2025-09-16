@@ -1,32 +1,11 @@
 import type { OpenGraphMetadata, SEOMetadata, OpenGraphImage } from '@/types/openGraph';
-
-/**
- * Default site-wide OpenGraph configuration
- */
-export const DEFAULT_SITE_CONFIG = {
-  siteName: 'ABC Illustrations',
-  description: 'Create beautiful digital illustrations with ABC Illustrations - a clean, intuitive drawing canvas app',
-  type: 'website' as const,
-  locale: 'en_US',
-  twitter: {
-    card: 'summary_large_image' as const,
-    site: '@lovable_dev',
-  },
-  defaultImage: {
-    url: 'https://lovable.dev/opengraph-image-p98pqg.png',
-    width: 1200,
-    height: 630,
-    alt: 'ABC Illustrations - Digital Drawing Canvas',
-  }
-};
+import { SITE_CONFIG, getAbsoluteUrl as getConfigAbsoluteUrl } from '@/config/site';
 
 /**
  * Generate absolute URL for the current environment
  */
 export function getAbsoluteUrl(path: string = ''): string {
-  // In production, use the actual domain
-  const baseUrl = window.location.origin;
-  return `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+  return getConfigAbsoluteUrl(path);
 }
 
 /**
@@ -46,14 +25,14 @@ export function createOpenGraphImage(
   if (imageUrl && imageUrl.trim()) {
     return {
       url: imageUrl.startsWith('http') ? imageUrl : getAbsoluteUrl(imageUrl),
-      width: 1200,
-      height: 630,
-      alt: alt || DEFAULT_SITE_CONFIG.defaultImage.alt,
+      width: SITE_CONFIG.defaultImage.width,
+      height: SITE_CONFIG.defaultImage.height,
+      alt: alt || SITE_CONFIG.defaultImage.alt,
       type: 'image/png'
     };
   }
   
-  return DEFAULT_SITE_CONFIG.defaultImage;
+  return SITE_CONFIG.defaultImage;
 }
 
 /**
@@ -65,19 +44,21 @@ export function generateDefaultOpenGraph(
   path?: string
 ): SEOMetadata {
   return {
-    title: title || DEFAULT_SITE_CONFIG.siteName,
-    description: description || DEFAULT_SITE_CONFIG.description,
-    type: DEFAULT_SITE_CONFIG.type,
+    title: title || SITE_CONFIG.name,
+    description: description || SITE_CONFIG.description,
+    type: 'website',
     url: path ? generateCanonicalUrl(path) : undefined,
-    image: DEFAULT_SITE_CONFIG.defaultImage,
-    siteName: DEFAULT_SITE_CONFIG.siteName,
-    locale: DEFAULT_SITE_CONFIG.locale,
+    image: SITE_CONFIG.defaultImage,
+    siteName: SITE_CONFIG.name,
+    locale: SITE_CONFIG.locale,
     twitter: {
-      ...DEFAULT_SITE_CONFIG.twitter,
+      card: 'summary_large_image',
+      site: SITE_CONFIG.twitter.handle,
+      creator: SITE_CONFIG.twitter.creator,
       title: title,
       description: description,
-      image: DEFAULT_SITE_CONFIG.defaultImage.url,
-      imageAlt: DEFAULT_SITE_CONFIG.defaultImage.alt,
+      image: SITE_CONFIG.defaultImage.url,
+      imageAlt: SITE_CONFIG.defaultImage.alt,
     }
   };
 }
@@ -91,8 +72,8 @@ export function generateBookOpenGraph(
   bookId?: string,
   coverImage?: string
 ): SEOMetadata {
-  const title = `${bookTitle} | ${DEFAULT_SITE_CONFIG.siteName}`;
-  const description = bookDescription || `Explore "${bookTitle}" - an illustrated story created with ABC Illustrations`;
+  const title = `${bookTitle} | ${SITE_CONFIG.name}`;
+  const description = bookDescription || `Explore "${bookTitle}" - an illustrated story created with ${SITE_CONFIG.name}`;
   const path = bookId ? `/books/${bookId}` : undefined;
   
   return {
@@ -101,10 +82,12 @@ export function generateBookOpenGraph(
     type: 'book',
     url: path ? generateCanonicalUrl(path) : undefined,
     image: createOpenGraphImage(coverImage, `Cover of ${bookTitle}`),
-    siteName: DEFAULT_SITE_CONFIG.siteName,
-    locale: DEFAULT_SITE_CONFIG.locale,
+    siteName: SITE_CONFIG.name,
+    locale: SITE_CONFIG.locale,
     twitter: {
-      ...DEFAULT_SITE_CONFIG.twitter,
+      card: 'summary_large_image',
+      site: SITE_CONFIG.twitter.handle,
+      creator: SITE_CONFIG.twitter.creator,
       title,
       description,
       image: createOpenGraphImage(coverImage, `Cover of ${bookTitle}`).url,
@@ -126,7 +109,7 @@ export function generateDailyPublishedOpenGraph(
   timeRemaining?: string
 ): SEOMetadata {
   const pageInfo = currentPage && totalPages ? ` (Page ${currentPage}/${totalPages})` : '';
-  const title = `${contentTitle}${pageInfo} | Daily Illustrations`;
+  const title = `${contentTitle}${pageInfo} | ${SITE_CONFIG.dailyContent.title}`;
   
   let description = contentDescription || `Experience "${contentTitle}" - today's featured illustrated content`;
   if (timeRemaining) {
@@ -141,11 +124,13 @@ export function generateDailyPublishedOpenGraph(
     type: 'article',
     url: path ? generateCanonicalUrl(path) : undefined,
     image: createOpenGraphImage(pageImage, `Illustration from ${contentTitle}`),
-    siteName: DEFAULT_SITE_CONFIG.siteName,
-    locale: DEFAULT_SITE_CONFIG.locale,
+    siteName: SITE_CONFIG.name,
+    locale: SITE_CONFIG.locale,
     publishedTime: new Date().toISOString(),
     twitter: {
-      ...DEFAULT_SITE_CONFIG.twitter,
+      card: 'summary_large_image',
+      site: SITE_CONFIG.twitter.handle,
+      creator: SITE_CONFIG.twitter.creator,
       title,
       description,
       image: createOpenGraphImage(pageImage, `Illustration from ${contentTitle}`).url,

@@ -9,6 +9,7 @@ import { ProcessStatus } from '@/types/process';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
+import { SITE_CONFIG } from '@/config/site';
 
 interface ExportsSectionProps {
   contentType: 'book' | 'page';
@@ -169,9 +170,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         .insert({
           book_id: contentId,
           title: contentName,
-          description: `Daily ABC Illustrations featuring ${contentName}`,
+          description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
           published_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + 48 * 60 * 60 * 1000).toISOString(), // 48 hours from now
+          expires_at: new Date(Date.now() + SITE_CONFIG.dailyContent.expirationHours * 60 * 60 * 1000).toISOString(),
           is_active: true
         })
         .select()

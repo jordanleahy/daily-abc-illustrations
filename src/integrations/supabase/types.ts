@@ -199,7 +199,7 @@ export type Database = {
           book_id: string
           created_at: string
           description: string | null
-          expires_at: string
+          expires_at: string | null
           id: string
           is_active: boolean
           published_at: string
@@ -210,7 +210,7 @@ export type Database = {
           book_id: string
           created_at?: string
           description?: string | null
-          expires_at?: string
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           published_at?: string
@@ -221,7 +221,7 @@ export type Database = {
           book_id?: string
           created_at?: string
           description?: string | null
-          expires_at?: string
+          expires_at?: string | null
           id?: string
           is_active?: boolean
           published_at?: string
@@ -283,6 +283,39 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      instagram_shared: {
+        Row: {
+          book_id: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          shared_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          shared_at?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          shared_at?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -541,6 +574,36 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
+      }
+      get_daily_published_pages: {
+        Args: { p_book_id: string }
+        Returns: {
+          book_id: string
+          content: Json
+          created_at: string
+          current_system_prompt_id: string
+          description: string
+          id: string
+          letter: string
+          page_number: number
+          title: string
+          updated_at: string
+        }[]
+      }
+      get_instagram_shared_pages: {
+        Args: { p_book_id: string }
+        Returns: {
+          book_id: string
+          content: Json
+          created_at: string
+          current_system_prompt_id: string
+          description: string
+          id: string
+          letter: string
+          page_number: number
+          title: string
+          updated_at: string
+        }[]
       }
       get_next_page_image_version_number: {
         Args: { p_page_id: string }

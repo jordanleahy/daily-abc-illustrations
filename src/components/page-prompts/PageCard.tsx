@@ -95,14 +95,45 @@ export function PageCard({ page, bookId }: PageCardProps) {
     try {
       setIsRegeneratingImage(true);
       
-      const { error } = await supabase.functions.invoke('generate-image', {
+      // First, get the next version number for this page's images
+      const { data: existingImages, error: fetchError } = await supabase
+        .from('page_image_urls')
+        .select('version_number')
+        .eq('page_id', page.id)
+        .order('version_number', { ascending: false })
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      const nextVersion = existingImages && existingImages.length > 0 
+        ? existingImages[0].version_number + 1 
+        : 1;
+
+      // Create a new page_image_urls record
+      const { data: newImageRecord, error: createError } = await supabase
+        .from('page_image_urls')
+        .insert({
+          page_id: page.id,
+          book_id: bookId,
+          user_id: user.id,
+          version_number: nextVersion,
+          is_latest: true,
+          generation_status: 'not_started'
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      // Now call generate-image with the record ID
+      const { error: generateError } = await supabase.functions.invoke('generate-image', {
         body: {
-          pageId: page.id,
+          recordId: newImageRecord.id,
           userId: user.id,
         },
       });
 
-      if (error) throw error;
+      if (generateError) throw generateError;
 
       toast({
         title: "Success",

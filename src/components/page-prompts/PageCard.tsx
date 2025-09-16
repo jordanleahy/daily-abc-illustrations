@@ -2,7 +2,8 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw } from 'lucide-react';
+import { Toggle } from '@/components/ui/toggle';
+import { RefreshCw, FileText } from 'lucide-react';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,6 +21,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [showPrompt, setShowPrompt] = useState(false);
 
   const handleRegeneratePrompt = async () => {
     if (!user) {
@@ -81,6 +83,18 @@ export function PageCard({ page, bookId }: PageCardProps) {
             >
               <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
             </Button>
+            {currentPrompt && (
+              <Toggle
+                size="sm"
+                className="w-6 h-6"
+                pressed={showPrompt}
+                onPressedChange={setShowPrompt}
+                title="Toggle between image and prompt view"
+                aria-label="Toggle between image and prompt view"
+              >
+                <FileText className="w-3 h-3" />
+              </Toggle>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {currentPrompt && (
@@ -103,10 +117,19 @@ export function PageCard({ page, bookId }: PageCardProps) {
         )}
       </CardHeader>
       <CardContent className="p-4 space-y-3">
-        <PageImageSection 
-          pageId={page.id}
-          bookId={bookId}
-        />
+        {showPrompt && currentPrompt ? (
+          <div className="space-y-2">
+            <div className="text-sm font-medium text-foreground">System Prompt:</div>
+            <div className="text-sm text-muted-foreground bg-muted p-3 rounded-md max-h-48 overflow-y-auto whitespace-pre-wrap">
+              {currentPrompt.content}
+            </div>
+          </div>
+        ) : (
+          <PageImageSection 
+            pageId={page.id}
+            bookId={bookId}
+          />
+        )}
       </CardContent>
     </Card>
   );

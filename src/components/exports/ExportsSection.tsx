@@ -155,13 +155,23 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       // Open the daily published page with the new publication ID
       window.open(`/daily-published/${newPublication.id}`, '_blank');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error publishing daily:', error);
-      toast({
-        title: "Publishing Failed",
-        description: "There was an error publishing your content. Please try again.",
-        variant: "destructive"
-      });
+      
+      // Check if this is a duplicate publication error
+      if (error?.message?.includes('A daily publication already exists for this book')) {
+        toast({
+          title: "Already Published",
+          description: `${contentName} is already published as daily content. Each book can only have one active daily publication.`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Publishing Failed",
+          description: "There was an error publishing your content. Please try again.",
+          variant: "destructive"
+        });
+      }
     }
   };
 

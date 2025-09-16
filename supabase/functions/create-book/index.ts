@@ -116,7 +116,7 @@ REQUIRED OUTPUT FORMAT (JSON only, no other text):
     "book_name": "Creative title based on the conversation theme",
     "category": "Educational category (e.g., Animals, Science, Nature, etc.)",
     "book_description": "Brief description of what children will learn",
-    "total_pages": 26
+    "total_pages": "Number of pages you decided to create (should equal the number of pages in the pages array)"
   },
   "pages": [
     {
@@ -130,9 +130,11 @@ REQUIRED OUTPUT FORMAT (JSON only, no other text):
         "activity": "Simple activity or question for engagement"
       }
     }
-    // ... repeat for all 26 letters A-Z
+    // ... create pages for letters relevant to the conversation theme (could be full A-Z or subset based on content richness)
   ]
 }
+
+IMPORTANT: Analyze the conversation and determine how many alphabet letters have meaningful, distinct concepts to teach. Create pages only for letters that have substantial educational content related to the conversation theme. This could be anywhere from 10-26 pages depending on the conversation scope.
 
 CRITICAL: Return ONLY valid JSON, no additional text.`;
 
@@ -200,9 +202,15 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
     }
 
     // Validate the structure
-    if (!bookData.book || !bookData.pages || bookData.pages.length !== 26) {
+    if (!bookData.book || !bookData.pages || !Array.isArray(bookData.pages) || bookData.pages.length === 0) {
       console.error('Invalid book data structure:', bookData);
       throw new Error('Generated book data is incomplete or invalid');
+    }
+
+    // Validate that total_pages matches actual pages count
+    if (bookData.book.total_pages !== bookData.pages.length) {
+      console.error('Page count mismatch:', { declared: bookData.book.total_pages, actual: bookData.pages.length });
+      throw new Error('Book total_pages does not match actual number of pages generated');
     }
 
     console.log('Book data validated, saving to database...');
@@ -255,7 +263,7 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
       JSON.stringify({
         success: true,
         bookId: book.id,
-        message: `"${book.book_name}" has been created with 26 pages! You can now view your book.`,
+        message: `"${book.book_name}" has been created with ${book.total_pages} pages! You can now view your book.`,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

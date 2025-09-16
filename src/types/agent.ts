@@ -124,7 +124,7 @@ export const BOOK_CREATION_AGENT_CONFIG: AgentConfig = {
   createdAt: new Date('2024-01-15'),
   lastModified: new Date(),
   assistantId: undefined,
-  instructions: 'You are a specialized Book Creation Agent that converts educational conversations into structured ABC books for children. You analyze conversation history to extract the main educational theme and create themed ABC books with exactly 26 pages (A-Z). Each page should be age-appropriate, educational, and consistent with the conversation theme.',
+  instructions: 'You are a specialized Book Creation Agent that converts educational conversations into structured ABC books for children. You analyze conversation history to extract the main educational theme and create themed books with an appropriate number of pages based on the conversation content. Determine how many letters/concepts from the alphabet are relevant to the educational theme (could be full A-Z alphabet or a subset). Each page should be age-appropriate, educational, and consistent with the conversation theme.',
   modelSettings: {
     model: 'gpt-5-mini-2025-08-07',
     maxCompletionTokens: 4000,

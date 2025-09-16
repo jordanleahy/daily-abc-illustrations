@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
-import { RefreshCw, FileText } from 'lucide-react';
+import { RefreshCw, FileText, Copy } from 'lucide-react';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useAuth } from '@/hooks/useAuth';
@@ -63,6 +63,25 @@ export function PageCard({ page, bookId }: PageCardProps) {
       setIsRegenerating(false);
     }
   };
+
+  const handleCopyPrompt = async () => {
+    if (!currentPrompt?.content) return;
+
+    try {
+      await navigator.clipboard.writeText(currentPrompt.content);
+      toast({
+        title: "Copied!",
+        description: "System prompt copied to clipboard",
+      });
+    } catch (error) {
+      console.error('Error copying to clipboard:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
   
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -119,8 +138,18 @@ export function PageCard({ page, bookId }: PageCardProps) {
       <CardContent className="p-4 space-y-3">
         {showPrompt && currentPrompt ? (
           <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden flex flex-col">
-            <div className="text-sm font-medium text-foreground p-3 pb-2 border-b border-border/50">
-              System Prompt:
+            <div className="flex items-center justify-between text-sm font-medium text-foreground p-3 pb-2 border-b border-border/50">
+              <span>System Prompt:</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="w-6 h-6"
+                onClick={handleCopyPrompt}
+                title="Copy system prompt to clipboard"
+                aria-label="Copy system prompt to clipboard"
+              >
+                <Copy className="w-3 h-3" />
+              </Button>
             </div>
             <div className="flex-1 p-3 overflow-y-auto">
               <div className="text-sm text-muted-foreground whitespace-pre-wrap">

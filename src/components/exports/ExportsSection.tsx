@@ -2,10 +2,8 @@ import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, RotateCcw, Trash2, Globe, Instagram } from 'lucide-react';
+import { Download, FileText, RotateCcw, Trash2, Globe } from 'lucide-react';
 import { useExports } from '@/hooks/useExports';
-import { useDailyPublished } from '@/hooks/useDailyPublished';
-import { useInstagramShared } from '@/hooks/useInstagramShared';
 import { Export } from '@/types/export';
 import { ProcessStatus } from '@/types/process';
 import { supabase } from '@/integrations/supabase/client';
@@ -25,12 +23,6 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 }) => {
   const { user } = useAuth();
   const { exports, createExport, deleteExport } = useExports(contentType, contentId);
-  const { data: dailyPublications = [] } = useDailyPublished(contentType === 'book' ? contentId : undefined);
-  const { data: instagramShared = [] } = useInstagramShared(contentType === 'book' ? contentId : undefined);
-  
-  // Ensure arrays are valid
-  const publications = Array.isArray(dailyPublications) ? dailyPublications : [];
-  const instagramShares = Array.isArray(instagramShared) ? instagramShared : [];
 
   const pdfExports = exports.filter(exp => exp.export_type === 'pdf');
   const latestPdfExport = pdfExports[0];
@@ -135,17 +127,6 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       return;
     }
 
-    // Check if already published daily (only check active with valid expiration)
-    const existingDaily = publications.find(pub => 
-      pub.expires_at && new Date(pub.expires_at) > new Date()
-    );
-    
-    if (existingDaily) {
-      // Just open the existing publication
-      window.open(`/daily-published/${existingDaily.id}`, '_blank');
-      return;
-    }
-
     try {
       // Create new daily publication
       const { data: newPublication, error: insertError } = await supabase
@@ -184,69 +165,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
-  const handlePublishInstagram = async () => {
-    if (!user?.id) {
-      toast({
-        title: "Authentication Required",
-        description: "You must be logged in to share for Instagram subscribers.",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    // Check if already shared for Instagram
-    const existingInstagram = instagramShares.find(share => share.is_active);
-    
-    if (existingInstagram) {
-      // Just open the existing Instagram share
-      window.open(`/instagram-shared/${existingInstagram.id}`, '_blank');
-      return;
-    }
-
-    try {
-      // Create new Instagram share
-      const { data: newShare, error: insertError } = await supabase
-        .from('instagram_shared')
-        .insert({
-          book_id: contentId,
-          title: contentName,
-          description: `${contentName} shared for Instagram subscribers`,
-        })
-        .select()
-        .single();
-
-      if (insertError) {
-        console.error('Error creating Instagram share:', insertError);
-        throw insertError;
-      }
-
-      toast({
-        title: "Shared for Instagram!",
-        description: `${contentName} is now permanently available for Instagram subscribers.`,
-      });
-
-      // Open the Instagram shared page with the new share ID
-      window.open(`/instagram-shared/${newShare.id}`, '_blank');
-
-    } catch (error) {
-      console.error('Error sharing for Instagram:', error);
-      toast({
-        title: "Sharing Failed",
-        description: "There was an error sharing your content. Please try again.",
-        variant: "destructive"
-      });
-    }
-  };
-
   const { text, action, disabled, icon: Icon } = getButtonState();
-  
-  // Check if already published daily (with expiration)
-  const existingDaily = publications.find(pub => 
-    pub.expires_at && new Date(pub.expires_at) > new Date()
-  );
-  
-  // Check if already shared for Instagram
-  const existingInstagram = instagramShares.find(share => share.is_active);
 
   return (
     <Card>
@@ -329,10 +248,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           <div className="space-y-1">
             <h4 className="text-sm font-medium">Publish Daily</h4>
             <p className="text-sm text-muted-foreground">
-              {existingDaily 
-                ? "View your daily publication" 
-                : `Publish your ${contentType} to the daily publication`
-              }
+              Publish your {contentType} to the daily publication
             </p>
           </div>
           <Button 
@@ -341,27 +257,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             className="flex items-center gap-2"
           >
             <Globe className="h-4 w-4" />
-            {existingDaily ? "View Daily" : "Publish Daily"}
-          </Button>
-        </div>
-
-        <div className="flex items-center justify-between pt-4 border-t">
-          <div className="space-y-1">
-            <h4 className="text-sm font-medium">Share for Instagram Subscribers</h4>
-            <p className="text-sm text-muted-foreground">
-              {existingInstagram 
-                ? "View your Instagram share" 
-                : "Create a permanent link for Instagram subscribers"
-              }
-            </p>
-          </div>
-          <Button 
-            onClick={handlePublishInstagram}
-            variant="outline"
-            className="flex items-center gap-2"
-          >
-            <Instagram className="h-4 w-4" />
-            {existingInstagram ? "View Instagram" : "Share for Instagram"}
+            Publish Daily
           </Button>
         </div>
       </CardContent>

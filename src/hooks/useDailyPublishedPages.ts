@@ -2,17 +2,20 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Page } from '@/types/book';
 
-export const useInstagramSharedPagesPublic = (bookId: string | undefined) => {
+export const useDailyPublishedPages = (bookId: string | undefined) => {
   return useQuery({
-    queryKey: ['instagram-shared-pages-public', bookId],
+    queryKey: ['daily-published-pages', bookId],
     queryFn: async () => {
       if (!bookId) return [];
       
       const { data, error } = await supabase
-        .rpc('get_instagram_shared_pages', { p_book_id: bookId });
+        .from('pages')
+        .select('*')
+        .eq('book_id', bookId)
+        .order('page_number', { ascending: true });
 
       if (error) {
-        console.error('Error fetching instagram shared pages (public):', error);
+        console.error('Error fetching daily published pages:', error);
         throw error;
       }
 

@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
-import { SimplePageImage } from '@/components/SimplePageImage';
+import { PageImageSection } from '@/components/PageImageSection';
 import type { Page } from '@/types/book';
 
 interface DailyPublishedPageViewProps {
@@ -43,7 +43,7 @@ export function DailyPublishedPageView({
               className="p-1 h-8 w-8 rounded border border-border hover:bg-muted"
             >
               <div className="w-6 h-6 bg-muted rounded-sm overflow-hidden">
-                <SimplePageImage 
+                <PageImageSection 
                   pageId={previousPage.id}
                   bookId={bookId}
                 />
@@ -63,7 +63,7 @@ export function DailyPublishedPageView({
             <CardContent className="p-0">
               {/* Large illustration area */}
               <div className="aspect-square bg-gradient-to-br from-background to-muted/50">
-                <SimplePageImage 
+                <PageImageSection 
                   pageId={page.id}
                   bookId={bookId}
                 />

@@ -10,7 +10,6 @@ import Agents from "./pages/Agents";
 import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
 import DailyPublished from "./pages/DailyPublished";
-import InstagramShared from "./pages/InstagramShared";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -41,7 +40,6 @@ const App = () => (
           <Route path="/books" element={<Books />} />
           <Route path="/books/:id" element={<BookDetail />} />
           <Route path="/daily-published/:id" element={<DailyPublished />} />
-          <Route path="/instagram-shared/:id" element={<InstagramShared />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -2,28 +2,27 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DailyPublished } from '@/types/dailyPublished';
 
-export const useDailyPublished = (bookId: string | undefined) => {
+export const useDailyPublished = () => {
   return useQuery({
-    queryKey: ['daily-published', bookId],
+    queryKey: ['daily-published'],
     queryFn: async () => {
-      if (!bookId) return [];
-      
       const { data, error } = await supabase
         .from('daily_published')
         .select('*')
-        .eq('book_id', bookId)
         .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .gt('expires_at', new Date().toISOString())
+        .order('published_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching daily published content:', error);
         throw error;
       }
 
-      return data as DailyPublished[] || [];
+      return data as DailyPublished | null;
     },
-    enabled: !!bookId,
-    staleTime: 30 * 1000, // 30 seconds
-    gcTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };

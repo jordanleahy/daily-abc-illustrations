@@ -12,6 +12,8 @@ export const useDailyPublishedById = (id: string | undefined) => {
         .from('daily_published')
         .select('*')
         .eq('id', id)
+        .eq('is_active', true)
+        .gt('expires_at', new Date().toISOString())
         .maybeSingle();
 
       if (error) {

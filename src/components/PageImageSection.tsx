@@ -159,62 +159,12 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   return (
     <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden relative">
       {hasImage && currentImage?.image_url ? (
-        // Show generated image with hover regenerate button
-        <div className="w-full h-full relative group">
-          <img 
-            src={currentImage.image_url} 
-            alt="Generated page image"
-            className="w-full h-full object-cover"
-          />
-          
-          {/* Debug info and refresh button - only show in dev mode */}
-          {process.env.NODE_ENV === 'development' && (
-            <div className="absolute top-2 right-2 flex gap-2">
-              <Button
-                onClick={() => {
-                  console.log('Current image data:', currentImage);
-                  refreshData();
-                }}
-                size="sm"
-                variant="outline"
-                className="bg-white/90 text-xs"
-              >
-                <RefreshCw className="w-3 h-3 mr-1" />
-                Refresh
-              </Button>
-              <div className="bg-white/90 text-xs px-2 py-1 rounded text-black">
-                v{currentImage.version_number} • {currentImage.generation_status}
-              </div>
-            </div>
-          )}
-          
-          {/* Hover overlay with regenerate button */}
-          <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-            <Button
-              onClick={handleRegenerateImage}
-              disabled={isRegenerating || isLocalGenerating}
-              size="sm"
-              variant="secondary"
-              className="animate-scale-in"
-            >
-              {isRegenerating ? (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-                  Regenerating...
-                </>
-              ) : (
-                <>
-                  <RefreshCw className="w-4 h-4 mr-2" />
-                  Regenerate
-                </>
-              )}
-            </Button>
-          </div>
-          
-          <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-2">
-            v{currentImage.version_number} • {currentImage.generation_duration_ms}ms
-          </div>
-        </div>
+        // Show clean generated image
+        <img 
+          src={currentImage.image_url} 
+          alt="Generated page image"
+          className="w-full h-full object-cover"
+        />
       ) : isGenerating ? (
         // Show generating state
         <div className="flex flex-col items-center justify-center h-full space-y-3">
@@ -284,12 +234,6 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
         </div>
       )}
 
-      {/* Version History Indicator */}
-      {versions.length > 1 && (
-        <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded">
-          {versions.length} versions
-        </div>
-      )}
     </div>
   );
 }

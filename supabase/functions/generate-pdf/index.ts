@@ -133,7 +133,7 @@ serve(async (req) => {
       color: rgb(0.6, 0.6, 0.6),
     });
 
-    // Add pages with content
+    // Add pages with images only
     const pages = bookData.pages || [];
     console.log(`Processing ${pages.length} pages...`);
 
@@ -149,9 +149,7 @@ serve(async (req) => {
         color: rgb(0.2, 0.2, 0.2),
       });
 
-      let yPosition = 700;
-
-      // Add image if available
+      // Add image if available - centered and larger
       const imageUrl = pageImages.get(pageData.id);
       if (imageUrl) {
         try {
@@ -172,86 +170,38 @@ serve(async (req) => {
             }
 
             if (image) {
-              const imageDims = image.scale(0.5);
+              // Scale image to fit page nicely (larger than before)
+              const maxWidth = 500;
+              const maxHeight = 600;
+              let scale = Math.min(maxWidth / image.width, maxHeight / image.height);
+              
+              const scaledWidth = image.width * scale;
+              const scaledHeight = image.height * scale;
+              
+              // Center the image
+              const x = (612 - scaledWidth) / 2;
+              const y = 700 - scaledHeight;
+              
               page.drawImage(image, {
-                x: 50,
-                y: yPosition - imageDims.height,
-                width: imageDims.width,
-                height: imageDims.height,
+                x: x,
+                y: y,
+                width: scaledWidth,
+                height: scaledHeight,
               });
-              yPosition -= imageDims.height + 20;
             }
           }
         } catch (e) {
           console.log('Error processing image for page:', pageData.letter, e);
         }
-      }
-
-      // Add content
-      if (pageData.content) {
-        const content = pageData.content as any;
-        
-        if (content.mainConcept) {
-          page.drawText('Main Concept:', {
-            x: 50,
-            y: yPosition,
-            size: 14,
-            font: boldFont,
-            color: rgb(0.2, 0.2, 0.2),
-          });
-          yPosition -= 20;
-          
-          page.drawText(content.mainConcept, {
-            x: 50,
-            y: yPosition,
-            size: 12,
-            font: font,
-            color: rgb(0.3, 0.3, 0.3),
-            maxWidth: 500,
-          });
-          yPosition -= 40;
-        }
-
-        if (content.funFact) {
-          page.drawText('Fun Fact:', {
-            x: 50,
-            y: yPosition,
-            size: 14,
-            font: boldFont,
-            color: rgb(0.2, 0.2, 0.2),
-          });
-          yPosition -= 20;
-          
-          page.drawText(content.funFact, {
-            x: 50,
-            y: yPosition,
-            size: 12,
-            font: font,
-            color: rgb(0.3, 0.3, 0.3),
-            maxWidth: 500,
-          });
-          yPosition -= 40;
-        }
-
-        if (content.activity) {
-          page.drawText('Activity:', {
-            x: 50,
-            y: yPosition,
-            size: 14,
-            font: boldFont,
-            color: rgb(0.2, 0.2, 0.2),
-          });
-          yPosition -= 20;
-          
-          page.drawText(content.activity, {
-            x: 50,
-            y: yPosition,
-            size: 12,
-            font: font,
-            color: rgb(0.3, 0.3, 0.3),
-            maxWidth: 500,
-          });
-        }
+      } else {
+        // If no image, show the image URL would be displayed here
+        page.drawText('No image available for this page', {
+          x: 50,
+          y: 400,
+          size: 14,
+          font: font,
+          color: rgb(0.5, 0.5, 0.5),
+        });
       }
 
       // Page number

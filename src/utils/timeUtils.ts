@@ -38,7 +38,8 @@ export const formatTimeRemaining = (expiresAt: string): string => {
 
   if (minutes > 0) {
     const remainingSeconds = seconds % 60;
-    return remainingSeconds > 0 ? `${minutes}m ${remainingSeconds}s left` : `${minutes}m left`;
+    // Always show seconds when we're in the minutes range for better countdown experience
+    return `${minutes}m ${remainingSeconds}s left`;
   }
 
   if (seconds > 0) {

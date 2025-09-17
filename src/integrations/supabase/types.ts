@@ -542,6 +542,63 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_metadata: {
+        Row: {
+          created_at: string
+          daily_published_id: string
+          error_message: string | null
+          generation_metadata: Json | null
+          id: string
+          is_active: boolean
+          is_latest: boolean
+          og_image_url: string | null
+          optimization_status: string
+          optimized_at: string | null
+          seo_description: string | null
+          seo_title: string | null
+          source_data: Json | null
+          updated_at: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          created_at?: string
+          daily_published_id: string
+          error_message?: string | null
+          generation_metadata?: Json | null
+          id?: string
+          is_active?: boolean
+          is_latest?: boolean
+          og_image_url?: string | null
+          optimization_status?: string
+          optimized_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          source_data?: Json | null
+          updated_at?: string
+          user_id: string
+          version_number?: number
+        }
+        Update: {
+          created_at?: string
+          daily_published_id?: string
+          error_message?: string | null
+          generation_metadata?: Json | null
+          id?: string
+          is_active?: boolean
+          is_latest?: boolean
+          og_image_url?: string | null
+          optimization_status?: string
+          optimized_at?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
+          source_data?: Json | null
+          updated_at?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -611,6 +668,10 @@ export type Database = {
       }
       get_next_page_prompt_version_number: {
         Args: { p_page_id: string }
+        Returns: number
+      }
+      get_next_seo_version_number: {
+        Args: { p_daily_published_id: string }
         Returns: number
       }
       get_next_version_number: {

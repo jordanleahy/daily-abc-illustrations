@@ -35,11 +35,11 @@ export function DailyPublishedPageView({
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
 
-  // Update countdown every second for real-time display
+  // Update countdown every 100ms for smooth real-time display
   useEffect(() => {
     const interval = setInterval(() => {
       setTimeRemaining(formatTimeRemaining(expiresAt));
-    }, 1000); // Update every second
+    }, 100); // Update every 100ms for smoother countdown
 
     return () => clearInterval(interval);
   }, [expiresAt]);

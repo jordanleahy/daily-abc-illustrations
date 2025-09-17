@@ -8,6 +8,7 @@ import { Send, BookOpen, ExternalLink } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PageLayout } from '@/components/layout';
 import { useAuth } from '@/hooks/useAuth';
+import { useDailyPublished } from '@/hooks/useDailyPublished';
 import { toast } from 'sonner';
 
 interface Message {
@@ -18,6 +19,7 @@ interface Message {
 
 const Index = () => {
   const { session, isAuthenticated, loading } = useAuth();
+  const { data: dailyContent, isLoading: isDailyLoading } = useDailyPublished();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -42,6 +44,13 @@ const Index = () => {
     setUserScrolledUp(false);
   }, [messages.length]);
 
+  // Redirect to daily publication if available
+  useEffect(() => {
+    if (!loading && !isDailyLoading && dailyContent && dailyContent.id) {
+      navigate(`/daily-published/${dailyContent.id}`, { replace: true });
+    }
+  }, [dailyContent, loading, isDailyLoading, navigate]);
+
   // Handle scroll events to detect if user scrolled up
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
     const element = event.currentTarget;
@@ -51,10 +60,10 @@ const Index = () => {
     setUserScrolledUp(!isScrolledToBottom);
   };
 
-  // Show loading state while checking authentication
-  if (loading) {
+  // Show loading state while checking authentication or daily content
+  if (loading || isDailyLoading) {
     return (
-      <PageLayout title="ABC Cards Chat" showHeader={true} fullHeight={false}>
+      <PageLayout title="ABC Cards" showHeader={true} fullHeight={false}>
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center space-y-2">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>

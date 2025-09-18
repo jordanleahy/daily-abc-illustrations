@@ -1,8 +1,8 @@
 import { useMemo, useState, useEffect } from 'react';
 import { useDailyPublishedById } from './useDailyPublishedById';
 import { useDailyPublishedPages } from './useDailyPublishedPages';
-import { usePageImageUrls } from './usePageImageUrls';
-import { useBook } from './useBook';
+import { usePublicPageImage } from './usePublicPageImage';
+import { usePublicBook } from './usePublicBook';
 import { useSeoMetadata, useSeoMetadataByBook } from './useSeoMetadata';
 import { generateDailyPublishedOpenGraph } from '@/utils/openGraph';
 import { formatTimeRemaining } from '@/utils/timeUtils';
@@ -23,7 +23,7 @@ export const useDailyPublishedOpenGraph = (
   const { data: pages = [] } = useDailyPublishedPages(dailyContent?.book_id);
   
   // Fetch book details for category/description
-  const { data: book } = useBook(dailyContent?.book_id);
+  const { data: book } = usePublicBook(dailyContent?.book_id);
   
   // Get current page
   const currentPage = pages[currentPageIndex];
@@ -63,8 +63,8 @@ export const useDailyPublishedOpenGraph = (
     fetchFirstPageImage();
   }, [firstPage?.id]);
   
-  // Fetch image for the first page (for OpenGraph image) - keep this as backup
-  const { currentImage: firstPageImage } = usePageImageUrls(firstPage?.id);
+  // Fetch image for the first page using public hook
+  const { data: firstPageImage } = usePublicPageImage(firstPage?.id || '');
   
   // Debug logging for OpenGraph image
   console.log('[useDailyPublishedOpenGraph] Debug info:', {
@@ -128,7 +128,7 @@ export const useDailyPublishedOpenGraph = (
     }
 
     // Don't generate metadata until we have the first page image loaded or confirmed it doesn't exist
-    if (firstPage?.id && !firstPageImage && firstPageImage !== null) {
+    if (firstPage?.id && firstPageImage === undefined) {
       console.log('[useDailyPublishedOpenGraph] Waiting for first page image to load...');
       return null;
     }

@@ -35,6 +35,7 @@ export const PageHeader = ({ title = "ABC Cards Platform" }: PageHeaderProps) =>
     { name: 'Chat', href: '/' },
     { name: 'My Books', href: '/books' },
     { name: 'Agents', href: '/agents' },
+    { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },
   ];
 
   return (

@@ -1,6 +1,5 @@
 import { usePublicPageImage } from '@/hooks/usePublicPageImage';
 import { Shimmer } from '@/components/ui/shimmer';
-import { OptimizedImage } from '@/components/ui/optimized-image';
 
 interface PublicPageImageProps {
   pageId: string;
@@ -24,10 +23,11 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
   }
 
   return (
-    <OptimizedImage
+    <img
       src={imageData.image_url}
       alt="Page illustration"
       className={`w-full h-full object-cover object-top ${className}`}
+      loading="lazy"
     />
   );
 }

@@ -37,58 +37,44 @@ const SAFE_SPACE_CONFIGS: Record<string, SafeSpaceConfig> = {
   '1:1': {
     aspectRatio: '1:1 Square Format',
     description: 'Centered layout with balanced margins on all sides',
-    safeZones: 'Maintain MINIMUM 22-25% margins on all sides, especially TOP MARGIN for letter-based content, ensure NO illustrations extend beyond inner 50% of frame',
-    composition: 'Strictly centered layout with generous breathing room from all edges, all visual elements contained well within safe boundaries',
-    negativePrompts: 'STRICTLY PROHIBIT any corner-to-corner compositions, NEVER allow illustrations to bleed to edges, no edge-hugging elements, NEVER allow letters or illustrations to touch or get close to any edge, maintain large buffer zones around all elements'
+    safeZones: 'Maintain balanced 18-20% margins on all sides, especially TOP MARGIN for letter-based content',
+    composition: 'Centered layout with generous breathing room from top edge, well-framed central focus',
+    negativePrompts: 'No corner-to-corner compositions, maintain balanced spacing, no edge-hugging elements, NEVER allow letters to touch or get close to the top edge, no cramped letter positioning'
   },
   '16:9': {
     aspectRatio: '16:9 Landscape Format',
     description: 'Wide horizontal layout with proper safe boundaries',
-    safeZones: 'Maintain MINIMUM 20-25% margins on left and right sides, MINIMUM 15-20% margins on top and bottom, ensure NO illustration bleeding',
-    composition: 'Strictly contained wide horizontal layout with all visual elements well within safe boundaries, never extending to edges',
-    negativePrompts: 'STRICTLY PROHIBIT edge bleeding, no illustrations touching left/right/top/bottom edges, no edge-to-edge content, maintain large buffer zones around all visual elements'
+    safeZones: 'Maintain 15-20% margins on left and right sides, 10% margins on top and bottom',
+    composition: 'Wide horizontal layout with workflow elements well within safe boundaries',
+    negativePrompts: 'No cramped horizontal layouts, no elements touching left/right edges, no edge-to-edge content'
   },
   '9:16': {
     aspectRatio: '9:16 Portrait Format',
     description: 'Vertical orientation with generous breathing room',
-    safeZones: 'Maintain MINIMUM 18-22% margins on top and bottom, MINIMUM 12-15% margins on left and right sides, prevent any edge bleeding',
-    composition: 'Strictly contained vertical orientation with generous breathing room from all edges',
-    negativePrompts: 'STRICTLY PROHIBIT elements touching any edges, maintain large vertical and horizontal buffer zones, no edge bleeding, no cramped layouts'
+    safeZones: 'Maintain 12-15% margins on top and bottom, 8-10% margins on left and right sides',
+    composition: 'Vertical orientation with generous breathing room',
+    negativePrompts: 'No elements touching top/bottom edges, maintain vertical breathing room, no cramped vertical layouts'
   },
   '4:3': {
     aspectRatio: '4:3 Standard Format',
     description: 'Balanced horizontal spacing with proper frame margins',
-    safeZones: 'Maintain MINIMUM 18-20% margins on left and right, MINIMUM 15-18% margins on top and bottom, ensure complete edge safety',
-    composition: 'Strictly balanced horizontal spacing with large frame margins, all elements contained within center area',
-    negativePrompts: 'STRICTLY PROHIBIT any elements touching frame borders, no edge bleeding, maintain large horizontal and vertical buffer zones around all visual elements'
+    safeZones: 'Maintain 12% margins on left and right, 10% margins on top and bottom',
+    composition: 'Balanced horizontal spacing with proper frame margins',
+    negativePrompts: 'No cramped compositions, no elements touching frame borders, maintain horizontal balance'
   },
   '3:4': {
     aspectRatio: '3:4 Portrait Format',
     description: 'Optimized for social media viewing with proper vertical spacing',
-    safeZones: 'Maintain MINIMUM 15-20% margins on top and bottom, MINIMUM 12-15% margins on left and right sides, prevent platform overlay conflicts',
-    composition: 'Strictly contained social media layout with proper vertical spacing, all elements within safe center area',
-    negativePrompts: 'STRICTLY PROHIBIT elements touching any edges, maintain social media safe zones with large buffer areas, no edge bleeding, no cramped content'
+    safeZones: 'Maintain 10-12% margins on top and bottom, 8% margins on left and right sides',
+    composition: 'Optimized for social media viewing with proper vertical spacing',
+    negativePrompts: 'No elements touching edges, maintain social media safe zones, no cramped vertical content'
   },
   '4:5': {
     aspectRatio: '4:5 Portrait Format',
     description: 'Moderately tall portrait layout ideal for print and digital display',
-    safeZones: 'Maintain MINIMUM 18-22% margins on top and bottom, MINIMUM 15% margins on left and right sides, ensure print-safe boundaries',
-    composition: 'Strictly contained moderately tall portrait with well-balanced vertical composition, all elements within safe boundaries',
-    negativePrompts: 'STRICTLY PROHIBIT elements touching any edges, maintain large balanced buffer zones, no edge bleeding, no cramped portrait layouts'
-  },
-  '1200:630': {
-    aspectRatio: '1200x630 Social Media Format',
-    description: 'Optimized for social media sharing with platform-safe composition',
-    safeZones: 'Maintain MINIMUM 20-25% margins on left and right sides, MINIMUM 25-30% margins on top and bottom to prevent any illustration bleeding and ensure complete safety from platform UI overlays',
-    composition: 'Strictly centered layout with all illustrations, text, and visual elements contained well within the safe boundaries, never extending beyond the inner 50% of the frame',
-    negativePrompts: 'STRICTLY PROHIBIT any illustration elements from touching or getting close to edges, NEVER allow edge bleeding, no illustrations extending to outer margins, no edge-to-edge content, no corner positioning, maintain extra-large buffer zones around all visual elements'
-  },
-  '40:21': {
-    aspectRatio: '40:21 Social Media Format (1200x630)',
-    description: 'Optimized for social media sharing with platform-safe composition',
-    safeZones: 'Maintain MINIMUM 20-25% margins on left and right sides, MINIMUM 25-30% margins on top and bottom to prevent any illustration bleeding and ensure complete safety from platform UI overlays',
-    composition: 'Strictly centered layout with all illustrations, text, and visual elements contained well within the safe boundaries, never extending beyond the inner 50% of the frame',
-    negativePrompts: 'STRICTLY PROHIBIT any illustration elements from touching or getting close to edges, NEVER allow edge bleeding, no illustrations extending to outer margins, no edge-to-edge content, no corner positioning, maintain extra-large buffer zones around all visual elements'
+    safeZones: 'Maintain 12-15% margins on top and bottom, 10% margins on left and right sides',
+    composition: 'Moderately tall portrait with well-balanced vertical composition',
+    negativePrompts: 'No elements touching top/bottom edges, maintain balanced vertical spacing, no cramped portrait layouts'
   }
 };
 

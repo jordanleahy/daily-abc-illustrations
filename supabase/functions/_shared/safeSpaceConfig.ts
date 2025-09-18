@@ -75,20 +75,6 @@ const SAFE_SPACE_CONFIGS: Record<string, SafeSpaceConfig> = {
     safeZones: 'Maintain 12-15% margins on top and bottom, 10% margins on left and right sides',
     composition: 'Moderately tall portrait with well-balanced vertical composition',
     negativePrompts: 'No elements touching top/bottom edges, maintain balanced vertical spacing, no cramped portrait layouts'
-  },
-  '1200:630': {
-    aspectRatio: '1200x630 Social Media Format',
-    description: 'Optimized for social media sharing with platform-safe composition',
-    safeZones: 'Maintain 12-15% margins on left and right sides, 15-20% margins on top and bottom to avoid platform UI overlays',
-    composition: 'Wide social media layout with title elements in upper portion, key visuals centered, and breathing room for platform interface elements',
-    negativePrompts: 'No elements touching edges, avoid placing critical text or visuals in outer 15% margins, no edge-to-edge layouts that conflict with social platform overlays, maintain readability zones'
-  },
-  '40:21': {
-    aspectRatio: '40:21 Social Media Format (1200x630)',
-    description: 'Optimized for social media sharing with platform-safe composition',
-    safeZones: 'Maintain 12-15% margins on left and right sides, 15-20% margins on top and bottom to avoid platform UI overlays',
-    composition: 'Wide social media layout with title elements in upper portion, key visuals centered, and breathing room for platform interface elements',
-    negativePrompts: 'No elements touching edges, avoid placing critical text or visuals in outer 15% margins, no edge-to-edge layouts that conflict with social platform overlays, maintain readability zones'
   }
 };
 

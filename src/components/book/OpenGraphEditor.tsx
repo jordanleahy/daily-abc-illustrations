@@ -1,64 +1,4 @@
-/**
- * ==================================================================================
- * OPENGRAPH EDITOR COMPONENT
- * ==================================================================================
- * 
- * BUSINESS PURPOSE:
- * Provides a comprehensive interface for managing social media metadata and
- * thumbnail generation for book content. Enables content creators to optimize
- * how their books appear when shared across social platforms, directly impacting
- * click-through rates and engagement metrics.
- * 
- * FEATURE SET:
- * 1. Social Media Metadata Management
- *    - Custom title optimization (60 char limit awareness)
- *    - Description editing (160 char limit for meta descriptions)
- *    - Image upload and management
- * 
- * 2. AI Thumbnail Generation
- *    - Automated thumbnail creation using book metadata
- *    - Real-time generation progress tracking
- *    - Version control with rollback capabilities
- * 
- * 3. Preview & Validation
- *    - Live social media preview
- *    - Platform-specific optimization
- *    - Visual validation of changes
- * 
- * TECHNICAL ARCHITECTURE:
- * - React functional component with hooks
- * - Real-time data synchronization via React Query
- * - File upload handling with validation
- * - Inline editing with optimistic updates
- * - Toast notifications for user feedback
- * 
- * USER EXPERIENCE DESIGN:
- * - Inline editing for quick updates
- * - Visual feedback for all actions
- * - Progressive disclosure of advanced features
- * - Mobile-responsive design
- * 
- * BUSINESS RULES:
- * - Image priority: Custom upload > Generated thumbnail > Default
- * - File size limits (5MB max for uploads)
- * - Supported formats (images only)
- * - Version control for generated content
- * 
- * PERFORMANCE CONSIDERATIONS:
- * - Optimistic updates for immediate feedback
- * - Debounced API calls to prevent spam
- * - Progressive image loading
- * - Efficient re-render management
- * 
- * INTEGRATION POINTS:
- * - Book SEO metadata system
- * - Thumbnail generation service
- * - Supabase Storage for image hosting
- * - OpenAI for automated content generation
- * ==================================================================================
- */
-
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -66,18 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
-import { Loader2, Upload, Eye, Wand2, X, Image, Edit, FileText } from 'lucide-react';
+import { Loader2, Upload, Eye, Wand2, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { useUpdateSeoMetadata } from '@/hooks/useUpdateSeoMetadata';
-import { useLatestBookThumbnail, useGenerateBookThumbnail, useBookThumbnailProgress, useBookThumbnails } from '@/hooks/useBookThumbnails';
-import { useGenerateBookThumbnailPrompt } from '@/hooks/useGenerateBookThumbnailPrompt';
-import { BookThumbnailPromptEditor } from './BookThumbnailPromptEditor';
-import { BookThumbnailVersionHistory } from './BookThumbnailVersionHistory';
 import { useAuth } from '@/hooks/useAuth';
-import { BookThumbnail } from '@/types/bookThumbnail';
 
 interface OpenGraphEditorProps {
   bookId: string;
@@ -85,88 +19,20 @@ interface OpenGraphEditorProps {
   bookDescription?: string;
 }
 
-/**
- * COMPONENT: OpenGraphEditor
- * 
- * PROPS:
- * - bookId: Unique identifier for the book
- * - bookTitle: Default title (fallback for SEO title)
- * - bookDescription: Default description (fallback for SEO description)
- * 
- * STATE MANAGEMENT:
- * - Local editing states for inline editing UX
- * - Upload progress tracking
- * - Generation status monitoring
- * - Error handling and user feedback
- * 
- * DATA FLOW:
- * 1. Component mounts → Fetch existing SEO metadata
- * 2. User edits → Optimistic local updates
- * 3. Save action → API call + cache invalidation
- * 4. Generation → Progress polling + status updates
- * 5. Completion → Automatic UI refresh
- */
 export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGraphEditorProps) => {
   const { data: seoMetadata, isLoading, refetch } = useBookSeoMetadata(bookId);
-  const { data: latestThumbnail, refetch: refetchLatestThumbnail } = useLatestBookThumbnail(bookId);
-  const { data: thumbnailProgress } = useBookThumbnailProgress(bookId);
-  const { data: allThumbnails } = useBookThumbnails(bookId);
-  const generateThumbnail = useGenerateBookThumbnail();
-  const generatePrompt = useGenerateBookThumbnailPrompt();
   const updateSeoMetadata = useUpdateSeoMetadata();
   const { user } = useAuth();
-  const queryClient = useQueryClient();
-
-  // Mutation for generating image from existing record
-  const generateImageFromRecord = useMutation({
-    mutationFn: async ({ recordId, userId }: { recordId: string; userId: string }) => {
-      const { data, error } = await supabase.functions.invoke('generate-book-thumbnail', {
-        body: { recordId, userId },
-      });
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      toast.success('Thumbnail generation started');
-      queryClient.invalidateQueries({ queryKey: ['book-thumbnail-progress', bookId] });
-      queryClient.invalidateQueries({ queryKey: ['book-thumbnails', bookId] });
-      refetch();
-    },
-    onError: (error) => {
-      console.error('Generate thumbnail error:', error);
-      toast.error('Failed to generate thumbnail image');
-    },
-  });
   
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isEditingPrompt, setIsEditingPrompt] = useState(false);
-  const [promptContent, setPromptContent] = useState('');
-  const [selectedThumbnailVersion, setSelectedThumbnailVersion] = useState<BookThumbnail | null>(null);
-  const [isReverting, setIsReverting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentTitle = seoMetadata?.seo_title || bookTitle;
   const currentDescription = seoMetadata?.seo_description || bookDescription || '';
-  // Prioritize selected version, then SEO metadata image, then latest thumbnail
-  const currentImage = selectedThumbnailVersion?.thumbnail_url || seoMetadata?.og_image_url || latestThumbnail?.thumbnail_url;
-  const isViewingHistoricalVersion = selectedThumbnailVersion && !selectedThumbnailVersion.is_latest;
-  
-  // Get the latest thumbnail record (which may have a prompt but no image yet)
-  const latestThumbnailRecord = allThumbnails?.[0]; // First item is latest due to ordering
-  const hasPrompt = Boolean(latestThumbnailRecord?.prompt_used?.trim());
-  const canGenerateImage = hasPrompt && latestThumbnailRecord?.generation_status !== 'in_progress' && user?.id;
-
-  // Watch for thumbnail generation completion and refresh data
-  useEffect(() => {
-    // If generation completed, invalidate all thumbnail-related queries to refresh UI
-    if (thumbnailProgress?.generation_status === 'complete') {
-      queryClient.invalidateQueries({ queryKey: ['book-thumbnail-latest', bookId] });
-      queryClient.invalidateQueries({ queryKey: ['book-thumbnails', bookId] });
-    }
-  }, [thumbnailProgress?.generation_status, queryClient, bookId]);
+  const currentImage = seoMetadata?.og_image_url;
 
   const handleTitleSave = async (newTitle: string) => {
     try {
@@ -200,26 +66,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
   };
 
-  /**
-   * IMAGE UPLOAD HANDLER
-   * 
-   * FEATURES:
-   * - File type validation (images only)
-   * - Size validation (5MB limit)
-   * - Progress tracking
-   * - Automatic SEO metadata update
-   * - Error handling with user feedback
-   * 
-   * SECURITY:
-   * - File type verification
-   * - Size limits enforcement
-   * - User folder isolation in storage
-   * 
-   * UX CONSIDERATIONS:
-   * - Immediate visual feedback
-   * - Loading states during upload
-   * - Error recovery guidance
-   */
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -284,21 +130,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
   };
 
-  /**
-   * AUTO-GENERATION HANDLER
-   * 
-   * BUSINESS LOGIC:
-   * - Leverages OpenAI for SEO optimization
-   * - Generates title, description, and metadata
-   * - Maintains brand voice and style consistency
-   * - Optimizes for search engine visibility
-   * 
-   * TECHNICAL IMPLEMENTATION:
-   * - Calls generate-seo-metadata edge function
-   * - Handles async processing with loading states
-   * - Provides user feedback throughout process
-   * - Automatic cache refresh on completion
-   */
   const handleAutoGenerate = async () => {
     setIsGenerating(true);
     try {
@@ -320,140 +151,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     } finally {
       setIsGenerating(false);
     }
-  };
-
-  /**
-   * PROMPT GENERATION HANDLER
-   * 
-   * WORKFLOW:
-   * 1. User clicks "Generate Prompt"
-   * 2. AI analyzes book metadata and creates optimized prompt
-   * 3. Prompt is stored in database with version control
-   * 4. User can review and edit before image generation
-   */
-  const handleGeneratePrompt = async () => {
-    try {
-      const result = await generatePrompt.mutateAsync({ bookId });
-      setPromptContent(result.prompt);
-      setIsEditingPrompt(true);
-    } catch (error) {
-      // Error handling is done in the mutation
-    }
-  };
-
-   /**
-    * DIRECT IMAGE GENERATION HANDLER
-    * 
-    * Used when we already have a prompt and want to generate the image
-    */
-    const handleGenerateImageFromPrompt = async () => {
-     if (!latestThumbnailRecord?.id) {
-       toast.error('No prompt available for image generation');
-       return;
-     }
-
-     if (!hasPrompt) {
-       toast.error('Please generate a prompt first');
-       return;
-     }
-
-     if (!user?.id) {
-       toast.error('User authentication required');
-       return;
-     }
-
-     // Use the mutation hook to prevent multiple clicks
-     generateImageFromRecord.mutate({
-       recordId: latestThumbnailRecord.id,
-       userId: user.id,
-     });
-
-     setIsEditingPrompt(false); // Close prompt editor when generation starts
-   };
-
-  /**
-   * PROMPT EDITING HANDLERS
-   */
-  const handleSavePrompt = async () => {
-    if (!latestThumbnailRecord?.id) {
-      toast.error('No thumbnail record found');
-      return;
-    }
-
-    if (!promptContent?.trim()) {
-      toast.error('Prompt cannot be empty');
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('book_thumbnails')
-        .update({ 
-          prompt_used: promptContent.trim(),
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', latestThumbnailRecord.id);
-
-      if (error) throw error;
-      
-      setIsEditingPrompt(false);
-      refetch(); // Refresh data to update hasPrompt state
-      toast.success('Prompt saved successfully');
-    } catch (error) {
-      console.error('Save prompt error:', error);
-      toast.error('Failed to save prompt');
-    }
-  };
-
-  const handleCancelPromptEdit = () => {
-    setIsEditingPrompt(false);
-    setPromptContent(latestThumbnailRecord?.prompt_used || '');
-  };
-
-  const handleEditExistingPrompt = () => {
-    setPromptContent(latestThumbnailRecord?.prompt_used || '');
-    setIsEditingPrompt(true);
-  };
-
-  // Version history handlers
-  const handleVersionSelect = (thumbnail: BookThumbnail) => {
-    setSelectedThumbnailVersion(thumbnail);
-  };
-
-  const handleRevertToVersion = async (thumbnail: BookThumbnail) => {
-    if (!thumbnail || thumbnail.is_latest) return;
-    
-    setIsReverting(true);
-    try {
-      const { error } = await supabase
-        .from('book_thumbnails')
-        .update({ is_latest: true, updated_at: new Date().toISOString() })
-        .eq('id', thumbnail.id);
-
-      if (error) throw error;
-
-      // Set all other thumbnails as not latest
-      await supabase
-        .from('book_thumbnails')
-        .update({ is_latest: false, updated_at: new Date().toISOString() })
-        .eq('book_id', bookId)
-        .neq('id', thumbnail.id);
-
-      toast.success(`Successfully reverted to version ${thumbnail.version_number}`);
-
-      // Reset selection to show current
-      setSelectedThumbnailVersion(null);
-      refetch();
-    } catch (error) {
-      console.error('Error reverting to version:', error);
-      toast.error('Failed to revert to selected version');
-    } finally {
-      setIsReverting(false);
-    }
-  };
-
-  const handleBackToCurrent = () => {
-    setSelectedThumbnailVersion(null);
   };
 
   if (isLoading) {
@@ -548,7 +245,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 <img
                   src={currentImage}
                   alt="OpenGraph preview"
-                  className="w-full max-w-md aspect-[1200/630] object-cover rounded-md border"
+                  className="w-full max-w-md h-32 object-cover rounded-md border"
                 />
                 <Button
                   variant="destructive"
@@ -568,13 +265,12 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
               </div>
             )}
             
-            <div className="space-y-2">
-              {/* Upload Button */}
+            <div className="flex gap-2">
               <Button
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading || isViewingHistoricalVersion}
-                className="flex items-center gap-2 w-full"
+                disabled={isUploading}
+                className="flex items-center gap-2"
               >
                 {isUploading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -583,66 +279,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 )}
                 {currentImage ? 'Replace Image' : 'Upload Image'}
               </Button>
-
-              {/* Thumbnail Generation Flow */}
-              <div className="space-y-2">
-                {/* Generate Prompt Button */}
-                <Button
-                  onClick={handleGeneratePrompt}
-                  disabled={generatePrompt.isPending || isViewingHistoricalVersion}
-                  variant="outline"
-                  className="flex items-center gap-2 w-full"
-                >
-                  {generatePrompt.isPending ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating Prompt...
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-4 h-4" />
-                      Generate Prompt
-                    </>
-                  )}
-                </Button>
-
-                {/* Generate Thumb Button - disabled until prompt exists */}
-                <Button
-                  onClick={handleGenerateImageFromPrompt}
-                  disabled={!hasPrompt || !canGenerateImage || generateImageFromRecord.isPending || thumbnailProgress?.generation_status === 'in_progress' || isViewingHistoricalVersion}
-                  className="flex items-center gap-2 w-full"
-                  title={!hasPrompt ? "Generate a prompt first to enable thumbnail generation" : 
-                         generateImageFromRecord.isPending || thumbnailProgress?.generation_status === 'in_progress' ? "Thumbnail generation in progress" :
-                         !canGenerateImage ? "Cannot generate image at this time" : 
-                         isViewingHistoricalVersion ? "Cannot generate while viewing historical version" :
-                         "Generate thumbnail from the current prompt"}
-                >
-                  {generateImageFromRecord.isPending || thumbnailProgress?.generation_status === 'in_progress' ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      Generating Thumb...
-                    </>
-                  ) : (
-                    <>
-                      <Image className="w-4 h-4" />
-                      {hasPrompt ? 'Generate Thumb' : 'Generate Thumb (Prompt Required)'}
-                    </>
-                  )}
-                </Button>
-
-                {/* Edit Prompt Button - only show when prompt exists */}
-                {hasPrompt && (
-                  <Button
-                    onClick={handleEditExistingPrompt}
-                    disabled={isViewingHistoricalVersion}
-                    variant="outline"
-                    className="flex items-center gap-2 w-full"
-                  >
-                    <Edit className="w-4 h-4" />
-                    Edit Prompt
-                  </Button>
-                )}
-              </div>
             </div>
           </div>
           
@@ -655,62 +291,11 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
           />
         </div>
 
-        {/* Version History */}
-        {allThumbnails && allThumbnails.length > 0 && (
-          <BookThumbnailVersionHistory
-            thumbnails={allThumbnails}
-            selectedVersionId={selectedThumbnailVersion?.id}
-            onVersionSelect={handleVersionSelect}
-            onRevertToVersion={handleRevertToVersion}
-            isCurrentLatest={!isViewingHistoricalVersion}
-            onBackToCurrent={handleBackToCurrent}
-            isReverting={isReverting}
-          />
-        )}
-
-        {/* Prompt Editor Modal */}
-        {isEditingPrompt && (
-          <div className="space-y-4">
-            <BookThumbnailPromptEditor
-              content={promptContent}
-              onContentChange={setPromptContent}
-              onSave={handleSavePrompt}
-              onCancel={handleCancelPromptEdit}
-              onGenerateImage={handleGenerateImageFromPrompt}
-              isGeneratingImage={thumbnailProgress?.generation_status === 'in_progress'}
-              aspectRatio="1200:630"
-            />
-          </div>
-        )}
-
-        {/* Status Badges */}
-        <div className="flex items-center gap-2 flex-wrap">
+        {/* Status Badge */}
+        <div className="flex items-center gap-2">
           <Badge variant={seoMetadata ? 'default' : 'secondary'}>
             {seoMetadata ? 'Custom Settings' : 'Using Defaults'}
           </Badge>
-          {latestThumbnail && !seoMetadata?.og_image_url && (
-            <Badge variant="outline">
-              Using Generated Thumbnail
-            </Badge>
-          )}
-          {hasPrompt && !latestThumbnail && (
-            <Badge variant="secondary">
-              <FileText className="w-3 h-3 mr-1" />
-              Prompt Ready
-            </Badge>
-          )}
-          {thumbnailProgress?.generation_status === 'in_progress' && (
-            <Badge variant="secondary">
-              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
-              Generating Image
-            </Badge>
-          )}
-          {isViewingHistoricalVersion && (
-            <Badge variant="outline">
-              <Eye className="w-3 h-3 mr-1" />
-              Viewing Version {selectedThumbnailVersion?.version_number}
-            </Badge>
-          )}
         </div>
 
         {/* Preview Card */}
@@ -723,7 +308,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
               <img
                 src={currentImage}
                 alt="Preview"
-                className="w-full aspect-[1200/630] object-cover rounded max-h-20"
+                className="w-full h-20 object-cover rounded"
               />
             )}
           </div>

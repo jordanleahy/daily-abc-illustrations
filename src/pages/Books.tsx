@@ -5,13 +5,19 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useBooks } from '@/hooks/useBooks';
-import { BookOpen, Calendar, Users } from 'lucide-react';
+import { AdminOnly } from '@/components/AdminOnly';
+import { BookOpen, Calendar, Users, Sparkles } from 'lucide-react';
 import { Container } from '@/components/layout/Container';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 export default function Books() {
   const { user, loading: authLoading } = useAuth();
   const { books, loading } = useBooks();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [seoGenerating, setSeoGenerating] = useState(false);
 
   // Redirect to auth if not authenticated
   if (!authLoading && !user) {
@@ -25,6 +31,33 @@ export default function Books() {
 
   const handleCreateNewBook = () => {
     navigate('/');
+  };
+
+  const handleGenerateSEOForAllBooks = async () => {
+    try {
+      setSeoGenerating(true);
+      
+      const { data, error } = await supabase.functions.invoke('generate-seo-for-all-books');
+      
+      if (error) {
+        throw error;
+      }
+      
+      toast({
+        title: "SEO Generation Started",
+        description: `Processing ${data.totalBooks} books. Check the Edge Function logs for progress.`,
+      });
+      
+    } catch (error) {
+      console.error('Error triggering SEO generation:', error);
+      toast({
+        title: "Error",
+        description: "Failed to start SEO generation. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setSeoGenerating(false);
+    }
   };
 
   // Show loading while auth is being checked
@@ -67,10 +100,23 @@ export default function Books() {
                 Create and manage your personalized ABC learning books
               </p>
             </div>
-            <Button onClick={handleCreateNewBook} className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Create New Book
-            </Button>
+            <div className="flex gap-2">
+              <AdminOnly>
+                <Button 
+                  onClick={handleGenerateSEOForAllBooks}
+                  disabled={seoGenerating}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  {seoGenerating ? 'Generating SEO...' : 'Generate SEO for All Books'}
+                </Button>
+              </AdminOnly>
+              <Button onClick={handleCreateNewBook} className="flex items-center gap-2">
+                <BookOpen className="w-4 h-4" />
+                Create New Book
+              </Button>
+            </div>
           </div>
 
           {books.length === 0 ? (

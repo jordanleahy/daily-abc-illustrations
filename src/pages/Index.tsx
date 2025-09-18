@@ -8,7 +8,7 @@ import { Send, BookOpen, ExternalLink, Image, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PageLayout } from '@/components/layout';
 import { useAuth } from '@/hooks/useAuth';
-import { useDailyPublished } from '@/hooks/useDailyPublished';
+import { useActiveDailyPublished } from '@/hooks/useActiveDailyPublished';
 import { toast } from 'sonner';
 
 interface Message {
@@ -20,7 +20,7 @@ interface Message {
 
 const Index = () => {
   const { session, isAuthenticated, loading } = useAuth();
-  const { data: dailyContent, isLoading: isDailyLoading } = useDailyPublished();
+  const { data: activeDaily, isLoading: isDailyLoading } = useActiveDailyPublished();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -47,12 +47,12 @@ const Index = () => {
     setUserScrolledUp(false);
   }, [messages.length]);
 
-  // Removed automatic redirect to daily publication - users can navigate manually if needed
-  // useEffect(() => {
-  //   if (!loading && !isDailyLoading && dailyContent && dailyContent.id) {
-  //     navigate(`/daily-published/${dailyContent.id}`, { replace: true });
-  //   }
-  // }, [dailyContent, loading, isDailyLoading, navigate]);
+  // Redirect non-authenticated users to active daily published content
+  useEffect(() => {
+    if (!loading && !isDailyLoading && !isAuthenticated && activeDaily?.id) {
+      navigate(`/daily-published/${activeDaily.id}`, { replace: true });
+    }
+  }, [activeDaily, loading, isDailyLoading, isAuthenticated, navigate]);
 
   // Handle scroll events to detect if user scrolled up
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
@@ -77,16 +77,31 @@ const Index = () => {
     );
   }
 
-  // Show authentication required message
+  // Show loading for non-authenticated users while checking for active daily content
   if (!isAuthenticated) {
+    if (!isDailyLoading && !activeDaily) {
+      // No active daily content available - show fallback message
+      return (
+        <PageLayout title="ABC Cards" showHeader={true} fullHeight={false}>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center space-y-4 max-w-md mx-auto p-6">
+              <h2 className="text-xl font-semibold">No Daily Content Available</h2>
+              <p className="text-muted-foreground">
+                There's currently no active daily published content. Please check back later or sign in to access more features.
+              </p>
+            </div>
+          </div>
+        </PageLayout>
+      );
+    }
+    
+    // Still loading or has daily content (will redirect) - show loading
     return (
-      <PageLayout title="ABC Cards Chat" showHeader={true} fullHeight={false}>
+      <PageLayout title="ABC Cards" showHeader={true} fullHeight={false}>
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-4 max-w-md mx-auto p-6">
-            <h2 className="text-xl font-semibold">Authentication Required</h2>
-            <p className="text-muted-foreground">
-              Please sign in to chat with your ABC Cards agent. You can sign in using the profile button in the top navigation.
-            </p>
+          <div className="text-center space-y-2">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="text-muted-foreground">Loading...</p>
           </div>
         </div>
       </PageLayout>

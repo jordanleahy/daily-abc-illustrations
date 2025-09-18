@@ -69,7 +69,7 @@ import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 import { Loader2, Upload, Eye, Wand2, X, Image, Edit, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useMutation } from '@tanstack/react-query';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { useUpdateSeoMetadata } from '@/hooks/useUpdateSeoMetadata';
 import { useLatestBookThumbnail, useGenerateBookThumbnail, useBookThumbnailProgress, useBookThumbnails } from '@/hooks/useBookThumbnails';
@@ -116,6 +116,27 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const updateSeoMetadata = useUpdateSeoMetadata();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Mutation for generating image from existing record
+  const generateImageFromRecord = useMutation({
+    mutationFn: async ({ recordId, userId }: { recordId: string; userId: string }) => {
+      const { data, error } = await supabase.functions.invoke('generate-book-thumbnail', {
+        body: { recordId, userId },
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      toast.success('Thumbnail generation started');
+      queryClient.invalidateQueries({ queryKey: ['book-thumbnail-progress', bookId] });
+      queryClient.invalidateQueries({ queryKey: ['book-thumbnails', bookId] });
+      refetch();
+    },
+    onError: (error) => {
+      console.error('Generate thumbnail error:', error);
+      toast.error('Failed to generate thumbnail image');
+    },
+  });
   
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -320,12 +341,12 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
   };
 
-  /**
-   * DIRECT IMAGE GENERATION HANDLER
-   * 
-   * Used when we already have a prompt and want to generate the image
-   */
-   const handleGenerateImageFromPrompt = async () => {
+   /**
+    * DIRECT IMAGE GENERATION HANDLER
+    * 
+    * Used when we already have a prompt and want to generate the image
+    */
+    const handleGenerateImageFromPrompt = async () => {
      if (!latestThumbnailRecord?.id) {
        toast.error('No prompt available for image generation');
        return;
@@ -341,28 +362,13 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
        return;
      }
 
-     try {
-       // Call the generate-book-thumbnail function directly with the existing record
-       const { data, error } = await supabase.functions.invoke('generate-book-thumbnail', {
-         body: {
-           recordId: latestThumbnailRecord.id,
-           userId: user.id,
-         },
-       });
+     // Use the mutation hook to prevent multiple clicks
+     generateImageFromRecord.mutate({
+       recordId: latestThumbnailRecord.id,
+       userId: user.id,
+     });
 
-       if (error) throw error;
-
-        toast.success('Thumbnail generation started');
-        setIsEditingPrompt(false); // Close prompt editor when generation starts
-        
-        // Invalidate queries to refresh UI state
-        queryClient.invalidateQueries({ queryKey: ['book-thumbnail-progress', bookId] });
-        queryClient.invalidateQueries({ queryKey: ['book-thumbnails', bookId] });
-        refetch();
-     } catch (error) {
-       console.error('Generate thumbnail error:', error);
-       toast.error('Failed to generate thumbnail image');
-     }
+     setIsEditingPrompt(false); // Close prompt editor when generation starts
    };
 
   /**
@@ -603,15 +609,15 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 {/* Generate Thumb Button - disabled until prompt exists */}
                 <Button
                   onClick={handleGenerateImageFromPrompt}
-                  disabled={!hasPrompt || !canGenerateImage || thumbnailProgress?.generation_status === 'in_progress' || isViewingHistoricalVersion}
+                  disabled={!hasPrompt || !canGenerateImage || generateImageFromRecord.isPending || thumbnailProgress?.generation_status === 'in_progress' || isViewingHistoricalVersion}
                   className="flex items-center gap-2 w-full"
                   title={!hasPrompt ? "Generate a prompt first to enable thumbnail generation" : 
-                         thumbnailProgress?.generation_status === 'in_progress' ? "Thumbnail generation in progress" :
+                         generateImageFromRecord.isPending || thumbnailProgress?.generation_status === 'in_progress' ? "Thumbnail generation in progress" :
                          !canGenerateImage ? "Cannot generate image at this time" : 
                          isViewingHistoricalVersion ? "Cannot generate while viewing historical version" :
                          "Generate thumbnail from the current prompt"}
                 >
-                  {thumbnailProgress?.generation_status === 'in_progress' ? (
+                  {generateImageFromRecord.isPending || thumbnailProgress?.generation_status === 'in_progress' ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Generating Thumb...

@@ -3,7 +3,7 @@ import { useDailyPublishedById } from './useDailyPublishedById';
 import { useDailyPublishedPages } from './useDailyPublishedPages';
 import { usePageImageUrls } from './usePageImageUrls';
 import { useBook } from './useBook';
-import { useSeoMetadata } from './useSeoMetadata';
+import { useSeoMetadata, useSeoMetadataByBook } from './useSeoMetadata';
 import { generateDailyPublishedOpenGraph } from '@/utils/openGraph';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { SEOMetadata } from '@/types/openGraph';
@@ -76,14 +76,50 @@ export const useDailyPublishedOpenGraph = (
     directFetchedUrl: firstPageImageUrl
   });
 
-  // Fetch SEO metadata from database
+  // Fetch SEO metadata from database - try daily published first, then fallback to book-level
   const { data: seoMetadata, isLoading: isLoadingSeo } = useSeoMetadata(dailyId);
   
+  // If no daily-specific SEO data, check for book-level SEO data
+  const { data: bookSeoMetadata, isLoading: isLoadingBookSeo } = useSeoMetadataByBook(
+    dailyContent?.book_id && !seoMetadata ? dailyContent.book_id : undefined
+  );
+  
+  // Auto-generate daily-specific SEO if needed
+  useEffect(() => {
+    const generateDailySEO = async () => {
+      if (!dailyContent || !dailyId || seoMetadata || isLoadingSeo) return;
+      
+      // Only generate if we have book-level SEO but no daily-specific SEO
+      if (bookSeoMetadata && !isLoadingBookSeo) {
+        try {
+          console.log('Auto-generating daily-specific SEO for:', dailyId);
+          const timeRemaining = formatTimeRemaining(dailyContent.expires_at);
+          
+          await supabase.functions.invoke('update-seo-for-daily-published', {
+            body: {
+              dailyPublishedId: dailyId,
+              bookId: dailyContent.book_id,
+              contentTitle: dailyContent.title,
+              timeRemaining
+            }
+          });
+        } catch (error) {
+          console.error('Failed to generate daily SEO:', error);
+        }
+      }
+    };
+
+    generateDailySEO();
+  }, [dailyContent, dailyId, seoMetadata, isLoadingSeo, bookSeoMetadata, isLoadingBookSeo]);
+  
+  // Use daily-specific SEO if available, otherwise use book-level SEO
+  const finalSeoMetadata = seoMetadata || bookSeoMetadata;
+  
   // Extract optimized content from SEO metadata
-  const optimizedTitle = seoMetadata?.seo_title;
-  const optimizedDescription = seoMetadata?.seo_description;
+  const optimizedTitle = finalSeoMetadata?.seo_title;
+  const optimizedDescription = finalSeoMetadata?.seo_description;
   const hasOptimizedContent = !!(optimizedTitle && optimizedDescription);
-  const isOptimizing = isLoadingSeo;
+  const isOptimizing = isLoadingSeo || isLoadingBookSeo;
 
   // Generate OpenGraph metadata
   const openGraphMetadata: SEOMetadata | null = useMemo(() => {

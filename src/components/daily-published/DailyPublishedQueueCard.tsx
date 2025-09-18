@@ -117,16 +117,6 @@ export function DailyPublishedQueueCard({
                 {seoMetadata.seo_description}
               </p>
             )}
-            
-            <h4 className="text-lg font-semibold text-primary mb-2">
-              {item.book?.book_name || "Unknown Book"}
-            </h4>
-            
-            {item.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
-                {item.description}
-              </p>
-            )}
           </div>
         </div>
       </CardHeader>

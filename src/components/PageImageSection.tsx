@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Shimmer } from "@/components/ui/shimmer";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { usePageImageUrls } from "@/hooks/usePageImageUrls";
 import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
 import { supabase } from "@/integrations/supabase/client";
@@ -264,15 +265,14 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
     <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden relative">
       {hasImage && currentImage?.image_url ? (
         // Show clean generated image
-        <div className="relative w-full h-full">
-          <img 
-            src={currentImage.image_url} 
-            alt="Generated page image"
-            className="w-full h-full object-cover"
-            onLoad={() => console.log('🖼️ Image loaded successfully:', currentImage.image_url)}
-            onError={() => console.error('🚫 Image failed to load:', currentImage.image_url)}
-          />
-        </div>
+        <OptimizedImage 
+          src={currentImage.image_url} 
+          alt="Generated page image"
+          className="w-full h-full"
+          showShimmer={false}
+          onLoad={() => console.log('🖼️ Image loaded successfully:', currentImage.image_url)}
+          onError={() => console.error('🚫 Image failed to load:', currentImage.image_url)}
+        />
       ) : isGenerating ? (
         // Show generating state
         <div className="flex flex-col items-center justify-center h-full space-y-3">

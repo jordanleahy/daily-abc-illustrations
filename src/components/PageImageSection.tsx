@@ -146,29 +146,61 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
     }
   };
 
+  // Helper function to get stored prompt from page_system_prompts
+  const getStoredPrompt = async (): Promise<string | null> => {
+    if (!user) return null;
+
+    try {
+      const { data: storedPrompt, error } = await supabase
+        .from('page_system_prompts')
+        .select('content')
+        .eq('page_id', pageId)
+        .eq('is_latest', true)
+        .eq('is_deployed', true)
+        .single();
+
+      if (error || !storedPrompt) {
+        console.log('No stored prompt found:', error);
+        return null;
+      }
+
+      return storedPrompt.content;
+    } catch (error) {
+      console.error('Error fetching stored prompt:', error);
+      return null;
+    }
+  };
+
   const handleRegenerateImage = async () => {
     if (!user) return;
 
     setIsRegenerating(true);
     setIsLocalGenerating(true);
     try {
-      // First generate a new prompt
-      const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-image-prompt', {
-        body: {
-          pageId,
-          userId: user.id
-        }
-      });
-
-      if (promptError) throw promptError;
-      if (!promptData?.success) throw new Error(promptData?.error || 'Failed to generate image prompt');
+      // First try to use the stored prompt from page_system_prompts
+      let prompt = await getStoredPrompt();
       
-      const prompt = promptData.imagePrompt;
-      if (!prompt || prompt.trim().length === 0) {
-        throw new Error('No image prompt could be generated. Please ensure a page system prompt is deployed.');
+      if (!prompt) {
+        // Fallback to generating a new prompt if no stored prompt exists
+        console.log('No stored prompt found, generating new prompt');
+        const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-image-prompt', {
+          body: {
+            pageId,
+            userId: user.id
+          }
+        });
+
+        if (promptError) throw promptError;
+        if (!promptData?.success) throw new Error(promptData?.error || 'Failed to generate image prompt');
+        
+        prompt = promptData.imagePrompt;
       }
 
-      // Create new image record with the generated prompt
+      if (!prompt || prompt.trim().length === 0) {
+        throw new Error('No image prompt available. Please ensure a page system prompt is deployed.');
+      }
+
+      // Create new image record with the prompt
       const record = await createImageRecord(bookId, prompt);
       if (!record) {
         throw new Error('Failed to create image record');

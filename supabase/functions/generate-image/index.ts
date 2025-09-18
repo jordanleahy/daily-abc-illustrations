@@ -146,7 +146,28 @@ serve(async (req) => {
       });
     }
 
-    console.log(`[${requestId}] Calling OpenAI Image Generation API`);
+    // Validate prompt before calling OpenAI
+    if (!imageRecord.prompt_used || imageRecord.prompt_used.trim().length === 0) {
+      console.log(`[${requestId}] No prompt available for image generation`);
+      
+      await supabase
+        .from('page_image_urls')
+        .update({
+          generation_status: 'error',
+          error_message: 'No prompt available for image generation'
+        })
+        .eq('id', recordId);
+
+      return new Response(JSON.stringify({
+        success: false,
+        error: 'No prompt available for image generation'
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    console.log(`[${requestId}] Calling OpenAI Image Generation API with prompt length: ${imageRecord.prompt_used.length}`);
 
     const generationStartTime = Date.now();
 

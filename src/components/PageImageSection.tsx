@@ -272,23 +272,6 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
             onLoad={() => console.log('🖼️ Image loaded successfully:', currentImage.image_url)}
             onError={() => console.error('🚫 Image failed to load:', currentImage.image_url)}
           />
-          {/* Show regenerate button on hover */}
-          <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
-            <Button 
-              onClick={handleRegenerateImage}
-              size="sm"
-              variant="secondary"
-              disabled={isRegenerating || isGenerating}
-              className="shadow-lg"
-            >
-              {isRegenerating ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              Regenerate
-            </Button>
-          </div>
         </div>
       ) : isGenerating ? (
         // Show generating state

@@ -101,17 +101,51 @@ serve(async (req) => {
       content: agent.instructions
     };
 
-    // Combine system message with user messages
-    const allMessages = [systemMessage, ...messages];
+    // Check if any message contains images
+    const hasImages = messages.some((msg: any) => msg.images && msg.images.length > 0);
+    
+    // Convert messages to OpenAI format, handling images if present
+    const formattedMessages = messages.map((msg: any) => {
+      if (msg.images && msg.images.length > 0) {
+        // Format message with images for vision API
+        const content = [
+          {
+            type: "text",
+            text: msg.content
+          },
+          ...msg.images.map((image: string) => ({
+            type: "image_url",
+            image_url: {
+              url: image
+            }
+          }))
+        ];
+        
+        return {
+          role: msg.role,
+          content: content
+        };
+      } else {
+        // Regular text message
+        return {
+          role: msg.role,
+          content: msg.content
+        };
+      }
+    });
+
+    // Combine system message with formatted user messages
+    const allMessages = [systemMessage, ...formattedMessages];
 
     // Prepare OpenAI API parameters based on model
     const apiParams: any = {
-      model: agent.model,
+      model: hasImages ? 'gpt-4o' : agent.model, // Use vision-capable model for images
       messages: allMessages,
     };
 
     // Use correct token parameter based on model
-    if (isLegacyModel(agent.model)) {
+    const effectiveModel = hasImages ? 'gpt-4o' : agent.model;
+    if (isLegacyModel(effectiveModel)) {
       apiParams.max_tokens = agent.max_completion_tokens;
     } else {
       apiParams.max_completion_tokens = agent.max_completion_tokens;
@@ -122,7 +156,11 @@ serve(async (req) => {
       apiParams.top_p = agent.top_p;
     }
 
-    console.log('OpenAI API parameters:', apiParams);
+    console.log('OpenAI API parameters:', {
+      model: apiParams.model,
+      messageCount: apiParams.messages.length,
+      hasImages: hasImages
+    });
 
     // Make API call to OpenAI
     console.log('Making OpenAI API call...');

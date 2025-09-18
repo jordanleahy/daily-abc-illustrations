@@ -4,7 +4,7 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
-import { Send, BookOpen, ExternalLink } from 'lucide-react';
+import { Send, BookOpen, ExternalLink, Image, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PageLayout } from '@/components/layout';
 import { useAuth } from '@/hooks/useAuth';
@@ -15,6 +15,7 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  images?: string[]; // Base64 encoded images
 }
 
 const Index = () => {
@@ -26,6 +27,8 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isCreatingBook, setIsCreatingBook] = useState(false);
   const [bookCreated, setBookCreated] = useState<{ id: string; message: string } | null>(null);
+  const [selectedImages, setSelectedImages] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Refs for auto-scroll functionality
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -92,16 +95,18 @@ const Index = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    if ((!input.trim() && selectedImages.length === 0) || isLoading) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
       role: 'user',
-      content: input.trim()
+      content: input.trim() || 'Please analyze these images.',
+      images: selectedImages.length > 0 ? selectedImages : undefined
     };
 
     setMessages(prev => [...prev, userMessage]);
     setInput('');
+    setSelectedImages([]);
     setIsLoading(true);
 
     try {
@@ -114,7 +119,8 @@ const Index = () => {
         body: { 
           messages: [...messages, userMessage].map(msg => ({
             role: msg.role,
-            content: msg.content
+            content: msg.content,
+            images: msg.images
           }))
         },
         headers: {
@@ -181,6 +187,50 @@ const Index = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length === 0) return;
+
+    const imagePromises = files.map(file => {
+      return new Promise<string>((resolve, reject) => {
+        if (!file.type.startsWith('image/')) {
+          toast.error('Please select only image files');
+          reject(new Error('Not an image file'));
+          return;
+        }
+
+        if (file.size > 10 * 1024 * 1024) { // 10MB limit
+          toast.error('Image must be smaller than 10MB');
+          reject(new Error('File too large'));
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          resolve(reader.result as string);
+        };
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+      });
+    });
+
+    try {
+      const base64Images = await Promise.all(imagePromises);
+      setSelectedImages(prev => [...prev, ...base64Images].slice(0, 4)); // Limit to 4 images
+      
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } catch (error) {
+      console.error('Error uploading images:', error);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setSelectedImages(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleCreateBook = async () => {
@@ -264,6 +314,20 @@ const Index = () => {
                     <div className="whitespace-pre-wrap text-sm leading-relaxed">
                       {message.content}
                     </div>
+                    {/* Display images if present */}
+                    {message.images && message.images.length > 0 && (
+                      <div className="mt-2 grid gap-2 grid-cols-2">
+                        {message.images.map((image, index) => (
+                          <img
+                            key={index}
+                            src={image}
+                            alt={`Uploaded image ${index + 1}`}
+                            className="rounded-md max-w-full h-auto object-cover"
+                            style={{ maxHeight: '200px' }}
+                          />
+                        ))}
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
@@ -330,11 +394,37 @@ const Index = () => {
             
             <form onSubmit={handleSubmit} className="flex gap-2">
               <div className="flex-1 relative">
+                {/* Image preview area */}
+                {selectedImages.length > 0 && (
+                  <div className="mb-2 p-3 border border-border rounded-md bg-muted/30">
+                    <div className="grid gap-2 grid-cols-4">
+                      {selectedImages.map((image, index) => (
+                        <div key={index} className="relative">
+                          <img
+                            src={image}
+                            alt={`Selected ${index + 1}`}
+                            className="w-full h-16 object-cover rounded border"
+                          />
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="destructive"
+                            className="absolute -top-2 -right-2 h-6 w-6 p-0 rounded-full"
+                            onClick={() => removeImage(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Type your message..."
-                  className="resize-none pr-12 min-h-[50px] max-h-32"
+                  className="resize-none pr-20 min-h-[50px] max-h-32"
                   rows={1}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' && !e.shiftKey) {
@@ -343,10 +433,31 @@ const Index = () => {
                     }
                   }}
                 />
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+                
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute right-12 top-2 h-8 w-8 p-0"
+                  disabled={selectedImages.length >= 4}
+                >
+                  <Image className="h-4 w-4" />
+                </Button>
+                
                 <Button
                   type="submit"
                   size="sm"
-                  disabled={!input.trim() || isLoading}
+                  disabled={(!input.trim() && selectedImages.length === 0) || isLoading}
                   className="absolute right-2 top-2 h-8 w-8 p-0"
                 >
                   <Send className="h-4 w-4" />

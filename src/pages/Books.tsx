@@ -181,9 +181,12 @@ export default function Books() {
                           src={book.firstPageImageUrl} 
                           alt={`Preview of ${book.book_name}`}
                           className="w-full h-full object-cover"
+                          shimmerVariant="default"
                         />
                       ) : (
-                        <BookOpen className="w-8 h-8 text-muted-foreground" />
+                        <div className="flex items-center justify-center w-full h-full">
+                          <BookOpen className="w-8 h-8 text-muted-foreground" />
+                        </div>
                       )}
                     </div>
                   </CardContent>

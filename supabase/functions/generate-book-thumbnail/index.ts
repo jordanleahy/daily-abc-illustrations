@@ -176,20 +176,20 @@ serve(async (req) => {
     const startTime = Date.now();
 
     try {
-      /**
-       * OPENAI IMAGE GENERATION:
-       * Uses OpenAI's latest image generation model for high-quality thumbnails.
-       * 
-       * MODEL SELECTION: gpt-image-1
-       * - Best quality/cost ratio for thumbnails
-       * - Consistent style generation
-       * - Fast processing times
-       * 
-       * LIMITATIONS:
-       * - Maximum size 1024x1024 (we request this then crop if needed)
-       * - PNG format only (best for thumbnails with text)
-       * - API rate limits apply
-       */
+       /**
+        * OPENAI IMAGE GENERATION:
+        * Uses OpenAI's DALL-E 3 model for high-quality thumbnails.
+        * 
+        * MODEL SELECTION: dall-e-3
+        * - Highest quality image generation
+        * - Best text rendering capabilities  
+        * - Consistent style generation
+        * 
+        * LIMITATIONS:
+        * - Maximum size 1024x1024 (OpenAI doesn't support 1200x630)
+        * - API rate limits apply
+        * - Higher cost than dall-e-2
+        */
       const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
       if (!openAIApiKey) {
         throw new Error('OpenAI API key not configured');
@@ -204,12 +204,12 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          model: 'gpt-image-1',
+          model: 'dall-e-3',
           prompt: thumbnailRecord.prompt_used,
           n: 1,
-          size: '1024x1024', // OpenAI doesn't support 1200x630, we'll use 1024x1024 and crop if needed
-          quality: 'high',
-          output_format: 'png'
+          size: '1024x1024',
+          quality: 'hd',
+          response_format: 'b64_json'
         }),
       });
 

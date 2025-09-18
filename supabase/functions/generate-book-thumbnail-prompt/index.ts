@@ -160,7 +160,7 @@ serve(async (req) => {
       .from('agents')
       .select('instructions, model')
       .eq('user_id', userId)
-      .eq('type', 'graphics_designer')
+      .eq('type', 'graphic-designer')
       .eq('is_latest', true)
       .single();
 
@@ -177,6 +177,7 @@ Book Description: ${book.book_description || 'Educational ABC book for children'
 Category: ${book.category || 'Educational'}
 
 Requirements:
+- Aspect ratio: 1200x630 pixels (perfect for social media sharing)
 - Book title should be prominently displayed and readable
 - Include visual elements that represent the book's educational content
 - Design should be appealing to both children and parents

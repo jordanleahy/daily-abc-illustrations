@@ -194,7 +194,7 @@ The thumbnail should work well at small sizes and clearly communicate what the b
      * render correctly across different social media platforms and devices.
      * Uses the shared safeSpaceConfig module for consistent rules.
      */
-    const enhancedPrompt = appendSafeSpaceRules(basePrompt, "1:1");
+    const enhancedPrompt = appendSafeSpaceRules(basePrompt, "1200:630");
     
     console.log('Generated enhanced prompt for book thumbnail');
 

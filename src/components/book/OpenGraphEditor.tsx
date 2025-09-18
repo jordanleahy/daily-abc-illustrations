@@ -542,7 +542,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 <img
                   src={currentImage}
                   alt="OpenGraph preview"
-                  className="w-full max-w-md h-32 object-cover rounded-md border"
+                  className="w-full max-w-md aspect-[1200/630] object-cover rounded-md border"
                 />
                 <Button
                   variant="destructive"
@@ -717,7 +717,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
               <img
                 src={currentImage}
                 alt="Preview"
-                className="w-full h-20 object-cover rounded"
+                className="w-full aspect-[1200/630] object-cover rounded max-h-20"
               />
             )}
           </div>

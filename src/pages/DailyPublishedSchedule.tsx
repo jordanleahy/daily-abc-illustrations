@@ -12,20 +12,38 @@ const DailyPublishedSchedule = () => {
         }}
       />
       <PageLayout title="Daily Published Schedule">
-        <div className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Daily Published Schedule</CardTitle>
-              <CardDescription>
-                Manage your daily published content schedule and timing
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
+        <div className="container mx-auto py-6">
+          <div className="space-y-6">
+            {/* Page Header */}
+            <div className="space-y-2">
+              <h1 className="text-3xl font-bold tracking-tight">Daily Published Schedule</h1>
               <p className="text-muted-foreground">
-                Daily published schedule functionality will be implemented here.
+                Manage your daily published content schedule and timing
               </p>
-            </CardContent>
-          </Card>
+            </div>
+
+            {/* Main Content */}
+            <div className="grid gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Schedule Overview</CardTitle>
+                  <CardDescription>
+                    View and manage your daily content publishing schedule
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <p className="text-muted-foreground">
+                      Daily published schedule functionality will be implemented here.
+                    </p>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                      {/* Schedule cards will be added here */}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </div>
       </PageLayout>
     </>

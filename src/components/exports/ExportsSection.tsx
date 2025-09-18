@@ -186,6 +186,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
     try {
       // Create new daily publication
+      // Get next queue position for this new item
+      const { data: nextPosition } = await supabase.rpc('get_next_queue_position');
+      
       const { data: newPublication, error: insertError } = await supabase
         .from('daily_published')
         .insert({
@@ -194,7 +197,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
           published_at: new Date().toISOString(),
           expires_at: new Date(Date.now() + SITE_CONFIG.dailyContent.expirationHours * 60 * 60 * 1000).toISOString(),
-          is_active: true
+          is_active: true,
+          status: 'active' as const,
+          queue_position: nextPosition || 1
         })
         .select()
         .single();

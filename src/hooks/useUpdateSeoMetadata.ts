@@ -16,22 +16,34 @@ export const useUpdateSeoMetadata = () => {
     mutationFn: async ({ bookId, seoTitle, seoDescription, ogImageUrl }: UpdateSeoMetadataParams) => {
       if (!user) throw new Error('User not authenticated');
 
-      // Create a temporary daily_published entry for book-level SEO if needed
-      // This allows us to use the existing seo_metadata table structure
-      let dailyPublishedId = `book-seo-${bookId}`;
+      // First, get the actual daily_published entry for this book
+      const { data: dailyPublished, error: dailyError } = await supabase
+        .from('daily_published')
+        .select('id')
+        .eq('book_id', bookId)
+        .eq('is_active', true)
+        .gt('expires_at', new Date().toISOString())
+        .maybeSingle();
+
+      if (dailyError) {
+        console.error('Error fetching daily published entry:', dailyError);
+        throw new Error('Failed to find daily published entry for this book');
+      }
+
+      if (!dailyPublished) {
+        throw new Error('This book must be daily published before SEO metadata can be updated');
+      }
+
+      const dailyPublishedId = dailyPublished.id;
       
-      // First, check if we already have a daily_published entry for this book's SEO
+      // Check if we already have SEO metadata for this daily publication
       const { data: existingSeo } = await supabase
         .from('seo_metadata')
         .select('daily_published_id')
-        .contains('source_data', { bookId })
+        .eq('daily_published_id', dailyPublishedId)
         .eq('user_id', user.id)
         .eq('is_latest', true)
         .maybeSingle();
-
-      if (existingSeo) {
-        dailyPublishedId = existingSeo.daily_published_id;
-      }
 
       // Prepare source data
       const sourceData = {
@@ -49,6 +61,12 @@ export const useUpdateSeoMetadata = () => {
           .eq('user_id', user.id);
       }
 
+      // Get the next version number for this daily publication
+      const { data: versionData } = await supabase
+        .rpc('get_next_seo_version_number', { p_daily_published_id: dailyPublishedId });
+      
+      const versionNumber = versionData || 1;
+
       // Insert new SEO metadata
       const { data, error } = await supabase
         .from('seo_metadata')
@@ -61,7 +79,7 @@ export const useUpdateSeoMetadata = () => {
           optimization_status: 'complete',
           is_latest: true,
           is_active: true,
-          version_number: 1,
+          version_number: versionNumber,
           source_data: sourceData,
           generation_metadata: {
             type: 'manual',

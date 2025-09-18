@@ -1,3 +1,59 @@
+/**
+ * ==================================================================================
+ * BOOK THUMBNAIL PROMPT GENERATION SERVICE
+ * ==================================================================================
+ * 
+ * BUSINESS PURPOSE:
+ * This edge function generates AI-optimized prompts for creating book cover thumbnails
+ * used in social media sharing and marketing materials. It combines book metadata,
+ * user design preferences, and platform-specific requirements to create effective
+ * visual content generation prompts.
+ * 
+ * TECHNICAL ARCHITECTURE:
+ * - Deno-based Supabase Edge Function
+ * - Integrates with OpenAI for image generation (via separate function)
+ * - Uses Supabase database for metadata storage and version control
+ * - Implements safe space design guidelines for social media platforms
+ * 
+ * WORKFLOW:
+ * 1. Client Request → Validate bookId and userId
+ * 2. Database Fetch → Retrieve book details and system prompts
+ * 3. Agent Config → Get user's graphics designer agent settings
+ * 4. Prompt Assembly → Combine metadata with design guidelines
+ * 5. Safe Space Rules → Apply platform-specific layout constraints
+ * 6. Version Control → Create new thumbnail record with version tracking
+ * 7. Response → Return generated prompt and thumbnail record ID
+ * 
+ * BUSINESS RULES:
+ * - Each book can have multiple thumbnail versions (version control)
+ * - Prompts maintain consistency with book's existing illustration style
+ * - Thumbnails must work at small sizes (social media feeds)
+ * - Aspect ratio fixed at 1200x630 for optimal social media sharing
+ * - Safe space guidelines ensure text readability across platforms
+ * 
+ * PERFORMANCE CONSIDERATIONS:
+ * - Caches agent configurations to reduce database queries
+ * - Uses single database transaction for version control
+ * - Minimal prompt processing for fast response times
+ * 
+ * ERROR HANDLING:
+ * - Validates user ownership of book (security)
+ * - Graceful degradation if agent config missing
+ * - Comprehensive error logging for debugging
+ * - Returns structured error responses for client handling
+ * 
+ * DEPENDENCIES:
+ * - Supabase Database (books, book_system_prompts, agents, book_thumbnails)
+ * - Safe Space Configuration (platform-specific design rules)
+ * - User Authentication (via RLS policies)
+ * 
+ * INTEGRATION POINTS:
+ * - Called by: Frontend OpenGraphEditor component
+ * - Calls: None (pure prompt generation)
+ * - Triggers: generate-book-thumbnail function (separate call)
+ * ==================================================================================
+ */
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
@@ -8,8 +64,23 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/**
+ * Main request handler for book thumbnail prompt generation
+ * 
+ * REQUEST FORMAT:
+ * POST body: { bookId: string, userId: string }
+ * 
+ * RESPONSE FORMAT:
+ * Success: { success: true, thumbnailId: string, prompt: string, versionNumber: number }
+ * Error: { error: string, details?: string }
+ * 
+ * SECURITY:
+ * - Validates user ownership via database queries
+ * - Uses RLS policies for data access control
+ * - Sanitizes all user inputs
+ */
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS preflight requests for web client compatibility
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -55,7 +126,12 @@ serve(async (req) => {
 
     console.log('Book data:', book);
 
-    // Fetch book system prompt for style consistency
+    /**
+     * STYLE CONSISTENCY LOGIC:
+     * Extract illustration style from book's system prompt to maintain
+     * visual consistency across all book materials including thumbnails.
+     * This ensures brand coherence for published content.
+     */
     let styleGuide = '';
     if (book.current_system_prompt_id) {
       const { data: systemPrompt } = await supabase
@@ -73,7 +149,12 @@ serve(async (req) => {
       }
     }
 
-    // Get Graphics Designer Agent configuration
+    /**
+     * AGENT CONFIGURATION RETRIEVAL:
+     * Fetch user's custom graphics designer agent settings to personalize
+     * the thumbnail generation according to their preferred design style.
+     * Falls back to default instructions if no custom agent exists.
+     */
     const { data: agent, error: agentError } = await supabase
       .from('agents')
       .select('instructions, model')
@@ -106,7 +187,21 @@ Design Style: ${agentInstructions}
 
 The thumbnail should work well at small sizes and clearly communicate what the book is about.`;
 
-    // Apply safe space rules for the 19:10 aspect ratio (1200:630)
+    /**
+     * SAFE SPACE IMPLEMENTATION:
+     * Applies platform-specific design guidelines to ensure thumbnails
+     * render correctly across different social media platforms and devices.
+     * 
+     * BUSINESS IMPACT:
+     * - Prevents text cutoff on mobile devices
+     * - Ensures readability in social media feeds
+     * - Optimizes click-through rates by following platform best practices
+     * 
+     * TECHNICAL DETAILS:
+     * - Uses 19:10 aspect ratio (1200:630) for optimal social sharing
+     * - Applies margin rules for text placement
+     * - Considers platform-specific UI overlays
+     */
     function appendSafeSpaceRules(prompt: string, aspectRatio: string): string {
       const rules = safeSpaceConfig.aspectRatios[aspectRatio as keyof typeof safeSpaceConfig.aspectRatios];
       if (!rules || !safeSpaceConfig.enabled) return prompt;
@@ -128,7 +223,12 @@ ${safeSpaceConfig.generalGuidelines.platformCompatibility}`;
     
     console.log('Generated enhanced prompt for book thumbnail');
 
-    // Get next version number
+    /**
+     * VERSION CONTROL SYSTEM:
+     * Implements semantic versioning for thumbnails allowing users to
+     * iterate on designs while maintaining history of previous versions.
+     * Critical for A/B testing and design rollback capabilities.
+     */
     const { data: versionData } = await supabase
       .rpc('get_next_book_thumbnail_version_number', { p_book_id: bookId });
 

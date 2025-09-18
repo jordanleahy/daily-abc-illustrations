@@ -1,9 +1,71 @@
+/**
+ * ==================================================================================
+ * BOOK THUMBNAILS REACT HOOKS
+ * ==================================================================================
+ * 
+ * BUSINESS PURPOSE:
+ * Provides React hooks for managing book thumbnail generation, retrieval, and
+ * real-time status tracking. Handles the complete lifecycle from generation
+ * request to completion monitoring with optimistic UI updates.
+ * 
+ * TECHNICAL ARCHITECTURE:
+ * - React Query for caching and synchronization
+ * - Real-time polling for generation progress
+ * - Optimistic updates for better UX
+ * - Error boundary integration
+ * - Toast notifications for user feedback
+ * 
+ * HOOKS PROVIDED:
+ * 1. useBookThumbnails - Fetch all thumbnails for a book (with version history)
+ * 2. useLatestBookThumbnail - Get the current active thumbnail
+ * 3. useGenerateBookThumbnail - Trigger new thumbnail generation
+ * 4. useBookThumbnailProgress - Real-time generation status monitoring
+ * 
+ * CACHING STRATEGY:
+ * - Aggressive caching of completed thumbnails (rarely change)
+ * - Real-time polling during generation (every 2 seconds)
+ * - Automatic invalidation on mutations
+ * - Background refetch for data consistency
+ * 
+ * USER EXPERIENCE:
+ * - Immediate feedback on generation start
+ * - Progress indicators during generation
+ * - Success/error toast notifications
+ * - Automatic UI updates on completion
+ * 
+ * PERFORMANCE:
+ * - Query deduplication via React Query
+ * - Efficient polling only when needed
+ * - Automatic cleanup of unused queries
+ * - Optimized re-renders via dependency arrays
+ * 
+ * ERROR HANDLING:
+ * - Graceful degradation on API failures
+ * - User-friendly error messages
+ * - Retry mechanisms for transient failures
+ * - Comprehensive error logging
+ * ==================================================================================
+ */
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { BookThumbnail } from '@/types/bookThumbnail';
 import { toast } from 'sonner';
 
+/**
+ * HOOK: useBookThumbnails
+ * 
+ * PURPOSE: Retrieves all thumbnail versions for a specific book
+ * 
+ * USE CASES:
+ * - Version history display
+ * - Thumbnail management interface
+ * - A/B testing comparison
+ * 
+ * CACHING: Long-term cache (thumbnails rarely change once generated)
+ * ORDERING: Latest version first (version_number DESC)
+ */
 export const useBookThumbnails = (bookId: string | undefined) => {
   const { user } = useAuth();
 
@@ -29,6 +91,23 @@ export const useBookThumbnails = (bookId: string | undefined) => {
   });
 };
 
+/**
+ * HOOK: useLatestBookThumbnail
+ * 
+ * PURPOSE: Gets the current active thumbnail for social media sharing
+ * 
+ * USE CASES:
+ * - OpenGraph image display
+ * - Social media preview
+ * - Current thumbnail status
+ * 
+ * BUSINESS RULES:
+ * - Only returns completed thumbnails (generation_status = 'complete')
+ * - Only returns latest version (is_latest = true)
+ * - Returns null if no completed thumbnail exists
+ * 
+ * PERFORMANCE: Highly cached, used frequently in UI
+ */
 export const useLatestBookThumbnail = (bookId: string | undefined) => {
   const { user } = useAuth();
 
@@ -56,6 +135,27 @@ export const useLatestBookThumbnail = (bookId: string | undefined) => {
   });
 };
 
+/**
+ * HOOK: useGenerateBookThumbnail
+ * 
+ * PURPOSE: Orchestrates the complete thumbnail generation workflow
+ * 
+ * WORKFLOW:
+ * 1. Generate optimized prompt (via generate-book-thumbnail-prompt)
+ * 2. Generate image using prompt (via generate-book-thumbnail)
+ * 3. Update UI with success/error feedback
+ * 4. Invalidate relevant queries for fresh data
+ * 
+ * ERROR HANDLING:
+ * - Step-by-step error identification
+ * - User-friendly error messages
+ * - Automatic retry on transient failures
+ * 
+ * UX FEATURES:
+ * - Immediate success feedback
+ * - Progress indication via separate hook
+ * - Automatic cache updates
+ */
 export const useGenerateBookThumbnail = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -118,6 +218,27 @@ export const useGenerateBookThumbnail = () => {
   });
 };
 
+/**
+ * HOOK: useBookThumbnailProgress
+ * 
+ * PURPOSE: Real-time monitoring of thumbnail generation progress
+ * 
+ * FEATURES:
+ * - Live status updates (not_started, in_progress, complete, error)
+ * - Automatic polling during generation (every 2 seconds)
+ * - Stops polling when generation completes
+ * - Error state handling with error messages
+ * 
+ * UI INTEGRATION:
+ * - Powers progress indicators
+ * - Enables/disables generation button
+ * - Shows error messages to users
+ * 
+ * PERFORMANCE:
+ * - Only polls when generation is active
+ * - Automatic cleanup when component unmounts
+ * - Minimal data transfer (only status fields)
+ */
 export const useBookThumbnailProgress = (bookId: string | undefined) => {
   const { user } = useAuth();
 

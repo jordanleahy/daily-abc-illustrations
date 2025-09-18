@@ -1,4 +1,41 @@
 /**
+ * ==================================================================================
+ * BOOK THUMBNAIL TYPE DEFINITIONS
+ * ==================================================================================
+ * 
+ * BUSINESS PURPOSE:
+ * Defines the complete data structure for book thumbnail generation and management.
+ * This system supports AI-generated social media thumbnails with full version control,
+ * progress tracking, and error handling capabilities.
+ * 
+ * KEY BUSINESS FEATURES:
+ * - Version Control: Multiple thumbnails per book with semantic versioning
+ * - Progress Tracking: Real-time generation status monitoring
+ * - Error Recovery: Detailed error messages for debugging and user feedback
+ * - Performance Metrics: Duration tracking for optimization and cost analysis
+ * - Quality Assurance: Aspect ratio enforcement for platform compatibility
+ * 
+ * DATABASE INTEGRATION:
+ * - Maps directly to 'book_thumbnails' Supabase table
+ * - Enforces referential integrity with books and users
+ * - Supports efficient querying via indexed fields
+ * - Compatible with Row Level Security (RLS) policies
+ * 
+ * LIFECYCLE STATES:
+ * 1. not_started → Record created, awaiting generation
+ * 2. in_progress → AI generation in process
+ * 3. complete → Successfully generated and stored
+ * 4. error → Generation failed with error details
+ * 
+ * PERFORMANCE CONSIDERATIONS:
+ * - Nullable fields reduce storage overhead during generation
+ * - Indexed fields support efficient querying
+ * - Version tracking enables A/B testing and rollback
+ * - Duration metrics support cost optimization
+ * ==================================================================================
+ */
+
+/**
  * Book thumbnail generation record
  * Tracks the lifecycle of AI-generated book cover thumbnails from prompt to completion
  */

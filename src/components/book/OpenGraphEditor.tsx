@@ -1,3 +1,63 @@
+/**
+ * ==================================================================================
+ * OPENGRAPH EDITOR COMPONENT
+ * ==================================================================================
+ * 
+ * BUSINESS PURPOSE:
+ * Provides a comprehensive interface for managing social media metadata and
+ * thumbnail generation for book content. Enables content creators to optimize
+ * how their books appear when shared across social platforms, directly impacting
+ * click-through rates and engagement metrics.
+ * 
+ * FEATURE SET:
+ * 1. Social Media Metadata Management
+ *    - Custom title optimization (60 char limit awareness)
+ *    - Description editing (160 char limit for meta descriptions)
+ *    - Image upload and management
+ * 
+ * 2. AI Thumbnail Generation
+ *    - Automated thumbnail creation using book metadata
+ *    - Real-time generation progress tracking
+ *    - Version control with rollback capabilities
+ * 
+ * 3. Preview & Validation
+ *    - Live social media preview
+ *    - Platform-specific optimization
+ *    - Visual validation of changes
+ * 
+ * TECHNICAL ARCHITECTURE:
+ * - React functional component with hooks
+ * - Real-time data synchronization via React Query
+ * - File upload handling with validation
+ * - Inline editing with optimistic updates
+ * - Toast notifications for user feedback
+ * 
+ * USER EXPERIENCE DESIGN:
+ * - Inline editing for quick updates
+ * - Visual feedback for all actions
+ * - Progressive disclosure of advanced features
+ * - Mobile-responsive design
+ * 
+ * BUSINESS RULES:
+ * - Image priority: Custom upload > Generated thumbnail > Default
+ * - File size limits (5MB max for uploads)
+ * - Supported formats (images only)
+ * - Version control for generated content
+ * 
+ * PERFORMANCE CONSIDERATIONS:
+ * - Optimistic updates for immediate feedback
+ * - Debounced API calls to prevent spam
+ * - Progressive image loading
+ * - Efficient re-render management
+ * 
+ * INTEGRATION POINTS:
+ * - Book SEO metadata system
+ * - Thumbnail generation service
+ * - Supabase Storage for image hosting
+ * - OpenAI for automated content generation
+ * ==================================================================================
+ */
+
 import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -20,6 +80,27 @@ interface OpenGraphEditorProps {
   bookDescription?: string;
 }
 
+/**
+ * COMPONENT: OpenGraphEditor
+ * 
+ * PROPS:
+ * - bookId: Unique identifier for the book
+ * - bookTitle: Default title (fallback for SEO title)
+ * - bookDescription: Default description (fallback for SEO description)
+ * 
+ * STATE MANAGEMENT:
+ * - Local editing states for inline editing UX
+ * - Upload progress tracking
+ * - Generation status monitoring
+ * - Error handling and user feedback
+ * 
+ * DATA FLOW:
+ * 1. Component mounts → Fetch existing SEO metadata
+ * 2. User edits → Optimistic local updates
+ * 3. Save action → API call + cache invalidation
+ * 4. Generation → Progress polling + status updates
+ * 5. Completion → Automatic UI refresh
+ */
 export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGraphEditorProps) => {
   const { data: seoMetadata, isLoading, refetch } = useBookSeoMetadata(bookId);
   const { data: latestThumbnail } = useLatestBookThumbnail(bookId);
@@ -71,6 +152,26 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
   };
 
+  /**
+   * IMAGE UPLOAD HANDLER
+   * 
+   * FEATURES:
+   * - File type validation (images only)
+   * - Size validation (5MB limit)
+   * - Progress tracking
+   * - Automatic SEO metadata update
+   * - Error handling with user feedback
+   * 
+   * SECURITY:
+   * - File type verification
+   * - Size limits enforcement
+   * - User folder isolation in storage
+   * 
+   * UX CONSIDERATIONS:
+   * - Immediate visual feedback
+   * - Loading states during upload
+   * - Error recovery guidance
+   */
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -135,6 +236,21 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
   };
 
+  /**
+   * AUTO-GENERATION HANDLER
+   * 
+   * BUSINESS LOGIC:
+   * - Leverages OpenAI for SEO optimization
+   * - Generates title, description, and metadata
+   * - Maintains brand voice and style consistency
+   * - Optimizes for search engine visibility
+   * 
+   * TECHNICAL IMPLEMENTATION:
+   * - Calls generate-seo-metadata edge function
+   * - Handles async processing with loading states
+   * - Provides user feedback throughout process
+   * - Automatic cache refresh on completion
+   */
   const handleAutoGenerate = async () => {
     setIsGenerating(true);
     try {
@@ -158,6 +274,23 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
   };
 
+  /**
+   * THUMBNAIL GENERATION HANDLER
+   * 
+   * WORKFLOW ORCHESTRATION:
+   * 1. User clicks "Generate Thumbnail"
+   * 2. Calls useGenerateBookThumbnail mutation
+   * 3. Mutation handles two-step process:
+   *    a. Generate prompt (with book context)
+   *    b. Generate image (using OpenAI)
+   * 4. Progress monitoring via useBookThumbnailProgress
+   * 5. UI updates automatically on completion
+   * 
+   * ERROR HANDLING:
+   * - Handled by mutation hook
+   * - User feedback via toast notifications
+   * - Graceful degradation on failures
+   */
   const handleGenerateThumbnail = async () => {
     try {
       await generateThumbnail.mutateAsync({ bookId });

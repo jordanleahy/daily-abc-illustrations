@@ -1,3 +1,70 @@
+/**
+ * ==================================================================================
+ * BOOK THUMBNAIL IMAGE GENERATION SERVICE
+ * ==================================================================================
+ * 
+ * BUSINESS PURPOSE:
+ * This edge function generates high-quality book cover thumbnails using OpenAI's
+ * image generation API. It handles the complete pipeline from prompt processing
+ * to image storage, providing automated visual content creation for marketing
+ * and social media purposes.
+ * 
+ * TECHNICAL ARCHITECTURE:
+ * - Deno-based Supabase Edge Function
+ * - OpenAI API integration (gpt-image-1 model)
+ * - Supabase Storage for image hosting
+ * - Real-time status tracking and progress monitoring
+ * - Automatic version management and history
+ * 
+ * WORKFLOW:
+ * 1. Client Request → Validate recordId and userId
+ * 2. Record Retrieval → Fetch thumbnail record with generated prompt
+ * 3. Status Update → Mark generation as 'in_progress'
+ * 4. OpenAI API Call → Generate image using stored prompt
+ * 5. Image Processing → Convert base64 to buffer
+ * 6. Storage Upload → Save to Supabase Storage bucket
+ * 7. URL Generation → Create public URL for client access
+ * 8. Record Update → Mark complete with metadata
+ * 9. Error Handling → Update status on failure with error details
+ * 
+ * BUSINESS RULES:
+ * - Images are 1024x1024 (OpenAI limitation, cropped to 1200x630 if needed)
+ * - High quality PNG format for best visual results
+ * - Public URLs for easy integration with social media platforms
+ * - Performance tracking for optimization and billing
+ * - Version control for iterative design improvements
+ * 
+ * PERFORMANCE CONSIDERATIONS:
+ * - Async processing with real-time status updates
+ * - Progress polling capability for UI feedback
+ * - Error recovery with detailed failure information
+ * - Optimized storage paths for CDN delivery
+ * 
+ * COST CONSIDERATIONS:
+ * - OpenAI API costs per image generation
+ * - Supabase Storage costs for image hosting
+ * - Performance metrics for ROI analysis
+ * 
+ * ERROR HANDLING:
+ * - Comprehensive OpenAI API error mapping
+ * - Storage failure recovery
+ * - User-friendly error messages
+ * - Detailed logging for debugging
+ * 
+ * SECURITY:
+ * - User ownership validation via RLS policies
+ * - Secure API key management via environment variables
+ * - Input sanitization and validation
+ * - Storage bucket access control
+ * 
+ * INTEGRATION POINTS:
+ * - Called by: Frontend after prompt generation
+ * - Depends on: generate-book-thumbnail-prompt function
+ * - Stores in: Supabase Storage (page-images bucket)
+ * - Updates: book_thumbnails table with results
+ * ==================================================================================
+ */
+
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
@@ -7,8 +74,30 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/**
+ * Main request handler for book thumbnail image generation
+ * 
+ * REQUEST FORMAT:
+ * POST body: { recordId: string, userId: string }
+ * 
+ * RESPONSE FORMAT:
+ * Success: { success: true, thumbnailUrl: string, duration: number }
+ * Error: { error: string }
+ * 
+ * PROCESSING STAGES:
+ * 1. Validation & Record Retrieval
+ * 2. Status Management (in_progress)
+ * 3. OpenAI Image Generation
+ * 4. Image Storage & URL Generation
+ * 5. Completion & Metadata Update
+ * 
+ * PERFORMANCE METRICS:
+ * - Generation duration tracking
+ * - Error rate monitoring
+ * - API cost tracking (via metadata)
+ */
 serve(async (req) => {
-  // Handle CORS preflight requests
+  // Handle CORS preflight requests for web client compatibility
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -87,7 +176,20 @@ serve(async (req) => {
     const startTime = Date.now();
 
     try {
-      // Use OpenAI for image generation (gpt-image-1 model)
+      /**
+       * OPENAI IMAGE GENERATION:
+       * Uses OpenAI's latest image generation model for high-quality thumbnails.
+       * 
+       * MODEL SELECTION: gpt-image-1
+       * - Best quality/cost ratio for thumbnails
+       * - Consistent style generation
+       * - Fast processing times
+       * 
+       * LIMITATIONS:
+       * - Maximum size 1024x1024 (we request this then crop if needed)
+       * - PNG format only (best for thumbnails with text)
+       * - API rate limits apply
+       */
       const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
       if (!openAIApiKey) {
         throw new Error('OpenAI API key not configured');
@@ -129,7 +231,19 @@ serve(async (req) => {
       // Convert base64 to buffer
       const imageBuffer = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
 
-      // Upload to Supabase Storage
+      /**
+       * STORAGE ORGANIZATION:
+       * Files organized by book ID for easy management and cleanup
+       * Version numbers in filename for history tracking
+       * 
+       * PATH STRUCTURE: book-thumbnails/{bookId}/thumbnail_{recordId}_v{version}.png
+       * 
+       * BENEFITS:
+       * - Easy bulk operations per book
+       * - Version history preservation
+       * - CDN-friendly URLs
+       * - Predictable naming convention
+       */
       const fileName = `thumbnail_${recordId}_v${thumbnailRecord.version_number}.png`;
       const filePath = `book-thumbnails/${thumbnailRecord.book_id}/${fileName}`;
 

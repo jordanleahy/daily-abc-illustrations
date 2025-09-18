@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
-import { Loader2, Upload, Eye, Wand2, X } from 'lucide-react';
+import { Loader2, Upload, Eye, Wand2, X, MessageSquare, ImagePlus } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
@@ -153,6 +153,16 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
   };
 
+  const handleGenerateThumbPrompt = () => {
+    // Placeholder for Generate Thumb Prompt functionality
+    toast.info('Generate Thumb Prompt - Coming Soon');
+  };
+
+  const handleGenerateThumbImage = () => {
+    // Placeholder for Generate Thumb Image functionality
+    toast.info('Generate Thumb Image - Coming Soon');
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -278,6 +288,22 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                   <Upload className="w-4 h-4" />
                 )}
                 {currentImage ? 'Replace Image' : 'Upload Image'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleGenerateThumbPrompt}
+                className="flex items-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Generate Thumb Prompt
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleGenerateThumbImage}
+                className="flex items-center gap-2"
+              >
+                <ImagePlus className="w-4 h-4" />
+                Generate Thumb Image
               </Button>
             </div>
           </div>

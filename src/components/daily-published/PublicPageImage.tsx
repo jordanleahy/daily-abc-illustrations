@@ -29,6 +29,7 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
       src={imageData.image_url}
       alt="Page illustration"
       className={`w-full h-full object-cover object-top ${className}`}
+      showProgress
       blurDataURL={commonBlurDataUrls.neutral}
       rootMargin="100px"
     />

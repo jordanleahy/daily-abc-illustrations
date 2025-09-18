@@ -32,6 +32,8 @@ export const HeroSidebar = ({ thumbnails, mainImage, onImageSelect }: HeroSideba
             src={thumbnail}
             alt={`Thumbnail ${index + 1}`}
             className="w-full h-full object-cover"
+            shimmerVariant="skeleton"
+            skeletonType="image"
             blurDataURL={commonBlurDataUrls.neutral}
             rootMargin="50px"
           />

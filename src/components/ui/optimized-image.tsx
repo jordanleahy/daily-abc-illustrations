@@ -11,6 +11,8 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   className?: string;
   fallbackSrc?: string;
   showShimmer?: boolean;
+  shimmerVariant?: 'default' | 'skeleton' | 'blur-up' | 'progress';
+  skeletonType?: 'text' | 'card' | 'image' | 'custom';
   responsive?: boolean;
   widths?: number[];
   quality?: number;
@@ -18,7 +20,13 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   critical?: boolean;
   blurDataURL?: string;
   rootMargin?: string;
+  showProgress?: boolean;
 }
+
+// Progressive JPEG detection
+const isProgressiveJpeg = (url: string): boolean => {
+  return url.toLowerCase().includes('.jpg') || url.toLowerCase().includes('.jpeg');
+};
 
 export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageProps>(
   ({ 
@@ -26,7 +34,9 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
     alt, 
     className, 
     fallbackSrc, 
-    showShimmer = true, 
+    showShimmer = true,
+    shimmerVariant = 'blur-up', 
+    skeletonType = 'image',
     responsive = true,
     widths = [400, 800, 1200],
     quality = 80,
@@ -34,6 +44,7 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
     critical = false,
     blurDataURL,
     rootMargin = '200px',
+    showProgress = false,
     ...props 
   }, ref) => {
     const [currentSrc, setCurrentSrc] = useState<string>('');
@@ -42,6 +53,7 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
     const [formatIndex, setFormatIndex] = useState(0);
     const [shouldLoad, setShouldLoad] = useState(critical);
     const [showBlur, setShowBlur] = useState(!!blurDataURL);
+    const [loadProgress, setLoadProgress] = useState(0);
 
     // Use intersection observer for non-critical images
     const { ref: intersectionRef, isIntersecting } = useIntersectionObserver<HTMLDivElement>({
@@ -58,6 +70,26 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
       ? getResponsiveImageProps(src, { widths, quality, sizes })
       : null;
     
+    // Progressive loading progress simulation for large images
+    useEffect(() => {
+      if (!shouldLoad || !showProgress || !isLoading) return;
+      
+      const isLargeImage = isProgressiveJpeg(currentSrc);
+      if (!isLargeImage) return;
+      
+      const progressInterval = setInterval(() => {
+        setLoadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return prev;
+          }
+          return prev + Math.random() * 15;
+        });
+      }, 100);
+      
+      return () => clearInterval(progressInterval);
+    }, [shouldLoad, showProgress, isLoading, currentSrc]);
+
     // Handle when image should start loading
     useEffect(() => {
       if (critical || isIntersecting) {
@@ -72,6 +104,7 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
       setIsLoading(true);
       setHasError(false);
       setFormatIndex(0);
+      setLoadProgress(0);
       
       // Use responsive src or build optimized URL
       const initialUrl = responsive 
@@ -86,6 +119,7 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
       setIsLoading(false);
       setHasError(false);
       setShowBlur(false);
+      setLoadProgress(100);
       
       if (currentSrc) {
         imagePerformanceTracker.endLoading(currentSrc, false);
@@ -100,6 +134,7 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
         setFormatIndex(nextFormatIndex);
         const nextUrl = buildOptimizedImageUrl(src, supportedFormats[nextFormatIndex]);
         setCurrentSrc(nextUrl);
+        setLoadProgress(0);
         imagePerformanceTracker.startLoading(nextUrl);
         return;
       }
@@ -107,6 +142,7 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
       // If all formats failed and we have a fallback, use it
       if (fallbackSrc && currentSrc !== fallbackSrc) {
         setCurrentSrc(fallbackSrc);
+        setLoadProgress(0);
         imagePerformanceTracker.startLoading(fallbackSrc);
         return;
       }
@@ -114,6 +150,7 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
       // If original URL wasn't tried yet, try it as final fallback
       if (currentSrc !== src) {
         setCurrentSrc(src);
+        setLoadProgress(0);
         imagePerformanceTracker.startLoading(src);
         return;
       }
@@ -122,27 +159,47 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
       setIsLoading(false);
       setHasError(true);
       setShowBlur(false);
+      setLoadProgress(0);
     }, [formatIndex, supportedFormats, src, fallbackSrc, currentSrc]);
+
+    // Determine shimmer props based on variant
+    const getShimmerProps = () => {
+      switch (shimmerVariant) {
+        case 'progress':
+          return {
+            variant: 'progress' as const,
+            progress: loadProgress,
+            className: cn("absolute inset-0 w-full h-full", className)
+          };
+        case 'blur-up':
+          return {
+            variant: 'blur-up' as const,
+            blurDataURL: blurDataURL,
+            className: cn("absolute inset-0 w-full h-full", className)
+          };
+        case 'skeleton':
+          return {
+            variant: 'skeleton' as const,
+            skeletonType,
+            className: cn("absolute inset-0 w-full h-full", className)
+          };
+        default:
+          return {
+            variant: 'default' as const,
+            isShimmering: true,
+            className: "absolute inset-0 w-full h-full"
+          };
+      }
+    };
 
     return (
       <div 
         ref={intersectionRef}
         className={cn("relative overflow-hidden", className)}
       >
-        {/* Blur placeholder */}
-        {showBlur && blurDataURL && (
-          <img
-            src={blurDataURL}
-            alt=""
-            className="absolute inset-0 w-full h-full object-cover blur-sm scale-110 transition-opacity duration-300"
-            style={{ filter: 'blur(10px)' }}
-            aria-hidden="true"
-          />
-        )}
-        
-        {/* Show shimmer while loading if enabled and no blur */}
-        {isLoading && showShimmer && !showBlur && (
-          <Shimmer className="absolute inset-0 w-full h-full" />
+        {/* Enhanced shimmer loading states */}
+        {isLoading && showShimmer && (
+          <Shimmer {...getShimmerProps()} />
         )}
         
         {/* Show error state */}

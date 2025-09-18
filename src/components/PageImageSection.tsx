@@ -291,21 +291,6 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
           <p className="text-xs text-muted-foreground">
             {currentImage?.error_message || 'Unknown error occurred'}
           </p>
-          <Button 
-            onClick={() => {
-              setGeneratedPrompt(null);
-              if (hasDeployedPrompt) {
-                handleGenerateImageDirectly();
-              } else {
-                handleGeneratePrompt();
-              }
-            }}
-            size="sm"
-            variant="outline"
-            disabled={isGeneratingPrompt || isGenerating}
-          >
-            Try Again
-          </Button>
         </div>
       ) : generatedPrompt ? (
         // Show prompt preview with generate image button

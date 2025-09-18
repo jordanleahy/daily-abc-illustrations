@@ -7,6 +7,7 @@ import { HeroTitleSection } from './HeroTitleSection';
 import { HeroSpecsOnly } from './HeroSpecsOnly';
 import { HeroSpecs } from './HeroSpecs';
 import { DailyContent } from './types';
+import { OptimizedImage } from '@/components/ui/optimized-image';
 
 interface HeroContentProps {
   content: DailyContent;
@@ -57,7 +58,7 @@ export const HeroContent = ({
         {/* Main Image */}
         <div className="col-span-1 lg:col-span-8">
           <div className="relative aspect-[4/3] rounded-lg overflow-hidden bg-gradient-to-br from-emerald-400 to-blue-500">
-            <img
+            <OptimizedImage
               src={selectedImage}
               alt={content.title}
               className="w-full h-full object-cover"

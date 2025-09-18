@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { OptimizedImage } from '@/components/ui/optimized-image';
 
 interface HeroSidebarProps {
   thumbnails: string[];
@@ -26,7 +27,7 @@ export const HeroSidebar = ({ thumbnails, mainImage, onImageSelect }: HeroSideba
               : 'border-border'
           }`}
         >
-          <img
+          <OptimizedImage
             src={thumbnail}
             alt={`Thumbnail ${index + 1}`}
             className="w-full h-full object-cover"

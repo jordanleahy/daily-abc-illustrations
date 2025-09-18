@@ -10,6 +10,7 @@ import { PageLayout } from '@/components/layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useActiveDailyPublished } from '@/hooks/useActiveDailyPublished';
 import { toast } from 'sonner';
+import { OptimizedImage } from '@/components/ui/optimized-image';
 
 interface Message {
   id: string;
@@ -330,19 +331,19 @@ const Index = () => {
                       {message.content}
                     </div>
                     {/* Display images if present */}
-                    {message.images && message.images.length > 0 && (
-                      <div className="mt-2 grid gap-2 grid-cols-2">
-                        {message.images.map((image, index) => (
-                          <img
-                            key={index}
-                            src={image}
-                            alt={`Uploaded image ${index + 1}`}
-                            className="rounded-md max-w-full h-auto object-cover"
-                            style={{ maxHeight: '200px' }}
-                          />
-                        ))}
-                      </div>
-                    )}
+                     {message.images && message.images.length > 0 && (
+                       <div className="mt-2 grid gap-2 grid-cols-2">
+                         {message.images.map((image, index) => (
+                           <OptimizedImage
+                             key={index}
+                             src={image}
+                             alt={`Uploaded image ${index + 1}`}
+                             className="rounded-md max-w-full h-auto object-cover"
+                             style={{ maxHeight: '200px' }}
+                           />
+                         ))}
+                       </div>
+                     )}
                   </div>
                 </div>
               ))}
@@ -413,14 +414,14 @@ const Index = () => {
                 {selectedImages.length > 0 && (
                   <div className="mb-2 p-3 border border-border rounded-md bg-muted/30">
                     <div className="grid gap-2 grid-cols-4">
-                      {selectedImages.map((image, index) => (
-                        <div key={index} className="relative">
-                          <img
-                            src={image}
-                            alt={`Selected ${index + 1}`}
-                            className="w-full h-16 object-cover rounded border"
-                          />
-                          <Button
+                       {selectedImages.map((image, index) => (
+                         <div key={index} className="relative">
+                           <OptimizedImage
+                             src={image}
+                             alt={`Selected ${index + 1}`}
+                             className="w-full h-16 object-cover rounded border"
+                           />
+                           <Button
                             type="button"
                             size="sm"
                             variant="destructive"

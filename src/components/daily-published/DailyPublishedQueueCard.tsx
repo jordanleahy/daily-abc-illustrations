@@ -5,6 +5,7 @@ import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { Clock, Calendar, Hash, Image } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { OptimizedImage } from '@/components/ui/optimized-image';
 
 interface DailyPublishedQueueCardProps {
   item: DailyPublishedWithBook;
@@ -97,7 +98,7 @@ export function DailyPublishedQueueCard({
           {/* OG Image on the left */}
           <div className="flex-shrink-0 w-32 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
             {seoMetadata?.og_image_url ? (
-              <img 
+              <OptimizedImage 
                 src={seoMetadata.og_image_url} 
                 alt={`${item.title} OpenGraph preview`}
                 className="w-full h-full object-cover"

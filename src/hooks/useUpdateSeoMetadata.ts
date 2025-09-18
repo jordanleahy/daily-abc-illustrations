@@ -24,7 +24,7 @@ export const useUpdateSeoMetadata = () => {
       const { data: existingSeo } = await supabase
         .from('seo_metadata')
         .select('daily_published_id')
-        .like('source_data', `%"bookId":"${bookId}"%`)
+        .contains('source_data', { bookId })
         .eq('user_id', user.id)
         .eq('is_latest', true)
         .maybeSingle();

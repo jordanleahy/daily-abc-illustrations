@@ -30,6 +30,7 @@ import { toast } from 'sonner';
 
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
+import { OpenGraphEditor } from "@/components/book/OpenGraphEditor";
 import { ExportsSection } from '@/components/exports/ExportsSection';
 
 import { PageImageSection } from "@/components/PageImageSection";
@@ -569,6 +570,13 @@ export default function BookDetail() {
                   </div>
                 </CardContent>
               </Card>
+
+               {/* OpenGraph Editor Section */}
+               <OpenGraphEditor 
+                 bookId={book.id}
+                 bookTitle={book.book_name}
+                 bookDescription={book.book_description}
+               />
 
                {/* System Prompt Section */}
                <SystemPromptSection 

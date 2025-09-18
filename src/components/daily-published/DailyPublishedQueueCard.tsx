@@ -85,7 +85,7 @@ export function DailyPublishedQueueCard({
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           {/* OG Image on the left */}
-          <div className="flex-shrink-0 w-24 h-24 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+          <div className="flex-shrink-0 w-32 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
             {seoMetadata?.og_image_url ? (
               <img 
                 src={seoMetadata.og_image_url} 
@@ -93,7 +93,7 @@ export function DailyPublishedQueueCard({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Image className="h-8 w-8 text-muted-foreground" />
+              <Image className="h-6 w-6 text-muted-foreground" />
             )}
           </div>
           

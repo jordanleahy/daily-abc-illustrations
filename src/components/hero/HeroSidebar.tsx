@@ -1,6 +1,4 @@
 import { useState } from 'react';
-import { OptimizedImage } from '@/components/ui/optimized-image';
-import { commonBlurDataUrls } from '@/utils/blurDataUrl';
 
 interface HeroSidebarProps {
   thumbnails: string[];
@@ -28,14 +26,10 @@ export const HeroSidebar = ({ thumbnails, mainImage, onImageSelect }: HeroSideba
               : 'border-border'
           }`}
         >
-          <OptimizedImage
+          <img
             src={thumbnail}
             alt={`Thumbnail ${index + 1}`}
             className="w-full h-full object-cover"
-            shimmerVariant="skeleton"
-            skeletonType="image"
-            blurDataURL={commonBlurDataUrls.neutral}
-            rootMargin="50px"
           />
         </button>
       ))}

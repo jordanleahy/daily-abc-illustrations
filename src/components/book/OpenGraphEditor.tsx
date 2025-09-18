@@ -78,7 +78,6 @@ import { BookThumbnailPromptEditor } from './BookThumbnailPromptEditor';
 import { BookThumbnailVersionHistory } from './BookThumbnailVersionHistory';
 import { useAuth } from '@/hooks/useAuth';
 import { BookThumbnail } from '@/types/bookThumbnail';
-import { OptimizedImage } from '@/components/ui/optimized-image';
 
 interface OpenGraphEditorProps {
   bookId: string;
@@ -546,7 +545,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
           <div className="space-y-3">
             {currentImage ? (
               <div className="relative">
-                <OptimizedImage
+                <img
                   src={currentImage}
                   alt="OpenGraph preview"
                   className="w-full max-w-md aspect-[1200/630] object-cover rounded-md border"
@@ -721,7 +720,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
             <p className="font-semibold text-sm">{currentTitle}</p>
             <p className="text-xs text-muted-foreground line-clamp-2">{currentDescription}</p>
             {currentImage && (
-              <OptimizedImage
+              <img
                 src={currentImage}
                 alt="Preview"
                 className="w-full aspect-[1200/630] object-cover rounded max-h-20"

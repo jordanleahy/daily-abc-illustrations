@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2, RotateCcw, Clock, AlertCircle, CheckCircle } from 'lucide-react';
 import { BookThumbnail } from '@/types/bookThumbnail';
 import { formatDistanceToNow } from 'date-fns';
-import { OptimizedImage } from '@/components/ui/optimized-image';
 
 interface BookThumbnailVersionHistoryProps {
   thumbnails: BookThumbnail[];
@@ -90,10 +89,11 @@ export const BookThumbnailVersionHistory: React.FC<BookThumbnailVersionHistoryPr
                 onClick={() => onVersionSelect(thumbnail)}
               >
                 {thumbnail.thumbnail_url ? (
-                  <OptimizedImage
+                  <img
                     src={thumbnail.thumbnail_url}
                     alt={`Version ${thumbnail.version_number}`}
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center bg-muted">

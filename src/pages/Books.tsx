@@ -11,7 +11,6 @@ import { Container } from '@/components/layout/Container';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { OptimizedImage } from '@/components/ui/optimized-image';
 
 export default function Books() {
   const { user, loading: authLoading } = useAuth();
@@ -177,17 +176,13 @@ export default function Books() {
                     
                     <div className="aspect-square bg-muted rounded-lg flex items-center justify-center overflow-hidden">
                       {book.firstPageImageUrl ? (
-                        <OptimizedImage 
+                        <img 
                           src={book.firstPageImageUrl} 
                           alt={`Preview of ${book.book_name}`}
                           className="w-full h-full object-cover"
-                          shimmerVariant="default"
-                          critical={true}
                         />
                       ) : (
-                        <div className="flex items-center justify-center w-full h-full">
-                          <BookOpen className="w-8 h-8 text-muted-foreground" />
-                        </div>
+                        <BookOpen className="w-8 h-8 text-muted-foreground" />
                       )}
                     </div>
                   </CardContent>

@@ -46,20 +46,8 @@ function supportsImageFormat(format: string): boolean {
 }
 
 /**
- * Checks if a URL is from Supabase Storage
- */
-function isSupabaseStorageUrl(url: string): boolean {
-  try {
-    const urlObj = new URL(url);
-    return urlObj.pathname.includes('/storage/v1/object/');
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Builds optimized image URL with format parameters
- * For Supabase Storage URLs, returns the original URL unmodified since they don't support format parameters
+ * For Supabase Storage, we'll append format parameters that can be processed by edge functions
  */
 export function buildOptimizedImageUrl(
   originalUrl: string, 
@@ -69,15 +57,10 @@ export function buildOptimizedImageUrl(
 ): string {
   if (!originalUrl) return originalUrl;
   
-  // Skip optimization for Supabase Storage URLs
-  if (isSupabaseStorageUrl(originalUrl)) {
-    return originalUrl;
-  }
-  
   try {
     const url = new URL(originalUrl);
     
-    // Add format optimization parameters for other services
+    // Add format optimization parameters
     url.searchParams.set('format', format);
     url.searchParams.set('quality', quality.toString());
     
@@ -112,62 +95,6 @@ export function generateImageVariants(
   });
   
   return variants;
-}
-
-/**
- * Generates srcset string for responsive images
- * Creates URLs for different widths in the best supported format
- */
-export function generateSrcSet(
-  originalUrl: string,
-  widths: number[] = [400, 800, 1200],
-  quality: number = 80
-): string {
-  const bestFormat = getBestImageFormat();
-  
-  return widths
-    .map(width => {
-      const url = buildOptimizedImageUrl(originalUrl, bestFormat, width, quality);
-      return `${url} ${width}w`;
-    })
-    .join(', ');
-}
-
-/**
- * Generates sizes string for responsive images based on common breakpoints
- */
-export function generateSizes(
-  customSizes?: string
-): string {
-  if (customSizes) return customSizes;
-  
-  // Default responsive sizes for common use cases
-  return '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
-}
-
-/**
- * Gets responsive image props for use in img elements
- */
-export function getResponsiveImageProps(
-  originalUrl: string,
-  options: {
-    widths?: number[];
-    quality?: number;
-    sizes?: string;
-  } = {}
-): {
-  src: string;
-  srcSet: string;
-  sizes: string;
-} {
-  const { widths = [400, 800, 1200], quality = 80, sizes } = options;
-  const bestFormat = getBestImageFormat();
-  
-  return {
-    src: buildOptimizedImageUrl(originalUrl, bestFormat, widths[1], quality), // Default to middle size
-    srcSet: generateSrcSet(originalUrl, widths, quality),
-    sizes: generateSizes(sizes)
-  };
 }
 
 /**

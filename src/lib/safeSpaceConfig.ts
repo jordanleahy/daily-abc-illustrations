@@ -75,6 +75,13 @@ const SAFE_SPACE_CONFIGS: Record<string, SafeSpaceConfig> = {
     safeZones: 'Maintain 12-15% margins on top and bottom, 10% margins on left and right sides',
     composition: 'Moderately tall portrait with well-balanced vertical composition',
     negativePrompts: 'No elements touching top/bottom edges, maintain balanced vertical spacing, no cramped portrait layouts'
+  },
+  '3:2': {
+    aspectRatio: '3:2 Landscape Format',
+    description: 'Optimal SEO thumbnail format with balanced horizontal layout',
+    safeZones: 'Maintain 12-15% margins on left and right sides, 8-10% margins on top and bottom',
+    composition: 'Balanced landscape layout optimized for SEO thumbnails and social media previews',
+    negativePrompts: 'No elements touching horizontal edges, maintain proper thumbnail readability, no cramped landscape layouts, avoid edge-to-edge content'
   }
 };
 

@@ -496,57 +496,56 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
               </Button>
 
               {/* Thumbnail Generation Flow */}
-              <div className="flex gap-2">
-                {!hasPrompt ? (
-                  // Step 1: Generate Prompt
+              <div className="space-y-2">
+                {/* Generate Prompt Button */}
+                <Button
+                  onClick={handleGeneratePrompt}
+                  disabled={generatePrompt.isPending}
+                  variant="outline"
+                  className="flex items-center gap-2 w-full"
+                >
+                  {generatePrompt.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating Prompt...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="w-4 h-4" />
+                      Generate Prompt
+                    </>
+                  )}
+                </Button>
+
+                {/* Generate Thumb Button - disabled until prompt exists */}
+                <Button
+                  onClick={handleGenerateImageFromPrompt}
+                  disabled={!hasPrompt || !canGenerateImage || thumbnailProgress?.generation_status === 'in_progress'}
+                  className="flex items-center gap-2 w-full"
+                >
+                  {thumbnailProgress?.generation_status === 'in_progress' ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generating Thumb...
+                    </>
+                  ) : (
+                    <>
+                      <Image className="w-4 h-4" />
+                      Generate Thumb
+                    </>
+                  )}
+                </Button>
+
+                {/* Edit Prompt Button - only show when prompt exists */}
+                {hasPrompt && (
                   <Button
-                    onClick={handleGeneratePrompt}
-                    disabled={generatePrompt.isPending}
+                    onClick={handleEditExistingPrompt}
                     variant="outline"
-                    className="flex items-center gap-2 flex-1"
+                    className="flex items-center gap-2 w-full"
                   >
-                    {generatePrompt.isPending ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        Generating Prompt...
-                      </>
-                    ) : (
-                      <>
-                        <FileText className="w-4 h-4" />
-                        Generate Prompt
-                      </>
-                    )}
+                    <Edit className="w-4 h-4" />
+                    Edit Prompt
                   </Button>
-                ) : (
-                  // Step 2: Edit Prompt or Generate Image
-                  <>
-                    <Button
-                      onClick={handleEditExistingPrompt}
-                      variant="outline"
-                      className="flex items-center gap-2"
-                    >
-                      <Edit className="w-4 h-4" />
-                      Edit Prompt
-                    </Button>
-                    
-                    <Button
-                      onClick={handleGenerateImageFromPrompt}
-                      disabled={!canGenerateImage || thumbnailProgress?.generation_status === 'in_progress'}
-                      className="flex items-center gap-2 flex-1"
-                    >
-                      {thumbnailProgress?.generation_status === 'in_progress' ? (
-                        <>
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                          Generating Image...
-                        </>
-                      ) : (
-                        <>
-                          <Image className="w-4 h-4" />
-                          Generate Image
-                        </>
-                      )}
-                    </Button>
-                  </>
                 )}
               </div>
             </div>

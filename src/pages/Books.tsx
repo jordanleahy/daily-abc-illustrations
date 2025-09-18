@@ -182,6 +182,7 @@ export default function Books() {
                           alt={`Preview of ${book.book_name}`}
                           className="w-full h-full object-cover"
                           shimmerVariant="default"
+                          critical={true}
                         />
                       ) : (
                         <div className="flex items-center justify-center w-full h-full">

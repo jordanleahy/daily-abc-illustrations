@@ -3,7 +3,8 @@ import { useDailyPublishedById } from './useDailyPublishedById';
 import { useDailyPublishedPages } from './useDailyPublishedPages';
 import { usePageImageUrls } from './usePageImageUrls';
 import { useBook } from './useBook';
-import { generateDailyPublishedOpenGraph, optimizeOpenGraphContent } from '@/utils/openGraph';
+import { useSeoMetadata } from './useSeoMetadata';
+import { generateDailyPublishedOpenGraph } from '@/utils/openGraph';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { SEOMetadata } from '@/types/openGraph';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,44 +76,14 @@ export const useDailyPublishedOpenGraph = (
     directFetchedUrl: firstPageImageUrl
   });
 
-  // State for AI optimization
-  const [optimizedContent, setOptimizedContent] = useState<{
-    optimizedTitle?: string;
-    optimizedDescription?: string;
-  } | null>(null);
-  const [isOptimizing, setIsOptimizing] = useState(false);
-
-  // Optimize content when dependencies change
-  useEffect(() => {
-    if (!dailyContent || !pages.length) return;
-
-    const optimizeContent = async () => {
-      setIsOptimizing(true);
-      try {
-        const timeRemaining = formatTimeRemaining(dailyContent.expires_at);
-        const pageNumber = currentPageIndex + 1;
-        const totalPages = pages.length;
-
-        const result = await optimizeOpenGraphContent(
-          dailyContent.title,
-          book?.book_description || dailyContent.description,
-          book?.book_name || 'Educational Content', // Use book name as category
-          timeRemaining,
-          pageNumber,
-          totalPages
-        );
-
-        setOptimizedContent(result);
-      } catch (error) {
-        console.error('Failed to optimize OpenGraph content:', error);
-        setOptimizedContent(null);
-      } finally {
-        setIsOptimizing(false);
-      }
-    };
-
-    optimizeContent();
-  }, [dailyContent?.id, dailyContent?.title, dailyContent?.description, book?.book_name, book?.book_description, currentPageIndex, pages.length]);
+  // Fetch SEO metadata from database
+  const { data: seoMetadata, isLoading: isLoadingSeo } = useSeoMetadata(dailyId);
+  
+  // Extract optimized content from SEO metadata
+  const optimizedTitle = seoMetadata?.seo_title;
+  const optimizedDescription = seoMetadata?.seo_description;
+  const hasOptimizedContent = !!(optimizedTitle && optimizedDescription);
+  const isOptimizing = isLoadingSeo;
 
   // Generate OpenGraph metadata
   const openGraphMetadata: SEOMetadata | null = useMemo(() => {
@@ -147,15 +118,15 @@ export const useDailyPublishedOpenGraph = (
       dailyContent.id,
       ogImage,
       timeRemaining,
-      optimizedContent?.optimizedTitle,
-      optimizedContent?.optimizedDescription
+      optimizedTitle,
+      optimizedDescription
     );
-  }, [dailyContent, pages, currentPageIndex, firstPageImage, optimizedContent, firstPageImageUrl]);
+  }, [dailyContent, pages, currentPageIndex, firstPageImage, optimizedTitle, optimizedDescription, firstPageImageUrl]);
 
   return {
     openGraphMetadata,
     isReady: !!dailyContent && pages.length > 0,
     isOptimizing,
-    hasOptimizedContent: !!optimizedContent?.optimizedTitle || !!optimizedContent?.optimizedDescription
+    hasOptimizedContent
   };
 };

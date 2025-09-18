@@ -97,43 +97,6 @@ export function generateBookOpenGraph(
   };
 }
 
-/**
- * Optimize OpenGraph title and description using AI
- */
-export async function optimizeOpenGraphContent(
-  contentTitle: string,
-  bookDescription?: string,
-  category?: string,
-  timeRemaining?: string,
-  currentPage?: number,
-  totalPages?: number
-): Promise<{ optimizedTitle?: string; optimizedDescription?: string } | null> {
-  try {
-    const { data, error } = await supabase.functions.invoke('optimize-opengraph', {
-      body: {
-        contentTitle,
-        bookDescription,
-        category,
-        timeRemaining,
-        currentPage,
-        totalPages,
-      },
-    });
-
-    if (error) {
-      console.error('Error optimizing OpenGraph content:', error);
-      return null;
-    }
-
-    return {
-      optimizedTitle: data?.optimizedTitle,
-      optimizedDescription: data?.optimizedDescription,
-    };
-  } catch (error) {
-    console.error('Failed to optimize OpenGraph content:', error);
-    return null;
-  }
-}
 
 /**
  * Generate OpenGraph metadata for daily published content

@@ -260,6 +260,31 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
 
     console.log('All pages created successfully');
 
+    // Generate initial SEO metadata in background (non-blocking)
+    const generateSEOPromise = supabase.functions.invoke('generate-seo-metadata', {
+      body: {
+        bookId: book.id,
+        contentTitle: book.book_name,
+        bookDescription: book.book_description,
+        category: book.category,
+        totalPages: book.total_pages,
+        userId: userId
+      }
+    }).then(result => {
+      if (result.error) {
+        console.error('SEO generation failed:', result.error);
+      } else {
+        console.log('SEO metadata generated successfully for book:', book.id);
+      }
+    }).catch(error => {
+      console.error('SEO generation error:', error);
+    });
+
+    // Use EdgeRuntime.waitUntil for background processing
+    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
+      EdgeRuntime.waitUntil(generateSEOPromise);
+    }
+
     return new Response(
       JSON.stringify({
         success: true,

@@ -57,7 +57,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
-import { safeSpaceConfig } from '../_shared/safeSpaceConfig.ts';
+import { appendSafeSpaceRules } from '../_shared/safeSpaceConfig.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -191,35 +191,9 @@ The thumbnail should work well at small sizes and clearly communicate what the b
      * SAFE SPACE IMPLEMENTATION:
      * Applies platform-specific design guidelines to ensure thumbnails
      * render correctly across different social media platforms and devices.
-     * 
-     * BUSINESS IMPACT:
-     * - Prevents text cutoff on mobile devices
-     * - Ensures readability in social media feeds
-     * - Optimizes click-through rates by following platform best practices
-     * 
-     * TECHNICAL DETAILS:
-     * - Uses 19:10 aspect ratio (1200:630) for optimal social sharing
-     * - Applies margin rules for text placement
-     * - Considers platform-specific UI overlays
+     * Uses the shared safeSpaceConfig module for consistent rules.
      */
-    function appendSafeSpaceRules(prompt: string, aspectRatio: string): string {
-      const rules = safeSpaceConfig.aspectRatios[aspectRatio as keyof typeof safeSpaceConfig.aspectRatios];
-      if (!rules || !safeSpaceConfig.enabled) return prompt;
-
-      const safeSpaceInstructions = `
-SAFE SPACE GUIDELINES for ${aspectRatio} aspect ratio:
-- Text Placement: ${rules.textPlacement}
-- Logo/Branding: ${rules.logoPlacement}
-- Critical Elements: ${rules.criticalElements}
-- Social Media: ${rules.socialMediaConsiderations}
-
-${safeSpaceConfig.generalGuidelines.textReadability}
-${safeSpaceConfig.generalGuidelines.platformCompatibility}`;
-
-      return prompt + safeSpaceInstructions;
-    }
-
-    const enhancedPrompt = appendSafeSpaceRules(basePrompt, "19:10");
+    const enhancedPrompt = appendSafeSpaceRules(basePrompt, "1:1");
     
     console.log('Generated enhanced prompt for book thumbnail');
 

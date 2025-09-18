@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,11 +16,12 @@ export default function Books() {
   const { user, loading: authLoading } = useAuth();
   const { books, loading } = useBooks();
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const [seoGenerating, setSeoGenerating] = useState(false);
 
-  // Redirect to auth if not authenticated
-  if (!authLoading && !user) {
+  // Redirect to auth if not authenticated (but not if already on auth page)
+  if (!authLoading && !user && location.pathname !== '/auth') {
     navigate('/auth');
     return null;
   }

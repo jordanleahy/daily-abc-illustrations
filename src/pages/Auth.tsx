@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,14 +20,15 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { isAuthenticated } = useAuth();
 
-  // Redirect if already authenticated
+  // Only redirect if already authenticated AND not on auth page
   useEffect(() => {
-    if (isAuthenticated) {
+    if (isAuthenticated && location.pathname !== '/auth') {
       navigate('/');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, navigate, location.pathname]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();

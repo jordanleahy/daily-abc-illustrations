@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +39,7 @@ export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const { currentPrompt, refreshData } = useSystemPrompt(id || '');
   const { pages } = useBookPages(id);
   const { data: book, isLoading: bookLoading, error: bookError, isFetched: bookFetched } = useBook(id);
@@ -59,11 +60,11 @@ export default function BookDetail() {
     // Wait for auth loading to complete before checking user status
     if (authLoading) return;
     
-    if (!user || !id) {
+    if ((!user || !id) && location.pathname !== '/auth') {
       navigate('/auth');
       return;
     }
-  }, [user, id, navigate, authLoading]);
+  }, [user, id, navigate, authLoading, location.pathname]);
 
   // Handle book not found only after auth and query have both completed
   useEffect(() => {

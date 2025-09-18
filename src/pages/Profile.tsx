@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,12 +15,13 @@ const Profile = () => {
   const { isAuthenticated, user, loading: authLoading } = useAuth();
   const { data: profile, isLoading, error } = useProfile();
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    if (!authLoading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated && location.pathname !== '/auth') {
       navigate('/auth');
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate, location.pathname]);
 
   if (authLoading || isLoading) {
     return (

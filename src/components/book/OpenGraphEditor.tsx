@@ -128,8 +128,8 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   
   // Get the latest thumbnail record (which may have a prompt but no image yet)
   const latestThumbnailRecord = allThumbnails?.[0]; // First item is latest due to ordering
-  const hasPrompt = latestThumbnailRecord?.prompt_used;
-  const canGenerateImage = hasPrompt && latestThumbnailRecord?.generation_status !== 'in_progress';
+  const hasPrompt = Boolean(latestThumbnailRecord?.prompt_used?.trim());
+  const canGenerateImage = hasPrompt && latestThumbnailRecord?.generation_status !== 'in_progress' && user?.id;
 
   const handleTitleSave = async (newTitle: string) => {
     try {
@@ -309,40 +309,61 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
    * 
    * Used when we already have a prompt and want to generate the image
    */
-  const handleGenerateImageFromPrompt = async () => {
-    if (!latestThumbnailRecord?.id) {
-      toast.error('No prompt available for image generation');
-      return;
-    }
+   const handleGenerateImageFromPrompt = async () => {
+     if (!latestThumbnailRecord?.id) {
+       toast.error('No prompt available for image generation');
+       return;
+     }
 
-    try {
-      // Call the generate-book-thumbnail function directly with the existing record
-      const { data, error } = await supabase.functions.invoke('generate-book-thumbnail', {
-        body: {
-          recordId: latestThumbnailRecord.id,
-          userId: user?.id,
-        },
-      });
+     if (!hasPrompt) {
+       toast.error('Please generate a prompt first');
+       return;
+     }
 
-      if (error) throw error;
-      toast.success('Thumbnail generation started!');
-    } catch (error) {
-      console.error('Image generation error:', error);
-      toast.error('Failed to generate thumbnail image');
-    }
-  };
+     if (!user?.id) {
+       toast.error('User authentication required');
+       return;
+     }
+
+     try {
+       // Call the generate-book-thumbnail function directly with the existing record
+       const { data, error } = await supabase.functions.invoke('generate-book-thumbnail', {
+         body: {
+           recordId: latestThumbnailRecord.id,
+           userId: user.id,
+         },
+       });
+
+       if (error) throw error;
+
+       toast.success('Thumbnail generation started');
+       setIsEditingPrompt(false); // Close prompt editor when generation starts
+       refetch();
+     } catch (error) {
+       console.error('Generate thumbnail error:', error);
+       toast.error('Failed to generate thumbnail image');
+     }
+   };
 
   /**
    * PROMPT EDITING HANDLERS
    */
   const handleSavePrompt = async () => {
-    if (!latestThumbnailRecord?.id) return;
+    if (!latestThumbnailRecord?.id) {
+      toast.error('No thumbnail record found');
+      return;
+    }
+
+    if (!promptContent?.trim()) {
+      toast.error('Prompt cannot be empty');
+      return;
+    }
 
     try {
       const { error } = await supabase
         .from('book_thumbnails')
         .update({ 
-          prompt_used: promptContent,
+          prompt_used: promptContent.trim(),
           updated_at: new Date().toISOString()
         })
         .eq('id', latestThumbnailRecord.id);
@@ -350,6 +371,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
       if (error) throw error;
       
       setIsEditingPrompt(false);
+      refetch(); // Refresh data to update hasPrompt state
       toast.success('Prompt saved successfully');
     } catch (error) {
       console.error('Save prompt error:', error);
@@ -522,6 +544,10 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                   onClick={handleGenerateImageFromPrompt}
                   disabled={!hasPrompt || !canGenerateImage || thumbnailProgress?.generation_status === 'in_progress'}
                   className="flex items-center gap-2 w-full"
+                  title={!hasPrompt ? "Generate a prompt first to enable thumbnail generation" : 
+                         thumbnailProgress?.generation_status === 'in_progress' ? "Thumbnail generation in progress" :
+                         !canGenerateImage ? "Cannot generate image at this time" : 
+                         "Generate thumbnail from the current prompt"}
                 >
                   {thumbnailProgress?.generation_status === 'in_progress' ? (
                     <>
@@ -531,7 +557,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                   ) : (
                     <>
                       <Image className="w-4 h-4" />
-                      Generate Thumb
+                      {hasPrompt ? 'Generate Thumb' : 'Generate Thumb (Prompt Required)'}
                     </>
                   )}
                 </Button>

@@ -46,8 +46,20 @@ function supportsImageFormat(format: string): boolean {
 }
 
 /**
+ * Checks if a URL is from Supabase Storage
+ */
+function isSupabaseStorageUrl(url: string): boolean {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.pathname.includes('/storage/v1/object/');
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Builds optimized image URL with format parameters
- * For Supabase Storage, we'll append format parameters that can be processed by edge functions
+ * For Supabase Storage URLs, returns the original URL unmodified since they don't support format parameters
  */
 export function buildOptimizedImageUrl(
   originalUrl: string, 
@@ -57,10 +69,15 @@ export function buildOptimizedImageUrl(
 ): string {
   if (!originalUrl) return originalUrl;
   
+  // Skip optimization for Supabase Storage URLs
+  if (isSupabaseStorageUrl(originalUrl)) {
+    return originalUrl;
+  }
+  
   try {
     const url = new URL(originalUrl);
     
-    // Add format optimization parameters
+    // Add format optimization parameters for other services
     url.searchParams.set('format', format);
     url.searchParams.set('quality', quality.toString());
     

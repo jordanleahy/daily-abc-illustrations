@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { useUpdateSeoMetadata } from '@/hooks/useUpdateSeoMetadata';
+import { useAuth } from '@/hooks/useAuth';
 
 interface OpenGraphEditorProps {
   bookId: string;
@@ -21,6 +22,7 @@ interface OpenGraphEditorProps {
 export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGraphEditorProps) => {
   const { data: seoMetadata, isLoading, refetch } = useBookSeoMetadata(bookId);
   const updateSeoMetadata = useUpdateSeoMetadata();
+  const { user } = useAuth();
   
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -82,8 +84,8 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
 
     setIsUploading(true);
     try {
-      // Upload to page-images bucket
-      const fileName = `og-${bookId}-${Date.now()}.${file.name.split('.').pop()}`;
+      // Upload to page-images bucket with user ID as folder (required by RLS)
+      const fileName = `${user?.id}/og-${bookId}-${Date.now()}.${file.name.split('.').pop()}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('page-images')
         .upload(fileName, file);

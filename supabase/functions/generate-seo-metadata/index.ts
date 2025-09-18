@@ -9,13 +9,10 @@
  * POST request with body: {
  *   "bookId": string (required),
  *   "dailyPublishedId": string (optional),
- *   "contentTitle": string,
+ *   "contentTitle": string (required),
  *   "bookDescription": string (optional),
- *   "category": string (optional),
- *   "timeRemaining": string (optional),
- *   "currentPage": number (optional),
- *   "totalPages": number (optional),
- *   "ogImageUrl": string (optional)
+ *   "ogImageUrl": string (optional),
+ *   "userId": string (optional, can be derived from bookId)
  * }
  * 
  * Environment Variables Required:
@@ -38,10 +35,6 @@ interface SEORequest {
   dailyPublishedId?: string;
   contentTitle: string;
   bookDescription?: string;
-  category?: string;
-  timeRemaining?: string;
-  currentPage?: number;
-  totalPages?: number;
   ogImageUrl?: string;
   userId?: string;
 }
@@ -63,10 +56,6 @@ serve(async (req) => {
       dailyPublishedId, 
       contentTitle, 
       bookDescription, 
-      category, 
-      timeRemaining, 
-      currentPage, 
-      totalPages, 
       ogImageUrl,
       userId 
     }: SEORequest = await req.json();
@@ -105,18 +94,9 @@ serve(async (req) => {
     }
 
     // Build context for the AI
-    let context = `Content: "${contentTitle}"`;
+    let context = `Content Title: "${contentTitle}"`;
     if (bookDescription) {
       context += `\nBook Description: "${bookDescription}"`;
-    }
-    if (category) {
-      context += `\nCategory: ${category}`;
-    }
-    if (currentPage && totalPages) {
-      context += `\nPage: ${currentPage} of ${totalPages}`;
-    }
-    if (timeRemaining) {
-      context += `\nTime Remaining: ${timeRemaining}`;
     }
 
     const prompt = `${context}
@@ -127,7 +107,6 @@ Requirements:
 - Title: Maximum 60 characters, engaging and click-worthy
 - Description: Maximum 160 characters, compelling and informative
 - Focus on educational value and child appeal
-- Include urgency if time-limited
 - Use emojis sparingly but effectively
 - Make parents want to click for their kids
 
@@ -205,11 +184,7 @@ Return only JSON format:
         source_data: {
           bookId,
           contentTitle,
-          bookDescription,
-          category,
-          timeRemaining,
-          currentPage,
-          totalPages
+          bookDescription
         },
         generation_metadata: {
           model: 'gpt-4o-mini',

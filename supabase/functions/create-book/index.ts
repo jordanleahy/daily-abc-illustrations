@@ -266,8 +266,6 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
         bookId: book.id,
         contentTitle: book.book_name,
         bookDescription: book.book_description,
-        category: book.category,
-        totalPages: book.total_pages,
         userId: userId
       }
     }).then(result => {

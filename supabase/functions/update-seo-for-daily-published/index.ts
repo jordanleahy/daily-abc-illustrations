@@ -2,15 +2,14 @@
  * Update SEO Metadata for Daily Published Content
  * 
  * This function generates daily-published-specific SEO metadata when content 
- * is published. It creates a new version with the daily_published_id and 
- * time-sensitive optimizations.
+ * is published. It creates a new version with the daily_published_id based
+ * on existing book-level SEO metadata.
  * 
  * Usage:
  * POST request with body: {
  *   "dailyPublishedId": string,
  *   "bookId": string,
- *   "contentTitle": string,
- *   "timeRemaining": string
+ *   "contentTitle": string
  * }
  * 
  * Environment Variables Required:
@@ -35,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { dailyPublishedId, bookId, contentTitle, timeRemaining } = await req.json();
+    const { dailyPublishedId, bookId, contentTitle } = await req.json();
 
     console.log('Updating SEO metadata for daily published:', dailyPublishedId);
 
@@ -90,8 +89,7 @@ serve(async (req) => {
         body: {
           bookId,
           dailyPublishedId,
-          contentTitle,
-          timeRemaining
+          contentTitle
         }
       });
 
@@ -121,7 +119,6 @@ serve(async (req) => {
           dailyPublishedId,
           bookId,
           contentTitle,
-          timeRemaining,
           baseBookSeoId: bookSeo.id
         },
         generation_metadata: {

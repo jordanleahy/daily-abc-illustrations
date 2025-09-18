@@ -95,7 +95,28 @@ export function PageCard({ page, bookId }: PageCardProps) {
     try {
       setIsRegeneratingImage(true);
       
-      // First, get the next version number for this page's images
+      // First, fetch the latest deployed page system prompt
+      const { data: deployedPrompt, error: promptError } = await supabase
+        .from('page_system_prompts')
+        .select('content')
+        .eq('page_id', page.id)
+        .eq('is_deployed', true)
+        .order('deployed_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+
+      if (promptError) throw promptError;
+
+      if (!deployedPrompt) {
+        toast({
+          title: "No Deployed Prompt",
+          description: "Please deploy a page system prompt before generating an image",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Get the next version number for this page's images
       const { data: existingImages, error: fetchError } = await supabase
         .from('page_image_urls')
         .select('version_number')
@@ -109,7 +130,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
         ? existingImages[0].version_number + 1 
         : 1;
 
-      // Create a new page_image_urls record
+      // Create a new page_image_urls record with the deployed prompt
       const { data: newImageRecord, error: createError } = await supabase
         .from('page_image_urls')
         .insert({
@@ -118,7 +139,8 @@ export function PageCard({ page, bookId }: PageCardProps) {
           user_id: user.id,
           version_number: nextVersion,
           is_latest: true,
-          generation_status: 'not_started'
+          generation_status: 'not_started',
+          prompt_used: deployedPrompt.content
         })
         .select()
         .single();

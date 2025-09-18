@@ -44,12 +44,12 @@ const Index = () => {
     setUserScrolledUp(false);
   }, [messages.length]);
 
-  // Redirect to daily publication if available
-  useEffect(() => {
-    if (!loading && !isDailyLoading && dailyContent && dailyContent.id) {
-      navigate(`/daily-published/${dailyContent.id}`, { replace: true });
-    }
-  }, [dailyContent, loading, isDailyLoading, navigate]);
+  // Removed automatic redirect to daily publication - users can navigate manually if needed
+  // useEffect(() => {
+  //   if (!loading && !isDailyLoading && dailyContent && dailyContent.id) {
+  //     navigate(`/daily-published/${dailyContent.id}`, { replace: true });
+  //   }
+  // }, [dailyContent, loading, isDailyLoading, navigate]);
 
   // Handle scroll events to detect if user scrolled up
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {

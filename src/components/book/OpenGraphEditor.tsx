@@ -153,9 +153,47 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
   };
 
-  const handleGenerateThumbPrompt = () => {
-    // Placeholder for Generate Thumb Prompt functionality
-    toast.info('Generate Thumb Prompt - Coming Soon');
+  const handleGenerateThumbPrompt = async () => {
+    if (!user?.id) {
+      toast.error('User not authenticated');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-book-thumbnail-prompt', {
+        body: {
+          bookId,
+          userId: user.id,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data?.thumbnailPrompt) {
+        // Show the generated prompt in a success toast with copy functionality
+        toast.success('Thumbnail prompt generated! Check browser console for full prompt.', {
+          duration: 5000,
+        });
+        
+        // Log the prompt to console for easy copying
+        console.log('Generated Thumbnail Prompt:', data.thumbnailPrompt);
+        console.log('Original Prompt (before safe space rules):', data.originalPrompt);
+        
+        // Optionally copy to clipboard
+        if (navigator.clipboard) {
+          await navigator.clipboard.writeText(data.thumbnailPrompt);
+          toast.info('Prompt copied to clipboard!');
+        }
+      } else {
+        throw new Error('Failed to generate thumbnail prompt');
+      }
+    } catch (error) {
+      console.error('Thumbnail prompt generation error:', error);
+      toast.error('Failed to generate thumbnail prompt');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const handleGenerateThumbImage = () => {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Shimmer } from './shimmer';
-import { getSupportedImageFormat, buildOptimizedImageUrl } from '@/utils/imageOptimization';
+import { getSupportedImageFormat, buildOptimizedImageUrl, getResponsiveImageProps } from '@/utils/imageOptimization';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -9,10 +9,25 @@ interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> 
   className?: string;
   fallbackSrc?: string;
   showShimmer?: boolean;
+  responsive?: boolean;
+  widths?: number[];
+  quality?: number;
+  sizes?: string;
 }
 
 export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageProps>(
-  ({ src, alt, className, fallbackSrc, showShimmer = true, ...props }, ref) => {
+  ({ 
+    src, 
+    alt, 
+    className, 
+    fallbackSrc, 
+    showShimmer = true, 
+    responsive = true,
+    widths = [400, 800, 1200],
+    quality = 80,
+    sizes,
+    ...props 
+  }, ref) => {
     const [currentSrc, setCurrentSrc] = useState<string>('');
     const [isLoading, setIsLoading] = useState(true);
     const [hasError, setHasError] = useState(false);
@@ -21,16 +36,23 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
     // Get supported formats in priority order (AVIF > WebP > PNG)
     const supportedFormats = getSupportedImageFormat();
     
+    // Get responsive image props if responsive mode is enabled
+    const responsiveProps = responsive 
+      ? getResponsiveImageProps(src, { widths, quality, sizes })
+      : null;
+    
     useEffect(() => {
       // Reset states when src changes
       setIsLoading(true);
       setHasError(false);
       setFormatIndex(0);
       
-      // Start with the best supported format
-      const initialUrl = buildOptimizedImageUrl(src, supportedFormats[0]);
+      // Use responsive src or build optimized URL
+      const initialUrl = responsive 
+        ? responsiveProps?.src || src
+        : buildOptimizedImageUrl(src, supportedFormats[0]);
       setCurrentSrc(initialUrl);
-    }, [src, supportedFormats]);
+    }, [src, supportedFormats, responsive, responsiveProps]);
 
     const handleLoad = () => {
       setIsLoading(false);
@@ -84,6 +106,8 @@ export const OptimizedImage = React.forwardRef<HTMLImageElement, OptimizedImageP
           <img
             ref={ref}
             src={currentSrc}
+            srcSet={responsive ? responsiveProps?.srcSet : undefined}
+            sizes={responsive ? responsiveProps?.sizes : undefined}
             alt={alt}
             className={cn(
               "w-full h-full object-cover transition-opacity duration-300",

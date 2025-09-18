@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
+import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { Clock, Calendar, Hash } from 'lucide-react';
 
 interface DailyPublishedQueueCardProps {
@@ -13,6 +14,9 @@ export function DailyPublishedQueueCard({
   item, 
   expectedActivationTime 
 }: DailyPublishedQueueCardProps) {
+  // Fetch SEO metadata for this specific daily published item
+  const { data: seoMetadata } = useSeoMetadata(item.id);
+  
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'active':
@@ -92,11 +96,17 @@ export function DailyPublishedQueueCard({
             </div>
             
             <h3 className="text-xl font-bold text-foreground leading-tight mb-1">
-              {item.book?.book_name || 'Unknown Book'}
+              {seoMetadata?.seo_title || item.title || "Unknown Title"}
             </h3>
             
+            {seoMetadata?.seo_description && (
+              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 mb-2">
+                {seoMetadata.seo_description}
+              </p>
+            )}
+            
             <h4 className="text-lg font-semibold text-primary mb-2">
-              {item.title}
+              {item.book?.book_name || "Unknown Book"}
             </h4>
             
             {item.description && (

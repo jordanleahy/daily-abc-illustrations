@@ -3,8 +3,6 @@ import { Badge } from '@/components/ui/badge';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
-import { usePublicPageImage } from '@/hooks/usePublicPageImage';
-import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { Clock, Calendar, Hash, Image } from 'lucide-react';
 
 interface DailyPublishedQueueCardProps {
@@ -18,13 +16,6 @@ export function DailyPublishedQueueCard({
 }: DailyPublishedQueueCardProps) {
   // Fetch SEO metadata for this specific daily published item
   const { data: seoMetadata } = useSeoMetadata(item.id);
-  
-  // Fetch pages to get the first page for the OG image
-  const { data: pages = [] } = useDailyPublishedPages(item.book_id);
-  const firstPage = pages[0];
-  
-  // Fetch the image for the first page (OG image)
-  const { data: firstPageImage } = usePublicPageImage(firstPage?.id || '');
   
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -95,10 +86,10 @@ export function DailyPublishedQueueCard({
         <div className="flex items-start justify-between gap-4">
           {/* OG Image on the left */}
           <div className="flex-shrink-0 w-24 h-24 rounded-md overflow-hidden bg-muted flex items-center justify-center">
-            {firstPageImage?.image_url ? (
+            {seoMetadata?.og_image_url ? (
               <img 
-                src={firstPageImage.image_url} 
-                alt={`${item.title} preview`}
+                src={seoMetadata.og_image_url} 
+                alt={`${item.title} OpenGraph preview`}
                 className="w-full h-full object-cover"
               />
             ) : (

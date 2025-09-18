@@ -203,6 +203,8 @@ export type Database = {
           id: string
           is_active: boolean
           published_at: string
+          queue_position: number
+          status: string
           title: string
           updated_at: string
         }
@@ -214,6 +216,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           published_at?: string
+          queue_position: number
+          status?: string
           title: string
           updated_at?: string
         }
@@ -225,6 +229,8 @@ export type Database = {
           id?: string
           is_active?: boolean
           published_at?: string
+          queue_position?: number
+          status?: string
           title?: string
           updated_at?: string
         }
@@ -662,12 +668,20 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_next_activation_time: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_next_page_image_version_number: {
         Args: { p_page_id: string }
         Returns: number
       }
       get_next_page_prompt_version_number: {
         Args: { p_page_id: string }
+        Returns: number
+      }
+      get_next_queue_position: {
+        Args: Record<PropertyKey, never>
         Returns: number
       }
       get_next_seo_version_number: {
@@ -684,6 +698,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      process_daily_published_queue: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
     }
     Enums: {

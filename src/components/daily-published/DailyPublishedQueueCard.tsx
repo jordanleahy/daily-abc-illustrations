@@ -3,7 +3,9 @@ import { Badge } from '@/components/ui/badge';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
-import { Clock, Calendar, Hash } from 'lucide-react';
+import { usePublicPageImage } from '@/hooks/usePublicPageImage';
+import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
+import { Clock, Calendar, Hash, Image } from 'lucide-react';
 
 interface DailyPublishedQueueCardProps {
   item: DailyPublishedWithBook;
@@ -16,6 +18,13 @@ export function DailyPublishedQueueCard({
 }: DailyPublishedQueueCardProps) {
   // Fetch SEO metadata for this specific daily published item
   const { data: seoMetadata } = useSeoMetadata(item.id);
+  
+  // Fetch pages to get the first page for the OG image
+  const { data: pages = [] } = useDailyPublishedPages(item.book_id);
+  const firstPage = pages[0];
+  
+  // Fetch the image for the first page (OG image)
+  const { data: firstPageImage } = usePublicPageImage(firstPage?.id || '');
   
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -84,6 +93,19 @@ export function DailyPublishedQueueCard({
     <Card className="overflow-hidden border-l-4 border-l-primary/20 hover:border-l-primary/50 transition-colors">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
+          {/* OG Image on the left */}
+          <div className="flex-shrink-0 w-24 h-24 rounded-md overflow-hidden bg-muted flex items-center justify-center">
+            {firstPageImage?.image_url ? (
+              <img 
+                src={firstPageImage.image_url} 
+                alt={`${item.title} preview`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Image className="h-8 w-8 text-muted-foreground" />
+            )}
+          </div>
+          
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <Hash className="h-4 w-4 text-muted-foreground flex-shrink-0" />

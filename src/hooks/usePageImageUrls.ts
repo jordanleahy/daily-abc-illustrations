@@ -168,10 +168,20 @@ export function usePageImageUrls(pageId: string) {
             old.map(img => img.id === updatedImage.id ? updatedImage as PageImageUrlVersion : img)
           );
           
-          // Update current image cache
+          // Update current image cache with enhanced logging
           if (updatedImage.is_latest) {
-            console.log(`[usePageImageUrls] Updated image is now latest (version ${updatedImage.version_number})`);
+            console.log(`[usePageImageUrls] ✅ Updated image is now latest (version ${updatedImage.version_number})`);
+            // Force update the cache to ensure the UI shows the image
             queryClient.setQueryData(['page-image-latest', pageId], updatedImage);
+            
+            // If image is complete, make sure we refresh to avoid any stale state
+            if (updatedImage.generation_status === 'complete' && updatedImage.image_url) {
+              console.log(`[usePageImageUrls] 🔄 Image complete, ensuring fresh cache`);
+              // Small delay to ensure database consistency, then refresh
+              setTimeout(() => {
+                queryClient.invalidateQueries({ queryKey: ['page-image-latest', pageId] });
+              }, 100);
+            }
           } else if (oldImage.is_latest && !updatedImage.is_latest) {
             // This image was latest but no longer is - need to find the new latest
             console.log(`[usePageImageUrls] Image was latest but no longer is, refreshing current image`);

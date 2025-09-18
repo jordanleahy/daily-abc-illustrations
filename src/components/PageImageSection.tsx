@@ -29,12 +29,25 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
 
   // Clear local generating state when backend status updates to complete or error
   useEffect(() => {
-    console.log('Image status changed:', currentImage?.generation_status, 'isLocalGenerating:', isLocalGenerating);
-    if (currentImage?.generation_status && ['complete', 'error'].includes(currentImage.generation_status) && isLocalGenerating) {
-      console.log('Clearing local generating state');
-      setIsLocalGenerating(false);
+    console.log('🔄 Image state update:', {
+      imageId: currentImage?.id,
+      status: currentImage?.generation_status,
+      hasImageUrl: !!currentImage?.image_url,
+      isLocalGenerating,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Only clear local generating if we have a definitive completion state
+    if (currentImage && isLocalGenerating) {
+      if (currentImage.generation_status === 'complete' && currentImage.image_url) {
+        console.log('✅ Image generation complete, clearing local state');
+        setIsLocalGenerating(false);
+      } else if (currentImage.generation_status === 'error') {
+        console.log('❌ Image generation failed, clearing local state');
+        setIsLocalGenerating(false);
+      }
     }
-  }, [currentImage?.generation_status, isLocalGenerating]);
+  }, [currentImage?.id, currentImage?.generation_status, currentImage?.image_url, isLocalGenerating]);
 
   const handleGeneratePrompt = async () => {
     if (!user) return;
@@ -236,16 +249,47 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const isGenerating = currentImage?.generation_status === 'in_progress' || isLocalGenerating;
   const hasImage = currentImage?.generation_status === 'complete' && currentImage?.image_url;
   const hasError = currentImage?.generation_status === 'error';
+  
+  console.log('🎨 Render state:', {
+    hasImage,
+    isGenerating,
+    hasError,
+    imageUrl: currentImage?.image_url ? 'present' : 'missing',
+    status: currentImage?.generation_status,
+    isLocalGenerating,
+    currentImageId: currentImage?.id
+  });
 
   return (
     <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden relative">
       {hasImage && currentImage?.image_url ? (
         // Show clean generated image
-        <img 
-          src={currentImage.image_url} 
-          alt="Generated page image"
-          className="w-full h-full object-cover"
-        />
+        <div className="relative w-full h-full">
+          <img 
+            src={currentImage.image_url} 
+            alt="Generated page image"
+            className="w-full h-full object-cover"
+            onLoad={() => console.log('🖼️ Image loaded successfully:', currentImage.image_url)}
+            onError={() => console.error('🚫 Image failed to load:', currentImage.image_url)}
+          />
+          {/* Show regenerate button on hover */}
+          <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors duration-200 flex items-center justify-center opacity-0 hover:opacity-100">
+            <Button 
+              onClick={handleRegenerateImage}
+              size="sm"
+              variant="secondary"
+              disabled={isRegenerating || isGenerating}
+              className="shadow-lg"
+            >
+              {isRegenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              Regenerate
+            </Button>
+          </div>
+        </div>
       ) : isGenerating ? (
         // Show generating state
         <div className="flex flex-col items-center justify-center h-full space-y-3">

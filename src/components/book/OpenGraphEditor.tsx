@@ -238,7 +238,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
 
         {/* Image Field */}
         <div className="space-y-2">
-          <Label>Social Media Image</Label>
+          <Label>Social Media Image <span className="text-sm text-muted-foreground font-normal">(Recommended: 1200x630px)</span></Label>
           <div className="space-y-3">
             {currentImage ? (
               <div className="relative">

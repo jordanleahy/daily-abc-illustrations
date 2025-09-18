@@ -102,36 +102,33 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const handleGenerateImageDirectly = async () => {
     if (!user || !hasDeployedPrompt) return;
 
-    setIsLocalGenerating(true); // Start shimmer immediately
+    setIsLocalGenerating(true);
     try {
-      // Generate the image prompt using the page system prompt
-      const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-image-prompt', {
-        body: {
-          pageId,
-          userId: user.id
-        }
-      });
-
-      if (promptError) throw promptError;
-      if (!promptData?.success) throw new Error(promptData?.error || 'Failed to generate image prompt');
+      // Use stored prompt first, then fallback to generating new one
+      let prompt = await getStoredPrompt();
       
-      const prompt = promptData.imagePrompt;
-      if (!prompt || prompt.trim().length === 0) {
-        throw new Error('No image prompt could be generated. Please ensure a page system prompt is deployed.');
+      if (!prompt) {
+        const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-image-prompt', {
+          body: { pageId, userId: user.id }
+        });
+
+        if (promptError) throw promptError;
+        if (!promptData?.success) throw new Error(promptData?.error || 'Failed to generate image prompt');
+        
+        prompt = promptData.imagePrompt;
       }
 
-      // Create image record with the generated prompt
+      if (!prompt || prompt.trim().length === 0) {
+        throw new Error('No image prompt available. Please ensure a page system prompt is deployed.');
+      }
+
       const record = await createImageRecord(bookId, prompt);
       if (!record) {
         throw new Error('Failed to create image record');
       }
 
-      // Start image generation
       const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: { 
-          recordId: record.id,
-          userId: user.id
-        }
+        body: { recordId: record.id, userId: user.id }
       });
 
       if (error) throw error;
@@ -142,7 +139,7 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
     } catch (error: any) {
       console.error('Error generating image:', error);
       toast.error(error.message || 'Failed to generate image');
-      setIsLocalGenerating(false); // Clear local generating on error
+      setIsLocalGenerating(false);
     }
   };
 

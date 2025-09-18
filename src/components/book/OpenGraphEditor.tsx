@@ -58,7 +58,7 @@
  * ==================================================================================
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -69,6 +69,7 @@ import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 import { Loader2, Upload, Eye, Wand2, X, Image, Edit, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { useQueryClient } from '@tanstack/react-query';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { useUpdateSeoMetadata } from '@/hooks/useUpdateSeoMetadata';
 import { useLatestBookThumbnail, useGenerateBookThumbnail, useBookThumbnailProgress, useBookThumbnails } from '@/hooks/useBookThumbnails';
@@ -107,13 +108,14 @@ interface OpenGraphEditorProps {
  */
 export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGraphEditorProps) => {
   const { data: seoMetadata, isLoading, refetch } = useBookSeoMetadata(bookId);
-  const { data: latestThumbnail } = useLatestBookThumbnail(bookId);
+  const { data: latestThumbnail, refetch: refetchLatestThumbnail } = useLatestBookThumbnail(bookId);
   const { data: thumbnailProgress } = useBookThumbnailProgress(bookId);
   const { data: allThumbnails } = useBookThumbnails(bookId);
   const generateThumbnail = useGenerateBookThumbnail();
   const generatePrompt = useGenerateBookThumbnailPrompt();
   const updateSeoMetadata = useUpdateSeoMetadata();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
@@ -135,6 +137,15 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const latestThumbnailRecord = allThumbnails?.[0]; // First item is latest due to ordering
   const hasPrompt = Boolean(latestThumbnailRecord?.prompt_used?.trim());
   const canGenerateImage = hasPrompt && latestThumbnailRecord?.generation_status !== 'in_progress' && user?.id;
+
+  // Watch for thumbnail generation completion and refresh data
+  useEffect(() => {
+    // If generation completed, invalidate all thumbnail-related queries to refresh UI
+    if (thumbnailProgress?.generation_status === 'complete') {
+      queryClient.invalidateQueries({ queryKey: ['book-thumbnail-latest', bookId] });
+      queryClient.invalidateQueries({ queryKey: ['book-thumbnails', bookId] });
+    }
+  }, [thumbnailProgress?.generation_status, queryClient, bookId]);
 
   const handleTitleSave = async (newTitle: string) => {
     try {
@@ -341,9 +352,13 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
 
        if (error) throw error;
 
-       toast.success('Thumbnail generation started');
-       setIsEditingPrompt(false); // Close prompt editor when generation starts
-       refetch();
+        toast.success('Thumbnail generation started');
+        setIsEditingPrompt(false); // Close prompt editor when generation starts
+        
+        // Invalidate queries to refresh UI state
+        queryClient.invalidateQueries({ queryKey: ['book-thumbnail-progress', bookId] });
+        queryClient.invalidateQueries({ queryKey: ['book-thumbnails', bookId] });
+        refetch();
      } catch (error) {
        console.error('Generate thumbnail error:', error);
        toast.error('Failed to generate thumbnail image');

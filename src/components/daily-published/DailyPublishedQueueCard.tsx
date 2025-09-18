@@ -52,13 +52,13 @@ export function DailyPublishedQueueCard({
     if (item.status === 'queued' && expectedActivationTime) {
       const now = new Date().getTime();
       const activation = new Date(expectedActivationTime).getTime();
-      const isReady = activation <= now;
       
       return {
         icon: Calendar,
-        label: isReady ? 'Ready to activate' : 'Activates',
-        value: isReady ? 'Now' : formatTimeRemaining(expectedActivationTime),
-        color: isReady ? 'text-green-600' : 'text-blue-600'
+        label: 'Scheduled to activate',
+        value: new Date(expectedActivationTime).toLocaleDateString() + ' at ' + 
+               new Date(expectedActivationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        color: 'text-blue-600'
       };
     }
     

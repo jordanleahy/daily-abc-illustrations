@@ -5,26 +5,22 @@ import { DailyPublishedQueueCard } from '@/components/daily-published/DailyPubli
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, Calendar } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { DailyPublishedWithBook } from '@/types/dailyPublished';
 
 const DailyPublishedSchedule = () => {
   const { data: queueItems, isLoading, error } = useDailyPublishedQueue();
 
-  const calculateExpectedActivationTime = (queuePosition: number) => {
-    if (queuePosition === 1) {
-      // First item - check if there's currently an active item
-      const activeItem = queueItems?.find(item => item.status === 'active');
-      if (!activeItem) {
-        return new Date().toISOString(); // Can activate now
-      }
-      return activeItem.expires_at; // Wait for current to expire
+  const calculateExpectedActivationTime = (item: DailyPublishedWithBook) => {
+    if (item.status === 'active') {
+      return undefined; // Active items don't need activation time
     }
     
-    // For items after the first, calculate based on 48-hour intervals
-    const activeItem = queueItems?.find(item => item.status === 'active');
-    const baseTime = activeItem ? activeItem.published_at : new Date().toISOString();
-    const activationTime = new Date(baseTime);
-    activationTime.setHours(activationTime.getHours() + (queuePosition - 1) * 48);
-    return activationTime.toISOString();
+    if (item.status === 'queued') {
+      // For queued items, use their scheduled published_at time
+      return item.published_at;
+    }
+    
+    return undefined;
   };
 
   return (
@@ -84,11 +80,7 @@ const DailyPublishedSchedule = () => {
                     <DailyPublishedQueueCard
                       key={item.id}
                       item={item}
-                      expectedActivationTime={
-                        item.status === 'queued' 
-                          ? calculateExpectedActivationTime(item.queue_position)
-                          : undefined
-                      }
+                      expectedActivationTime={calculateExpectedActivationTime(item)}
                     />
                   ))
                 )}

@@ -6,11 +6,12 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
-import { Loader2, Upload, Eye, Wand2, X } from 'lucide-react';
+import { Loader2, Upload, Eye, Wand2, X, Image } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { useUpdateSeoMetadata } from '@/hooks/useUpdateSeoMetadata';
+import { useLatestBookThumbnail, useGenerateBookThumbnail, useBookThumbnailProgress } from '@/hooks/useBookThumbnails';
 import { useAuth } from '@/hooks/useAuth';
 
 interface OpenGraphEditorProps {
@@ -21,6 +22,9 @@ interface OpenGraphEditorProps {
 
 export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGraphEditorProps) => {
   const { data: seoMetadata, isLoading, refetch } = useBookSeoMetadata(bookId);
+  const { data: latestThumbnail } = useLatestBookThumbnail(bookId);
+  const { data: thumbnailProgress } = useBookThumbnailProgress(bookId);
+  const generateThumbnail = useGenerateBookThumbnail();
   const updateSeoMetadata = useUpdateSeoMetadata();
   const { user } = useAuth();
   
@@ -32,7 +36,8 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
 
   const currentTitle = seoMetadata?.seo_title || bookTitle;
   const currentDescription = seoMetadata?.seo_description || bookDescription || '';
-  const currentImage = seoMetadata?.og_image_url;
+  // Prioritize SEO metadata image, then latest thumbnail, then null
+  const currentImage = seoMetadata?.og_image_url || latestThumbnail?.thumbnail_url;
 
   const handleTitleSave = async (newTitle: string) => {
     try {
@@ -153,6 +158,14 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
   };
 
+  const handleGenerateThumbnail = async () => {
+    try {
+      await generateThumbnail.mutateAsync({ bookId });
+    } catch (error) {
+      // Error handling is done in the mutation
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -270,7 +283,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="flex items-center gap-2"
+                className="flex items-center gap-2 flex-1"
               >
                 {isUploading ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -278,6 +291,25 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                   <Upload className="w-4 h-4" />
                 )}
                 {currentImage ? 'Replace Image' : 'Upload Image'}
+              </Button>
+              
+              <Button
+                onClick={handleGenerateThumbnail}
+                disabled={generateThumbnail.isPending || thumbnailProgress?.generation_status === 'in_progress'}
+                variant="outline"
+                className="flex items-center gap-2 flex-1"
+              >
+                {generateThumbnail.isPending || thumbnailProgress?.generation_status === 'in_progress' ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <Image className="w-4 h-4" />
+                    Generate Thumbnail
+                  </>
+                )}
               </Button>
             </div>
           </div>
@@ -296,6 +328,17 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
           <Badge variant={seoMetadata ? 'default' : 'secondary'}>
             {seoMetadata ? 'Custom Settings' : 'Using Defaults'}
           </Badge>
+          {latestThumbnail && !seoMetadata?.og_image_url && (
+            <Badge variant="outline">
+              Using Generated Thumbnail
+            </Badge>
+          )}
+          {thumbnailProgress?.generation_status === 'in_progress' && (
+            <Badge variant="secondary">
+              <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+              Generating Thumbnail
+            </Badge>
+          )}
         </div>
 
         {/* Preview Card */}

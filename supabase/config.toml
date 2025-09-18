@@ -92,3 +92,9 @@ verify_jwt = true
 
 [functions.process-daily-published-queue]
 verify_jwt = false
+
+[functions.generate-book-thumbnail-prompt]
+verify_jwt = false
+
+[functions.generate-book-thumbnail]
+verify_jwt = false

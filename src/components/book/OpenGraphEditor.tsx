@@ -74,7 +74,9 @@ import { useUpdateSeoMetadata } from '@/hooks/useUpdateSeoMetadata';
 import { useLatestBookThumbnail, useGenerateBookThumbnail, useBookThumbnailProgress, useBookThumbnails } from '@/hooks/useBookThumbnails';
 import { useGenerateBookThumbnailPrompt } from '@/hooks/useGenerateBookThumbnailPrompt';
 import { BookThumbnailPromptEditor } from './BookThumbnailPromptEditor';
+import { BookThumbnailVersionHistory } from './BookThumbnailVersionHistory';
 import { useAuth } from '@/hooks/useAuth';
+import { BookThumbnail } from '@/types/bookThumbnail';
 
 interface OpenGraphEditorProps {
   bookId: string;
@@ -119,12 +121,15 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEditingPrompt, setIsEditingPrompt] = useState(false);
   const [promptContent, setPromptContent] = useState('');
+  const [selectedThumbnailVersion, setSelectedThumbnailVersion] = useState<BookThumbnail | null>(null);
+  const [isReverting, setIsReverting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentTitle = seoMetadata?.seo_title || bookTitle;
   const currentDescription = seoMetadata?.seo_description || bookDescription || '';
-  // Prioritize SEO metadata image, then latest thumbnail, then null
-  const currentImage = seoMetadata?.og_image_url || latestThumbnail?.thumbnail_url;
+  // Prioritize selected version, then SEO metadata image, then latest thumbnail
+  const currentImage = selectedThumbnailVersion?.thumbnail_url || seoMetadata?.og_image_url || latestThumbnail?.thumbnail_url;
+  const isViewingHistoricalVersion = selectedThumbnailVersion && !selectedThumbnailVersion.is_latest;
   
   // Get the latest thumbnail record (which may have a prompt but no image yet)
   const latestThumbnailRecord = allThumbnails?.[0]; // First item is latest due to ordering
@@ -389,6 +394,47 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     setIsEditingPrompt(true);
   };
 
+  // Version history handlers
+  const handleVersionSelect = (thumbnail: BookThumbnail) => {
+    setSelectedThumbnailVersion(thumbnail);
+  };
+
+  const handleRevertToVersion = async (thumbnail: BookThumbnail) => {
+    if (!thumbnail || thumbnail.is_latest) return;
+    
+    setIsReverting(true);
+    try {
+      const { error } = await supabase
+        .from('book_thumbnails')
+        .update({ is_latest: true, updated_at: new Date().toISOString() })
+        .eq('id', thumbnail.id);
+
+      if (error) throw error;
+
+      // Set all other thumbnails as not latest
+      await supabase
+        .from('book_thumbnails')
+        .update({ is_latest: false, updated_at: new Date().toISOString() })
+        .eq('book_id', bookId)
+        .neq('id', thumbnail.id);
+
+      toast.success(`Successfully reverted to version ${thumbnail.version_number}`);
+
+      // Reset selection to show current
+      setSelectedThumbnailVersion(null);
+      refetch();
+    } catch (error) {
+      console.error('Error reverting to version:', error);
+      toast.error('Failed to revert to selected version');
+    } finally {
+      setIsReverting(false);
+    }
+  };
+
+  const handleBackToCurrent = () => {
+    setSelectedThumbnailVersion(null);
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -506,7 +552,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
               <Button
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
+                disabled={isUploading || isViewingHistoricalVersion}
                 className="flex items-center gap-2 w-full"
               >
                 {isUploading ? (
@@ -522,7 +568,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 {/* Generate Prompt Button */}
                 <Button
                   onClick={handleGeneratePrompt}
-                  disabled={generatePrompt.isPending}
+                  disabled={generatePrompt.isPending || isViewingHistoricalVersion}
                   variant="outline"
                   className="flex items-center gap-2 w-full"
                 >
@@ -542,11 +588,12 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 {/* Generate Thumb Button - disabled until prompt exists */}
                 <Button
                   onClick={handleGenerateImageFromPrompt}
-                  disabled={!hasPrompt || !canGenerateImage || thumbnailProgress?.generation_status === 'in_progress'}
+                  disabled={!hasPrompt || !canGenerateImage || thumbnailProgress?.generation_status === 'in_progress' || isViewingHistoricalVersion}
                   className="flex items-center gap-2 w-full"
                   title={!hasPrompt ? "Generate a prompt first to enable thumbnail generation" : 
                          thumbnailProgress?.generation_status === 'in_progress' ? "Thumbnail generation in progress" :
                          !canGenerateImage ? "Cannot generate image at this time" : 
+                         isViewingHistoricalVersion ? "Cannot generate while viewing historical version" :
                          "Generate thumbnail from the current prompt"}
                 >
                   {thumbnailProgress?.generation_status === 'in_progress' ? (
@@ -566,6 +613,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 {hasPrompt && (
                   <Button
                     onClick={handleEditExistingPrompt}
+                    disabled={isViewingHistoricalVersion}
                     variant="outline"
                     className="flex items-center gap-2 w-full"
                   >
@@ -585,6 +633,19 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
             className="hidden"
           />
         </div>
+
+        {/* Version History */}
+        {allThumbnails && allThumbnails.length > 0 && (
+          <BookThumbnailVersionHistory
+            thumbnails={allThumbnails}
+            selectedVersionId={selectedThumbnailVersion?.id}
+            onVersionSelect={handleVersionSelect}
+            onRevertToVersion={handleRevertToVersion}
+            isCurrentLatest={!isViewingHistoricalVersion}
+            onBackToCurrent={handleBackToCurrent}
+            isReverting={isReverting}
+          />
+        )}
 
         {/* Prompt Editor Modal */}
         {isEditingPrompt && (
@@ -621,6 +682,12 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
             <Badge variant="secondary">
               <Loader2 className="w-3 h-3 mr-1 animate-spin" />
               Generating Image
+            </Badge>
+          )}
+          {isViewingHistoricalVersion && (
+            <Badge variant="outline">
+              <Eye className="w-3 h-3 mr-1" />
+              Viewing Version {selectedThumbnailVersion?.version_number}
             </Badge>
           )}
         </div>

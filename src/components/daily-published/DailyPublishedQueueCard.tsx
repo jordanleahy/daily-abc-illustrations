@@ -4,6 +4,7 @@ import { formatTimeRemaining } from '@/utils/timeUtils';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { Clock, Calendar, Hash, Image } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface DailyPublishedQueueCardProps {
   item: DailyPublishedWithBook;
@@ -14,8 +15,14 @@ export function DailyPublishedQueueCard({
   item, 
   expectedActivationTime 
 }: DailyPublishedQueueCardProps) {
+  const navigate = useNavigate();
+  
   // Fetch SEO metadata for this specific daily published item
   const { data: seoMetadata } = useSeoMetadata(item.id);
+
+  const handleCardClick = () => {
+    navigate(`/books/${item.book_id}`);
+  };
   
   const getStatusVariant = (status: string) => {
     switch (status) {
@@ -81,7 +88,10 @@ export function DailyPublishedQueueCard({
   const timingInfo = getTimingDisplay();
 
   return (
-    <Card className="overflow-hidden border-l-4 border-l-primary/20 hover:border-l-primary/50 transition-colors">
+    <Card 
+      className="overflow-hidden border-l-4 border-l-primary/20 hover:border-l-primary/50 transition-colors cursor-pointer hover:shadow-lg"
+      onClick={handleCardClick}
+    >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           {/* OG Image on the left */}

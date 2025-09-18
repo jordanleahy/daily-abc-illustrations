@@ -80,7 +80,7 @@ Deno.serve(async (req) => {
 
       if (nextItem) {
         const now = new Date()
-        const expiresAt = new Date(now.getTime() + 48 * 60 * 60 * 1000) // 48 hours from now
+        const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000) // 24 hours from now
 
         const { error: activateError } = await supabase
           .from('daily_published')

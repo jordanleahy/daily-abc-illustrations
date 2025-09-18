@@ -41,7 +41,7 @@ const DailyPublishedSchedule = () => {
                 <h1 className="text-3xl font-bold tracking-tight">Publishing Queue</h1>
               </div>
               <p className="text-muted-foreground">
-                Books are automatically published every 48 hours in queue order
+                Books are automatically published every 24 hours in queue order
               </p>
             </div>
 

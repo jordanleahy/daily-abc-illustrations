@@ -30,7 +30,7 @@ export const SITE_CONFIG = {
   dailyContent: {
     title: 'Daily ABC Illustrations',
     description: 'Daily featured illustrated content',
-    expirationHours: 48,
+    expirationHours: 24,
   },
   
   // Branding

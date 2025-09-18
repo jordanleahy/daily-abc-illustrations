@@ -60,7 +60,12 @@ export function buildOptimizedImageUrl(
   try {
     const url = new URL(originalUrl);
     
-    // Add format optimization parameters
+    // Skip optimization for Supabase Storage URLs as they don't support format parameters
+    if (url.pathname.includes('/storage/v1/object/')) {
+      return originalUrl;
+    }
+    
+    // Add format optimization parameters for other services
     url.searchParams.set('format', format);
     url.searchParams.set('quality', quality.toString());
     

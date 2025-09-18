@@ -26,7 +26,7 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
     <img
       src={imageData.image_url}
       alt="Page illustration"
-      className={`w-full h-full object-cover ${className}`}
+      className={`w-full h-full object-cover object-top ${className}`}
       loading="lazy"
     />
   );

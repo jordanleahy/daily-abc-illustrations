@@ -46,8 +46,6 @@ export function DailyPublishedPageView({
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden" style={{ touchAction: 'none' }}>
-      {/* Dynamic meta tags for this specific page */}
-      {openGraphMetadata && <MetaHead metadata={openGraphMetadata} />}
       {/* Fixed Header with countdown and page number */}
       <div className="fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-background/95 backdrop-blur-sm border-b">
         <div className="text-sm font-medium text-muted-foreground">

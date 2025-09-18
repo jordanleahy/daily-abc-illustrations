@@ -31,50 +31,8 @@ export const useDailyPublishedOpenGraph = (
   // Get first page for consistent OpenGraph image (always use first page for social sharing)
   const firstPage = pages[0];
   
-  // State to hold the first page image URL directly from database
-  const [firstPageImageUrl, setFirstPageImageUrl] = useState<string | null>(null);
-  
-  // Fetch first page image directly from database to ensure we get it
-  useEffect(() => {
-    if (!firstPage?.id) return;
-    
-    const fetchFirstPageImage = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('page_image_urls')
-          .select('image_url')
-          .eq('page_id', firstPage.id)
-          .eq('is_latest', true)
-          .eq('generation_status', 'complete')
-          .single();
-          
-        if (error) {
-          console.error('Error fetching first page image:', error);
-          return;
-        }
-        
-        console.log('[useDailyPublishedOpenGraph] First page image URL:', data?.image_url);
-        setFirstPageImageUrl(data?.image_url || null);
-      } catch (error) {
-        console.error('Error in fetchFirstPageImage:', error);
-      }
-    };
-    
-    fetchFirstPageImage();
-  }, [firstPage?.id]);
-  
   // Fetch image for the first page using public hook
   const { data: firstPageImage } = usePublicPageImage(firstPage?.id || '');
-  
-  // Debug logging for OpenGraph image
-  console.log('[useDailyPublishedOpenGraph] Debug info:', {
-    firstPageId: firstPage?.id,
-    firstPageTitle: firstPage?.title,
-    hasFirstPageImage: !!firstPageImage,
-    firstPageImageUrl: firstPageImage?.image_url,
-    firstPageImageStatus: firstPageImage?.generation_status,
-    directFetchedUrl: firstPageImageUrl
-  });
 
   // Fetch SEO metadata from database - try daily published first, then fallback to book-level
   const { data: seoMetadata, isLoading: isLoadingSeo } = useSeoMetadata(dailyId);
@@ -129,7 +87,6 @@ export const useDailyPublishedOpenGraph = (
 
     // Don't generate metadata until we have the first page image loaded or confirmed it doesn't exist
     if (firstPage?.id && firstPageImage === undefined) {
-      console.log('[useDailyPublishedOpenGraph] Waiting for first page image to load...');
       return null;
     }
 
@@ -137,14 +94,8 @@ export const useDailyPublishedOpenGraph = (
     const pageNumber = currentPageIndex + 1;
     const totalPages = pages.length;
     
-    // Use first page image for consistent OpenGraph sharing - prefer direct fetch over hook
-    const ogImage = firstPageImageUrl || firstPageImage?.image_url || null;
-    
-    console.log('[generateDailyPublishedOpenGraph] Image being used:', {
-      firstPageImageUrl: firstPageImage?.image_url,
-      ogImage,
-      hasImage: !!ogImage
-    });
+    // Use first page image for consistent OpenGraph sharing
+    const ogImage = firstPageImage?.image_url || null;
 
     return generateDailyPublishedOpenGraph(
       dailyContent.title,
@@ -157,7 +108,7 @@ export const useDailyPublishedOpenGraph = (
       optimizedTitle,
       optimizedDescription
     );
-  }, [dailyContent, pages, currentPageIndex, firstPageImage, optimizedTitle, optimizedDescription, firstPageImageUrl]);
+  }, [dailyContent, pages, currentPageIndex, firstPageImage, optimizedTitle, optimizedDescription]);
 
   return {
     openGraphMetadata,

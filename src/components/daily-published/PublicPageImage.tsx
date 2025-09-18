@@ -1,6 +1,7 @@
 import { usePublicPageImage } from '@/hooks/usePublicPageImage';
 import { Shimmer } from '@/components/ui/shimmer';
 import { OptimizedImage } from '@/components/ui/optimized-image';
+import { commonBlurDataUrls } from '@/utils/blurDataUrl';
 
 interface PublicPageImageProps {
   pageId: string;
@@ -28,6 +29,8 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
       src={imageData.image_url}
       alt="Page illustration"
       className={`w-full h-full object-cover object-top ${className}`}
+      blurDataURL={commonBlurDataUrls.neutral}
+      rootMargin="100px"
     />
   );
 }

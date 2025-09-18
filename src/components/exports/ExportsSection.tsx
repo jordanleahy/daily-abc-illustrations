@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Download, FileText, RotateCcw, Trash2, Globe, Eye } from 'lucide-react';
+import { Download, FileText, RotateCcw, Trash2, Globe, Eye, Copy } from 'lucide-react';
 import { useExports } from '@/hooks/useExports';
 import { Export } from '@/types/export';
 import { ProcessStatus } from '@/types/process';
@@ -153,6 +153,27 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
+  const handleCopyLink = async () => {
+    if (existingPublication) {
+      const dailyPublishedUrl = `${window.location.origin}/daily-published/${existingPublication.id}`;
+      
+      try {
+        await navigator.clipboard.writeText(dailyPublishedUrl);
+        toast({
+          title: "Link copied!",
+          description: "The daily published link has been copied to your clipboard."
+        });
+      } catch (error) {
+        console.error('Failed to copy link:', error);
+        toast({
+          title: "Copy failed",
+          description: "Unable to copy link to clipboard.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
   const handlePublishDaily = async () => {
     if (!user?.id) {
       toast({
@@ -300,15 +321,28 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
               Publish your {contentType} to the daily publication
             </p>
           </div>
-          <Button 
-            onClick={existingPublication ? handleViewPublication : handlePublishDaily}
-            variant="outline"
-            className="flex items-center gap-2"
-            disabled={isCheckingPublication}
-          >
-            {existingPublication ? <Eye className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-            {isCheckingPublication ? 'Checking...' : existingPublication ? 'View' : 'Publish Daily'}
-          </Button>
+          <div className="flex items-center gap-2">
+            {existingPublication && (
+              <Button 
+                onClick={handleCopyLink}
+                variant="outline"
+                size="sm"
+                className="flex items-center gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                Copy Link
+              </Button>
+            )}
+            <Button 
+              onClick={existingPublication ? handleViewPublication : handlePublishDaily}
+              variant="outline"
+              className="flex items-center gap-2"
+              disabled={isCheckingPublication}
+            >
+              {existingPublication ? <Eye className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+              {isCheckingPublication ? 'Checking...' : existingPublication ? 'View' : 'Publish Daily'}
+            </Button>
+          </div>
         </div>
       </CardContent>
     </Card>

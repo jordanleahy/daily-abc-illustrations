@@ -1,8 +1,11 @@
 /**
  * Generate Graphics Designer System Prompt Edge Function
  * 
- * This edge function generates a comprehensive system prompt for the Graphics Designer Agent
- * based on book metadata (name, category, description) using the user's Illustration Director Agent.
+ * This edge function implements a two-stage process:
+ * 1. Uses the Illustration Director Agent to generate a JSON style guide
+ * 2. Parses the JSON and transforms it into a Graphics Designer system prompt
+ * 
+ * This ensures consistent, structured visual guidelines across all image prompts.
  * 
  * @requires OPENAI_API_KEY - OpenAI API key for GPT model access
  * @requires SUPABASE_URL - Supabase project URL
@@ -10,30 +13,162 @@
  */
 
 // XMLHttpRequest polyfill - Required for OpenAI API calls in Deno runtime
-// Provides browser-compatible XMLHttpRequest functionality that some libraries expect
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 // Deno HTTP server - Core server functionality for handling HTTP requests
-// Used to create the edge function endpoint that responds to HTTP requests
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
 // Supabase JavaScript client - Database and auth operations
-// Provides type-safe access to Supabase database, auth, and other services
-// Version pinned to ensure consistent behavior across deployments
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
 // Shared utilities and types - Common functionality across edge functions
-// ProcessStatus: Enum for tracking operation states (IN_PROGRESS, COMPLETE, ERROR)
-// corsHeaders: CORS headers for browser compatibility
-// log: Structured logging utility for debugging and monitoring
-// generateRequestId: Creates unique identifiers for request tracking
 import { ProcessStatus, corsHeaders, log, generateRequestId } from '../_shared/types.ts';
+
+// Style Guide Types - For JSON validation and parsing
+interface StyleGuideJSON {
+  metadata: {
+    category: string;
+    theme: string;
+    audience: string;
+    useCases: string[];
+    styleTags: string[];
+    status: 'active' | 'draft' | 'archived';
+    version: string;
+    generatedAt: string;
+  };
+  colorPalette: {
+    primary: { hex: string; hsl: string; usage: string; };
+    secondary: { hex: string; hsl: string; usage: string; };
+    accent: { hex: string; hsl: string; usage: string; };
+    supporting: { hex: string; hsl: string; usage: string; };
+    background: { hex: string; hsl: string; usage: string; };
+    text: { hex: string; hsl: string; usage: string; };
+  };
+  visualElements: {
+    foregroundElements: { required: string[]; optional: string[]; style: string; };
+    midgroundContext: { connectors: string[]; workflows: string[]; contextual: string[]; };
+    backgroundFoundation: { setting: string; gradients: string[]; textures: string[]; whitespace: string; };
+  };
+  styleRequirements: {
+    artStyle: string;
+    subjects: string[];
+    flowIndicators: string[];
+    tone: 'gentle' | 'practical' | 'trustworthy' | 'empathetic' | 'playful' | 'educational';
+    technicalSpecs: { aspectRatio: string; resolution: string; format: string; };
+  };
+  compositionGuidelines: {
+    layoutFlow: 'triangular' | 'left-to-right' | 'modular-cards' | 'centered' | 'grid';
+    focusHierarchy: string[];
+    spacingRules: string;
+    balanceStrategy: string;
+  };
+  visualMetaphors: {
+    metaphor1: { concept: string; visualRepresentation: string; implementation: string; };
+    metaphor2: { concept: string; visualRepresentation: string; implementation: string; };
+    metaphor3: { concept: string; visualRepresentation: string; implementation: string; };
+  };
+  contentAnalysisFramework: {
+    lens1: { name: string; description: string; checkpoints: string[]; };
+    lens2: { name: string; description: string; checkpoints: string[]; };
+    lens3: { name: string; description: string; checkpoints: string[]; };
+  };
+  outputInstructions: {
+    visualFocus: string[];
+    textConstraints: string[];
+    educationalApproach: string[];
+  };
+  safetyGuidelines: {
+    prohibited: string[];
+    required: string[];
+    ageAppropriate: string[];
+  };
+}
+
+// Validation function
+function validateStyleGuide(data: any): data is StyleGuideJSON {
+  return (
+    data &&
+    typeof data === 'object' &&
+    data.metadata &&
+    data.colorPalette &&
+    data.visualElements &&
+    data.styleRequirements &&
+    data.compositionGuidelines &&
+    data.visualMetaphors &&
+    data.contentAnalysisFramework &&
+    data.outputInstructions &&
+    data.safetyGuidelines
+  );
+}
+
+// JSON-to-Prompt transformer function
+function createGraphicsDesignerPrompt(styleGuide: StyleGuideJSON): string {
+  const { colorPalette, styleRequirements, compositionGuidelines, visualMetaphors } = styleGuide;
+  
+  return `🎨 Graphics Designer AI - Children's ABC Book Illustration Specialist
+
+CRITICAL VISUAL CONSISTENCY REQUIREMENTS:
+You MUST use these exact colors and specifications for ALL image prompts to ensure visual consistency across the entire book.
+
+🎯 MANDATORY COLOR PALETTE:
+- Primary Color: ${colorPalette.primary.hex} (${colorPalette.primary.usage})
+- Secondary Color: ${colorPalette.secondary.hex} (${colorPalette.secondary.usage})
+- Accent Color: ${colorPalette.accent.hex} (${colorPalette.accent.usage})
+- Supporting Color: ${colorPalette.supporting.hex} (${colorPalette.supporting.usage})
+- Background Color: ${colorPalette.background.hex} (${colorPalette.background.usage})
+- Text Color: ${colorPalette.text.hex} (${colorPalette.text.usage})
+
+🎭 VISUAL STYLE REQUIREMENTS:
+- Art Style: ${styleRequirements.artStyle}
+- Tone: ${styleRequirements.tone}
+- Composition: ${compositionGuidelines.layoutFlow} layout
+- Focus Hierarchy: ${compositionGuidelines.focusHierarchy.join(' → ')}
+- Spacing: ${compositionGuidelines.spacingRules}
+- Balance Strategy: ${compositionGuidelines.balanceStrategy}
+
+🔄 VISUAL METAPHORS (Apply consistently across ALL pages):
+1. ${visualMetaphors.metaphor1.concept}: ${visualMetaphors.metaphor1.visualRepresentation}
+   Implementation: ${visualMetaphors.metaphor1.implementation}
+
+2. ${visualMetaphors.metaphor2.concept}: ${visualMetaphors.metaphor2.visualRepresentation}
+   Implementation: ${visualMetaphors.metaphor2.implementation}
+
+3. ${visualMetaphors.metaphor3.concept}: ${visualMetaphors.metaphor3.visualRepresentation}
+   Implementation: ${visualMetaphors.metaphor3.implementation}
+
+🎯 FOREGROUND ELEMENTS (Always Include):
+${styleGuide.visualElements.foregroundElements.required.map(el => `- ${el}`).join('\n')}
+
+🌄 BACKGROUND FOUNDATION:
+- Setting: ${styleGuide.visualElements.backgroundFoundation.setting}
+- Whitespace: ${styleGuide.visualElements.backgroundFoundation.whitespace}
+- Gradients: ${styleGuide.visualElements.backgroundFoundation.gradients.join(', ')}
+
+⚙️ TECHNICAL SPECIFICATIONS:
+- Aspect Ratio: ${styleRequirements.technicalSpecs.aspectRatio}
+- Resolution: ${styleRequirements.technicalSpecs.resolution}
+- Format: ${styleRequirements.technicalSpecs.format}
+
+📝 OUTPUT INSTRUCTIONS:
+- Visual Focus: ${styleGuide.outputInstructions.visualFocus.join(', ')}
+- Text Constraints: ${styleGuide.outputInstructions.textConstraints.join(', ')}
+- Educational Approach: ${styleGuide.outputInstructions.educationalApproach.join(', ')}
+
+🛡️ SAFETY REQUIREMENTS:
+- Age-Appropriate: ${styleGuide.safetyGuidelines.ageAppropriate.join(', ')}
+- Required Elements: ${styleGuide.safetyGuidelines.required.join(', ')}
+- Prohibited Content: ${styleGuide.safetyGuidelines.prohibited.join(', ')}
+
+🎯 YOUR MISSION:
+When generating image prompts, you MUST maintain these exact specifications for visual consistency across all pages. Every prompt should reference the specific colors, apply the visual metaphors, follow the composition guidelines, and maintain the defined art style and tone.
+
+CONSISTENCY IS CRITICAL - Use these guidelines as your foundation for every single image prompt you create.`;
 
 serve(async (req) => {
   const requestId = generateRequestId();
   const startTime = Date.now();
   
-  log('INFO', ProcessStatus.IN_PROGRESS, 'REQUEST', `Starting Graphics Designer system prompt generation`, { requestId, method: req.method });
+  log('INFO', ProcessStatus.IN_PROGRESS, 'REQUEST', `Starting two-stage Graphics Designer prompt generation`, { requestId, method: req.method });
 
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -139,22 +274,23 @@ serve(async (req) => {
       requestId, 
       duration: agentDuration,
       agentId: agentConfig.id?.substring(0, 8) + '...',
-      model: agentConfig.model,
+      model: agentConfig.model_settings?.model || agentConfig.model,
       version: agentConfig.version
     });
 
-    currentStep = 'PREPARE_PROMPT';
-    const promptStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Preparing book data for AI processing...', { requestId });
+    // ===== STAGE 1: Generate JSON Style Guide using Illustration Director =====
+    currentStep = 'STAGE1_PREPARE_PROMPT';
+    const stage1StartTime = Date.now();
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Stage 1: Preparing JSON style guide generation prompt...', { requestId });
 
-    const bookDataPrompt = `
-Book Data:
-- Book Name: ${bookData.book_name}
+    const styleGuidePrompt = `Generate a comprehensive JSON style guide for this children's ABC book:
+
+Book Details:
+- Name: ${bookData.book_name}
 - Category: ${bookData.category || 'General Children\'s Book'}
 - Description: ${bookData.book_description || 'An educational ABC book for children'}
 
-Please generate a comprehensive system prompt for the Graphics Designer Agent that will be used to create image prompts for individual pages of this book.
-    `.trim();
+Please provide your response as valid JSON following the exact schema structure you are designed to output. This style guide will be used to ensure visual consistency across all illustrations in the book.`;
 
     // Get OpenAI API key
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -163,33 +299,32 @@ Please generate a comprehensive system prompt for the Graphics Designer Agent th
       throw new Error('OpenAI API key not configured');
     }
 
-    const promptDuration = Date.now() - promptStartTime;
-    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Book data prepared for AI processing', { 
+    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Stage 1 prompt prepared', { 
       requestId, 
-      duration: promptDuration,
-      contentLength: bookDataPrompt.length
+      duration: Date.now() - stage1StartTime,
+      contentLength: styleGuidePrompt.length
     });
 
-    currentStep = 'OPENAI_API';
-    const aiStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling OpenAI API for system prompt generation...', { 
+    currentStep = 'STAGE1_OPENAI_API';
+    const stage1ApiStartTime = Date.now();
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Stage 1: Calling OpenAI API for JSON style guide generation...', { 
       requestId,
-      model: agentConfig.model,
-      maxTokens: agentConfig.max_completion_tokens,
-      topP: agentConfig.top_p
+      model: agentConfig.model_settings?.model || agentConfig.model,
+      maxTokens: agentConfig.model_settings?.max_completion_tokens || agentConfig.max_completion_tokens,
+      topP: agentConfig.model_settings?.top_p || agentConfig.top_p
     });
 
     // Call OpenAI API using the Illustration Director agent's configuration
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const stage1Response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: agentConfig.model,
-        max_completion_tokens: agentConfig.max_completion_tokens,
-        top_p: parseFloat(agentConfig.top_p),
+        model: agentConfig.model_settings?.model || agentConfig.model,
+        max_completion_tokens: agentConfig.model_settings?.max_completion_tokens || agentConfig.max_completion_tokens,
+        top_p: parseFloat(agentConfig.model_settings?.top_p || agentConfig.top_p),
         messages: [
           {
             role: 'system',
@@ -197,35 +332,35 @@ Please generate a comprehensive system prompt for the Graphics Designer Agent th
           },
           {
             role: 'user',
-            content: bookDataPrompt
+            content: styleGuidePrompt
           }
         ],
       }),
     });
 
-    const aiDuration = Date.now() - aiStartTime;
+    const stage1Duration = Date.now() - stage1ApiStartTime;
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      const errorMsg = `OpenAI API error: ${errorData.error?.message || response.statusText}`;
+    if (!stage1Response.ok) {
+      const errorData = await stage1Response.json();
+      const errorMsg = `Stage 1 OpenAI API error: ${errorData.error?.message || stage1Response.statusText}`;
       log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
         requestId, 
-        duration: aiDuration,
-        statusCode: response.status,
+        duration: stage1Duration,
+        statusCode: stage1Response.status,
         error: errorData
       });
       throw new Error(errorMsg);
     }
 
-    const data = await response.json();
+    const stage1Data = await stage1Response.json();
     
-    // Robustly extract text from GPT-5 response
-    const choice = data?.choices?.[0] ?? {};
+    // Extract JSON style guide from response
+    const choice = stage1Data?.choices?.[0] ?? {};
     const msg = choice.message ?? {};
-    let systemPrompt = '';
+    let rawStyleGuide = '';
 
     if (Array.isArray(msg.content)) {
-      systemPrompt = msg.content
+      rawStyleGuide = msg.content
         .map((part: any) => {
           if (typeof part === 'string') return part;
           if (typeof part?.text === 'string') return part.text;
@@ -236,34 +371,92 @@ Please generate a comprehensive system prompt for the Graphics Designer Agent th
         .join('')
         .trim();
     } else if (typeof msg.content === 'string') {
-      systemPrompt = (msg.content as string).trim();
+      rawStyleGuide = (msg.content as string).trim();
     }
 
-    // Validate that we got a system prompt
-    if (!systemPrompt) {
-      const errorMsg = 'OpenAI returned empty system prompt';
+    if (!rawStyleGuide) {
+      const errorMsg = 'Stage 1: OpenAI returned empty style guide';
       log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, {
         requestId,
-        duration: aiDuration,
+        duration: stage1Duration,
         rawMessage: choice,
         bookName: bookData.book_name
       });
       throw new Error(errorMsg);
     }
 
-    log('INFO', ProcessStatus.COMPLETE, currentStep, 'System prompt generated successfully', { 
+    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Stage 1: JSON style guide generated successfully', { 
       requestId, 
-      duration: aiDuration,
-      promptLength: systemPrompt.length,
-      tokensUsed: data.usage?.total_tokens,
+      duration: stage1Duration,
+      rawLength: rawStyleGuide.length,
+      tokensUsed: stage1Data.usage?.total_tokens,
+      bookName: bookData.book_name
+    });
+
+    // ===== STAGE 2: Parse JSON and Create Graphics Designer Prompt =====
+    currentStep = 'STAGE2_PARSE_JSON';
+    const stage2StartTime = Date.now();
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Stage 2: Parsing JSON style guide...', { requestId });
+
+    let graphicsDesignerPrompt = '';
+    let isJsonValid = false;
+
+    try {
+      // Try to parse as JSON
+      const parsedStyleGuide = JSON.parse(rawStyleGuide);
+      
+      if (validateStyleGuide(parsedStyleGuide)) {
+        log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Valid JSON style guide detected, creating structured prompt', { requestId });
+        graphicsDesignerPrompt = createGraphicsDesignerPrompt(parsedStyleGuide);
+        isJsonValid = true;
+      } else {
+        log('WARN', ProcessStatus.WARNING, currentStep, 'JSON structure validation failed, using fallback approach', { requestId });
+        graphicsDesignerPrompt = `🎨 Graphics Designer AI - Children's ABC Book Illustration Specialist
+
+Based on the style guide generated for "${bookData.book_name}" (${bookData.category}):
+
+${rawStyleGuide}
+
+Your mission is to create consistent, beautiful image prompts for each page of this ABC book. Follow the style guidelines above precisely to ensure visual consistency across all illustrations.
+
+CRITICAL: Always reference the specific colors, design elements, and visual metaphors defined in the style guide above when creating image prompts.`;
+      }
+    } catch (parseError) {
+      log('WARN', ProcessStatus.WARNING, currentStep, 'JSON parsing failed, using fallback text-based prompt', { 
+        requestId, 
+        parseError: parseError.message 
+      });
+      
+      // Fallback for non-JSON response
+      graphicsDesignerPrompt = `🎨 Graphics Designer AI - Children's ABC Book Illustration Specialist
+
+Based on the style guide generated for "${bookData.book_name}" (${bookData.category}):
+
+${rawStyleGuide}
+
+Your mission is to create consistent, beautiful image prompts for each page of this ABC book. Follow the style guidelines above precisely to ensure visual consistency across all illustrations.
+
+CRITICAL: Always reference the specific colors, design elements, and visual metaphors defined in the style guide above when creating image prompts.`;
+    }
+
+    const stage2Duration = Date.now() - stage2StartTime;
+    
+    log('INFO', ProcessStatus.COMPLETE, currentStep, `Stage 2: Graphics Designer prompt created successfully (JSON: ${isJsonValid})`, { 
+      requestId, 
+      duration: stage2Duration,
+      promptLength: graphicsDesignerPrompt.length,
+      wasJsonValid: isJsonValid,
       bookName: bookData.book_name
     });
 
     const totalDuration = Date.now() - startTime;
-    log('INFO', ProcessStatus.COMPLETE, 'COMPLETE', 'Graphics Designer system prompt generation completed successfully!', { 
+    log('INFO', ProcessStatus.COMPLETE, 'COMPLETE', 'Two-stage Graphics Designer prompt generation completed successfully!', { 
       requestId,
       totalDuration,
-      promptLength: systemPrompt.length,
+      stage1Duration,
+      stage2Duration,
+      promptLength: graphicsDesignerPrompt.length,
+      jsonValid: isJsonValid,
       bookInfo: {
         name: bookData.book_name,
         category: bookData.category
@@ -273,8 +466,14 @@ Please generate a comprehensive system prompt for the Graphics Designer Agent th
     return new Response(
       JSON.stringify({ 
         success: true, 
-        systemPrompt: systemPrompt,
-        bookId 
+        systemPrompt: graphicsDesignerPrompt,
+        bookId,
+        metadata: {
+          jsonStyleGuideGenerated: true,
+          jsonValid: isJsonValid,
+          stage1Tokens: stage1Data.usage?.total_tokens,
+          processingTime: totalDuration
+        }
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -283,7 +482,7 @@ Please generate a comprehensive system prompt for the Graphics Designer Agent th
 
   } catch (error) {
     const totalDuration = Date.now() - startTime;
-    log('ERROR', ProcessStatus.ERROR, currentStep || 'UNKNOWN', 'Graphics Designer system prompt generation failed', { 
+    log('ERROR', ProcessStatus.ERROR, currentStep || 'UNKNOWN', 'Two-stage Graphics Designer prompt generation failed', { 
       requestId,
       totalDuration,
       error: error.message,

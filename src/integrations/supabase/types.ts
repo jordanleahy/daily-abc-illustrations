@@ -433,60 +433,6 @@ export type Database = {
         }
         Relationships: []
       }
-      page_simplified_prompts: {
-        Row: {
-          book_id: string
-          created_at: string
-          error_message: string | null
-          generation_completed_at: string | null
-          generation_duration_ms: number | null
-          generation_started_at: string | null
-          generation_status: string
-          id: string
-          is_latest: boolean
-          page_id: string
-          simplified_content: string
-          source_prompt_id: string | null
-          updated_at: string
-          user_id: string
-          version_number: number
-        }
-        Insert: {
-          book_id: string
-          created_at?: string
-          error_message?: string | null
-          generation_completed_at?: string | null
-          generation_duration_ms?: number | null
-          generation_started_at?: string | null
-          generation_status?: string
-          id?: string
-          is_latest?: boolean
-          page_id: string
-          simplified_content: string
-          source_prompt_id?: string | null
-          updated_at?: string
-          user_id: string
-          version_number?: number
-        }
-        Update: {
-          book_id?: string
-          created_at?: string
-          error_message?: string | null
-          generation_completed_at?: string | null
-          generation_duration_ms?: number | null
-          generation_started_at?: string | null
-          generation_status?: string
-          id?: string
-          is_latest?: boolean
-          page_id?: string
-          simplified_content?: string
-          source_prompt_id?: string | null
-          updated_at?: string
-          user_id?: string
-          version_number?: number
-        }
-        Relationships: []
-      }
       page_system_prompts: {
         Row: {
           agent_name: string | null
@@ -812,10 +758,6 @@ export type Database = {
       }
       get_next_seo_version_number: {
         Args: { p_daily_published_id: string }
-        Returns: number
-      }
-      get_next_simplified_prompt_version_number: {
-        Args: { p_page_id: string }
         Returns: number
       }
       get_next_version_number: {

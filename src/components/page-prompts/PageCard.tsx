@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { RefreshCw, FileText, Copy, Trash2, Edit3, Image } from 'lucide-react';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
-import { PageSystemPromptSection } from './PageSystemPromptSection';
+import { PageSystemPromptEditor } from './PageSystemPromptEditor';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -31,7 +31,13 @@ interface PageCardProps {
 export function PageCard({ page, bookId }: PageCardProps) {
   const { 
     currentPrompt, 
-    refreshData,
+    refreshData, 
+    isEditing: isEditingPrompt,
+    editedContent,
+    startEdit: startEditPrompt,
+    cancelEdit: cancelEditPrompt,
+    saveEdit: saveEditPrompt,
+    updateEditedContent
   } = usePageSystemPrompt(page.id);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -393,13 +399,49 @@ export function PageCard({ page, bookId }: PageCardProps) {
         )}
       </CardHeader>
       <CardContent className="p-4 space-y-3">
-        {showPrompt ? (
-          <div className="w-full">
-            <PageSystemPromptSection 
-              pageId={page.id} 
-              pageTitle={page.title}
-              bookId={bookId}
-            />
+        {showPrompt && currentPrompt ? (
+          <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden flex flex-col">
+            <div className="flex items-center justify-between text-sm font-medium text-foreground p-3 pb-2 border-b border-border/50">
+              <span>System Prompt:</span>
+              <div className="flex gap-1">
+                {!isEditingPrompt && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-6 h-6"
+                    onClick={startEditPrompt}
+                    title="Edit system prompt"
+                    aria-label="Edit system prompt"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                  </Button>
+                )}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-6 h-6"
+                  onClick={handleCopyPrompt}
+                  title="Copy system prompt to clipboard"
+                  aria-label="Copy system prompt to clipboard"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+            <div className="flex-1 p-3 overflow-y-auto">
+              {isEditingPrompt ? (
+                <PageSystemPromptEditor
+                  content={editedContent}
+                  onContentChange={updateEditedContent}
+                  onSave={saveEditPrompt}
+                  onCancel={cancelEditPrompt}
+                />
+              ) : (
+                <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+                  {currentPrompt.content}
+                </div>
+              )}
+            </div>
           </div>
         ) : (
           <PageImageSection 

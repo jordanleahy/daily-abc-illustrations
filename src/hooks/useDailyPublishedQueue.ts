@@ -16,7 +16,8 @@ export const useDailyPublishedQueue = () => {
             user_id
           )
         `)
-        .order('queue_position', { ascending: true });
+         .neq('status', 'draft') // Filter out draft entries from public queue view
+         .order('queue_position', { ascending: true });
 
       if (error) {
         console.error('Error fetching daily published queue:', error);

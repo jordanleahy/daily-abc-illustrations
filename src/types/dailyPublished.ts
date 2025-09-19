@@ -1,4 +1,4 @@
-export type DailyPublishedStatus = 'queued' | 'active' | 'expired';
+export type DailyPublishedStatus = 'draft' | 'queued' | 'active' | 'expired';
 
 export interface DailyPublished {
   id: string;

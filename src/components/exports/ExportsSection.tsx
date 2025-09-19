@@ -37,12 +37,12 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       
       setIsCheckingPublication(true);
       try {
-        const { data, error } = await supabase
-          .from('daily_published')
-          .select('*')
-          .eq('book_id', contentId)
-          .in('status', ['queued', 'active'])
-          .maybeSingle();
+         const { data, error } = await supabase
+           .from('daily_published')
+           .select('*')
+           .eq('book_id', contentId)
+           .in('status', ['draft', 'queued', 'active'])
+           .maybeSingle();
 
         if (!error && data) {
           setExistingPublication(data);
@@ -178,48 +178,78 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
-  const handleAddToQueue = async () => {
-    if (!user?.id) {
-      toast({
-        title: "Authentication Required",
-        description: "You must be logged in to add content to the queue.",
-        variant: "destructive"
-      });
-      return;
-    }
+   const handleAddToQueue = async () => {
+     if (!user?.id) {
+       toast({
+         title: "Authentication Required",
+         description: "You must be logged in to add content to the queue.",
+         variant: "destructive"
+       });
+       return;
+     }
 
-    try {
-      // Get next queue position
-      const { data: nextPosition } = await supabase.rpc('get_next_queue_position');
-      
-      // Create new daily publication in queue
-      const { data: newPublication, error: insertError } = await supabase
-        .from('daily_published')
-        .insert({
-          book_id: contentId,
-          title: contentName,
-          description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
-          status: 'queued' as const,
-          queue_position: nextPosition || 1
-        })
-        .select()
-        .single();
+     try {
+       // Check if there's already a draft entry for this book
+       if (existingPublication && existingPublication.status === 'draft') {
+         // Convert draft to queued
+         const { data: nextPosition } = await supabase.rpc('get_next_queue_position');
+         
+         const { data: updatedPublication, error: updateError } = await supabase
+           .from('daily_published')
+           .update({
+             status: 'queued' as const,
+             queue_position: nextPosition || 1,
+             is_active: false // Still not active until processed by queue
+           })
+           .eq('id', existingPublication.id)
+           .select()
+           .single();
 
-      if (insertError) {
-        console.error('Error adding to queue:', insertError);
-        throw insertError;
-      }
+         if (updateError) {
+           console.error('Error converting draft to queue:', updateError);
+           throw updateError;
+         }
 
-      toast({
-        title: "Added to Queue!",
-        description: `${contentName} has been added to the daily publication queue at position ${newPublication.queue_position}.`,
-      });
+         toast({
+           title: "Added to Queue!",
+           description: `${contentName} has been added to the daily publication queue at position ${updatedPublication.queue_position}.`,
+         });
 
-      // Update local state
-      setExistingPublication(newPublication);
+         // Update local state
+         setExistingPublication(updatedPublication);
+       } else {
+         // Get next queue position
+         const { data: nextPosition } = await supabase.rpc('get_next_queue_position');
+         
+         // Create new daily publication in queue
+         const { data: newPublication, error: insertError } = await supabase
+           .from('daily_published')
+           .insert({
+             book_id: contentId,
+             title: contentName,
+             description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
+             status: 'queued' as const,
+             queue_position: nextPosition || 1
+           })
+           .select()
+           .single();
 
-      // Open the queue page to show status
-      window.open('/daily-published-schedule', '_blank');
+         if (insertError) {
+           console.error('Error adding to queue:', insertError);
+           throw insertError;
+         }
+
+         toast({
+           title: "Added to Queue!",
+           description: `${contentName} has been added to the daily publication queue at position ${newPublication.queue_position}.`,
+         });
+
+         // Update local state
+         setExistingPublication(newPublication);
+       }
+
+       // Open the queue page to show status
+       window.open('/daily-published-schedule', '_blank');
 
     } catch (error: any) {
       console.error('Error adding to queue:', error);
@@ -327,30 +357,31 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
               Add your {contentType} to the daily publication queue
             </p>
           </div>
-          <div className="flex items-center gap-2">
-            {existingPublication && existingPublication.status === 'active' && (
-              <Button 
-                onClick={handleCopyLink}
-                variant="outline"
-                size="sm"
-                className="flex items-center gap-2"
-              >
-                <Copy className="h-4 w-4" />
-                Copy Link
-              </Button>
-            )}
-            <Button 
-              onClick={existingPublication ? handleViewPublication : handleAddToQueue}
-              variant="outline"
-              className="flex items-center gap-2"
-              disabled={isCheckingPublication}
-            >
-              {existingPublication ? <Eye className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-              {isCheckingPublication ? 'Checking...' : existingPublication 
-                ? (existingPublication.status === 'active' ? 'View Live' : 'View in Queue') 
-                : 'Add to Queue'}
-            </Button>
-          </div>
+           <div className="flex items-center gap-2">
+             {existingPublication && existingPublication.status === 'active' && (
+               <Button 
+                 onClick={handleCopyLink}
+                 variant="outline"
+                 size="sm"
+                 className="flex items-center gap-2"
+               >
+                 <Copy className="h-4 w-4" />
+                 Copy Link
+               </Button>
+             )}
+             <Button 
+               onClick={existingPublication && existingPublication.status !== 'draft' ? handleViewPublication : handleAddToQueue}
+               variant="outline"
+               className="flex items-center gap-2"
+               disabled={isCheckingPublication}
+             >
+               {existingPublication && existingPublication.status !== 'draft' ? <Eye className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
+               {isCheckingPublication ? 'Checking...' : 
+                 existingPublication && existingPublication.status !== 'draft'
+                   ? (existingPublication.status === 'active' ? 'View Live' : 'View in Queue') 
+                   : 'Add to Queue'}
+             </Button>
+           </div>
         </div>
       </CardContent>
     </Card>

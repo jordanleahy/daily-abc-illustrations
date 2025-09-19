@@ -260,19 +260,44 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
 
     console.log('All pages created successfully');
 
-    // Generate initial SEO metadata in background (non-blocking)
+    // Create a draft daily_published entry for SEO generation
+    console.log('Creating draft daily_published entry for book:', book.id);
+    const { data: draftPublication, error: draftError } = await supabase
+      .from('daily_published')
+      .insert({
+        book_id: book.id,
+        title: book.book_name,
+        description: book.book_description || `Educational content featuring ${book.book_name}`,
+        status: 'draft',
+        is_active: false,
+        queue_position: null,
+        published_at: new Date().toISOString(), // Set to current time but inactive
+        expires_at: null // No expiration for draft entries
+      })
+      .select()
+      .single();
+
+    if (draftError) {
+      console.error('Error creating draft daily_published entry:', draftError);
+      // Continue without failing the book creation
+    } else {
+      console.log('Draft daily_published entry created:', draftPublication.id);
+    }
+
+    // Generate initial SEO metadata in background (non-blocking) with daily_published_id
     const generateSEOPromise = supabase.functions.invoke('generate-seo-metadata', {
       body: {
         bookId: book.id,
         contentTitle: book.book_name,
         bookDescription: book.book_description,
-        userId: userId
+        userId: userId,
+        dailyPublishedId: draftPublication?.id // Pass the draft daily_published_id
       }
     }).then(result => {
       if (result.error) {
         console.error('SEO generation failed:', result.error);
       } else {
-        console.log('SEO metadata generated successfully for book:', book.id);
+        console.log('SEO metadata generated successfully for book:', book.id, 'with daily_published_id:', draftPublication?.id);
       }
     }).catch(error => {
       console.error('SEO generation error:', error);

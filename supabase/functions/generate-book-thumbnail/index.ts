@@ -102,7 +102,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-image-1',
         prompt: imagePrompt,
-        size: '1792x1024', // 3:2 aspect ratio, good for social media
+        size: '1536x1024', // 3:2 aspect ratio, supported by gpt-image-1
         quality: 'high',
         output_format: 'png',
       }),
@@ -195,7 +195,7 @@ serve(async (req) => {
         generation_started_at: new Date().toISOString(),
         generation_completed_at: new Date().toISOString(),
         generation_duration_ms: 8000, // Approximate duration
-        aspect_ratio: '1792:1024',
+        aspect_ratio: '1536:1024',
         is_latest: true
       })
       .select()

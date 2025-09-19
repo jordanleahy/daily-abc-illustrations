@@ -3,15 +3,24 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Sparkles, Save, X, RefreshCw } from "lucide-react";
+import { Sparkles, Save, X, RefreshCw, Image } from "lucide-react";
 import { usePageSimplifiedPrompt } from "@/hooks/usePageSimplifiedPrompt";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useState } from "react";
 
 interface SimplifiedPromptTabProps {
   pageId: string;
   pageTitle?: string;
+  bookId: string;
 }
 
-export function SimplifiedPromptTab({ pageId, pageTitle }: SimplifiedPromptTabProps) {
+export function SimplifiedPromptTab({ pageId, pageTitle, bookId }: SimplifiedPromptTabProps) {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+  
   const {
     currentPrompt,
     isLoading,
@@ -25,6 +34,94 @@ export function SimplifiedPromptTab({ pageId, pageTitle }: SimplifiedPromptTabPr
     generateSimplifiedPrompt,
     updateEditedContent,
   } = usePageSimplifiedPrompt(pageId);
+
+  const handleGenerateImage = async () => {
+    if (!user || !currentPrompt?.simplified_content) {
+      toast({
+        title: "Error",
+        description: !user ? "Please log in to generate images" : "No simplified prompt available",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setIsGeneratingImage(true);
+
+      // Get the next version number for this page's images
+      const { data: existingImages, error: fetchError } = await supabase
+        .from('page_image_urls')
+        .select('version_number')
+        .eq('page_id', pageId)
+        .order('version_number', { ascending: false })
+        .limit(1);
+
+      if (fetchError) throw fetchError;
+
+      const nextVersion = existingImages && existingImages.length > 0 
+        ? existingImages[0].version_number + 1 
+        : 1;
+
+      // Create a new page_image_urls record with the simplified prompt
+      const { data: newImageRecord, error: createError } = await supabase
+        .from('page_image_urls')
+        .insert({
+          page_id: pageId,
+          book_id: bookId,
+          user_id: user.id,
+          version_number: nextVersion,
+          is_latest: true,
+          generation_status: 'not_started',
+          prompt_used: currentPrompt.simplified_content // Use the simplified prompt instead
+        })
+        .select()
+        .single();
+
+      if (createError) throw createError;
+
+      // Get current session for auth
+      const { data: sessionRes } = await supabase.auth.getSession();
+      const token = sessionRes.session?.access_token;
+
+      if (!token) {
+        toast({
+          title: "Authentication Required",
+          description: "Please log in again to generate images",
+          variant: "destructive",
+        });
+        setIsGeneratingImage(false);
+        return;
+      }
+
+      // Call generate-image with the record ID
+      const { error: generateError } = await supabase.functions.invoke('generate-image', {
+        body: {
+          recordId: newImageRecord.id,
+          userId: user.id,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (generateError) throw generateError;
+
+      toast({
+        title: "Success",
+        description: "Image generation started using simplified prompt",
+      });
+
+    } catch (error) {
+      console.error('Error generating image:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate image with simplified prompt",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -119,6 +216,15 @@ export function SimplifiedPromptTab({ pageId, pageTitle }: SimplifiedPromptTabPr
                       onClick={startEdit}
                     >
                       Edit
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={handleGenerateImage}
+                      disabled={isGeneratingImage}
+                      className="bg-gradient-to-r from-primary to-primary/80"
+                    >
+                      <Image className={`h-4 w-4 mr-1 ${isGeneratingImage ? 'animate-pulse' : ''}`} />
+                      {isGeneratingImage ? 'Generating...' : 'Generate'}
                     </Button>
                   </div>
                 </div>

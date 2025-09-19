@@ -398,6 +398,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
             <PageSystemPromptSection 
               pageId={page.id} 
               pageTitle={page.title}
+              bookId={bookId}
             />
           </div>
         ) : (

@@ -13,9 +13,10 @@ import { SimplifiedPromptTab } from './SimplifiedPromptTab';
 interface PageSystemPromptSectionProps {
   pageId: string;
   pageTitle?: string;
+  bookId: string;
 }
 
-export function PageSystemPromptSection({ pageId, pageTitle }: PageSystemPromptSectionProps) {
+export function PageSystemPromptSection({ pageId, pageTitle, bookId }: PageSystemPromptSectionProps) {
   const {
     currentPrompt,
     versions,
@@ -159,7 +160,7 @@ export function PageSystemPromptSection({ pageId, pageTitle }: PageSystemPromptS
           </TabsContent>
 
           <TabsContent value="simplified" className="mt-4">
-            <SimplifiedPromptTab pageId={pageId} pageTitle={pageTitle} />
+            <SimplifiedPromptTab pageId={pageId} pageTitle={pageTitle} bookId={bookId} />
           </TabsContent>
         </Tabs>
 

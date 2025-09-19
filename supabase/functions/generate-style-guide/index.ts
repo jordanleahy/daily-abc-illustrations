@@ -593,7 +593,7 @@ Use this style guide consistently across all illustrations for this book. Each i
             await supabase
               .from('book_system_prompts')
               .update({
-                status: ProcessStatus.ERROR,
+                prompt_status: ProcessStatus.ERROR,
                 generation_metadata: {
                   error_message: error.message,
                   failed_at: new Date().toISOString(),
@@ -796,7 +796,7 @@ Use this style guide consistently across all illustrations for this book. Each i
         source_type: 'generated',
         is_latest: true,
         is_deployed: true,
-        status: ProcessStatus.COMPLETE,
+        prompt_status: ProcessStatus.COMPLETE,
         generation_metadata: {
           model: agentConfig.model,
           generated_at: new Date().toISOString(),

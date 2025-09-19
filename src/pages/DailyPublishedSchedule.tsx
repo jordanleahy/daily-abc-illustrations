@@ -10,14 +10,35 @@ import { DailyPublishedWithBook } from '@/types/dailyPublished';
 const DailyPublishedSchedule = () => {
   const { data: queueItems, isLoading, error } = useDailyPublishedQueue();
 
-  const calculateExpectedActivationTime = (item: DailyPublishedWithBook) => {
+  const calculateExpectedActivationTime = (item: DailyPublishedWithBook, index: number) => {
     if (item.status === 'active') {
       return undefined; // Active items don't need activation time
     }
     
-    if (item.status === 'queued') {
-      // For queued items, use their scheduled published_at time
-      return item.published_at;
+    if (item.status === 'queued' && queueItems) {
+      // Find the current active item
+      const activeItem = queueItems.find(queueItem => queueItem.status === 'active');
+      let baseTime: Date;
+
+      if (activeItem && activeItem.published_at) {
+        // Calculate from when the active item expires (24 hours after published_at)
+        baseTime = new Date(activeItem.published_at);
+        baseTime.setHours(baseTime.getHours() + 24);
+      } else {
+        // If no active item, start from now
+        baseTime = new Date();
+      }
+
+      // Calculate how many positions ahead this item is from becoming active
+      // For a queued item at index position, it needs to wait for all items before it
+      const activeItemIndex = queueItems.findIndex(queueItem => queueItem.status === 'active');
+      const positionsAhead = index - (activeItemIndex >= 0 ? activeItemIndex : 0) - 1;
+
+      // Each position adds 24 hours
+      const activationTime = new Date(baseTime);
+      activationTime.setHours(activationTime.getHours() + (positionsAhead * 24));
+
+      return activationTime.toISOString();
     }
     
     return undefined;
@@ -81,7 +102,7 @@ const DailyPublishedSchedule = () => {
                        key={item.id}
                        item={item}
                        position={index + 1}
-                       expectedActivationTime={calculateExpectedActivationTime(item)}
+                       expectedActivationTime={calculateExpectedActivationTime(item, index)}
                      />
                    ))
                  )}

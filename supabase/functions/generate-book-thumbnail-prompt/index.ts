@@ -100,7 +100,6 @@ Your thumbnails should be:
 - Clearly readable at small sizes
 - Professional and polished
 - Appropriate for children's educational content
-- ${safeSpaceConfig.aspectRatio} - ${safeSpaceConfig.description}
 
 Focus on creating prompts that will generate thumbnails with:
 - Clear, bold visual elements
@@ -149,14 +148,19 @@ Focus on creating prompts that will generate thumbnails with:
       throw new Error('OpenAI returned empty thumbnail prompt');
     }
 
+    // Add safe space config information to the generated prompt
+    const promptWithAspectRatio = `${generatedPrompt}
+
+${safeSpaceConfig.aspectRatio} - ${safeSpaceConfig.description}`;
+
     log('INFO', ProcessStatus.COMPLETE, 'OPENAI', 'Prompt generated', { 
       requestId, 
-      promptLength: generatedPrompt.length,
+      promptLength: promptWithAspectRatio.length,
       tokensUsed: data.usage?.total_tokens
     });
 
     // Apply 3:2 safe space rules for thumbnail optimization
-    const enhancedPrompt = appendSafeSpaceRules(generatedPrompt, '3:2');
+    const enhancedPrompt = appendSafeSpaceRules(promptWithAspectRatio, '3:2');
 
     const totalDuration = Date.now() - startTime;
     log('INFO', ProcessStatus.COMPLETE, 'COMPLETE', 'Thumbnail prompt generation completed', { 

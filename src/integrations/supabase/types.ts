@@ -257,7 +257,7 @@ export type Database = {
           id: string
           is_active: boolean
           published_at: string
-          queue_position: number
+          queue_position: number | null
           status: string
           title: string
           updated_at: string
@@ -270,7 +270,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           published_at?: string
-          queue_position: number
+          queue_position?: number | null
           status?: string
           title: string
           updated_at?: string
@@ -283,7 +283,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           published_at?: string
-          queue_position?: number
+          queue_position?: number | null
           status?: string
           title?: string
           updated_at?: string

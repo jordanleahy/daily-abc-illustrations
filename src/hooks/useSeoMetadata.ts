@@ -1,10 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useSeoMetadataSubscription } from './useSeoMetadataSubscription';
 
 /**
  * Hook to fetch SEO metadata for daily published content
  */
 export const useSeoMetadata = (dailyPublishedId?: string) => {
+  // Enable real-time subscriptions
+  useSeoMetadataSubscription();
   return useQuery({
     queryKey: ['seo-metadata', dailyPublishedId],
     queryFn: async () => {

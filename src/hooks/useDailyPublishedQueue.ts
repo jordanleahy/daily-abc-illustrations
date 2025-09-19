@@ -1,8 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
+import { useSeoMetadataSubscription } from './useSeoMetadataSubscription';
 
 export const useDailyPublishedQueue = () => {
+  // Enable real-time subscriptions for SEO metadata updates
+  useSeoMetadataSubscription();
+  
   return useQuery({
     queryKey: ['daily-published-queue'],
     queryFn: async () => {

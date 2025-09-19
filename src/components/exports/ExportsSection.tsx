@@ -222,7 +222,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       window.open('/daily-published-schedule', '_blank');
 
     } catch (error: any) {
-      console.error('Error publishing daily:', error);
+      console.error('Error adding to queue:', error);
       
       // Check if this is a duplicate publication error
       if (error?.message?.includes('A daily publication already exists for this book')) {

@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
-import { Loader2, Upload, Eye, Wand2, X, MessageSquare, ImagePlus } from 'lucide-react';
+import { Loader2, Upload, Eye, Wand2, X, MessageSquare, ImagePlus, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
@@ -28,6 +28,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentTitle = seoMetadata?.seo_title || bookTitle;
@@ -160,6 +161,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
 
     setIsGenerating(true);
+    setGeneratedPrompt(null); // Clear previous prompt
     try {
       const { data, error } = await supabase.functions.invoke('generate-book-thumbnail-prompt', {
         body: {
@@ -171,6 +173,9 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
       if (error) throw error;
 
       if (data?.success && data?.thumbnailPrompt) {
+        // Store the prompt in state to display in UI
+        setGeneratedPrompt(data.thumbnailPrompt);
+        
         // Show the generated prompt in a success toast with copy functionality
         toast.success('Thumbnail prompt generated! Check browser console for full prompt.', {
           duration: 5000,
@@ -194,6 +199,17 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleCopyPrompt = async () => {
+    if (generatedPrompt && navigator.clipboard) {
+      await navigator.clipboard.writeText(generatedPrompt);
+      toast.success('Prompt copied to clipboard!');
+    }
+  };
+
+  const handleClearPrompt = () => {
+    setGeneratedPrompt(null);
   };
 
   const handleGenerateThumbImage = () => {
@@ -366,6 +382,41 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
             {seoMetadata ? 'Custom Settings' : 'Using Defaults'}
           </Badge>
         </div>
+
+        {/* Generated Thumbnail Prompt */}
+        {generatedPrompt && (
+          <div className="border rounded-md bg-blue-50/50 dark:bg-blue-950/20">
+            <div className="flex items-center justify-between p-3 border-b bg-blue-100/30 dark:bg-blue-900/20">
+              <Label className="text-sm font-medium">Generated Thumbnail Prompt</Label>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCopyPrompt}
+                  className="h-7 px-2"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearPrompt}
+                  className="h-7 px-2"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              </div>
+            </div>
+            <div className="p-3">
+              <textarea
+                value={generatedPrompt}
+                readOnly
+                className="w-full h-32 text-xs font-mono bg-transparent border-none resize-none focus:outline-none"
+                style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Preview Card */}
         <div className="border rounded-md p-4 bg-muted/30">

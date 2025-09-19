@@ -159,8 +159,8 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
       return;
     }
 
-    // Check if we have a generated prompt to use
-    if (!generatedPrompt) {
+    // Check if we have a generated prompt to use, or if we're regenerating an existing thumbnail
+    if (!generatedPrompt && !(thumbnailData?.thumbnail_url && thumbnailData?.generation_status === 'complete')) {
       toast.error('Please generate a thumbnail prompt first');
       return;
     }
@@ -171,7 +171,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         body: {
           bookId,
           userId: user.id,
-          customPrompt: generatedPrompt, // Use the generated prompt
+          ...(generatedPrompt && { customPrompt: generatedPrompt }), // Only include if we have a prompt
         },
       });
 
@@ -324,7 +324,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
               <Button
                 variant="outline"
                 onClick={handleGenerateThumbImage}
-                disabled={isGenerating || !generatedPrompt}
+                disabled={isGenerating || (!generatedPrompt && !(thumbnailData?.thumbnail_url && thumbnailData?.generation_status === 'complete'))}
                 className="flex items-center gap-2"
               >
                 {isGenerating ? (

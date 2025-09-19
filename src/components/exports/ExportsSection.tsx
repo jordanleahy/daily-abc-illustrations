@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Download, FileText, RotateCcw, Trash2, Globe, Eye, Copy } from 'lucide-react';
 import { useExports } from '@/hooks/useExports';
+import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
 import { Export } from '@/types/export';
 import { ProcessStatus } from '@/types/process';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +25,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 }) => {
   const { user } = useAuth();
   const { exports, createExport, deleteExport } = useExports(contentType, contentId);
+  const { data: expectedDate, isLoading: dateLoading } = useExpectedPublicationDate(contentId);
   const [existingPublication, setExistingPublication] = useState<any>(null);
   const [isCheckingPublication, setIsCheckingPublication] = useState(false);
 
@@ -354,7 +356,19 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           <div className="space-y-1">
             <h4 className="text-sm font-medium">Daily Queue</h4>
             <p className="text-sm text-muted-foreground">
-              Add your {contentType} to the daily publication queue
+              {existingPublication && existingPublication.status !== 'draft' 
+                ? `Currently ${existingPublication.status} in the publication queue`
+                : dateLoading 
+                  ? 'Calculating publication date...'
+                  : expectedDate 
+                    ? `This would be published on ${expectedDate.toLocaleDateString('en-US', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}`
+                    : 'Add your book to the daily publication queue'
+              }
             </p>
           </div>
            <div className="flex items-center gap-2">

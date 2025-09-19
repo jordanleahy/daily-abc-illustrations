@@ -91,11 +91,14 @@ export type Database = {
       book_system_prompts: {
         Row: {
           book_id: string
+          config_hash: string | null
+          config_version: string | null
           content: string
           created_at: string
           deployed_at: string | null
           generation_metadata: Json | null
           id: string
+          illustration_config: Json | null
           is_deployed: boolean
           is_latest: boolean
           prompt_status: string
@@ -106,11 +109,14 @@ export type Database = {
         }
         Insert: {
           book_id: string
+          config_hash?: string | null
+          config_version?: string | null
           content: string
           created_at?: string
           deployed_at?: string | null
           generation_metadata?: Json | null
           id?: string
+          illustration_config?: Json | null
           is_deployed?: boolean
           is_latest?: boolean
           prompt_status?: string
@@ -121,11 +127,14 @@ export type Database = {
         }
         Update: {
           book_id?: string
+          config_hash?: string | null
+          config_version?: string | null
           content?: string
           created_at?: string
           deployed_at?: string | null
           generation_metadata?: Json | null
           id?: string
+          illustration_config?: Json | null
           is_deployed?: boolean
           is_latest?: boolean
           prompt_status?: string

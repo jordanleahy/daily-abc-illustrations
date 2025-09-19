@@ -491,11 +491,47 @@ Required JSON Schema:
     const updateStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Updating database records...', { requestId });
 
-    // Update the book system prompt record with the generated style guide
+    // Import utilities for new illustration config architecture
+    const { transformConfigToContent } = await import('../../src/utils/configTransformer.ts');
+    const { generateConfigHash } = await import('../../src/utils/configHash.ts');
+
+    let finalContent: string;
+    let illustrationConfig: any = null;
+    let configHash: string | null = null;
+    let configVersion = 'v1.0.0';
+
+    if (isValidJSON && styleGuideJSON) {
+      // Valid JSON - create illustration config
+      illustrationConfig = {
+        ...styleGuideJSON,
+        configVersion,
+        lastTransformed: new Date().toISOString()
+      };
+      
+      configHash = generateConfigHash(illustrationConfig);
+      illustrationConfig.configHash = configHash;
+      
+      // Transform to human-readable content
+      finalContent = transformConfigToContent(illustrationConfig);
+      
+      log('INFO', ProcessStatus.COMPLETE, 'CONFIG_TRANSFORM', 'Transformed JSON config to human-readable content', {
+        requestId,
+        configHash,
+        contentLength: finalContent.length
+      });
+    } else {
+      // Fallback - store raw content without config
+      finalContent = styleGuide;
+    }
+
+    // Update the book system prompt record with both config and content
     const { error: updateError } = await supabaseClient
       .from('book_system_prompts')
       .update({
-        content: styleGuide,
+        content: finalContent,
+        illustration_config: illustrationConfig,
+        config_version: configVersion,
+        config_hash: configHash,
         prompt_status: ProcessStatus.COMPLETE,
         is_deployed: true,
         deployed_at: new Date().toISOString(),
@@ -504,7 +540,8 @@ Required JSON Schema:
           generated_at: new Date().toISOString(),
           request_id: requestId,
           agent_version: agentConfig.version,
-          tokens_used: data.usage?.total_tokens
+          tokens_used: data.usage?.total_tokens,
+          has_structured_config: isValidJSON
         }
       })
       .eq('id', promptId);

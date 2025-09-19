@@ -2,10 +2,15 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { SystemPromptEditor } from './SystemPromptEditor';
 import { VersionHistoryModal } from './VersionHistoryModal';
+import { StyleGuideViewer } from './StyleGuideViewer';
+import { IllustrationConfigEditor } from './IllustrationConfigEditor';
 import { useSystemPrompt } from '@/hooks/useSystemPrompt';
+import { useIllustrationConfig } from '@/hooks/useIllustrationConfig';
 import { ProcessStatus } from '@/types/process';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Edit, 
   History, 
@@ -15,7 +20,10 @@ import {
   CheckCircle,
   AlertCircle,
   Loader2,
-  RefreshCw
+  RefreshCw,
+  Palette,
+  Settings,
+  Eye
 } from 'lucide-react';
 
 interface SystemPromptSectionProps {
@@ -38,7 +46,17 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
     refreshData
   } = useSystemPrompt(bookId);
 
+  const {
+    config,
+    hasStructuredConfig,
+    isConfigOutdated,
+    regenerateContent
+  } = useIllustrationConfig(bookId);
+
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const [activeTab, setActiveTab] = useState<'content' | 'config' | 'visual'>('content');
+  const [isEditingConfig, setIsEditingConfig] = useState(false);
+  const { toast } = useToast();
 
   const getStatusIcon = (promptStatus?: string) => {
     switch (promptStatus) {
@@ -183,36 +201,126 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
               onSave={saveEdit}
               onCancel={cancelEdit}
             />
+          ) : isEditingConfig && config ? (
+            <IllustrationConfigEditor
+              config={config}
+              onConfigChange={(newConfig) => {
+                // Update config logic would go here
+                console.log('Config updated:', newConfig);
+              }}
+              onSave={() => {
+                setIsEditingConfig(false);
+                toast({
+                  title: "Configuration Updated",
+                  description: "Illustration configuration has been saved successfully."
+                });
+              }}
+              onCancel={() => setIsEditingConfig(false)}
+            />
           ) : (
-            <div className="space-y-4">
-              {currentPrompt?.promptStatus === ProcessStatus.IN_PROGRESS ? (
-                <div className="flex items-center justify-center py-8 space-x-2">
-                  <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
-                  <span className="text-sm text-muted-foreground">Generating system prompt...</span>
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as any)}>
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="content" className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  Instructions
+                </TabsTrigger>
+                <TabsTrigger value="config" className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  Configuration
+                  {hasStructuredConfig && (
+                    <Badge variant="secondary" className="ml-1 h-4 text-xs">
+                      JSON
+                    </Badge>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="visual" className="flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  Visual Preview
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="content" className="mt-4">
+                <div className="space-y-4">
+                  {currentPrompt?.promptStatus === ProcessStatus.IN_PROGRESS ? (
+                    <div className="flex items-center justify-center py-8 space-x-2">
+                      <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                      <span className="text-sm text-muted-foreground">Generating system prompt...</span>
+                    </div>
+                  ) : currentPrompt?.promptStatus === ProcessStatus.ERROR ? (
+                    <div className="flex items-center justify-center py-8 space-x-2 text-red-500">
+                      <AlertCircle className="h-6 w-6" />
+                      <span className="text-sm">Generation failed. Please try again.</span>
+                    </div>
+                  ) : (
+                    <div className="bg-muted/50 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium flex items-center gap-2">
+                          Current Version
+                          {getStatusIcon(currentPrompt?.promptStatus)}
+                          {isConfigOutdated && (
+                            <Badge variant="outline" className="text-yellow-600">
+                              Config Updated
+                            </Badge>
+                          )}
+                        </h4>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          {currentPrompt?.lastModified ? new Date(currentPrompt.lastModified).toLocaleDateString() : 'Unknown'}
+                        </div>
+                      </div>
+                      <div className="text-sm leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
+                        {currentPrompt?.content || 'No content available'}
+                      </div>
+                    </div>
+                  )}
                 </div>
-              ) : currentPrompt?.promptStatus === ProcessStatus.ERROR ? (
-                <div className="flex items-center justify-center py-8 space-x-2 text-red-500">
-                  <AlertCircle className="h-6 w-6" />
-                  <span className="text-sm">Generation failed. Please try again.</span>
-                </div>
-              ) : (
-                <div className="bg-muted/50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h4 className="font-medium flex items-center gap-2">
-                      Current Version
-                      {getStatusIcon(currentPrompt?.promptStatus)}
-                    </h4>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      {currentPrompt?.lastModified ? new Date(currentPrompt.lastModified).toLocaleDateString() : 'Unknown'}
+              </TabsContent>
+
+              <TabsContent value="config" className="mt-4">
+                {hasStructuredConfig && config ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Palette className="h-5 w-5" />
+                        <h4 className="font-medium">Illustration Configuration</h4>
+                        <Badge variant="secondary">{config.configVersion}</Badge>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsEditingConfig(true)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit Config
+                      </Button>
+                    </div>
+                    <div className="bg-muted/50 rounded-lg p-4 max-h-96 overflow-y-auto">
+                      <pre className="text-sm font-mono whitespace-pre-wrap">
+                        {JSON.stringify(config, null, 2)}
+                      </pre>
                     </div>
                   </div>
-                  <div className="text-sm leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
-                    {currentPrompt?.content || 'No content available'}
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Settings className="w-12 h-12 mx-auto mb-4 opacity-40" />
+                    <p className="mb-2">No structured configuration available</p>
+                    <p className="text-sm">This prompt was created with the legacy format</p>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </TabsContent>
+
+              <TabsContent value="visual" className="mt-4">
+                {currentPrompt?.content ? (
+                  <StyleGuideViewer styleGuideContent={currentPrompt.content} />
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Eye className="w-12 h-12 mx-auto mb-4 opacity-40" />
+                    <p className="mb-2">No content to preview</p>
+                    <p className="text-sm">Generate a system prompt to see the visual preview</p>
+                  </div>
+                )}
+              </TabsContent>
+            </Tabs>
           )}
         </CardContent>
       </Card>

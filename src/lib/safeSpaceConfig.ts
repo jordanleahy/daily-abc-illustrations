@@ -77,11 +77,11 @@ const SAFE_SPACE_CONFIGS: Record<string, SafeSpaceConfig> = {
     negativePrompts: 'No elements touching top/bottom edges, maintain balanced vertical spacing, no cramped portrait layouts'
   },
   '3:2': {
-    aspectRatio: '3:2 Landscape Format',
-    description: 'Optimal SEO thumbnail format with balanced horizontal layout',
-    safeZones: 'Maintain 12-15% margins on left and right sides, 8-10% margins on top and bottom',
-    composition: 'Balanced landscape layout optimized for SEO thumbnails and social media previews',
-    negativePrompts: 'No elements touching horizontal edges, maintain proper thumbnail readability, no cramped landscape layouts, avoid edge-to-edge content'
+    aspectRatio: '3:2 Landscape Format (Social Media Optimized)',
+    description: 'Designed for 1536x1024 generation that will be cropped to 1200x630 for social media display',
+    safeZones: 'CRITICAL: Maintain 25-30% margins on top and bottom (accounts for 1200x630 crop), 15-20% margins on left and right sides',
+    composition: 'Center-weighted layout with all important content in the middle 40% of vertical space. Text and logos must be positioned in the absolute center to survive social media cropping from 1536x1024 to 1200x630',
+    negativePrompts: 'NEVER place text or important elements near top/bottom edges - they will be cropped in social media display. No vertical edge placement, no cramped layouts, maintain central focus zone, avoid any content in top 25% or bottom 25% of image'
   }
 };
 

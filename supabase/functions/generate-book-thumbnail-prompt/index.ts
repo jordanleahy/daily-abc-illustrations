@@ -169,14 +169,18 @@ Please incorporate the established visual style from the style guide while optim
 ` : ''}
 
 Requirements for Thumbnail Prompt:
-- Target size: 1536x1024 pixels (3:2 aspect ratio)
-- Optimized for SEO and social media sharing
-- Clear, readable text elements that work at small sizes
-- Eye-catching composition that stands out in search results
+- Target size: 1536x1024 pixels (3:2 aspect ratio) 
+- CRITICAL CROPPING AWARENESS: The final 1536x1024 image will be CROPPED to 1200x630 for social media display
+- This cropping removes approximately 19% from both TOP and BOTTOM edges
+- ALL important content (text, logos, key visuals) MUST be positioned in the CENTER 40% of the vertical space
+- Optimized for SEO and social media sharing after cropping
+- Clear, readable text elements that work at small sizes and survive the crop
+- Eye-catching composition with center-weighted design
 - Professional, engaging design suitable for book marketing
-- Include the book title prominently and legibly
-- Use colors and design elements that will be visible in thumbnail format
+- Include the book title prominently in the ABSOLUTE CENTER - never near top/bottom edges
+- Use bold, high-contrast colors and design elements visible in thumbnail format
 - Avoid small details that won't be visible when scaled down
+- NEVER place important elements in the top 25% or bottom 25% of the image
 
 Generate a detailed image generation prompt that will create an effective thumbnail for this book.
     `.trim();

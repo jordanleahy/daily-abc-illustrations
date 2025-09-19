@@ -117,9 +117,8 @@ Focus on creating prompts that will generate thumbnails with:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        max_tokens: 4000,
-        temperature: 0.7,
+        model: 'gpt-5-mini-2025-08-07',
+        max_completion_tokens: 4000,
         messages: [
           { role: 'system', content: THUMBNAIL_SYSTEM_PROMPT },
           { role: 'user', content: thumbnailPrompt }

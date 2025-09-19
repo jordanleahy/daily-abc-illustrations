@@ -41,7 +41,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           .from('daily_published')
           .select('*')
           .eq('book_id', contentId)
-          .eq('is_active', true)
+          .in('status', ['queued', 'active'])
           .maybeSingle();
 
         if (!error && data) {
@@ -149,7 +149,11 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
   const handleViewPublication = () => {
     if (existingPublication) {
-      window.open(`/daily-published/${existingPublication.id}`, '_blank');
+      if (existingPublication.status === 'active') {
+        window.open(`/daily-published/${existingPublication.id}`, '_blank');
+      } else {
+        window.open('/daily-published-schedule', '_blank');
+      }
     }
   };
 
@@ -174,51 +178,48 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
-  const handlePublishDaily = async () => {
+  const handleAddToQueue = async () => {
     if (!user?.id) {
       toast({
         title: "Authentication Required",
-        description: "You must be logged in to publish daily content.",
+        description: "You must be logged in to add content to the queue.",
         variant: "destructive"
       });
       return;
     }
 
     try {
-      // Create new daily publication
-      // Get next queue position for this new item
+      // Get next queue position
       const { data: nextPosition } = await supabase.rpc('get_next_queue_position');
       
+      // Create new daily publication in queue
       const { data: newPublication, error: insertError } = await supabase
         .from('daily_published')
         .insert({
           book_id: contentId,
           title: contentName,
           description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
-          published_at: new Date().toISOString(),
-          expires_at: new Date(Date.now() + SITE_CONFIG.dailyContent.expirationHours * 60 * 60 * 1000).toISOString(),
-          is_active: true,
-          status: 'active' as const,
+          status: 'queued' as const,
           queue_position: nextPosition || 1
         })
         .select()
         .single();
 
       if (insertError) {
-        console.error('Error creating daily publication:', insertError);
+        console.error('Error adding to queue:', insertError);
         throw insertError;
       }
 
       toast({
-        title: "Published Daily!",
-        description: `${contentName} is now available as daily content for ${SITE_CONFIG.dailyContent.expirationHours} hours.`,
+        title: "Added to Queue!",
+        description: `${contentName} has been added to the daily publication queue at position ${newPublication.queue_position}.`,
       });
 
       // Update local state
       setExistingPublication(newPublication);
 
-      // Open the daily published page with the new publication ID
-      window.open(`/daily-published/${newPublication.id}`, '_blank');
+      // Open the queue page to show status
+      window.open('/daily-published-schedule', '_blank');
 
     } catch (error: any) {
       console.error('Error publishing daily:', error);
@@ -226,14 +227,14 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       // Check if this is a duplicate publication error
       if (error?.message?.includes('A daily publication already exists for this book')) {
         toast({
-          title: "Already Published",
-          description: `${contentName} is already published as daily content. Each book can only have one active daily publication.`,
+          title: "Already in Queue",
+          description: `${contentName} is already in the daily publication queue. Each book can only have one queue entry.`,
           variant: "destructive"
         });
       } else {
         toast({
-          title: "Publishing Failed",
-          description: "There was an error publishing your content. Please try again.",
+          title: "Queue Addition Failed",
+          description: "There was an error adding your content to the queue. Please try again.",
           variant: "destructive"
         });
       }
@@ -321,13 +322,13 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
         <div className="flex items-center justify-between pt-4 border-t">
           <div className="space-y-1">
-            <h4 className="text-sm font-medium">Publish Daily</h4>
+            <h4 className="text-sm font-medium">Daily Queue</h4>
             <p className="text-sm text-muted-foreground">
-              Publish your {contentType} to the daily publication
+              Add your {contentType} to the daily publication queue
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {existingPublication && (
+            {existingPublication && existingPublication.status === 'active' && (
               <Button 
                 onClick={handleCopyLink}
                 variant="outline"
@@ -339,13 +340,15 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
               </Button>
             )}
             <Button 
-              onClick={existingPublication ? handleViewPublication : handlePublishDaily}
+              onClick={existingPublication ? handleViewPublication : handleAddToQueue}
               variant="outline"
               className="flex items-center gap-2"
               disabled={isCheckingPublication}
             >
               {existingPublication ? <Eye className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-              {isCheckingPublication ? 'Checking...' : existingPublication ? 'View' : 'Publish Daily'}
+              {isCheckingPublication ? 'Checking...' : existingPublication 
+                ? (existingPublication.status === 'active' ? 'View Live' : 'View in Queue') 
+                : 'Add to Queue'}
             </Button>
           </div>
         </div>

@@ -7,7 +7,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { ProcessStatus, corsHeaders, log, generateRequestId } from '../_shared/types.ts';
-import { appendSafeSpaceRules } from '../_shared/safeSpaceConfig.ts';
+import { appendSafeSpaceRules, getSafeSpaceRules } from '../_shared/safeSpaceConfig.ts';
 
 serve(async (req) => {
   const requestId = generateRequestId();
@@ -89,7 +89,10 @@ Generate a detailed image generation prompt that will create an effective thumbn
       throw new Error('OpenAI API key not configured');
     }
 
-    // Hardcoded thumbnail-optimized settings
+    // Get aspect ratio configuration
+    const safeSpaceConfig = getSafeSpaceRules('3:2');
+
+    // Dynamic thumbnail-optimized system prompt
     const THUMBNAIL_SYSTEM_PROMPT = `You are a specialized thumbnail prompt generator for children's educational books. Create detailed, SEO-optimized image prompts that will work perfectly as book thumbnails for social media and search engines.
 
 Your thumbnails should be:
@@ -97,7 +100,7 @@ Your thumbnails should be:
 - Clearly readable at small sizes
 - Professional and polished
 - Appropriate for children's educational content
-- Optimized for 3:2 aspect ratio (1536x1024 pixels)
+- ${safeSpaceConfig.aspectRatio} - ${safeSpaceConfig.description}
 
 Focus on creating prompts that will generate thumbnails with:
 - Clear, bold visual elements

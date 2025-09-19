@@ -93,7 +93,7 @@ Generate a detailed image generation prompt that will create an effective thumbn
     const safeSpaceConfig = getSafeSpaceRules('3:2');
 
     // Dynamic thumbnail-optimized system prompt
-    const THUMBNAIL_SYSTEM_PROMPT = `Please create an iamge prompt`;
+    const THUMBNAIL_SYSTEM_PROMPT = `Please create an image prompt`;
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

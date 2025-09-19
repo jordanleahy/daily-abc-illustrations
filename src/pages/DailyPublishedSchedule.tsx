@@ -75,15 +75,16 @@ const DailyPublishedSchedule = () => {
                       Add books to your daily published queue to get started.
                     </p>
                   </div>
-                ) : (
-                  queueItems?.map((item) => (
-                    <DailyPublishedQueueCard
-                      key={item.id}
-                      item={item}
-                      expectedActivationTime={calculateExpectedActivationTime(item)}
-                    />
-                  ))
-                )}
+                 ) : (
+                   queueItems?.map((item, index) => (
+                     <DailyPublishedQueueCard
+                       key={item.id}
+                       item={item}
+                       position={index + 1}
+                       expectedActivationTime={calculateExpectedActivationTime(item)}
+                     />
+                   ))
+                 )}
               </div>
             )}
           </div>

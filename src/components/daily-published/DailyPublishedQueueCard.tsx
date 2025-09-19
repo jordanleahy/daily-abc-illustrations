@@ -8,11 +8,13 @@ import { useNavigate } from 'react-router-dom';
 
 interface DailyPublishedQueueCardProps {
   item: DailyPublishedWithBook;
+  position: number;
   expectedActivationTime?: string;
 }
 
 export function DailyPublishedQueueCard({ 
   item, 
+  position,
   expectedActivationTime 
 }: DailyPublishedQueueCardProps) {
   const navigate = useNavigate();
@@ -110,9 +112,9 @@ export function DailyPublishedQueueCard({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
               <Hash className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-              <span className="text-sm font-medium text-muted-foreground">
-                Position {item.queue_position}
-              </span>
+               <span className="text-sm font-medium text-muted-foreground">
+                 Position {position}
+               </span>
               <Badge variant={getStatusVariant(item.status)} className="flex-shrink-0">
                 {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
               </Badge>

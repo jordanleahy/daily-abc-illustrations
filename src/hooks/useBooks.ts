@@ -1,3 +1,21 @@
+/**
+ * @fileoverview Books data management hook
+ * 
+ * This hook provides comprehensive book data management including fetching user's books,
+ * real-time updates, and associated image URLs. It uses React Query for caching and
+ * state management with Supabase real-time subscriptions.
+ * 
+ * Key Features:
+ * - Fetches user's books with first page images
+ * - Real-time updates via Supabase subscriptions
+ * - Automatic cache invalidation and updates
+ * - Error handling with user notifications
+ * - Excludes archived books from results
+ * 
+ * @version 1.0.0
+ * @author ABC Cards Team
+ */
+
 import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,6 +23,40 @@ import { useAuth } from './useAuth';
 import { Book } from '@/types/book';
 import { toast } from 'sonner';
 
+/**
+ * Books data management hook
+ * 
+ * Fetches and manages the current user's books with real-time updates.
+ * Includes the first page image URL for each book for display purposes.
+ * Automatically excludes archived books and maintains real-time synchronization.
+ * 
+ * @hook
+ * @returns {Object} Book data and loading state
+ * @returns {Book[]} books - Array of user's books with first page images
+ * @returns {boolean} loading - Whether books are being loaded
+ * @returns {Error | null} error - Any error that occurred during loading
+ * 
+ * @example
+ * ```tsx
+ * const { books, loading, error } = useBooks();
+ * 
+ * if (loading) return <div>Loading books...</div>;
+ * if (error) return <div>Error loading books</div>;
+ * 
+ * return (
+ *   <div>
+ *     {books.map(book => (
+ *       <div key={book.id}>
+ *         <h3>{book.book_name}</h3>
+ *         {book.firstPageImageUrl && (
+ *           <img src={book.firstPageImageUrl} alt="Book preview" />
+ *         )}
+ *       </div>
+ *     ))}
+ *   </div>
+ * );
+ * ```
+ */
 export const useBooks = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();

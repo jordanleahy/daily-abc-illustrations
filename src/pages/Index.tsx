@@ -1,3 +1,21 @@
+/**
+ * @fileoverview Main landing page with AI chat interface
+ * 
+ * This component provides the primary interface for ABC Cards users to interact
+ * with the AI assistant. It handles chat functionality, image uploads, book creation,
+ * and authentication-based routing.
+ * 
+ * Key Features:
+ * - Real-time chat with AI assistant
+ * - Image upload and preview
+ * - Automatic book creation from conversations
+ * - Authentication-based access control
+ * - Auto-redirect to daily published content for non-authenticated users
+ * 
+ * @version 1.0.0
+ * @author ABC Cards Team
+ */
+
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -11,6 +29,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { useActiveDailyPublished } from '@/hooks/useActiveDailyPublished';
 import { toast } from 'sonner';
 
+/**
+ * Chat message interface
+ * 
+ * @interface Message
+ * @property {string} id - Unique identifier for the message
+ * @property {'user' | 'assistant'} role - Message sender role
+ * @property {string} content - Text content of the message
+ * @property {string[]} [images] - Optional array of base64 encoded images
+ */
 interface Message {
   id: string;
   role: 'user' | 'assistant';
@@ -18,6 +45,16 @@ interface Message {
   images?: string[]; // Base64 encoded images
 }
 
+/**
+ * Main landing page component with AI chat interface
+ * 
+ * Provides a full-featured chat interface for authenticated users to interact
+ * with the AI assistant. Non-authenticated users are redirected to active daily
+ * published content if available.
+ * 
+ * @component
+ * @returns {JSX.Element} The rendered landing page
+ */
 const Index = () => {
   const { session, isAuthenticated, loading } = useAuth();
   const { data: activeDaily, isLoading: isDailyLoading } = useActiveDailyPublished();

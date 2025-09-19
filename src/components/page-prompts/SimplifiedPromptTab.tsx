@@ -111,6 +111,49 @@ export function SimplifiedPromptTab({ pageId, pageTitle, bookId }: SimplifiedPro
         description: "Image generation started using simplified prompt",
       });
 
+      // Set up polling to check for completion and force refresh
+      const pollForCompletion = async () => {
+        let attempts = 0;
+        const maxAttempts = 30; // Poll for up to 5 minutes
+        
+        const poll = async () => {
+          attempts++;
+          console.log(`Polling attempt ${attempts} for image completion`);
+          
+          try {
+            const { data: imageCheck } = await supabase
+              .from('page_image_urls')
+              .select('generation_status, image_url')
+              .eq('id', newImageRecord.id)
+              .single();
+            
+            if (imageCheck?.generation_status === 'complete' && imageCheck.image_url) {
+              console.log('Image generation completed, forcing refresh');
+              // Force refresh the page to show the new image
+              window.location.reload();
+              return;
+            }
+            
+            if (imageCheck?.generation_status === 'error' || attempts >= maxAttempts) {
+              console.log('Image generation failed or timed out');
+              setIsGeneratingImage(false);
+              return;
+            }
+            
+            // Continue polling
+            setTimeout(poll, 10000); // Check every 10 seconds
+          } catch (error) {
+            console.error('Error polling for image completion:', error);
+            setIsGeneratingImage(false);
+          }
+        };
+        
+        // Start polling after a short delay
+        setTimeout(poll, 5000);
+      };
+      
+      pollForCompletion();
+
     } catch (error) {
       console.error('Error generating image:', error);
       toast({
@@ -118,7 +161,6 @@ export function SimplifiedPromptTab({ pageId, pageTitle, bookId }: SimplifiedPro
         description: "Failed to generate image with simplified prompt",
         variant: "destructive",
       });
-    } finally {
       setIsGeneratingImage(false);
     }
   };
@@ -240,16 +282,30 @@ export function SimplifiedPromptTab({ pageId, pageTitle, bookId }: SimplifiedPro
                 Generate a focused image prompt optimized for AI image generation
               </p>
             </div>
-            <Button
-              onClick={generateSimplifiedPrompt}
-              disabled={isGenerating}
-              className="bg-gradient-to-r from-primary to-primary/80"
-            >
-              <Sparkles className={`h-4 w-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
-              {isGenerating ? 'Generating...' : 'Call Simplify Image'}
-            </Button>
+            <div className="flex gap-2 justify-center">
+              <Button
+                onClick={generateSimplifiedPrompt}
+                disabled={isGenerating}
+                className="bg-gradient-to-r from-primary to-primary/80"
+              >
+                <Sparkles className={`h-4 w-4 mr-2 ${isGenerating ? 'animate-spin' : ''}`} />
+                {isGenerating ? 'Generating...' : 'Call Simplify Image'}
+              </Button>
+            </div>
           </div>
         )}
+        
+        {/* Debug: Force refresh button */}
+        <div className="mt-4 pt-4 border-t border-border">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => window.location.reload()}
+            className="w-full text-xs text-muted-foreground"
+          >
+            🔄 Refresh to see generated images
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

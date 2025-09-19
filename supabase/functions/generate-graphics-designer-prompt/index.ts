@@ -163,6 +163,7 @@ ${styleGuide.visualElements.foregroundElements.required.map(el => `- ${el}`).joi
 When generating image prompts, you MUST maintain these exact specifications for visual consistency across all pages. Every prompt should reference the specific colors, apply the visual metaphors, follow the composition guidelines, and maintain the defined art style and tone.
 
 CONSISTENCY IS CRITICAL - Use these guidelines as your foundation for every single image prompt you create.`;
+}
 
 serve(async (req) => {
   const requestId = generateRequestId();

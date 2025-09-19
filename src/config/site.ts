@@ -5,9 +5,9 @@
 
 export const SITE_CONFIG = {
   // Basic site information
-  name: 'ABC Illustrations',
+  name: 'Daily ABC Illustrations',
   tagline: 'Digital Drawing Canvas',
-  description: 'Create beautiful digital illustrations with ABC Illustrations - a clean, intuitive drawing canvas app',
+  description: 'A new learning book every 24 hours',
   author: 'Lovable',
   
   // URLs and social
@@ -23,13 +23,13 @@ export const SITE_CONFIG = {
     url: 'https://lovable.dev/opengraph-image-p98pqg.png',
     width: 1200,
     height: 630,
-    alt: 'ABC Illustrations - Digital Drawing Canvas',
+    alt: 'Daily ABC Illustrations - A new learning book every 24 hours',
   },
   
   // Content specific
   dailyContent: {
     title: 'Daily ABC Illustrations',
-    description: 'Daily featured illustrated content',
+    description: 'A new learning book every 24 hours',
     expirationHours: 24,
   },
   

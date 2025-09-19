@@ -11,6 +11,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { useUpdateSeoMetadata } from '@/hooks/useUpdateSeoMetadata';
+import { useBookThumbnails } from '@/hooks/useBookThumbnails';
 import { useAuth } from '@/hooks/useAuth';
 
 interface OpenGraphEditorProps {
@@ -21,6 +22,7 @@ interface OpenGraphEditorProps {
 
 export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGraphEditorProps) => {
   const { data: seoMetadata, isLoading, refetch } = useBookSeoMetadata(bookId);
+  const { data: thumbnailData, refetch: refetchThumbnails } = useBookThumbnails(bookId);
   const updateSeoMetadata = useUpdateSeoMetadata();
   const { user } = useAuth();
   
@@ -33,7 +35,8 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
 
   const currentTitle = seoMetadata?.seo_title || bookTitle;
   const currentDescription = seoMetadata?.seo_description || bookDescription || '';
-  const currentImage = seoMetadata?.og_image_url;
+  // Use thumbnail from book_thumbnails table first, fallback to SEO metadata
+  const currentImage = thumbnailData?.thumbnail_url || seoMetadata?.og_image_url;
 
   const handleTitleSave = async (newTitle: string) => {
     try {
@@ -229,16 +232,9 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
       if (error) throw error;
 
       if (data?.success && data?.thumbnailUrl) {
-        // Update SEO metadata with the new thumbnail
-        await updateSeoMetadata.mutateAsync({
-          bookId,
-          seoTitle: currentTitle,
-          seoDescription: currentDescription,
-          ogImageUrl: data.thumbnailUrl,
-        });
-
-        refetch();
-        toast.success('Thumbnail image generated and applied successfully!');
+        // Refetch thumbnails to show the new generated image
+        refetchThumbnails();
+        toast.success('Thumbnail image generated successfully!');
         
         // Clear the prompt since it's been used
         setGeneratedPrompt(null);

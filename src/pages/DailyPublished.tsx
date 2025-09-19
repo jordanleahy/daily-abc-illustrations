@@ -7,6 +7,7 @@ import { MetaHead } from '@/components/common';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
+import { ManualSeoButton } from '@/components/daily-published/ManualSeoButton';
 
 export default function DailyPublished() {
   const { id } = useParams<{ id: string }>();
@@ -95,6 +96,11 @@ export default function DailyPublished() {
     <div className="min-h-screen bg-background">
       {/* Dynamic meta tags for social sharing */}
       {openGraphMetadata && <MetaHead metadata={openGraphMetadata} />}
+      
+      {/* Temporary debug SEO button - remove after testing */}
+      <div className="fixed top-4 right-4 z-50">
+        <ManualSeoButton dailyPublishedId={id!} />
+      </div>
       
       <DailyPublishedPageView
       page={currentPage}

@@ -337,20 +337,23 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
           <Label>Social Media Image <span className="text-sm text-muted-foreground font-normal">(Recommended: 1200x630px)</span></Label>
           <div className="space-y-3">
             {currentImage ? (
-              <div className="relative">
-                <img
-                  src={currentImage}
-                  alt="OpenGraph preview"
-                  className="w-full max-w-md h-32 object-cover rounded-md border"
-                />
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={handleRemoveImage}
-                  className="absolute top-2 right-2"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
+              <div className="relative max-w-md">
+                {/* Aspect ratio container for 1200x630 (1.9:1) social media images */}
+                <div className="relative w-full" style={{ aspectRatio: '1200/630' }}>
+                  <img
+                    src={currentImage}
+                    alt="OpenGraph preview"
+                    className="absolute inset-0 w-full h-full object-cover rounded-md border"
+                  />
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 z-10"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
               </div>
             ) : (
               <div className="border-2 border-dashed border-muted-foreground/30 rounded-md p-8 text-center">
@@ -462,11 +465,13 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
             <p className="font-semibold text-sm">{currentTitle}</p>
             <p className="text-xs text-muted-foreground line-clamp-2">{currentDescription}</p>
             {currentImage && (
-              <img
-                src={currentImage}
-                alt="Preview"
-                className="w-full h-20 object-cover rounded"
-              />
+              <div className="w-full" style={{ aspectRatio: '1200/630' }}>
+                <img
+                  src={currentImage}
+                  alt="Preview"
+                  className="w-full h-full object-cover rounded"
+                />
+              </div>
             )}
           </div>
         </div>

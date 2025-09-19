@@ -754,6 +754,7 @@ export type Database = {
           generation_status: string
           id: string
           is_latest: boolean
+          prompt_used: string
           thumbnail_url: string
           updated_at: string
           user_id: string

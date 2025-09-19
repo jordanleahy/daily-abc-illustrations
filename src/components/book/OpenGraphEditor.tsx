@@ -176,20 +176,12 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         // Store the prompt in state to display in UI
         setGeneratedPrompt(data.thumbnailPrompt);
         
-        // Show the generated prompt in a success toast with copy functionality
-        toast.success('Thumbnail prompt generated! Check browser console for full prompt.', {
-          duration: 5000,
-        });
+        // Show success message
+        toast.success('Thumbnail prompt generated successfully!');
         
-        // Log the prompt to console for easy copying
+        // Log the prompt to console for debugging
         console.log('Generated Thumbnail Prompt:', data.thumbnailPrompt);
         console.log('Original Prompt (before safe space rules):', data.originalPrompt);
-        
-        // Optionally copy to clipboard
-        if (navigator.clipboard) {
-          await navigator.clipboard.writeText(data.thumbnailPrompt);
-          toast.info('Prompt copied to clipboard!');
-        }
       } else {
         throw new Error('Failed to generate thumbnail prompt');
       }

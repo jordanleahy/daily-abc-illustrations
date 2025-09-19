@@ -269,6 +269,8 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
             src={currentImage.image_url} 
             alt="Generated page image"
             className="w-full h-full object-cover"
+            loading="lazy"
+            decoding="async"
             onLoad={() => console.log('🖼️ Image loaded successfully:', currentImage.image_url)}
             onError={() => console.error('🚫 Image failed to load:', currentImage.image_url)}
           />

@@ -28,6 +28,7 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
       alt="Page illustration"
       className={`w-full h-full object-cover object-top ${className}`}
       loading="lazy"
+      decoding="async"
     />
   );
 }

@@ -492,8 +492,8 @@ Required JSON Schema:
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Updating database records...', { requestId });
 
     // Import utilities for new illustration config architecture
-    const { transformConfigToContent } = await import('../../src/utils/configTransformer.ts');
-    const { generateConfigHash } = await import('../../src/utils/configHash.ts');
+    const { transformConfigToContent } = await import('../_shared/configTransformer.ts');
+    const { generateConfigHash } = await import('../_shared/configHash.ts');
 
     let finalContent: string;
     let illustrationConfig: any = null;

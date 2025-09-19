@@ -212,6 +212,51 @@ serve(async (req) => {
       versionNumber: thumbnailRecord.version_number
     }), `}`);
 
+    // Update SEO metadata with the thumbnail URL
+    console.log(`[${new Date().toISOString()}] [INFO] [in-progress] [SEO_UPDATE] - Updating SEO metadata with thumbnail... {`, JSON.stringify({
+      requestId
+    }), `}`);
+
+    try {
+      // Find the draft daily_published entry for this book
+      const { data: dailyPublishedData, error: dailyPublishedError } = await supabase
+        .from('daily_published')
+        .select('id')
+        .eq('book_id', bookId)
+        .eq('status', 'draft')
+        .maybeSingle();
+
+      if (dailyPublishedError) {
+        console.error(`[${new Date().toISOString()}] [WARN] [SEO_UPDATE] - Error finding draft daily_published:`, dailyPublishedError);
+      } else if (dailyPublishedData) {
+        // Update the SEO metadata with the thumbnail URL
+        const { error: seoUpdateError } = await supabase
+          .from('seo_metadata')
+          .update({ 
+            og_image_url: thumbnailUrl,
+            updated_at: new Date().toISOString()
+          })
+          .eq('daily_published_id', dailyPublishedData.id)
+          .eq('is_latest', true)
+          .eq('is_active', true);
+
+        if (seoUpdateError) {
+          console.error(`[${new Date().toISOString()}] [WARN] [SEO_UPDATE] - Error updating SEO metadata:`, seoUpdateError);
+        } else {
+          console.log(`[${new Date().toISOString()}] [INFO] [complete] [SEO_UPDATE] - SEO metadata updated with thumbnail URL {`, JSON.stringify({
+            requestId,
+            dailyPublishedId: dailyPublishedData.id
+          }), `}`);
+        }
+      } else {
+        console.log(`[${new Date().toISOString()}] [INFO] [SEO_UPDATE] - No draft daily_published entry found for book {`, JSON.stringify({
+          requestId
+        }), `}`);
+      }
+    } catch (seoError) {
+      console.error(`[${new Date().toISOString()}] [WARN] [SEO_UPDATE] - SEO update failed, but continuing:`, seoError);
+    }
+
     console.log(`[${new Date().toISOString()}] [INFO] [complete] [COMPLETE] - Book thumbnail generation completed successfully! {`, JSON.stringify({
       requestId,
       totalDuration: 8000,

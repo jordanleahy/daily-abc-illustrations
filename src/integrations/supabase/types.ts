@@ -742,6 +742,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_daily_published_queue: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_book_thumbnail: {
         Args: { p_book_id: string }
         Returns: {

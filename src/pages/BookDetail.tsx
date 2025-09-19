@@ -102,113 +102,44 @@ export default function BookDetail() {
       }))
     };
     
-    // Use SSE for streaming progress - construct URL from window location
-    const baseUrl = window.location.origin.includes('localhost') 
-      ? 'http://localhost:54321'
-      : 'https://foxdnspwzhjxjxuicute.supabase.co';
-
-    // Clear previous messages and let backend handle all progress
-    setProgressMessages([]);
-    
-    let receivedAnyEvents = false;
-    
     try {
-      const response = await fetch(
-        `${baseUrl}/functions/v1/generate-style-guide?stream=true`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            bookId: book.id,
-            userId: user.id,
-            bookMetadata
-          }),
-        }
-      );
+      // Show initial progress message
+      setProgressMessages([{
+        step: 'Style Guide Generation',
+        message: 'Starting style guide generation...',
+        timestamp: new Date().toISOString(),
+        status: ProcessStatus.IN_PROGRESS
+      }]);
 
-      if (response.body) {
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-  
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-  
-          const chunk = decoder.decode(value, { stream: true });
-          const lines = chunk.split('\n');
-  
-          for (const line of lines) {
-            if (line.startsWith('data: ')) {
-              try {
-                const data = JSON.parse(line.slice(6));
-                receivedAnyEvents = true;
-                
-                // Update existing message for same step or add new one
-                setProgressMessages(prev => {
-                  const existingIndex = prev.findIndex(msg => msg.step === data.step);
-                  if (existingIndex >= 0) {
-                    // Update existing message for this step
-                    const updated = [...prev];
-                    updated[existingIndex] = data;
-                    return updated;
-                  } else {
-                    // Add new message
-                    return [...prev, data];
-                  }
-                });
-  
-                // Handle completion - check both status and step for completion
-                if ((data.status === ProcessStatus.COMPLETE || data.step === 'complete') && data.styleGuide) {
-                  // Stop the loading state when generation completes
-                  setStyleGuideLoading(false);
-                  
-                  // Force refresh the system prompt data
-                  await refreshData();
-                  console.log('Style guide generation completed, forcing cache refresh');
-                  
-                  toast.success('Style guide generated successfully!');
-                }
-                
-                // Handle errors  
-                if (data.status === ProcessStatus.ERROR) {
-                  toast.error(`Error: ${data.message}`);
-                  // Also stop loading on error
-                  setStyleGuideLoading(false);
-                }
-              } catch {
-                // Ignore JSON parse errors for partial chunks
-              }
-            }
-          }
-        }
-      }
+      const { data, error } = await supabase.functions.invoke('generate-style-guide', {
+        body: { bookId: book.id, userId: user.id, bookMetadata },
+      });
 
-      // Fallback: if we didn't receive any SSE event, call non-streaming function
-      if (!receivedAnyEvents) {
-        const { data, error } = await supabase.functions.invoke('generate-style-guide', {
-          body: { bookId: book.id, userId: user.id, bookMetadata },
-        });
-        if (error) throw error;
-        if (data?.styleGuide) {
-          // Force refresh the system prompt data
-          await refreshData();
-          console.log('Style guide generation completed via fallback, forcing cache refresh');
-          
-          toast.success('Style guide generated successfully!');
-        } else {
-          throw new Error('No style guide returned');
-        }
+      if (error) throw error;
+      
+      if (data?.success && data?.styleGuide) {
+        // Show completion message
+        setProgressMessages(prev => [...prev, {
+          step: 'Complete',
+          message: 'Style guide generated successfully!',
+          timestamp: new Date().toISOString(),
+          status: ProcessStatus.COMPLETE
+        }]);
+        
+        // Force refresh the system prompt data
+        await refreshData();
+        console.log('Style guide generation completed, forcing cache refresh');
+        
+        toast.success('Style guide generated successfully!');
+      } else {
+        throw new Error(data?.error || 'No style guide returned');
       }
     } catch (error: any) {
       console.error('Error:', error);
-      toast.error('An error occurred while generating the style guide');
+      toast.error(error.message || 'An error occurred while generating the style guide');
       setProgressMessages(prev => [...prev, {
         step: 'error',
-        message: `Network error: ${error.message}`,
+        message: `Error: ${error.message}`,
         timestamp: new Date().toISOString(),
         status: ProcessStatus.ERROR
       }]);

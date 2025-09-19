@@ -10,7 +10,7 @@ import { Loader2, Upload, Eye, Wand2, X, MessageSquare, ImagePlus, Copy } from '
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
-import { useUpdateSeoMetadata } from '@/hooks/useUpdateSeoMetadata';
+
 import { useBookThumbnails } from '@/hooks/useBookThumbnails';
 import { useAuth } from '@/hooks/useAuth';
 
@@ -23,7 +23,7 @@ interface OpenGraphEditorProps {
 export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGraphEditorProps) => {
   const { data: seoMetadata, isLoading, refetch } = useBookSeoMetadata(bookId);
   const { data: thumbnailData, refetch: refetchThumbnails } = useBookThumbnails(bookId);
-  const updateSeoMetadata = useUpdateSeoMetadata();
+  
   const { user } = useAuth();
   
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -39,35 +39,17 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const currentImage = thumbnailData?.thumbnail_url || seoMetadata?.og_image_url;
 
   const handleTitleSave = async (newTitle: string) => {
-    try {
-      await updateSeoMetadata.mutateAsync({
-        bookId,
-        seoTitle: newTitle,
-        seoDescription: currentDescription,
-        ogImageUrl: currentImage,
-      });
-      setIsEditingTitle(false);
-      refetch();
-      toast.success('Title updated successfully');
-    } catch (error) {
-      toast.error('Failed to update title');
-    }
+    // Note: SEO metadata is now read-only as it's generated at book creation
+    // Manual editing would require implementing new update logic
+    setIsEditingTitle(false);
+    toast.error('SEO editing is currently disabled - SEO is generated at book creation');
   };
 
   const handleDescriptionSave = async (newDescription: string) => {
-    try {
-      await updateSeoMetadata.mutateAsync({
-        bookId,
-        seoTitle: currentTitle,
-        seoDescription: newDescription,
-        ogImageUrl: currentImage,
-      });
-      setIsEditingDescription(false);
-      refetch();
-      toast.success('Description updated successfully');
-    } catch (error) {
-      toast.error('Failed to update description');
-    }
+    // Note: SEO metadata is now read-only as it's generated at book creation
+    // Manual editing would require implementing new update logic
+    setIsEditingDescription(false);
+    toast.error('SEO editing is currently disabled - SEO is generated at book creation');
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -101,13 +83,9 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         .from('page-images')
         .getPublicUrl(fileName);
 
-      // Update SEO metadata with new image URL
-      await updateSeoMetadata.mutateAsync({
-        bookId,
-        seoTitle: currentTitle,
-        seoDescription: currentDescription,
-        ogImageUrl: publicUrl.publicUrl,
-      });
+      // Note: Image upload functionality needs to be reimplemented
+      // to work with the new SEO system where metadata is generated at book creation
+      toast.error('Image upload is currently disabled - SEO is generated at book creation');
 
       refetch();
       toast.success('Image uploaded successfully');
@@ -120,42 +98,10 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   };
 
   const handleRemoveImage = async () => {
-    try {
-      await updateSeoMetadata.mutateAsync({
-        bookId,
-        seoTitle: currentTitle,
-        seoDescription: currentDescription,
-        ogImageUrl: null,
-      });
-      refetch();
-      toast.success('Image removed successfully');
-    } catch (error) {
-      toast.error('Failed to remove image');
-    }
+    // Note: SEO metadata is now read-only as it's generated at book creation
+    toast.error('Image removal is currently disabled - SEO is generated at book creation');
   };
 
-  const handleAutoGenerate = async () => {
-    setIsGenerating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-seo-metadata', {
-        body: {
-          bookId,
-          contentTitle: bookTitle,
-          contentDescription: bookDescription,
-        },
-      });
-
-      if (error) throw error;
-
-      refetch();
-      toast.success('OpenGraph content generated successfully');
-    } catch (error) {
-      console.error('Generation error:', error);
-      toast.error('Failed to generate OpenGraph content');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
 
   const handleGenerateThumbPrompt = async () => {
     if (!user?.id) {
@@ -265,30 +211,14 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   return (
     <Card>
       <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Eye className="w-5 h-5" />
-              Social Media Preview
-            </CardTitle>
-            <CardDescription>
-              Customize how your book appears when shared on social media
-            </CardDescription>
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAutoGenerate}
-            disabled={isGenerating}
-            className="flex items-center gap-2"
-          >
-            {isGenerating ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Wand2 className="w-4 h-4" />
-            )}
-            Auto-generate
-          </Button>
+        <div>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Eye className="w-5 h-5" />
+            Social Media Preview
+          </CardTitle>
+          <CardDescription>
+            SEO metadata is generated automatically when the book is created
+          </CardDescription>
         </div>
       </CardHeader>
       <CardContent className="space-y-6">

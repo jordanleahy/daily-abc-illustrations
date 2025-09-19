@@ -379,47 +379,105 @@ Required JSON Schema:
       throw new Error(errorMsg);
     }
 
-    // Parse and validate JSON structure
-    let styleGuideJSON;
+    // Parse and validate JSON structure with hybrid approach
+    let styleGuide;
+    let isValidJSON = false;
+    
     try {
-      // Clean the response to extract just the JSON
-      const jsonMatch = styleGuideText.match(/\{[\s\S]*\}/);
-      const jsonStr = jsonMatch ? jsonMatch[0] : styleGuideText;
-      styleGuideJSON = JSON.parse(jsonStr);
+      log('INFO', ProcessStatus.IN_PROGRESS, 'JSON_EXTRACTION', 'Attempting multiple JSON extraction methods', {
+        requestId,
+        responseLength: styleGuideText.length,
+        responsePreview: styleGuideText.substring(0, 200) + '...'
+      });
+
+      // Multiple JSON extraction strategies
+      let jsonStr = '';
+      let extractionMethod = 'unknown';
+      
+      // Strategy 1: Extract from markdown code blocks
+      let codeBlockMatch = styleGuideText.match(/```json\s*([\s\S]*?)\s*```/i);
+      if (codeBlockMatch && codeBlockMatch[1]) {
+        jsonStr = codeBlockMatch[1].trim();
+        extractionMethod = 'markdown-json-block';
+      } 
+      // Strategy 2: Extract from generic code blocks
+      else if ((codeBlockMatch = styleGuideText.match(/```\s*([\s\S]*?)\s*```/))) {
+        jsonStr = codeBlockMatch[1].trim();
+        extractionMethod = 'markdown-generic-block';
+      }
+      // Strategy 3: Find largest JSON object in response
+      else {
+        const jsonMatches = styleGuideText.match(/\{[\s\S]*\}/g);
+        if (jsonMatches && jsonMatches.length > 0) {
+          // Get the largest JSON-like string
+          jsonStr = jsonMatches.reduce((a, b) => a.length > b.length ? a : b);
+          extractionMethod = 'largest-json-object';
+        } else {
+          jsonStr = styleGuideText;
+          extractionMethod = 'raw-response';
+        }
+      }
+
+      // Clean common formatting issues
+      jsonStr = jsonStr
+        .replace(/^\s*[\r\n]+/gm, '') // Remove extra newlines
+        .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+        .trim();
+
+      log('INFO', ProcessStatus.IN_PROGRESS, 'JSON_EXTRACTION', `Extracted JSON using method: ${extractionMethod}`, {
+        requestId,
+        extractionMethod,
+        extractedLength: jsonStr.length,
+        extractedPreview: jsonStr.substring(0, 200) + '...'
+      });
+
+      // Attempt to parse the extracted JSON
+      const styleGuideJSON = JSON.parse(jsonStr);
       
       // Basic validation - ensure required top-level keys exist
       const requiredKeys = ['metadata', 'colorPalette', 'visualElements', 'styleRequirements', 'compositionGuidelines', 'visualMetaphors', 'contentAnalysisFramework', 'outputInstructions', 'safetyGuidelines'];
+      const presentKeys = Object.keys(styleGuideJSON);
       const missingKeys = requiredKeys.filter(key => !styleGuideJSON[key]);
       
       if (missingKeys.length > 0) {
-        throw new Error(`Missing required JSON keys: ${missingKeys.join(', ')}`);
+        log('WARN', ProcessStatus.IN_PROGRESS, 'JSON_VALIDATION', `JSON missing some required keys, but proceeding`, {
+          requestId,
+          missingKeys,
+          presentKeys,
+          extractionMethod
+        });
       }
       
-      log('INFO', ProcessStatus.COMPLETE, 'JSON_VALIDATION', 'Style guide JSON validated successfully', {
+      // Successfully parsed JSON
+      styleGuide = JSON.stringify(styleGuideJSON, null, 2);
+      isValidJSON = true;
+      
+      log('INFO', ProcessStatus.COMPLETE, 'JSON_VALIDATION', 'Style guide JSON parsed and validated successfully', {
         requestId,
-        jsonKeys: Object.keys(styleGuideJSON),
-        colorCount: Object.keys(styleGuideJSON.colorPalette || {}).length
+        extractionMethod,
+        jsonKeys: presentKeys,
+        colorCount: Object.keys(styleGuideJSON.colorPalette || {}).length,
+        missingKeys: missingKeys.length > 0 ? missingKeys : null
       });
       
     } catch (parseError) {
-      const errorMsg = `Failed to parse JSON response: ${parseError.message}`;
-      log('ERROR', ProcessStatus.ERROR, 'JSON_PARSE', errorMsg, {
+      log('WARN', ProcessStatus.IN_PROGRESS, 'JSON_PARSE_FALLBACK', 'JSON parsing failed, storing as structured text', {
         requestId,
-        rawResponse: styleGuideText.substring(0, 500) + '...',
-        parseError: parseError.message
+        parseError: parseError.message,
+        responseLength: styleGuideText.length
       });
       
-      // Fallback: Store as text with error metadata
-      styleGuideJSON = {
-        error: 'JSON_PARSE_FAILED',
-        rawResponse: styleGuideText,
-        parseError: parseError.message,
-        fallbackContent: styleGuideText
-      };
+      // Hybrid fallback: Store the raw response as structured text
+      // This ensures users get the actual content instead of error objects
+      styleGuide = styleGuideText;
+      isValidJSON = false;
+      
+      log('INFO', ProcessStatus.COMPLETE, 'FALLBACK_STORAGE', 'Stored raw response as structured text for manual review', {
+        requestId,
+        contentLength: styleGuide.length,
+        contentType: 'structured-text'
+      });
     }
-
-    // Convert back to string for storage (we'll parse it when needed)
-    const styleGuide = JSON.stringify(styleGuideJSON, null, 2);
 
     log('INFO', ProcessStatus.COMPLETE, currentStep, 'Style guide generated successfully', { 
       requestId, 

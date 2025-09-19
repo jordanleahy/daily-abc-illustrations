@@ -77,11 +77,11 @@ const SAFE_SPACE_CONFIGS: Record<string, SafeSpaceConfig> = {
     negativePrompts: 'No elements touching top/bottom edges, maintain balanced vertical spacing, no cramped portrait layouts'
   },
   '3:2': {
-    aspectRatio: '3:2 Landscape Format (Social Media Optimized)',
-    description: 'Designed for 1536x1024 generation that will be cropped to 1200x630 for social media display',
-    safeZones: 'CRITICAL: Maintain 35-40% margins on top and bottom (accounts for 1200x630 crop), 20-25% margins on left and right sides',
-    composition: 'Center-weighted layout with all important content in the middle 30% of vertical space. Text and logos must be positioned in the absolute center to survive social media cropping from 1536x1024 to 1200x630',
-    negativePrompts: 'NEVER place text or important elements near top/bottom edges - they will be cropped in social media display. No vertical edge placement, no cramped layouts, maintain central focus zone, avoid any content in top 35% or bottom 35% of image, keep all text in the center third of the image'
+    aspectRatio: '3:2 Social Media Format',
+    description: 'Social media optimized layout with center-focused composition',
+    safeZones: 'Maintain 35-40% margins top/bottom, 20-25% margins left/right',
+    composition: 'Center-weighted layout with all content in middle third of image',
+    negativePrompts: 'No content in top/bottom 35% of image, keep all elements center-focused'
   }
 };
 

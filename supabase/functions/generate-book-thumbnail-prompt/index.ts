@@ -67,7 +67,7 @@ serve(async (req) => {
     });
 
     const thumbnailPrompt = `
-Generate an SEO-optimized thumbnail image prompt for this book that will be used for social media sharing and search engine previews.
+Generate an image prompt for this book that will be used for social media sharing and search engine previews.
 
 Book Information:
 - Title: ${bookData.book_name}
@@ -93,20 +93,7 @@ Generate a detailed image generation prompt that will create an effective thumbn
     const safeSpaceConfig = getSafeSpaceRules('3:2');
 
     // Dynamic thumbnail-optimized system prompt
-    const THUMBNAIL_SYSTEM_PROMPT = `You are a specialized thumbnail prompt generator for children's educational books. Create detailed, SEO-optimized image prompts that will work perfectly as book thumbnails for social media and search engines.
-
-Your thumbnails should be:
-- Eye-catching and visually appealing for social media
-- Clearly readable at small sizes
-- Professional and polished
-- Appropriate for children's educational content
-
-Focus on creating prompts that will generate thumbnails with:
-- Clear, bold visual elements
-- Readable text integration if needed
-- Attractive color schemes
-- Professional composition
-- Educational themes that match the book content`;
+    const THUMBNAIL_SYSTEM_PROMPT = `Please create an iamge prompt`;
 
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {

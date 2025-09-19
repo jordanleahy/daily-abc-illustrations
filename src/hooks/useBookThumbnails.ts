@@ -23,19 +23,37 @@ export const useBookThumbnails = (bookId?: string) => {
     queryFn: async () => {
       if (!bookId) return null;
 
-      // Use the new RPC function to get book thumbnail
-      const { data, error } = await supabase.rpc('get_book_thumbnail', {
-        p_book_id: bookId
-      });
+      try {
+        // Use direct SQL query since book_thumbnails table isn't in generated types yet
+        const { data, error } = await supabase
+          .rpc('get_book_thumbnail', { p_book_id: bookId } as any);
 
-      if (error) {
+        if (error) {
+          console.error('Error fetching book thumbnails:', error);
+          return null;
+        }
+
+        // Handle the response - RPC functions return arrays
+        if (Array.isArray(data) && data.length > 0) {
+          const thumbnail = data[0];
+          return {
+            id: thumbnail.id,
+            book_id: thumbnail.book_id,
+            user_id: thumbnail.user_id,
+            thumbnail_url: thumbnail.thumbnail_url,
+            generation_status: thumbnail.generation_status,
+            is_latest: thumbnail.is_latest,
+            version_number: thumbnail.version_number,
+            created_at: thumbnail.created_at,
+            updated_at: thumbnail.updated_at,
+          } as BookThumbnail;
+        }
+
+        return null;
+      } catch (error) {
         console.error('Error fetching book thumbnails:', error);
         return null;
       }
-
-      // Return the first result since the RPC returns an array
-      const thumbnail = Array.isArray(data) && data.length > 0 ? data[0] : null;
-      return thumbnail as BookThumbnail | null;
     },
     enabled: !!bookId,
     staleTime: 30 * 1000, // 30 seconds

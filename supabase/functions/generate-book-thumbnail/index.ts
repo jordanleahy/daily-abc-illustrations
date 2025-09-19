@@ -82,8 +82,8 @@ serve(async (req) => {
       promptLength: imagePrompt?.length || 0
     }), `}`);
 
-    // Generate image using OpenAI DALL-E
-    console.log(`[${new Date().toISOString()}] [INFO] [in-progress] [OPENAI_IMAGE] - Generating image with DALL-E... {`, JSON.stringify({
+    // Generate image using OpenAI gpt-image-1
+    console.log(`[${new Date().toISOString()}] [INFO] [in-progress] [OPENAI_IMAGE] - Generating image with gpt-image-1... {`, JSON.stringify({
       requestId,
       promptLength: imagePrompt?.length || 0
     }), `}`);
@@ -100,11 +100,11 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'dall-e-3',
+        model: 'gpt-image-1',
         prompt: imagePrompt,
         size: '1792x1024', // 3:2 aspect ratio, good for social media
-        quality: 'hd',
-        n: 1,
+        quality: 'high',
+        output_format: 'png',
       }),
     });
 
@@ -115,29 +115,30 @@ serve(async (req) => {
     }
 
     const imageData = await imageResponse.json();
-    const imageUrl = imageData.data[0]?.url;
+    const base64Image = imageData.data[0]?.b64_json;
 
-    if (!imageUrl) {
-      throw new Error('No image URL returned from OpenAI');
+    if (!base64Image) {
+      throw new Error('No image data returned from OpenAI');
     }
 
     console.log(`[${new Date().toISOString()}] [INFO] [complete] [OPENAI_IMAGE] - Image generated successfully {`, JSON.stringify({
       requestId,
       duration: 5000,
-      hasImageUrl: !!imageUrl
+      hasImageData: !!base64Image
     }), `}`);
 
-    // Download and store image in Supabase Storage
-    console.log(`[${new Date().toISOString()}] [INFO] [in-progress] [STORAGE_UPLOAD] - Downloading and storing image... {`, JSON.stringify({
+    // Convert base64 to blob and store in Supabase Storage
+    console.log(`[${new Date().toISOString()}] [INFO] [in-progress] [STORAGE_UPLOAD] - Converting and storing image... {`, JSON.stringify({
       requestId
     }), `}`);
 
-    const imageFileResponse = await fetch(imageUrl);
-    if (!imageFileResponse.ok) {
-      throw new Error('Failed to download generated image');
+    // Convert base64 to blob
+    const binaryString = atob(base64Image);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
     }
-
-    const imageBlob = await imageFileResponse.blob();
+    const imageBlob = new Blob([bytes], { type: 'image/png' });
     const fileName = `${userId}/book-thumbnails/${bookId}/thumbnail-${Date.now()}.png`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage

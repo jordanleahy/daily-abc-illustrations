@@ -82,6 +82,101 @@ const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 
 const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
+/**
+ * Safely processes agent template by substituting variables with book-specific data
+ */
+function processAgentTemplate(
+  template: string, 
+  bookMetadata: any, 
+  requestId: string
+): { processedTemplate: string; variables: Record<string, string> } {
+  // Input validation
+  if (!template || typeof template !== 'string') {
+    console.log(`[${requestId}] [TEMPLATE_PROCESSOR] Invalid template input, using original`);
+    return { processedTemplate: template || '', variables: {} };
+  }
+
+  // Sanitize book metadata values
+  const sanitizeValue = (value: string | undefined | null, maxLength = 100): string => {
+    if (!value) return '';
+    
+    // Convert to string and trim
+    let sanitized = String(value).trim();
+    
+    // Remove potentially dangerous characters
+    sanitized = sanitized
+      .replace(/[<>]/g, '') // Remove angle brackets
+      .replace(/\$\{.*?\}/g, '') // Remove template literals
+      .replace(/`/g, '') // Remove backticks
+      .replace(/<script[^>]*>.*?<\/script>/gi, '') // Remove script tags
+      .replace(/<[^>]*>/g, ''); // Remove any remaining HTML tags
+    
+    // Limit length
+    if (sanitized.length > maxLength) {
+      sanitized = sanitized.substring(0, maxLength).trim();
+    }
+    
+    return sanitized;
+  };
+
+  // Create secure variable mapping with sanitized values
+  const templateVariables: Record<string, string> = {
+    '<Category>': sanitizeValue(bookMetadata.category) || 'Educational',
+    '<Theme>': sanitizeValue(bookMetadata.book_name) || 'ABC Learning',
+    '<CATEGORY>': sanitizeValue(bookMetadata.category) || 'Educational', // Alternative casing
+    '<THEME>': sanitizeValue(bookMetadata.book_name) || 'ABC Learning', // Alternative casing
+    '<BOOK_NAME>': sanitizeValue(bookMetadata.book_name) || 'ABC Learning',
+    '<BOOK_CATEGORY>': sanitizeValue(bookMetadata.category) || 'Educational',
+    '<BOOK_DESCRIPTION>': sanitizeValue(bookMetadata.book_description, 200) || 'An educational ABC learning book',
+  };
+
+  console.log(`[${requestId}] [TEMPLATE_PROCESSOR] Processing template with variables:`, 
+    Object.keys(templateVariables).reduce((acc, key) => ({
+      ...acc, 
+      [key]: templateVariables[key].substring(0, 50) + (templateVariables[key].length > 50 ? '...' : '')
+    }), {})
+  );
+
+  try {
+    let processedTemplate = template;
+    const usedVariables: Record<string, string> = {};
+
+    // Define allowed variable patterns (security allowlist)
+    const allowedVariables = Object.keys(templateVariables);
+    
+    // Process each allowed variable
+    for (const variable of allowedVariables) {
+      const value = templateVariables[variable];
+      
+      // Check if variable exists in template
+      if (processedTemplate.includes(variable)) {
+        processedTemplate = processedTemplate.replace(new RegExp(escapeRegExp(variable), 'g'), value);
+        usedVariables[variable] = value;
+        console.log(`[${requestId}] [TEMPLATE_PROCESSOR] Substituted ${variable} with: ${value.substring(0, 30)}${value.length > 30 ? '...' : ''}`);
+      }
+    }
+
+    console.log(`[${requestId}] [TEMPLATE_PROCESSOR] Template processing complete. Used ${Object.keys(usedVariables).length} variables`);
+    
+    return {
+      processedTemplate,
+      variables: usedVariables
+    };
+
+  } catch (error) {
+    console.error(`[${requestId}] [TEMPLATE_PROCESSOR] Error processing template:`, error);
+    // Fallback to original template on any error
+    return { processedTemplate: template, variables: {} };
+  }
+}
+
+/**
+ * Escapes special regex characters in a string
+ */
+function escapeRegExp(string: string): string {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 serve(async (req) => {
   const requestId = generateRequestId();
   const startTime = Date.now();
@@ -301,6 +396,21 @@ Book Information:
           totalSteps: 4
         });
 
+        // Process agent instructions template with book-specific variables
+        const { processedTemplate: processedInstructions, variables: usedVariables } = processAgentTemplate(
+          agentConfig.instructions,
+          bookMetadata,
+          requestId
+        );
+
+        log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Template processing completed', { 
+          requestId,
+          originalLength: agentConfig.instructions.length,
+          processedLength: processedInstructions.length,
+          variablesUsed: Object.keys(usedVariables).length,
+          variables: Object.keys(usedVariables)
+        });
+
         // Call OpenAI API using the agent's model settings
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
           method: 'POST',
@@ -311,7 +421,7 @@ Book Information:
             body: JSON.stringify({
             model: agentConfig.model,
             messages: [
-              { role: 'system', content: agentConfig.instructions },
+              { role: 'system', content: processedInstructions },
               { role: 'user', content: styleGuidePrompt }
             ],
             max_completion_tokens: agentConfig.max_completion_tokens,
@@ -602,6 +712,21 @@ Book Information:
       topP: agentConfig.top_p
     });
 
+    // Process agent instructions template with book-specific variables
+    const { processedTemplate: processedInstructions, variables: usedVariables } = processAgentTemplate(
+      agentConfig.instructions,
+      bookMetadata,
+      requestId
+    );
+
+    log('INFO', ProcessStatus.IN_PROGRESS, 'TEMPLATE_PROCESSING', 'Template processing completed', { 
+      requestId,
+      originalLength: agentConfig.instructions.length,
+      processedLength: processedInstructions.length,
+      variablesUsed: Object.keys(usedVariables).length,
+      variables: Object.keys(usedVariables)
+    });
+
     // Call OpenAI API using the agent's model settings
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -612,7 +737,7 @@ Book Information:
       body: JSON.stringify({
         model: agentConfig.model,
         messages: [
-          { role: 'system', content: agentConfig.instructions },
+          { role: 'system', content: processedInstructions },
           { role: 'user', content: styleGuidePrompt }
         ],
         max_completion_tokens: agentConfig.max_completion_tokens,

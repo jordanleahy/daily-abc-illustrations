@@ -20,7 +20,7 @@ export function PageSystemPromptEditor({
   const [isSaving, setIsSaving] = useState(false);
 
   const characterCount = content.length;
-  const maxCharacters = 4000;
+  const maxCharacters = 8000;
 
   const handleSave = async () => {
     if (isSaving || !content.trim() || characterCount > maxCharacters) return;

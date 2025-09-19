@@ -157,13 +157,116 @@ serve(async (req) => {
     const promptStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Preparing style guide prompt...', { requestId });
 
-    // Prepare the prompt for OpenAI
-    const styleGuidePrompt = `Please create your visual style guide for this ABC book:
+    // Prepare the JSON-focused prompt for OpenAI
+    const styleGuidePrompt = `Please create a JSON-structured visual style guide for this ABC book:
 
 Book Information:
 - Name: ${bookMetadata.book_name}
 - Category: ${bookMetadata.category || 'General'}
-- Description: ${bookMetadata.book_description || 'ABC learning book'}`;
+- Description: ${bookMetadata.book_description || 'ABC learning book'}
+
+CRITICAL: Your response must be a valid JSON object following the exact schema structure I will provide. Do not include any text before or after the JSON object.
+
+Required JSON Schema:
+{
+  "metadata": {
+    "category": "string (book category)",
+    "theme": "string (main visual theme)",
+    "audience": "3-5 year olds",
+    "useCases": ["array", "of", "contexts"],
+    "styleTags": ["vector", "modern", "professional"],
+    "status": "active",
+    "version": "v1.0.0",
+    "generatedAt": "ISO timestamp"
+  },
+  "colorPalette": {
+    "primary": { "hex": "#000000", "hsl": "hsl(0, 0%, 0%)", "usage": "description" },
+    "secondary": { "hex": "#000000", "hsl": "hsl(0, 0%, 0%)", "usage": "description" },
+    "accent": { "hex": "#000000", "hsl": "hsl(0, 0%, 0%)", "usage": "description" },
+    "supporting": { "hex": "#000000", "hsl": "hsl(0, 0%, 0%)", "usage": "description" },
+    "background": { "hex": "#000000", "hsl": "hsl(0, 0%, 0%)", "usage": "description" },
+    "text": { "hex": "#000000", "hsl": "hsl(0, 0%, 0%)", "usage": "description" }
+  },
+  "visualElements": {
+    "foregroundElements": {
+      "required": ["array of must-have elements"],
+      "optional": ["array of optional elements"],
+      "style": "description of foreground style"
+    },
+    "midgroundContext": {
+      "connectors": ["visual connectors"],
+      "workflows": ["process flows"],
+      "contextual": ["background context elements"]
+    },
+    "backgroundFoundation": {
+      "setting": "environment description",
+      "gradients": ["gradient descriptions"],
+      "textures": ["texture descriptions"],
+      "whitespace": "whitespace usage rules"
+    }
+  },
+  "styleRequirements": {
+    "artStyle": "Professional vector illustration with clean, modern aesthetic",
+    "subjects": ["people", "objects", "icons"],
+    "flowIndicators": ["arrows", "lines", "connections"],
+    "tone": "gentle",
+    "technicalSpecs": {
+      "aspectRatio": "1:1",
+      "resolution": "1024x1024",
+      "format": "PNG"
+    }
+  },
+  "compositionGuidelines": {
+    "layoutFlow": "triangular",
+    "focusHierarchy": ["primary", "secondary", "tertiary"],
+    "spacingRules": "spacing guidelines",
+    "balanceStrategy": "balance approach"
+  },
+  "visualMetaphors": {
+    "metaphor1": {
+      "concept": "metaphor name",
+      "visualRepresentation": "how it looks",
+      "implementation": "how to use it"
+    },
+    "metaphor2": {
+      "concept": "metaphor name", 
+      "visualRepresentation": "how it looks",
+      "implementation": "how to use it"
+    },
+    "metaphor3": {
+      "concept": "metaphor name",
+      "visualRepresentation": "how it looks", 
+      "implementation": "how to use it"
+    }
+  },
+  "contentAnalysisFramework": {
+    "lens1": {
+      "name": "Purpose/Values Check",
+      "description": "framework description",
+      "checkpoints": ["checkpoint1", "checkpoint2"]
+    },
+    "lens2": {
+      "name": "Factual/Reality Check", 
+      "description": "framework description",
+      "checkpoints": ["checkpoint1", "checkpoint2"]
+    },
+    "lens3": {
+      "name": "Nuance/Context Check",
+      "description": "framework description", 
+      "checkpoints": ["checkpoint1", "checkpoint2"]
+    }
+  },
+  "outputInstructions": {
+    "visualFocus": ["focus through lighting", "composition", "color"],
+    "textConstraints": ["minimal text", "only letter and word"],
+    "educationalApproach": ["message emerges from imagery"]
+  },
+  "safetyGuidelines": {
+    "prohibited": ["inappropriate content"],
+    "required": ["age-appropriate elements"],
+    "ageAppropriate": ["3-5 year old suitable content"]
+  }
+}`;
 
     // Get OpenAI API key
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -206,7 +309,7 @@ Book Information:
       body: JSON.stringify({
         model: agentConfig.model,
         messages: [
-          { role: 'system', content: processedInstructions },
+          { role: 'system', content: agentConfig.instructions },
           { role: 'user', content: styleGuidePrompt }
         ],
         max_completion_tokens: agentConfig.max_completion_tokens,
@@ -244,13 +347,13 @@ Book Information:
 
     const data = await response.json();
     
-    // Robustly extract text from GPT response
+    // Robustly extract JSON from GPT response
     const choice = data?.choices?.[0] ?? {};
     const msg = choice.message ?? {};
-    let styleGuide = '';
+    let styleGuideText = '';
 
     if (Array.isArray(msg.content)) {
-      styleGuide = msg.content
+      styleGuideText = msg.content
         .map((part: any) => {
           if (typeof part === 'string') return part;
           if (typeof part?.text === 'string') return part.text;
@@ -261,12 +364,12 @@ Book Information:
         .join('')
         .trim();
     } else if (typeof msg.content === 'string') {
-      styleGuide = (msg.content as string).trim();
+      styleGuideText = (msg.content as string).trim();
     }
 
-    // Validate that we got a style guide
-    if (!styleGuide) {
-      const errorMsg = 'OpenAI returned empty style guide';
+    // Validate that we got content
+    if (!styleGuideText) {
+      const errorMsg = 'OpenAI returned empty response';
       log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, {
         requestId,
         duration: aiDuration,
@@ -275,6 +378,48 @@ Book Information:
       });
       throw new Error(errorMsg);
     }
+
+    // Parse and validate JSON structure
+    let styleGuideJSON;
+    try {
+      // Clean the response to extract just the JSON
+      const jsonMatch = styleGuideText.match(/\{[\s\S]*\}/);
+      const jsonStr = jsonMatch ? jsonMatch[0] : styleGuideText;
+      styleGuideJSON = JSON.parse(jsonStr);
+      
+      // Basic validation - ensure required top-level keys exist
+      const requiredKeys = ['metadata', 'colorPalette', 'visualElements', 'styleRequirements', 'compositionGuidelines', 'visualMetaphors', 'contentAnalysisFramework', 'outputInstructions', 'safetyGuidelines'];
+      const missingKeys = requiredKeys.filter(key => !styleGuideJSON[key]);
+      
+      if (missingKeys.length > 0) {
+        throw new Error(`Missing required JSON keys: ${missingKeys.join(', ')}`);
+      }
+      
+      log('INFO', ProcessStatus.COMPLETE, 'JSON_VALIDATION', 'Style guide JSON validated successfully', {
+        requestId,
+        jsonKeys: Object.keys(styleGuideJSON),
+        colorCount: Object.keys(styleGuideJSON.colorPalette || {}).length
+      });
+      
+    } catch (parseError) {
+      const errorMsg = `Failed to parse JSON response: ${parseError.message}`;
+      log('ERROR', ProcessStatus.ERROR, 'JSON_PARSE', errorMsg, {
+        requestId,
+        rawResponse: styleGuideText.substring(0, 500) + '...',
+        parseError: parseError.message
+      });
+      
+      // Fallback: Store as text with error metadata
+      styleGuideJSON = {
+        error: 'JSON_PARSE_FAILED',
+        rawResponse: styleGuideText,
+        parseError: parseError.message,
+        fallbackContent: styleGuideText
+      };
+    }
+
+    // Convert back to string for storage (we'll parse it when needed)
+    const styleGuide = JSON.stringify(styleGuideJSON, null, 2);
 
     log('INFO', ProcessStatus.COMPLETE, currentStep, 'Style guide generated successfully', { 
       requestId, 

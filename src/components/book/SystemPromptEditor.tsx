@@ -2,7 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Save, X, FileText } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { StyleGuideViewer } from './StyleGuideViewer';
+import { Save, X, FileText, Eye, Code, Palette } from 'lucide-react';
 
 interface SystemPromptEditorProps {
   content: string;
@@ -60,14 +63,50 @@ export const SystemPromptEditor = ({
         </div>
       </div>
       
-      <Textarea
-        value={content}
-        onChange={(e) => onContentChange(e.target.value)}
-        onKeyDown={handleKeyDown}
-        placeholder="Enter your system prompt for illustration generation..."
-        className="min-h-[300px] font-mono text-sm resize-none"
-        maxLength={maxCharacters}
-      />
+      <Tabs defaultValue="edit" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+          <TabsTrigger value="edit">
+            <Code className="w-4 h-4 mr-2" />
+            Edit
+          </TabsTrigger>
+          <TabsTrigger value="preview">
+            <Eye className="w-4 h-4 mr-2" />
+            Preview
+          </TabsTrigger>
+          <TabsTrigger value="json-viewer">
+            <Palette className="w-4 h-4 mr-2" />
+            JSON Viewer
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="edit" className="mt-4 space-y-4">
+          <Textarea
+            value={content}
+            onChange={(e) => onContentChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Enter your system prompt for illustration generation..."
+            className="min-h-[300px] font-mono text-sm resize-none"
+            maxLength={maxCharacters}
+          />
+        </TabsContent>
+        
+        <TabsContent value="preview" className="mt-4">
+          <Card>
+            <CardContent className="p-4">
+              <pre className="whitespace-pre-wrap text-sm font-mono bg-muted p-4 rounded-lg overflow-auto max-h-[400px]">
+                {content || 'No content to preview'}
+              </pre>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="json-viewer" className="mt-4">
+          <StyleGuideViewer 
+            styleGuideContent={content}
+            className="max-h-[500px] overflow-y-auto"
+          />
+        </TabsContent>
+      </Tabs>
       
       <div className="flex items-center justify-between">
         <div className="text-xs text-muted-foreground">

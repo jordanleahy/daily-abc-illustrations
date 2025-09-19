@@ -77,7 +77,8 @@ interface IllustrationConfig {
   visualElements: VisualElements;
   styleRequirements: StyleRequirements;
   compositionGuidelines: CompositionGuidelines;
-  visualMetaphors: VisualMetaphors;
+  visualMetaphors?: VisualMetaphors;
+  visualMetaphor?: any; // Fallback for inconsistent AI responses
   contentAnalysisFramework: ContentAnalysisFramework;
   outputInstructions: {
     visualFocus: string[];
@@ -95,85 +96,90 @@ interface IllustrationConfig {
 }
 
 export function transformConfigToContent(config: IllustrationConfig): string {
-  return `You are an illustration director creating images for "${config.metadata.theme}" - a ${config.metadata.category} ABC book for ${config.metadata.audience}.
+  // Safely access visualMetaphors with fallback for singular form
+  const visualMetaphors = config.visualMetaphors || config.visualMetaphor || {};
+  const metaphor1 = visualMetaphors.metaphor1 || {};
+  const metaphor2 = visualMetaphors.metaphor2 || {};
+  const metaphor3 = visualMetaphors.metaphor3 || {};
+
+  return `You are an illustration director creating images for "${config.metadata?.theme || 'Unknown Theme'}" - a ${config.metadata?.category || 'Unknown Category'} ABC book for ${config.metadata?.audience || 'children'}.
 
 ## Visual Style Direction
-Art Style: ${config.styleRequirements.artStyle}
-Overall Tone: ${config.styleRequirements.tone}
-Layout Approach: ${config.compositionGuidelines.layoutFlow}
+Art Style: ${config.styleRequirements?.artStyle || 'Not specified'}
+Overall Tone: ${config.styleRequirements?.tone || 'friendly'}
+Layout Approach: ${config.compositionGuidelines?.layoutFlow || 'Not specified'}
 
 ## Color Palette
-- Primary: ${config.colorPalette.primary.hex} (${config.colorPalette.primary.usage})
-- Secondary: ${config.colorPalette.secondary.hex} (${config.colorPalette.secondary.usage})
-- Accent: ${config.colorPalette.accent.hex} (${config.colorPalette.accent.usage})
-- Supporting: ${config.colorPalette.supporting.hex} (${config.colorPalette.supporting.usage})
-- Background: ${config.colorPalette.background.hex} (${config.colorPalette.background.usage})
-- Text: ${config.colorPalette.text.hex} (${config.colorPalette.text.usage})
+- Primary: ${config.colorPalette?.primary?.hex || '#000000'} (${config.colorPalette?.primary?.usage || 'primary elements'})
+- Secondary: ${config.colorPalette?.secondary?.hex || '#666666'} (${config.colorPalette?.secondary?.usage || 'secondary elements'})
+- Accent: ${config.colorPalette?.accent?.hex || '#FF0000'} (${config.colorPalette?.accent?.usage || 'accents'})
+- Supporting: ${config.colorPalette?.supporting?.hex || '#888888'} (${config.colorPalette?.supporting?.usage || 'supporting elements'})
+- Background: ${config.colorPalette?.background?.hex || '#FFFFFF'} (${config.colorPalette?.background?.usage || 'backgrounds'})
+- Text: ${config.colorPalette?.text?.hex || '#000000'} (${config.colorPalette?.text?.usage || 'text'})
 
 ## Key Visual Metaphors
 
-### 1. ${config.visualMetaphors.metaphor1.concept}
-${config.visualMetaphors.metaphor1.visualRepresentation}
-**Implementation:** ${config.visualMetaphors.metaphor1.implementation}
+### 1. ${metaphor1.concept || 'Visual Concept 1'}
+${metaphor1.visualRepresentation || 'Visual representation not specified'}
+**Implementation:** ${metaphor1.implementation || 'Implementation details not specified'}
 
-### 2. ${config.visualMetaphors.metaphor2.concept}
-${config.visualMetaphors.metaphor2.visualRepresentation}
-**Implementation:** ${config.visualMetaphors.metaphor2.implementation}
+### 2. ${metaphor2.concept || 'Visual Concept 2'}
+${metaphor2.visualRepresentation || 'Visual representation not specified'}
+**Implementation:** ${metaphor2.implementation || 'Implementation details not specified'}
 
-### 3. ${config.visualMetaphors.metaphor3.concept}
-${config.visualMetaphors.metaphor3.visualRepresentation}
-**Implementation:** ${config.visualMetaphors.metaphor3.implementation}
-
+### 3. ${metaphor3.concept || 'Visual Concept 3'}
+${metaphor3.visualRepresentation || 'Visual representation not specified'}
+**Implementation:** ${metaphor3.implementation || 'Implementation details not specified'}
 ## Composition Guidelines
-${config.compositionGuidelines.spacingRules}
-**Balance Strategy:** ${config.compositionGuidelines.balanceStrategy}
+${config.compositionGuidelines?.spacingRules || 'Spacing rules not specified'}
+**Balance Strategy:** ${config.compositionGuidelines?.balanceStrategy || 'Balance strategy not specified'}
 
 ## Visual Elements
 
 ### Required Foreground Elements
-${config.visualElements.foregroundElements.required.map(item => `- ${item}`).join('\n')}
+${config.visualElements?.foregroundElements?.required?.map(item => `- ${item}`).join('\n') || '- No requirements specified'}
 
 ### Optional Elements
-${config.visualElements.foregroundElements.optional.map(item => `- ${item}`).join('\n')}
+${config.visualElements?.foregroundElements?.optional?.map(item => `- ${item}`).join('\n') || '- No optional elements specified'}
 
 ### Style Requirements
-${config.visualElements.foregroundElements.style}
+${config.visualElements?.foregroundElements?.style || 'Style requirements not specified'}
 
 ### Background Foundation
-**Setting:** ${config.visualElements.backgroundFoundation.setting}
-**Gradients:** ${config.visualElements.backgroundFoundation.gradients.join(', ')}
-**Textures:** ${config.visualElements.backgroundFoundation.textures.join(', ')}
-**Whitespace:** ${config.visualElements.backgroundFoundation.whitespace}
+**Setting:** ${config.visualElements?.backgroundFoundation?.setting || 'Setting not specified'}
+**Gradients:** ${config.visualElements?.backgroundFoundation?.gradients?.join(', ') || 'No gradients specified'}
+**Textures:** ${config.visualElements?.backgroundFoundation?.textures?.join(', ') || 'No textures specified'}
+**Whitespace:** ${config.visualElements?.backgroundFoundation?.whitespace || 'Whitespace rules not specified'}
 
 ## Technical Specifications
-- Format: ${config.styleRequirements.technicalSpecs.format}
-- Resolution: ${config.styleRequirements.technicalSpecs.resolution}
-- Aspect Ratio: ${config.styleRequirements.technicalSpecs.aspectRatio}
+- Format: ${config.styleRequirements?.technicalSpecs?.format || 'Format not specified'}
+- Resolution: ${config.styleRequirements?.technicalSpecs?.resolution || 'Resolution not specified'}
+- Aspect Ratio: ${config.styleRequirements?.technicalSpecs?.aspectRatio || 'Aspect ratio not specified'}
 
 ## Content Analysis Framework
 
-### ${config.contentAnalysisFramework.lens1.name}
-${config.contentAnalysisFramework.lens1.description}
-Checkpoints: ${config.contentAnalysisFramework.lens1.checkpoints.map(item => `- ${item}`).join('\n')}
+### ${config.contentAnalysisFramework?.lens1?.name || 'Analysis Lens 1'}
+${config.contentAnalysisFramework?.lens1?.description || 'Description not provided'}
+Checkpoints: ${config.contentAnalysisFramework?.lens1?.checkpoints?.map(item => `- ${item}`).join('\n') || '- No checkpoints specified'}
 
-### ${config.contentAnalysisFramework.lens2.name}
-${config.contentAnalysisFramework.lens2.description}
-Checkpoints: ${config.contentAnalysisFramework.lens2.checkpoints.map(item => `- ${item}`).join('\n')}
+### ${config.contentAnalysisFramework?.lens2?.name || 'Analysis Lens 2'}
+${config.contentAnalysisFramework?.lens2?.description || 'Description not provided'}
+Checkpoints: ${config.contentAnalysisFramework?.lens2?.checkpoints?.map(item => `- ${item}`).join('\n') || '- No checkpoints specified'}
 
-### ${config.contentAnalysisFramework.lens3.name}
-${config.contentAnalysisFramework.lens3.description}
-Checkpoints: ${config.contentAnalysisFramework.lens3.checkpoints.map(item => `- ${item}`).join('\n')}
+### ${config.contentAnalysisFramework?.lens3?.name || 'Analysis Lens 3'}
+${config.contentAnalysisFramework?.lens3?.description || 'Description not provided'}
+Checkpoints: ${config.contentAnalysisFramework?.lens3?.checkpoints?.map(item => `- ${item}`).join('\n') || '- No checkpoints specified'}
 
 ## Output Instructions
-**Visual Focus:** ${config.outputInstructions.visualFocus.join(', ')}
-**Text Constraints:** ${config.outputInstructions.textConstraints.join(', ')}
-**Educational Approach:** ${config.outputInstructions.educationalApproach.join(', ')}
+**Visual Focus:** ${config.outputInstructions?.visualFocus?.join(', ') || 'Visual focus not specified'}
+**Text Constraints:** ${config.outputInstructions?.textConstraints?.join(', ') || 'Text constraints not specified'}
+**Educational Approach:** ${config.outputInstructions?.educationalApproach?.join(', ') || 'Educational approach not specified'}
 
 ## Safety & Content Guidelines
-**Age-Appropriate Elements:** ${config.safetyGuidelines.ageAppropriate.join(', ')}
-**Required Elements:** ${config.safetyGuidelines.required.join(', ')}
-**Prohibited Content:** ${config.safetyGuidelines.prohibited.join(', ')}
+**Age-Appropriate Elements:** ${config.safetyGuidelines?.ageAppropriate?.join(', ') || 'Age-appropriate guidelines not specified'}
+**Required Elements:** ${config.safetyGuidelines?.required?.join(', ') || 'Required elements not specified'}
+**Prohibited Content:** ${config.safetyGuidelines?.prohibited?.join(', ') || 'Prohibited content not specified'}
 
 ---
-*This style guide was generated from structured configuration v${config.configVersion}*`;
+*This style guide was generated from structured configuration v${config.configVersion || 'Unknown'}*`;
 }

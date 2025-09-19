@@ -9,6 +9,7 @@ interface BookThumbnail {
   generation_status: string;
   is_latest: boolean;
   version_number: number;
+  prompt_used: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -44,6 +45,7 @@ export const useBookThumbnails = (bookId?: string) => {
             generation_status: thumbnail.generation_status,
             is_latest: thumbnail.is_latest,
             version_number: thumbnail.version_number,
+            prompt_used: thumbnail.prompt_used,
             created_at: thumbnail.created_at,
             updated_at: thumbnail.updated_at,
           } as BookThumbnail;

@@ -143,8 +143,9 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   };
 
   const handleCopyPrompt = async () => {
-    if (generatedPrompt && navigator.clipboard) {
-      await navigator.clipboard.writeText(generatedPrompt);
+    const promptToCopy = generatedPrompt || thumbnailData?.prompt_used;
+    if (promptToCopy && navigator.clipboard) {
+      await navigator.clipboard.writeText(promptToCopy);
       toast.success('Prompt copied to clipboard!');
     }
   };
@@ -353,11 +354,13 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
           </Badge>
         </div>
 
-        {/* Generated Thumbnail Prompt */}
-        {generatedPrompt && (
+        {/* Thumbnail Prompt */}
+        {(generatedPrompt || thumbnailData?.prompt_used) && (
           <div className="border rounded-md bg-blue-50/50 dark:bg-blue-950/20">
             <div className="flex items-center justify-between p-3 border-b bg-blue-100/30 dark:bg-blue-900/20">
-              <Label className="text-sm font-medium">Generated Thumbnail Prompt</Label>
+              <Label className="text-sm font-medium">
+                {generatedPrompt ? 'Generated' : 'Current'} Thumbnail Prompt
+              </Label>
               <div className="flex items-center gap-2">
                 <Button
                   variant="ghost"
@@ -367,19 +370,21 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 >
                   <Copy className="w-3 h-3" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearPrompt}
-                  className="h-7 px-2"
-                >
-                  <X className="w-3 h-3" />
-                </Button>
+                {generatedPrompt && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleClearPrompt}
+                    className="h-7 px-2"
+                  >
+                    <X className="w-3 h-3" />
+                  </Button>
+                )}
               </div>
             </div>
             <div className="p-3">
               <textarea
-                value={generatedPrompt}
+                value={generatedPrompt || thumbnailData?.prompt_used || ''}
                 readOnly
                 className="w-full h-32 text-xs font-mono bg-transparent border-none resize-none focus:outline-none"
                 style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}

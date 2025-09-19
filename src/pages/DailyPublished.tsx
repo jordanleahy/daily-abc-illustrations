@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useDailyPublishedById } from '@/hooks/useDailyPublishedById';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { DailyPublishedPageView, useDailyPublishedPages } from '@/components/daily-published';
@@ -10,7 +10,11 @@ import { SITE_CONFIG } from '@/config/site';
 
 export default function DailyPublished() {
   const { id } = useParams<{ id: string }>();
-  const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useDailyPublishedById(id);
+  const navigate = useNavigate();
+  const { data: result, isLoading: isLoadingDaily, error: dailyError } = useDailyPublishedById(id);
+  const dailyContent = result?.data;
+  const isExpired = result?.isExpired;
+  
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
@@ -18,6 +22,13 @@ export default function DailyPublished() {
   const { openGraphMetadata } = useDailyPublishedOpenGraph(id, currentPageIndex);
 
   const isLoading = isLoadingDaily || isLoadingPages;
+
+  // Redirect to homepage if content is expired
+  useEffect(() => {
+    if (!isLoadingDaily && isExpired) {
+      navigate('/', { replace: true });
+    }
+  }, [isLoadingDaily, isExpired, navigate]);
 
   if (isLoading) {
     return (

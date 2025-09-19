@@ -6,9 +6,10 @@ export const useDailyPublishedById = (id: string | undefined) => {
   return useQuery({
     queryKey: ['daily-published', id],
     queryFn: async () => {
-      if (!id) return null;
+      if (!id) return { data: null, isExpired: false };
       
-      const { data, error } = await supabase
+      // First, try to get active content
+      const { data: activeData, error: activeError } = await supabase
         .from('daily_published')
         .select('*')
         .eq('id', id)
@@ -16,12 +17,34 @@ export const useDailyPublishedById = (id: string | undefined) => {
         .gt('expires_at', new Date().toISOString())
         .maybeSingle();
 
-      if (error) {
-        console.error('Error fetching daily published content by id:', error);
-        throw error;
+      if (activeError) {
+        console.error('Error fetching daily published content by id:', activeError);
+        throw activeError;
       }
 
-      return data as DailyPublished | null;
+      if (activeData) {
+        return { data: activeData as DailyPublished, isExpired: false };
+      }
+
+      // If no active content, check if expired content exists
+      const { data: expiredData, error: expiredError } = await supabase
+        .from('daily_published')
+        .select('*')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (expiredError) {
+        console.error('Error checking for expired content:', expiredError);
+        throw expiredError;
+      }
+
+      // If content exists but is not active, it's expired
+      if (expiredData) {
+        return { data: null, isExpired: true };
+      }
+
+      // Content doesn't exist at all
+      return { data: null, isExpired: false };
     },
     enabled: !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes

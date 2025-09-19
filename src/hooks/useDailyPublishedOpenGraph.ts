@@ -58,7 +58,8 @@ export const useDailyPublishedOpenGraph = (
    */
 
   // Fetch the main daily published content (title, description, expiry date, etc.)
-  const { data: dailyContent } = useDailyPublishedById(dailyId);
+  const { data: dailyResult } = useDailyPublishedById(dailyId);
+  const dailyContent = dailyResult?.data;
   
   // Fetch all pages that belong to this book
   // 📚 LEARNING NOTE - Conditional fetching:

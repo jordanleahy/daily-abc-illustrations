@@ -23,7 +23,7 @@ export const useBookThumbnails = (bookId?: string) => {
     queryFn: async () => {
       if (!bookId) return null;
 
-      // Use rpc to query book_thumbnails table since it's not in generated types yet
+      // Use the new RPC function to get book thumbnail
       const { data, error } = await supabase.rpc('get_book_thumbnail', {
         p_book_id: bookId
       });
@@ -33,7 +33,9 @@ export const useBookThumbnails = (bookId?: string) => {
         return null;
       }
 
-      return data as BookThumbnail | null;
+      // Return the first result since the RPC returns an array
+      const thumbnail = Array.isArray(data) && data.length > 0 ? data[0] : null;
+      return thumbnail as BookThumbnail | null;
     },
     enabled: !!bookId,
     staleTime: 30 * 1000, // 30 seconds

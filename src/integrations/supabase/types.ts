@@ -144,6 +144,60 @@ export type Database = {
           },
         ]
       }
+      book_thumbnails: {
+        Row: {
+          aspect_ratio: string
+          book_id: string
+          created_at: string
+          error_message: string | null
+          generation_completed_at: string | null
+          generation_duration_ms: number | null
+          generation_started_at: string | null
+          generation_status: string
+          id: string
+          is_latest: boolean
+          prompt_used: string | null
+          thumbnail_url: string | null
+          updated_at: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          aspect_ratio?: string
+          book_id: string
+          created_at?: string
+          error_message?: string | null
+          generation_completed_at?: string | null
+          generation_duration_ms?: number | null
+          generation_started_at?: string | null
+          generation_status?: string
+          id?: string
+          is_latest?: boolean
+          prompt_used?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id: string
+          version_number?: number
+        }
+        Update: {
+          aspect_ratio?: string
+          book_id?: string
+          created_at?: string
+          error_message?: string | null
+          generation_completed_at?: string | null
+          generation_duration_ms?: number | null
+          generation_started_at?: string | null
+          generation_status?: string
+          id?: string
+          is_latest?: boolean
+          prompt_used?: string | null
+          thumbnail_url?: string | null
+          updated_at?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: []
+      }
       books: {
         Row: {
           book_description: string | null
@@ -634,6 +688,20 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_book_thumbnail: {
+        Args: { p_book_id: string }
+        Returns: {
+          book_id: string
+          created_at: string
+          generation_status: string
+          id: string
+          is_latest: boolean
+          thumbnail_url: string
+          updated_at: string
+          user_id: string
+          version_number: number
+        }[]
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
@@ -671,6 +739,10 @@ export type Database = {
       get_next_activation_time: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_next_book_thumbnail_version_number: {
+        Args: { p_book_id: string }
+        Returns: number
       }
       get_next_page_image_version_number: {
         Args: { p_page_id: string }

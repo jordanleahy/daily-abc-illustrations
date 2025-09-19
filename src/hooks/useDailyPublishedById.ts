@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DailyPublished } from '@/types/dailyPublished';
+import { isValidUUID } from '@/utils/uuid';
 
 export const useDailyPublishedById = (id: string | undefined) => {
   return useQuery({
@@ -26,24 +27,14 @@ export const useDailyPublishedById = (id: string | undefined) => {
         return { data: activeData as DailyPublished, isExpired: false };
       }
 
-      // If no active content, check if expired content exists
-      const { data: expiredData, error: expiredError } = await supabase
-        .from('daily_published')
-        .select('*')
-        .eq('id', id)
-        .maybeSingle();
-
-      if (expiredError) {
-        console.error('Error checking for expired content:', expiredError);
-        throw expiredError;
-      }
-
-      // If content exists but is not active, it's expired
-      if (expiredData) {
+      // If no active content found and the ID looks like a valid UUID,
+      // assume it's expired content for non-auth users (since RLS blocks expired content access)
+      // This handles the common case where users visit expired links
+      if (isValidUUID(id)) {
         return { data: null, isExpired: true };
       }
 
-      // Content doesn't exist at all
+      // If ID is malformed, it truly doesn't exist
       return { data: null, isExpired: false };
     },
     enabled: !!id,

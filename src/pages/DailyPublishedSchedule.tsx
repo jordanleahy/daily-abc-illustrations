@@ -20,63 +20,38 @@ const DailyPublishedSchedule = () => {
       const activeItem = queueItems.find(queueItem => queueItem.status === 'active');
       let baseTime: Date;
 
-      console.log('Debug activation time calculation:', {
-        itemTitle: item.title,
-        index,
-        activeItem: activeItem ? {
-          title: activeItem.title,
-          published_at: activeItem.published_at,
-          expires_at: activeItem.expires_at
-        } : null
-      });
-
       if (activeItem && activeItem.expires_at) {
         // Use expires_at directly instead of calculating from published_at
         baseTime = new Date(activeItem.expires_at);
-        console.log('Using expires_at:', activeItem.expires_at, 'baseTime:', baseTime);
       } else if (activeItem && activeItem.published_at) {
         // Fallback: Calculate from published_at + 24 hours
         const publishedDate = new Date(activeItem.published_at);
-        console.log('Published date:', publishedDate, 'isValid:', !isNaN(publishedDate.getTime()));
         
         if (isNaN(publishedDate.getTime())) {
-          console.error('Invalid published_at date:', activeItem.published_at);
           return undefined;
         }
         
         baseTime = new Date(publishedDate);
         baseTime.setHours(baseTime.getHours() + 24);
-        console.log('Calculated baseTime from published_at:', baseTime);
       } else {
         // If no active item, start from now
         baseTime = new Date();
-        console.log('No active item, using now:', baseTime);
       }
 
       // Calculate how many positions ahead this item is from becoming active
       const activeItemIndex = queueItems.findIndex(queueItem => queueItem.status === 'active');
       const positionsAhead = index - (activeItemIndex >= 0 ? activeItemIndex : 0) - 1;
 
-      console.log('Position calculation:', {
-        activeItemIndex,
-        currentIndex: index,
-        positionsAhead
-      });
-
       // Each position adds 24 hours
       const activationTime = new Date(baseTime);
       
       if (isNaN(baseTime.getTime())) {
-        console.error('Invalid baseTime:', baseTime);
         return undefined;
       }
       
       activationTime.setHours(activationTime.getHours() + (positionsAhead * 24));
       
-      console.log('Final activation time:', activationTime, 'isValid:', !isNaN(activationTime.getTime()));
-      
       if (isNaN(activationTime.getTime())) {
-        console.error('Invalid activation time calculated');
         return undefined;
       }
 

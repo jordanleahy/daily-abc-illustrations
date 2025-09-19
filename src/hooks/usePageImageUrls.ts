@@ -213,10 +213,33 @@ export function usePageImageUrls(pageId: string) {
     };
   }, [pageId, user, queryClient]);
 
+  // Add polling for active image generation
+  useEffect(() => {
+    if (!currentImage || currentImage.generation_status !== 'in_progress') return;
+
+    console.log(`[usePageImageUrls] Starting polling for image generation: ${currentImage.id}`);
+    
+    const pollInterval = setInterval(() => {
+      console.log(`[usePageImageUrls] Polling for image updates...`);
+      queryClient.invalidateQueries({ queryKey: ['page-image-latest', pageId] });
+      queryClient.invalidateQueries({ queryKey: ['page-image-versions', pageId] });
+    }, 2000); // Poll every 2 seconds
+
+    return () => {
+      console.log(`[usePageImageUrls] Stopping polling for image generation`);
+      clearInterval(pollInterval);
+    };
+  }, [currentImage?.id, currentImage?.generation_status, pageId, queryClient]);
+
   const refreshData = () => {
     console.log(`[usePageImageUrls] Manual refresh requested for page ${pageId}`);
     queryClient.invalidateQueries({ queryKey: ['page-image-latest', pageId] });
     queryClient.invalidateQueries({ queryKey: ['page-image-versions', pageId] });
+    // Also force immediate refetch
+    setTimeout(() => {
+      queryClient.refetchQueries({ queryKey: ['page-image-latest', pageId] });
+      queryClient.refetchQueries({ queryKey: ['page-image-versions', pageId] });
+    }, 100);
   };
 
   return {

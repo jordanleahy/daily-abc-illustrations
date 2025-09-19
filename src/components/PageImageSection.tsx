@@ -331,6 +331,29 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
         </div>
       )}
 
+      {/* Add regenerate and refresh buttons overlay for existing images */}
+      {hasImage && (
+        <div className="absolute top-2 right-2 flex gap-1">
+          <Button
+            onClick={handleRegenerateImage}
+            size="sm"
+            variant="secondary"
+            className="opacity-80 hover:opacity-100"
+            disabled={isRegenerating || isGenerating}
+          >
+            {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+          </Button>
+          <Button
+            onClick={refreshData}
+            size="sm"
+            variant="outline"
+            className="opacity-80 hover:opacity-100"
+            title="Force refresh image"
+          >
+            <RefreshCw className="w-3 h-3" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

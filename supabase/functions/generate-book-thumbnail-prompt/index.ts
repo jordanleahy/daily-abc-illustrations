@@ -3,6 +3,7 @@
  * 
  * This edge function generates specialized thumbnail prompts for SEO and social media
  * based on book metadata and style guide, optimized for 3:2 aspect ratio (1536x1024).
+ * Uses hardcoded model settings and thumbnail-specific instructions.
  * 
  * @requires OPENAI_API_KEY - OpenAI API key for GPT model access
  * @requires SUPABASE_URL - Supabase project URL
@@ -115,39 +116,7 @@ serve(async (req) => {
       hasStyleGuide: !!styleGuide
     });
 
-    currentStep = 'FETCH_AGENT';
-    const agentStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Fetching Illustration Director Agent configuration...', { requestId });
-
-    // Fetch user's Illustration Director Agent configuration
-    const { data: agentConfig, error: agentError } = await supabaseClient
-      .from('agents')
-      .select('*')
-      .eq('user_id', userId)
-      .eq('type', 'illustration-director')
-      .eq('is_latest', true)
-      .single();
-
-    const agentDuration = Date.now() - agentStartTime;
-
-    if (agentError || !agentConfig) {
-      const errorMsg = 'No Illustration Director Agent configuration found for user';
-      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
-        requestId, 
-        duration: agentDuration,
-        error: agentError?.message,
-        userId: userId?.substring(0, 8) + '...'
-      });
-      throw new Error(errorMsg);
-    }
-
-    log('INFO', ProcessStatus.COMPLETE, currentStep, `Found agent config: ${agentConfig.name}`, { 
-      requestId, 
-      duration: agentDuration,
-      agentId: agentConfig.id?.substring(0, 8) + '...',
-      model: agentConfig.model,
-      version: agentConfig.version
-    });
+    // Agent dependency removed - using hardcoded thumbnail-specific settings
 
     currentStep = 'PREPARE_PROMPT';
     const promptStartTime = Date.now();
@@ -188,14 +157,37 @@ Generate a detailed image generation prompt that will create an effective thumbn
 
     currentStep = 'OPENAI_API';
     const aiStartTime = Date.now();
+    
+    // Hardcoded model settings optimized for thumbnail generation
+    const MODEL = 'gpt-4o-mini';
+    const MAX_TOKENS = 4000;
+    const TEMPERATURE = 0.7;
+    
+    // Thumbnail-specific system prompt
+    const THUMBNAIL_SYSTEM_PROMPT = `You are a specialized thumbnail prompt generator for children's educational books. Create detailed, SEO-optimized image prompts that will work perfectly as book thumbnails for social media and search engines.
+
+Your thumbnails should be:
+- Eye-catching and visually appealing for social media
+- Clearly readable at small sizes
+- Professional and polished
+- Appropriate for children's educational content
+- Optimized for 3:2 aspect ratio (1536x1024 pixels)
+
+Focus on creating prompts that will generate thumbnails with:
+- Clear, bold visual elements
+- Readable text integration if needed
+- Attractive color schemes
+- Professional composition
+- Educational themes that match the book content`;
+
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling OpenAI API for thumbnail prompt generation...', { 
       requestId,
-      model: agentConfig.model,
-      maxTokens: agentConfig.max_completion_tokens,
-      topP: agentConfig.top_p
+      model: MODEL,
+      maxTokens: MAX_TOKENS,
+      temperature: TEMPERATURE
     });
 
-    // Call OpenAI API using the Illustration Director agent's configuration
+    // Call OpenAI API with hardcoded thumbnail-optimized settings
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -203,13 +195,13 @@ Generate a detailed image generation prompt that will create an effective thumbn
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: agentConfig.model,
-        max_completion_tokens: agentConfig.max_completion_tokens,
-        top_p: parseFloat(agentConfig.top_p),
+        model: MODEL,
+        max_tokens: MAX_TOKENS,
+        temperature: TEMPERATURE,
         messages: [
           {
             role: 'system',
-            content: agentConfig.instructions
+            content: THUMBNAIL_SYSTEM_PROMPT
           },
           {
             role: 'user',

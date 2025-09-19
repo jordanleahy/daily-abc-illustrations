@@ -330,9 +330,14 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
               <Button
                 variant="outline"
                 onClick={handleGenerateThumbPrompt}
+                disabled={isGenerating}
                 className="flex items-center gap-2"
               >
-                <MessageSquare className="w-4 h-4" />
+                {isGenerating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <MessageSquare className="w-4 h-4" />
+                )}
                 Generate Thumb Prompt
               </Button>
               <Button

@@ -16,7 +16,8 @@ export const useDailyPublishedQueue = () => {
             user_id
           )
         `)
-         .neq('status', 'draft') // Filter out draft entries from public queue view
+        .neq('status', 'draft') // Filter out draft entries from public queue view
+         .neq('status', 'expired') // Filter out expired entries from queue view
          .order('queue_position', { ascending: true });
 
       if (error) {

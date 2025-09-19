@@ -204,9 +204,53 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     setGeneratedPrompt(null);
   };
 
-  const handleGenerateThumbImage = () => {
-    // Placeholder for Generate Thumb Image functionality
-    toast.info('Generate Thumb Image - Coming Soon');
+  const handleGenerateThumbImage = async () => {
+    if (!user?.id) {
+      toast.error('User not authenticated');
+      return;
+    }
+
+    // Check if we have a generated prompt to use
+    if (!generatedPrompt) {
+      toast.error('Please generate a thumbnail prompt first');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-book-thumbnail', {
+        body: {
+          bookId,
+          userId: user.id,
+          customPrompt: generatedPrompt, // Use the generated prompt
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.success && data?.thumbnailUrl) {
+        // Update SEO metadata with the new thumbnail
+        await updateSeoMetadata.mutateAsync({
+          bookId,
+          seoTitle: currentTitle,
+          seoDescription: currentDescription,
+          ogImageUrl: data.thumbnailUrl,
+        });
+
+        refetch();
+        toast.success('Thumbnail image generated and applied successfully!');
+        
+        // Clear the prompt since it's been used
+        setGeneratedPrompt(null);
+      } else {
+        throw new Error('Failed to generate thumbnail image');
+      }
+    } catch (error) {
+      console.error('Thumbnail image generation error:', error);
+      toast.error('Failed to generate thumbnail image');
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (isLoading) {
@@ -351,9 +395,14 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
               <Button
                 variant="outline"
                 onClick={handleGenerateThumbImage}
+                disabled={isGenerating || !generatedPrompt}
                 className="flex items-center gap-2"
               >
-                <ImagePlus className="w-4 h-4" />
+                {isGenerating ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <ImagePlus className="w-4 h-4" />
+                )}
                 Generate Thumb Image
               </Button>
             </div>

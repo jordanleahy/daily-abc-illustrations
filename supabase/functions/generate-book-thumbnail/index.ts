@@ -68,12 +68,12 @@ serve(async (req) => {
     // Get book info for naming
     const { data: bookData, error: bookError } = await supabase
       .from('books')
-      .select('name')
+      .select('book_name')
       .eq('id', bookId)
       .single();
 
     if (bookError) throw bookError;
-    bookName = bookData.name || 'Unknown Book';
+    bookName = bookData.book_name || 'Unknown Book';
 
     console.log(`[${new Date().toISOString()}] [INFO] [complete] [FETCH_DATA] - Data fetched successfully {`, JSON.stringify({
       requestId,
@@ -165,6 +165,51 @@ serve(async (req) => {
       duration: 2000,
       fileName: fileName.substring(fileName.lastIndexOf('/') + 1),
       fileSize: imageBlob.size
+    }), `}`);
+
+    // Create book thumbnail record
+    console.log(`[${new Date().toISOString()}] [INFO] [in-progress] [DB_INSERT] - Creating book thumbnail record... {`, JSON.stringify({
+      requestId
+    }), `}`);
+
+    // Get next version number for this book
+    const { data: versionData, error: versionError } = await supabase
+      .rpc('get_next_book_thumbnail_version_number', { p_book_id: bookId });
+
+    if (versionError) {
+      console.error(`[${new Date().toISOString()}] [ERROR] [VERSION] - Version error:`, versionError);
+      throw versionError;
+    }
+
+    const nextVersion = versionData || 1;
+
+    const { data: thumbnailRecord, error: thumbnailError } = await supabase
+      .from('book_thumbnails')
+      .insert({
+        book_id: bookId,
+        user_id: userId,
+        version_number: nextVersion,
+        thumbnail_url: thumbnailUrl,
+        prompt_used: imagePrompt,
+        generation_status: 'complete',
+        generation_started_at: new Date().toISOString(),
+        generation_completed_at: new Date().toISOString(),
+        generation_duration_ms: 8000, // Approximate duration
+        aspect_ratio: '1792:1024',
+        is_latest: true
+      })
+      .select()
+      .single();
+
+    if (thumbnailError) {
+      console.error(`[${new Date().toISOString()}] [ERROR] [DB_INSERT] - Database error:`, thumbnailError);
+      throw thumbnailError;
+    }
+
+    console.log(`[${new Date().toISOString()}] [INFO] [complete] [DB_INSERT] - Thumbnail record created {`, JSON.stringify({
+      requestId,
+      thumbnailId: thumbnailRecord.id,
+      versionNumber: thumbnailRecord.version_number
     }), `}`);
 
     console.log(`[${new Date().toISOString()}] [INFO] [complete] [COMPLETE] - Book thumbnail generation completed successfully! {`, JSON.stringify({

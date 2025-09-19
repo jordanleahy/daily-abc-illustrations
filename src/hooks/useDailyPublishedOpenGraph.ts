@@ -199,8 +199,8 @@ export const useDailyPublishedOpenGraph = (
     const pageNumber = currentPageIndex + 1; // Convert from 0-based to 1-based
     const totalPages = pages.length;
     
-    // Use first page image for consistent OpenGraph sharing across all pages
-    const ogImage = firstPageImage?.image_url || null;
+    // Prioritize SEO metadata image, fallback to first page image for consistent OpenGraph sharing
+    const ogImage = finalSeoMetadata?.og_image_url || firstPageImage?.image_url || null;
 
     // Call the utility function to generate the complete metadata object
     // This function handles all the OpenGraph protocol requirements

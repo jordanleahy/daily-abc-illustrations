@@ -382,6 +382,7 @@ Required JSON Schema:
     // Parse and validate JSON structure with hybrid approach
     let styleGuide;
     let isValidJSON = false;
+    let styleGuideJSON: any = null;
     
     try {
       log('INFO', ProcessStatus.IN_PROGRESS, 'JSON_EXTRACTION', 'Attempting multiple JSON extraction methods', {
@@ -432,7 +433,7 @@ Required JSON Schema:
       });
 
       // Attempt to parse the extracted JSON
-      const styleGuideJSON = JSON.parse(jsonStr);
+      styleGuideJSON = JSON.parse(jsonStr);
       
       // Basic validation - ensure required top-level keys exist
       const requiredKeys = ['metadata', 'colorPalette', 'visualElements', 'styleRequirements', 'compositionGuidelines', 'visualMetaphors', 'contentAnalysisFramework', 'outputInstructions', 'safetyGuidelines'];

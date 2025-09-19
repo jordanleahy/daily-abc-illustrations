@@ -332,7 +332,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 ) : (
                   <ImagePlus className="w-4 h-4" />
                 )}
-                Generate Thumb Image
+                {thumbnailData?.thumbnail_url && thumbnailData?.generation_status === 'complete' ? 'Regenerate Thumb Image' : 'Generate Thumb Image'}
               </Button>
             </div>
           </div>

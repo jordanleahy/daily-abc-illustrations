@@ -800,6 +800,10 @@ export type Database = {
       }
     }
     Functions: {
+      calculate_fixed_schedule_time: {
+        Args: { queue_pos: number }
+        Returns: string
+      }
       cleanup_daily_published_queue: {
         Args: Record<PropertyKey, never>
         Returns: Json
@@ -861,6 +865,10 @@ export type Database = {
         Args: { p_book_id: string }
         Returns: number
       }
+      get_next_fixed_activation_time: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_next_page_image_version_number: {
         Args: { p_page_id: string }
         Returns: number
@@ -893,6 +901,10 @@ export type Database = {
         Returns: boolean
       }
       process_daily_published_queue: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      process_daily_published_queue_fixed: {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }

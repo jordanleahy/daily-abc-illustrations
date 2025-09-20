@@ -10,52 +10,15 @@ import { DailyPublishedWithBook } from '@/types/dailyPublished';
 const DailyPublishedSchedule = () => {
   const { data: queueItems, isLoading, error } = useDailyPublishedQueue();
 
-  const calculateExpectedActivationTime = (item: DailyPublishedWithBook, index: number) => {
+  const calculateExpectedActivationTime = (item: DailyPublishedWithBook) => {
     if (item.status === 'active') {
       return undefined; // Active items don't need activation time
     }
     
-    if (item.status === 'queued' && queueItems) {
-      // Find the current active item
-      const activeItem = queueItems.find(queueItem => queueItem.status === 'active');
-      let baseTime: Date;
-
-      if (activeItem && activeItem.expires_at) {
-        // Use expires_at directly instead of calculating from published_at
-        baseTime = new Date(activeItem.expires_at);
-      } else if (activeItem && activeItem.published_at) {
-        // Fallback: Calculate from published_at + 24 hours
-        const publishedDate = new Date(activeItem.published_at);
-        
-        if (isNaN(publishedDate.getTime())) {
-          return undefined;
-        }
-        
-        baseTime = new Date(publishedDate);
-        baseTime.setHours(baseTime.getHours() + 24);
-      } else {
-        // If no active item, start from now
-        baseTime = new Date();
-      }
-
-      // Calculate how many positions ahead this item is from becoming active
-      const activeItemIndex = queueItems.findIndex(queueItem => queueItem.status === 'active');
-      const positionsAhead = index - (activeItemIndex >= 0 ? activeItemIndex : 0) - 1;
-
-      // Each position adds 24 hours
-      const activationTime = new Date(baseTime);
-      
-      if (isNaN(baseTime.getTime())) {
-        return undefined;
-      }
-      
-      activationTime.setHours(activationTime.getHours() + (positionsAhead * 24));
-      
-      if (isNaN(activationTime.getTime())) {
-        return undefined;
-      }
-
-      return activationTime.toISOString();
+    if (item.status === 'queued') {
+      // For fixed schedule, use the published_at time that was set by the migration
+      // This represents the exact 11:12 PM UTC activation time for this item
+      return item.published_at;
     }
     
     return undefined;
@@ -79,7 +42,7 @@ const DailyPublishedSchedule = () => {
                 <h1 className="text-3xl font-bold tracking-tight">Publishing Queue</h1>
               </div>
               <p className="text-muted-foreground">
-                Books are automatically published every 24 hours in queue order
+                Books are automatically published daily at 11:12 PM UTC in queue order
               </p>
             </div>
 
@@ -115,12 +78,12 @@ const DailyPublishedSchedule = () => {
                   </div>
                  ) : (
                    queueItems?.map((item, index) => (
-                     <DailyPublishedQueueCard
-                       key={item.id}
-                       item={item}
-                       position={index + 1}
-                       expectedActivationTime={calculateExpectedActivationTime(item, index)}
-                     />
+                      <DailyPublishedQueueCard
+                        key={item.id}
+                        item={item}
+                        position={index + 1}
+                        expectedActivationTime={calculateExpectedActivationTime(item)}
+                      />
                    ))
                  )}
               </div>

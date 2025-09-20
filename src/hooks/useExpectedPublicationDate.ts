@@ -15,28 +15,13 @@ export const useExpectedPublicationDate = (contentId: string) => {
         return null;
       }
 
-      // Find the current active item's published_at time or calculate from queue
-      const activeItem = queueItems.find(item => item.status === 'active');
-      let baseTime: Date;
+      // Use fixed daily schedule (11:12 PM UTC)
+      // Calculate the activation time for this position
+      const { data: activationTime } = await supabase.rpc('calculate_fixed_schedule_time', {
+        queue_pos: nextPosition
+      });
 
-      if (activeItem && activeItem.published_at) {
-        // If there's an active item, calculate from when it expires (24 hours after published_at)
-        baseTime = new Date(activeItem.published_at);
-        baseTime.setHours(baseTime.getHours() + 24);
-      } else {
-        // If no active item, start from now
-        baseTime = new Date();
-      }
-
-      // Calculate position in queue (subtract 1 because this is the next position)
-      const queuedItems = queueItems.filter(item => item.status === 'queued').length;
-      const positionsAhead = queuedItems; // This book would be after all currently queued items
-
-      // Each position adds 24 hours
-      const expectedDate = new Date(baseTime);
-      expectedDate.setHours(expectedDate.getHours() + (positionsAhead * 24));
-
-      return expectedDate;
+      return activationTime ? new Date(activationTime) : null;
     },
     enabled: !queueLoading && !!contentId,
     staleTime: 5 * 60 * 1000, // 5 minutes

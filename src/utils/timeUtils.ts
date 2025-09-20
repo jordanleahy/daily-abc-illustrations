@@ -48,3 +48,27 @@ export const formatTimeRemaining = (expiresAt: string): string => {
 
   return 'Expired';
 };
+
+export const formatFixedScheduleTime = (timeString: string): string => {
+  const date = new Date(timeString);
+  
+  // Format as user's local time
+  const localTime = date.toLocaleString(undefined, {
+    weekday: 'short',
+    month: 'short', 
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZoneName: 'short'
+  });
+  
+  // Also show UTC time for reference
+  const utcTime = date.toLocaleString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'UTC',
+    timeZoneName: 'short'
+  });
+  
+  return `${localTime} (${utcTime})`;
+};

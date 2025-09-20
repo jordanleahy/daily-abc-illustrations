@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { formatTimeRemaining } from '@/utils/timeUtils';
+import { formatTimeRemaining, formatFixedScheduleTime } from '@/utils/timeUtils';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { Clock, Calendar, Hash, Image } from 'lucide-react';
@@ -63,14 +63,10 @@ export function DailyPublishedQueueCard({
     }
     
     if (item.status === 'queued' && expectedActivationTime) {
-      const now = new Date().getTime();
-      const activation = new Date(expectedActivationTime).getTime();
-      
       return {
         icon: Calendar,
         label: 'Scheduled to activate',
-        value: new Date(expectedActivationTime).toLocaleDateString() + ' at ' + 
-               new Date(expectedActivationTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        value: formatFixedScheduleTime(expectedActivationTime),
         color: 'text-blue-600'
       };
     }

@@ -23,29 +23,30 @@ export const useExpirationTransition = ({ currentId, expiresAt }: UseExpirationT
   // Poll for new active content more frequently when near expiry
   const { data: activeContent, refetch: refetchActive } = useActiveDailyPublished();
 
-  // Check if we're within 2 minutes of expiry
   const checkExpiryStatus = useCallback(() => {
-    const now = new Date().getTime();
-    const expiry = new Date(expiresAt).getTime();
-    const timeUntilExpiry = expiry - now;
-    const twoMinutes = 2 * 60 * 1000; // 2 minutes in ms
+    const now = new Date();
+    const expiry = new Date(expiresAt);
+    const timeDiff = expiry.getTime() - now.getTime();
     
-    const nearExpiry = timeUntilExpiry <= twoMinutes && timeUntilExpiry > 0;
-    setIsNearExpiry(nearExpiry);
+    // For fixed schedule, consider "near expiry" as within 5 minutes of 11:12 PM UTC
+    const nearExpiryThreshold = 5 * 60 * 1000; // 5 minutes in milliseconds
+    const isCurrentlyNearExpiry = timeDiff <= nearExpiryThreshold && timeDiff > 0;
     
-    // If content has expired, start transition immediately
-    if (timeUntilExpiry <= 0 && !isTransitioning) {
+    setIsNearExpiry(isCurrentlyNearExpiry);
+    
+    // If expired (past 11:12 PM UTC), handle the transition
+    if (timeDiff <= 0 && !isTransitioning) {
       handleExpiredContent();
     }
     
-    return { timeUntilExpiry, nearExpiry };
+    return { timeUntilExpiry: timeDiff, nearExpiry: isCurrentlyNearExpiry };
   }, [expiresAt, isTransitioning]);
 
   // Handle expired content with smooth transition
   const handleExpiredContent = useCallback(async () => {
     if (isTransitioning) return;
     
-    console.log('🔄 Content expired, initiating transition...');
+    console.log('🔄 Content expired at fixed 11:12 PM UTC, initiating transition...');
     setIsTransitioning(true);
     
     try {

@@ -23,13 +23,19 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🔄 Starting enhanced daily published queue processing...')
+    const startTime = Date.now()
+    console.log('🔄 Starting enhanced daily published queue processing...', { timestamp: new Date().toISOString() })
+
+    // Validate environment variables
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')
+    const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      throw new Error('Missing required environment variables: SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY')
+    }
 
     // Create Supabase client with service role key
-    const supabase = createClient<Database>(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
-    )
+    const supabase = createClient<Database>(supabaseUrl, serviceRoleKey)
 
     const now = new Date()
     const currentTime = now.toISOString()
@@ -148,9 +154,11 @@ Deno.serve(async (req) => {
       console.log('✅ Queue positions cleaned up and resequenced')
     }
 
+    const processingTime = Date.now() - startTime
     const summary = {
       success: true,
       timestamp: currentTime,
+      processing_time_ms: processingTime,
       actions: {
         expired: expiredCount,
         activated: activatedCount,
@@ -163,7 +171,10 @@ Deno.serve(async (req) => {
         : 'Queue is healthy - no changes needed'
     }
 
-    console.log('✅ Enhanced queue processing completed:', summary.message)
+    console.log('✅ Enhanced queue processing completed:', { 
+      ...summary,
+      performance: `${processingTime}ms`
+    })
 
     return new Response(
       JSON.stringify(summary),
@@ -174,12 +185,20 @@ Deno.serve(async (req) => {
     )
 
   } catch (error) {
-    console.error('❌ Unexpected error:', error)
+    const errorDetails = {
+      message: error instanceof Error ? error.message : 'Unknown error occurred',
+      name: error instanceof Error ? error.name : 'UnknownError',
+      stack: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
+    }
+    
+    console.error('❌ Critical queue processing error:', errorDetails)
     
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: errorDetails.message,
+        timestamp: errorDetails.timestamp
       }),
       { 
         status: 500,

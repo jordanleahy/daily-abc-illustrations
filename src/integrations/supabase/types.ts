@@ -857,10 +857,6 @@ export type Database = {
           updated_at: string
         }[]
       }
-      get_next_activation_time: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
       get_next_book_thumbnail_version_number: {
         Args: { p_book_id: string }
         Returns: number
@@ -899,10 +895,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      process_daily_published_queue: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
       }
       process_daily_published_queue_fixed: {
         Args: Record<PropertyKey, never>

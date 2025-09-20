@@ -155,7 +155,7 @@ serve(async (req) => {
         try {
           const imageResponse = await fetch(imageUrl);
           if (imageResponse.ok) {
-            const imageBytes = await imageResponse.arrayBytes();
+            const imageBytes = await imageResponse.arrayBuffer();
             let image;
             
             // Try to embed as JPEG first, then PNG

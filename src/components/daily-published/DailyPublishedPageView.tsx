@@ -41,7 +41,7 @@ export function DailyPublishedPageView({
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
   
   // Handle smooth transitions when content is about to expire
-  const { isNearExpiry, isTransitioning } = useExpirationTransition({
+  const { isTransitioning } = useExpirationTransition({
     currentId: contentId,
     expiresAt
   });
@@ -76,10 +76,8 @@ export function DailyPublishedPageView({
     <div className="h-screen bg-background flex flex-col overflow-hidden" style={{ touchAction: 'none' }}>
       {/* Fixed Header with countdown and page number */}
       <div className="fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-background/95 backdrop-blur-sm border-b">
-        <div className={`text-sm font-medium transition-colors duration-300 ${
-          isNearExpiry ? 'text-destructive animate-pulse' : 'text-muted-foreground'
-        }`}>
-          {isNearExpiry && '⚡ '}{timeRemaining}
+        <div className="text-sm font-medium text-muted-foreground">
+          {timeRemaining}
         </div>
         
         {/* Center section with previous page thumbnail and page indicator */}
@@ -124,13 +122,6 @@ export function DailyPublishedPageView({
 
       {/* Slide to unlock at bottom - sticky with proper mobile support */}
       <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
-        {isNearExpiry && (
-          <div className="mb-2 text-center">
-            <p className="text-xs text-muted-foreground">
-              New content loading soon...
-            </p>
-          </div>
-        )}
         <SlideToUnlock 
           onUnlock={onNext}
           disabled={isLastPage}

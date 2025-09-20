@@ -60,7 +60,7 @@ export default function DailyPublished() {
             </p>
             <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-4 w-4" />
-              Daily content expires after {SITE_CONFIG.dailyContent.expirationHours} hours
+              New content published {SITE_CONFIG.dailyContent.schedule}
             </div>
           </CardContent>
         </Card>

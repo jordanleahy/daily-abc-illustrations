@@ -46,7 +46,7 @@ serve(async (req) => {
     const prompt = `Create a thumbnail image prompt for "${book.book_name}", a ${book.category || 'children\'s book'}. 
 ${book.book_description ? `Description: ${book.book_description}` : ''}
 
-Focus on visual composition and design elements that work well for social media thumbnails. Include clear typography, engaging visuals, and appropriate colors for the target audience. Avoid mentioning specific pixel dimensions.`;
+Focus on visual composition and design elements that work well for social media thumbnails. Ensure the main title text is prominently centered in the middle of the composition. Include clear typography, engaging visuals, and appropriate colors for the target audience. The text should be the focal point positioned in the center of the image. Avoid mentioning specific pixel dimensions.`;
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {

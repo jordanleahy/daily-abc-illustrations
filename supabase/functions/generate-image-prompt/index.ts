@@ -261,11 +261,7 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
           },
           {
             role: 'user',
-            content: `Create a detailed image prompt for this learning book page:
-
-${pageContent}
-
-Please generate a specific, detailed image prompt that captures the visual elements and incorporates the page details (letter, title, description, content).`
+            content: pageContent
           }
         ],
       }),

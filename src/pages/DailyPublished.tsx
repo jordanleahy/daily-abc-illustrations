@@ -108,15 +108,16 @@ export default function DailyPublished() {
       {openGraphMetadata && <MetaHead metadata={openGraphMetadata} />}
       
       <DailyPublishedPageView
-      page={currentPage}
-      bookId={dailyContent.book_id}
-      pageNumber={currentPageIndex + 1}
-      totalPages={pages.length}
-      previousPage={previousPage}
+        page={currentPage}
+        bookId={dailyContent.book_id}
+        pageNumber={currentPageIndex + 1}
+        totalPages={pages.length}
+        previousPage={previousPage}
         expiresAt={dailyContent.expires_at}
         onNext={handleNext}
         onPrevious={currentPageIndex > 0 ? handlePrevious : undefined}
         openGraphMetadata={openGraphMetadata}
+        contentId={dailyContent.id}
       />
     </div>
   );

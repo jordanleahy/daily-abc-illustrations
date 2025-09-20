@@ -1,8 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DailyPublished } from '@/types/dailyPublished';
+import { useDailyPublishedSubscription } from './useDailyPublishedSubscription';
 
 export const useActiveDailyPublished = () => {
+  // Enable real-time subscriptions
+  useDailyPublishedSubscription();
+  
   return useQuery({
     queryKey: ['active-daily-published'],
     queryFn: async () => {

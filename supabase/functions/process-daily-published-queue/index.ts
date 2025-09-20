@@ -23,7 +23,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    console.log('🔄 Starting daily published queue processing...')
+    console.log('🔄 Starting enhanced daily published queue processing...')
 
     // Create Supabase client with service role key
     const supabase = createClient<Database>(
@@ -31,7 +31,12 @@ Deno.serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    // Step 1: Mark expired active items as expired
+    const now = new Date()
+    const currentTime = now.toISOString()
+    
+    console.log(`⏰ Processing at: ${currentTime}`)
+
+    // Step 1: Mark expired active items as expired (atomic transaction)
     const { data: expiredItems, error: expireError } = await supabase
       .from('daily_published')
       .update({ 
@@ -39,23 +44,31 @@ Deno.serve(async (req) => {
         is_active: false 
       })
       .eq('status', 'active')
-      .lt('expires_at', new Date().toISOString())
-      .select('id, title, queue_position')
+      .lt('expires_at', currentTime)
+      .select('id, title, queue_position, expires_at')
 
     if (expireError) {
       console.error('❌ Error expiring items:', expireError)
       throw expireError
     }
 
+    let expiredCount = 0
     if (expiredItems && expiredItems.length > 0) {
-      console.log(`✅ Expired ${expiredItems.length} items:`, expiredItems.map(item => `${item.title} (pos ${item.queue_position})`))
+      expiredCount = expiredItems.length
+      console.log(`✅ Expired ${expiredCount} items:`)
+      expiredItems.forEach(item => {
+        const expiredAgo = now.getTime() - new Date(item.expires_at).getTime()
+        console.log(`   - "${item.title}" (pos ${item.queue_position}) - expired ${Math.round(expiredAgo / 1000)}s ago`)
+      })
     }
 
-    // Step 2: Check if we need to activate the next item in queue
+    // Step 2: Check current active status (ensure no gaps)
     const { data: activeItems, error: activeError } = await supabase
       .from('daily_published')
-      .select('id, queue_position, published_at, expires_at')
+      .select('id, title, queue_position, published_at, expires_at')
       .eq('status', 'active')
+      .eq('is_active', true)
+      .gt('expires_at', currentTime)
       .order('queue_position', { ascending: true })
 
     if (activeError) {
@@ -63,11 +76,15 @@ Deno.serve(async (req) => {
       throw activeError
     }
 
-    // If no active items, activate the first queued item
+    let activatedCount = 0
+    
+    // Step 3: If no active items, immediately activate the next queued item
     if (!activeItems || activeItems.length === 0) {
+      console.log('📋 No active content found - activating next item immediately...')
+      
       const { data: nextItem, error: nextError } = await supabase
         .from('daily_published')
-        .select('id, title, queue_position')
+        .select('id, title, queue_position, book_id')
         .eq('status', 'queued')
         .order('queue_position', { ascending: true })
         .limit(1)
@@ -79,47 +96,77 @@ Deno.serve(async (req) => {
       }
 
       if (nextItem) {
-        const now = new Date()
-        const expiresAt = new Date(now.getTime() + 24 * 60 * 60 * 1000) // 24 hours from now
+        const activationTime = now
+        const expirationTime = new Date(activationTime.getTime() + 24 * 60 * 60 * 1000) // 24 hours
 
-        const { error: activateError } = await supabase
+        // Use atomic update to prevent race conditions
+        const { data: activatedItem, error: activateError } = await supabase
           .from('daily_published')
           .update({
             status: 'active',
             is_active: true,
-            published_at: now.toISOString(),
-            expires_at: expiresAt.toISOString()
+            published_at: activationTime.toISOString(),
+            expires_at: expirationTime.toISOString()
           })
           .eq('id', nextItem.id)
+          .eq('status', 'queued') // Ensure it's still queued (prevent race conditions)
+          .select('id, title')
+          .maybeSingle()
 
         if (activateError) {
           console.error('❌ Error activating next item:', activateError)
           throw activateError
         }
 
-        console.log(`🎉 Activated item: ${nextItem.title} (Position ${nextItem.queue_position})`)
+        if (activatedItem) {
+          activatedCount = 1
+          console.log(`🎉 Successfully activated: "${nextItem.title}" (Position ${nextItem.queue_position})`)
+          console.log(`   ⏰ Active until: ${expirationTime.toISOString()}`)
+        } else {
+          console.log('⚠️  Item may have been activated by another process (race condition avoided)')
+        }
       } else {
-        console.log('📝 No queued items to activate')
+        console.log('📝 No queued items available to activate')
       }
     } else {
-      console.log(`📊 Current active items: ${activeItems.length}`)
+      console.log(`📊 Found ${activeItems.length} active item(s):`)
       activeItems.forEach(item => {
-        const timeLeft = new Date(item.expires_at).getTime() - new Date().getTime()
-        const hoursLeft = Math.round(timeLeft / (1000 * 60 * 60))
-        console.log(`   - Position ${item.queue_position}: ${hoursLeft}h remaining`)
+        const timeLeft = new Date(item.expires_at).getTime() - now.getTime()
+        const hoursLeft = Math.round(timeLeft / (1000 * 60 * 60) * 10) / 10
+        const minutesLeft = Math.round((timeLeft % (1000 * 60 * 60)) / (1000 * 60))
+        console.log(`   - "${item.title}" (pos ${item.queue_position}): ${hoursLeft}h ${minutesLeft}m remaining`)
       })
     }
 
-    console.log('✅ Queue processing completed successfully')
+    // Step 4: Clean up queue positions (resequence for consistency)
+    const { error: resequenceError } = await supabase.rpc('cleanup_daily_published_queue')
+    
+    if (resequenceError) {
+      console.warn('⚠️ Warning: Queue cleanup failed:', resequenceError)
+      // Don't throw - this is not critical for the main process
+    } else {
+      console.log('✅ Queue positions cleaned up and resequenced')
+    }
+
+    const summary = {
+      success: true,
+      timestamp: currentTime,
+      actions: {
+        expired: expiredCount,
+        activated: activatedCount,
+        current_active: activeItems?.length || 0
+      },
+      message: expiredCount > 0 
+        ? `Expired ${expiredCount} item(s), activated ${activatedCount} item(s)`
+        : activatedCount > 0 
+        ? `Activated ${activatedCount} new item(s)`
+        : 'Queue is healthy - no changes needed'
+    }
+
+    console.log('✅ Enhanced queue processing completed:', summary.message)
 
     return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: 'Queue processed successfully',
-        expired: expiredItems?.length || 0,
-        active: activeItems?.length || 0,
-        timestamp: new Date().toISOString()
-      }),
+      JSON.stringify(summary),
       { 
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }

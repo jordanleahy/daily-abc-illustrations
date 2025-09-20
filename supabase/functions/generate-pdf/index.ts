@@ -101,56 +101,14 @@ serve(async (req) => {
 
     // Create PDF document
     const pdfDoc = await PDFDocument.create();
-    const font = await pdfDoc.embedFont(StandardFonts.Helvetica);
-    const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 
-    // Title page
-    const titlePage = pdfDoc.addPage([612, 792]); // Letter size
-    titlePage.drawText(bookData.book_name || 'ABC Book', {
-      x: 50,
-      y: 700,
-      size: 32,
-      font: boldFont,
-      color: rgb(0.2, 0.2, 0.2),
-    });
-
-    if (bookData.book_description) {
-      titlePage.drawText(bookData.book_description, {
-        x: 50,
-        y: 650,
-        size: 14,
-        font: font,
-        color: rgb(0.4, 0.4, 0.4),
-        maxWidth: 500,
-      });
-    }
-
-    titlePage.drawText(`Generated on ${new Date().toLocaleDateString()}`, {
-      x: 50,
-      y: 100,
-      size: 10,
-      font: font,
-      color: rgb(0.6, 0.6, 0.6),
-    });
-
-    // Add pages with images only
+    // Add pages with images only - no title page, no headers
     const pages = bookData.pages || [];
     console.log(`Processing ${pages.length} pages...`);
 
     for (const pageData of pages.sort((a, b) => a.page_number - b.page_number)) {
-      const page = pdfDoc.addPage([612, 792]);
-      
-      // Page header
-      page.drawText(`${pageData.letter?.toUpperCase()} - ${pageData.title}`, {
-        x: 50,
-        y: 750,
-        size: 24,
-        font: boldFont,
-        color: rgb(0.2, 0.2, 0.2),
-      });
-
-      // Add image if available - centered and larger
       const imageUrl = pageImages.get(pageData.id);
+      
       if (imageUrl) {
         try {
           const imageResponse = await fetch(imageUrl);
@@ -166,52 +124,35 @@ serve(async (req) => {
                 image = await pdfDoc.embedPng(imageBytes);
               } catch (e) {
                 console.log('Failed to embed image:', e);
+                continue; // Skip this page if image can't be processed
               }
             }
 
             if (image) {
-              // Scale image to fit page nicely (larger than before)
-              const maxWidth = 500;
-              const maxHeight = 600;
-              let scale = Math.min(maxWidth / image.width, maxHeight / image.height);
+              // Create page sized to fit the image perfectly
+              const pageWidth = Math.max(image.width, 612); // Minimum letter width
+              const pageHeight = Math.max(image.height, 792); // Minimum letter height
               
-              const scaledWidth = image.width * scale;
-              const scaledHeight = image.height * scale;
+              const page = pdfDoc.addPage([pageWidth, pageHeight]);
               
-              // Center the image
-              const x = (612 - scaledWidth) / 2;
-              const y = 700 - scaledHeight;
+              // Center the image on the page at full size
+              const x = (pageWidth - image.width) / 2;
+              const y = (pageHeight - image.height) / 2;
               
               page.drawImage(image, {
                 x: x,
                 y: y,
-                width: scaledWidth,
-                height: scaledHeight,
+                width: image.width,
+                height: image.height,
               });
             }
           }
         } catch (e) {
           console.log('Error processing image for page:', pageData.letter, e);
+          // Skip pages with image processing errors
         }
-      } else {
-        // If no image, show the image URL would be displayed here
-        page.drawText('No image available for this page', {
-          x: 50,
-          y: 400,
-          size: 14,
-          font: font,
-          color: rgb(0.5, 0.5, 0.5),
-        });
       }
-
-      // Page number
-      page.drawText(`Page ${pageData.page_number}`, {
-        x: 520,
-        y: 50,
-        size: 10,
-        font: font,
-        color: rgb(0.6, 0.6, 0.6),
-      });
+      // Skip pages without images entirely - no placeholder pages
     }
 
     console.log('Saving PDF...');

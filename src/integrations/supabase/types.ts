@@ -748,7 +748,56 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      active_daily_published: {
+        Row: {
+          book_id: string | null
+          created_at: string | null
+          description: string | null
+          expires_at: string | null
+          id: string | null
+          is_active: boolean | null
+          published_at: string | null
+          queue_position: number | null
+          status: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          book_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          published_at?: string | null
+          queue_position?: number | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          book_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string | null
+          is_active?: boolean | null
+          published_at?: string | null
+          queue_position?: number | null
+          status?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_published_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       cleanup_daily_published_queue: {

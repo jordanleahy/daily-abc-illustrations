@@ -27,6 +27,23 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   // Check if there's a deployed page system prompt
   const hasDeployedPrompt = currentPrompt?.is_deployed === true;
 
+  // Helper function to detect navigation/cancellation errors
+  const isNavigationError = (error: any): boolean => {
+    return error?.name === 'AbortError' || 
+           error?.message?.includes('cancelled') ||
+           error?.message?.includes('aborted') ||
+           error?.code === 'ABORT_ERR';
+  };
+
+  // Enhanced state recovery on component mount
+  useEffect(() => {
+    // Check if there's an ongoing generation when component mounts
+    if (currentImage?.generation_status === 'in_progress' && !isLocalGenerating) {
+      console.log('🔄 Recovering generation state on mount');
+      setIsLocalGenerating(true);
+    }
+  }, [currentImage?.id, currentImage?.generation_status]); // Only run when image or status changes
+
   // Clear local generating state when backend status updates to complete or error
   useEffect(() => {
     console.log('🔄 Image state update:', {
@@ -74,7 +91,13 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
       toast.success('Prompt generated successfully!');
     } catch (error: any) {
       console.error('Error generating prompt:', error);
-      toast.error(error.message || 'Failed to generate prompt');
+      
+      // Don't show error messages for navigation cancellations
+      if (!isNavigationError(error)) {
+        toast.error(error.message || 'Failed to generate prompt');
+      } else {
+        console.log('🚫 Prompt generation cancelled due to navigation');
+      }
     } finally {
       setIsGeneratingPrompt(false);
     }
@@ -107,8 +130,16 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
       refreshData();
     } catch (error: any) {
       console.error('Error generating image:', error);
-      toast.error(error.message || 'Failed to generate image');
-      setIsLocalGenerating(false); // Clear local generating on error
+      
+      // Only clear local generating state and show error for real errors, not navigation cancellations
+      if (!isNavigationError(error)) {
+        toast.error(error.message || 'Failed to generate image');
+        setIsLocalGenerating(false);
+      } else {
+        console.log('🚫 Image generation request cancelled due to navigation');
+        // Don't clear isLocalGenerating for navigation cancellations
+        // The backend process continues and we'll recover state on return
+      }
     }
   };
 
@@ -151,8 +182,15 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
       refreshData();
     } catch (error: any) {
       console.error('Error generating image:', error);
-      toast.error(error.message || 'Failed to generate image');
-      setIsLocalGenerating(false);
+      
+      // Only clear local generating state and show error for real errors, not navigation cancellations
+      if (!isNavigationError(error)) {
+        toast.error(error.message || 'Failed to generate image');
+        setIsLocalGenerating(false);
+      } else {
+        console.log('🚫 Direct image generation request cancelled due to navigation');
+        // Don't clear isLocalGenerating for navigation cancellations
+      }
     }
   };
 
@@ -231,8 +269,15 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
       refreshData();
     } catch (error: any) {
       console.error('Error regenerating image:', error);
-      toast.error(error.message || 'Failed to regenerate image');
-      setIsLocalGenerating(false);
+      
+      // Only clear local generating state and show error for real errors, not navigation cancellations
+      if (!isNavigationError(error)) {
+        toast.error(error.message || 'Failed to regenerate image');
+        setIsLocalGenerating(false);
+      } else {
+        console.log('🚫 Image regeneration request cancelled due to navigation');
+        // Don't clear isLocalGenerating for navigation cancellations
+      }
     } finally {
       setIsRegenerating(false);
     }

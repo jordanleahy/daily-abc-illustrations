@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatTimeRemaining, formatFixedScheduleTime } from '@/utils/timeUtils';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
+import { useBookThumbnails } from '@/hooks/useBookThumbnails';
 import { Clock, Calendar, Hash, Image } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -21,6 +22,9 @@ export function DailyPublishedQueueCard({
   
   // Fetch SEO metadata for this specific daily published item
   const { data: seoMetadata } = useSeoMetadata(item.id);
+  
+  // Fallback to book thumbnail if SEO metadata is missing  
+  const { data: bookThumbnail } = useBookThumbnails(item.book_id);
 
   const handleCardClick = () => {
     navigate(`/books/${item.book_id}`);
@@ -92,13 +96,14 @@ export function DailyPublishedQueueCard({
     >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
-          {/* OG Image on the left */}
+          {/* OG Image with fallback to book thumbnail */}
           <div className="flex-shrink-0 w-32 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
-            {seoMetadata?.og_image_url ? (
+            {seoMetadata?.og_image_url || bookThumbnail?.thumbnail_url ? (
               <img 
-                src={seoMetadata.og_image_url} 
-                alt={`${item.title} OpenGraph preview`}
+                src={seoMetadata?.og_image_url || bookThumbnail?.thumbnail_url || ''} 
+                alt={`${item.title} preview`}
                 className="w-full h-full object-cover"
+                loading="lazy"
               />
             ) : (
               <Image className="h-6 w-6 text-muted-foreground" />

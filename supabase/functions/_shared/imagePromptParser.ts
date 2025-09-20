@@ -64,23 +64,43 @@ export interface ParsedImagePrompt {
  * Validates if parsed data matches the ImagePromptJSON schema
  */
 export function validateImagePromptJSON(data: any): data is ImagePromptJSON {
-  return (
-    data &&
-    typeof data === 'object' &&
-    data.subject &&
-    data.subject.primary &&
-    data.subject.letterFocus &&
-    data.scene &&
-    data.scene.setting &&
-    data.style &&
-    data.style.artStyle &&
-    data.lighting &&
-    data.composition &&
-    data.colors &&
-    data.educational &&
-    data.technical &&
-    data.safety
-  );
+  try {
+    return (
+      data &&
+      typeof data === 'object' &&
+      // Subject validation
+      data.subject &&
+      typeof data.subject === 'object' &&
+      typeof data.subject.primary === 'string' &&
+      typeof data.subject.letterFocus === 'string' &&
+      // Scene validation
+      data.scene &&
+      typeof data.scene === 'object' &&
+      typeof data.scene.setting === 'string' &&
+      typeof data.scene.environment === 'string' &&
+      // Style validation (basic)
+      data.style &&
+      typeof data.style === 'object' &&
+      typeof data.style.artStyle === 'string' &&
+      // Lighting validation (basic)
+      data.lighting &&
+      typeof data.lighting === 'object' &&
+      // Colors validation (basic)
+      data.colors &&
+      typeof data.colors === 'object' &&
+      // Educational validation (basic)
+      data.educational &&
+      typeof data.educational === 'object' &&
+      // Technical validation (basic)
+      data.technical &&
+      typeof data.technical === 'object' &&
+      // Safety validation (basic)
+      data.safety &&
+      typeof data.safety === 'object'
+    );
+  } catch (error) {
+    return false;
+  }
 }
 
 /**
@@ -135,7 +155,7 @@ export function transformJSONToPrompt(json: ImagePromptJSON): string {
   // Subject and educational focus
   promptParts.push(`${subject.primary} prominently featuring the letter "${subject.letterFocus}"`);
   
-  if (subject.secondary && subject.secondary.length > 0) {
+  if (subject.secondary && Array.isArray(subject.secondary) && subject.secondary.length > 0) {
     promptParts.push(`with ${subject.secondary.join(', ')}`);
   }
 
@@ -147,9 +167,13 @@ export function transformJSONToPrompt(json: ImagePromptJSON): string {
   }
 
   // Style and artistic treatment
-  promptParts.push(`rendered in ${style.artStyle} style with ${style.tone} tone`);
+  promptParts.push(`rendered in ${style.artStyle} style`);
   
-  if (style.visualMetaphors && style.visualMetaphors.length > 0) {
+  if (style.tone) {
+    promptParts.push(`with ${style.tone} tone`);
+  }
+  
+  if (style.visualMetaphors && Array.isArray(style.visualMetaphors) && style.visualMetaphors.length > 0) {
     promptParts.push(`incorporating visual metaphors: ${style.visualMetaphors.join(', ')}`);
   }
 

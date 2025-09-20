@@ -35,6 +35,11 @@ import { ProcessStatus, corsHeaders, log, generateRequestId } from '../_shared/t
 // Ensures all image prompts meet content safety standards for children's books
 import { appendSafeSpaceRules } from '../_shared/safeSpaceConfig.ts';
 
+// JSON Image Prompt Parser - Handles parsing and transforming structured JSON responses
+// parseImagePromptResponse: Parses AI JSON response and transforms to optimized text prompt
+// ParsedImagePrompt: Type for parsed results with validation status
+import { parseImagePromptResponse, type ParsedImagePrompt } from '../_shared/imagePromptParser.ts';
+
 // Remove hardcoded instructions - will fetch from agents table instead
 
 serve(async (req) => {
@@ -285,10 +290,10 @@ Please generate a specific, detailed image prompt that captures the visual eleme
     // Robustly extract text from GPT-5 response
     const choice = data?.choices?.[0] ?? {};
     const msg = choice.message ?? {};
-    let imagePrompt = '';
+    let rawResponse = '';
 
     if (Array.isArray(msg.content)) {
-      imagePrompt = msg.content
+      rawResponse = msg.content
         .map((part: any) => {
           if (typeof part === 'string') return part;
           if (typeof part?.text === 'string') return part.text;
@@ -299,12 +304,12 @@ Please generate a specific, detailed image prompt that captures the visual eleme
         .join('')
         .trim();
     } else if (typeof msg.content === 'string') {
-      imagePrompt = (msg.content as string).trim();
+      rawResponse = (msg.content as string).trim();
     }
 
-    // Validate that we got a prompt
-    if (!imagePrompt) {
-      const errorMsg = 'OpenAI returned empty image prompt';
+    // Validate that we got a response
+    if (!rawResponse) {
+      const errorMsg = 'OpenAI returned empty response';
       log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, {
         requestId,
         duration: aiDuration,
@@ -314,7 +319,37 @@ Please generate a specific, detailed image prompt that captures the visual eleme
       throw new Error(errorMsg);
     }
 
-    // Append safe space rules to the generated image prompt using extracted aspect ratio
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Parsing Graphics Designer response...', {
+      requestId,
+      responseLength: rawResponse.length,
+      letter: pageData.letter
+    });
+
+    // Parse the JSON response using the dedicated parser
+    const parsedResult: ParsedImagePrompt = parseImagePromptResponse(rawResponse);
+    
+    let imagePrompt = parsedResult.transformedText;
+    
+    // Log parsing results
+    if (parsedResult.isValid) {
+      log('INFO', ProcessStatus.COMPLETE, currentStep, 'Successfully parsed JSON image prompt', {
+        requestId,
+        jsonValid: true,
+        originalLength: rawResponse.length,
+        transformedLength: imagePrompt.length,
+        letter: pageData.letter
+      });
+    } else {
+      log('WARN', ProcessStatus.WARNING, currentStep, 'JSON parsing failed, using fallback text', {
+        requestId,
+        jsonValid: false,
+        parseError: parsedResult.parseError,
+        fallbackLength: imagePrompt.length,
+        letter: pageData.letter
+      });
+    }
+
+    // Append safe space rules to the final image prompt using extracted aspect ratio
     const enhancedImagePrompt = appendSafeSpaceRules(imagePrompt, aspectRatio);
 
     log('INFO', ProcessStatus.COMPLETE, currentStep, 'Image prompt generated successfully with safe space rules', { 
@@ -324,7 +359,9 @@ Please generate a specific, detailed image prompt that captures the visual eleme
       enhancedPromptLength: enhancedImagePrompt.length,
       tokensUsed: data.usage?.total_tokens,
       letter: pageData.letter,
-      aspectRatio: aspectRatio
+      aspectRatio: aspectRatio,
+      jsonParsed: parsedResult.isValid,
+      parseError: parsedResult.parseError || null
     });
 
     // Save the generated prompt to page_system_prompts table
@@ -346,7 +383,28 @@ Please generate a specific, detailed image prompt that captures the visual eleme
 
     const versionNumber = versionData || 1;
 
-    // Insert the generated prompt into page_system_prompts table with individual metadata columns
+    // Prepare metadata for database storage
+    const generationMetadata = {
+      json_parsing: {
+        is_valid: parsedResult.isValid,
+        parse_error: parsedResult.parseError || null,
+        raw_response_length: rawResponse.length,
+        json_schema_used: parsedResult.isValid ? 'ImagePromptJSON_v1' : null
+      },
+      ai_model: {
+        model: agentConfig.model,
+        tokens_used: data.usage?.total_tokens || 0,
+        duration_ms: aiDuration
+      },
+      prompt_processing: {
+        original_length: imagePrompt.length,
+        enhanced_length: enhancedImagePrompt.length,
+        safe_space_rules_applied: true,
+        aspect_ratio: aspectRatio
+      }
+    };
+
+    // Insert the generated prompt into page_system_prompts table with enhanced metadata
     const { error: insertError } = await supabaseClient
       .from('page_system_prompts')
       .insert({
@@ -355,11 +413,12 @@ Please generate a specific, detailed image prompt that captures the visual eleme
         user_id: userId,
         content: enhancedImagePrompt,
         version_number: versionNumber,
-        source_type: 'image_generation',
+        source_type: 'image_generation_json',
         is_latest: true,
         is_deployed: true,
         deployed_at: new Date().toISOString(),
         prompt_status: 'complete',
+        generation_metadata: generationMetadata,
         // Individual metadata columns
         prompt_type: 'image_generation',
         model: agentConfig.model,

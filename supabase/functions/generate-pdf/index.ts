@@ -8,113 +8,144 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Helper function to optimize image for PDF
-async function optimizeImageForPdf(imageBytes: ArrayBuffer): Promise<ArrayBuffer> {
-  // Simple optimization: reduce file size by using reasonable quality settings
-  // For production, you could implement actual image resizing/compression here
-  const originalSize = imageBytes.byteLength;
-  console.log(`Original image size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`);
-  
-  // Return as-is for now, but log the size for monitoring
-  return imageBytes;
-}
-
-// Helper function to process images in batches
-async function processImageBatch(
-  pdfDoc: any, 
-  pages: any[], 
-  pageImages: Map<string, string>, 
-  supabase: any, 
-  exportId: string, 
-  batchIndex: number, 
-  totalBatches: number
-) {
-  console.log(`Processing batch ${batchIndex + 1}/${totalBatches} (${pages.length} pages)`);
-  
-  // Update progress
-  await supabase
-    .from('exports')
-    .update({ 
-      export_status: 'in-progress',
-      error_message: `Processing batch ${batchIndex + 1}/${totalBatches}`,
-      updated_at: new Date().toISOString()
-    })
-    .eq('id', exportId);
-
-  const processedPages = [];
-  
-  for (const pageData of pages) {
-    const imageUrl = pageImages.get(pageData.id);
+// Background PDF generation function
+async function generatePdfInBackground(exportId: string, supabase: any, exportRecord: any, bookData: any, pageImages: Map<string, string>) {
+  try {
+    console.log('Starting background PDF generation for export:', exportId);
     
-    if (imageUrl) {
-      try {
-        console.log(`Processing page ${pageData.letter}: ${imageUrl}`);
-        
-        // Add authorization headers and better error handling
-        const imageResponse = await fetch(imageUrl, {
-          headers: {
-            'User-Agent': 'Supabase-Edge-Function/1.0',
-          },
-        });
-        
-        if (!imageResponse.ok) {
-          console.error(`Failed to fetch image for page ${pageData.letter}: ${imageResponse.status} ${imageResponse.statusText}`);
-          continue;
-        }
-        
-        const imageBytes = await imageResponse.arrayBuffer();
-        const optimizedBytes = await optimizeImageForPdf(imageBytes);
-        
-        let image;
-        
-        // Try to embed as JPEG first, then PNG
+    // Create PDF document
+    const pdfDoc = await PDFDocument.create();
+    const pages = bookData.pages || [];
+    const sortedPages = pages.sort((a, b) => a.page_number - b.page_number);
+    
+    console.log(`Processing ${sortedPages.length} pages...`);
+    let successCount = 0;
+    
+    for (const pageData of sortedPages) {
+      const imageUrl = pageImages.get(pageData.id);
+      
+      if (imageUrl) {
         try {
-          image = await pdfDoc.embedJpg(optimizedBytes);
-        } catch {
-          try {
-            image = await pdfDoc.embedPng(optimizedBytes);
-          } catch (e) {
-            console.log(`Failed to embed image for page ${pageData.letter}:`, e);
-            continue;
-          }
-        }
-
-        if (image) {
-          // Use standard page size and scale image to fit
-          const maxWidth = 612; // 8.5 inches at 72 DPI
-          const maxHeight = 792; // 11 inches at 72 DPI
+          console.log(`Processing page ${pageData.letter}: ${imageUrl}`);
           
-          // Calculate scaling to fit page while maintaining aspect ratio
-          const scaleX = maxWidth / image.width;
-          const scaleY = maxHeight / image.height;
-          const scale = Math.min(scaleX, scaleY, 1); // Don't upscale
-          
-          const scaledWidth = image.width * scale;
-          const scaledHeight = image.height * scale;
-          
-          const page = pdfDoc.addPage([maxWidth, maxHeight]);
-          
-          // Center the image on the page
-          const x = (maxWidth - scaledWidth) / 2;
-          const y = (maxHeight - scaledHeight) / 2;
-          
-          page.drawImage(image, {
-            x: x,
-            y: y,
-            width: scaledWidth,
-            height: scaledHeight,
+          const imageResponse = await fetch(imageUrl, {
+            headers: { 'User-Agent': 'Supabase-Edge-Function/1.0' },
           });
           
-          processedPages.push(pageData.letter);
+          if (!imageResponse.ok) {
+            console.error(`Failed to fetch image for page ${pageData.letter}: ${imageResponse.status}`);
+            continue;
+          }
+          
+          const imageBytes = await imageResponse.arrayBuffer();
+          console.log(`Image size for page ${pageData.letter}: ${(imageBytes.byteLength / 1024 / 1024).toFixed(2)} MB`);
+          
+          let image;
+          try {
+            image = await pdfDoc.embedJpg(imageBytes);
+          } catch {
+            try {
+              image = await pdfDoc.embedPng(imageBytes);
+            } catch (e) {
+              console.log(`Failed to embed image for page ${pageData.letter}:`, e);
+              continue;
+            }
+          }
+
+          if (image) {
+            // Use standard letter size and scale image to fit
+            const pageWidth = 612; // 8.5 inches at 72 DPI
+            const pageHeight = 792; // 11 inches at 72 DPI
+            
+            const scaleX = pageWidth / image.width;
+            const scaleY = pageHeight / image.height;
+            const scale = Math.min(scaleX, scaleY, 1); // Don't upscale
+            
+            const scaledWidth = image.width * scale;
+            const scaledHeight = image.height * scale;
+            
+            const page = pdfDoc.addPage([pageWidth, pageHeight]);
+            
+            // Center the image
+            const x = (pageWidth - scaledWidth) / 2;
+            const y = (pageHeight - scaledHeight) / 2;
+            
+            page.drawImage(image, {
+              x: x,
+              y: y,
+              width: scaledWidth,
+              height: scaledHeight,
+            });
+            
+            successCount++;
+            
+            // Update progress every few pages
+            if (successCount % 3 === 0) {
+              await supabase
+                .from('exports')
+                .update({ 
+                  error_message: `Processed ${successCount}/${sortedPages.length} pages`,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', exportId);
+            }
+          }
+        } catch (e) {
+          console.error(`Error processing page ${pageData.letter}:`, e);
         }
-      } catch (e) {
-        console.error(`Error processing image for page ${pageData.letter}:`, e);
       }
     }
+
+    if (successCount === 0) {
+      throw new Error('No images could be processed');
+    }
+
+    console.log(`Saving PDF with ${successCount} pages...`);
+    const pdfBytes = await pdfDoc.save();
+    
+    const fileName = `${exportRecord.user_id}/${exportRecord.content_id}/book-${Date.now()}.pdf`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('exports')
+      .upload(fileName, pdfBytes, {
+        contentType: 'application/pdf',
+        upsert: true
+      });
+
+    if (uploadError) {
+      throw new Error(`Upload failed: ${uploadError.message}`);
+    }
+
+    const { data: publicUrlData } = supabase.storage
+      .from('exports')
+      .getPublicUrl(fileName);
+
+    await supabase
+      .from('exports')
+      .update({ 
+        export_status: 'complete',
+        export_url: publicUrlData.publicUrl,
+        file_size_bytes: pdfBytes.length,
+        completed_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        error_message: null
+      })
+      .eq('id', exportId);
+
+    console.log(`PDF generation completed successfully. File size: ${(pdfBytes.length / 1024 / 1024).toFixed(2)} MB`);
+
+  } catch (error) {
+    console.error('Background PDF generation failed:', error);
+    
+    await supabase
+      .from('exports')
+      .update({ 
+        export_status: 'error',
+        error_message: error.message || 'PDF generation failed',
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', exportId);
   }
-  
-  console.log(`Batch ${batchIndex + 1} completed. Processed pages: ${processedPages.join(', ')}`);
-  return processedPages;
 }
 
 serve(async (req) => {
@@ -147,18 +178,17 @@ serve(async (req) => {
       );
     }
 
-    // Update status to in-progress
+    // Update status to in-progress immediately
     await supabase
       .from('exports')
       .update({ 
         export_status: 'in-progress',
+        error_message: 'Starting PDF generation...',
         updated_at: new Date().toISOString()
       })
       .eq('id', exportId);
 
-    console.log('Fetching book data for:', exportRecord.content_id);
-
-    // Fetch book data with pages and images
+    // Fetch book data
     const { data: bookData, error: bookError } = await supabase
       .from('books')
       .select(`
@@ -188,7 +218,7 @@ serve(async (req) => {
       );
     }
 
-    // Fetch images for all pages separately
+    // Fetch images
     let pageImages = new Map();
     if (bookData.pages && bookData.pages.length > 0) {
       const pageIds = bookData.pages.map(p => p.id);
@@ -206,145 +236,20 @@ serve(async (req) => {
       }
     }
 
-    console.log('Creating PDF document...');
+    // Start background processing - this continues after response is sent
+    EdgeRuntime.waitUntil(generatePdfInBackground(exportId, supabase, exportRecord, bookData, pageImages));
 
-    // Create PDF document
-    const pdfDoc = await PDFDocument.create();
-
-    // Process pages in batches to avoid CPU timeout
-    const pages = bookData.pages || [];
-    const sortedPages = pages.sort((a, b) => a.page_number - b.page_number);
-    console.log(`Processing ${sortedPages.length} pages in batches...`);
-
-    const BATCH_SIZE = 5; // Process 5 pages at a time
-    const batches = [];
-    for (let i = 0; i < sortedPages.length; i += BATCH_SIZE) {
-      batches.push(sortedPages.slice(i, i + BATCH_SIZE));
-    }
-
-    let totalProcessed = 0;
-    
-    // Process batches sequentially to avoid overwhelming the system
-    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
-      const batch = batches[batchIndex];
-      const processedPages = await processImageBatch(
-        pdfDoc, 
-        batch, 
-        pageImages, 
-        supabase, 
-        exportId, 
-        batchIndex, 
-        batches.length
-      );
-      totalProcessed += processedPages.length;
-      
-      // Small delay between batches to prevent CPU overload
-      if (batchIndex < batches.length - 1) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-    }
-
-    console.log(`Completed processing. Total pages processed: ${totalProcessed}/${sortedPages.length}`);
-
-    if (totalProcessed === 0) {
-      await supabase
-        .from('exports')
-        .update({ 
-          export_status: 'error',
-          error_message: 'No images found or all images failed to process',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', exportId);
-
-      return new Response(
-        JSON.stringify({ error: 'No images found or all images failed to process' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    console.log('Saving PDF...');
-
-    // Generate PDF bytes
-    const pdfBytes = await pdfDoc.save();
-    const fileName = `${exportRecord.user_id}/${exportRecord.content_id}/book-${Date.now()}.pdf`;
-
-    // Upload to storage
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('exports')
-      .upload(fileName, pdfBytes, {
-        contentType: 'application/pdf',
-        upsert: true
-      });
-
-    if (uploadError) {
-      console.error('Error uploading PDF:', uploadError);
-      await supabase
-        .from('exports')
-        .update({ 
-          export_status: 'error',
-          error_message: 'Failed to upload PDF',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', exportId);
-
-      return new Response(
-        JSON.stringify({ error: 'Failed to upload PDF' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Get public URL
-    const { data: publicUrlData } = supabase.storage
-      .from('exports')
-      .getPublicUrl(fileName);
-
-    // Update export record with completion
-    await supabase
-      .from('exports')
-      .update({ 
-        export_status: 'complete',
-        export_url: publicUrlData.publicUrl,
-        file_size_bytes: pdfBytes.length,
-        completed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', exportId);
-
-    console.log('PDF generation completed successfully');
-
+    // Return immediately
     return new Response(JSON.stringify({ 
       success: true,
-      exportUrl: publicUrlData.publicUrl,
-      fileSize: pdfBytes.length
+      message: 'PDF generation started in background'
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in generate-pdf function:', error);
+    console.error('Error starting PDF generation:', error);
     
-    // Try to update export status to error if we have the exportId
-    try {
-      const { exportId } = await req.json();
-      if (exportId) {
-        const supabase = createClient(
-          Deno.env.get('SUPABASE_URL')!, 
-          Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
-        );
-        
-        await supabase
-          .from('exports')
-          .update({ 
-            export_status: 'error',
-            error_message: error.message || 'Unknown error occurred',
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', exportId);
-      }
-    } catch (updateError) {
-      console.error('Failed to update export status:', updateError);
-    }
-
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

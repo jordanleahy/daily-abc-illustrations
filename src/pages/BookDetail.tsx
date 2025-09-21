@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -41,6 +42,7 @@ export default function BookDetail() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const queryClient = useQueryClient();
   const { currentPrompt, refreshData } = useSystemPrompt(id || '');
   const { pages } = useBookPages(id);
   const { data: book, isLoading: bookLoading, error: bookError, isFetched: bookFetched } = useBook(id);
@@ -207,6 +209,9 @@ export default function BookDetail() {
         toast.error('Failed to delete book');
         return;
       }
+
+      // Immediately invalidate the books cache to update UI
+      queryClient.invalidateQueries({ queryKey: ['books', user.id] });
 
       toast.success('Book deleted successfully');
       navigate('/books');

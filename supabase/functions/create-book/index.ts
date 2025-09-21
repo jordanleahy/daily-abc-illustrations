@@ -155,6 +155,7 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
           content: 'Please create the book based on our conversation.' 
         }
       ],
+      response_format: { type: "json_object" }, // Force JSON mode
     };
 
     // Use correct token parameter based on model
@@ -188,15 +189,30 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
     }
 
     const aiResponse = await response.json();
-    const generatedContent = aiResponse.choices[0].message.content;
+    console.log('Full AI response:', JSON.stringify(aiResponse, null, 2));
+    
+    const generatedContent = aiResponse.choices?.[0]?.message?.content;
+    const finishReason = aiResponse.choices?.[0]?.finish_reason;
     
     console.log('AI response received, parsing JSON...');
     console.log('Raw AI response content:', generatedContent);
     console.log('Response length:', generatedContent?.length || 0);
+    console.log('Finish reason:', finishReason);
+
+    // Check for empty or null content
+    if (!generatedContent || generatedContent.trim().length === 0) {
+      console.error('OpenAI returned empty content. Full response:', JSON.stringify(aiResponse, null, 2));
+      throw new Error(`OpenAI returned empty content. Finish reason: ${finishReason}. This may be due to content filtering or model issues.`);
+    }
 
     // Parse the JSON response
     let bookData;
     try {
+      // Since we forced JSON mode, try direct parsing first
+      bookData = JSON.parse(generatedContent);
+    } catch (parseError) {
+      console.log('Direct JSON parse failed, trying extraction...');
+      
       // Try to extract JSON if the response contains other text
       let jsonContent = generatedContent;
       
@@ -215,12 +231,14 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
         }
       }
       
-      console.log('Attempting to parse JSON content:', jsonContent.substring(0, 200) + '...');
-      bookData = JSON.parse(jsonContent);
-    } catch (parseError) {
-      console.error('Failed to parse AI response as JSON. Full response:', generatedContent);
-      console.error('Parse error:', parseError.message);
-      throw new Error(`AI response was not valid JSON: ${parseError.message}. Response: ${generatedContent.substring(0, 500)}`);
+      try {
+        console.log('Attempting to parse extracted JSON content:', jsonContent.substring(0, 200) + '...');
+        bookData = JSON.parse(jsonContent);
+      } catch (secondParseError) {
+        console.error('Failed to parse AI response as JSON. Full response:', generatedContent);
+        console.error('Parse error:', secondParseError.message);
+        throw new Error(`AI response was not valid JSON: ${secondParseError.message}. Response: ${generatedContent.substring(0, 500)}`);
+      }
     }
 
     // Validate the structure

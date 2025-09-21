@@ -4,19 +4,23 @@ import { formatTimeRemaining, formatFixedScheduleTime } from '@/utils/timeUtils'
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { useBookThumbnails } from '@/hooks/useBookThumbnails';
-import { Clock, Calendar, Hash, Image } from 'lucide-react';
+import { Clock, Calendar, Hash, Image, GripVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 interface DailyPublishedQueueCardProps {
   item: DailyPublishedWithBook;
   position: number;
   expectedActivationTime?: string;
+  isDraggable?: boolean;
 }
 
 export function DailyPublishedQueueCard({ 
   item, 
   position,
-  expectedActivationTime 
+  expectedActivationTime,
+  isDraggable = false
 }: DailyPublishedQueueCardProps) {
   const navigate = useNavigate();
   
@@ -25,6 +29,24 @@ export function DailyPublishedQueueCard({
   
   // Fallback to book thumbnail if SEO metadata is missing  
   const { data: bookThumbnail } = useBookThumbnails(item.book_id);
+
+  // Sortable functionality (only for draggable items)
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging
+  } = useSortable({ 
+    id: item.id,
+    disabled: !isDraggable
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
   const handleCardClick = () => {
     navigate(`/books/${item.book_id}`);
@@ -90,12 +112,30 @@ export function DailyPublishedQueueCard({
   const timingInfo = getTimingDisplay();
 
   return (
-    <Card 
-      className="overflow-hidden border-l-4 border-l-primary/20 hover:border-l-primary/50 transition-colors cursor-pointer hover:shadow-lg"
-      onClick={handleCardClick}
+    <div 
+      ref={setNodeRef}
+      style={style}
+      className={`${isDragging ? 'opacity-50' : ''}`}
     >
+      <Card 
+        className={`overflow-hidden border-l-4 border-l-primary/20 hover:border-l-primary/50 transition-colors cursor-pointer hover:shadow-lg ${
+          isDraggable ? 'relative' : ''
+        }`}
+        onClick={handleCardClick}
+      >
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
+          {/* Drag Handle (only for draggable items) */}
+          {isDraggable && (
+            <div 
+              className="flex-shrink-0 p-2 cursor-grab hover:bg-muted rounded-md transition-colors"
+              {...attributes}
+              {...listeners}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
           {/* OG Image with fallback to book thumbnail */}
           <div className="flex-shrink-0 w-32 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
             {seoMetadata?.og_image_url || bookThumbnail?.thumbnail_url ? (
@@ -159,5 +199,6 @@ export function DailyPublishedQueueCard({
         </div>
       </CardContent>
     </Card>
+    </div>
   );
 }

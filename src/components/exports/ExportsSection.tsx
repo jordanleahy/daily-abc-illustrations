@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Download, FileText, RotateCcw, Trash2, Globe, Eye, Copy } from 'lucide-react';
 import { useExports } from '@/hooks/useExports';
 import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
+import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { Export } from '@/types/export';
 import { ProcessStatus } from '@/types/process';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,6 +27,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const { user } = useAuth();
   const { exports, createExport, deleteExport, refetch } = useExports(contentType, contentId);
   const { data: expectedDate, isLoading: dateLoading } = useExpectedPublicationDate(contentId);
+  const { generateQRCode } = useBookQRCode(contentType === 'book' ? contentId : undefined);
   const [existingPublication, setExistingPublication] = useState<any>(null);
   const [isCheckingPublication, setIsCheckingPublication] = useState(false);
 
@@ -277,6 +279,26 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
        return;
      }
 
+     // Helper function to generate QR code after successful queue addition
+     const generateQRCodeSafely = async () => {
+       if (contentType === 'book' && generateQRCode) {
+         try {
+           await generateQRCode();
+           toast({
+             title: "QR Code Generated",
+             description: "QR code for your daily published link has been created automatically."
+           });
+         } catch (error) {
+           console.error('Failed to generate QR code:', error);
+           toast({
+             title: "QR Code Generation Failed",
+             description: "Your book was added to the queue, but QR code generation failed. You can generate it manually from the book details page.",
+             variant: "destructive"
+           });
+         }
+       }
+     };
+
      try {
        // Check if there's already a draft entry for this book
        if (existingPublication && existingPublication.status === 'draft') {
@@ -306,6 +328,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
          // Update local state
          setExistingPublication(updatedPublication);
+         
+         // Generate QR code automatically
+         await generateQRCodeSafely();
        } else {
          // Get next queue position
          const { data: nextPosition } = await supabase.rpc('get_next_queue_position');
@@ -335,6 +360,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
          // Update local state
          setExistingPublication(newPublication);
+         
+         // Generate QR code automatically
+         await generateQRCodeSafely();
        }
 
        // Open the queue page to show status

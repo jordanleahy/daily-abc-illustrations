@@ -139,13 +139,53 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
-  const handleDownload = (exportRecord: Export) => {
-    if (exportRecord.export_url) {
-      window.open(exportRecord.export_url, '_blank');
+  const handleDownload = async (exportRecord: Export) => {
+    if (!exportRecord.export_url) return;
+
+    // Try downloading via Supabase Storage (avoids some browser/extension blocks)
+    try {
+      const match = exportRecord.export_url.match(/\/object\/public\/exports\/(.*)$/);
+      const objectPath = match?.[1];
+
+      if (objectPath) {
+        const { data, error } = await supabase.storage.from('exports').download(objectPath);
+        if (!error && data) {
+          const blobUrl = URL.createObjectURL(data);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          const filename = objectPath.split('/').pop() || 'export.pdf';
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(blobUrl);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn('Programmatic download failed, falling back to opening URL.', e);
+    }
+
+    // Fallback: open the public URL (may be blocked by some extensions)
+    const opened = window.open(exportRecord.export_url, '_blank');
+    if (!opened) {
+      toast({
+        title: 'Download blocked by browser',
+        description: 'Your browser or an extension blocked the file. Please allow downloads from supabase.co or disable the blocker for this site.',
+        variant: 'destructive'
+      });
     }
   };
 
-  const handleDelete = async (exportRecord: Export) => {
+  const handleCopyPdfLink = async (exportRecord: Export) => {
+    if (!exportRecord.export_url) return;
+    try {
+      await navigator.clipboard.writeText(exportRecord.export_url);
+      toast({ title: 'Link copied!', description: 'PDF link copied to clipboard.' });
+    } catch (e) {
+      toast({ title: 'Copy failed', description: 'Unable to copy link. You can right-click the Download button and copy link address.', variant: 'destructive' });
+    }
+  };
     if (confirm('Are you sure you want to delete this export?')) {
       try {
         await deleteExport(exportRecord.id);
@@ -365,6 +405,16 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                     title="Download PDF"
                   >
                     <Download className="h-4 w-4" />
+                  </Button>
+                )}
+                {latestPdfExport.export_status === ProcessStatus.COMPLETE && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleCopyPdfLink(latestPdfExport)}
+                    title="Copy PDF link"
+                  >
+                    <Copy className="h-4 w-4" />
                   </Button>
                 )}
                 <Button

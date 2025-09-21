@@ -107,36 +107,7 @@ serve(async (req) => {
     // Append conversation context and JSON output requirements to agent's instructions
     const conversationAndFormatRequirements = `
 
-CONVERSATION CONTEXT:
-${conversationContext}
-
-REQUIRED OUTPUT FORMAT (JSON only, no other text):
-{
-  "book": {
-    "book_name": "Creative title based on the conversation theme",
-    "category": "Educational category (e.g., Animals, Science, Nature, etc.)",
-    "book_description": "Brief description of what children will learn",
-    "total_pages": 15
-  },
-  "pages": [
-    {
-      "letter": "A",
-      "page_number": 1,
-      "title": "Creative title starting with A",
-      "description": "Brief description of the concept",
-      "content": {
-        "mainConcept": "Primary learning concept for A",
-        "funFact": "Interesting fact about the concept",
-        "activity": "Simple activity or question for engagement"
-      }
-    }
-    // ... create pages for letters relevant to the conversation theme
-  ]
-}
-
-IMPORTANT: Analyze the conversation and determine how many letters have meaningful, distinct concepts to teach. Create pages only for letters that have substantial educational content related to the conversation theme. This could be anywhere from 10-26 pages depending on the conversation scope.
-
-CRITICAL: Return ONLY valid JSON, no additional text.`;
+${conversationContext}`;
 
     const bookCreationPrompt = agentConfig.instructions + conversationAndFormatRequirements;
 
@@ -155,7 +126,6 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
           content: 'Please create the book based on our conversation.' 
         }
       ],
-      response_format: { type: "json_object" }, // Force JSON mode
     };
 
     // Use correct token parameter based on model
@@ -189,56 +159,17 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
     }
 
     const aiResponse = await response.json();
-    console.log('Full AI response:', JSON.stringify(aiResponse, null, 2));
-    
-    const generatedContent = aiResponse.choices?.[0]?.message?.content;
-    const finishReason = aiResponse.choices?.[0]?.finish_reason;
+    const generatedContent = aiResponse.choices[0].message.content;
     
     console.log('AI response received, parsing JSON...');
-    console.log('Raw AI response content:', generatedContent);
-    console.log('Response length:', generatedContent?.length || 0);
-    console.log('Finish reason:', finishReason);
-
-    // Check for empty or null content
-    if (!generatedContent || generatedContent.trim().length === 0) {
-      console.error('OpenAI returned empty content. Full response:', JSON.stringify(aiResponse, null, 2));
-      throw new Error(`OpenAI returned empty content. Finish reason: ${finishReason}. This may be due to content filtering or model issues.`);
-    }
 
     // Parse the JSON response
     let bookData;
     try {
-      // Since we forced JSON mode, try direct parsing first
       bookData = JSON.parse(generatedContent);
     } catch (parseError) {
-      console.log('Direct JSON parse failed, trying extraction...');
-      
-      // Try to extract JSON if the response contains other text
-      let jsonContent = generatedContent;
-      
-      // Look for JSON block markers and extract content
-      const jsonMatch = generatedContent.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch) {
-        jsonContent = jsonMatch[1];
-        console.log('Extracted JSON from markdown block');
-      } else {
-        // Try to find JSON object boundaries
-        const startBrace = generatedContent.indexOf('{');
-        const lastBrace = generatedContent.lastIndexOf('}');
-        if (startBrace !== -1 && lastBrace !== -1 && lastBrace > startBrace) {
-          jsonContent = generatedContent.slice(startBrace, lastBrace + 1);
-          console.log('Extracted JSON from object boundaries');
-        }
-      }
-      
-      try {
-        console.log('Attempting to parse extracted JSON content:', jsonContent.substring(0, 200) + '...');
-        bookData = JSON.parse(jsonContent);
-      } catch (secondParseError) {
-        console.error('Failed to parse AI response as JSON. Full response:', generatedContent);
-        console.error('Parse error:', secondParseError.message);
-        throw new Error(`AI response was not valid JSON: ${secondParseError.message}. Response: ${generatedContent.substring(0, 500)}`);
-      }
+      console.error('Failed to parse AI response as JSON:', generatedContent);
+      throw new Error('AI response was not valid JSON');
     }
 
     // Validate the structure

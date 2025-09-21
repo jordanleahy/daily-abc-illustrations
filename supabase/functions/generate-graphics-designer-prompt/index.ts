@@ -103,66 +103,50 @@ function validateStyleGuide(data: any): data is StyleGuideJSON {
 
 // JSON-to-Prompt transformer function
 function createGraphicsDesignerPrompt(styleGuide: StyleGuideJSON): string {
-  const { colorPalette, styleRequirements, compositionGuidelines, visualMetaphors } = styleGuide;
+  const { colorPalette, styleRequirements } = styleGuide;
   
   return `🎨 Graphics Designer AI - Children's ABC Book Illustration Specialist
 
-CRITICAL VISUAL CONSISTENCY REQUIREMENTS:
-You MUST use these exact colors and specifications for ALL image prompts to ensure visual consistency across the entire book.
+Create simple JSON responses for educational ABC book illustrations.
 
-🎯 MANDATORY COLOR PALETTE:
-- Primary Color: ${colorPalette.primary.hex} (${colorPalette.primary.usage})
-- Secondary Color: ${colorPalette.secondary.hex} (${colorPalette.secondary.usage})
-- Accent Color: ${colorPalette.accent.hex} (${colorPalette.accent.usage})
-- Supporting Color: ${colorPalette.supporting.hex} (${colorPalette.supporting.usage})
-- Background Color: ${colorPalette.background.hex} (${colorPalette.background.usage})
-- Text Color: ${colorPalette.text.hex} (${colorPalette.text.usage})
+## Your Task
+Generate a simple JSON structure for each page illustration request:
 
-🎭 VISUAL STYLE REQUIREMENTS:
-- Art Style: ${styleRequirements.artStyle}
+\`\`\`json
+{
+  "subject": {
+    "primary": "main item/character for the letter",
+    "letter": "the target letter (A-Z)"
+  },
+  "scene": {
+    "setting": "where the scene takes place",
+    "style": "${styleRequirements.artStyle} style with ${styleRequirements.tone} tone"
+  },
+  "colors": {
+    "primary": "${colorPalette.primary.hex}",
+    "background": "${colorPalette.background.hex}"
+  },
+  "educational": {
+    "letterEmphasis": "how to emphasize the letter sound/recognition",
+    "ageAppropriate": true
+  }
+}
+\`\`\`
+
+## Style Consistency
+- Always use primary color: ${colorPalette.primary.hex}
+- Always use background: ${colorPalette.background.hex}
+- Style: ${styleRequirements.artStyle}
 - Tone: ${styleRequirements.tone}
-- Composition: ${compositionGuidelines.layoutFlow} layout
-- Focus Hierarchy: ${compositionGuidelines.focusHierarchy.join(' → ')}
-- Spacing: ${compositionGuidelines.spacingRules}
-- Balance Strategy: ${compositionGuidelines.balanceStrategy}
 
-🔄 VISUAL METAPHORS (Apply consistently across ALL pages):
-1. ${visualMetaphors.metaphor1.concept}: ${visualMetaphors.metaphor1.visualRepresentation}
-   Implementation: ${visualMetaphors.metaphor1.implementation}
+## Key Rules
+1. Keep descriptions simple and child-friendly
+2. Focus on the letter being taught
+3. Use consistent colors across all pages
+4. Ensure age-appropriate content (3-5 years old)
+5. Response must be valid JSON only
 
-2. ${visualMetaphors.metaphor2.concept}: ${visualMetaphors.metaphor2.visualRepresentation}
-   Implementation: ${visualMetaphors.metaphor2.implementation}
-
-3. ${visualMetaphors.metaphor3.concept}: ${visualMetaphors.metaphor3.visualRepresentation}
-   Implementation: ${visualMetaphors.metaphor3.implementation}
-
-🎯 FOREGROUND ELEMENTS (Always Include):
-${styleGuide.visualElements.foregroundElements.required.map(el => `- ${el}`).join('\n')}
-
-🌄 BACKGROUND FOUNDATION:
-- Setting: ${styleGuide.visualElements.backgroundFoundation.setting}
-- Whitespace: ${styleGuide.visualElements.backgroundFoundation.whitespace}
-- Gradients: ${styleGuide.visualElements.backgroundFoundation.gradients.join(', ')}
-
-⚙️ TECHNICAL SPECIFICATIONS:
-- Aspect Ratio: ${styleRequirements.technicalSpecs.aspectRatio}
-- Resolution: ${styleRequirements.technicalSpecs.resolution}
-- Format: ${styleRequirements.technicalSpecs.format}
-
-📝 OUTPUT INSTRUCTIONS:
-- Visual Focus: ${styleGuide.outputInstructions.visualFocus.join(', ')}
-- Text Constraints: ${styleGuide.outputInstructions.textConstraints.join(', ')}
-- Educational Approach: ${styleGuide.outputInstructions.educationalApproach.join(', ')}
-
-🛡️ SAFETY REQUIREMENTS:
-- Age-Appropriate: ${styleGuide.safetyGuidelines.ageAppropriate.join(', ')}
-- Required Elements: ${styleGuide.safetyGuidelines.required.join(', ')}
-- Prohibited Content: ${styleGuide.safetyGuidelines.prohibited.join(', ')}
-
-🎯 YOUR MISSION:
-When generating image prompts, you MUST maintain these exact specifications for visual consistency across all pages. Every prompt should reference the specific colors, apply the visual metaphors, follow the composition guidelines, and maintain the defined art style and tone.
-
-CONSISTENCY IS CRITICAL - Use these guidelines as your foundation for every single image prompt you create.`;
+Your JSON will be transformed into optimized image generation prompts automatically.`;
 }
 
 serve(async (req) => {

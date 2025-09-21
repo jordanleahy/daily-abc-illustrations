@@ -6,49 +6,19 @@
 export interface ImagePromptJSON {
   subject: {
     primary: string;
-    secondary?: string[];
-    letterFocus: string;
+    letter: string;
   };
   scene: {
     setting: string;
-    environment: string;
-    timeOfDay?: string;
-  };
-  style: {
-    artStyle: string;
-    tone: string;
-    visualMetaphors: string[];
-  };
-  lighting: {
-    primary: string;
-    mood: string;
-    shadows?: string;
-  };
-  composition: {
-    layout: string;
-    focusPoints: string[];
-    balance: string;
+    style: string;
   };
   colors: {
     primary: string;
-    secondary: string;
-    accent: string;
     background: string;
   };
   educational: {
     letterEmphasis: string;
-    learningObjective: string;
     ageAppropriate: boolean;
-  };
-  technical: {
-    aspectRatio: string;
-    resolution?: string;
-    format?: string;
-  };
-  safety: {
-    contentFlags: string[];
-    prohibitedElements: string[];
-    requiredElements: string[];
   };
 }
 
@@ -72,31 +42,22 @@ export function validateImagePromptJSON(data: any): data is ImagePromptJSON {
       data.subject &&
       typeof data.subject === 'object' &&
       typeof data.subject.primary === 'string' &&
-      typeof data.subject.letterFocus === 'string' &&
+      typeof data.subject.letter === 'string' &&
       // Scene validation
       data.scene &&
       typeof data.scene === 'object' &&
       typeof data.scene.setting === 'string' &&
-      typeof data.scene.environment === 'string' &&
-      // Style validation (basic)
-      data.style &&
-      typeof data.style === 'object' &&
-      typeof data.style.artStyle === 'string' &&
-      // Lighting validation (basic)
-      data.lighting &&
-      typeof data.lighting === 'object' &&
-      // Colors validation (basic)
+      typeof data.scene.style === 'string' &&
+      // Colors validation
       data.colors &&
       typeof data.colors === 'object' &&
-      // Educational validation (basic)
+      typeof data.colors.primary === 'string' &&
+      typeof data.colors.background === 'string' &&
+      // Educational validation
       data.educational &&
       typeof data.educational === 'object' &&
-      // Technical validation (basic)
-      data.technical &&
-      typeof data.technical === 'object' &&
-      // Safety validation (basic)
-      data.safety &&
-      typeof data.safety === 'object'
+      typeof data.educational.letterEmphasis === 'string' &&
+      typeof data.educational.ageAppropriate === 'boolean'
     );
   } catch (error) {
     return false;
@@ -137,90 +98,12 @@ export function extractJSON(rawResponse: string): string | null {
  * Transforms validated JSON into optimized image prompt text
  */
 export function transformJSONToPrompt(json: ImagePromptJSON): string {
-  const {
-    subject,
-    scene,
-    style,
-    lighting,
-    composition,
-    colors,
-    educational,
-    technical,
-    safety
-  } = json;
+  const { subject, scene, colors, educational } = json;
 
-  // Build the prompt in a structured way
-  const promptParts: string[] = [];
+  // Build a concise prompt focusing on essentials
+  const prompt = `A ${scene.style} illustration of ${subject.primary} prominently featuring the letter "${subject.letter}" in ${scene.setting}. ${educational.letterEmphasis}. Use primary color ${colors.primary} and background color ${colors.background}. Child-friendly, educational ABC book style, 1024x1024 square format.`;
 
-  // Subject and educational focus
-  promptParts.push(`${subject.primary} prominently featuring the letter "${subject.letterFocus}"`);
-  
-  if (subject.secondary && Array.isArray(subject.secondary) && subject.secondary.length > 0) {
-    promptParts.push(`with ${subject.secondary.join(', ')}`);
-  }
-
-  // Scene and environment
-  promptParts.push(`in ${scene.setting}, ${scene.environment}`);
-  
-  if (scene.timeOfDay) {
-    promptParts.push(`during ${scene.timeOfDay}`);
-  }
-
-  // Style and artistic treatment
-  promptParts.push(`rendered in ${style.artStyle} style`);
-  
-  if (style.tone) {
-    promptParts.push(`with ${style.tone} tone`);
-  }
-  
-  if (style.visualMetaphors && Array.isArray(style.visualMetaphors) && style.visualMetaphors.length > 0) {
-    promptParts.push(`incorporating visual metaphors: ${style.visualMetaphors.join(', ')}`);
-  }
-
-  // Lighting and mood
-  promptParts.push(`${lighting.primary} lighting creating ${lighting.mood} mood`);
-  
-  if (lighting.shadows) {
-    promptParts.push(`with ${lighting.shadows} shadows`);
-  }
-
-  // Composition details
-  promptParts.push(`using ${composition.layout} composition`);
-  
-  if (composition.focusPoints && composition.focusPoints.length > 0) {
-    promptParts.push(`focusing on ${composition.focusPoints.join(', ')}`);
-  }
-  
-  promptParts.push(`with ${composition.balance} balance`);
-
-  // Color specifications
-  promptParts.push(`Color palette: primary ${colors.primary}, secondary ${colors.secondary}, accent ${colors.accent}, background ${colors.background}`);
-
-  // Educational emphasis
-  promptParts.push(`Educational focus: ${educational.letterEmphasis} for ${educational.learningObjective}`);
-
-  // Technical specifications
-  promptParts.push(`Aspect ratio: ${technical.aspectRatio}`);
-  
-  if (technical.resolution) {
-    promptParts.push(`Resolution: ${technical.resolution}`);
-  }
-  
-  if (technical.format) {
-    promptParts.push(`Format: ${technical.format}`);
-  }
-
-  // Safety requirements
-  if (safety.requiredElements && safety.requiredElements.length > 0) {
-    promptParts.push(`Required elements: ${safety.requiredElements.join(', ')}`);
-  }
-  
-  if (safety.prohibitedElements && safety.prohibitedElements.length > 0) {
-    promptParts.push(`Avoid: ${safety.prohibitedElements.join(', ')}`);
-  }
-
-  // Join all parts into a coherent prompt
-  return promptParts.join(', ') + '.';
+  return prompt;
 }
 
 /**

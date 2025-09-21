@@ -1,70 +1,30 @@
 /**
- * JSON schema for structured image prompts from Graphics Designer Agent
- * This ensures consistent, parseable output that can be transformed into optimized text prompts
+ * Simplified JSON schema for structured image prompts from Graphics Designer Agent
+ * Focuses on essential elements for clear, concise image generation
  */
 export interface ImagePromptJSON {
-  /** Main subject/character of the image */
+  /** Main subject and letter focus */
   subject: {
     primary: string;
-    secondary?: string[];
-    letterFocus: string;
+    letter: string;
   };
   
-  /** Scene setting and environment */
+  /** Scene description */
   scene: {
     setting: string;
-    environment: string;
-    timeOfDay?: string;
+    style: string;
   };
   
-  /** Visual style and artistic treatment */
-  style: {
-    artStyle: string;
-    tone: string;
-    visualMetaphors: string[];
-  };
-  
-  /** Lighting conditions and mood */
-  lighting: {
-    primary: string;
-    mood: string;
-    shadows?: string;
-  };
-  
-  /** Layout and positioning details */
-  composition: {
-    layout: string;
-    focusPoints: string[];
-    balance: string;
-  };
-  
-  /** Specific colors from the style guide */
+  /** Key colors for consistency */
   colors: {
     primary: string;
-    secondary: string;
-    accent: string;
     background: string;
   };
   
-  /** Educational elements for learning */
+  /** Educational focus */
   educational: {
     letterEmphasis: string;
-    learningObjective: string;
     ageAppropriate: boolean;
-  };
-  
-  /** Technical specifications */
-  technical: {
-    aspectRatio: string;
-    resolution?: string;
-    format?: string;
-  };
-  
-  /** Safety and content guidelines */
-  safety: {
-    contentFlags: string[];
-    prohibitedElements: string[];
-    requiredElements: string[];
   };
 }
 

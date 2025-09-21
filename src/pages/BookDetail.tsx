@@ -25,7 +25,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
-import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
@@ -48,6 +48,7 @@ export default function BookDetail() {
   const isMobile = useIsMobile();
   const [viewMode, setViewMode] = useState<'admin' | 'user'>('admin');
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
+  const [generateAllPromptsLoading, setGenerateAllPromptsLoading] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   
@@ -145,6 +146,21 @@ export default function BookDetail() {
       }]);
     } finally {
       setStyleGuideLoading(false);
+    }
+  };
+
+  const generateAllPagePrompts = async () => {
+    if (!book || !user) return;
+    
+    setGenerateAllPromptsLoading(true);
+    try {
+      // Placeholder implementation
+      toast.success('Generate All Page Prompts functionality coming soon!');
+    } catch (error: any) {
+      console.error('Error:', error);
+      toast.error('An error occurred while generating page prompts');
+    } finally {
+      setGenerateAllPromptsLoading(false);
     }
   };
 
@@ -326,6 +342,21 @@ export default function BookDetail() {
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <Palette className="w-4 h-4" />
+                      )}
+                    </Button>
+
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={generateAllPagePrompts}
+                      disabled={generateAllPromptsLoading}
+                      title="Generate All Page Prompts"
+                      aria-label="Generate All Page Prompts"
+                    >
+                      {generateAllPromptsLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <FileText className="w-4 h-4" />
                       )}
                     </Button>
                     

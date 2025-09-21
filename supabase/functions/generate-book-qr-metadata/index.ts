@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
-import { qrcode } from "https://deno.land/x/qrcode@v2.0.0/mod.ts";
+import { qrcodegen } from "https://deno.land/x/qrcodegen@1.8.0/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -95,10 +95,14 @@ serve(async (req) => {
     
     let qrSvg: string;
     try {
-      qrSvg = await qrcode(publicUrl, { 
-        output: "svg",
-        size: 256 
-      });
+      // Generate QR using qrcodegen to ensure SVG output
+      const qr = qrcodegen.QrCode.encodeText(publicUrl, qrcodegen.QrCode.Ecc.M);
+      const border = qrCodeConfig.margin ?? 2;
+      qrSvg = qr.toSvgString(border);
+      // Enforce explicit width/height
+      if (qrSvg.startsWith('<svg ')) {
+        qrSvg = qrSvg.replace('<svg ', `<svg width="${qrCodeConfig.size}" height="${qrCodeConfig.size}" `);
+      }
       console.log('QR SVG generated, length:', qrSvg.length);
       console.log('QR SVG preview:', qrSvg.substring(0, 100) + '...');
     } catch (qrError) {
@@ -108,7 +112,7 @@ serve(async (req) => {
     
     // Validate SVG content
     if (!qrSvg || typeof qrSvg !== 'string' || !qrSvg.includes('<svg')) {
-      console.error('Invalid QR SVG generated:', qrSvg);
+      console.error('Invalid QR SVG generated:', (qrSvg && typeof qrSvg === 'string') ? qrSvg.substring(0, 200) + '...' : String(qrSvg));
       throw new Error('Generated QR code is not a valid SVG');
     }
     

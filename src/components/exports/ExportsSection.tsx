@@ -186,6 +186,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       toast({ title: 'Copy failed', description: 'Unable to copy link. You can right-click the Download button and copy link address.', variant: 'destructive' });
     }
   };
+
+  const handleDelete = async (exportRecord: Export) => {
     if (confirm('Are you sure you want to delete this export?')) {
       try {
         await deleteExport(exportRecord.id);

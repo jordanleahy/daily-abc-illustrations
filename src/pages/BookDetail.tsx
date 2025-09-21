@@ -32,7 +32,7 @@ import { toast } from 'sonner';
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
 import { OpenGraphEditor } from "@/components/book/OpenGraphEditor";
-import { BookQRCodeSection } from "@/components/book/BookQRCodeSection";
+// import { BookQRCodeSection } from "@/components/book/BookQRCodeSection"; // Temporarily disabled
 import { ExportsSection } from '@/components/exports/ExportsSection';
 
 import { PageImageSection } from "@/components/PageImageSection";
@@ -546,8 +546,8 @@ export default function BookDetail() {
                   bookDescription={book.book_description}
                 />
 
-                {/* QR Code Section */}
-                <BookQRCodeSection bookId={book.id} />
+// Temporarily disabled QR Code section to isolate the error
+{/* <BookQRCodeSection bookId={book.id} /> */}
 
                 {/* System Prompt Section */}
                 <SystemPromptSection 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import QRCode from 'qrcode';
+// import QRCode from 'qrcode'; // Temporarily disabled to isolate error
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { useDailyPublishedById } from './useDailyPublishedById';
@@ -92,17 +92,19 @@ export const useBookQRCode = (bookId: string | undefined) => {
       }
 
       try {
-        const qrDataURL = await QRCode.toDataURL(qrRecord.public_url, {
-          width: qrRecord.qr_code_config?.size || 256,
-          margin: qrRecord.qr_code_config?.margin || 2,
-          color: {
-            dark: qrRecord.qr_code_config?.color?.dark || '#000000',
-            light: qrRecord.qr_code_config?.color?.light || '#FFFFFF'
-          },
-          errorCorrectionLevel: qrRecord.qr_code_config?.errorCorrectionLevel || 'M'
-        });
+        // Temporarily disabled QRCode generation to isolate error
+        // const qrDataURL = await QRCode.toDataURL(qrRecord.public_url, {
+        //   width: qrRecord.qr_code_config?.size || 256,
+        //   margin: qrRecord.qr_code_config?.margin || 2,
+        //   color: {
+        //     dark: qrRecord.qr_code_config?.color?.dark || '#000000',
+        //     light: qrRecord.qr_code_config?.color?.light || '#FFFFFF'
+        //   },
+        //   errorCorrectionLevel: qrRecord.qr_code_config?.errorCorrectionLevel || 'M'
+        // });
         
-        setQrCodeImage(qrDataURL);
+        // setQrCodeImage(qrDataURL);
+        setQrCodeImage('data:image/png;base64,placeholder'); // Placeholder
       } catch (error) {
         console.error('Error generating QR code image:', error);
         setQrCodeImage('');

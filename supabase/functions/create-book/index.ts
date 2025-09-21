@@ -191,14 +191,36 @@ CRITICAL: Return ONLY valid JSON, no additional text.`;
     const generatedContent = aiResponse.choices[0].message.content;
     
     console.log('AI response received, parsing JSON...');
+    console.log('Raw AI response content:', generatedContent);
+    console.log('Response length:', generatedContent?.length || 0);
 
     // Parse the JSON response
     let bookData;
     try {
-      bookData = JSON.parse(generatedContent);
+      // Try to extract JSON if the response contains other text
+      let jsonContent = generatedContent;
+      
+      // Look for JSON block markers and extract content
+      const jsonMatch = generatedContent.match(/```json\s*([\s\S]*?)\s*```/);
+      if (jsonMatch) {
+        jsonContent = jsonMatch[1];
+        console.log('Extracted JSON from markdown block');
+      } else {
+        // Try to find JSON object boundaries
+        const startBrace = generatedContent.indexOf('{');
+        const lastBrace = generatedContent.lastIndexOf('}');
+        if (startBrace !== -1 && lastBrace !== -1 && lastBrace > startBrace) {
+          jsonContent = generatedContent.slice(startBrace, lastBrace + 1);
+          console.log('Extracted JSON from object boundaries');
+        }
+      }
+      
+      console.log('Attempting to parse JSON content:', jsonContent.substring(0, 200) + '...');
+      bookData = JSON.parse(jsonContent);
     } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', generatedContent);
-      throw new Error('AI response was not valid JSON');
+      console.error('Failed to parse AI response as JSON. Full response:', generatedContent);
+      console.error('Parse error:', parseError.message);
+      throw new Error(`AI response was not valid JSON: ${parseError.message}. Response: ${generatedContent.substring(0, 500)}`);
     }
 
     // Validate the structure

@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import { useAuth } from '@/hooks/useAuth';
+import { InlineQRCode } from '@/components/book/InlineQRCode';
 import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';
 import { useHasRole } from '@/hooks/useUserRole';
@@ -32,7 +33,6 @@ import { toast } from 'sonner';
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
 import { OpenGraphEditor } from "@/components/book/OpenGraphEditor";
-import { BookQRCodeSection } from "@/components/book/BookQRCodeSection";
 import { ExportsSection } from '@/components/exports/ExportsSection';
 
 import { PageImageSection } from "@/components/PageImageSection";
@@ -523,18 +523,28 @@ export default function BookDetail() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      Created {new Date(book.created_at).toLocaleDateString()}
+                  <div className="flex flex-col md:flex-row gap-6">
+                    {/* Left side - Book metadata */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          Created {new Date(book.created_at).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          {book.category}
+                        </div>
+                         <Badge variant={book?.status === 'published' ? 'default' : 'secondary'}>
+                           {book?.status}
+                         </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      {book.category}
+                    
+                    {/* Right side - QR Code */}
+                    <div className="flex justify-center md:justify-end">
+                      <InlineQRCode bookId={book.id} />
                     </div>
-                     <Badge variant={book?.status === 'published' ? 'default' : 'secondary'}>
-                       {book?.status}
-                     </Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -546,8 +556,6 @@ export default function BookDetail() {
                   bookDescription={book.book_description}
                 />
 
-                {/* QR Code Section */}
-                <BookQRCodeSection bookId={book.id} />
 
                 {/* System Prompt Section */}
                 <SystemPromptSection 

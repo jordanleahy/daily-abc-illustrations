@@ -26,7 +26,7 @@ import { Send, BookOpen, ExternalLink, Image, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PageLayout } from '@/components/layout';
 import { useAuth } from '@/hooks/useAuth';
-import { useActiveDailyPublished } from '@/hooks/useActiveDailyPublished';
+import { useDailyPublished } from '@/hooks/useDailyPublished';
 import { toast } from 'sonner';
 
 /**
@@ -57,7 +57,7 @@ interface Message {
  */
 const Index = () => {
   const { session, isAuthenticated, loading } = useAuth();
-  const { data: activeDaily, isLoading: isDailyLoading } = useActiveDailyPublished();
+  const { data: activeDaily, isLoading: isDailyLoading } = useDailyPublished();
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');

@@ -15,12 +15,12 @@ export const useDailyPublished = () => {
         .select('*')
         .eq('is_active', true)
         .gt('expires_at', new Date().toISOString())
-        .order('published_at', { ascending: false })
+        .order('queue_position', { ascending: true })
         .limit(1)
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching daily published content:', error);
+        console.error('Error fetching active daily published content:', error);
         throw error;
       }
 

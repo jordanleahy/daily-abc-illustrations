@@ -78,18 +78,7 @@ serve(async (req) => {
       publicUrl = `https://dailyabcillustrations.com/preview/${bookId}`;
     }
 
-    // Check if QR record already exists
-    const { data: existingQR, error: qrError } = await supabase
-      .from('book_qr_codes')
-      .select('*')
-      .eq('book_id', bookId)
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (qrError && qrError.code !== 'PGRST116') { // PGRST116 = no rows found
-      throw qrError;
-    }
-
+    // Generate QR code configuration
     const qrCodeConfig = {
       url: publicUrl,
       size: 256,
@@ -112,57 +101,37 @@ serve(async (req) => {
     const qrSvg = qrCode.svg();
     const qrDataUrl = `data:image/svg+xml;base64,${btoa(qrSvg)}`;
 
-    let qrResult;
+    // Update the book record with QR code data
+    console.log('Updating book with QR code data');
+    const { data: qrResult, error: qrError } = await supabase
+      .from('books')
+      .update({
+        qr_code_public_url: publicUrl,
+        qr_code_image: qrDataUrl,
+        qr_code_config: qrCodeConfig,
+        qr_code_generated_at: new Date().toISOString()
+      })
+      .eq('id', bookId)
+      .eq('user_id', user.id)
+      .select()
+      .single();
 
-    if (existingQR) {
-      // Update existing QR code
-      const { data, error } = await supabase
-        .from('book_qr_codes')
-        .update({
-          public_url: publicUrl,
-          daily_published_id: dailyPublished?.id || null,
-          qr_code_config: qrCodeConfig,
-          qr_code_image: qrDataUrl,
-          is_active: true,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', existingQR.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      qrResult = data;
-    } else {
-      // Create new QR code record
-      const { data, error } = await supabase
-        .from('book_qr_codes')
-        .insert({
-          book_id: bookId,
-          user_id: user.id,
-          daily_published_id: dailyPublished?.id || null,
-          public_url: publicUrl,
-          qr_code_config: qrCodeConfig,
-          qr_code_image: qrDataUrl,
-          generation_status: 'complete',
-          is_active: true
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-      qrResult = data;
+    if (qrError) {
+      console.error('Error updating book with QR code:', qrError);
+      throw new Error(`Failed to update book with QR code: ${qrError.message}`);
     }
 
-    console.log('QR metadata generated successfully:', qrResult.id);
-
+    console.log('QR code generated successfully for book:', qrResult);
+    
     return new Response(JSON.stringify({
       success: true,
       data: {
-        id: qrResult.id,
-        publicUrl,
-        qrCodeConfig,
-        dailyPublishedStatus: dailyPublished?.status || null,
-        queuePosition: dailyPublished?.queue_position || null
+        bookId: bookId,
+        publicUrl: publicUrl,
+        qrCodeConfig: qrCodeConfig,
+        qrCodeImage: qrDataUrl,
+        dailyPublishedId: dailyPublished?.id || null,
+        generatedAt: new Date().toISOString()
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

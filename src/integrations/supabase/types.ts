@@ -88,67 +88,6 @@ export type Database = {
           },
         ]
       }
-      book_qr_codes: {
-        Row: {
-          book_id: string
-          created_at: string | null
-          daily_published_id: string | null
-          generation_status: string | null
-          id: string
-          is_active: boolean | null
-          public_url: string
-          qr_code_config: Json | null
-          updated_at: string | null
-          user_id: string
-        }
-        Insert: {
-          book_id: string
-          created_at?: string | null
-          daily_published_id?: string | null
-          generation_status?: string | null
-          id?: string
-          is_active?: boolean | null
-          public_url: string
-          qr_code_config?: Json | null
-          updated_at?: string | null
-          user_id: string
-        }
-        Update: {
-          book_id?: string
-          created_at?: string | null
-          daily_published_id?: string | null
-          generation_status?: string | null
-          id?: string
-          is_active?: boolean | null
-          public_url?: string
-          qr_code_config?: Json | null
-          updated_at?: string | null
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "book_qr_codes_book_id_fkey"
-            columns: ["book_id"]
-            isOneToOne: false
-            referencedRelation: "books"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "book_qr_codes_daily_published_id_fkey"
-            columns: ["daily_published_id"]
-            isOneToOne: false
-            referencedRelation: "active_daily_published"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "book_qr_codes_daily_published_id_fkey"
-            columns: ["daily_published_id"]
-            isOneToOne: false
-            referencedRelation: "daily_published"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       book_system_prompts: {
         Row: {
           book_id: string
@@ -277,6 +216,10 @@ export type Database = {
           current_system_prompt_id: string | null
           id: string
           pdf_url: string | null
+          qr_code_config: Json | null
+          qr_code_generated_at: string | null
+          qr_code_image: string | null
+          qr_code_public_url: string | null
           status: Database["public"]["Enums"]["publication_status"]
           total_pages: number | null
           updated_at: string
@@ -290,6 +233,10 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           pdf_url?: string | null
+          qr_code_config?: Json | null
+          qr_code_generated_at?: string | null
+          qr_code_image?: string | null
+          qr_code_public_url?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
           total_pages?: number | null
           updated_at?: string
@@ -303,6 +250,10 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           pdf_url?: string | null
+          qr_code_config?: Json | null
+          qr_code_generated_at?: string | null
+          qr_code_image?: string | null
+          qr_code_public_url?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
           total_pages?: number | null
           updated_at?: string

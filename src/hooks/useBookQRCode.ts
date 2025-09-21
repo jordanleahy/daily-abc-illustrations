@@ -1,39 +1,31 @@
-import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-// import QRCode from 'qrcode'; // Temporarily disabled to isolate error
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
-import { useDailyPublishedById } from './useDailyPublishedById';
-import { QRCodeData, QRCodeDisplayStatus, BookQRCode, QRCodeConfig } from '@/types/bookQRCode';
+import { QRCodeData, QRCodeDisplayStatus, QRCodeConfig } from '@/types/bookQRCode';
 import { toast } from 'sonner';
 
 export const useBookQRCode = (bookId: string | undefined) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [qrCodeImage, setQrCodeImage] = useState<string>('');
 
-  // Get daily published data for this book
-  const { data: qrRecord, isLoading: qrLoading, error: qrError } = useQuery({
-    queryKey: ['book-qr-code', bookId],
+  // Get book data including QR code information
+  const { data: bookData, isLoading: qrLoading, error: qrError } = useQuery({
+    queryKey: ['book-with-qr', bookId],
     queryFn: async () => {
       if (!bookId || !user?.id) return null;
 
       const { data, error } = await supabase
-        .from('book_qr_codes')
+        .from('books')
         .select('*')
-        .eq('book_id', bookId)
+        .eq('id', bookId)
         .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
+        .single();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         throw error;
       }
 
-      return data ? {
-        ...data,
-        qr_code_config: data.qr_code_config as any as QRCodeConfig
-      } as BookQRCode : null;
+      return data;
     },
     enabled: !!(bookId && user?.id),
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -74,7 +66,8 @@ export const useBookQRCode = (bookId: string | undefined) => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['book-qr-code', bookId] });
+      queryClient.invalidateQueries({ queryKey: ['book-with-qr', bookId] });
+      queryClient.invalidateQueries({ queryKey: ['books'] });
       toast.success('QR code generated successfully');
     },
     onError: (error) => {
@@ -83,46 +76,16 @@ export const useBookQRCode = (bookId: string | undefined) => {
     }
   });
 
-  // Generate QR code image when we have a public URL
-  useEffect(() => {
-    const generateQRImage = async () => {
-      if (!qrRecord?.public_url) {
-        setQrCodeImage('');
-        return;
-      }
-
-      try {
-        // Temporarily disabled QRCode generation to isolate error
-        // const qrDataURL = await QRCode.toDataURL(qrRecord.public_url, {
-        //   width: qrRecord.qr_code_config?.size || 256,
-        //   margin: qrRecord.qr_code_config?.margin || 2,
-        //   color: {
-        //     dark: qrRecord.qr_code_config?.color?.dark || '#000000',
-        //     light: qrRecord.qr_code_config?.color?.light || '#FFFFFF'
-        //   },
-        //   errorCorrectionLevel: qrRecord.qr_code_config?.errorCorrectionLevel || 'M'
-        // });
-        
-        // setQrCodeImage(qrDataURL);
-        setQrCodeImage('data:image/png;base64,placeholder'); // Placeholder
-      } catch (error) {
-        console.error('Error generating QR code image:', error);
-        setQrCodeImage('');
-      }
-    };
-
-    generateQRImage();
-  }, [qrRecord]);
 
   // Determine display status
   const status: QRCodeDisplayStatus = (dailyPublishedData?.status as QRCodeDisplayStatus) || 'not_published';
 
   // Download QR code function
   const downloadQRCode = () => {
-    if (!qrCodeImage) return;
+    if (!bookData?.qr_code_image) return;
 
     const link = document.createElement('a');
-    link.href = qrCodeImage;
+    link.href = bookData.qr_code_image;
     link.download = `qr-code-${bookId}.png`;
     document.body.appendChild(link);
     link.click();
@@ -131,10 +94,10 @@ export const useBookQRCode = (bookId: string | undefined) => {
 
   // Copy URL function
   const copyPublicUrl = async () => {
-    if (!qrRecord?.public_url) return;
+    if (!bookData?.qr_code_public_url) return;
 
     try {
-      await navigator.clipboard.writeText(qrRecord.public_url);
+      await navigator.clipboard.writeText(bookData.qr_code_public_url);
       toast.success('URL copied to clipboard');
     } catch (error) {
       console.error('Error copying URL:', error);
@@ -143,12 +106,13 @@ export const useBookQRCode = (bookId: string | undefined) => {
   };
 
   const qrCodeData: QRCodeData = {
-    qrCodeImage,
-    publicUrl: qrRecord?.public_url || '',
+    qrCodeImage: bookData?.qr_code_image || '',
+    publicUrl: bookData?.qr_code_public_url || '',
     status,
     queuePosition: dailyPublishedData?.queue_position,
     isLoading: qrLoading || generateQRMutation.isPending,
-    error: qrError?.message || generateQRMutation.error?.message
+    error: qrError?.message || generateQRMutation.error?.message,
+    generatedAt: bookData?.qr_code_generated_at
   };
 
   return {
@@ -156,7 +120,7 @@ export const useBookQRCode = (bookId: string | undefined) => {
     generateQRCode: () => bookId && generateQRMutation.mutate(bookId),
     downloadQRCode,
     copyPublicUrl,
-    hasQRCode: !!qrRecord,
+    hasQRCode: !!(bookData?.qr_code_public_url && bookData?.qr_code_image),
     isGenerating: generateQRMutation.isPending
   };
 };

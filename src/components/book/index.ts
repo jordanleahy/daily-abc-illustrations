@@ -4,4 +4,4 @@ export { VersionHistoryModal } from './VersionHistoryModal';
 export { OpenGraphEditor } from './OpenGraphEditor';
 export { StyleGuideViewer } from './StyleGuideViewer';
 export { IllustrationConfigEditor } from './IllustrationConfigEditor';
-// export { BookQRCodeSection } from './BookQRCodeSection'; // Temporarily disabled
+export { BookQRCodeSection } from './BookQRCodeSection';

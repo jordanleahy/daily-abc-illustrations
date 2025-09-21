@@ -1,7 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
-import { renderSVG } from 'https://esm.sh/uqr@0.1.4';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -90,33 +89,56 @@ serve(async (req) => {
       errorCorrectionLevel: 'M' as const
     };
 
-    // Generate QR code server-side using Deno-compatible library
+    // Generate QR code using QR Server API for reliability
     console.log('Generating QR code for URL:', publicUrl);
     
     let qrSvg: string;
     try {
-      // Generate QR using uqr library which works universally across runtimes
-      qrSvg = renderSVG(publicUrl, {
-        ecc: 'M', // Error correction level
-        border: qrCodeConfig.margin ?? 2,
-      });
+      // Use QR Server API which is more reliable than client libraries
+      const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?format=svg&size=${qrCodeConfig.size}x${qrCodeConfig.size}&margin=${qrCodeConfig.margin}&ecc=M&data=${encodeURIComponent(publicUrl)}`;
       
-      // Add explicit width/height to the SVG for proper sizing
-      if (qrSvg.startsWith('<svg ')) {
-        qrSvg = qrSvg.replace('<svg ', `<svg width="${qrCodeConfig.size}" height="${qrCodeConfig.size}" `);
+      console.log('Fetching QR code from API:', qrApiUrl);
+      
+      const qrResponse = await fetch(qrApiUrl);
+      
+      if (!qrResponse.ok) {
+        throw new Error(`QR API returned ${qrResponse.status}: ${qrResponse.statusText}`);
       }
       
-      console.log('QR SVG generated, length:', qrSvg.length);
-      console.log('QR SVG preview:', qrSvg.substring(0, 100) + '...');
+      qrSvg = await qrResponse.text();
+      
+      // Validate the response is actually SVG
+      if (!qrSvg || !qrSvg.trim().startsWith('<svg') || !qrSvg.includes('</svg>')) {
+        console.error('Invalid SVG response from QR API:', qrSvg?.substring(0, 200));
+        throw new Error('QR API returned invalid SVG content');
+      }
+      
+      console.log('QR SVG generated successfully, length:', qrSvg.length);
+      console.log('QR SVG preview:', qrSvg.substring(0, 150) + '...');
+      
     } catch (qrError) {
       console.error('Error generating QR code:', qrError);
-      throw new Error(`Failed to generate QR code: ${qrError.message}`);
-    }
-    
-    // Validate SVG content
-    if (!qrSvg || typeof qrSvg !== 'string' || !qrSvg.includes('<svg')) {
-      console.error('Invalid QR SVG generated:', (qrSvg && typeof qrSvg === 'string') ? qrSvg.substring(0, 200) + '...' : String(qrSvg));
-      throw new Error('Generated QR code is not a valid SVG');
+      
+      // Retry once with a smaller size if the first attempt fails
+      try {
+        console.log('Retrying QR generation with fallback parameters...');
+        const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?format=svg&size=200x200&margin=1&ecc=L&data=${encodeURIComponent(publicUrl)}`;
+        const retryResponse = await fetch(fallbackUrl);
+        
+        if (retryResponse.ok) {
+          qrSvg = await retryResponse.text();
+          if (qrSvg && qrSvg.trim().startsWith('<svg')) {
+            console.log('QR code generated successfully on retry');
+          } else {
+            throw new Error('Retry also returned invalid SVG');
+          }
+        } else {
+          throw new Error(`Retry failed: ${retryResponse.status}`);
+        }
+      } catch (retryError) {
+        console.error('QR generation retry also failed:', retryError);
+        throw new Error(`Failed to generate QR code: ${qrError.message}. Retry failed: ${retryError.message}`);
+      }
     }
     
     // Convert SVG to data URL

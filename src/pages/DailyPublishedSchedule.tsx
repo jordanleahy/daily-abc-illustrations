@@ -2,6 +2,7 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { MetaHead } from '@/components/common/MetaHead';
 import { useDailyPublishedQueue } from '@/hooks/useDailyPublishedQueue';
 import { useReorderQueue } from '@/hooks/useReorderQueue';
+import { useExpireContent } from '@/hooks/useExpireContent';
 import { DailyPublishedQueueCard } from '@/components/daily-published/DailyPublishedQueueCard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AlertCircle, Calendar } from 'lucide-react';
@@ -22,14 +23,28 @@ import {
   sortableKeyboardCoordinates,
   verticalListSortingStrategy
 } from '@dnd-kit/sortable';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 
 const DailyPublishedSchedule = () => {
   const { data: queueItems, isLoading, error } = useDailyPublishedQueue();
   const reorderMutation = useReorderQueue();
+  const expireMutation = useExpireContent();
   
   // Local state for optimistic updates during drag
   const [optimisticItems, setOptimisticItems] = useState<DailyPublishedWithBook[] | undefined>(undefined);
+  
+  // Auto-expire content on component mount and periodically
+  useEffect(() => {
+    // Check for expired content when the component mounts
+    expireMutation.mutate();
+    
+    // Set up periodic checks every 2 minutes
+    const interval = setInterval(() => {
+      expireMutation.mutate();
+    }, 2 * 60 * 1000);
+    
+    return () => clearInterval(interval);
+  }, []);
   
   // Use optimistic items if available, fallback to actual data
   const displayItems = optimisticItems || queueItems;

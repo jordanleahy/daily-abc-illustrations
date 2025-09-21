@@ -3,12 +3,11 @@ import { Button } from '@/components/ui/button';
 import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
 import { PublicPageImage } from './PublicPageImage';
 import { formatTimeRemaining } from '@/utils/timeUtils';
-import { useExpirationTransition } from '@/hooks/useExpirationTransition';
 import type { Page } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
 import { useState, useEffect } from 'react';
 import { MetaHead } from '@/components/common';
-import { Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface DailyPublishedPageViewProps {
   page: Page;
@@ -39,37 +38,38 @@ export function DailyPublishedPageView({
 }: DailyPublishedPageViewProps) {
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
+  const navigate = useNavigate();
   
-  // Handle smooth transitions when content is about to expire
-  const { isTransitioning } = useExpirationTransition({
-    currentId: contentId,
-    expiresAt
-  });
+  // Simple expiration check - redirect to home if expired
+  const isExpired = new Date() > new Date(expiresAt);
+  
+  useEffect(() => {
+    if (isExpired) {
+      console.log('Content has expired, redirecting to home...');
+      navigate('/', { replace: true });
+      return;
+    }
+  }, [isExpired, navigate]);
 
   // Update countdown every 100ms for smooth real-time display
   useEffect(() => {
     const interval = setInterval(() => {
-      setTimeRemaining(formatTimeRemaining(expiresAt));
+      const remaining = formatTimeRemaining(expiresAt);
+      setTimeRemaining(remaining);
+      
+      // Check if content has expired during countdown
+      if (new Date() > new Date(expiresAt)) {
+        clearInterval(interval);
+        navigate('/', { replace: true });
+      }
     }, 100); // Update every 100ms for smoother countdown
 
     return () => clearInterval(interval);
-  }, [expiresAt]);
+  }, [expiresAt, navigate]);
 
-  // Show transition overlay when content is transitioning
-  if (isTransitioning) {
-    return (
-      <div className="h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4 max-w-sm mx-auto p-6">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <div className="space-y-2">
-            <h3 className="font-semibold text-lg">Loading New Content</h3>
-            <p className="text-sm text-muted-foreground">
-              Fresh daily content is being prepared for you...
-            </p>
-          </div>
-        </div>
-      </div>
-    );
+  // Don't render anything if expired (navigation will happen)
+  if (isExpired) {
+    return null;
   }
 
   return (

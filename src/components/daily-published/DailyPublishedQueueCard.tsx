@@ -24,6 +24,10 @@ export function DailyPublishedQueueCard({
 }: DailyPublishedQueueCardProps) {
   const navigate = useNavigate();
   
+  // Check if item is expired (client-side detection)
+  const isExpiredClientSide = item.expires_at && new Date() > new Date(item.expires_at);
+  const effectiveStatus = isExpiredClientSide && item.status !== 'expired' ? 'expired' : item.status;
+  
   // Fetch SEO metadata for this specific daily published item
   const { data: seoMetadata } = useSeoMetadata(item.id);
   
@@ -79,7 +83,7 @@ export function DailyPublishedQueueCard({
   };
 
   const getTimingDisplay = () => {
-    if (item.status === 'active') {
+    if (effectiveStatus === 'active') {
       return {
         icon: Clock,
         label: 'Expires',
@@ -88,7 +92,7 @@ export function DailyPublishedQueueCard({
       };
     }
     
-    if (item.status === 'queued' && expectedActivationTime) {
+    if (effectiveStatus === 'queued' && expectedActivationTime) {
       return {
         icon: Calendar,
         label: 'Scheduled to activate',
@@ -97,11 +101,11 @@ export function DailyPublishedQueueCard({
       };
     }
     
-    if (item.status === 'expired') {
+    if (effectiveStatus === 'expired') {
       return {
         icon: Calendar,
         label: 'Expired',
-        value: new Date(item.expires_at).toLocaleDateString(),
+        value: item.expires_at ? new Date(item.expires_at).toLocaleDateString() : 'Recently expired',
         color: 'text-gray-500'
       };
     }
@@ -156,9 +160,12 @@ export function DailyPublishedQueueCard({
                <span className="text-sm font-medium text-muted-foreground">
                  Position {position}
                </span>
-              <Badge variant={getStatusVariant(item.status)} className="flex-shrink-0">
-                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-              </Badge>
+               <Badge variant={getStatusVariant(effectiveStatus)} className="flex-shrink-0">
+                 {effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1)}
+                 {isExpiredClientSide && item.status !== 'expired' && (
+                   <span className="ml-1 text-xs">(pending update)</span>
+                 )}
+               </Badge>
             </div>
             
             <h3 className="text-xl font-bold text-foreground leading-tight mb-1">
@@ -188,7 +195,7 @@ export function DailyPublishedQueueCard({
             </div>
           )}
           
-          {item.status === 'active' && (
+          {effectiveStatus === 'active' && (
             <div className="text-right">
               <div className="text-xs text-muted-foreground">Published</div>
               <div className="text-sm font-medium">

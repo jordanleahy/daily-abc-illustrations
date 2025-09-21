@@ -8,7 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/process";
 import { useState, useEffect } from "react";
-import { RefreshCw, Loader2, Upload, Sparkles } from "lucide-react";
+import { Loader2, Upload, Sparkles } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
 
 interface PageImageSectionProps {
@@ -25,7 +25,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isLocalGenerating, setIsLocalGenerating] = useState(false);
-  const [isRegenerating, setIsRegenerating] = useState(false);
+  
   const [internalShowUpload, setInternalShowUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
 
@@ -228,69 +228,6 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     }
   };
 
-  const handleRegenerateImage = async () => {
-    if (!user) return;
-
-    setIsRegenerating(true);
-    setIsLocalGenerating(true);
-    try {
-      // First try to use the stored prompt from page_system_prompts
-      let prompt = await getStoredPrompt();
-      
-      if (!prompt) {
-        // Fallback to generating a new prompt if no stored prompt exists
-        console.log('No stored prompt found, generating new prompt');
-        const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-image-prompt', {
-          body: {
-            pageId,
-            userId: user.id
-          }
-        });
-
-        if (promptError) throw promptError;
-        if (!promptData?.success) throw new Error(promptData?.error || 'Failed to generate image prompt');
-        
-        prompt = promptData.imagePrompt;
-      }
-
-      if (!prompt || prompt.trim().length === 0) {
-        throw new Error('No image prompt available. Please ensure a page system prompt is deployed.');
-      }
-
-      // Create new image record with the prompt
-      const record = await createImageRecord(bookId, prompt);
-      if (!record) {
-        throw new Error('Failed to create image record');
-      }
-
-      // Start image generation
-      const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: { 
-          recordId: record.id,
-          userId: user.id
-        }
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
-
-      toast.success('Image regeneration started!');
-      refreshData();
-    } catch (error: any) {
-      console.error('Error regenerating image:', error);
-      
-      // Only clear local generating state and show error for real errors, not navigation cancellations
-      if (!isNavigationError(error)) {
-        toast.error(error.message || 'Failed to regenerate image');
-        setIsLocalGenerating(false);
-      } else {
-        console.log('🚫 Image regeneration request cancelled due to navigation');
-        // Don't clear isLocalGenerating for navigation cancellations
-      }
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
 
   const handleImageUpload = async (file: File) => {
     if (!user) return;
@@ -464,32 +401,6 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
         </div>
       )}
 
-      {/* Action buttons overlay for existing images */}
-      {hasImage && !showUpload && (
-        <div className="absolute top-2 right-2 flex gap-1">
-          {!isUserUploaded && (
-            <Button
-              onClick={handleRegenerateImage}
-              size="sm"
-              variant="secondary"
-              className="opacity-80 hover:opacity-100"
-              disabled={isRegenerating || isGenerating}
-              title="Regenerate AI image"
-            >
-              {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-            </Button>
-          )}
-          <Button
-            onClick={refreshData}
-            size="sm"
-            variant="outline"
-            className="opacity-80 hover:opacity-100"
-            title="Force refresh image"
-          >
-            <RefreshCw className="w-3 h-3" />
-          </Button>
-        </div>
-      )}
     </div>
   );
 }

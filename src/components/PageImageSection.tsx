@@ -461,6 +461,15 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
       {/* Action buttons overlay for existing images */}
       {hasImage && !showUpload && (
         <div className="absolute top-2 right-2 flex gap-1">
+          <Button
+            onClick={() => setShowUpload(true)}
+            size="sm"
+            variant="outline"
+            className="opacity-80 hover:opacity-100"
+            title="Upload new image"
+          >
+            <Upload className="w-3 h-3" />
+          </Button>
           {!isUserUploaded && (
             <Button
               onClick={handleRegenerateImage}
@@ -473,15 +482,6 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
               {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
             </Button>
           )}
-          <Button
-            onClick={() => setShowUpload(true)}
-            size="sm"
-            variant="outline"
-            className="opacity-80 hover:opacity-100"
-            title="Upload new image"
-          >
-            <Upload className="w-3 h-3" />
-          </Button>
           <Button
             onClick={refreshData}
             size="sm"

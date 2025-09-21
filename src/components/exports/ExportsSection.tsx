@@ -1,3 +1,21 @@
+/**
+ * @fileoverview ExportsSection Component
+ * 
+ * This file contains the ExportsSection component which provides a unified interface
+ * for managing both PDF exports and daily publication queue functionality.
+ * 
+ * Key Features:
+ * - PDF generation and download with progress tracking
+ * - Daily publication queue management
+ * - Automatic QR code generation when adding to queue
+ * - Real-time status updates and error handling
+ * - Expected publication date calculations
+ * - Public link sharing and copying functionality
+ * 
+ * The component integrates multiple hooks and services to provide a seamless
+ * user experience for content export and publication workflows.
+ */
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,12 +31,35 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { SITE_CONFIG } from '@/config/site';
 
+/**
+ * Props for the ExportsSection component
+ */
 interface ExportsSectionProps {
+  /** Type of content being exported - either 'book' or 'page' */
   contentType: 'book' | 'page';
+  /** Unique identifier for the content */
   contentId: string;
+  /** Display name of the content for user-facing messages */
   contentName: string;
 }
 
+/**
+ * ExportsSection Component
+ * 
+ * A comprehensive component that manages both PDF exports and daily publication queue functionality.
+ * Provides users with the ability to:
+ * - Generate and download PDF exports of their content
+ * - Add books to the daily publication queue
+ * - Automatically generate QR codes when adding to queue
+ * - View publication status and expected dates
+ * - Copy public links for shared content
+ * 
+ * @param props - Component props
+ * @param props.contentType - Type of content ('book' or 'page')
+ * @param props.contentId - Unique identifier for the content
+ * @param props.contentName - Display name for user-facing messages
+ * @returns JSX element containing export controls and queue management
+ */
 export const ExportsSection: React.FC<ExportsSectionProps> = ({
   contentType,
   contentId,
@@ -34,12 +75,17 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const pdfExports = exports?.filter(exp => exp.export_type === 'pdf') || [];
   const latestPdfExport = pdfExports[0];
 
-  // Refresh data on component mount to ensure we have the latest status
+  /**
+   * Refresh exports data on component mount to ensure latest status
+   */
   useEffect(() => {
     refetch();
   }, [refetch]);
 
-  // Check for existing daily publication on mount
+  /**
+   * Check for existing daily publication entries on component mount
+   * Only runs for book content type
+   */
   useEffect(() => {
     const checkExistingPublication = async () => {
       if (contentType !== 'book') return;
@@ -66,6 +112,11 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     checkExistingPublication();
   }, [contentId, contentType]);
 
+  /**
+   * Handles PDF generation for the content
+   * Creates an export record, starts the PDF generation process via edge function,
+   * and polls for completion status with user feedback
+   */
   const handleCreatePdf = async () => {
     try {
       const exportRecord = await createExport({
@@ -141,6 +192,12 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
+  /**
+   * Downloads an export file using Supabase storage
+   * Attempts programmatic download first, falls back to opening URL
+   * 
+   * @param exportRecord - The export record containing the file URL
+   */
   const handleDownload = async (exportRecord: Export) => {
     if (!exportRecord.export_url) return;
 
@@ -179,6 +236,11 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
+  /**
+   * Copies PDF export link to clipboard
+   * 
+   * @param exportRecord - The export record containing the file URL
+   */
   const handleCopyPdfLink = async (exportRecord: Export) => {
     if (!exportRecord.export_url) return;
     try {
@@ -189,6 +251,11 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
+  /**
+   * Deletes an export record after user confirmation
+   * 
+   * @param exportRecord - The export record to delete
+   */
   const handleDelete = async (exportRecord: Export) => {
     if (confirm('Are you sure you want to delete this export?')) {
       try {
@@ -203,6 +270,12 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
+  /**
+   * Returns appropriate badge variant based on export status
+   * 
+   * @param status - The current process status
+   * @returns Badge component with appropriate styling
+   */
   const getStatusBadge = (status: ProcessStatus) => {
     const variants = {
       [ProcessStatus.NOT_STARTED]: 'secondary',
@@ -220,6 +293,11 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     );
   };
 
+  /**
+   * Determines the button text, action, and state based on current PDF export status
+   * 
+   * @returns Object containing button configuration (text, action, disabled state, icon)
+   */
   const getButtonState = () => {
     if (!latestPdfExport) {
       return { text: 'Generate PDF', action: handleCreatePdf, disabled: false, icon: FileText };
@@ -238,6 +316,10 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
+  /**
+   * Opens the appropriate page based on publication status
+   * Active publications open the public page, others open the schedule
+   */
   const handleViewPublication = () => {
     if (existingPublication) {
       if (existingPublication.status === 'active') {
@@ -248,6 +330,10 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
+  /**
+   * Copies the public daily published link to clipboard
+   * Only works when there's an existing publication
+   */
   const handleCopyLink = async () => {
     if (existingPublication) {
       const dailyPublishedUrl = `${window.location.origin}/daily-published/${existingPublication.id}`;
@@ -269,6 +355,20 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
   };
 
+   /**
+   * Adds content to the daily publication queue and automatically generates QR code
+   * 
+   * This function handles two main scenarios:
+   * 1. Converting existing draft entries to queued status
+   * 2. Creating new queue entries from scratch
+   * 
+   * After successful queue addition, it automatically generates a QR code for the content
+   * (only for book content type) and provides user feedback through toast notifications.
+   * 
+   * The function also opens the publication schedule page to show the queue status.
+   * 
+   * @throws Will display error toast if authentication fails, queue addition fails, or QR generation fails
+   */
    const handleAddToQueue = async () => {
      if (!user?.id) {
        toast({

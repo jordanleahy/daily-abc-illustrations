@@ -139,10 +139,10 @@ serve(async (req) => {
       bytes[i] = binaryString.charCodeAt(i);
     }
     const imageBlob = new Blob([bytes], { type: 'image/png' });
-    const fileName = `${userId}/book-thumbnails/${bookId}/thumbnail-${Date.now()}.png`;
+    const fileName = `${bookId}/cover.png`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('page-images')
+      .from('book-covers')
       .upload(fileName, imageBlob, {
         contentType: 'image/png',
         upsert: false
@@ -155,7 +155,7 @@ serve(async (req) => {
 
     // Get public URL
     const { data: publicUrlData } = supabase.storage
-      .from('page-images')
+      .from('book-covers')
       .getPublicUrl(fileName);
 
     const thumbnailUrl = publicUrlData.publicUrl;

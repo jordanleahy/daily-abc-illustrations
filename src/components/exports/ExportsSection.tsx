@@ -24,13 +24,18 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   contentName
 }) => {
   const { user } = useAuth();
-  const { exports, createExport, deleteExport } = useExports(contentType, contentId);
+  const { exports, createExport, deleteExport, refetch } = useExports(contentType, contentId);
   const { data: expectedDate, isLoading: dateLoading } = useExpectedPublicationDate(contentId);
   const [existingPublication, setExistingPublication] = useState<any>(null);
   const [isCheckingPublication, setIsCheckingPublication] = useState(false);
 
-  const pdfExports = exports.filter(exp => exp.export_type === 'pdf');
+  const pdfExports = exports?.filter(exp => exp.export_type === 'pdf') || [];
   const latestPdfExport = pdfExports[0];
+
+  // Refresh data on component mount to ensure we have the latest status
+  useEffect(() => {
+    refetch();
+  }, [refetch]);
 
   // Check for existing daily publication on mount
   useEffect(() => {
@@ -357,6 +362,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                     variant="outline"
                     size="sm"
                     onClick={() => handleDownload(latestPdfExport)}
+                    title="Download PDF"
                   >
                     <Download className="h-4 w-4" />
                   </Button>
@@ -364,7 +370,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={handleCreatePdf}
+                  onClick={() => refetch()}
+                  title="Refresh status"
                 >
                   <RotateCcw className="h-4 w-4" />
                 </Button>
@@ -372,6 +379,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                   variant="outline"
                   size="sm"
                   onClick={() => handleDelete(latestPdfExport)}
+                  title="Delete export"
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

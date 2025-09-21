@@ -71,26 +71,66 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         }
       });
 
+      // Start polling for progress updates
+      const pollInterval = setInterval(async () => {
+        const { data: updatedExport } = await supabase
+          .from('exports')
+          .select('*')
+          .eq('id', exportRecord.id)
+          .single();
+
+        if (updatedExport) {
+          // The useExports hook will automatically refresh and show the updated status
+          if (updatedExport.export_status === 'complete' || updatedExport.export_status === 'error') {
+            clearInterval(pollInterval);
+            
+            if (updatedExport.export_status === 'complete') {
+              toast({
+                title: "PDF Generated Successfully",
+                description: "Your PDF is ready for download."
+              });
+            } else {
+              toast({
+                variant: "destructive",
+                title: "PDF Generation Failed",
+                description: updatedExport.error_message || "An error occurred during generation."
+              });
+            }
+          }
+        }
+      }, 2000); // Poll every 2 seconds
+
       // Call the generate-pdf edge function
       const { error } = await supabase.functions.invoke('generate-pdf', {
         body: { exportId: exportRecord.id }
       });
 
       if (error) {
+        clearInterval(pollInterval);
         console.error('Error calling generate-pdf function:', error);
         toast({
           variant: "destructive",
-          title: "Failed to generate PDF",
+          title: "Failed to start PDF generation",
           description: error.message
         });
       } else {
         toast({
-          title: "PDF generation started",
-          description: "Your PDF is being generated. You'll be notified when it's ready."
+          title: "PDF Generation Started",
+          description: "Your PDF is being generated. This may take a few minutes for books with many images."
         });
+
+        // Clear interval after 5 minutes to prevent infinite polling
+        setTimeout(() => {
+          clearInterval(pollInterval);
+        }, 300000);
       }
     } catch (error) {
       console.error('Error creating PDF export:', error);
+      toast({
+        variant: "destructive",
+        title: "Export Failed",
+        description: "Failed to create export record."
+      });
     }
   };
 
@@ -338,9 +378,15 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
               </div>
             </div>
             
-            {latestPdfExport.error_message && (
+            {latestPdfExport.error_message && latestPdfExport.export_status === ProcessStatus.ERROR && (
               <div className="mt-2 text-sm text-destructive">
                 Error: {latestPdfExport.error_message}
+              </div>
+            )}
+            
+            {latestPdfExport.export_status === ProcessStatus.IN_PROGRESS && latestPdfExport.error_message && (
+              <div className="mt-2 text-sm text-muted-foreground">
+                Progress: {latestPdfExport.error_message}
               </div>
             )}
             

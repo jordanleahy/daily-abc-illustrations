@@ -1,12 +1,121 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
-import { PDFDocument, rgb, StandardFonts } from 'https://cdn.skypack.dev/pdf-lib@1.17.1';
+import { PDFDocument } from 'https://cdn.skypack.dev/pdf-lib@1.17.1';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Helper function to optimize image for PDF
+async function optimizeImageForPdf(imageBytes: ArrayBuffer): Promise<ArrayBuffer> {
+  // Simple optimization: reduce file size by using reasonable quality settings
+  // For production, you could implement actual image resizing/compression here
+  const originalSize = imageBytes.byteLength;
+  console.log(`Original image size: ${(originalSize / 1024 / 1024).toFixed(2)} MB`);
+  
+  // Return as-is for now, but log the size for monitoring
+  return imageBytes;
+}
+
+// Helper function to process images in batches
+async function processImageBatch(
+  pdfDoc: any, 
+  pages: any[], 
+  pageImages: Map<string, string>, 
+  supabase: any, 
+  exportId: string, 
+  batchIndex: number, 
+  totalBatches: number
+) {
+  console.log(`Processing batch ${batchIndex + 1}/${totalBatches} (${pages.length} pages)`);
+  
+  // Update progress
+  await supabase
+    .from('exports')
+    .update({ 
+      export_status: 'in-progress',
+      error_message: `Processing batch ${batchIndex + 1}/${totalBatches}`,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', exportId);
+
+  const processedPages = [];
+  
+  for (const pageData of pages) {
+    const imageUrl = pageImages.get(pageData.id);
+    
+    if (imageUrl) {
+      try {
+        console.log(`Processing page ${pageData.letter}: ${imageUrl}`);
+        
+        // Add authorization headers and better error handling
+        const imageResponse = await fetch(imageUrl, {
+          headers: {
+            'User-Agent': 'Supabase-Edge-Function/1.0',
+          },
+        });
+        
+        if (!imageResponse.ok) {
+          console.error(`Failed to fetch image for page ${pageData.letter}: ${imageResponse.status} ${imageResponse.statusText}`);
+          continue;
+        }
+        
+        const imageBytes = await imageResponse.arrayBuffer();
+        const optimizedBytes = await optimizeImageForPdf(imageBytes);
+        
+        let image;
+        
+        // Try to embed as JPEG first, then PNG
+        try {
+          image = await pdfDoc.embedJpg(optimizedBytes);
+        } catch {
+          try {
+            image = await pdfDoc.embedPng(optimizedBytes);
+          } catch (e) {
+            console.log(`Failed to embed image for page ${pageData.letter}:`, e);
+            continue;
+          }
+        }
+
+        if (image) {
+          // Use standard page size and scale image to fit
+          const maxWidth = 612; // 8.5 inches at 72 DPI
+          const maxHeight = 792; // 11 inches at 72 DPI
+          
+          // Calculate scaling to fit page while maintaining aspect ratio
+          const scaleX = maxWidth / image.width;
+          const scaleY = maxHeight / image.height;
+          const scale = Math.min(scaleX, scaleY, 1); // Don't upscale
+          
+          const scaledWidth = image.width * scale;
+          const scaledHeight = image.height * scale;
+          
+          const page = pdfDoc.addPage([maxWidth, maxHeight]);
+          
+          // Center the image on the page
+          const x = (maxWidth - scaledWidth) / 2;
+          const y = (maxHeight - scaledHeight) / 2;
+          
+          page.drawImage(image, {
+            x: x,
+            y: y,
+            width: scaledWidth,
+            height: scaledHeight,
+          });
+          
+          processedPages.push(pageData.letter);
+        }
+      } catch (e) {
+        console.error(`Error processing image for page ${pageData.letter}:`, e);
+      }
+    }
+  }
+  
+  console.log(`Batch ${batchIndex + 1} completed. Processed pages: ${processedPages.join(', ')}`);
+  return processedPages;
+}
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -102,57 +211,55 @@ serve(async (req) => {
     // Create PDF document
     const pdfDoc = await PDFDocument.create();
 
-    // Add pages with images only - no title page, no headers
+    // Process pages in batches to avoid CPU timeout
     const pages = bookData.pages || [];
-    console.log(`Processing ${pages.length} pages...`);
+    const sortedPages = pages.sort((a, b) => a.page_number - b.page_number);
+    console.log(`Processing ${sortedPages.length} pages in batches...`);
 
-    for (const pageData of pages.sort((a, b) => a.page_number - b.page_number)) {
-      const imageUrl = pageImages.get(pageData.id);
+    const BATCH_SIZE = 5; // Process 5 pages at a time
+    const batches = [];
+    for (let i = 0; i < sortedPages.length; i += BATCH_SIZE) {
+      batches.push(sortedPages.slice(i, i + BATCH_SIZE));
+    }
+
+    let totalProcessed = 0;
+    
+    // Process batches sequentially to avoid overwhelming the system
+    for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+      const batch = batches[batchIndex];
+      const processedPages = await processImageBatch(
+        pdfDoc, 
+        batch, 
+        pageImages, 
+        supabase, 
+        exportId, 
+        batchIndex, 
+        batches.length
+      );
+      totalProcessed += processedPages.length;
       
-      if (imageUrl) {
-        try {
-          const imageResponse = await fetch(imageUrl);
-          if (imageResponse.ok) {
-            const imageBytes = await imageResponse.arrayBuffer();
-            let image;
-            
-            // Try to embed as JPEG first, then PNG
-            try {
-              image = await pdfDoc.embedJpg(imageBytes);
-            } catch {
-              try {
-                image = await pdfDoc.embedPng(imageBytes);
-              } catch (e) {
-                console.log('Failed to embed image:', e);
-                continue; // Skip this page if image can't be processed
-              }
-            }
-
-            if (image) {
-              // Create page sized to fit the image perfectly
-              const pageWidth = Math.max(image.width, 612); // Minimum letter width
-              const pageHeight = Math.max(image.height, 792); // Minimum letter height
-              
-              const page = pdfDoc.addPage([pageWidth, pageHeight]);
-              
-              // Center the image on the page at full size
-              const x = (pageWidth - image.width) / 2;
-              const y = (pageHeight - image.height) / 2;
-              
-              page.drawImage(image, {
-                x: x,
-                y: y,
-                width: image.width,
-                height: image.height,
-              });
-            }
-          }
-        } catch (e) {
-          console.log('Error processing image for page:', pageData.letter, e);
-          // Skip pages with image processing errors
-        }
+      // Small delay between batches to prevent CPU overload
+      if (batchIndex < batches.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
-      // Skip pages without images entirely - no placeholder pages
+    }
+
+    console.log(`Completed processing. Total pages processed: ${totalProcessed}/${sortedPages.length}`);
+
+    if (totalProcessed === 0) {
+      await supabase
+        .from('exports')
+        .update({ 
+          export_status: 'error',
+          error_message: 'No images found or all images failed to process',
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', exportId);
+
+      return new Response(
+        JSON.stringify({ error: 'No images found or all images failed to process' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     console.log('Saving PDF...');

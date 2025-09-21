@@ -1,7 +1,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
-import { QRCode } from "https://deno.land/x/qr_code@v2.0.0/mod.ts";
+import QRCode from "https://esm.sh/qrcode@1.5.4";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -92,14 +92,15 @@ serve(async (req) => {
 
     // Generate QR code server-side
     console.log('Generating QR code for URL:', publicUrl);
-    const qrCode = new QRCode(publicUrl, {
-      errorCorrectionLevel: "M",
+    const qrDataUrl = await QRCode.toDataURL(publicUrl, {
+      errorCorrectionLevel: 'M',
       width: 256,
-      height: 256,
+      margin: 2,
+      color: {
+        dark: '#000000',
+        light: '#FFFFFF'
+      }
     });
-    
-    const qrSvg = qrCode.svg();
-    const qrDataUrl = `data:image/svg+xml;base64,${btoa(qrSvg)}`;
 
     // Update the book record with QR code data
     console.log('Updating book with QR code data');

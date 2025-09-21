@@ -1,5 +1,8 @@
 project_id = "foxdnspwzhjxjxuicute"
 
+[functions.generate-book-qr-metadata]
+verify_jwt = true
+
 [api]
 enabled = true
 port = 54321

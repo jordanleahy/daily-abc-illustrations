@@ -84,9 +84,13 @@ export const useBookQRCode = (bookId: string | undefined) => {
   const downloadQRCode = () => {
     if (!bookData?.qr_code_image) return;
 
+    // Determine file extension based on data URL type
+    const isSVG = bookData.qr_code_image.startsWith('data:image/svg+xml');
+    const extension = isSVG ? 'svg' : 'png';
+
     const link = document.createElement('a');
     link.href = bookData.qr_code_image;
-    link.download = `qr-code-${bookId}.png`;
+    link.download = `qr-code-${bookData.book_name || 'book'}.${extension}`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

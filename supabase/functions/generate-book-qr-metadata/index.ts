@@ -97,8 +97,12 @@ serve(async (req) => {
       const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?format=svg&size=${qrCodeConfig.size}x${qrCodeConfig.size}&margin=${qrCodeConfig.margin}&ecc=M&data=${encodeURIComponent(publicUrl)}`;
       
       console.log('Fetching QR code from API:', qrApiUrl);
+      console.log('Public URL length:', publicUrl.length);
       
       const qrResponse = await fetch(qrApiUrl);
+      
+      console.log('QR API Response Status:', qrResponse.status);
+      console.log('QR API Response Content-Type:', qrResponse.headers.get('content-type'));
       
       if (!qrResponse.ok) {
         throw new Error(`QR API returned ${qrResponse.status}: ${qrResponse.statusText}`);
@@ -106,14 +110,22 @@ serve(async (req) => {
       
       qrSvg = await qrResponse.text();
       
-      // Validate the response is actually SVG
-      if (!qrSvg || !qrSvg.trim().startsWith('<svg') || !qrSvg.includes('</svg>')) {
-        console.error('Invalid SVG response from QR API:', qrSvg?.substring(0, 200));
+      // More robust SVG validation using regex
+      const svgRegex = /<svg[\s\S]*<\/svg>/i;
+      if (!qrSvg || !svgRegex.test(qrSvg.trim())) {
+        console.error('Invalid SVG response from QR API:');
+        console.error('Response length:', qrSvg?.length);
+        console.error('Response preview:', qrSvg?.substring(0, 300));
+        
+        // Check if it's an HTML error page
+        if (qrSvg && qrSvg.toLowerCase().includes('<html')) {
+          console.error('QR API returned HTML error page');
+        }
+        
         throw new Error('QR API returned invalid SVG content');
       }
       
       console.log('QR SVG generated successfully, length:', qrSvg.length);
-      console.log('QR SVG preview:', qrSvg.substring(0, 150) + '...');
       
     } catch (qrError) {
       console.error('Error generating QR code:', qrError);
@@ -122,13 +134,22 @@ serve(async (req) => {
       try {
         console.log('Retrying QR generation with fallback parameters...');
         const fallbackUrl = `https://api.qrserver.com/v1/create-qr-code/?format=svg&size=200x200&margin=1&ecc=L&data=${encodeURIComponent(publicUrl)}`;
+        console.log('Fallback URL:', fallbackUrl);
+        
         const retryResponse = await fetch(fallbackUrl);
+        
+        console.log('Retry Response Status:', retryResponse.status);
+        console.log('Retry Response Content-Type:', retryResponse.headers.get('content-type'));
         
         if (retryResponse.ok) {
           qrSvg = await retryResponse.text();
-          if (qrSvg && qrSvg.trim().startsWith('<svg')) {
+          
+          // Use same robust validation for retry
+          const svgRegex = /<svg[\s\S]*<\/svg>/i;
+          if (qrSvg && svgRegex.test(qrSvg.trim())) {
             console.log('QR code generated successfully on retry');
           } else {
+            console.error('Retry response preview:', qrSvg?.substring(0, 300));
             throw new Error('Retry also returned invalid SVG');
           }
         } else {
@@ -140,8 +161,11 @@ serve(async (req) => {
       }
     }
     
-    // Convert SVG to data URL
-    const qrDataUrl = `data:image/svg+xml;base64,${btoa(qrSvg)}`;
+    // Convert SVG to data URL using safe encoding
+    const encoder = new TextEncoder();
+    const data = encoder.encode(qrSvg);
+    const base64 = btoa(String.fromCharCode(...data));
+    const qrDataUrl = `data:image/svg+xml;base64,${base64}`;
 
     // Update the book record with QR code data
     console.log('Updating book with QR code data');

@@ -460,23 +460,6 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               <Sparkles className="w-4 h-4 mr-2" />
               {hasDeployedPrompt ? 'Generate with AI' : 'Generate Prompt'}
             </Button>
-            <Button 
-              onClick={() => {
-                if (onCloseUpload) {
-                  // If controlled externally, we can't show upload directly
-                  return;
-                } else {
-                  setInternalShowUpload(true);
-                }
-              }}
-              variant="outline"
-              size="sm"
-              className="w-full"
-              disabled={isGeneratingPrompt || isGenerating}
-            >
-              <Upload className="w-4 h-4 mr-2" />
-              Upload Image
-            </Button>
           </div>
         </div>
       )}
@@ -484,15 +467,6 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
       {/* Action buttons overlay for existing images */}
       {hasImage && !showUpload && (
         <div className="absolute top-2 right-2 flex gap-1">
-          <Button
-            onClick={() => setShowUpload(true)}
-            size="sm"
-            variant="outline"
-            className="opacity-80 hover:opacity-100"
-            title="Upload new image"
-          >
-            <Upload className="w-3 h-3" />
-          </Button>
           {!isUserUploaded && (
             <Button
               onClick={handleRegenerateImage}

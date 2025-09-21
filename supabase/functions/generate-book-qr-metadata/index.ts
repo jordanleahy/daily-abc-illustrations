@@ -92,10 +92,25 @@ serve(async (req) => {
 
     // Generate QR code server-side using Deno-compatible library
     console.log('Generating QR code for URL:', publicUrl);
-    const qrSvg = qrcode(publicUrl, { 
-      output: "svg",
-      size: 256 
-    });
+    
+    let qrSvg: string;
+    try {
+      qrSvg = await qrcode(publicUrl, { 
+        output: "svg",
+        size: 256 
+      });
+      console.log('QR SVG generated, length:', qrSvg.length);
+      console.log('QR SVG preview:', qrSvg.substring(0, 100) + '...');
+    } catch (qrError) {
+      console.error('Error generating QR code:', qrError);
+      throw new Error(`Failed to generate QR code: ${qrError.message}`);
+    }
+    
+    // Validate SVG content
+    if (!qrSvg || typeof qrSvg !== 'string' || !qrSvg.includes('<svg')) {
+      console.error('Invalid QR SVG generated:', qrSvg);
+      throw new Error('Generated QR code is not a valid SVG');
+    }
     
     // Convert SVG to data URL
     const qrDataUrl = `data:image/svg+xml;base64,${btoa(qrSvg)}`;

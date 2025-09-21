@@ -14,9 +14,11 @@ import { ImageUpload } from "./ImageUpload";
 interface PageImageSectionProps {
   pageId: string;
   bookId: string;
+  showUpload?: boolean;
+  onCloseUpload?: () => void;
 }
 
-export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
+export function PageImageSection({ pageId, bookId, showUpload: externalShowUpload, onCloseUpload }: PageImageSectionProps) {
   const { user } = useAuth();
   const { currentImage, versions, isLoading, createImageRecord, uploadImage, refreshData } = usePageImageUrls(pageId);
   const { currentPrompt } = usePageSystemPrompt(pageId);
@@ -24,8 +26,12 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isLocalGenerating, setIsLocalGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
+  const [internalShowUpload, setInternalShowUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Use external upload state if provided, otherwise use internal state
+  const showUpload = externalShowUpload !== undefined ? externalShowUpload : internalShowUpload;
+  const setShowUpload = onCloseUpload ? onCloseUpload : setInternalShowUpload;
 
   // Check if there's a deployed page system prompt
   const hasDeployedPrompt = currentPrompt?.is_deployed === true;
@@ -293,7 +299,11 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
     try {
       await uploadImage(file, bookId);
       toast.success('Image uploaded successfully!');
-      setShowUpload(false);
+      if (onCloseUpload) {
+        onCloseUpload();
+      } else {
+        setInternalShowUpload(false);
+      }
       refreshData();
     } catch (error: any) {
       console.error('Error uploading image:', error);
@@ -345,7 +355,13 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
             </div>
           )}
           <Button
-            onClick={() => setShowUpload(false)}
+            onClick={() => {
+              if (onCloseUpload) {
+                onCloseUpload();
+              } else {
+                setInternalShowUpload(false);
+              }
+            }}
             variant="outline"
             size="sm"
             className="absolute top-2 right-2"
@@ -445,7 +461,14 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
               {hasDeployedPrompt ? 'Generate with AI' : 'Generate Prompt'}
             </Button>
             <Button 
-              onClick={() => setShowUpload(true)}
+              onClick={() => {
+                if (onCloseUpload) {
+                  // If controlled externally, we can't show upload directly
+                  return;
+                } else {
+                  setInternalShowUpload(true);
+                }
+              }}
               variant="outline"
               size="sm"
               className="w-full"

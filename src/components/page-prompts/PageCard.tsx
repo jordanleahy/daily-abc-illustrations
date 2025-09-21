@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
-import { RefreshCw, FileText, Copy, Trash2, Edit3, Image } from 'lucide-react';
+import { RefreshCw, FileText, Copy, Trash2, Edit3, Image, Upload } from 'lucide-react';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageSystemPromptEditor } from './PageSystemPromptEditor';
 import { PageImageSection } from '@/components/PageImageSection';
@@ -50,6 +50,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
   const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
 
   const handleRegeneratePrompt = async () => {
     if (!user) {
@@ -333,6 +334,16 @@ export function PageCard({ page, bookId }: PageCardProps) {
               variant="ghost"
               size="icon"
               className="w-6 h-6"
+              onClick={() => setShowUpload(true)}
+              title="Upload image for this page"
+              aria-label="Upload image for this page"
+            >
+              <Upload className="w-3 h-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-6 h-6"
               onClick={handleDeletePage}
               disabled={deletePage.isPending}
               title="Delete page"
@@ -447,6 +458,8 @@ export function PageCard({ page, bookId }: PageCardProps) {
           <PageImageSection 
             pageId={page.id}
             bookId={bookId}
+            showUpload={showUpload}
+            onCloseUpload={() => setShowUpload(false)}
           />
         )}
       </CardContent>

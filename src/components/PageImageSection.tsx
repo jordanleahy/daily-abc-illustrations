@@ -8,7 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/process";
 import { useState, useEffect } from "react";
-import { RefreshCw, Loader2 } from "lucide-react";
+import { RefreshCw, Loader2, Upload, Sparkles } from "lucide-react";
+import { ImageUpload } from "./ImageUpload";
 
 interface PageImageSectionProps {
   pageId: string;
@@ -17,12 +18,14 @@ interface PageImageSectionProps {
 
 export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const { user } = useAuth();
-  const { currentImage, versions, isLoading, createImageRecord, refreshData } = usePageImageUrls(pageId);
+  const { currentImage, versions, isLoading, createImageRecord, uploadImage, refreshData } = usePageImageUrls(pageId);
   const { currentPrompt } = usePageSystemPrompt(pageId);
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
   const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isLocalGenerating, setIsLocalGenerating] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   // Check if there's a deployed page system prompt
   const hasDeployedPrompt = currentPrompt?.is_deployed === true;
@@ -283,6 +286,23 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
     }
   };
 
+  const handleImageUpload = async (file: File) => {
+    if (!user) return;
+
+    setIsUploading(true);
+    try {
+      await uploadImage(file, bookId);
+      toast.success('Image uploaded successfully!');
+      setShowUpload(false);
+      refreshData();
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast.error(error.message || 'Failed to upload image');
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
@@ -294,6 +314,7 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
   const isGenerating = currentImage?.generation_status === 'in_progress' || isLocalGenerating;
   const hasImage = currentImage?.generation_status === 'complete' && currentImage?.image_url;
   const hasError = currentImage?.generation_status === 'error';
+  const isUserUploaded = currentImage?.source_type === 'user_uploaded';
   
   console.log('🎨 Render state:', {
     hasImage,
@@ -307,18 +328,64 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
 
   return (
     <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden relative">
-      {hasImage && currentImage?.image_url ? (
-        // Show clean generated image
+      {showUpload ? (
+        // Show upload interface
+        <div className="relative w-full h-full">
+          <ImageUpload 
+            onImageSelect={handleImageUpload}
+            disabled={isUploading}
+            className="w-full h-full"
+          />
+          {isUploading && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">
+              <div className="flex flex-col items-center space-y-2">
+                <Loader2 className="w-6 h-6 animate-spin" />
+                <p className="text-sm text-muted-foreground">Uploading...</p>
+              </div>
+            </div>
+          )}
+          <Button
+            onClick={() => setShowUpload(false)}
+            variant="outline"
+            size="sm"
+            className="absolute top-2 right-2"
+            disabled={isUploading}
+          >
+            Cancel
+          </Button>
+        </div>
+      ) : hasImage && currentImage?.image_url ? (
+        // Show image with source indicator
         <div className="relative w-full h-full">
           <img 
             src={currentImage.image_url} 
-            alt="Generated page image"
+            alt={isUserUploaded ? "Uploaded page image" : "Generated page image"}
             className="w-full h-full object-cover"
             loading="lazy"
             decoding="async"
             onLoad={() => console.log('🖼️ Image loaded successfully:', currentImage.image_url)}
             onError={() => console.error('🚫 Image failed to load:', currentImage.image_url)}
           />
+          {/* Source indicator */}
+          <div className="absolute top-2 left-2">
+            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+              isUserUploaded 
+                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
+                : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+            }`}>
+              {isUserUploaded ? (
+                <>
+                  <Upload className="w-3 h-3" />
+                  Uploaded
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-3 h-3" />
+                  AI Generated
+                </>
+              )}
+            </div>
+          </div>
         </div>
       ) : isGenerating ? (
         // Show generating state
@@ -362,33 +429,58 @@ export function PageImageSection({ pageId, bookId }: PageImageSectionProps) {
           <p className="text-sm text-muted-foreground">Generating prompt...</p>
         </div>
       ) : (
-        // Show initial state - check if we have a deployed prompt
-        <div className="flex flex-col items-center justify-center h-full space-y-3 p-4 text-center">
+        // Show initial state with both AI and upload options
+        <div className="flex flex-col items-center justify-center h-full space-y-4 p-4 text-center">
           <p className="text-sm text-muted-foreground">
-            Click to generate page image
+            Add an image to this page
           </p>
-          <Button 
-            onClick={hasDeployedPrompt ? handleGenerateImageDirectly : handleGeneratePrompt}
-            size="sm"
-            className="w-full"
-            disabled={isGeneratingPrompt || isGenerating}
-          >
-            {hasDeployedPrompt ? 'Generate Image' : 'Generate Prompt'}
-          </Button>
+          <div className="flex flex-col gap-2 w-full">
+            <Button 
+              onClick={hasDeployedPrompt ? handleGenerateImageDirectly : handleGeneratePrompt}
+              size="sm"
+              className="w-full"
+              disabled={isGeneratingPrompt || isGenerating}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              {hasDeployedPrompt ? 'Generate with AI' : 'Generate Prompt'}
+            </Button>
+            <Button 
+              onClick={() => setShowUpload(true)}
+              variant="outline"
+              size="sm"
+              className="w-full"
+              disabled={isGeneratingPrompt || isGenerating}
+            >
+              <Upload className="w-4 h-4 mr-2" />
+              Upload Image
+            </Button>
+          </div>
         </div>
       )}
 
-      {/* Add regenerate and refresh buttons overlay for existing images */}
-      {hasImage && (
+      {/* Action buttons overlay for existing images */}
+      {hasImage && !showUpload && (
         <div className="absolute top-2 right-2 flex gap-1">
+          {!isUserUploaded && (
+            <Button
+              onClick={handleRegenerateImage}
+              size="sm"
+              variant="secondary"
+              className="opacity-80 hover:opacity-100"
+              disabled={isRegenerating || isGenerating}
+              title="Regenerate AI image"
+            >
+              {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+            </Button>
+          )}
           <Button
-            onClick={handleRegenerateImage}
+            onClick={() => setShowUpload(true)}
             size="sm"
-            variant="secondary"
+            variant="outline"
             className="opacity-80 hover:opacity-100"
-            disabled={isRegenerating || isGenerating}
+            title="Upload new image"
           >
-            {isRegenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+            <Upload className="w-3 h-3" />
           </Button>
           <Button
             onClick={refreshData}

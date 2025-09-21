@@ -29,6 +29,8 @@ export interface PageImageUrl {
   error_message: string | null;
   /** Whether this is the current active version */
   is_latest: boolean;
+  /** Source of the image: AI generated or user uploaded */
+  source_type: 'ai_generated' | 'user_uploaded';
   /** ISO timestamp when the record was created */
   created_at: string;
   /** ISO timestamp when the record was last modified */

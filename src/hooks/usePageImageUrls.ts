@@ -65,7 +65,11 @@ export function usePageImageUrls(pageId: string) {
 
   // Create image record mutation
   const createImageMutation = useMutation({
-    mutationFn: async ({ bookId, promptUsed }: { bookId: string; promptUsed: string }) => {
+    mutationFn: async ({ bookId, promptUsed, sourceType = 'ai_generated' }: { 
+      bookId: string; 
+      promptUsed: string;
+      sourceType?: 'ai_generated' | 'user_uploaded';
+    }) => {
       if (!user) throw new Error('User not authenticated');
 
       const { data: versionData } = await supabase.rpc('get_next_page_image_version_number', {
@@ -81,8 +85,9 @@ export function usePageImageUrls(pageId: string) {
           book_id: bookId,
           user_id: user.id,
           version_number: versionNumber,
-          generation_status: 'not_started',
-          prompt_used: promptUsed
+          generation_status: sourceType === 'user_uploaded' ? 'complete' : 'not_started',
+          prompt_used: promptUsed,
+          source_type: sourceType
         })
         .select()
         .single();
@@ -242,14 +247,62 @@ export function usePageImageUrls(pageId: string) {
     }, 100);
   };
 
+  // Upload image function
+  const uploadImage = async (file: File, bookId: string): Promise<PageImageUrl> => {
+    if (!user) throw new Error('User not authenticated');
+
+    // Create image record first
+    const record = await createImageMutation.mutateAsync({ 
+      bookId, 
+      promptUsed: `User uploaded: ${file.name}`,
+      sourceType: 'user_uploaded'
+    });
+
+    // Upload to storage
+    const fileName = `${user.id}/pages/${pageId}/uploaded-${Date.now()}.${file.name.split('.').pop()}`;
+    
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('page-images')
+      .upload(fileName, file, {
+        contentType: file.type,
+        upsert: false
+      });
+
+    if (uploadError) {
+      // Clean up the record if upload fails
+      await supabase.from('page_image_urls').delete().eq('id', record.id);
+      throw uploadError;
+    }
+
+    // Get public URL
+    const { data: publicUrlData } = supabase.storage
+      .from('page-images')
+      .getPublicUrl(fileName);
+
+    // Update record with image URL
+    const { data: updatedRecord, error: updateError } = await supabase
+      .from('page_image_urls')
+      .update({
+        image_url: publicUrlData.publicUrl,
+        generation_completed_at: new Date().toISOString()
+      })
+      .eq('id', record.id)
+      .select()
+      .single();
+
+    if (updateError) throw updateError;
+    return updatedRecord as PageImageUrl;
+  };
+
   return {
     currentImage,
     versions,
     isLoading,
-    createImageRecord: (bookId: string, promptUsed: string) => 
-      createImageMutation.mutateAsync({ bookId, promptUsed }),
+    createImageRecord: (bookId: string, promptUsed: string, sourceType?: 'ai_generated' | 'user_uploaded') => 
+      createImageMutation.mutateAsync({ bookId, promptUsed, sourceType }),
     updateImageRecord: (recordId: string, updates: Partial<PageImageUrl>) =>
       updateImageMutation.mutateAsync({ recordId, updates }),
+    uploadImage,
     refreshData
   };
 }

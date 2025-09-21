@@ -402,6 +402,7 @@ export type Database = {
           is_latest: boolean
           page_id: string
           prompt_used: string | null
+          source_type: string
           updated_at: string
           user_id: string
           version_number: number
@@ -419,6 +420,7 @@ export type Database = {
           is_latest?: boolean
           page_id: string
           prompt_used?: string | null
+          source_type?: string
           updated_at?: string
           user_id: string
           version_number?: number
@@ -436,6 +438,7 @@ export type Database = {
           is_latest?: boolean
           page_id?: string
           prompt_used?: string | null
+          source_type?: string
           updated_at?: string
           user_id?: string
           version_number?: number

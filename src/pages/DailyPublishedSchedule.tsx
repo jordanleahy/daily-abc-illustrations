@@ -11,9 +11,37 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar, Clock, BookOpen, RefreshCw } from 'lucide-react';
+import { Calendar, Clock, BookOpen, RefreshCw, GripVertical } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { toast } from 'sonner';
+import { 
+  DndContext, 
+  closestCenter, 
+  DragEndEvent,
+  PointerSensor,
+  useSensor,
+  useSensors
+} from '@dnd-kit/core';
+import { 
+  SortableContext, 
+  verticalListSortingStrategy,
+  useSortable 
+} from '@dnd-kit/sortable';
+import { arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+// Utility function to generate sequential publish dates
+const getSequentialDates = (startDate: Date, count: number): string[] => {
+  const dates: string[] = [];
+  const currentDate = new Date(startDate);
+  
+  for (let i = 0; i < count; i++) {
+    dates.push(currentDate.toISOString().split('T')[0]);
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+  
+  return dates;
+};
 
 export default function DailyPublishedScheduleSimple() {
   const { user } = useAuth();
@@ -22,6 +50,15 @@ export default function DailyPublishedScheduleSimple() {
   const expireContent = useExpireContent();
   const [editingDate, setEditingDate] = useState<string | null>(null);
   const [newDate, setNewDate] = useState<string>('');
+
+  // Drag and drop sensors
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   const handleDateChange = async (itemId: string, publishDate: string) => {
     try {
@@ -41,6 +78,46 @@ export default function DailyPublishedScheduleSimple() {
       await expireContent.mutateAsync();
     } catch (error) {
       console.error('Failed to expire content:', error);
+    }
+  };
+
+  // Handle drag end for reordering queued items
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    
+    if (!over || active.id === over.id) return;
+    
+    const queuedItems = scheduleItems?.filter(item => item.status === 'queued') || [];
+    const oldIndex = queuedItems.findIndex(item => item.id === active.id);
+    const newIndex = queuedItems.findIndex(item => item.id === over.id);
+    
+    if (oldIndex === -1 || newIndex === -1) return;
+    
+    // Reorder the items
+    const reorderedItems = arrayMove(queuedItems, oldIndex, newIndex);
+    
+    // Calculate new sequential dates starting from tomorrow
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const newDates = getSequentialDates(tomorrow, reorderedItems.length);
+    
+    // Update dates for all reordered items
+    try {
+      toast.loading('Reordering schedule...', { id: 'reorder' });
+      
+      await Promise.all(
+        reorderedItems.map((item, index) =>
+          scheduleForDate.mutateAsync({
+            dailyPublishedId: item.id,
+            publishDate: newDates[index]
+          })
+        )
+      );
+      
+      toast.success('Schedule reordered successfully', { id: 'reorder' });
+    } catch (error) {
+      console.error('Failed to reorder schedule:', error);
+      toast.error('Failed to reorder schedule', { id: 'reorder' });
     }
   };
 
@@ -161,22 +238,34 @@ export default function DailyPublishedScheduleSimple() {
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <Calendar className="h-5 w-5 text-blue-500" />
                 Scheduled ({queuedItems.length})
+                <span className="text-sm text-muted-foreground font-normal ml-2">Drag to reorder</span>
               </h2>
-              <div className="space-y-4">
-                {queuedItems.map((item) => (
-                  <ScheduleCard 
-                    key={item.id} 
-                    item={item} 
-                    onDateEdit={(id, date) => handleDateChange(id, date)}
-                    editingDate={editingDate}
-                    setEditingDate={setEditingDate}
-                    newDate={newDate}
-                    setNewDate={setNewDate}
-                    formatDate={formatDate}
-                    getStatusColor={getStatusColor}
-                  />
-                ))}
-              </div>
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
+              >
+                <SortableContext
+                  items={queuedItems.map(item => item.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <div className="space-y-4">
+                    {queuedItems.map((item) => (
+                      <DraggableScheduleCard 
+                        key={item.id} 
+                        item={item} 
+                        onDateEdit={(id, date) => handleDateChange(id, date)}
+                        editingDate={editingDate}
+                        setEditingDate={setEditingDate}
+                        newDate={newDate}
+                        setNewDate={setNewDate}
+                        formatDate={formatDate}
+                        getStatusColor={getStatusColor}
+                      />
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
             </div>
           )}
 
@@ -312,5 +401,101 @@ function ScheduleCard({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+// Draggable version of ScheduleCard for queued items
+function DraggableScheduleCard(props: ScheduleCardProps) {
+  const navigate = useNavigate();
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style}>
+      <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/books/${props.item.book_id}`)}>
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start">
+            <div className="flex items-center gap-3 flex-1">
+              <div
+                className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+                {...attributes}
+                {...listeners}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <GripVertical className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="flex-1">
+                <CardTitle className="text-lg">{props.item.title}</CardTitle>
+                <CardDescription className="mt-1">
+                  {props.item.book.book_name}
+                  {props.item.description && ` • ${props.item.description}`}
+                </CardDescription>
+              </div>
+            </div>
+            <Badge className={props.getStatusColor(props.item.status)}>
+              {props.item.status}
+            </Badge>
+          </div>
+        </CardHeader>
+        
+        <CardContent className="pt-0">
+          <div className="flex justify-between items-center ml-10">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Calendar className="h-4 w-4" />
+                {props.editingDate === props.item.id ? (
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <Input
+                      type="date"
+                      value={props.newDate}
+                      onChange={(e) => props.setNewDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-auto"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => props.onDateEdit(props.item.id, props.newDate)}
+                      disabled={!props.newDate}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => props.setEditingDate(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <span 
+                    className="cursor-pointer hover:text-foreground"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      props.setEditingDate(props.item.id);
+                      props.setNewDate(props.item.publish_date);
+                    }}
+                  >
+                    {props.formatDate(props.item.publish_date)}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

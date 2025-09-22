@@ -31,6 +31,64 @@ import {
 import { arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
+// Custom hook for date editing logic
+function useDateEdit() {
+  const [editingDate, setEditingDate] = useState<string | null>(null);
+  const [newDate, setNewDate] = useState<string>('');
+
+  const startEdit = (itemId: string, currentDate: string) => {
+    setEditingDate(itemId);
+    setNewDate(currentDate);
+  };
+
+  const cancelEdit = () => {
+    setEditingDate(null);
+    setNewDate('');
+  };
+
+  const isEditing = (itemId: string) => editingDate === itemId;
+
+  return {
+    editingDate,
+    newDate,
+    setNewDate,
+    startEdit,
+    cancelEdit,
+    isEditing
+  };
+}
+
+// Utility functions
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'active': return 'bg-green-500';
+    case 'queued': return 'bg-blue-500';
+    case 'expired': return 'bg-gray-500';
+    case 'draft': return 'bg-yellow-500';
+    default: return 'bg-gray-400';
+  }
+};
+
+const formatDate = (dateString: string) => {
+  return new Date(dateString).toLocaleDateString('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+const formatDateWithTime = (dateString: string, isStart: boolean = false) => {
+  const date = new Date(dateString).toLocaleDateString('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+  const time = isStart ? '7:01 AM ET' : '7:00 AM ET';
+  return `${date} at ${time}`;
+};
+
 // Utility function to generate sequential publish dates
 const getSequentialDates = (startDate: Date, count: number): string[] => {
   const dates: string[] = [];
@@ -49,8 +107,7 @@ export default function DailyPublishedScheduleSimple() {
   const { data: scheduleItems, isLoading, error } = useDailyPublishedSchedule();
   const scheduleForDate = useScheduleForDate();
   const expireContent = useExpireContent();
-  const [editingDate, setEditingDate] = useState<string | null>(null);
-  const [newDate, setNewDate] = useState<string>('');
+  const dateEdit = useDateEdit();
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -67,8 +124,7 @@ export default function DailyPublishedScheduleSimple() {
         dailyPublishedId: itemId, 
         publishDate 
       });
-      setEditingDate(null);
-      setNewDate('');
+      dateEdit.cancelEdit();
     } catch (error) {
       console.error('Failed to update date:', error);
     }
@@ -232,13 +288,6 @@ export default function DailyPublishedScheduleSimple() {
                     key={item.id} 
                     item={item} 
                     onDateEdit={(id, date) => handleDateChange(id, date)}
-                    editingDate={editingDate}
-                    setEditingDate={setEditingDate}
-                    newDate={newDate}
-                    setNewDate={setNewDate}
-                    formatDate={formatDate}
-                    formatDateWithTime={formatDateWithTime}
-                    getStatusColor={getStatusColor}
                   />
                 ))}
               </div>
@@ -268,13 +317,6 @@ export default function DailyPublishedScheduleSimple() {
                         key={item.id} 
                         item={item} 
                         onDateEdit={(id, date) => handleDateChange(id, date)}
-                        editingDate={editingDate}
-                        setEditingDate={setEditingDate}
-                        newDate={newDate}
-                        setNewDate={setNewDate}
-                        formatDate={formatDate}
-                        formatDateWithTime={formatDateWithTime}
-                        getStatusColor={getStatusColor}
                         isDraggable={true}
                       />
                     ))}
@@ -324,34 +366,23 @@ export default function DailyPublishedScheduleSimple() {
   );
 }
 
+// Type for simplified schedule card props
+type ScheduleCardItem = DailyPublishedWithBook;
+
 interface ScheduleCardProps {
-  item: DailyPublishedWithBook;
+  item: ScheduleCardItem;
   onDateEdit: (id: string, date: string) => void;
-  editingDate: string | null;
-  setEditingDate: (id: string | null) => void;
-  newDate: string;
-  setNewDate: (date: string) => void;
-  formatDate: (date: string) => string;
-  formatDateWithTime: (date: string, isStart?: boolean) => string;
-  getStatusColor: (status: string) => string;
   isDraggable?: boolean;
 }
 
 function ScheduleCard({ 
   item, 
-  onDateEdit, 
-  editingDate, 
-  setEditingDate, 
-  newDate, 
-  setNewDate, 
-  formatDate,
-  formatDateWithTime, 
-  getStatusColor,
+  onDateEdit,
   isDraggable = false
 }: ScheduleCardProps) {
   const navigate = useNavigate();
   const { data: seoMetadata } = useSeoMetadata(item.id);
-  const isEditing = editingDate === item.id;
+  const dateEdit = useDateEdit();
   const today = new Date().toISOString().split('T')[0];
 
   // Always call useSortable, but only apply effects when draggable
@@ -375,6 +406,11 @@ function ScheduleCard({
 
   const handleCardClick = () => {
     navigate(`/books/${item.book_id}`);
+  };
+
+  const handleDateSave = (newDate: string) => {
+    onDateEdit(item.id, newDate);
+    dateEdit.cancelEdit();
   };
 
   const cardContent = (
@@ -434,26 +470,26 @@ function ScheduleCard({
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                {isEditing ? (
+                {dateEdit.isEditing(item.id) ? (
                   <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                     <Input
                       type="date"
-                      value={newDate}
-                      onChange={(e) => setNewDate(e.target.value)}
+                      value={dateEdit.newDate}
+                      onChange={(e) => dateEdit.setNewDate(e.target.value)}
                       min={today}
                       className="w-auto"
                     />
                     <Button
                       size="sm"
-                      onClick={() => onDateEdit(item.id, newDate)}
-                      disabled={!newDate}
+                      onClick={() => handleDateSave(dateEdit.newDate)}
+                      disabled={!dateEdit.newDate}
                     >
                       Save
                     </Button>
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => setEditingDate(null)}
+                      onClick={dateEdit.cancelEdit}
                     >
                       Cancel
                     </Button>
@@ -463,8 +499,7 @@ function ScheduleCard({
                     className="cursor-pointer hover:text-foreground"
                     onClick={(e) => {
                       e.stopPropagation();
-                      setEditingDate(item.id);
-                      setNewDate(item.expires_at);
+                      dateEdit.startEdit(item.id, item.expires_at);
                     }}
                   >
                     Expires {formatDateWithTime(item.expires_at, false)}

@@ -5,6 +5,11 @@
 [build.environment]
   NODE_VERSION = "18"
 
+# Edge Functions
+[[edge_functions]]
+  function = "daily-published-meta"
+  path = "/daily-published/*"
+
 # Headers for security and performance
 [[headers]]
   for = "/*"

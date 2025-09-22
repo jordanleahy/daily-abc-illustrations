@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Calendar, Clock, BookOpen, RefreshCw, GripVertical, Image } from 'lucide-react';
+import { Clock, BookOpen, RefreshCw, GripVertical, Image } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { toast } from 'sonner';
 import { 
@@ -264,7 +264,6 @@ export default function DailyPublishedScheduleSimple() {
           {queuedItems.length > 0 && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-blue-500" />
                 Scheduled ({queuedItems.length})
                 <span className="text-sm text-muted-foreground font-normal ml-2">Drag to reorder</span>
               </h2>
@@ -296,7 +295,6 @@ export default function DailyPublishedScheduleSimple() {
           {(!scheduleItems || scheduleItems.length === 0) && (
             <Card>
               <CardContent className="text-center py-12">
-                <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No scheduled content</h3>
                 <p className="text-muted-foreground">
                   Create and publish books to see them in the schedule.
@@ -368,11 +366,9 @@ function ScheduleDates({
   return (
     <div className="flex flex-col gap-1 text-sm text-muted-foreground">
       <div className="flex items-center gap-2">
-        <Calendar className="h-4 w-4" />
         <span>Starts {formatScheduleDate(item.publish_date, { includeTime: true, isStart: true })}</span>
       </div>
       <div className="flex items-center gap-2">
-        <Calendar className="h-4 w-4" />
         {dateEdit.isEditing(item.id) ? (
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
             <Input

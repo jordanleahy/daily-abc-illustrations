@@ -333,6 +333,87 @@ export default function DailyPublishedScheduleSimple() {
   );
 }
 
+// Reusable components
+function ScheduleThumbnail({ imageUrl, title }: { imageUrl?: string; title: string }) {
+  return (
+    <div className="w-full md:w-48 h-32 md:h-24 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+      {imageUrl ? (
+        <img 
+          src={imageUrl} 
+          alt={title}
+          className="w-full h-full object-cover"
+        />
+      ) : (
+        <Image className="h-8 w-8 text-muted-foreground" />
+      )}
+    </div>
+  );
+}
+
+function ScheduleDates({ 
+  item, 
+  onDateEdit, 
+  dateEdit 
+}: { 
+  item: ScheduleCardItem; 
+  onDateEdit: (id: string, date: string) => void;
+  dateEdit: ReturnType<typeof useDateEdit>;
+}) {
+  const today = new Date().toISOString().split('T')[0];
+
+  const handleDateSave = (newDate: string) => {
+    onDateEdit(item.id, newDate);
+    dateEdit.cancelEdit();
+  };
+
+  return (
+    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+      <div className="flex items-center gap-2">
+        <Calendar className="h-4 w-4" />
+        <span>Starts {formatScheduleDate(item.publish_date, { includeTime: true, isStart: true })}</span>
+      </div>
+      <div className="flex items-center gap-2">
+        <Calendar className="h-4 w-4" />
+        {dateEdit.isEditing(item.id) ? (
+          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+            <Input
+              type="date"
+              value={dateEdit.newDate}
+              onChange={(e) => dateEdit.setNewDate(e.target.value)}
+              min={today}
+              className="w-auto"
+            />
+            <Button
+              size="sm"
+              onClick={() => handleDateSave(dateEdit.newDate)}
+              disabled={!dateEdit.newDate}
+            >
+              Save
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={dateEdit.cancelEdit}
+            >
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <span 
+            className="cursor-pointer hover:text-foreground"
+            onClick={(e) => {
+              e.stopPropagation();
+              dateEdit.startEdit(item.id, item.expires_at);
+            }}
+          >
+            Expires {formatScheduleDate(item.expires_at, { includeTime: true, isStart: false })}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
 // Type for simplified schedule card props
 type ScheduleCardItem = DailyPublishedWithBook;
 
@@ -350,7 +431,6 @@ function ScheduleCard({
   const navigate = useNavigate();
   const { data: seoMetadata } = useSeoMetadata(item.id);
   const dateEdit = useDateEdit();
-  const today = new Date().toISOString().split('T')[0];
 
   // Always call useSortable, but only apply effects when draggable
   const {
@@ -375,11 +455,6 @@ function ScheduleCard({
     navigate(`/books/${item.book_id}`);
   };
 
-  const handleDateSave = (newDate: string) => {
-    onDateEdit(item.id, newDate);
-    dateEdit.cancelEdit();
-  };
-
   const cardContent = (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={handleCardClick}>
       <CardHeader className="pb-3">
@@ -396,18 +471,11 @@ function ScheduleCard({
             </div>
           )}
 
-          {/* Thumbnail */}
-          <div className="w-full md:w-48 h-32 md:h-24 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-            {seoMetadata?.og_image_url ? (
-              <img 
-                src={seoMetadata.og_image_url} 
-                alt={item.title}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <Image className="h-8 w-8 text-muted-foreground" />
-            )}
-          </div>
+          {/* Thumbnail Component */}
+          <ScheduleThumbnail 
+            imageUrl={seoMetadata?.og_image_url}
+            title={item.title}
+          />
 
           {/* Content */}
           <div className="md:flex-1 md:min-w-0">
@@ -430,50 +498,12 @@ function ScheduleCard({
       <CardContent className="pt-0">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>Starts {formatScheduleDate(item.publish_date, { includeTime: true, isStart: true })}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                {dateEdit.isEditing(item.id) ? (
-                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                    <Input
-                      type="date"
-                      value={dateEdit.newDate}
-                      onChange={(e) => dateEdit.setNewDate(e.target.value)}
-                      min={today}
-                      className="w-auto"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={() => handleDateSave(dateEdit.newDate)}
-                      disabled={!dateEdit.newDate}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={dateEdit.cancelEdit}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <span 
-                    className="cursor-pointer hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      dateEdit.startEdit(item.id, item.expires_at);
-                    }}
-                  >
-                    Expires {formatScheduleDate(item.expires_at, { includeTime: true, isStart: false })}
-                  </span>
-                )}
-              </div>
-            </div>
+            {/* Dates Component */}
+            <ScheduleDates 
+              item={item}
+              onDateEdit={onDateEdit}
+              dateEdit={dateEdit}
+            />
           </div>
         </div>
       </CardContent>

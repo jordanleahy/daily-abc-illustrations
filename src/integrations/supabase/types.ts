@@ -277,6 +277,7 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
+          publish_date: string
           published_at: string
           queue_position: number | null
           status: string
@@ -290,6 +291,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          publish_date?: string
           published_at?: string
           queue_position?: number | null
           status?: string
@@ -303,6 +305,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          publish_date?: string
           published_at?: string
           queue_position?: number | null
           status?: string
@@ -872,6 +875,10 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_next_available_publish_date: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_next_book_thumbnail_version_number: {
         Args: { p_book_id: string }
         Returns: number
@@ -914,6 +921,10 @@ export type Database = {
       process_daily_published_queue_fixed: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      process_simple_daily_publishing: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
     }
     Enums: {

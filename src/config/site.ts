@@ -7,7 +7,7 @@ export const SITE_CONFIG = {
   // Basic site information
   name: 'Daily ABC Illustrations',
   tagline: 'Digital Drawing Canvas',
-  description: 'A new book published daily at 11:12 PM UTC',
+  description: 'A new book published daily at 12:01 AM UTC',
   author: 'Lovable',
   
   // URLs and social
@@ -23,14 +23,14 @@ export const SITE_CONFIG = {
     url: 'https://lovable.dev/opengraph-image-p98pqg.png',
     width: 1200,
     height: 630,
-    alt: 'Daily ABC Illustrations - New books published daily at 11:12 PM UTC',
+    alt: 'Daily ABC Illustrations - New books published daily at 12:01 AM UTC',
   },
   
   // Content specific
   dailyContent: {
     title: 'Daily ABC Illustrations',
-    description: 'New books published daily at 11:12 PM UTC',
-    schedule: '11:12 PM UTC daily',
+    description: 'New books published daily at 12:01 AM UTC',
+    schedule: '12:01 AM UTC daily',
   },
   
   // Branding

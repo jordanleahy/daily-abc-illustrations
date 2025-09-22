@@ -12,6 +12,7 @@ export interface DailyPublished {
   updated_at: string;
   queue_position: number;
   status: DailyPublishedStatus;
+  publish_date: string; // New date-based field
 }
 
 export interface DailyPublishedWithBook extends DailyPublished {
@@ -26,4 +27,5 @@ export interface CreateDailyPublishedRequest {
   book_id: string;
   title: string;
   description?: string;
+  publish_date?: string; // Allow scheduling for specific dates
 }

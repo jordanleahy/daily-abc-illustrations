@@ -12,40 +12,47 @@ export const useActivateContent = () => {
 
   return useMutation({
     mutationFn: async () => {
-      console.log('Calling activate-daily-published-content function...');
+      console.log('Calling simple-daily-publisher function...');
       
-      const { data, error } = await supabase.functions.invoke('activate-daily-published-content', {
+      const { data, error } = await supabase.functions.invoke('simple-daily-publisher', {
         body: {}
       });
 
       if (error) {
-        console.error('Error calling activate function:', error);
+        console.error('Error calling simple daily publisher function:', error);
         throw error;
       }
 
       return data;
     },
     onSuccess: (data) => {
-      console.log('Activate content response:', data);
+      console.log('Simple daily publisher response:', data);
       
-      if (data?.activated_count > 0) {
+      if (data?.results?.changes?.activated_items > 0) {
         toast({
           title: 'Content Activated',
-          description: `${data.activated_count} item(s) have been activated`,
+          description: `${data.results.changes.activated_items} item(s) have been activated`,
+        });
+      }
+
+      if (data?.results?.changes?.expired_items > 0) {
+        toast({
+          title: 'Content Expired',
+          description: `${data.results.changes.expired_items} expired item(s) have been removed`,
         });
       }
 
       // Invalidate queries to refresh the UI
       queryClient.invalidateQueries({ queryKey: ['daily-published'] });
-      queryClient.invalidateQueries({ queryKey: ['daily-published-queue'] });
+      queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
       queryClient.invalidateQueries({ queryKey: ['active-daily-published'] });
     },
     onError: (error) => {
       console.error('Failed to activate content:', error);
       toast({
         variant: 'destructive',
-        title: 'Activation Failed',
-        description: 'Failed to activate content. Please try refreshing the page.',
+        title: 'Processing Failed',
+        description: 'Failed to process daily publishing. Please try refreshing the page.',
       });
     },
   });

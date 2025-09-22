@@ -3,12 +3,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadataSubscription } from './useSeoMetadataSubscription';
 
-export const useDailyPublishedQueue = () => {
+export const useDailyPublishedSchedule = () => {
   // Enable real-time subscriptions for SEO metadata updates
   useSeoMetadataSubscription();
   
   return useQuery({
-    queryKey: ['daily-published-queue'],
+    queryKey: ['daily-published-schedule'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('daily_published')
@@ -20,12 +20,12 @@ export const useDailyPublishedQueue = () => {
             user_id
           )
         `)
-        .neq('status', 'draft') // Filter out draft entries from public queue view
+        .neq('status', 'draft') // Filter out draft entries
         .order('publish_date', { ascending: true }) // Order by publish date instead of queue position
         .order('created_at', { ascending: true }); // Secondary sort by creation time
 
       if (error) {
-        console.error('Error fetching daily published queue:', error);
+        console.error('Error fetching daily published schedule:', error);
         throw error;
       }
 
@@ -50,7 +50,7 @@ export const useDailyPublishedQueue = () => {
         return true;
       });
     },
-    staleTime: 30 * 1000, // 30 seconds - more frequent updates for queue
+    staleTime: 30 * 1000, // 30 seconds - more frequent updates for schedule
     gcTime: 60 * 1000, // 1 minute
   });
 };

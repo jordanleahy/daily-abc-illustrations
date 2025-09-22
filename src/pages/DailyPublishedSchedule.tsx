@@ -343,9 +343,9 @@ function ScheduleCard({
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={handleCardClick}>
       <CardHeader className="pb-3">
-        <div className="flex items-start gap-4">
+        <div className="flex flex-col gap-3">
           {/* Thumbnail */}
-          <div className="w-32 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+          <div className="w-full h-32 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
             {seoMetadata?.og_image_url ? (
               <img 
                 src={seoMetadata.og_image_url} 
@@ -353,12 +353,12 @@ function ScheduleCard({
                 className="w-full h-full object-cover"
               />
             ) : (
-              <Image className="h-6 w-6 text-muted-foreground" />
+              <Image className="h-8 w-8 text-muted-foreground" />
             )}
           </div>
 
           {/* Content */}
-          <div className="flex-1 min-w-0">
+          <div>
             <div className="flex justify-between items-start">
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg truncate">{item.title}</CardTitle>
@@ -447,10 +447,10 @@ function DraggableScheduleCard(props: ScheduleCardProps) {
     <div ref={setNodeRef} style={style}>
       <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/books/${props.item.book_id}`)}>
         <CardHeader className="pb-3">
-          <div className="flex items-start gap-4">
+          <div className="flex flex-col gap-3 relative">
             {/* Drag Handle */}
             <div
-              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded flex-shrink-0 mt-1"
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded absolute top-0 right-0 z-10"
               {...attributes}
               {...listeners}
               onClick={(e) => e.stopPropagation()}
@@ -459,7 +459,7 @@ function DraggableScheduleCard(props: ScheduleCardProps) {
             </div>
 
             {/* Thumbnail */}
-            <div className="w-32 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+            <div className="w-full h-32 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
               {seoMetadata?.og_image_url ? (
                 <img 
                   src={seoMetadata.og_image_url} 
@@ -467,12 +467,12 @@ function DraggableScheduleCard(props: ScheduleCardProps) {
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <Image className="h-6 w-6 text-muted-foreground" />
+                <Image className="h-8 w-8 text-muted-foreground" />
               )}
             </div>
 
             {/* Content */}
-            <div className="flex-1 min-w-0">
+            <div>
               <div className="flex justify-between items-start">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-lg truncate">{props.item.title}</CardTitle>
@@ -490,7 +490,7 @@ function DraggableScheduleCard(props: ScheduleCardProps) {
         </CardHeader>
         
         <CardContent className="pt-0">
-          <div className="flex justify-between items-center ml-12">
+          <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />

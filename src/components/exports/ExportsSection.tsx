@@ -20,6 +20,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { FileText, Globe, Eye, Copy, History, RefreshCw } from 'lucide-react';
 import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
+import { formatScheduleTimestamp } from '@/utils/timezone';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -260,20 +261,11 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const getLinkedInPostText = () => {
     if (!existingPublication) return '';
     
-    const expiresAt = existingPublication.expires_at ? new Date(existingPublication.expires_at) : null;
-    const expirationText = expiresAt 
-      ? `Expires at ${expiresAt.toLocaleTimeString('en-US', { 
-          hour: 'numeric', 
-          hour12: true,
-          timeZone: 'America/New_York'
-        })} ${expiresAt.toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric',
-          timeZone: 'America/New_York'
-        })}`
+    const expirationText = existingPublication.expires_at 
+      ? `Expires ${formatScheduleTimestamp(existingPublication.expires_at)}`
       : 'Limited time available';
 
-    return `${contentName}: Learn Letters with Real Gear\n${expirationText}\nComment for Link`;
+    return `${existingPublication.title}: Learn Letters with Real Gear\n${expirationText}\nComment for Link`;
   };
 
   /**

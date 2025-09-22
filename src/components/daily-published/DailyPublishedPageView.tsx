@@ -1,17 +1,14 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { PublicPageImage } from './PublicPageImage';
+import { FreemiumHeader } from './FreemiumHeader';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { Page } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
 import { useState, useEffect } from 'react';
 import { MetaHead } from '@/components/common';
 import { useNavigate } from 'react-router-dom';
-import { QrCode } from 'lucide-react';
-import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { UpcomingBooksPreview } from './UpcomingBooksPreview';
 interface DailyPublishedPageViewProps {
   page: Page;
@@ -42,7 +39,6 @@ export function DailyPublishedPageView({
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
   const navigate = useNavigate();
-  const { qrCodeData } = useBookQRCode(bookId);
 
   // Simple expiration check - redirect to home if expired
   const isExpired = new Date() > new Date(expiresAt);
@@ -81,69 +77,14 @@ export function DailyPublishedPageView({
   return <div className="h-screen bg-background flex flex-col overflow-hidden" style={{
     touchAction: 'none'
   }}>
-      {/* Fixed Header with countdown, back button, and page controls */}
-      <div className="fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-background/95 backdrop-blur-sm border-b">
-        {/* Left section: Timer and back button */}
-        <div className="flex items-center gap-3">
-          <div className="text-sm font-medium text-muted-foreground">
-            {timeRemaining}
-          </div>
-          
-          {/* Previous page back button on the outside */}
-          {previousPage && onPrevious && (
-            <Button variant="ghost" size="sm" onClick={onPrevious} className="p-1 h-8 w-8 rounded border border-border hover:bg-muted">
-              <div className="w-6 h-6 bg-muted rounded-sm overflow-hidden">
-                <PublicPageImage pageId={previousPage.id} bookId={bookId} />
-              </div>
-            </Button>
-          )}
-        </div>
-        
-        {/* Middle section: Schedule title */}
-        <div className="text-sm font-medium text-foreground">
-          Schedule
-        </div>
-        
-        {/* Right section: QR button and page indicator grouped together */}
-        <div className="flex items-center gap-2">
-          {/* QR Code Button */}
-          <Sheet>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="sm" className="p-1 h-8 w-8 rounded border border-border hover:bg-muted">
-                <QrCode className="w-4 h-4" />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="bottom" className="h-[80vh]">
-              <SheetHeader>
-                <SheetTitle>Share to Share</SheetTitle>
-              </SheetHeader>
-              <div className="flex flex-col items-center justify-center h-full space-y-4">
-                <div className="w-64 h-64 rounded-lg flex items-center justify-center">
-                  {qrCodeData.isLoading ? (
-                    <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
-                      <QrCode className="w-16 h-16 text-muted-foreground animate-pulse" />
-                    </div>
-                  ) : qrCodeData.qrCodeImage ? (
-                    <img 
-                      src={qrCodeData.qrCodeImage} 
-                      alt="QR Code for sharing this content"
-                      className="w-64 h-64 rounded-lg"
-                    />
-                  ) : (
-                    <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
-                      <QrCode className="w-16 h-16 text-muted-foreground" />
-                    </div>
-                  )}
-                </div>
-              </div>
-            </SheetContent>
-          </Sheet>
-          
-          <div className="text-xs text-muted-foreground font-medium">
-            Page {pageNumber} of {totalPages}
-          </div>
-        </div>
-      </div>
+      <FreemiumHeader
+        timeRemaining={timeRemaining}
+        previousPage={previousPage}
+        onPrevious={onPrevious}
+        bookId={bookId}
+        pageNumber={pageNumber}
+        totalPages={totalPages}
+      />
 
       {/* Focused page card - Fixed height to prevent scrolling */}
       <div className="h-[calc(100vh-8rem)] mt-16 px-4 flex items-center justify-center">

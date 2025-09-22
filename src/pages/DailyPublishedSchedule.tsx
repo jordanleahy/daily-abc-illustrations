@@ -141,6 +141,17 @@ export default function DailyPublishedScheduleSimple() {
     });
   };
 
+  const formatDateWithTime = (dateString: string, isStart: boolean = false) => {
+    const date = new Date(dateString).toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+    const time = isStart ? '7:01 AM ET' : '11:59 PM ET';
+    return `${date} at ${time}`;
+  };
+
   if (!user) {
     return (
       <PageLayout>
@@ -226,6 +237,7 @@ export default function DailyPublishedScheduleSimple() {
                     newDate={newDate}
                     setNewDate={setNewDate}
                     formatDate={formatDate}
+                    formatDateWithTime={formatDateWithTime}
                     getStatusColor={getStatusColor}
                   />
                 ))}
@@ -261,6 +273,7 @@ export default function DailyPublishedScheduleSimple() {
                         newDate={newDate}
                         setNewDate={setNewDate}
                         formatDate={formatDate}
+                        formatDateWithTime={formatDateWithTime}
                         getStatusColor={getStatusColor}
                       />
                     ))}
@@ -318,6 +331,7 @@ interface ScheduleCardProps {
   newDate: string;
   setNewDate: (date: string) => void;
   formatDate: (date: string) => string;
+  formatDateWithTime: (date: string, isStart?: boolean) => string;
   getStatusColor: (status: string) => string;
 }
 
@@ -328,7 +342,8 @@ function ScheduleCard({
   setEditingDate, 
   newDate, 
   setNewDate, 
-  formatDate, 
+  formatDate,
+  formatDateWithTime, 
   getStatusColor 
 }: ScheduleCardProps) {
   const navigate = useNavigate();
@@ -381,7 +396,7 @@ function ScheduleCard({
             <div className="flex flex-col gap-1 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                <span>Starts {formatDate(item.publish_date)}</span>
+                <span>Starts {formatDateWithTime(item.publish_date, true)}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
@@ -418,7 +433,7 @@ function ScheduleCard({
                       setNewDate(item.expires_at);
                     }}
                   >
-                    Expires on {formatDate(item.expires_at)}
+                    Expires {formatDateWithTime(item.expires_at, false)}
                   </span>
                 )}
               </div>
@@ -501,7 +516,7 @@ function DraggableScheduleCard(props: ScheduleCardProps) {
               <div className="flex flex-col gap-1 text-sm text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
-                  <span>Starts {props.formatDate(props.item.publish_date)}</span>
+                  <span>Starts {props.formatDateWithTime(props.item.publish_date, true)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4" />
@@ -538,7 +553,7 @@ function DraggableScheduleCard(props: ScheduleCardProps) {
                         props.setNewDate(props.item.expires_at);
                       }}
                     >
-                      Expires on {props.formatDate(props.item.expires_at)}
+                      Expires {props.formatDateWithTime(props.item.expires_at, false)}
                     </span>
                   )}
                 </div>

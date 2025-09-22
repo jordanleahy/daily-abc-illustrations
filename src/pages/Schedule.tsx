@@ -6,6 +6,7 @@ import { MetaHead } from '@/components/common/MetaHead';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Clock, BookOpen, Image } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 
@@ -167,17 +168,37 @@ export default function Schedule() {
 // Reusable components (adapted from DailyPublishedSchedule)
 function ScheduleThumbnail({ imageUrl, title }: { imageUrl?: string; title: string }) {
   return (
-    <div className="w-32 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-      {imageUrl ? (
-        <img 
-          src={imageUrl} 
-          alt={title}
-          className="w-full h-full object-cover"
-        />
-      ) : (
-        <Image className="h-6 w-6 text-muted-foreground" />
-      )}
-    </div>
+    <>
+      {/* Mobile: Full width with aspect ratio */}
+      <div className="md:hidden w-full">
+        <AspectRatio ratio={1.91} className="rounded-lg overflow-hidden bg-muted">
+          {imageUrl ? (
+            <img 
+              src={imageUrl} 
+              alt={title}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <Image className="h-8 w-8 text-muted-foreground" />
+            </div>
+          )}
+        </AspectRatio>
+      </div>
+      
+      {/* Desktop: Fixed size */}
+      <div className="hidden md:block w-32 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+        {imageUrl ? (
+          <img 
+            src={imageUrl} 
+            alt={title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <Image className="h-6 w-6 text-muted-foreground" />
+        )}
+      </div>
+    </>
   );
 }
 

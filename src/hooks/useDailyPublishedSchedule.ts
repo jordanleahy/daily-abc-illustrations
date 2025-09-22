@@ -21,7 +21,7 @@ export const useDailyPublishedSchedule = () => {
           )
         `)
         .neq('status', 'draft') // Filter out draft entries
-        .order('publish_date', { ascending: true }) // Order by publish date instead of queue position
+        .order('queue_order', { ascending: true }) // Order by simple queue position
         .order('created_at', { ascending: true }); // Secondary sort by creation time
 
       if (error) {

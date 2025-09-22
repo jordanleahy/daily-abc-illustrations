@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
-import { useScheduleForDate } from '@/hooks/useScheduleForDate';
+import { useReorderQueue } from '@/hooks/useReorderQueue';
 import { useExpireContent } from '@/hooks/useExpireContent';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { MetaHead } from '@/components/common/MetaHead';
@@ -10,9 +10,8 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Clock, BookOpen, RefreshCw, GripVertical, Image, Edit3 } from 'lucide-react';
+import { Clock, BookOpen, RefreshCw, GripVertical, Image, ArrowUp, ArrowDown } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
-import { ScheduleEditor } from '@/components/daily-published/ScheduleEditor';
 import { toast } from 'sonner';
 import { 
   DndContext, 
@@ -30,28 +29,6 @@ import {
 import { arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-// Custom hook for date editing logic
-function useDateEdit() {
-  const [editingItemId, setEditingItemId] = useState<string | null>(null);
-
-  const startEdit = (itemId: string) => {
-    setEditingItemId(itemId);
-  };
-
-  const cancelEdit = () => {
-    setEditingItemId(null);
-  };
-
-  const isEditing = (itemId: string) => editingItemId === itemId;
-
-  return {
-    editingItemId,
-    startEdit,
-    cancelEdit,
-    isEditing
-  };
-}
-
 // Utility functions
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -63,7 +40,7 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// Simplified date/time formatter that uses actual timestamps
+// Simple date formatter - shows when it will be active (always 7:01 AM ET)
 const formatScheduleDate = (dateString: string, options?: { includeTime?: boolean }) => {
   const date = new Date(dateString);
   
@@ -76,38 +53,19 @@ const formatScheduleDate = (dateString: string, options?: { includeTime?: boolea
     });
   }
   
-  // Use actual timestamp converted to Eastern Time
+  // Always show 7:01 AM ET since that's when all books publish
   return date.toLocaleDateString('en-US', {
     weekday: 'short',
     month: 'short',
     day: 'numeric'
-  }) + ' at ' + date.toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    timeZone: 'America/New_York',
-    timeZoneName: 'short'
-  });
-};
-
-// Utility function to generate sequential publish dates
-const getSequentialDates = (startDate: Date, count: number): string[] => {
-  const dates: string[] = [];
-  const currentDate = new Date(startDate);
-  
-  for (let i = 0; i < count; i++) {
-    dates.push(currentDate.toISOString().split('T')[0]);
-    currentDate.setDate(currentDate.getDate() + 1);
-  }
-  
-  return dates;
+  }) + ' at 7:01 AM ET';
 };
 
 export default function DailyPublishedScheduleSimple() {
   const { user } = useAuth();
   const { data: scheduleItems, isLoading, error } = useDailyPublishedSchedule();
-  const scheduleForDate = useScheduleForDate();
+  const reorderQueue = useReorderQueue();
   const expireContent = useExpireContent();
-  const dateEdit = useDateEdit();
 
   // Drag and drop sensors
   const sensors = useSensors(
@@ -117,18 +75,6 @@ export default function DailyPublishedScheduleSimple() {
       },
     })
   );
-
-  const handleDateChange = async (itemId: string, publishDate: string) => {
-    try {
-      await scheduleForDate.mutateAsync({ 
-        dailyPublishedId: itemId, 
-        publishDate 
-      });
-      dateEdit.cancelEdit();
-    } catch (error) {
-      console.error('Failed to update date:', error);
-    }
-  };
 
   const handleExpireContent = async () => {
     try {
@@ -153,28 +99,19 @@ export default function DailyPublishedScheduleSimple() {
     // Reorder the items
     const reorderedItems = arrayMove(queuedItems, oldIndex, newIndex);
     
-    // Calculate new sequential dates starting from tomorrow
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const newDates = getSequentialDates(tomorrow, reorderedItems.length);
+    // Update queue_order for all items
+    const updateData = reorderedItems.map((item, index) => ({
+      id: item.id,
+      queue_order: index + 1
+    }));
     
-    // Update dates for all reordered items
     try {
-      toast.loading('Reordering schedule...', { id: 'reorder' });
-      
-      await Promise.all(
-        reorderedItems.map((item, index) =>
-          scheduleForDate.mutateAsync({
-            dailyPublishedId: item.id,
-            publishDate: newDates[index]
-          })
-        )
-      );
-      
-      toast.success('Schedule reordered successfully', { id: 'reorder' });
+      toast.loading('Reordering queue...', { id: 'reorder' });
+      await reorderQueue.mutateAsync({ items: updateData });
+      toast.success('Queue reordered successfully', { id: 'reorder' });
     } catch (error) {
-      console.error('Failed to reorder schedule:', error);
-      toast.error('Failed to reorder schedule', { id: 'reorder' });
+      console.error('Failed to reorder queue:', error);
+      toast.error('Failed to reorder queue', { id: 'reorder' });
     }
   };
 
@@ -210,15 +147,16 @@ export default function DailyPublishedScheduleSimple() {
   }
 
   const activeItems = scheduleItems?.filter(item => item.status === 'active') || [];
-  const queuedItems = scheduleItems?.filter(item => item.status === 'queued') || [];
+  const queuedItems = scheduleItems?.filter(item => item.status === 'queued')
+    .sort((a, b) => (a.queue_order || 0) - (b.queue_order || 0)) || [];
   const expiredItems = scheduleItems?.filter(item => item.status === 'expired') || [];
 
   return (
     <>
       <MetaHead 
         metadata={{
-          title: "Publishing Schedule",
-          description: "Manage your daily published content schedule with date-based publishing",
+          title: "Publishing Schedule - Simple Daily Queue",
+          description: "Manage your daily published content queue. Books publish automatically at 7:01 AM Eastern Time.",
           type: "website"
         }}
       />
@@ -227,9 +165,10 @@ export default function DailyPublishedScheduleSimple() {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <div className="flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-3xl font-bold">Publishing Schedule</h1>
+              <h1 className="text-3xl font-bold">Publishing Queue</h1>
               <p className="text-muted-foreground mt-2">
-                Books are published daily at 7:01 AM Eastern Time. Schedule your content for specific dates.
+                📚 Books publish daily at <strong>7:01 AM Eastern Time</strong><br/>
+                📋 Drag to reorder • Next book publishes tomorrow
               </p>
             </div>
             
@@ -245,19 +184,20 @@ export default function DailyPublishedScheduleSimple() {
             </div>
           </div>
 
-          {/* Active Items */}
+          {/* Active Item */}
           {activeItems.length > 0 && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-green-500" />
-                Currently Active
+                📺 Currently Live
               </h2>
               <div className="space-y-4">
                 {activeItems.map((item) => (
-                    <ScheduleCard 
-                      key={item.id} 
-                      item={item} 
-                    />
+                  <ScheduleCard 
+                    key={item.id} 
+                    item={item}
+                    position="active"
+                  />
                 ))}
               </div>
             </div>
@@ -267,7 +207,7 @@ export default function DailyPublishedScheduleSimple() {
           {queuedItems.length > 0 && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                Scheduled ({queuedItems.length})
+                📅 Publishing Queue ({queuedItems.length})
                 <span className="text-sm text-muted-foreground font-normal ml-2">Drag to reorder</span>
               </h2>
               <DndContext
@@ -280,10 +220,11 @@ export default function DailyPublishedScheduleSimple() {
                   strategy={verticalListSortingStrategy}
                 >
                   <div className="space-y-4">
-                    {queuedItems.map((item) => (
+                    {queuedItems.map((item, index) => (
                       <ScheduleCard 
                         key={item.id} 
-                        item={item} 
+                        item={item}
+                        position={index + 1}
                         isDraggable={true}
                       />
                     ))}
@@ -297,9 +238,9 @@ export default function DailyPublishedScheduleSimple() {
           {(!scheduleItems || scheduleItems.length === 0) && (
             <Card>
               <CardContent className="text-center py-12">
-                <h3 className="text-lg font-semibold mb-2">No scheduled content</h3>
+                <h3 className="text-lg font-semibold mb-2">No books in queue</h3>
                 <p className="text-muted-foreground">
-                  Create and publish books to see them in the schedule.
+                  Publish books to see them in the daily schedule.
                 </p>
               </CardContent>
             </Card>
@@ -335,7 +276,7 @@ export default function DailyPublishedScheduleSimple() {
 // Reusable components
 function ScheduleThumbnail({ imageUrl, title }: { imageUrl?: string; title: string }) {
   return (
-    <div className="w-full md:w-48 h-32 md:h-24 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+    <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
       {imageUrl ? (
         <img 
           src={imageUrl} 
@@ -343,64 +284,7 @@ function ScheduleThumbnail({ imageUrl, title }: { imageUrl?: string; title: stri
           className="w-full h-full object-cover"
         />
       ) : (
-        <Image className="h-8 w-8 text-muted-foreground" />
-      )}
-    </div>
-  );
-}
-
-function ScheduleDates({ 
-  item, 
-  dateEdit 
-}: { 
-  item: ScheduleCardItem; 
-  dateEdit: ReturnType<typeof useDateEdit>;
-}) {
-  // Format the date/time display using the new flexible columns if available
-  const formatDateTime = (date?: string, time?: string, fallbackTimestamp?: string) => {
-    if (date && time) {
-      const dateObj = new Date(`${date}T${time}`);
-      return dateObj.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric'
-      }) + ' at ' + dateObj.toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        timeZone: 'America/New_York',
-        timeZoneName: 'short'
-      });
-    }
-    return fallbackTimestamp ? formatScheduleDate(fallbackTimestamp, { includeTime: true }) : '';
-  };
-
-  return (
-    <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-      {dateEdit.isEditing(item.id) ? (
-        <ScheduleEditor 
-          item={item} 
-          onCancel={dateEdit.cancelEdit}
-        />
-      ) : (
-        <>
-          <div className="flex items-center gap-2">
-            <span>Starts {formatDateTime(item.start_date, item.start_time, item.published_at || item.publish_date)}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span>Expires {formatDateTime(item.expire_date, item.expire_time, item.expires_at)}</span>
-            <Button
-              size="sm"
-              variant="ghost"
-              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-              onClick={(e) => {
-                e.stopPropagation();
-                dateEdit.startEdit(item.id);
-              }}
-            >
-              <Edit3 className="h-3 w-3" />
-            </Button>
-          </div>
-        </>
+        <Image className="h-6 w-6 text-muted-foreground" />
       )}
     </div>
   );
@@ -411,16 +295,17 @@ type ScheduleCardItem = DailyPublishedWithBook;
 
 interface ScheduleCardProps {
   item: ScheduleCardItem;
+  position: number | "active";
   isDraggable?: boolean;
 }
 
 function ScheduleCard({ 
   item, 
+  position,
   isDraggable = false
 }: ScheduleCardProps) {
   const navigate = useNavigate();
   const { data: seoMetadata } = useSeoMetadata(item.id);
-  const dateEdit = useDateEdit();
 
   // Always call useSortable, but only apply effects when draggable
   const {
@@ -445,14 +330,42 @@ function ScheduleCard({
     navigate(`/books/${item.book_id}`);
   };
 
+  // Calculate when this item will be active
+  const getPublishInfo = () => {
+    if (item.status === 'active') {
+      return {
+        title: "📺 LIVE NOW",
+        subtitle: `Until tomorrow 7:01 AM ET`,
+        color: "text-green-600 font-semibold"
+      };
+    }
+    
+    if (typeof position === 'number') {
+      const days = position === 1 ? 'Tomorrow' : `In ${position} days`;
+      return {
+        title: `📅 Position #${position}`,
+        subtitle: `Publishes ${days} at 7:01 AM ET`,
+        color: "text-blue-600"
+      };
+    }
+    
+    return {
+      title: "Queued",
+      subtitle: "Waiting to publish",
+      color: "text-muted-foreground"
+    };
+  };
+
+  const publishInfo = getPublishInfo();
+
   const cardContent = (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow group" onClick={handleCardClick}>
       <CardHeader className="pb-3">
-        <div className="flex flex-col md:flex-row gap-3 relative">
+        <div className="flex gap-3 items-center">
           {/* Conditional Drag Handle */}
           {isDraggable && (
             <div
-              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded absolute top-2 right-2 md:top-1/2 md:-translate-y-1/2 md:right-2 z-10"
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
               {...attributes}
               {...listeners}
               onClick={(e) => e.stopPropagation()}
@@ -461,48 +374,52 @@ function ScheduleCard({
             </div>
           )}
 
-          {/* Thumbnail Component */}
+          {/* Position Indicator for Queue */}
+          {typeof position === 'number' && (
+            <div className="flex flex-col items-center justify-center w-8 h-8 bg-primary/10 rounded-full text-primary font-semibold text-sm">
+              {position}
+            </div>
+          )}
+
+          {/* Thumbnail */}
           <ScheduleThumbnail 
             imageUrl={seoMetadata?.og_image_url}
             title={item.title}
           />
 
           {/* Content */}
-          <div className="md:flex-1 md:min-w-0">
-            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 md:gap-0">
-              <Badge className={`${getStatusColor(item.status)} self-start md:order-2`} variant="secondary">
-                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-              </Badge>
-              <div className={`flex-1 min-w-0 md:order-1 ${isDraggable ? 'pr-8 md:pr-0' : ''}`}>
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start">
+              <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg truncate">{item.title}</CardTitle>
                 <CardDescription className="mt-1">
                   {item.book.book_name}
                   {item.description && ` • ${item.description}`}
                 </CardDescription>
               </div>
+              <Badge className={`${getStatusColor(item.status)} ml-2`} variant="secondary">
+                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+              </Badge>
+            </div>
+            
+            {/* Publishing Info */}
+            <div className="mt-2 text-sm">
+              <div className={publishInfo.color}>{publishInfo.title}</div>
+              <div className="text-muted-foreground text-xs">{publishInfo.subtitle}</div>
             </div>
           </div>
         </div>
       </CardHeader>
-      
-      <CardContent className="pt-0">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            {/* Dates Component */}
-            <ScheduleDates 
-              item={item}
-              dateEdit={dateEdit}
-            />
-          </div>
-        </div>
-      </CardContent>
     </Card>
   );
 
-  // Always wrap with sortable div, but only apply ref and style when draggable
-  return (
-    <div ref={isDraggable ? setNodeRef : undefined} style={style}>
-      {cardContent}
-    </div>
-  );
+  if (isDraggable) {
+    return (
+      <div ref={setNodeRef} style={style}>
+        {cardContent}
+      </div>
+    );
+  }
+
+  return cardContent;
 }

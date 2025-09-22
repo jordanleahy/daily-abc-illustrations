@@ -148,7 +148,7 @@ export default function DailyPublishedScheduleSimple() {
       month: 'short',
       day: 'numeric'
     });
-    const time = isStart ? '7:01 AM ET' : '11:59 PM ET';
+    const time = isStart ? '7:01 AM ET' : '7:00 AM ET';
     return `${date} at ${time}`;
   };
 
@@ -264,7 +264,7 @@ export default function DailyPublishedScheduleSimple() {
                 >
                   <div className="space-y-4">
                     {queuedItems.map((item) => (
-                      <DraggableScheduleCard 
+                      <ScheduleCard 
                         key={item.id} 
                         item={item} 
                         onDateEdit={(id, date) => handleDateChange(id, date)}
@@ -275,6 +275,7 @@ export default function DailyPublishedScheduleSimple() {
                         formatDate={formatDate}
                         formatDateWithTime={formatDateWithTime}
                         getStatusColor={getStatusColor}
+                        isDraggable={true}
                       />
                     ))}
                   </div>
@@ -333,6 +334,7 @@ interface ScheduleCardProps {
   formatDate: (date: string) => string;
   formatDateWithTime: (date: string, isStart?: boolean) => string;
   getStatusColor: (status: string) => string;
+  isDraggable?: boolean;
 }
 
 function ScheduleCard({ 
@@ -344,21 +346,51 @@ function ScheduleCard({
   setNewDate, 
   formatDate,
   formatDateWithTime, 
-  getStatusColor 
+  getStatusColor,
+  isDraggable = false
 }: ScheduleCardProps) {
   const navigate = useNavigate();
   const { data: seoMetadata } = useSeoMetadata(item.id);
   const isEditing = editingDate === item.id;
   const today = new Date().toISOString().split('T')[0];
 
+  // Conditionally use sortable hook only when draggable
+  const sortable = isDraggable ? useSortable({ id: item.id }) : null;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = sortable || {};
+
+  const style = isDraggable ? {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  } : {};
+
   const handleCardClick = () => {
     navigate(`/books/${item.book_id}`);
   };
 
-  return (
+  const cardContent = (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={handleCardClick}>
       <CardHeader className="pb-3">
-        <div className="flex flex-col md:flex-row gap-3">
+        <div className="flex flex-col md:flex-row gap-3 relative">
+          {/* Conditional Drag Handle */}
+          {isDraggable && (
+            <div
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded absolute top-2 right-2 md:top-1/2 md:-translate-y-1/2 md:right-2 z-10"
+              {...attributes}
+              {...listeners}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </div>
+          )}
+
           {/* Thumbnail */}
           <div className="w-full md:w-48 h-32 md:h-24 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
             {seoMetadata?.og_image_url ? (
@@ -375,7 +407,7 @@ function ScheduleCard({
           {/* Content */}
           <div className="md:flex-1 md:min-w-0">
             <div className="flex justify-between items-start">
-              <div className="flex-1 min-w-0">
+              <div className={`flex-1 min-w-0 ${isDraggable ? 'pr-8 md:pr-0' : ''}`}>
                 <CardTitle className="text-lg truncate">{item.title}</CardTitle>
                 <CardDescription className="mt-1">
                   {item.book.book_name}
@@ -443,125 +475,11 @@ function ScheduleCard({
       </CardContent>
     </Card>
   );
-}
 
-// Draggable version of ScheduleCard for queued items
-function DraggableScheduleCard(props: ScheduleCardProps) {
-  const navigate = useNavigate();
-  const { data: seoMetadata } = useSeoMetadata(props.item.id);
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: props.item.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
+  // Wrap with sortable div only when draggable
+  return isDraggable ? (
     <div ref={setNodeRef} style={style}>
-      <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/books/${props.item.book_id}`)}>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col md:flex-row gap-3 relative">
-            {/* Drag Handle */}
-            <div
-              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded absolute top-2 right-2 md:top-1/2 md:-translate-y-1/2 md:right-2 z-10"
-              {...attributes}
-              {...listeners}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
-            </div>
-
-            {/* Thumbnail */}
-            <div className="w-full md:w-48 h-32 md:h-24 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-              {seoMetadata?.og_image_url ? (
-                <img 
-                  src={seoMetadata.og_image_url} 
-                  alt={props.item.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Image className="h-8 w-8 text-muted-foreground" />
-              )}
-            </div>
-
-            {/* Content */}
-            <div className="md:flex-1 md:min-w-0">
-              <div className="flex justify-between items-start">
-                <div className="flex-1 min-w-0 pr-8 md:pr-0">
-                  <CardTitle className="text-lg truncate">{props.item.title}</CardTitle>
-                  <CardDescription className="mt-1">
-                    {props.item.book.book_name}
-                    {props.item.description && ` • ${props.item.description}`}
-                  </CardDescription>
-                </div>
-                <Badge className={props.getStatusColor(props.item.status)} variant="secondary">
-                  {props.item.status}
-                </Badge>
-              </div>
-            </div>
-          </div>
-        </CardHeader>
-        
-        <CardContent className="pt-0">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center gap-4">
-              <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  <span>Starts {props.formatDateWithTime(props.item.publish_date, true)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4" />
-                  {props.editingDate === props.item.id ? (
-                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                      <Input
-                        type="date"
-                        value={props.newDate}
-                        onChange={(e) => props.setNewDate(e.target.value)}
-                        min={new Date().toISOString().split('T')[0]}
-                        className="w-auto"
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() => props.onDateEdit(props.item.id, props.newDate)}
-                        disabled={!props.newDate}
-                      >
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => props.setEditingDate(null)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  ) : (
-                    <span 
-                      className="cursor-pointer hover:text-foreground"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        props.setEditingDate(props.item.id);
-                        props.setNewDate(props.item.expires_at);
-                      }}
-                    >
-                      Expires {props.formatDateWithTime(props.item.expires_at, false)}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {cardContent}
     </div>
-  );
+  ) : cardContent;
 }

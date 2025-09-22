@@ -41,10 +41,10 @@ export const useDailyPublishedSchedule = () => {
           return false; // Hide expired items
         }
         
-        // For active items, check if they should still be active
-        if (item.status === 'active' && item.publish_date < today) {
-          console.log(`Client-side detected expired item: ${item.title} (published on ${item.publish_date})`);
-          return false; // Hide items that should have expired
+        // For active items, only hide if expires_at has passed
+        if (item.status === 'active' && new Date(item.expires_at) <= now) {
+          console.log(`Client-side detected expired item: ${item.title} (expires at ${item.expires_at})`);
+          return false; // Hide items that have actually expired
         }
         
         return true;

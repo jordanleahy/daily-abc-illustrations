@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
-import { RefreshCw, FileText, Copy, Trash2, Edit3, Image, Upload } from 'lucide-react';
+import { RefreshCw, FileText, Copy, Trash2, Edit3, Image, Upload, Download } from 'lucide-react';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageSystemPromptEditor } from './PageSystemPromptEditor';
 import { PageImageSection } from '@/components/PageImageSection';
@@ -11,6 +11,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeletePage } from '@/hooks/useDeletePage';
+import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +43,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
   const { user } = useAuth();
   const { toast } = useToast();
   const deletePage = useDeletePage();
+  const { currentImage } = usePageImageUrls(page.id);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -288,6 +290,42 @@ export function PageCard({ page, bookId }: PageCardProps) {
       });
     }
   };
+
+  const handleDownloadImage = async () => {
+    if (!currentImage?.image_url) {
+      toast({
+        title: "No Image",
+        description: "No image available to download",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch(currentImage.image_url);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${page.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.png`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast({
+        title: "Downloaded",
+        description: "Image downloaded successfully",
+      });
+    } catch (error) {
+      console.error('Error downloading image:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to download image",
+        variant: "destructive",
+      });
+    }
+  };
   
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -339,6 +377,17 @@ export function PageCard({ page, bookId }: PageCardProps) {
               aria-label="Upload image for this page"
             >
               <Upload className="w-3 h-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-6 h-6"
+              onClick={handleDownloadImage}
+              disabled={!currentImage?.image_url || currentImage?.generation_status !== 'complete'}
+              title="Download page image as PNG"
+              aria-label="Download page image as PNG"
+            >
+              <Download className="w-3 h-3" />
             </Button>
             <Button
               variant="ghost"

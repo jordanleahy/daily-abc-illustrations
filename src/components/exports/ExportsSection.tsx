@@ -230,6 +230,28 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       setIsCheckingPublication(true);
       
       try {
+        // First verify the user owns this book
+        if (!user?.id) {
+          console.log('No authenticated user found');
+          return;
+        }
+
+        const { data: bookData, error: bookError } = await supabase
+          .from('books')
+          .select('user_id')
+          .eq('id', contentId)
+          .single();
+
+        if (bookError) {
+          console.error('Error checking book ownership:', bookError);
+          return;
+        }
+
+        if (bookData?.user_id !== user.id) {
+          console.error('User does not own this book:', { bookUserId: bookData?.user_id, currentUserId: user.id });
+          return;
+        }
+
         const { data, error } = await supabase
           .from('daily_published')
           .select('*')
@@ -237,7 +259,12 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           .in('status', ['draft', 'queued', 'active'])
           .maybeSingle();
 
-        if (!error && data) {
+        if (error) {
+          console.error('Error fetching daily published data:', error);
+          return;
+        }
+
+        if (data) {
           setExistingPublication(data);
         }
       } catch (error) {

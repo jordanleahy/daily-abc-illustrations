@@ -75,7 +75,7 @@ export default function Schedule() {
     }} />
       
       <PageLayout>
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <div className="container mx-auto px-4 pb-8 max-w-4xl">
           <div className="mb-8">
             
             

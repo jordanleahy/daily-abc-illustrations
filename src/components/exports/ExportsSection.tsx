@@ -172,15 +172,20 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           description: error.message
         });
       } else {
+        // For books, provide better time estimates
+        const estimatedTime = contentType === 'book' 
+          ? "2-5 minutes depending on book size"
+          : "1-2 minutes";
+            
         toast({
           title: "PDF Generation Started",
-          description: "Your PDF is being generated. This may take a few minutes for books with many images."
+          description: `Your PDF is being generated. Estimated time: ${estimatedTime}. Using optimized processing to prevent timeouts.`
         });
 
-        // Clear interval after 5 minutes to prevent infinite polling
+        // Clear interval after 8 minutes to account for chunked processing
         setTimeout(() => {
           clearInterval(pollInterval);
-        }, 300000);
+        }, 480000);
       }
     } catch (error) {
       console.error('Error creating PDF export:', error);

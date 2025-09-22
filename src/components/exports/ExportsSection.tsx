@@ -255,6 +255,50 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   };
 
   /**
+   * Generates LinkedIn post text based on book title and expiration date
+   */
+  const getLinkedInPostText = () => {
+    if (!existingPublication) return '';
+    
+    const expiresAt = existingPublication.expires_at ? new Date(existingPublication.expires_at) : null;
+    const expirationText = expiresAt 
+      ? `Expires at ${expiresAt.toLocaleTimeString('en-US', { 
+          hour: 'numeric', 
+          hour12: true,
+          timeZone: 'America/New_York'
+        })} ${expiresAt.toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric',
+          timeZone: 'America/New_York'
+        })}`
+      : 'Limited time available';
+
+    return `${contentName}: Learn Letters with Real Gear\n${expirationText}\nComment for Link`;
+  };
+
+  /**
+   * Copies the LinkedIn post text to clipboard
+   */
+  const handleCopyLinkedInPost = async () => {
+    const postText = getLinkedInPostText();
+    
+    try {
+      await navigator.clipboard.writeText(postText);
+      toast({
+        title: "LinkedIn post copied!",
+        description: "The LinkedIn post text has been copied to your clipboard."
+      });
+    } catch (error) {
+      console.error('Failed to copy LinkedIn post:', error);
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy LinkedIn post to clipboard.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  /**
    * Copies the public daily published link to clipboard
    * Only works when there's an existing publication
    */
@@ -464,6 +508,33 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             )}
           </div>
         </div>
+
+        {/* LinkedIn Post Section */}
+        {existingPublication && existingPublication.status !== 'draft' && (
+          <div className="flex flex-col gap-3 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h4 className="text-sm font-medium">LinkedIn Post</h4>
+                <p className="text-sm text-muted-foreground">
+                  Ready-to-share LinkedIn post text
+                </p>
+              </div>
+              <Button 
+                onClick={handleCopyLinkedInPost}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Copy className="h-4 w-4" />
+                Copy Post
+              </Button>
+            </div>
+            <div className="bg-muted/50 rounded-md p-3 text-sm">
+              <div className="whitespace-pre-line text-muted-foreground">
+                {getLinkedInPostText()}
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center justify-between pt-4 border-t">
           <div className="space-y-1">

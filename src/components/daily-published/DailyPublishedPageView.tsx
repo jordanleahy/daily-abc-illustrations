@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { PublicPageImage } from './PublicPageImage';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { Page } from '@/types/book';
@@ -153,15 +154,22 @@ export function DailyPublishedPageView({
         </div>
       </div>
 
-      {/* Slide to unlock or upcoming books preview at bottom */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 py-4 px-4 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
-        {isLastPage ? (
-          <UpcomingBooksPreview />
-        ) : (
+      {/* Slide to unlock at bottom - only show when not last page */}
+      {!isLastPage && (
+        <div className="fixed bottom-0 left-0 right-0 z-50 py-4 px-4 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
           <div className="px-6">
             <SlideToUnlock onUnlock={onNext} disabled={isLastPage} className="w-full" />
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Swipe up drawer for upcoming books - only show on last page */}
+      {isLastPage && (
+        <SwipeUpDrawer>
+          <div className="px-4 py-2 h-full">
+            <UpcomingBooksPreview />
+          </div>
+        </SwipeUpDrawer>
+      )}
     </div>;
 }

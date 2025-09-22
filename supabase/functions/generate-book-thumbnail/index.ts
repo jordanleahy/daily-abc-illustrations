@@ -187,8 +187,8 @@ serve(async (req) => {
       }
 
       if (dailyPublishedData) {
-        // Update existing SEO metadata with the thumbnail URL
-        const { error: seoUpdateError } = await supabase
+        // First, try to update existing SEO metadata
+        const { data: updateData, error: seoUpdateError } = await supabase
           .from('seo_metadata')
           .update({ 
             og_image_url: thumbnailUrl,
@@ -196,11 +196,41 @@ serve(async (req) => {
           })
           .eq('daily_published_id', dailyPublishedData.id)
           .eq('is_latest', true)
-          .eq('is_active', true);
+          .eq('is_active', true)
+          .select();
 
         if (seoUpdateError) {
           console.error(`[${new Date().toISOString()}] [ERROR] [SEO_UPDATE] - Error updating SEO metadata:`, seoUpdateError);
           throw seoUpdateError;
+        }
+
+        // If no rows were updated, create new SEO metadata
+        if (!updateData || updateData.length === 0) {
+          console.log(`[${new Date().toISOString()}] [INFO] [SEO_UPDATE] - No existing SEO metadata found, creating new entry...`);
+          
+          const { error: seoInsertError } = await supabase
+            .from('seo_metadata')
+            .insert({
+              daily_published_id: dailyPublishedData.id,
+              user_id: userId,
+              og_image_url: thumbnailUrl,
+              version_number: 1,
+              is_latest: true,
+              is_active: true,
+              optimization_status: 'complete',
+              seo_title: bookName,
+              seo_description: `Educational ABC book: ${bookName}`,
+              optimized_at: new Date().toISOString()
+            });
+
+          if (seoInsertError) {
+            console.error(`[${new Date().toISOString()}] [ERROR] [SEO_UPDATE] - Error inserting SEO metadata:`, seoInsertError);
+            throw seoInsertError;
+          }
+          
+          console.log(`[${new Date().toISOString()}] [INFO] [complete] [SEO_UPDATE] - New SEO metadata created with thumbnail URL`);
+        } else {
+          console.log(`[${new Date().toISOString()}] [INFO] [complete] [SEO_UPDATE] - Existing SEO metadata updated with thumbnail URL`);
         }
 
         console.log(`[${new Date().toISOString()}] [INFO] [complete] [SEO_UPDATE] - SEO metadata updated with thumbnail URL {`, JSON.stringify({

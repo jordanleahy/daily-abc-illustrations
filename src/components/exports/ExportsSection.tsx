@@ -17,7 +17,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Globe, Eye, Copy } from 'lucide-react';
+import { FileText, Globe, Eye, Copy, Download } from 'lucide-react';
 import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { supabase } from '@/integrations/supabase/client';
@@ -175,6 +175,42 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     } finally {
       setIsGeneratingPdf(false);
       setPdfProgress({ current: 0, total: 0, currentPage: '' });
+    }
+  };
+
+  /**
+   * Downloads the existing PDF from storage
+   */
+  const handleDownloadExistingPdf = async () => {
+    if (!existingPublication?.pdf_url) return;
+
+    try {
+      const response = await fetch(existingPublication.pdf_url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch PDF');
+      }
+
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${contentName}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "PDF Downloaded",
+        description: "Your existing PDF has been downloaded successfully."
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast({
+        variant: "destructive",
+        title: "Download Failed",
+        description: "Failed to download the existing PDF. Please try generating a new one."
+      });
     }
   };
 
@@ -433,6 +469,16 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {existingPublication?.pdf_url && (
+              <Button 
+                onClick={handleDownloadExistingPdf}
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Download className="h-4 w-4" />
+                Download
+              </Button>
+            )}
             <Button 
               onClick={action}
               disabled={disabled}

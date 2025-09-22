@@ -487,7 +487,7 @@ function ScheduleCard({
                 </CardDescription>
               </div>
               <Badge className={getStatusColor(item.status)} variant="secondary">
-                {item.status}
+                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
               </Badge>
             </div>
           </div>

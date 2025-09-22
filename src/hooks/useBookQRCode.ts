@@ -18,9 +18,6 @@ export const useBookQRCode = (bookId: string | undefined) => {
         .from('daily_published')
         .select('*')
         .eq('book_id', bookId)
-        .eq('is_active', true)
-        .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {

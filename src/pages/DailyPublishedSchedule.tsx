@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useScheduleForDate } from '@/hooks/useScheduleForDate';
@@ -240,11 +241,16 @@ function ScheduleCard({
   formatDate, 
   getStatusColor 
 }: ScheduleCardProps) {
+  const navigate = useNavigate();
   const isEditing = editingDate === item.id;
   const today = new Date().toISOString().split('T')[0];
 
+  const handleCardClick = () => {
+    navigate(`/books/${item.book_id}`);
+  };
+
   return (
-    <Card>
+    <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={handleCardClick}>
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div className="flex-1">
@@ -266,7 +272,7 @@ function ScheduleCard({
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Calendar className="h-4 w-4" />
               {isEditing ? (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                   <Input
                     type="date"
                     value={newDate}
@@ -292,7 +298,8 @@ function ScheduleCard({
               ) : (
                 <span 
                   className="cursor-pointer hover:text-foreground"
-                  onClick={() => {
+                  onClick={(e) => {
+                    e.stopPropagation();
                     setEditingDate(item.id);
                     setNewDate(item.publish_date);
                   }}

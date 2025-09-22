@@ -47,22 +47,25 @@ export const useSeoMetadataByBook = (bookId?: string) => {
     queryFn: async () => {
       if (!bookId) return null;
 
+      console.log('🔍 [DEBUG] Fetching SEO metadata by book_id:', bookId);
+
       // Get SEO metadata that was generated for this book
-      // This would be stored with book info in source_data
+      // Use contains() for better JSONB querying instead of like()
       const { data, error } = await supabase
         .from('seo_metadata')
         .select('*')
         .eq('is_latest', true)
         .eq('is_active', true)
         .eq('optimization_status', 'complete')
-        .like('source_data', `%"bookId":"${bookId}"%`)
+        .contains('source_data', { bookId })
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching SEO metadata by book:', error);
+        console.error('❌ [DEBUG] Error fetching SEO metadata by book:', error);
         return null;
       }
 
+      console.log('✅ [DEBUG] SEO metadata by book fetched:', data);
       return data;
     },
     enabled: !!bookId,

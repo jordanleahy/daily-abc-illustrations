@@ -86,7 +86,7 @@ export const useDailyPublishedOpenGraph = (
   // Fetch the image for the first page
   // 📚 LEARNING NOTE - Optional chaining:
   // firstPage?.id means "if firstPage exists, get its id, otherwise use undefined"
-  const { data: firstPageImage } = usePublicPageImage(firstPage?.id || '');
+  const { data: firstPageImage } = usePublicPageImage(firstPage?.id);
 
   /**
    * 🎯 SEO METADATA STRATEGY

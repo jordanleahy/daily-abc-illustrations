@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Calendar, Clock } from 'lucide-react';
 import { useUpcomingDailyPublished } from '@/hooks/useUpcomingDailyPublished';
-import { useBookThumbnails } from '@/hooks/useBookThumbnails';
+import { useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
 import { format } from 'date-fns';
 
 interface BookPreviewCardProps {
@@ -13,7 +13,7 @@ interface BookPreviewCardProps {
 }
 
 function BookPreviewCard({ bookId, title, description, publishDate }: BookPreviewCardProps) {
-  const { data: thumbnail } = useBookThumbnails(bookId);
+  const { data: seoMetadata } = useSeoMetadataByBook(bookId);
   
   const formatPublishDate = (dateString: string) => {
     try {
@@ -36,11 +36,11 @@ function BookPreviewCard({ bookId, title, description, publishDate }: BookPrevie
     <Card className="shrink-0 border border-border/50 bg-card/50 backdrop-blur-sm">
       <CardContent className="p-4">
         <div className="flex gap-3">
-          {/* Thumbnail */}
+          {/* SEO Thumbnail */}
           <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
-            {thumbnail?.thumbnail_url ? (
+            {seoMetadata?.og_image_url ? (
               <img
-                src={thumbnail.thumbnail_url}
+                src={seoMetadata.og_image_url}
                 alt={title}
                 className="w-full h-full object-cover"
               />

@@ -11,7 +11,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 
-import { useBookThumbnails } from '@/hooks/useBookThumbnails';
+
 import { useAuth } from '@/hooks/useAuth';
 
 interface OpenGraphEditorProps {
@@ -22,7 +22,6 @@ interface OpenGraphEditorProps {
 
 export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGraphEditorProps) => {
   const { data: seoMetadata, isLoading, refetch } = useBookSeoMetadata(bookId);
-  const { data: thumbnailData, refetch: refetchThumbnails } = useBookThumbnails(bookId);
   
   const { user } = useAuth();
   
@@ -35,8 +34,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
 
   const currentTitle = seoMetadata?.seo_title || bookTitle;
   const currentDescription = seoMetadata?.seo_description || bookDescription || '';
-  // Use thumbnail from book_thumbnails table first, fallback to SEO metadata
-  const currentImage = thumbnailData?.thumbnail_url || seoMetadata?.og_image_url;
+  const currentImage = seoMetadata?.og_image_url;
 
   const handleTitleSave = async (newTitle: string) => {
     // Note: SEO metadata is now read-only as it's generated at book creation
@@ -143,9 +141,8 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   };
 
   const handleCopyPrompt = async () => {
-    const promptToCopy = generatedPrompt || thumbnailData?.prompt_used;
-    if (promptToCopy && navigator.clipboard) {
-      await navigator.clipboard.writeText(promptToCopy);
+    if (generatedPrompt && navigator.clipboard) {
+      await navigator.clipboard.writeText(generatedPrompt);
       toast.success('Prompt copied to clipboard!');
     }
   };
@@ -160,8 +157,8 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
       return;
     }
 
-    // Check if we have a generated prompt to use, or if we're regenerating an existing thumbnail
-    if (!generatedPrompt && !(thumbnailData?.thumbnail_url && thumbnailData?.generation_status === 'complete')) {
+    // Check if we have a generated prompt to use
+    if (!generatedPrompt) {
       toast.error('Please generate a thumbnail prompt first');
       return;
     }
@@ -325,7 +322,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
               <Button
                 variant="outline"
                 onClick={handleGenerateThumbImage}
-                disabled={isGenerating || (!generatedPrompt && !(thumbnailData?.thumbnail_url && thumbnailData?.generation_status === 'complete'))}
+                disabled={isGenerating || !generatedPrompt}
                 className="flex items-center gap-2"
               >
                 {isGenerating ? (
@@ -333,7 +330,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 ) : (
                   <ImagePlus className="w-4 h-4" />
                 )}
-                {thumbnailData?.thumbnail_url && thumbnailData?.generation_status === 'complete' ? 'Regenerate Thumb Image' : 'Generate Thumb Image'}
+                {currentImage ? 'Regenerate Thumb Image' : 'Generate Thumb Image'}
               </Button>
             </div>
           </div>
@@ -355,11 +352,11 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         </div>
 
         {/* Thumbnail Prompt */}
-        {(generatedPrompt || thumbnailData?.prompt_used) && (
+        {generatedPrompt && (
           <div className="border rounded-md bg-blue-50/50 dark:bg-blue-950/20">
             <div className="flex items-center justify-between p-3 border-b bg-blue-100/30 dark:bg-blue-900/20">
               <Label className="text-sm font-medium">
-                {generatedPrompt ? 'Generated' : 'Current'} Thumbnail Prompt
+                Generated Thumbnail Prompt
               </Label>
               <div className="flex items-center gap-2">
                 <Button
@@ -370,21 +367,19 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 >
                   <Copy className="w-3 h-3" />
                 </Button>
-                {generatedPrompt && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleClearPrompt}
-                    className="h-7 px-2"
-                  >
-                    <X className="w-3 h-3" />
-                  </Button>
-                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleClearPrompt}
+                  className="h-7 px-2"
+                >
+                  <X className="w-3 h-3" />
+                </Button>
               </div>
             </div>
             <div className="p-3">
               <textarea
-                value={generatedPrompt || thumbnailData?.prompt_used || ''}
+                value={generatedPrompt || ''}
                 readOnly
                 className="w-full h-32 text-xs font-mono bg-transparent border-none resize-none focus:outline-none"
                 style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}

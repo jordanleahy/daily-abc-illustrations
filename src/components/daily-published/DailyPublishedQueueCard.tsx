@@ -3,7 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import { formatTimeRemaining, formatFixedScheduleTime } from '@/utils/timeUtils';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
-import { useBookThumbnails } from '@/hooks/useBookThumbnails';
+
 import { Clock, Calendar, Hash, Image, GripVertical } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSortable } from '@dnd-kit/sortable';
@@ -30,9 +30,6 @@ export function DailyPublishedQueueCard({
   
   // Fetch SEO metadata for this specific daily published item
   const { data: seoMetadata } = useSeoMetadata(item.id);
-  
-  // Fallback to book thumbnail if SEO metadata is missing  
-  const { data: bookThumbnail } = useBookThumbnails(item.book_id);
 
   // Sortable functionality (only for draggable items)
   const {
@@ -140,11 +137,11 @@ export function DailyPublishedQueueCard({
               <GripVertical className="h-4 w-4 text-muted-foreground" />
             </div>
           )}
-          {/* OG Image with fallback to book thumbnail */}
+          {/* SEO Thumbnail Image */}
           <div className="flex-shrink-0 w-32 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
-            {seoMetadata?.og_image_url || bookThumbnail?.thumbnail_url ? (
+            {seoMetadata?.og_image_url ? (
               <img 
-                src={seoMetadata?.og_image_url || bookThumbnail?.thumbnail_url || ''} 
+                src={seoMetadata.og_image_url} 
                 alt={`${item.title} preview`}
                 className="w-full h-full object-cover"
                 loading="lazy"

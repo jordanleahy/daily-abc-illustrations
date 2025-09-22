@@ -27,13 +27,14 @@ export function formatEasternTime(date: Date, formatString: string = 'yyyy-MM-dd
 
 /**
  * Create a publish date at 7:01 AM Eastern Time for a given date
- * Simplified to avoid complex timezone conversions
+ * Properly converts Eastern Time to UTC for storage
  */
 export function createEasternPublishDate(dateString: string): Date {
-  // Create the date at 7:01 AM and assume it's already in the correct timezone context
-  // The backend will handle the timezone conversion properly
-  const publishTime = new Date(dateString + 'T07:01:00');
-  return publishTime;
+  // Create a date object representing 7:01 AM in Eastern Time on the given date
+  const easternDateTime = new Date(dateString + 'T07:01:00');
+  
+  // Convert from Eastern Time to UTC for proper database storage
+  return fromEasternTime(easternDateTime);
 }
 
 /**

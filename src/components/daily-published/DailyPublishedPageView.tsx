@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { MetaHead } from '@/components/common';
 import { useNavigate } from 'react-router-dom';
 import { QrCode } from 'lucide-react';
+import { useBookQRCode } from '@/hooks/useBookQRCode';
 interface DailyPublishedPageViewProps {
   page: Page;
   bookId: string;
@@ -39,6 +40,7 @@ export function DailyPublishedPageView({
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
   const navigate = useNavigate();
+  const { qrCodeData } = useBookQRCode(bookId);
 
   // Simple expiration check - redirect to home if expired
   const isExpired = new Date() > new Date(expiresAt);
@@ -97,15 +99,22 @@ export function DailyPublishedPageView({
                 <SheetTitle>Share to Share</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col items-center justify-center h-full space-y-4">
-                <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
-                  <div className="text-center text-muted-foreground">
-                    <QrCode className="w-16 h-16 mx-auto mb-2" />
-                    <p className="text-sm">QR Code will be displayed here</p>
-                    <p className="text-xs mt-1">Content ID: {contentId}</p>
-                  </div>
-                </div>
-                <div className="text-center">
-                  
+                <div className="w-64 h-64 rounded-lg flex items-center justify-center">
+                  {qrCodeData.isLoading ? (
+                    <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
+                      <QrCode className="w-16 h-16 text-muted-foreground animate-pulse" />
+                    </div>
+                  ) : qrCodeData.qrCodeImage ? (
+                    <img 
+                      src={qrCodeData.qrCodeImage} 
+                      alt="QR Code for sharing this content"
+                      className="w-64 h-64 rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
+                      <QrCode className="w-16 h-16 text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
               </div>
             </SheetContent>

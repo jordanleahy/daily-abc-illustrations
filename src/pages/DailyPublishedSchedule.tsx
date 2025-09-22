@@ -60,11 +60,11 @@ function useDateEdit() {
 // Utility functions
 const getStatusColor = (status: string) => {
   switch (status) {
-    case 'active': return 'bg-green-500';
-    case 'queued': return 'bg-blue-500';
-    case 'expired': return 'bg-gray-500';
-    case 'draft': return 'bg-yellow-500';
-    default: return 'bg-gray-400';
+    case 'active': return 'bg-success text-success-foreground';
+    case 'queued': return 'bg-info text-info-foreground';
+    case 'expired': return 'bg-muted text-muted-foreground';
+    case 'draft': return 'bg-warning text-warning-foreground';
+    default: return 'bg-muted text-muted-foreground';
   }
 };
 

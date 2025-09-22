@@ -8,31 +8,25 @@ declare global {
   }
 }
 
-export const useGTM = (gtmId?: string) => {
+export const useGA4 = (measurementId?: string) => {
   const location = useLocation();
 
   useEffect(() => {
-    if (!gtmId || typeof window === 'undefined') return;
+    if (!measurementId || typeof window === 'undefined') return;
 
-    // Push page view to dataLayer on route change
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-      event: 'page_view',
+    // Send page view to Google Analytics on route change
+    window.gtag('config', measurementId, {
       page_location: window.location.href,
       page_path: location.pathname + location.search,
       page_title: document.title,
     });
-  }, [location, gtmId]);
+  }, [location, measurementId]);
 
   // Function to track custom events
   const trackEvent = (eventName: string, parameters?: Record<string, any>) => {
-    if (!gtmId || typeof window === 'undefined') return;
+    if (!measurementId || typeof window === 'undefined') return;
     
-    window.dataLayer = window.dataLayer || [];
-    window.dataLayer.push({
-      event: eventName,
-      ...parameters,
-    });
+    window.gtag('event', eventName, parameters);
   };
 
   return { trackEvent };

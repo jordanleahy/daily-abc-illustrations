@@ -167,69 +167,28 @@ serve(async (req) => {
       fileSize: imageBlob.size
     }), `}`);
 
-    // Create book thumbnail record
-    console.log(`[${new Date().toISOString()}] [INFO] [in-progress] [DB_INSERT] - Creating book thumbnail record... {`, JSON.stringify({
-      requestId
-    }), `}`);
-
-    // Get next version number for this book
-    const { data: versionData, error: versionError } = await supabase
-      .rpc('get_next_book_thumbnail_version_number', { p_book_id: bookId });
-
-    if (versionError) {
-      console.error(`[${new Date().toISOString()}] [ERROR] [VERSION] - Version error:`, versionError);
-      throw versionError;
-    }
-
-    const nextVersion = versionData || 1;
-
-    const { data: thumbnailRecord, error: thumbnailError } = await supabase
-      .from('book_thumbnails')
-      .insert({
-        book_id: bookId,
-        user_id: userId,
-        version_number: nextVersion,
-        thumbnail_url: thumbnailUrl,
-        prompt_used: imagePrompt,
-        generation_status: 'complete',
-        generation_started_at: new Date().toISOString(),
-        generation_completed_at: new Date().toISOString(),
-        generation_duration_ms: 8000, // Approximate duration
-        aspect_ratio: '1536:1024',
-        is_latest: true
-      })
-      .select()
-      .single();
-
-    if (thumbnailError) {
-      console.error(`[${new Date().toISOString()}] [ERROR] [DB_INSERT] - Database error:`, thumbnailError);
-      throw thumbnailError;
-    }
-
-    console.log(`[${new Date().toISOString()}] [INFO] [complete] [DB_INSERT] - Thumbnail record created {`, JSON.stringify({
-      requestId,
-      thumbnailId: thumbnailRecord.id,
-      versionNumber: thumbnailRecord.version_number
-    }), `}`);
-
-    // Update SEO metadata with the thumbnail URL
-    console.log(`[${new Date().toISOString()}] [INFO] [in-progress] [SEO_UPDATE] - Updating SEO metadata with thumbnail... {`, JSON.stringify({
+    // Create or update SEO metadata with the thumbnail URL
+    console.log(`[${new Date().toISOString()}] [INFO] [in-progress] [SEO_UPDATE] - Creating/updating SEO metadata with thumbnail... {`, JSON.stringify({
       requestId
     }), `}`);
 
     try {
-      // Find the active daily_published entry for this book
+      // Find the daily_published entry for this book (active or draft)
       const { data: dailyPublishedData, error: dailyPublishedError } = await supabase
         .from('daily_published')
         .select('id')
         .eq('book_id', bookId)
         .eq('is_active', true)
+        .gt('expires_at', new Date().toISOString())
         .maybeSingle();
 
       if (dailyPublishedError) {
-        console.error(`[${new Date().toISOString()}] [WARN] [SEO_UPDATE] - Error finding draft daily_published:`, dailyPublishedError);
-      } else if (dailyPublishedData) {
-        // Update the SEO metadata with the thumbnail URL
+        console.error(`[${new Date().toISOString()}] [WARN] [SEO_UPDATE] - Error finding daily_published:`, dailyPublishedError);
+        throw dailyPublishedError;
+      }
+
+      if (dailyPublishedData) {
+        // Update existing SEO metadata with the thumbnail URL
         const { error: seoUpdateError } = await supabase
           .from('seo_metadata')
           .update({ 
@@ -241,20 +200,22 @@ serve(async (req) => {
           .eq('is_active', true);
 
         if (seoUpdateError) {
-          console.error(`[${new Date().toISOString()}] [WARN] [SEO_UPDATE] - Error updating SEO metadata:`, seoUpdateError);
-        } else {
-          console.log(`[${new Date().toISOString()}] [INFO] [complete] [SEO_UPDATE] - SEO metadata updated with thumbnail URL {`, JSON.stringify({
-            requestId,
-            dailyPublishedId: dailyPublishedData.id
-          }), `}`);
+          console.error(`[${new Date().toISOString()}] [ERROR] [SEO_UPDATE] - Error updating SEO metadata:`, seoUpdateError);
+          throw seoUpdateError;
         }
+
+        console.log(`[${new Date().toISOString()}] [INFO] [complete] [SEO_UPDATE] - SEO metadata updated with thumbnail URL {`, JSON.stringify({
+          requestId,
+          dailyPublishedId: dailyPublishedData.id
+        }), `}`);
       } else {
-        console.log(`[${new Date().toISOString()}] [INFO] [SEO_UPDATE] - No active daily_published entry found for book {`, JSON.stringify({
+        console.log(`[${new Date().toISOString()}] [INFO] [SEO_UPDATE] - No active daily_published entry found for book - thumbnail stored for future use {`, JSON.stringify({
           requestId
         }), `}`);
       }
     } catch (seoError) {
-      console.error(`[${new Date().toISOString()}] [WARN] [SEO_UPDATE] - SEO update failed, but continuing:`, seoError);
+      console.error(`[${new Date().toISOString()}] [ERROR] [SEO_UPDATE] - SEO update failed:`, seoError);
+      throw seoError;
     }
 
     console.log(`[${new Date().toISOString()}] [INFO] [complete] [COMPLETE] - Book thumbnail generation completed successfully! {`, JSON.stringify({

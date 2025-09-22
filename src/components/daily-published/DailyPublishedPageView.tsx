@@ -121,7 +121,7 @@ export function DailyPublishedPageView({
       </div>
 
       {/* Slide to unlock at bottom - sticky with proper mobile support */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
+      <div className="fixed bottom-0 left-0 right-0 z-50 py-4 px-10 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
         <SlideToUnlock 
           onUnlock={onNext}
           disabled={isLastPage}

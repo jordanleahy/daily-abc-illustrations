@@ -80,13 +80,16 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       // Import the PDF generator service
       const { generateBookPDF, generatePagePDF } = await import('@/services/pdfGenerator');
 
+      let pdfBytes: Uint8Array | null = null;
+
       const options = {
         onProgress: (current: number, total: number, currentPage?: string) => {
           setPdfProgress({ current, total, currentPage: currentPage || '' });
         },
         onError: (error: string, pageId?: string) => {
           console.warn(`PDF generation warning: ${error}`, pageId);
-        }
+        },
+        returnBytes: true // Request raw bytes instead of triggering download
       };
 
       toast({
@@ -95,14 +98,70 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       });
 
       if (contentType === 'book') {
-        await generateBookPDF(contentId, contentName, options);
+        const result = await generateBookPDF(contentId, contentName, options);
+        pdfBytes = result || null;
       } else {
-        await generatePagePDF(contentId, contentName, options);
+        const result = await generatePagePDF(contentId, contentName, options);
+        pdfBytes = result || null;
+      }
+
+      // Upload PDF to storage bucket if we have bytes and this is part of daily published content
+      if (pdfBytes && contentType === 'book' && existingPublication) {
+        setPdfProgress({ current: 0, total: 0, currentPage: 'Uploading PDF...' });
+        
+        const fileName = `${contentId}-${Date.now()}.pdf`;
+        const filePath = `daily-published/${fileName}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('exports')
+          .upload(filePath, pdfBytes, {
+            contentType: 'application/pdf',
+            upsert: true
+          });
+
+        if (uploadError) {
+          console.error('Error uploading PDF:', uploadError);
+          throw new Error(`Failed to upload PDF: ${uploadError.message}`);
+        }
+
+        // Get public URL
+        const { data: urlData } = supabase.storage
+          .from('exports')
+          .getPublicUrl(filePath);
+
+        if (urlData?.publicUrl) {
+          // Update daily_published table with PDF URL
+          const { error: updateError } = await supabase
+            .from('daily_published')
+            .update({ pdf_url: urlData.publicUrl })
+            .eq('id', existingPublication.id);
+
+          if (updateError) {
+            console.error('Error updating PDF URL:', updateError);
+            // Don't throw error, just log it - the PDF was still generated successfully
+          }
+
+          // Update local state
+          setExistingPublication(prev => prev ? { ...prev, pdf_url: urlData.publicUrl } : prev);
+        }
+      }
+
+      // Trigger download
+      if (pdfBytes) {
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${contentName}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
       }
 
       toast({
         title: "PDF Generated Successfully",
-        description: "Your PDF has been downloaded successfully."
+        description: existingPublication ? "Your PDF has been saved and downloaded successfully." : "Your PDF has been downloaded successfully."
       });
 
     } catch (error) {

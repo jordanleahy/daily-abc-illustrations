@@ -265,6 +265,7 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
+          pdf_url: string | null
           publish_date: string
           published_at: string
           qr_code_config: Json | null
@@ -283,6 +284,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          pdf_url?: string | null
           publish_date?: string
           published_at?: string
           qr_code_config?: Json | null
@@ -301,6 +303,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          pdf_url?: string | null
           publish_date?: string
           published_at?: string
           qr_code_config?: Json | null

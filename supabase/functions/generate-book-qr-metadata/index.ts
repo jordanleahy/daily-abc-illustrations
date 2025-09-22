@@ -52,14 +52,11 @@ serve(async (req) => {
       throw new Error('Book not found or access denied');
     }
 
-    // Ensure book has a daily published entry (queued or active)
+    // Ensure book has a daily published entry
     const { data: dailyPublished, error: dpError } = await supabase
       .from('daily_published')
       .select('*')
       .eq('book_id', bookId)
-      .eq('is_active', true)
-      .in('status', ['queued', 'active'])
-      .gt('expires_at', new Date().toISOString())
       .maybeSingle();
 
     if (dpError) {
@@ -68,7 +65,7 @@ serve(async (req) => {
     }
 
     if (!dailyPublished) {
-      throw new Error('Book must have a queued or active daily published entry to generate QR code');
+      throw new Error('Book must have a daily published entry to generate QR code');
     }
 
     // Generate public URL for the daily published content

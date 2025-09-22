@@ -322,54 +322,6 @@ export type Database = {
           },
         ]
       }
-      exports: {
-        Row: {
-          completed_at: string | null
-          content_id: string
-          content_type: string
-          created_at: string
-          error_message: string | null
-          export_config: Json | null
-          export_status: string
-          export_type: string
-          export_url: string | null
-          file_size_bytes: number | null
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          completed_at?: string | null
-          content_id: string
-          content_type: string
-          created_at?: string
-          error_message?: string | null
-          export_config?: Json | null
-          export_status?: string
-          export_type: string
-          export_url?: string | null
-          file_size_bytes?: number | null
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          completed_at?: string | null
-          content_id?: string
-          content_type?: string
-          created_at?: string
-          error_message?: string | null
-          export_config?: Json | null
-          export_status?: string
-          export_type?: string
-          export_url?: string | null
-          file_size_bytes?: number | null
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       instagram_shared: {
         Row: {
           book_id: string

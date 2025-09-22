@@ -2,30 +2,24 @@
  * @fileoverview ExportsSection Component
  * 
  * This file contains the ExportsSection component which provides a unified interface
- * for managing both PDF exports and daily publication queue functionality.
+ * for managing PDF exports and daily publication queue functionality.
  * 
  * Key Features:
- * - PDF generation and download with progress tracking
+ * - Client-side PDF generation and download with progress tracking
  * - Daily publication queue management
  * - Automatic QR code generation when adding to queue
- * - Real-time status updates and error handling
  * - Expected publication date calculations
  * - Public link sharing and copying functionality
  * 
- * The component integrates multiple hooks and services to provide a seamless
- * user experience for content export and publication workflows.
+ * All PDF generation is handled client-side using pdf-lib for optimal performance.
  */
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Download, FileText, RotateCcw, Trash2, Globe, Eye, Copy } from 'lucide-react';
-import { useExports } from '@/hooks/useExports';
+import { FileText, Globe, Eye, Copy } from 'lucide-react';
 import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
-import { Export } from '@/types/export';
-import { ProcessStatus } from '@/types/process';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
@@ -48,7 +42,7 @@ interface ExportsSectionProps {
  * 
  * A comprehensive component that manages both PDF exports and daily publication queue functionality.
  * Provides users with the ability to:
- * - Generate and download PDF exports of their content
+ * - Generate and download PDF exports of their content using client-side processing
  * - Add books to the daily publication queue
  * - Automatically generate QR codes when adding to queue
  * - View publication status and expected dates
@@ -66,51 +60,10 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   contentName
 }) => {
   const { user } = useAuth();
-  const { exports, createExport, deleteExport, refetch } = useExports(contentType, contentId);
   const { data: expectedDate, isLoading: dateLoading } = useExpectedPublicationDate(contentId);
   const { generateQRCode } = useBookQRCode(contentType === 'book' ? contentId : undefined);
   const [existingPublication, setExistingPublication] = useState<any>(null);
   const [isCheckingPublication, setIsCheckingPublication] = useState(false);
-
-  const pdfExports = exports?.filter(exp => exp.export_type === 'pdf') || [];
-  const latestPdfExport = pdfExports[0];
-
-  /**
-   * Refresh exports data on component mount to ensure latest status
-   */
-  useEffect(() => {
-    refetch();
-  }, [refetch]);
-
-  /**
-   * Check for existing daily publication entries on component mount
-   * Only runs for book content type
-   */
-  useEffect(() => {
-    const checkExistingPublication = async () => {
-      if (contentType !== 'book') return;
-      
-      setIsCheckingPublication(true);
-      try {
-         const { data, error } = await supabase
-           .from('daily_published')
-           .select('*')
-           .eq('book_id', contentId)
-           .in('status', ['draft', 'queued', 'active'])
-           .maybeSingle();
-
-        if (!error && data) {
-          setExistingPublication(data);
-        }
-      } catch (error) {
-        console.error('Error checking publication:', error);
-      } finally {
-        setIsCheckingPublication(false);
-      }
-    };
-
-    checkExistingPublication();
-  }, [contentId, contentType]);
 
   /**
    * Handles client-side PDF generation for the content
@@ -167,108 +120,37 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   };
 
   /**
-   * Downloads an export file using Supabase storage
-   * Attempts programmatic download first, falls back to opening URL
-   * 
-   * @param exportRecord - The export record containing the file URL
+   * Check for existing daily publication entries on component mount
+   * Only runs for book content type
    */
-  const handleDownload = async (exportRecord: Export) => {
-    if (!exportRecord.export_url) return;
-
-    // Try downloading via Supabase Storage (avoids some browser/extension blocks)
-    try {
-      const match = exportRecord.export_url.match(/\/object\/public\/exports\/(.*)$/);
-      const objectPath = match?.[1];
-
-      if (objectPath) {
-        const { data, error } = await supabase.storage.from('exports').download(objectPath);
-        if (!error && data) {
-          const blobUrl = URL.createObjectURL(data);
-          const a = document.createElement('a');
-          a.href = blobUrl;
-          const filename = objectPath.split('/').pop() || 'export.pdf';
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          a.remove();
-          URL.revokeObjectURL(blobUrl);
-          return;
-        }
-      }
-    } catch (e) {
-      console.warn('Programmatic download failed, falling back to opening URL.', e);
-    }
-
-    // Fallback: open the public URL (may be blocked by some extensions)
-    const opened = window.open(exportRecord.export_url, '_blank');
-    if (!opened) {
-      toast({
-        title: 'Download blocked by browser',
-        description: 'Your browser or an extension blocked the file. Please allow downloads from supabase.co or disable the blocker for this site.',
-        variant: 'destructive'
-      });
-    }
-  };
-
-  /**
-   * Copies PDF export link to clipboard
-   * 
-   * @param exportRecord - The export record containing the file URL
-   */
-  const handleCopyPdfLink = async (exportRecord: Export) => {
-    if (!exportRecord.export_url) return;
-    try {
-      await navigator.clipboard.writeText(exportRecord.export_url);
-      toast({ title: 'Link copied!', description: 'PDF link copied to clipboard.' });
-    } catch (e) {
-      toast({ title: 'Copy failed', description: 'Unable to copy link. You can right-click the Download button and copy link address.', variant: 'destructive' });
-    }
-  };
-
-  /**
-   * Deletes an export record after user confirmation
-   * 
-   * @param exportRecord - The export record to delete
-   */
-  const handleDelete = async (exportRecord: Export) => {
-    if (confirm('Are you sure you want to delete this export?')) {
+  useEffect(() => {
+    const checkExistingPublication = async () => {
+      if (contentType !== 'book') return;
+      
+      setIsCheckingPublication(true);
       try {
-        await deleteExport(exportRecord.id);
-        toast({
-          title: "Export deleted",
-          description: "The export has been removed successfully."
-        });
+         const { data, error } = await supabase
+           .from('daily_published')
+           .select('*')
+           .eq('book_id', contentId)
+           .in('status', ['draft', 'queued', 'active'])
+           .maybeSingle();
+
+        if (!error && data) {
+          setExistingPublication(data);
+        }
       } catch (error) {
-        console.error('Error deleting export:', error);
+        console.error('Error checking publication:', error);
+      } finally {
+        setIsCheckingPublication(false);
       }
-    }
-  };
+    };
+
+    checkExistingPublication();
+  }, [contentId, contentType]);
 
   /**
-   * Returns appropriate badge variant based on export status
-   * 
-   * @param status - The current process status
-   * @returns Badge component with appropriate styling
-   */
-  const getStatusBadge = (status: ProcessStatus) => {
-    const variants = {
-      [ProcessStatus.NOT_STARTED]: 'secondary',
-      [ProcessStatus.IN_PROGRESS]: 'default',
-      [ProcessStatus.COMPLETE]: 'default',
-      [ProcessStatus.ERROR]: 'destructive',
-      [ProcessStatus.WARNING]: 'destructive',
-      [ProcessStatus.SKIPPED]: 'secondary'
-    } as const;
-
-    return (
-      <Badge variant={variants[status] || 'secondary'}>
-        {status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-      </Badge>
-    );
-  };
-
-  /**
-   * Determines the button text, action, and state based on current PDF export status
+   * Determines the button text, action, and state based on PDF generation status
    * 
    * @returns Object containing button configuration (text, action, disabled state, icon)
    */
@@ -453,19 +335,20 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       console.error('Error adding to queue:', error);
       
       // Check if this is a duplicate publication error
-      if (error?.message?.includes('A daily publication already exists for this book')) {
+      if (error.message?.includes('Only one publication can be active')) {
         toast({
-          title: "Already in Queue",
-          description: `${contentName} is already in the daily publication queue. Each book can only have one queue entry.`,
+          title: "Publication Limit Reached",
+          description: "Only one book can be published daily. Please wait until tomorrow or contact support.",
           variant: "destructive"
         });
-      } else {
-        toast({
-          title: "Queue Addition Failed",
-          description: "There was an error adding your content to the queue. Please try again.",
-          variant: "destructive"
-        });
+        return;
       }
+
+      toast({
+        title: "Failed to Add to Queue",
+        description: error.message || "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -506,73 +389,6 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             )}
           </div>
         </div>
-
-        {latestPdfExport && (
-          <div className="pt-4 border-t">
-            <div className="flex items-center justify-between text-sm">
-              <div className="flex items-center gap-2">
-                <span>Status:</span>
-                {getStatusBadge(latestPdfExport.export_status)}
-              </div>
-              <div className="flex items-center gap-2">
-                {latestPdfExport.export_status === ProcessStatus.COMPLETE && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleDownload(latestPdfExport)}
-                    title="Download PDF"
-                  >
-                    <Download className="h-4 w-4" />
-                  </Button>
-                )}
-                {latestPdfExport.export_status === ProcessStatus.COMPLETE && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleCopyPdfLink(latestPdfExport)}
-                    title="Copy PDF link"
-                  >
-                    <Copy className="h-4 w-4" />
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => refetch()}
-                  title="Refresh status"
-                >
-                  <RotateCcw className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleDelete(latestPdfExport)}
-                  title="Delete export"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </div>
-            
-            {latestPdfExport.error_message && latestPdfExport.export_status === ProcessStatus.ERROR && (
-              <div className="mt-2 text-sm text-destructive">
-                Error: {latestPdfExport.error_message}
-              </div>
-            )}
-            
-            {latestPdfExport.export_status === ProcessStatus.IN_PROGRESS && latestPdfExport.error_message && (
-              <div className="mt-2 text-sm text-muted-foreground">
-                Progress: {latestPdfExport.error_message}
-              </div>
-            )}
-            
-            {latestPdfExport.file_size_bytes && (
-              <div className="mt-2 text-sm text-muted-foreground">
-                File size: {(latestPdfExport.file_size_bytes / 1024 / 1024).toFixed(2)} MB
-              </div>
-            )}
-          </div>
-        )}
 
         <div className="flex items-center justify-between pt-4 border-t">
           <div className="space-y-1">

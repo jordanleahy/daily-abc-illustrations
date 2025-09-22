@@ -113,87 +113,56 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   }, [contentId, contentType]);
 
   /**
-   * Handles PDF generation for the content
-   * Creates an export record, starts the PDF generation process via edge function,
-   * and polls for completion status with user feedback
+   * Handles client-side PDF generation for the content
+   * Uses pdf-lib to generate PDFs directly in the browser
    */
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0, currentPage: '' });
+
   const handleCreatePdf = async () => {
+    setIsGeneratingPdf(true);
+    setPdfProgress({ current: 0, total: 0, currentPage: '' });
+
     try {
-      const exportRecord = await createExport({
-        content_type: contentType,
-        content_id: contentId,
-        export_type: 'pdf',
-        export_config: {
-          quality: 'high',
-          includeImages: true
+      // Import the PDF generator service
+      const { generateBookPDF, generatePagePDF } = await import('@/services/pdfGenerator');
+
+      const options = {
+        onProgress: (current: number, total: number, currentPage?: string) => {
+          setPdfProgress({ current, total, currentPage: currentPage || '' });
+        },
+        onError: (error: string, pageId?: string) => {
+          console.warn(`PDF generation warning: ${error}`, pageId);
         }
+      };
+
+      toast({
+        title: "PDF Generation Started",
+        description: "Generating your PDF directly in the browser..."
       });
 
-      // Start polling for progress updates
-      const pollInterval = setInterval(async () => {
-        const { data: updatedExport } = await supabase
-          .from('exports')
-          .select('*')
-          .eq('id', exportRecord.id)
-          .single();
-
-        if (updatedExport) {
-          // The useExports hook will automatically refresh and show the updated status
-          if (updatedExport.export_status === 'complete' || updatedExport.export_status === 'error') {
-            clearInterval(pollInterval);
-            
-            if (updatedExport.export_status === 'complete') {
-              toast({
-                title: "PDF Generated Successfully",
-                description: "Your PDF is ready for download."
-              });
-            } else {
-              toast({
-                variant: "destructive",
-                title: "PDF Generation Failed",
-                description: updatedExport.error_message || "An error occurred during generation."
-              });
-            }
-          }
-        }
-      }, 2000); // Poll every 2 seconds
-
-      // Call the generate-pdf edge function
-      const { error } = await supabase.functions.invoke('generate-pdf', {
-        body: { exportId: exportRecord.id }
-      });
-
-      if (error) {
-        clearInterval(pollInterval);
-        console.error('Error calling generate-pdf function:', error);
-        toast({
-          variant: "destructive",
-          title: "Failed to start PDF generation",
-          description: error.message
-        });
+      if (contentType === 'book') {
+        await generateBookPDF(contentId, contentName, options);
       } else {
-        // For books, provide better time estimates
-        const estimatedTime = contentType === 'book' 
-          ? "2-5 minutes depending on book size"
-          : "1-2 minutes";
-            
-        toast({
-          title: "PDF Generation Started",
-          description: `Your PDF is being generated. Estimated time: ${estimatedTime}. Using optimized processing to prevent timeouts.`
-        });
-
-        // Clear interval after 8 minutes to account for chunked processing
-        setTimeout(() => {
-          clearInterval(pollInterval);
-        }, 480000);
+        await generatePagePDF(contentId, contentName, options);
       }
+
+      toast({
+        title: "PDF Generated Successfully",
+        description: "Your PDF has been downloaded successfully."
+      });
+
     } catch (error) {
-      console.error('Error creating PDF export:', error);
+      console.error('Error generating PDF:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast({
         variant: "destructive",
-        title: "Export Failed",
-        description: "Failed to create export record."
+        title: "PDF Generation Failed",
+        description: errorMessage
       });
+    } finally {
+      setIsGeneratingPdf(false);
+      setPdfProgress({ current: 0, total: 0, currentPage: '' });
     }
   };
 
@@ -304,21 +273,14 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
    * @returns Object containing button configuration (text, action, disabled state, icon)
    */
   const getButtonState = () => {
-    if (!latestPdfExport) {
-      return { text: 'Generate PDF', action: handleCreatePdf, disabled: false, icon: FileText };
+    if (isGeneratingPdf) {
+      const progressText = pdfProgress.total > 0 
+        ? `Generating... (${pdfProgress.current}/${pdfProgress.total}${pdfProgress.currentPage ? ` - Page ${pdfProgress.currentPage}` : ''})`
+        : 'Generating PDF...';
+      return { text: progressText, action: () => {}, disabled: true, icon: FileText };
     }
 
-    switch (latestPdfExport.export_status) {
-      case ProcessStatus.NOT_STARTED:
-      case ProcessStatus.IN_PROGRESS:
-        return { text: 'Generating PDF...', action: () => {}, disabled: true, icon: FileText };
-      case ProcessStatus.COMPLETE:
-        return { text: 'Download PDF', action: () => handleDownload(latestPdfExport), disabled: false, icon: Download };
-      case ProcessStatus.ERROR:
-        return { text: 'Retry PDF Generation', action: handleCreatePdf, disabled: false, icon: RotateCcw };
-      default:
-        return { text: 'Generate PDF', action: handleCreatePdf, disabled: false, icon: FileText };
-    }
+    return { text: 'Generate PDF', action: handleCreatePdf, disabled: false, icon: FileText };
   };
 
   /**
@@ -528,14 +490,21 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
               Download a PDF version with all available content
             </p>
           </div>
-          <Button 
-            onClick={action}
-            disabled={disabled}
-            className="flex items-center gap-2"
-          >
-            <Icon className="h-4 w-4" />
-            {text}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={action}
+              disabled={disabled}
+              className="flex items-center gap-2"
+            >
+              <Icon className="h-4 w-4" />
+              {text}
+            </Button>
+            {isGeneratingPdf && pdfProgress.total > 0 && (
+              <div className="text-sm text-muted-foreground">
+                {Math.round((pdfProgress.current / pdfProgress.total) * 100)}%
+              </div>
+            )}
+          </div>
         </div>
 
         {latestPdfExport && (

@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Clock, BookOpen, Image } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
+import { toEasternTime } from '@/utils/timezone';
+import { format } from 'date-fns-tz';
 
 // Utility functions (reused from DailyPublishedSchedule)
 const getStatusColor = (status: string) => {
@@ -42,6 +44,14 @@ const formatScheduleDate = (dateString: string, options?: {
     month: 'short',
     day: 'numeric'
   }) + ' at 7:01 AM ET';
+};
+
+// Helper function to get day name for queue position
+const getPublishDayName = (position: number): string => {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + position);
+  const easternTime = toEasternTime(tomorrow);
+  return format(easternTime, 'EEEE'); // Full day name like "Monday"
 };
 export default function Schedule() {
   const {
@@ -192,7 +202,7 @@ function PublicScheduleCard({
                 </>}
               {isQueued && <>
                   <div className="text-muted-foreground text-xs">
-                    Publishes {position === 1 ? 'Tomorrow' : `in ${position} days`} at 7:01 AM ET
+                    {getPublishDayName(position as number)}
                   </div>
                 </>}
             </div>
@@ -213,7 +223,7 @@ function PublicScheduleCard({
                 </>}
               {isQueued && <>
                   <div className="text-muted-foreground text-xs">
-                    Publishes {position === 1 ? 'Tomorrow' : `in ${position} days`} at 7:01 AM ET
+                    {getPublishDayName(position as number)}
                   </div>
                 </>}
             </div>

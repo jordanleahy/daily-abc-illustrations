@@ -181,8 +181,24 @@ export const useDailyPublishedOpenGraph = (
    * work on every render. Perfect for complex data transformations like this!
    */
   const openGraphMetadata: SEOMetadata | null = useMemo(() => {
+    console.log('🔄 [DEBUG] useDailyPublishedOpenGraph: Generating metadata for:', {
+      dailyId,
+      dailyTitle: dailyContent?.title,
+      hasPages: pages.length > 0,
+      currentPageIndex,
+      hasSeoMetadata: !!finalSeoMetadata,
+      optimizedTitle,
+      optimizedDescription,
+      ogImageUrl: finalSeoMetadata?.og_image_url,
+      firstPageImageUrl: firstPageImage?.image_url
+    });
+
     // Early return: we need basic data before we can generate metadata
     if (!dailyContent || !pages.length) {
+      console.log('⚠️ [DEBUG] useDailyPublishedOpenGraph: Missing basic data:', {
+        hasDailyContent: !!dailyContent,
+        pagesCount: pages.length
+      });
       return null;
     }
 
@@ -191,6 +207,7 @@ export const useDailyPublishedOpenGraph = (
     // We wait for firstPageImage to be either loaded (with data) or confirmed as null
     // undefined means it's still loading
     if (firstPage?.id && firstPageImage === undefined) {
+      console.log('⏳ [DEBUG] useDailyPublishedOpenGraph: Waiting for first page image to load');
       return null;
     }
 
@@ -202,9 +219,21 @@ export const useDailyPublishedOpenGraph = (
     // Prioritize SEO metadata image, fallback to first page image for consistent OpenGraph sharing
     const ogImage = finalSeoMetadata?.og_image_url || firstPageImage?.image_url || null;
 
+    console.log('📋 [DEBUG] useDailyPublishedOpenGraph: About to generate OpenGraph with:', {
+      title: dailyContent.title,
+      description: dailyContent.description,
+      pageNumber,
+      totalPages,
+      dailyId: dailyContent.id,
+      ogImage,
+      timeRemaining,
+      optimizedTitle,
+      optimizedDescription
+    });
+
     // Call the utility function to generate the complete metadata object
     // This function handles all the OpenGraph protocol requirements
-    return generateDailyPublishedOpenGraph(
+    const result = generateDailyPublishedOpenGraph(
       dailyContent.title,           // Main content title
       dailyContent.description,     // Main content description  
       pageNumber,                   // Current page (1, 2, 3...)
@@ -215,6 +244,9 @@ export const useDailyPublishedOpenGraph = (
       optimizedTitle,               // AI-optimized title (if available)
       optimizedDescription          // AI-optimized description (if available)
     );
+
+    console.log('✅ [DEBUG] useDailyPublishedOpenGraph: Generated result:', result);
+    return result;
     
     // 📚 LEARNING NOTE - Dependency array:
     // useMemo re-runs when any value in this array changes

@@ -13,6 +13,8 @@ export const useSeoMetadata = (dailyPublishedId?: string) => {
     queryFn: async () => {
       if (!dailyPublishedId) return null;
 
+      console.log('🔍 [DEBUG] Fetching SEO metadata for daily_published_id:', dailyPublishedId);
+
       const { data, error } = await supabase
         .from('seo_metadata')
         .select('*')
@@ -23,10 +25,11 @@ export const useSeoMetadata = (dailyPublishedId?: string) => {
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching SEO metadata:', error);
+        console.error('❌ [DEBUG] Error fetching SEO metadata:', error);
         return null;
       }
 
+      console.log('✅ [DEBUG] SEO metadata fetched:', data);
       return data;
     },
     enabled: !!dailyPublishedId,

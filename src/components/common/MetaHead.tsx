@@ -13,6 +13,19 @@ interface MetaHeadProps {
  * Handles OpenGraph, Twitter Cards, and standard SEO meta tags
  */
 export function MetaHead({ metadata, customMeta = [] }: MetaHeadProps) {
+  console.log('📋 [DEBUG] MetaHead: Rendering meta tags with data:', {
+    title: metadata?.title,
+    description: metadata?.description,
+    image: metadata?.image?.url,
+    url: metadata?.url,
+    type: metadata?.type
+  });
+
+  if (!metadata) {
+    console.log('⚠️ [DEBUG] MetaHead: No metadata provided');
+    return null;
+  }
+
   const {
     title,
     description,

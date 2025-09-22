@@ -16,8 +16,7 @@ export const useBookSeoMetadata = (bookId?: string) => {
         .from('daily_published')
         .select('id')
         .eq('book_id', bookId)
-        .eq('is_active', true)
-        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
         .maybeSingle();
 
       if (dailyError) {

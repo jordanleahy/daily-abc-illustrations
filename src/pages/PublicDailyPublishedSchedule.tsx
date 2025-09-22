@@ -234,20 +234,16 @@ const PublicScheduleCard: React.FC<{
                   {item.book.book_name}
                   {item.description && ` • ${item.description}`}
                 </CardDescription>
+                
+                {/* Dates Component */}
+                <div className="mt-3">
+                  <PublicScheduleDates item={item} />
+                </div>
               </div>
             </div>
           </div>
         </div>
       </CardHeader>
-      
-      <CardContent className="pt-0">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            {/* Dates Component */}
-            <PublicScheduleDates item={item} />
-          </div>
-        </div>
-      </CardContent>
     </Card>
   );
 };

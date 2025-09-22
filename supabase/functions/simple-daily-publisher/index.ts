@@ -1,4 +1,5 @@
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2'
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { utcToZonedTime, format } from 'https://esm.sh/date-fns-tz@3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -41,6 +42,39 @@ Deno.serve(async (req) => {
 
   try {
     console.log('🚀 Simple Daily Publisher started at:', new Date().toISOString());
+    
+    // Parse request body to check schedule type
+    const body = await req.text();
+    const requestData = body ? JSON.parse(body) : {};
+    
+    // Check if this is the correct time slot for Eastern Time
+    const now = new Date();
+    const easternTime = utcToZonedTime(now, 'America/New_York');
+    const easternHour = easternTime.getHours();
+    const easternMinute = easternTime.getMinutes();
+    
+    // Only process if it's 7:01 AM Eastern Time (±2 minutes for tolerance)
+    const isCorrectTime = easternHour === 7 && easternMinute >= 0 && easternMinute <= 3;
+    
+    if (!isCorrectTime) {
+      console.log(`⏰ Skipping execution - not 7:01 AM Eastern Time. Current: ${format(easternTime, 'HH:mm zzz')}`);
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          message: 'Execution skipped - not scheduled time',
+          current_eastern_time: format(easternTime, 'yyyy-MM-dd HH:mm:ss zzz'),
+          scheduled_time: '07:01 Eastern Time'
+        }),
+        { 
+          headers: { 
+            ...corsHeaders, 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
+    }
+    
+    console.log(`✅ Executing at correct Eastern Time: ${format(easternTime, 'yyyy-MM-dd HH:mm:ss zzz')}`);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
@@ -88,6 +122,7 @@ Deno.serve(async (req) => {
         success: true,
         message: 'Daily publishing processed successfully',
         timestamp: new Date().toISOString(),
+        eastern_time: format(easternTime, 'yyyy-MM-dd HH:mm:ss zzz'),
         results: result
       }),
       {

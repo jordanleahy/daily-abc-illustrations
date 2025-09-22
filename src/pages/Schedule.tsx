@@ -235,6 +235,24 @@ function PublicScheduleCard({
 
           {/* Content */}
           <div className="flex-1 min-w-0">
+            {/* Publishing Info - Mobile Only (above title) */}
+            <div className="block md:hidden mb-2 text-sm">
+              {isActive && (
+                <>
+                  <div className="text-green-600 font-semibold">📺 LIVE NOW</div>
+                  <div className="text-muted-foreground text-xs">Until tomorrow 7:01 AM ET</div>
+                </>
+              )}
+              {isQueued && (
+                <>
+                  <div className="text-blue-600">📅 Position #{position}</div>
+                  <div className="text-muted-foreground text-xs">
+                    Publishes {position === 1 ? 'Tomorrow' : `in ${position} days`} at 7:01 AM ET
+                  </div>
+                </>
+              )}
+            </div>
+            
             <div className="flex justify-between items-start">
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg truncate">{item.title}</CardTitle>
@@ -248,8 +266,8 @@ function PublicScheduleCard({
               </Badge>
             </div>
             
-            {/* Publishing Info */}
-            <div className="mt-2 text-sm">
+            {/* Publishing Info - Desktop Only (below title) */}
+            <div className="hidden md:block mt-2 text-sm">
               {isActive && (
                 <>
                   <div className="text-green-600 font-semibold">📺 LIVE NOW</div>

@@ -24,7 +24,6 @@ export const usePublicDailyPublishedSchedule = () => {
           )
         `)
         .in('status', ['active', 'queued'])
-        .eq('is_active', true)
         .order('publish_date', { ascending: true })
         .order('created_at', { ascending: true });
 
@@ -39,18 +38,17 @@ export const usePublicDailyPublishedSchedule = () => {
       const now = new Date();
       
       return items.filter(item => {
-        // Show active items (not expired) and queued items
-        if (!item.is_active) {
-          return false;
+        // Show active items that are not expired
+        if (item.status === 'active') {
+          return item.is_active && (!item.expires_at || new Date(item.expires_at) > now);
         }
         
-        // For active items, check expiration
-        if (item.status === 'active' && item.expires_at && new Date(item.expires_at) <= now) {
-          return false;
+        // Show queued items regardless of is_active status
+        if (item.status === 'queued') {
+          return true;
         }
         
-        // Show both active and queued items
-        return item.status === 'active' || item.status === 'queued';
+        return false;
       });
     },
     staleTime: 60 * 1000, // 1 minute - longer cache for public content

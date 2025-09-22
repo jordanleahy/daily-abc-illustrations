@@ -231,7 +231,7 @@ const PublicScheduleCard: React.FC<{
               <div className="flex-1 min-w-0 md:order-1">
                 <CardTitle className="text-lg truncate">{item.title}</CardTitle>
                 <CardDescription className="mt-1">
-                  {item.book?.book_name || 'Book information unavailable'}
+                  {item.book.book_name}
                   {item.description && ` • ${item.description}`}
                 </CardDescription>
               </div>

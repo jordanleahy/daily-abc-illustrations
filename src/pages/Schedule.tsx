@@ -208,7 +208,10 @@ function PublicScheduleCard({
   };
   const isActive = item.status === 'active';
   const isQueued = item.status === 'queued' && typeof position === 'number';
-  return <Card className="cursor-pointer hover:shadow-lg transition-shadow group" onClick={handleCardClick}>
+   return <Card 
+     className={`transition-shadow group ${isActive ? "cursor-pointer hover:shadow-lg" : ""}`} 
+     onClick={isActive ? handleCardClick : undefined}
+   >
       <CardHeader className="pb-3">
         <div className="flex flex-col md:flex-row gap-3 md:items-center">
           {/* Thumbnail */}

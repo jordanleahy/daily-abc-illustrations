@@ -9,8 +9,9 @@ import { MetaHead } from '@/components/common/MetaHead';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Clock, BookOpen, RefreshCw, GripVertical, Image, ArrowUp, ArrowDown } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { toast } from 'sonner';
 import { 
@@ -275,6 +276,26 @@ export default function DailyPublishedScheduleSimple() {
 
 // Reusable components
 function ScheduleThumbnail({ imageUrl, title }: { imageUrl?: string; title: string }) {
+  const isMobile = useIsMobile();
+  
+  if (isMobile) {
+    return (
+      <AspectRatio ratio={16/9} className="bg-muted rounded-lg overflow-hidden">
+        {imageUrl ? (
+          <img 
+            src={imageUrl} 
+            alt={title}
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Image className="h-8 w-8 text-muted-foreground" />
+          </div>
+        )}
+      </AspectRatio>
+    );
+  }
+  
   return (
     <div className="w-32 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
       {imageUrl ? (
@@ -306,6 +327,7 @@ function ScheduleCard({
 }: ScheduleCardProps) {
   const navigate = useNavigate();
   const { data: seoMetadata } = useSeoMetadata(item.id);
+  const isMobile = useIsMobile();
 
   // Always call useSortable, but only apply effects when draggable
   const {
@@ -335,62 +357,114 @@ function ScheduleCard({
 
   const cardContent = (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow group" onClick={handleCardClick}>
-      <CardHeader className="pb-3">
-        <div className="flex gap-3 items-center">
-          {/* Conditional Drag Handle */}
-          {isDraggable && (
-            <div
-              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
-              {...attributes}
-              {...listeners}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <GripVertical className="h-4 w-4 text-muted-foreground" />
-            </div>
-          )}
-
-
-          {/* Thumbnail */}
-          <ScheduleThumbnail 
-            imageUrl={seoMetadata?.og_image_url}
-            title={item.title}
-          />
-
-          {/* Content */}
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-start">
-              <div className="flex-1 min-w-0">
-                <CardTitle className="text-lg truncate">{item.title}</CardTitle>
-                <CardDescription className="mt-1">
-                  {item.book.book_name}
-                  {item.description && ` • ${item.description}`}
-                </CardDescription>
-              </div>
-              <Badge className={`${getStatusColor(item.status)} ml-2`} variant="secondary">
-                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-              </Badge>
-            </div>
+      <CardContent className="p-0">
+        {isMobile ? (
+          /* Mobile Layout: Full-width thumbnail on top */
+          <div>
+            {/* Full-width thumbnail */}
+            <ScheduleThumbnail 
+              imageUrl={seoMetadata?.og_image_url}
+              title={item.title}
+            />
             
-            {/* Publishing Info */}
-            <div className="mt-2 text-sm">
-              {isActive && (
-                <>
-                  <div className="text-green-600 font-semibold">📺 LIVE NOW</div>
-                  <div className="text-muted-foreground text-xs">Until tomorrow 7:01 AM ET</div>
-                </>
-              )}
-              {isQueued && (
-                <>
-                  <div className="text-blue-600">📅 Position #{position}</div>
-                  <div className="text-muted-foreground text-xs">
-                    Publishes {position === 1 ? 'Tomorrow' : `in ${position} days`} at 7:01 AM ET
+            {/* Content section with publishing info above title */}
+            <div className="p-6">
+              {/* Publishing Info - Mobile (above title) */}
+              <div className="mb-3 text-sm">
+                {isActive && (
+                  <>
+                    <div className="text-green-600 font-semibold">📺 LIVE NOW</div>
+                    <div className="text-muted-foreground text-xs">Until tomorrow 7:01 AM ET</div>
+                  </>
+                )}
+                {isQueued && (
+                  <>
+                    <div className="text-blue-600">📅 Position #{position}</div>
+                    <div className="text-muted-foreground text-xs">
+                      Publishes {position === 1 ? 'Tomorrow' : `in ${position} days`} at 7:01 AM ET
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              {/* Title and description */}
+              <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg truncate">{item.title}</CardTitle>
+                  <CardDescription className="mt-1">
+                    {item.book.book_name}
+                    {item.description && ` • ${item.description}`}
+                  </CardDescription>
+                </div>
+                
+                {/* Drag Handle - Mobile (right side) */}
+                {isDraggable && (
+                  <div
+                    className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded ml-2"
+                    {...attributes}
+                    {...listeners}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <GripVertical className="h-4 w-4 text-muted-foreground" />
                   </div>
-                </>
-              )}
+                )}
+              </div>
             </div>
           </div>
-        </div>
-      </CardHeader>
+        ) : (
+          /* Desktop Layout: Horizontal with thumbnail on left */
+          <div className="p-6">
+            <div className="flex gap-3 items-center">
+              {/* Conditional Drag Handle - Desktop */}
+              {isDraggable && (
+                <div
+                  className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
+                  {...attributes}
+                  {...listeners}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <GripVertical className="h-4 w-4 text-muted-foreground" />
+                </div>
+              )}
+
+              {/* Thumbnail */}
+              <ScheduleThumbnail 
+                imageUrl={seoMetadata?.og_image_url}
+                title={item.title}
+              />
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg truncate">{item.title}</CardTitle>
+                  <CardDescription className="mt-1">
+                    {item.book.book_name}
+                    {item.description && ` • ${item.description}`}
+                  </CardDescription>
+                </div>
+                
+                {/* Publishing Info - Desktop (below title) */}
+                <div className="mt-2 text-sm">
+                  {isActive && (
+                    <>
+                      <div className="text-green-600 font-semibold">📺 LIVE NOW</div>
+                      <div className="text-muted-foreground text-xs">Until tomorrow 7:01 AM ET</div>
+                    </>
+                  )}
+                  {isQueued && (
+                    <>
+                      <div className="text-blue-600">📅 Position #{position}</div>
+                      <div className="text-muted-foreground text-xs">
+                        Publishes {position === 1 ? 'Tomorrow' : `in ${position} days`} at 7:01 AM ET
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 

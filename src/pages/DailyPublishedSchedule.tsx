@@ -69,23 +69,20 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString('en-US', {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
-};
-
-const formatDateWithTime = (dateString: string, isStart: boolean = false) => {
+// Comprehensive date/time formatter
+const formatScheduleDate = (dateString: string, options?: { includeTime?: boolean; isStart?: boolean }) => {
   const date = new Date(dateString).toLocaleDateString('en-US', {
     weekday: 'short',
     year: 'numeric',
     month: 'short',
     day: 'numeric'
   });
-  const time = isStart ? '7:01 AM ET' : '7:00 AM ET';
+  
+  if (!options?.includeTime) {
+    return date;
+  }
+  
+  const time = options.isStart ? '7:01 AM ET' : '7:00 AM ET';
   return `${date} at ${time}`;
 };
 
@@ -188,25 +185,6 @@ export default function DailyPublishedScheduleSimple() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
-
-  const formatDateWithTime = (dateString: string, isStart: boolean = false) => {
-    const date = new Date(dateString).toLocaleDateString('en-US', {
-      weekday: 'short',
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-    const time = isStart ? '7:01 AM ET' : '7:00 AM ET';
-    return `${date} at ${time}`;
-  };
 
   if (!user) {
     return (
@@ -352,7 +330,7 @@ export default function DailyPublishedScheduleSimple() {
                     <div key={item.id} className="text-sm p-3 bg-muted rounded-lg">
                       <div className="flex justify-between items-center">
                         <span>{item.title} • {item.book.book_name}</span>
-                        <span className="text-xs">{formatDate(item.publish_date)}</span>
+                        <span className="text-xs">{formatScheduleDate(item.publish_date)}</span>
                       </div>
                     </div>
                   ))}
@@ -466,7 +444,7 @@ function ScheduleCard({
             <div className="flex flex-col gap-1 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
-                <span>Starts {formatDateWithTime(item.publish_date, true)}</span>
+                <span>Starts {formatScheduleDate(item.publish_date, { includeTime: true, isStart: true })}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-4 w-4" />
@@ -502,7 +480,7 @@ function ScheduleCard({
                       dateEdit.startEdit(item.id, item.expires_at);
                     }}
                   >
-                    Expires {formatDateWithTime(item.expires_at, false)}
+                    Expires {formatScheduleDate(item.expires_at, { includeTime: true, isStart: false })}
                   </span>
                 )}
               </div>

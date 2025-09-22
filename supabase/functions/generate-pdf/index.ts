@@ -62,33 +62,44 @@ async function fetchImageWithRetry(url: string, maxRetries = 3, timeoutMs = 1500
   throw new Error(`Failed to fetch image after ${maxRetries} attempts. Last error: ${lastError?.message}`);
 }
 
+// Add type definitions
+interface PageError {
+  page: string;
+  reason: string;
+}
+
 // Compress image data to reduce memory usage and processing time
 async function compressImageData(imageBytes: ArrayBuffer): Promise<ArrayBuffer> {
   try {
-    // For now, we'll just return the original data
-    // In a full implementation, you'd resize the image here
-    // keeping file size under 500KB for faster processing
     const sizeMB = imageBytes.byteLength / 1024 / 1024;
     
-    // If image is larger than 2MB, we could implement compression
-    // For now, log a warning for very large images
-    if (sizeMB > 2) {
-      console.warn(`Large image detected: ${sizeMB.toFixed(2)} MB - consider implementing compression`);
+    // For images larger than 1.5MB, we should implement actual compression
+    if (sizeMB > 1.5) {
+      console.log(`⚠️ Large image detected: ${sizeMB.toFixed(2)} MB - consider implementing compression for better performance`);
+      
+      // TODO: Implement actual image compression here
+      // For now, we'll return the original but log the issue
+      // In production, you'd want to:
+      // 1. Decode the image
+      // 2. Resize to max 1200px width/height 
+      // 3. Re-encode with quality reduction
+      // 4. Return compressed bytes
     }
     
     return imageBytes;
   } catch (error) {
-    console.warn('Image compression failed, using original:', error.message);
+    console.warn('Image compression check failed, using original:', error.message);
     return imageBytes;
   }
 }
 
-// Process images in parallel batches to improve performance
-async function processPagesInBatches(pages: any[], pageImages: Map<string, string>, pdfDoc: any, exportId: string, supabase: any, batchSize = 4): Promise<{successCount: number, failedPages: any[]}> {
+// Process images in parallel batches but add pages sequentially to avoid PDF corruption
+async function processPagesInBatches(pages: any[], pageImages: Map<string, string>, pdfDoc: any, exportId: string, supabase: any, batchSize = 4): Promise<{successCount: number, failedPages: PageError[]}> {
   let successCount = 0;
-  let failedPages = [];
+  let failedPages: PageError[] = [];
   const totalPages = pages.length;
   
+  // Process images in parallel but collect results for sequential PDF page addition
   for (let i = 0; i < pages.length; i += batchSize) {
     const batch = pages.slice(i, i + batchSize);
     const batchStart = i + 1;
@@ -105,7 +116,7 @@ async function processPagesInBatches(pages: any[], pageImages: Map<string, strin
       })
       .eq('id', exportId);
     
-    // Process batch in parallel
+    // Fetch and process images in parallel
     const batchPromises = batch.map(async (pageData) => {
       const imageUrl = pageImages.get(pageData.id);
       
@@ -113,50 +124,33 @@ async function processPagesInBatches(pages: any[], pageImages: Map<string, strin
         return { 
           success: false, 
           page: pageData.letter, 
+          pageData,
           reason: 'No image URL available' 
         };
       }
       
       try {
         // Fetch and compress image
-        const imageBytes = await fetchImageWithRetry(imageUrl, 2, 10000); // Reduced retries and timeout for batch processing
+        const imageBytes = await fetchImageWithRetry(imageUrl, 2, 10000);
         const compressedBytes = await compressImageData(imageBytes);
         
-        // Embed image in PDF
+        // Embed image in PDF (but don't add to PDF yet)
         const image = await embedImageInPdf(pdfDoc, compressedBytes, pageData.letter);
         
-        // Use standard letter size and scale image to fit
-        const pageWidth = 612; // 8.5 inches at 72 DPI
-        const pageHeight = 792; // 11 inches at 72 DPI
-        
-        const scaleX = pageWidth / image.width;
-        const scaleY = pageHeight / image.height;
-        const scale = Math.min(scaleX, scaleY, 1); // Don't upscale
-        
-        const scaledWidth = image.width * scale;
-        const scaledHeight = image.height * scale;
-        
-        const page = pdfDoc.addPage([pageWidth, pageHeight]);
-        
-        // Center the image
-        const x = (pageWidth - scaledWidth) / 2;
-        const y = (pageHeight - scaledHeight) / 2;
-        
-        page.drawImage(image, {
-          x: x,
-          y: y,
-          width: scaledWidth,
-          height: scaledHeight,
-        });
-        
-        console.log(`✓ Successfully processed page ${pageData.letter}`);
-        return { success: true, page: pageData.letter };
+        console.log(`✓ Successfully processed image for page ${pageData.letter}`);
+        return { 
+          success: true, 
+          page: pageData.letter, 
+          pageData, 
+          image 
+        };
         
       } catch (error) {
         console.error(`✗ Failed to process page ${pageData.letter}:`, error.message);
         return { 
           success: false, 
           page: pageData.letter, 
+          pageData,
           reason: error.message 
         };
       }
@@ -165,21 +159,59 @@ async function processPagesInBatches(pages: any[], pageImages: Map<string, strin
     // Wait for batch to complete
     const batchResults = await Promise.allSettled(batchPromises);
     
-    // Process results
-    batchResults.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
-        if (result.value.success) {
+    // Sequential PDF page addition to prevent corruption
+    for (let j = 0; j < batchResults.length; j++) {
+      const result = batchResults[j];
+      
+      if (result.status === 'fulfilled' && result.value.success && result.value.image) {
+        try {
+          // Add page to PDF sequentially
+          const pageWidth = 612; // 8.5 inches at 72 DPI
+          const pageHeight = 792; // 11 inches at 72 DPI
+          
+          const scaleX = pageWidth / result.value.image.width;
+          const scaleY = pageHeight / result.value.image.height;
+          const scale = Math.min(scaleX, scaleY, 1); // Don't upscale
+          
+          const scaledWidth = result.value.image.width * scale;
+          const scaledHeight = result.value.image.height * scale;
+          
+          const page = pdfDoc.addPage([pageWidth, pageHeight]);
+          
+          // Center the image
+          const x = (pageWidth - scaledWidth) / 2;
+          const y = (pageHeight - scaledHeight) / 2;
+          
+          page.drawImage(result.value.image, {
+            x: x,
+            y: y,
+            width: scaledWidth,
+            height: scaledHeight,
+          });
+          
           successCount++;
-        } else {
-          failedPages.push(result.value);
+          console.log(`✓ Successfully added page ${result.value.page} to PDF`);
+          
+        } catch (error) {
+          console.error(`✗ Failed to add page ${result.value.page} to PDF:`, error.message);
+          failedPages.push({
+            page: result.value.page,
+            reason: `PDF addition failed: ${error.message}`
+          });
         }
-      } else {
+      } else if (result.status === 'fulfilled' && !result.value.success) {
+        failedPages.push({
+          page: result.value.page,
+          reason: result.value.reason || 'Unknown error'
+        });
+      } else if (result.status === 'rejected') {
+        const pageData = batch[j];
         failedPages.push({ 
-          page: batch[index].letter, 
-          reason: result.reason?.message || 'Unknown error' 
+          page: pageData.letter, 
+          reason: result.reason?.message || 'Promise rejected' 
         });
       }
-    });
+    }
     
     // Small delay between batches to prevent overwhelming the system
     if (i + batchSize < pages.length) {
@@ -304,7 +336,7 @@ async function generatePdfInBackground(exportId: string, supabase: any, exportRe
 }
 
 // Chunked PDF generation for large books
-async function generateChunkedPdf(exportId: string, supabase: any, exportRecord: any, sortedPages: any[], pageImages: Map<string, string>, chunkSize: number) {
+async function generateChunkedPdf(exportId: string, supabase: any, exportRecord: any, sortedPages: any[], pageImages: Map<string, string>, chunkSize: number): Promise<{success: boolean, fileSize: string, processingTime: string}> {
   const totalPages = sortedPages.length;
   const chunks = [];
   
@@ -317,7 +349,7 @@ async function generateChunkedPdf(exportId: string, supabase: any, exportRecord:
   
   const pdfDoc = await PDFDocument.create();
   let totalSuccessCount = 0;
-  let totalFailedPages = [];
+  let totalFailedPages: PageError[] = [];
   const startTime = Date.now();
   
   // Process each chunk
@@ -372,7 +404,7 @@ async function generateChunkedPdf(exportId: string, supabase: any, exportRecord:
 }
 
 // Finalize and upload PDF
-async function finalizePdf(pdfDoc: any, exportId: string, supabase: any, exportRecord: any, successCount: number, totalPages: number, failedPages: any[], processingTime: string) {
+async function finalizePdf(pdfDoc: any, exportId: string, supabase: any, exportRecord: any, successCount: number, totalPages: number, failedPages: PageError[], processingTime: string): Promise<{success: boolean, fileSize: string, processingTime: string}> {
 
   try {
     // Generate final PDF

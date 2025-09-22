@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Clock, BookOpen, Image } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { format } from 'date-fns';
+import { formatEasternTime } from '@/utils/timezone';
 
 // Utility functions
 const getStatusColor = (status: string) => {
@@ -28,10 +29,10 @@ const formatScheduleDate = (dateString: string, options?: { includeTime?: boolea
   const date = new Date(dateString);
   
   if (options?.includeTime) {
-    return format(date, options.isStart ? "MMM d 'at' h:mm a" : "MMM d 'at' h:mm a");
+    return formatEasternTime(date, options.isStart ? "MMM d 'at' h:mm a 'ET'" : "MMM d 'at' h:mm a 'ET'");
   }
   
-  return format(date, 'MMM d, yyyy');
+  return formatEasternTime(date, 'MMM d, yyyy');
 };
 
 const PublicDailyPublishedSchedule: React.FC = () => {
@@ -188,8 +189,8 @@ const PublicScheduleDates: React.FC<{
       <div className="flex items-center gap-2">
         <span>
           {isQueued 
-            ? `Scheduled for ${formatScheduleDate(item.publish_date, { includeTime: true, isStart: true })}`
-            : `Published ${formatScheduleDate(item.publish_date, { includeTime: true, isStart: true })}`
+            ? `Scheduled for ${formatScheduleDate(item.published_at, { includeTime: true, isStart: true })}`
+            : `Published ${formatScheduleDate(item.published_at, { includeTime: true, isStart: true })}`
           }
         </span>
       </div>

@@ -215,33 +215,76 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   };
 
   /**
-   * Check for existing daily publication entries on component mount
+   * Set up real-time subscription for daily publication changes
    * Only runs for book content type
    */
   useEffect(() => {
+    if (contentType !== 'book') return;
+    
     const checkExistingPublication = async () => {
-      if (contentType !== 'book') return;
-      
       setIsCheckingPublication(true);
+      
       try {
-         const { data, error } = await supabase
-           .from('daily_published')
-           .select('*')
-           .eq('book_id', contentId)
-           .in('status', ['draft', 'queued', 'active'])
-           .maybeSingle();
+        const { data, error } = await supabase
+          .from('daily_published')
+          .select('*')
+          .eq('book_id', contentId)
+          .in('status', ['draft', 'queued', 'active'])
+          .maybeSingle();
 
         if (!error && data) {
           setExistingPublication(data);
         }
       } catch (error) {
-        console.error('Error checking publication:', error);
+        console.error('Error checking existing publication:', error);
+        toast({
+          variant: "destructive",
+          title: "Error",
+          description: "Failed to check existing publication status."
+        });
       } finally {
         setIsCheckingPublication(false);
       }
     };
 
+    // Initial fetch
     checkExistingPublication();
+
+    // Set up real-time subscription
+    const channel = supabase
+      .channel(`daily_published_changes_${contentId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'daily_published',
+          filter: `book_id=eq.${contentId}`
+        },
+        (payload) => {
+          console.log('Daily published updated:', payload);
+          setExistingPublication(payload.new as any);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'daily_published',
+          filter: `book_id=eq.${contentId}`
+        },
+        (payload) => {
+          console.log('Daily published created:', payload);
+          setExistingPublication(payload.new as any);
+        }
+      )
+      .subscribe();
+
+    // Cleanup subscription
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [contentId, contentType]);
 
   /**

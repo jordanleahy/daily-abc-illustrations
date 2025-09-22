@@ -13,6 +13,10 @@ export interface DailyPublished {
   queue_position?: number; // Made optional since we're not using it anymore
   status: DailyPublishedStatus;
   publish_date: string; // New date-based field
+  qr_code_image?: string;
+  qr_code_public_url?: string;
+  qr_code_config?: any;
+  qr_code_generated_at?: string;
 }
 
 export interface DailyPublishedWithBook extends DailyPublished {

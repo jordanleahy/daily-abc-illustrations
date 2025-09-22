@@ -52,29 +52,27 @@ serve(async (req) => {
       throw new Error('Book not found or access denied');
     }
 
-    // Check if book has a daily published entry
+    // Ensure book has an active daily published entry
     const { data: dailyPublished, error: dpError } = await supabase
       .from('daily_published')
       .select('*')
       .eq('book_id', bookId)
-      .order('created_at', { ascending: false })
-      .limit(1)
+      .eq('is_active', true)
+      .eq('status', 'active')
+      .gt('expires_at', new Date().toISOString())
       .maybeSingle();
 
     if (dpError) {
       console.error('Error fetching daily published:', dpError);
+      throw new Error('Failed to fetch daily published entry');
     }
 
-    // Generate public URL based on publication status
-    let publicUrl: string;
-    
-    if (dailyPublished) {
-      // Use daily published URL for published content
-      publicUrl = `https://dailyabcillustrations.com/daily-published/${dailyPublished.id}`;
-    } else {
-      // Use preview URL for non-published content
-      publicUrl = `https://dailyabcillustrations.com/preview/${bookId}`;
+    if (!dailyPublished) {
+      throw new Error('Book must have an active daily published entry to generate QR code');
     }
+
+    // Generate public URL for the daily published content
+    const publicUrl = `https://dailyabcillustrations.com/daily-published/${dailyPublished.id}`;
 
     // Generate QR code configuration
     const qrCodeConfig = {
@@ -167,36 +165,35 @@ serve(async (req) => {
     const base64 = btoa(String.fromCharCode(...data));
     const qrDataUrl = `data:image/svg+xml;base64,${base64}`;
 
-    // Update the book record with QR code data
-    console.log('Updating book with QR code data');
+    // Update the daily published record with QR code data
+    console.log('Updating daily published record with QR code data');
     const { data: qrResult, error: qrError } = await supabase
-      .from('books')
+      .from('daily_published')
       .update({
         qr_code_public_url: publicUrl,
         qr_code_image: qrDataUrl,
         qr_code_config: qrCodeConfig,
         qr_code_generated_at: new Date().toISOString()
       })
-      .eq('id', bookId)
-      .eq('user_id', user.id)
+      .eq('id', dailyPublished.id)
       .select()
       .single();
 
     if (qrError) {
-      console.error('Error updating book with QR code:', qrError);
-      throw new Error(`Failed to update book with QR code: ${qrError.message}`);
+      console.error('Error updating daily published record with QR code:', qrError);
+      throw new Error(`Failed to update daily published record with QR code: ${qrError.message}`);
     }
 
-    console.log('QR code generated successfully for book:', qrResult);
+    console.log('QR code generated successfully for daily published entry:', qrResult);
     
     return new Response(JSON.stringify({
       success: true,
       data: {
         bookId: bookId,
+        dailyPublishedId: dailyPublished.id,
         publicUrl: publicUrl,
         qrCodeConfig: qrCodeConfig,
         qrCodeImage: qrDataUrl,
-        dailyPublishedId: dailyPublished?.id || null,
         generatedAt: new Date().toISOString()
       }
     }), {

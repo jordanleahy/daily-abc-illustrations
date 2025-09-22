@@ -216,10 +216,6 @@ export type Database = {
           current_system_prompt_id: string | null
           id: string
           pdf_url: string | null
-          qr_code_config: Json | null
-          qr_code_generated_at: string | null
-          qr_code_image: string | null
-          qr_code_public_url: string | null
           status: Database["public"]["Enums"]["publication_status"]
           total_pages: number | null
           updated_at: string
@@ -233,10 +229,6 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           pdf_url?: string | null
-          qr_code_config?: Json | null
-          qr_code_generated_at?: string | null
-          qr_code_image?: string | null
-          qr_code_public_url?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
           total_pages?: number | null
           updated_at?: string
@@ -250,10 +242,6 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           pdf_url?: string | null
-          qr_code_config?: Json | null
-          qr_code_generated_at?: string | null
-          qr_code_image?: string | null
-          qr_code_public_url?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
           total_pages?: number | null
           updated_at?: string
@@ -279,6 +267,10 @@ export type Database = {
           is_active: boolean
           publish_date: string
           published_at: string
+          qr_code_config: Json | null
+          qr_code_generated_at: string | null
+          qr_code_image: string | null
+          qr_code_public_url: string | null
           queue_position: number | null
           status: string
           title: string
@@ -293,6 +285,10 @@ export type Database = {
           is_active?: boolean
           publish_date?: string
           published_at?: string
+          qr_code_config?: Json | null
+          qr_code_generated_at?: string | null
+          qr_code_image?: string | null
+          qr_code_public_url?: string | null
           queue_position?: number | null
           status?: string
           title: string
@@ -307,6 +303,10 @@ export type Database = {
           is_active?: boolean
           publish_date?: string
           published_at?: string
+          qr_code_config?: Json | null
+          qr_code_generated_at?: string | null
+          qr_code_image?: string | null
+          qr_code_public_url?: string | null
           queue_position?: number | null
           status?: string
           title?: string

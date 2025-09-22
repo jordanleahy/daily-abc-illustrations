@@ -189,14 +189,13 @@ const PublicScheduleDates: React.FC<{
       <div className="flex items-center gap-2">
         <span>
           {isQueued 
-            ? `Scheduled for ${formatScheduleDate(item.published_at, { includeTime: true, isStart: true })}`
+            ? `Starts ${formatScheduleDate(item.published_at, { includeTime: true, isStart: true })}`
             : `Published ${formatScheduleDate(item.published_at, { includeTime: true, isStart: true })}`
           }
         </span>
       </div>
       {item.expires_at && (
         <div className="flex items-center gap-2">
-          <Clock className="h-4 w-4" />
           <span>Expires {formatScheduleDate(item.expires_at, { includeTime: true })}</span>
         </div>
       )}

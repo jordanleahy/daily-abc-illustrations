@@ -372,45 +372,88 @@ function ScheduleDates({
     dateEdit.cancelEdit();
   };
 
+  // Format the date/time display using the new flexible columns if available
+  const formatDateTime = (date?: string, time?: string, fallbackTimestamp?: string) => {
+    if (date && time) {
+      const dateObj = new Date(`${date}T${time}`);
+      return dateObj.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric'
+      }) + ' at ' + dateObj.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+        timeZone: 'America/New_York',
+        timeZoneName: 'short'
+      });
+    }
+    return fallbackTimestamp ? formatScheduleDate(fallbackTimestamp, { includeTime: true }) : '';
+  };
+
   return (
     <div className="flex flex-col gap-1 text-sm text-muted-foreground">
       <div className="flex items-center gap-2">
-        <span>Starts {formatScheduleDate(item.published_at || item.publish_date, { includeTime: true })}</span>
+        <span>Starts {formatDateTime(item.start_date, item.start_time, item.published_at || item.publish_date)}</span>
       </div>
       <div className="flex items-center gap-2">
         {dateEdit.isEditing(item.id) ? (
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <Input
-              type="date"
-              value={dateEdit.newDate}
-              onChange={(e) => dateEdit.setNewDate(e.target.value)}
-              min={today}
-              className="w-auto"
-            />
-            <Button
-              size="sm"
-              onClick={() => handleDateSave(dateEdit.newDate)}
-              disabled={!dateEdit.newDate}
-            >
-              Save
-            </Button>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={dateEdit.cancelEdit}
-            >
-              Cancel
-            </Button>
+          <div className="flex flex-col gap-2 p-2 bg-muted rounded" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium">Start:</label>
+              <Input
+                type="date"
+                value={dateEdit.newDate}
+                onChange={(e) => dateEdit.setNewDate(e.target.value)}
+                min={today}
+                className="w-auto text-xs"
+              />
+              <Input
+                type="time"
+                defaultValue="07:01"
+                className="w-auto text-xs"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-medium">End:</label>
+              <Input
+                type="date"
+                defaultValue={item.expire_date || new Date(new Date(dateEdit.newDate).getTime() + 24*60*60*1000).toISOString().split('T')[0]}
+                className="w-auto text-xs"
+              />
+              <Input
+                type="time"
+                defaultValue="07:01"
+                className="w-auto text-xs"
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                onClick={() => handleDateSave(dateEdit.newDate)}
+                disabled={!dateEdit.newDate}
+                className="text-xs"
+              >
+                Save
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={dateEdit.cancelEdit}
+                className="text-xs"
+              >
+                Cancel
+              </Button>
+            </div>
           </div>
         ) : (
           <span 
             className="cursor-pointer hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
-              dateEdit.startEdit(item.id, item.expires_at);
+              dateEdit.startEdit(item.id, item.expire_date || item.expires_at);
             }}
           >
-            Expires {formatScheduleDate(item.expires_at, { includeTime: true })}
+            Expires {formatDateTime(item.expire_date, item.expire_time, item.expires_at)}
           </span>
         )}
       </div>

@@ -17,6 +17,11 @@ export interface DailyPublished {
   qr_code_public_url?: string;
   qr_code_config?: any;
   qr_code_generated_at?: string;
+  // New flexible date/time fields
+  start_date?: string;
+  start_time?: string;
+  expire_date?: string;
+  expire_time?: string;
 }
 
 export interface DailyPublishedWithBook extends DailyPublished {
@@ -32,4 +37,8 @@ export interface CreateDailyPublishedRequest {
   title: string;
   description?: string;
   publish_date?: string; // Allow scheduling for specific dates
+  start_date?: string; // New flexible scheduling fields
+  start_time?: string;
+  expire_date?: string;
+  expire_time?: string;
 }

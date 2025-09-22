@@ -208,6 +208,8 @@ export type Database = {
           book_id: string
           created_at: string
           description: string | null
+          expire_date: string | null
+          expire_time: string | null
           expires_at: string | null
           id: string
           is_active: boolean
@@ -219,6 +221,8 @@ export type Database = {
           qr_code_image: string | null
           qr_code_public_url: string | null
           queue_position: number | null
+          start_date: string | null
+          start_time: string | null
           status: string
           title: string
           updated_at: string
@@ -227,6 +231,8 @@ export type Database = {
           book_id: string
           created_at?: string
           description?: string | null
+          expire_date?: string | null
+          expire_time?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean
@@ -238,6 +244,8 @@ export type Database = {
           qr_code_image?: string | null
           qr_code_public_url?: string | null
           queue_position?: number | null
+          start_date?: string | null
+          start_time?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -246,6 +254,8 @@ export type Database = {
           book_id?: string
           created_at?: string
           description?: string | null
+          expire_date?: string | null
+          expire_time?: string | null
           expires_at?: string | null
           id?: string
           is_active?: boolean
@@ -257,6 +267,8 @@ export type Database = {
           qr_code_image?: string | null
           qr_code_public_url?: string | null
           queue_position?: number | null
+          start_date?: string | null
+          start_time?: string | null
           status?: string
           title?: string
           updated_at?: string

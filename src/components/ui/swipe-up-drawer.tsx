@@ -161,15 +161,29 @@ export function SwipeUpDrawer({ children, className, onStateChange }: SwipeUpDra
         onTouchEnd={handleTouchEnd}
         onMouseDown={handleMouseDown}
       >
-        {/* Handle */}
-        <div className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing">
-          <div className="w-12 h-1 bg-muted-foreground/30 rounded-full" />
-        </div>
-        
-        {/* Hint text when closed */}
+        {/* Handle and indicator when closed */}
         {!isOpen && (
-          <div className="text-center text-sm text-muted-foreground py-2">
-            Swipe up for upcoming books
+          <div className="flex items-center justify-center pt-3 pb-4 cursor-grab active:cursor-grabbing">
+            <div className="flex items-center gap-3 px-4 py-2 bg-muted/50 rounded-full border">
+              <div className="w-8 h-8 bg-muted-foreground/20 rounded-full flex items-center justify-center">
+                <svg 
+                  className="w-4 h-4 text-muted-foreground" 
+                  fill="none" 
+                  viewBox="0 0 24 24" 
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                </svg>
+              </div>
+              <span className="text-sm text-muted-foreground font-medium">View upcoming</span>
+            </div>
+          </div>
+        )}
+        
+        {/* Simple handle when open */}
+        {isOpen && (
+          <div className="flex justify-center pt-3 pb-2 cursor-grab active:cursor-grabbing">
+            <div className="w-12 h-1 bg-muted-foreground/30 rounded-full" />
           </div>
         )}
         

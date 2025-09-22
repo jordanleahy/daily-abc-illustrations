@@ -17,7 +17,7 @@ export interface QRCodeData {
   qrCodeImage: string;
   publicUrl: string;
   status: QRCodeDisplayStatus;
-  queuePosition?: number;
+  publishDate?: string; // Use publish_date instead of queue_position
   isLoading: boolean;
   error?: string;
   generatedAt?: string;

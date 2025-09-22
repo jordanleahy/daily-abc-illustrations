@@ -460,10 +460,17 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
            throw insertError;
          }
 
-         toast({
-           title: "Added to Queue!",
-           description: `${contentName} has been added to the daily publication queue at position ${newPublication.queue_position}.`,
-         });
+          const formattedDate = new Date(nextDate).toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric', 
+            month: 'long',
+            day: 'numeric'
+          });
+
+          toast({
+            title: "Scheduled for Publication!",  
+            description: `${contentName} has been scheduled for ${formattedDate} at 12:01 AM UTC.`,
+          });
 
          // Update local state
          setExistingPublication(newPublication);

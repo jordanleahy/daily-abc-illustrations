@@ -113,7 +113,7 @@ export const useBookQRCode = (bookId: string | undefined) => {
     qrCodeImage: bookData?.qr_code_image || '',
     publicUrl: bookData?.qr_code_public_url || '',
     status,
-    queuePosition: dailyPublishedData?.queue_position,
+    publishDate: dailyPublishedData?.publish_date, // Use publish_date instead of queue_position
     isLoading: qrLoading || generateQRMutation.isPending,
     error: qrError?.message || generateQRMutation.error?.message,
     generatedAt: bookData?.qr_code_generated_at

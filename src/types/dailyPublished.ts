@@ -10,7 +10,7 @@ export interface DailyPublished {
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  queue_position: number;
+  queue_position?: number; // Made optional since we're not using it anymore
   status: DailyPublishedStatus;
   publish_date: string; // New date-based field
 }

@@ -10,7 +10,6 @@ import { useState, useEffect } from 'react';
 import { MetaHead } from '@/components/common';
 import { useNavigate } from 'react-router-dom';
 import { QrCode } from 'lucide-react';
-
 interface DailyPublishedPageViewProps {
   page: Page;
   bookId: string;
@@ -25,15 +24,14 @@ interface DailyPublishedPageViewProps {
   /** Current daily published content ID for transition handling */
   contentId?: string;
 }
-
-export function DailyPublishedPageView({ 
-  page, 
-  bookId, 
-  pageNumber, 
+export function DailyPublishedPageView({
+  page,
+  bookId,
+  pageNumber,
   totalPages,
   previousPage,
   expiresAt,
-  onNext, 
+  onNext,
   onPrevious,
   openGraphMetadata,
   contentId
@@ -41,14 +39,15 @@ export function DailyPublishedPageView({
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
   const navigate = useNavigate();
-  
+
   // Simple expiration check - redirect to home if expired
   const isExpired = new Date() > new Date(expiresAt);
-  
   useEffect(() => {
     if (isExpired) {
       console.log('Content has expired, redirecting to home...');
-      navigate('/', { replace: true });
+      navigate('/', {
+        replace: true
+      });
       return;
     }
   }, [isExpired, navigate]);
@@ -58,11 +57,13 @@ export function DailyPublishedPageView({
     const interval = setInterval(() => {
       const remaining = formatTimeRemaining(expiresAt);
       setTimeRemaining(remaining);
-      
+
       // Check if content has expired during countdown
       if (new Date() > new Date(expiresAt)) {
         clearInterval(interval);
-        navigate('/', { replace: true });
+        navigate('/', {
+          replace: true
+        });
       }
     }, 100); // Update every 100ms for smoother countdown
 
@@ -73,9 +74,9 @@ export function DailyPublishedPageView({
   if (isExpired) {
     return null;
   }
-
-  return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden" style={{ touchAction: 'none' }}>
+  return <div className="h-screen bg-background flex flex-col overflow-hidden" style={{
+    touchAction: 'none'
+  }}>
       {/* Fixed Header with countdown and page number */}
       <div className="fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-background/95 backdrop-blur-sm border-b">
         <div className="text-sm font-medium text-muted-foreground">
@@ -87,11 +88,7 @@ export function DailyPublishedPageView({
           {/* QR Code Button */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="p-1 h-8 w-8 rounded border border-border hover:bg-muted"
-              >
+              <Button variant="ghost" size="sm" className="p-1 h-8 w-8 rounded border border-border hover:bg-muted">
                 <QrCode className="w-4 h-4" />
               </Button>
             </SheetTrigger>
@@ -108,29 +105,17 @@ export function DailyPublishedPageView({
                   </div>
                 </div>
                 <div className="text-center">
-                  <p className="text-sm text-muted-foreground">
-                    Scan this code to access this daily published content
-                  </p>
+                  
                 </div>
               </div>
             </SheetContent>
           </Sheet>
           
-          {previousPage && onPrevious && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onPrevious}
-              className="p-1 h-8 w-8 rounded border border-border hover:bg-muted"
-            >
+          {previousPage && onPrevious && <Button variant="ghost" size="sm" onClick={onPrevious} className="p-1 h-8 w-8 rounded border border-border hover:bg-muted">
               <div className="w-6 h-6 bg-muted rounded-sm overflow-hidden">
-                <PublicPageImage 
-                  pageId={previousPage.id}
-                  bookId={bookId}
-                />
+                <PublicPageImage pageId={previousPage.id} bookId={bookId} />
               </div>
-            </Button>
-          )}
+            </Button>}
           <div className="text-xs text-muted-foreground font-medium">
             Page {pageNumber} of {totalPages}
           </div>
@@ -144,10 +129,7 @@ export function DailyPublishedPageView({
             <CardContent className="p-0">
               {/* Large illustration area */}
               <div className="aspect-square bg-gradient-to-br from-background to-muted/50">
-                <PublicPageImage 
-                  pageId={page.id}
-                  bookId={bookId}
-                />
+                <PublicPageImage pageId={page.id} bookId={bookId} />
               </div>
             </CardContent>
           </Card>
@@ -156,12 +138,7 @@ export function DailyPublishedPageView({
 
       {/* Slide to unlock at bottom - sticky with proper mobile support */}
       <div className="fixed bottom-0 left-0 right-0 z-50 py-4 px-10 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
-        <SlideToUnlock 
-          onUnlock={onNext}
-          disabled={isLastPage}
-          className="w-full"
-        />
+        <SlideToUnlock onUnlock={onNext} disabled={isLastPage} className="w-full" />
       </div>
-    </div>
-  );
+    </div>;
 }

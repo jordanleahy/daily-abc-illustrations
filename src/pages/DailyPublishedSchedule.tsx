@@ -378,44 +378,50 @@ function ScheduleCard({
       <CardContent className="pt-0">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              {isEditing ? (
-                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                  <Input
-                    type="date"
-                    value={newDate}
-                    onChange={(e) => setNewDate(e.target.value)}
-                    min={today}
-                    className="w-auto"
-                  />
-                  <Button
-                    size="sm"
-                    onClick={() => onDateEdit(item.id, newDate)}
-                    disabled={!newDate}
+            <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                <span>Starts {formatDate(item.publish_date)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                {isEditing ? (
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <Input
+                      type="date"
+                      value={newDate}
+                      onChange={(e) => setNewDate(e.target.value)}
+                      min={today}
+                      className="w-auto"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => onDateEdit(item.id, newDate)}
+                      disabled={!newDate}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => setEditingDate(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                ) : (
+                  <span 
+                    className="cursor-pointer hover:text-foreground"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingDate(item.id);
+                      setNewDate(item.expires_at);
+                    }}
                   >
-                    Save
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => setEditingDate(null)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-              ) : (
-                <span 
-                  className="cursor-pointer hover:text-foreground"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingDate(item.id);
-                    setNewDate(item.expires_at);
-                  }}
-                >
-                  Expires on {formatDate(item.expires_at)}
-                </span>
-              )}
+                    Expires on {formatDate(item.expires_at)}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
         </div>
@@ -492,44 +498,50 @@ function DraggableScheduleCard(props: ScheduleCardProps) {
         <CardContent className="pt-0">
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Calendar className="h-4 w-4" />
-                {props.editingDate === props.item.id ? (
-                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                    <Input
-                      type="date"
-                      value={props.newDate}
-                      onChange={(e) => props.setNewDate(e.target.value)}
-                      min={new Date().toISOString().split('T')[0]}
-                      className="w-auto"
-                    />
-                    <Button
-                      size="sm"
-                      onClick={() => props.onDateEdit(props.item.id, props.newDate)}
-                      disabled={!props.newDate}
+              <div className="flex flex-col gap-1 text-sm text-muted-foreground">
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>Starts {props.formatDate(props.item.publish_date)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  {props.editingDate === props.item.id ? (
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <Input
+                        type="date"
+                        value={props.newDate}
+                        onChange={(e) => props.setNewDate(e.target.value)}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="w-auto"
+                      />
+                      <Button
+                        size="sm"
+                        onClick={() => props.onDateEdit(props.item.id, props.newDate)}
+                        disabled={!props.newDate}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => props.setEditingDate(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  ) : (
+                    <span 
+                      className="cursor-pointer hover:text-foreground"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        props.setEditingDate(props.item.id);
+                        props.setNewDate(props.item.expires_at);
+                      }}
                     >
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => props.setEditingDate(null)}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                ) : (
-                  <span 
-                    className="cursor-pointer hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      props.setEditingDate(props.item.id);
-                      props.setNewDate(props.item.expires_at);
-                    }}
-                  >
-                    Expires on {props.formatDate(props.item.expires_at)}
-                  </span>
-                )}
+                      Expires on {props.formatDate(props.item.expires_at)}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
           </div>

@@ -354,8 +354,7 @@ function ScheduleCard({
   const isEditing = editingDate === item.id;
   const today = new Date().toISOString().split('T')[0];
 
-  // Conditionally use sortable hook only when draggable
-  const sortable = isDraggable ? useSortable({ id: item.id }) : null;
+  // Always call useSortable, but only apply effects when draggable
   const {
     attributes,
     listeners,
@@ -363,7 +362,10 @@ function ScheduleCard({
     transform,
     transition,
     isDragging,
-  } = sortable || {};
+  } = useSortable({ 
+    id: item.id,
+    disabled: !isDraggable
+  });
 
   const style = isDraggable ? {
     transform: CSS.Transform.toString(transform),
@@ -476,10 +478,10 @@ function ScheduleCard({
     </Card>
   );
 
-  // Wrap with sortable div only when draggable
-  return isDraggable ? (
-    <div ref={setNodeRef} style={style}>
+  // Always wrap with sortable div, but only apply ref and style when draggable
+  return (
+    <div ref={isDraggable ? setNodeRef : undefined} style={style}>
       {cardContent}
     </div>
-  ) : cardContent;
+  );
 }

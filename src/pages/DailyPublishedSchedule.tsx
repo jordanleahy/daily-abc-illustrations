@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useScheduleForDate } from '@/hooks/useScheduleForDate';
 import { useExpireContent } from '@/hooks/useExpireContent';
+import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { MetaHead } from '@/components/common/MetaHead';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calendar, Clock, BookOpen, RefreshCw, GripVertical } from 'lucide-react';
+import { Calendar, Clock, BookOpen, RefreshCw, GripVertical, Image } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { toast } from 'sonner';
 import { 
@@ -331,6 +332,7 @@ function ScheduleCard({
   getStatusColor 
 }: ScheduleCardProps) {
   const navigate = useNavigate();
+  const { data: seoMetadata } = useSeoMetadata(item.id);
   const isEditing = editingDate === item.id;
   const today = new Date().toISOString().split('T')[0];
 
@@ -341,17 +343,35 @@ function ScheduleCard({
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={handleCardClick}>
       <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="flex-1">
-            <CardTitle className="text-lg">{item.title}</CardTitle>
-            <CardDescription className="mt-1">
-              {item.book.book_name}
-              {item.description && ` • ${item.description}`}
-            </CardDescription>
+        <div className="flex items-start gap-4">
+          {/* Thumbnail */}
+          <div className="w-32 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+            {seoMetadata?.og_image_url ? (
+              <img 
+                src={seoMetadata.og_image_url} 
+                alt={item.title}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Image className="h-6 w-6 text-muted-foreground" />
+            )}
           </div>
-          <Badge className={getStatusColor(item.status)}>
-            {item.status}
-          </Badge>
+
+          {/* Content */}
+          <div className="flex-1 min-w-0">
+            <div className="flex justify-between items-start">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg truncate">{item.title}</CardTitle>
+                <CardDescription className="mt-1">
+                  {item.book.book_name}
+                  {item.description && ` • ${item.description}`}
+                </CardDescription>
+              </div>
+              <Badge className={getStatusColor(item.status)} variant="secondary">
+                {item.status}
+              </Badge>
+            </div>
+          </div>
         </div>
       </CardHeader>
       
@@ -407,6 +427,7 @@ function ScheduleCard({
 // Draggable version of ScheduleCard for queued items
 function DraggableScheduleCard(props: ScheduleCardProps) {
   const navigate = useNavigate();
+  const { data: seoMetadata } = useSeoMetadata(props.item.id);
   const {
     attributes,
     listeners,
@@ -426,32 +447,50 @@ function DraggableScheduleCard(props: ScheduleCardProps) {
     <div ref={setNodeRef} style={style}>
       <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={() => navigate(`/books/${props.item.book_id}`)}>
         <CardHeader className="pb-3">
-          <div className="flex justify-between items-start">
-            <div className="flex items-center gap-3 flex-1">
-              <div
-                className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded"
-                {...attributes}
-                {...listeners}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <GripVertical className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="flex-1">
-                <CardTitle className="text-lg">{props.item.title}</CardTitle>
-                <CardDescription className="mt-1">
-                  {props.item.book.book_name}
-                  {props.item.description && ` • ${props.item.description}`}
-                </CardDescription>
+          <div className="flex items-start gap-4">
+            {/* Drag Handle */}
+            <div
+              className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded flex-shrink-0 mt-1"
+              {...attributes}
+              {...listeners}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="h-4 w-4 text-muted-foreground" />
+            </div>
+
+            {/* Thumbnail */}
+            <div className="w-32 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+              {seoMetadata?.og_image_url ? (
+                <img 
+                  src={seoMetadata.og_image_url} 
+                  alt={props.item.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <Image className="h-6 w-6 text-muted-foreground" />
+              )}
+            </div>
+
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg truncate">{props.item.title}</CardTitle>
+                  <CardDescription className="mt-1">
+                    {props.item.book.book_name}
+                    {props.item.description && ` • ${props.item.description}`}
+                  </CardDescription>
+                </div>
+                <Badge className={props.getStatusColor(props.item.status)} variant="secondary">
+                  {props.item.status}
+                </Badge>
               </div>
             </div>
-            <Badge className={props.getStatusColor(props.item.status)}>
-              {props.item.status}
-            </Badge>
           </div>
         </CardHeader>
         
         <CardContent className="pt-0">
-          <div className="flex justify-between items-center ml-10">
+          <div className="flex justify-between items-center ml-12">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                 <Calendar className="h-4 w-4" />

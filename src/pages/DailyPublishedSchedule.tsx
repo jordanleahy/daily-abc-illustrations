@@ -374,12 +374,6 @@ function ScheduleCard({
             </div>
           )}
 
-          {/* Position Indicator for Queue */}
-          {typeof position === 'number' && (
-            <div className="flex flex-col items-center justify-center w-8 h-8 bg-primary/10 rounded-full text-primary font-semibold text-sm">
-              {position}
-            </div>
-          )}
 
           {/* Thumbnail */}
           <ScheduleThumbnail 

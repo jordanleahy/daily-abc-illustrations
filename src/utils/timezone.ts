@@ -26,6 +26,16 @@ export function formatEasternTime(date: Date, formatString: string = 'yyyy-MM-dd
 }
 
 /**
+ * Format a timestamp for schedule display (e.g., "Sep 23 at 7:01 AM ET")
+ */
+export function formatScheduleTimestamp(timestamp: string): string {
+  const date = new Date(timestamp);
+  const easternDate = toEasternTime(date);
+  
+  return format(easternDate, 'MMM d \'at\' h:mm aa \'ET\'');
+}
+
+/**
  * Create a publish date at 7:01 AM Eastern Time for a given date
  * Properly converts Eastern Time to UTC for storage
  */

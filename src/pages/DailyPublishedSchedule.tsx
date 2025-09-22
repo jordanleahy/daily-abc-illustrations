@@ -68,21 +68,30 @@ const getStatusColor = (status: string) => {
   }
 };
 
-// Comprehensive date/time formatter
-const formatScheduleDate = (dateString: string, options?: { includeTime?: boolean; isStart?: boolean }) => {
-  const date = new Date(dateString).toLocaleDateString('en-US', {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  });
+// Simplified date/time formatter that uses actual timestamps
+const formatScheduleDate = (dateString: string, options?: { includeTime?: boolean }) => {
+  const date = new Date(dateString);
   
   if (!options?.includeTime) {
-    return date;
+    return date.toLocaleDateString('en-US', {
+      weekday: 'short',
+      year: 'numeric', 
+      month: 'short',
+      day: 'numeric'
+    });
   }
   
-  const time = options.isStart ? '7:01 AM ET' : '7:00 AM ET';
-  return `${date} at ${time}`;
+  // Use actual timestamp converted to Eastern Time
+  return date.toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric'
+  }) + ' at ' + date.toLocaleTimeString('en-US', {
+    hour: 'numeric',
+    minute: '2-digit',
+    timeZone: 'America/New_York',
+    timeZoneName: 'short'
+  });
 };
 
 // Utility function to generate sequential publish dates
@@ -366,7 +375,7 @@ function ScheduleDates({
   return (
     <div className="flex flex-col gap-1 text-sm text-muted-foreground">
       <div className="flex items-center gap-2">
-        <span>Starts {formatScheduleDate(item.publish_date, { includeTime: true, isStart: true })}</span>
+        <span>Starts {formatScheduleDate(item.published_at || item.publish_date, { includeTime: true })}</span>
       </div>
       <div className="flex items-center gap-2">
         {dateEdit.isEditing(item.id) ? (
@@ -401,7 +410,7 @@ function ScheduleDates({
               dateEdit.startEdit(item.id, item.expires_at);
             }}
           >
-            Expires {formatScheduleDate(item.expires_at, { includeTime: true, isStart: false })}
+            Expires {formatScheduleDate(item.expires_at, { includeTime: true })}
           </span>
         )}
       </div>

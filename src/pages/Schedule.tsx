@@ -253,17 +253,12 @@ function PublicScheduleCard({
               )}
             </div>
             
-            <div className="flex justify-between items-start">
-              <div className="flex-1 min-w-0">
-                <CardTitle className="text-lg truncate">{item.title}</CardTitle>
-                <CardDescription className="mt-1">
-                  {item.book.book_name}
-                  {item.description && ` • ${item.description}`}
-                </CardDescription>
-              </div>
-              <Badge className={`${getStatusColor(item.status)} ml-2`} variant="secondary">
-                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-              </Badge>
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-lg truncate">{item.title}</CardTitle>
+              <CardDescription className="mt-1">
+                {item.book.book_name}
+                {item.description && ` • ${item.description}`}
+              </CardDescription>
             </div>
             
             {/* Publishing Info - Desktop Only (below title) */}

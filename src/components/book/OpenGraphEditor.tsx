@@ -10,7 +10,8 @@ import { Loader2, Upload, Eye, Wand2, X, MessageSquare, ImagePlus, Copy } from '
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
-
+import { useBookPages } from '@/hooks/useBookPages';
+import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 
 import { useAuth } from '@/hooks/useAuth';
 
@@ -22,6 +23,9 @@ interface OpenGraphEditorProps {
 
 export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGraphEditorProps) => {
   const { data: seoMetadata, isLoading, refetch } = useBookSeoMetadata(bookId);
+  const { pages } = useBookPages(bookId);
+  const firstPage = pages?.[0];
+  const { currentImage: firstPageImage } = usePageImageUrls(firstPage?.id || '');
   
   const { user } = useAuth();
   
@@ -35,6 +39,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const currentTitle = seoMetadata?.seo_title || bookTitle;
   const currentDescription = seoMetadata?.seo_description || bookDescription || '';
   const currentImage = seoMetadata?.og_image_url;
+  const fallbackImage = firstPageImage?.image_url && firstPageImage?.generation_status === 'complete' ? firstPageImage.image_url : null;
 
   const handleTitleSave = async (newTitle: string) => {
     // Note: SEO metadata is now read-only as it's generated at book creation
@@ -283,11 +288,24 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                   </Button>
                 </div>
               </div>
+            ) : fallbackImage ? (
+              <div className="space-y-2">
+                <div className="relative w-full" style={{ aspectRatio: '1200/630' }}>
+                  <img
+                    src={fallbackImage}
+                    alt="First page image (will be used when shared)"
+                    className="absolute inset-0 w-full h-full object-cover rounded-md border border-dashed border-muted-foreground/50"
+                  />
+                  <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-xs p-2 rounded-b-md">
+                    Using first page image (no custom image set)
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="border-2 border-dashed border-muted-foreground/30 rounded-md p-8 text-center">
                 <p className="text-sm text-muted-foreground">No custom image set</p>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Will use the first page image when shared
+                  {firstPage ? 'Waiting for first page image to generate' : 'No pages created yet'}
                 </p>
               </div>
             )}
@@ -394,13 +412,16 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
           <div className="space-y-2">
             <p className="font-semibold text-sm">{currentTitle}</p>
             <p className="text-xs text-muted-foreground line-clamp-2">{currentDescription}</p>
-            {currentImage && (
+            {(currentImage || fallbackImage) && (
               <div className="w-full" style={{ aspectRatio: '1200/630' }}>
                 <img
-                  src={currentImage}
+                  src={currentImage || fallbackImage || ''}
                   alt="Preview"
                   className="w-full h-full object-cover rounded"
                 />
+                {!currentImage && fallbackImage && (
+                  <p className="text-xs text-muted-foreground mt-1">Using first page image</p>
+                )}
               </div>
             )}
           </div>

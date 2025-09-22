@@ -29,6 +29,19 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   
   const { user } = useAuth();
   
+  // Debug logging for OpenGraph editor
+  console.log('🎨 [OpenGraphEditor] Rendering with:', {
+    bookId,
+    bookTitle,
+    seoMetadata: seoMetadata ? {
+      has_title: !!seoMetadata.seo_title,
+      has_description: !!seoMetadata.seo_description,
+      has_thumbnail: !!seoMetadata.og_image_url,
+      thumbnail_url: seoMetadata.og_image_url
+    } : null,
+    isLoading
+  });
+  
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -40,6 +53,16 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const currentDescription = seoMetadata?.seo_description || bookDescription || '';
   const currentImage = seoMetadata?.og_image_url;
   const fallbackImage = firstPageImage?.image_url && firstPageImage?.generation_status === 'complete' ? firstPageImage.image_url : null;
+
+  // Debug the current state of images
+  console.log('🖼️ [OpenGraphEditor] Image state:', {
+    currentImage,
+    fallbackImage,
+    firstPageImage: firstPageImage ? {
+      url: firstPageImage.image_url,
+      status: firstPageImage.generation_status
+    } : null
+  });
 
   const handleTitleSave = async (newTitle: string) => {
     // Note: SEO metadata is now read-only as it's generated at book creation

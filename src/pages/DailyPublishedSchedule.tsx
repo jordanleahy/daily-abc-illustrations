@@ -410,10 +410,10 @@ function ScheduleCard({
                   onClick={(e) => {
                     e.stopPropagation();
                     setEditingDate(item.id);
-                    setNewDate(item.publish_date);
+                    setNewDate(item.expires_at);
                   }}
                 >
-                  {formatDate(item.publish_date)}
+                  Expires on {formatDate(item.expires_at)}
                 </span>
               )}
             </div>
@@ -524,10 +524,10 @@ function DraggableScheduleCard(props: ScheduleCardProps) {
                     onClick={(e) => {
                       e.stopPropagation();
                       props.setEditingDate(props.item.id);
-                      props.setNewDate(props.item.publish_date);
+                      props.setNewDate(props.item.expires_at);
                     }}
                   >
-                    {props.formatDate(props.item.publish_date)}
+                    Expires on {props.formatDate(props.item.expires_at)}
                   </span>
                 )}
               </div>

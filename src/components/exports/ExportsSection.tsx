@@ -265,7 +265,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       ? `Expires ${formatScheduleTimestamp(existingPublication.expires_at)}`
       : 'Limited time available';
 
-    return `${existingPublication.title}: Learn Letters with Real Gear\n${expirationText}\nComment for Link`;
+    return `${existingPublication.title}\n${expirationText}\nComment for Link`;
   };
 
   /**

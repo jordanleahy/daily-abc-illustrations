@@ -94,7 +94,7 @@ export function DailyPublishedPageView({
             </SheetTrigger>
             <SheetContent side="bottom" className="h-[80vh]">
               <SheetHeader>
-                <SheetTitle>Daily Published QR Code</SheetTitle>
+                <SheetTitle>Share to Share</SheetTitle>
               </SheetHeader>
               <div className="flex flex-col items-center justify-center h-full space-y-4">
                 <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">

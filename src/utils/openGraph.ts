@@ -112,28 +112,43 @@ export function generateDailyPublishedOpenGraph(
   optimizedTitle?: string,
   optimizedDescription?: string
 ): SEOMetadata {
-  // Use optimized title if available, otherwise create engaging title with pagination
-  let title = optimizedTitle || contentTitle;
+  // Use optimized title exactly as-is if available, otherwise create engaging title with pagination
+  let title: string;
   
-  // Add page info if we have multiple pages and no optimized title
-  if (!optimizedTitle && currentPage && totalPages && totalPages > 1) {
-    title = `${contentTitle} (Page ${currentPage}/${totalPages})`;
-  }
-  
-  // Add site branding if not using optimized title
-  if (!optimizedTitle) {
+  if (optimizedTitle) {
+    // Use optimized title exactly as provided - no modifications
+    title = optimizedTitle;
+  } else {
+    // Create title from content title
+    title = contentTitle;
+    
+    // Add page info if we have multiple pages
+    if (currentPage && totalPages && totalPages > 1) {
+      title = `${contentTitle} (Page ${currentPage}/${totalPages})`;
+    }
+    
+    // Add site branding for non-optimized titles
     title = `${title} | ${SITE_CONFIG.dailyContent.title}`;
   }
   
   // Use optimized description if available, otherwise create compelling description
-  let description = optimizedDescription || contentDescription || `Experience "${contentTitle}" - today's featured illustrated content`;
+  let description: string;
   
-  // Add urgency if time-limited and no optimized description
-  if (!optimizedDescription && timeRemaining) {
-    description = `${description} • Available for ${timeRemaining}`;
+  if (optimizedDescription) {
+    // Use optimized description exactly as provided
+    description = optimizedDescription;
+  } else {
+    // Create description from content
+    description = contentDescription || `Experience "${contentTitle}" - today's featured illustrated content`;
+    
+    // Add urgency if time-limited
+    if (timeRemaining) {
+      description = `${description} • Available for ${timeRemaining}`;
+    }
   }
   
   const path = contentId ? `/daily-published/${contentId}` : undefined;
+  const canonicalUrl = path ? generateCanonicalUrl(path) : undefined;
   
   return {
     title,

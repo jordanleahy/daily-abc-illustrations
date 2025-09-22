@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { PublicPageImage } from './PublicPageImage';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { Page } from '@/types/book';
@@ -8,6 +9,7 @@ import type { SEOMetadata } from '@/types/openGraph';
 import { useState, useEffect } from 'react';
 import { MetaHead } from '@/components/common';
 import { useNavigate } from 'react-router-dom';
+import { QrCode } from 'lucide-react';
 
 interface DailyPublishedPageViewProps {
   page: Page;
@@ -80,8 +82,40 @@ export function DailyPublishedPageView({
           {timeRemaining}
         </div>
         
-        {/* Center section with previous page thumbnail and page indicator */}
+        {/* Center section with QR button, previous page thumbnail and page indicator */}
         <div className="flex items-center gap-2">
+          {/* QR Code Button */}
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="p-1 h-8 w-8 rounded border border-border hover:bg-muted"
+              >
+                <QrCode className="w-4 h-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[80vh]">
+              <SheetHeader>
+                <SheetTitle>Daily Published QR Code</SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
+                  <div className="text-center text-muted-foreground">
+                    <QrCode className="w-16 h-16 mx-auto mb-2" />
+                    <p className="text-sm">QR Code will be displayed here</p>
+                    <p className="text-xs mt-1">Content ID: {contentId}</p>
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Scan this code to access this daily published content
+                  </p>
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+          
           {previousPage && onPrevious && (
             <Button
               variant="ghost"

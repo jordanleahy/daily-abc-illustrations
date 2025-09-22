@@ -14,6 +14,7 @@ import DailyPublished from "./pages/DailyPublished";
 import DailyPublishedSchedule from "./pages/DailyPublishedSchedule";
 import Schedule from "./pages/Schedule";
 import NotFound from "./pages/NotFound";
+import { GA4Tracker } from "./components/GA4Tracker";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,7 +37,8 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
-        <Routes>
+          <GA4Tracker />
+          <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/profile" element={<Profile />} />

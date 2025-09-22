@@ -22,6 +22,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 import { Book } from '@/types/book';
 import { toast } from 'sonner';
+import { usePageImageSubscription } from './usePageImageSubscription';
 
 /**
  * Books data management hook
@@ -60,6 +61,9 @@ import { toast } from 'sonner';
 export const useBooks = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  
+  // Enable real-time subscriptions for page images
+  usePageImageSubscription();
 
   const { data: books = [], isLoading, error } = useQuery({
     queryKey: ['books', user?.id],

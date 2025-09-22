@@ -176,8 +176,8 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
       if (error) throw error;
 
       if (data?.success && data?.thumbnailUrl) {
-        // Refetch thumbnails to show the new generated image
-        refetchThumbnails();
+        // Refetch SEO metadata to show the new generated image
+        refetch();
         toast.success('Thumbnail image generated successfully!');
         
         // Clear the prompt since it's been used

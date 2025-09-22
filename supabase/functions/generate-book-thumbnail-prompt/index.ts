@@ -62,7 +62,7 @@ Focus on visual composition and design elements that work well for social media 
       },
       body: JSON.stringify({
         model: 'gpt-5-nano-2025-08-07',
-        max_completion_tokens: 1000,
+        max_completion_tokens: 4000,
         messages: [
           { 
             role: 'system', 

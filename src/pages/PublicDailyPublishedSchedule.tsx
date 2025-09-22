@@ -162,7 +162,7 @@ const PublicScheduleThumbnail: React.FC<{
   title: string;
 }> = ({ imageUrl, title }) => {
   return (
-    <div className="w-16 md:w-20 aspect-[1.91/1] bg-muted rounded-lg flex-shrink-0 overflow-hidden">
+    <div className="h-full aspect-[1.91/1] bg-muted rounded-lg flex-shrink-0 overflow-hidden">
       {imageUrl ? (
         <img 
           src={imageUrl} 

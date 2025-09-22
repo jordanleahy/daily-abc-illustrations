@@ -107,6 +107,11 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
       // Upload PDF to storage bucket if we have bytes and this is part of daily published content
       if (pdfBytes && contentType === 'book' && existingPublication) {
+        // Check if user is authenticated before attempting upload
+        if (!user?.id) {
+          throw new Error('You must be logged in to save PDFs to daily published content.');
+        }
+
         setPdfProgress({ current: 0, total: 0, currentPage: 'Uploading PDF...' });
         
         const fileName = `${contentId}-${Date.now()}.pdf`;
@@ -138,7 +143,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
           if (updateError) {
             console.error('Error updating PDF URL:', updateError);
-            // Don't throw error, just log it - the PDF was still generated successfully
+            throw new Error(`Failed to save PDF URL: ${updateError.message}. Please try again or contact support.`);
           }
 
           // Update local state

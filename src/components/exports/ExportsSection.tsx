@@ -17,7 +17,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Globe, Eye, Copy } from 'lucide-react';
+import { FileText, Globe, Eye, Copy, History, RefreshCw } from 'lucide-react';
 import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { supabase } from '@/integrations/supabase/client';
@@ -63,6 +63,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const { data: expectedDate, isLoading: dateLoading } = useExpectedPublicationDate(contentId);
   const { generateQRCode } = useBookQRCode(contentType === 'book' ? contentId : undefined);
   const [existingPublication, setExistingPublication] = useState<any>(null);
+  const [publicationHistory, setPublicationHistory] = useState<any[]>([]);
   const [isCheckingPublication, setIsCheckingPublication] = useState(false);
 
   /**
@@ -129,15 +130,23 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       
       setIsCheckingPublication(true);
       try {
-         const { data, error } = await supabase
-           .from('daily_published')
-           .select('*')
-           .eq('book_id', contentId)
-           .in('status', ['draft', 'queued', 'active'])
-           .maybeSingle();
+        // Get all publications for this book, ordered by most recent first
+        const { data, error } = await supabase
+          .from('daily_published')
+          .select('*')
+          .eq('book_id', contentId)
+          .order('created_at', { ascending: false });
 
         if (!error && data) {
-          setExistingPublication(data);
+          setPublicationHistory(data);
+          
+          // Find the current active/queued/draft publication
+          const currentPublication = data.find(pub => 
+            ['draft', 'queued', 'active'].includes(pub.status)
+          );
+          
+          // If no current publication, use the most recent one (could be expired)
+          setExistingPublication(currentPublication || data[0] || null);
         }
       } catch (error) {
         console.error('Error checking publication:', error);
@@ -173,9 +182,75 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     if (existingPublication) {
       if (existingPublication.status === 'active') {
         window.open(`/daily-published/${existingPublication.id}`, '_blank');
+      } else if (existingPublication.status === 'expired') {
+        window.open(`/daily-published/${existingPublication.id}`, '_blank');
       } else {
         window.open('/daily-published-schedule', '_blank');
       }
+    }
+  };
+
+  /**
+   * Republishes an expired book by adding it back to the queue
+   */
+  const handleRepublish = async () => {
+    if (!user?.id) {
+      toast({
+        title: "Authentication Required",
+        description: "You must be logged in to republish content.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    try {
+      // Get next available publish date
+      const { data: nextDate } = await supabase.rpc('get_next_available_publish_date');
+      
+      // Create new daily publication scheduled for next available date
+      const { data: newPublication, error: insertError } = await supabase
+        .from('daily_published')
+        .insert({
+          book_id: contentId,
+          title: contentName,
+          description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
+          status: 'queued' as const,
+          publish_date: nextDate
+        })
+        .select()
+        .single();
+
+      if (insertError) {
+        console.error('Error republishing:', insertError);
+        throw insertError;
+      }
+
+      const formattedDate = new Date(nextDate).toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric', 
+        month: 'long',
+        day: 'numeric'
+      });
+
+      toast({
+        title: "Republished Successfully!",  
+        description: `${contentName} has been scheduled for ${formattedDate} at 7:01 AM Eastern Time.`,
+      });
+
+      // Update local state
+      setExistingPublication(newPublication);
+      setPublicationHistory(prev => [newPublication, ...prev]);
+      
+      // Open the queue page to show status
+      window.open('/daily-published-schedule', '_blank');
+
+    } catch (error: any) {
+      console.error('Error republishing:', error);
+      toast({
+        title: "Failed to Republish",
+        description: error.message || "An unexpected error occurred. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -392,22 +467,39 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
         <div className="flex items-center justify-between pt-4 border-t">
           <div className="space-y-1">
-            <h4 className="text-sm font-medium">Daily Queue</h4>
+            <h4 className="text-sm font-medium flex items-center gap-2">
+              Daily Queue
+              {publicationHistory.length > 1 && (
+                <History className="h-4 w-4 text-muted-foreground" />
+              )}
+            </h4>
             <p className="text-sm text-muted-foreground">
-              {existingPublication && existingPublication.status !== 'draft' 
-                ? `Currently ${existingPublication.status} in the publication queue`
-                : dateLoading 
-                  ? 'Calculating publication date...'
-                  : expectedDate 
-                    ? `This would be published on ${expectedDate.toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}`
-                    : 'Add your book to the daily publication queue'
+              {existingPublication && existingPublication.status === 'expired' 
+                ? `Previously published on ${new Date(existingPublication.publish_date).toLocaleDateString('en-US', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                  })} - Now expired`
+                : existingPublication && existingPublication.status !== 'draft' 
+                  ? `Currently ${existingPublication.status} in the publication queue`
+                  : dateLoading 
+                    ? 'Calculating publication date...'
+                    : expectedDate 
+                      ? `This would be published on ${expectedDate.toLocaleDateString('en-US', { 
+                          weekday: 'long', 
+                          year: 'numeric', 
+                          month: 'long', 
+                          day: 'numeric' 
+                        })}`
+                      : 'Add your book to the daily publication queue'
               }
             </p>
+            {publicationHistory.length > 1 && (
+              <p className="text-xs text-muted-foreground">
+                Published {publicationHistory.filter(p => p.status === 'expired').length} time(s) previously
+              </p>
+            )}
           </div>
            <div className="flex items-center gap-2">
              {existingPublication && existingPublication.status === 'active' && (
@@ -421,18 +513,51 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                  Copy Link
                </Button>
              )}
-             <Button 
-               onClick={existingPublication && existingPublication.status !== 'draft' ? handleViewPublication : handleAddToQueue}
-               variant="outline"
-               className="flex items-center gap-2"
-               disabled={isCheckingPublication}
-             >
-               {existingPublication && existingPublication.status !== 'draft' ? <Eye className="h-4 w-4" /> : <Globe className="h-4 w-4" />}
-               {isCheckingPublication ? 'Checking...' : 
-                 existingPublication && existingPublication.status !== 'draft'
-                   ? (existingPublication.status === 'active' ? 'View Live' : 'View in Queue') 
-                   : 'Add to Queue'}
-             </Button>
+             {existingPublication && existingPublication.status === 'expired' && (
+               <>
+                 <Button 
+                   onClick={handleViewPublication}
+                   variant="outline"
+                   size="sm"
+                   className="flex items-center gap-2"
+                 >
+                   <History className="h-4 w-4" />
+                   View Archive
+                 </Button>
+                 <Button 
+                   onClick={handleRepublish}
+                   variant="outline"
+                   size="sm"
+                   className="flex items-center gap-2"
+                 >
+                   <RefreshCw className="h-4 w-4" />
+                   Republish
+                 </Button>
+               </>
+             )}
+             {(!existingPublication || existingPublication.status === 'draft' || existingPublication.status === 'expired') && (
+               <Button 
+                 onClick={handleAddToQueue}
+                 variant="outline"
+                 className="flex items-center gap-2"
+                 disabled={isCheckingPublication}
+               >
+                 <Globe className="h-4 w-4" />
+                 {isCheckingPublication ? 'Checking...' : 'Add to Queue'}
+               </Button>
+             )}
+             {existingPublication && ['queued', 'active'].includes(existingPublication.status) && (
+               <Button 
+                 onClick={handleViewPublication}
+                 variant="outline"
+                 className="flex items-center gap-2"
+                 disabled={isCheckingPublication}
+               >
+                 <Eye className="h-4 w-4" />
+                 {isCheckingPublication ? 'Checking...' : 
+                   existingPublication.status === 'active' ? 'View Live' : 'View in Queue'}
+               </Button>
+             )}
            </div>
         </div>
       </CardContent>

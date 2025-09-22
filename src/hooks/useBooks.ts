@@ -70,10 +70,13 @@ export const useBooks = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // First, get all books
+      // Get all books with their daily_published status
       const { data: booksData, error: booksError } = await supabase
         .from('books')
-        .select('*')
+        .select(`
+          *,
+          daily_published!left(status)
+        `)
         .eq('user_id', user.id)
         .neq('status', 'archived')
         .order('created_at', { ascending: false });
@@ -114,9 +117,10 @@ export const useBooks = () => {
         });
       }
 
-      // Combine books with their first image URLs
+      // Combine books with their first image URLs and daily_published status
       const processedBooks = booksData.map(book => ({
         ...book,
+        dailyPublishedStatus: book.daily_published?.[0]?.status || undefined,
         firstPageImageUrl: bookImageMap.get(book.id) || undefined
       }));
       
@@ -141,10 +145,8 @@ export const useBooks = () => {
         },
         (payload) => {
           console.log('Book inserted:', payload.new);
-          // Use queryClient to update cache instead of local state
-          queryClient.setQueryData(['books', user.id], (old: Book[] = []) => 
-            [payload.new as Book, ...old]
-          );
+          // Refetch to get the full data with daily_published status
+          queryClient.invalidateQueries({ queryKey: ['books', user.id] });
         }
       )
       .on(
@@ -157,17 +159,8 @@ export const useBooks = () => {
         },
         (payload) => {
           console.log('Book updated:', payload.new);
-          const updatedBook = payload.new as Book;
-          queryClient.setQueryData(['books', user.id], (old: Book[] = []) => {
-            // If book is archived, remove it from the list
-            if (updatedBook.status === 'archived') {
-              return old.filter(book => book.id !== updatedBook.id);
-            }
-            // Otherwise update it normally
-            return old.map(book =>
-              book.id === updatedBook.id ? updatedBook : book
-            );
-          });
+          // Refetch to get the updated data with daily_published status
+          queryClient.invalidateQueries({ queryKey: ['books', user.id] });
         }
       )
       .on(
@@ -183,6 +176,19 @@ export const useBooks = () => {
           queryClient.setQueryData(['books', user.id], (old: Book[] = []) =>
             old.filter(book => book.id !== payload.old.id)
           );
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'daily_published'
+        },
+        (payload) => {
+          console.log('Daily published changed:', payload);
+          // Refetch books when daily_published status changes
+          queryClient.invalidateQueries({ queryKey: ['books', user.id] });
         }
       )
       .subscribe();

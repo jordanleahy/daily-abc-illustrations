@@ -17,6 +17,8 @@ export interface Book {
   total_pages: number;
   /** Publication status of the book */
   status: 'draft' | 'published' | 'archived';
+  /** Daily published status (from daily_published table) */
+  dailyPublishedStatus?: 'draft' | 'queued' | 'active' | 'expired';
   /** ID of the currently deployed system prompt for AI operations */
   current_system_prompt_id?: string;
   /** URL of the first created page image (if any) */

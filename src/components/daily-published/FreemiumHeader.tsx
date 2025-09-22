@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { QrCode } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { PublicPageImage } from './PublicPageImage';
 import type { Page } from '@/types/book';
@@ -29,6 +30,7 @@ export function FreemiumHeader({
   showPageIndicator = true
 }: FreemiumHeaderProps) {
   const { qrCodeData } = useBookQRCode(bookId);
+  const navigate = useNavigate();
 
   return (
     <div className="fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-background/95 backdrop-blur-sm border-b">
@@ -51,7 +53,10 @@ export function FreemiumHeader({
       </div>
       
       {/* Middle section: Title */}
-      <div className="text-sm font-medium text-foreground">
+      <div 
+        className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
+        onClick={() => navigate('/schedule')}
+      >
         {title}
       </div>
       

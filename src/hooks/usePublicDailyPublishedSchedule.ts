@@ -23,7 +23,7 @@ export const usePublicDailyPublishedSchedule = () => {
             book_description
           )
         `)
-        .eq('status', 'active')
+        .in('status', ['active', 'queued'])
         .eq('is_active', true)
         .order('publish_date', { ascending: true })
         .order('created_at', { ascending: true });
@@ -39,17 +39,18 @@ export const usePublicDailyPublishedSchedule = () => {
       const now = new Date();
       
       return items.filter(item => {
-        // Only show items that are active and not expired
-        if (item.status !== 'active' || !item.is_active) {
+        // Show active items (not expired) and queued items
+        if (!item.is_active) {
           return false;
         }
         
-        // Check expiration
-        if (item.expires_at && new Date(item.expires_at) <= now) {
+        // For active items, check expiration
+        if (item.status === 'active' && item.expires_at && new Date(item.expires_at) <= now) {
           return false;
         }
         
-        return true;
+        // Show both active and queued items
+        return item.status === 'active' || item.status === 'queued';
       });
     },
     staleTime: 60 * 1000, // 1 minute - longer cache for public content

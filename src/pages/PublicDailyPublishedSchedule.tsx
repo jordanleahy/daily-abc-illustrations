@@ -39,6 +39,7 @@ const PublicDailyPublishedSchedule: React.FC = () => {
   const navigate = useNavigate();
 
   const activeItems = scheduleItems?.filter(item => item.status === 'active') || [];
+  const queuedItems = scheduleItems?.filter(item => item.status === 'queued') || [];
 
   if (isLoading) {
     return (
@@ -96,7 +97,7 @@ const PublicDailyPublishedSchedule: React.FC = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Published Content Schedule</h1>
           <p className="text-muted-foreground">
-            Currently active published content
+            Currently active and upcoming scheduled content
           </p>
         </div>
 
@@ -119,12 +120,30 @@ const PublicDailyPublishedSchedule: React.FC = () => {
             </div>
           )}
 
+          {/* Queued Items */}
+          {queuedItems.length > 0 && (
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                Scheduled ({queuedItems.length})
+              </h2>
+              <div className="space-y-4">
+                {queuedItems.map((item) => (
+                  <PublicScheduleCard 
+                    key={item.id} 
+                    item={item}
+                    onClick={() => navigate(`/book/${item.book_id}`)}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Empty State */}
           {(!scheduleItems || scheduleItems.length === 0) && (
             <Card>
               <CardContent className="text-center py-12">
                 <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No active content</h3>
+                <h3 className="text-lg font-semibold mb-2">No scheduled content</h3>
                 <p className="text-muted-foreground">
                   Check back later for new published content.
                 </p>
@@ -162,10 +181,17 @@ const PublicScheduleThumbnail: React.FC<{
 const PublicScheduleDates: React.FC<{
   item: DailyPublishedWithBook;
 }> = ({ item }) => {
+  const isQueued = item.status === 'queued';
+  
   return (
     <div className="flex flex-col gap-1 text-sm text-muted-foreground">
       <div className="flex items-center gap-2">
-        <span>Published {formatScheduleDate(item.publish_date, { includeTime: true, isStart: true })}</span>
+        <span>
+          {isQueued 
+            ? `Scheduled for ${formatScheduleDate(item.publish_date, { includeTime: true, isStart: true })}`
+            : `Published ${formatScheduleDate(item.publish_date, { includeTime: true, isStart: true })}`
+          }
+        </span>
       </div>
       {item.expires_at && (
         <div className="flex items-center gap-2">

@@ -113,7 +113,7 @@ export default function DailyPublishedScheduleSimple() {
             <div>
               <h1 className="text-3xl font-bold">Publishing Schedule</h1>
               <p className="text-muted-foreground mt-2">
-                Books are published daily at 12:01 AM UTC. Schedule your content for specific dates.
+                Books are published daily at 7:01 AM Eastern Time. Schedule your content for specific dates.
               </p>
             </div>
             

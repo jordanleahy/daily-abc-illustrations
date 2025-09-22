@@ -1,6 +1,7 @@
 import { useDailyPublishedQueue } from './useDailyPublishedQueue';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
+import { createEasternPublishDate } from '@/utils/timezone';
 
 export const useExpectedPublicationDate = (contentId: string) => {
   const { data: queueItems = [], isLoading: queueLoading } = useDailyPublishedQueue();
@@ -15,8 +16,8 @@ export const useExpectedPublicationDate = (contentId: string) => {
         return null;
       }
 
-      // Convert date to publication time (12:01 AM UTC)
-      const publishDate = new Date(nextDate + 'T00:01:00.000Z');
+      // Convert date to publication time (7:01 AM Eastern Time)
+      const publishDate = createEasternPublishDate(nextDate);
       
       return publishDate;
     },

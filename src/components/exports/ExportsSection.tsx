@@ -430,7 +430,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
           toast({
             title: "Scheduled for Publication!",
-            description: `${contentName} has been scheduled for ${formattedDate} at 12:01 AM UTC.`,
+            description: `${contentName} has been scheduled for ${formattedDate} at 7:01 AM Eastern Time.`,
           });
 
           // Update local state
@@ -469,7 +469,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
           toast({
             title: "Scheduled for Publication!",  
-            description: `${contentName} has been scheduled for ${formattedDate} at 12:01 AM UTC.`,
+            description: `${contentName} has been scheduled for ${formattedDate} at 7:01 AM Eastern Time.`,
           });
 
          // Update local state

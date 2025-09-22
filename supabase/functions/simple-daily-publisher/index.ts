@@ -1,5 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
-import { utcToZonedTime, format } from 'https://esm.sh/date-fns-tz@3';
+import { toZonedTime, format } from 'https://esm.sh/date-fns-tz@3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     
     // Check if this is the correct time slot for Eastern Time
     const now = new Date();
-    const easternTime = utcToZonedTime(now, 'America/New_York');
+    const easternTime = toZonedTime(now, 'America/New_York');
     const easternHour = easternTime.getHours();
     const easternMinute = easternTime.getMinutes();
     

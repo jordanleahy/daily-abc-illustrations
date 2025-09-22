@@ -167,7 +167,7 @@ export default function Schedule() {
 // Reusable components (adapted from DailyPublishedSchedule)
 function ScheduleThumbnail({ imageUrl, title }: { imageUrl?: string; title: string }) {
   return (
-    <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+    <div className="w-32 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
       {imageUrl ? (
         <img 
           src={imageUrl} 

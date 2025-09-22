@@ -99,6 +99,11 @@ export function DailyPublishedPageView({
           )}
         </div>
         
+        {/* Middle section: Schedule title */}
+        <div className="text-sm font-medium text-foreground">
+          Schedule
+        </div>
+        
         {/* Right section: QR button and page indicator grouped together */}
         <div className="flex items-center gap-2">
           {/* QR Code Button */}

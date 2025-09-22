@@ -145,7 +145,7 @@ serve(async (req) => {
       .from('book-covers')
       .upload(fileName, imageBlob, {
         contentType: 'image/png',
-        upsert: false
+        upsert: true
       });
 
     if (uploadError) {

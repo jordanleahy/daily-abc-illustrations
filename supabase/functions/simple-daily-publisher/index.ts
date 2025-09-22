@@ -86,10 +86,10 @@ Deno.serve(async (req) => {
 
     const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
-    // Call the database function to process daily publishing  
+    // Call the enhanced database function to process daily publishing with safety measures
     console.log('📅 Processing daily publishing for date:', new Date().toISOString().split('T')[0]);
     
-    const { data: result, error: processError } = await supabase.rpc('process_simple_daily_publishing');
+    const { data: result, error: processError } = await supabase.rpc('process_enhanced_daily_publishing');
 
     if (processError) {
       console.error('❌ Error processing daily publishing:', processError);

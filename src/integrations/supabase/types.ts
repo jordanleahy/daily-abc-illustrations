@@ -271,6 +271,39 @@ export type Database = {
           },
         ]
       }
+      daily_publishing_status: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          processing_date: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processing_date: string
+          started_at?: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          processing_date?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       instagram_shared: {
         Row: {
           book_id: string
@@ -783,6 +816,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      process_enhanced_daily_publishing: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       process_simple_daily_publishing: {
         Args: Record<PropertyKey, never>

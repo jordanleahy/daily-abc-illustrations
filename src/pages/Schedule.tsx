@@ -78,10 +78,7 @@ export default function Schedule() {
         <div className="container mx-auto px-4 py-8 max-w-4xl">
           <div className="mb-8">
             
-            <p className="text-muted-foreground mt-2">
-              📚 New books publish daily at <strong>7:01 AM Eastern Time</strong><br />
-              📖 Free illustrated children's books updated every day
-            </p>
+            
           </div>
 
           {/* Active Item */}

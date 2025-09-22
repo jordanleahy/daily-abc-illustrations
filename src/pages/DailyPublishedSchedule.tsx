@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
@@ -10,9 +10,9 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Clock, BookOpen, RefreshCw, GripVertical, Image } from 'lucide-react';
+import { Clock, BookOpen, RefreshCw, GripVertical, Image, Edit3 } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
+import { ScheduleEditor } from '@/components/daily-published/ScheduleEditor';
 import { toast } from 'sonner';
 import { 
   DndContext, 
@@ -32,25 +32,20 @@ import { CSS } from '@dnd-kit/utilities';
 
 // Custom hook for date editing logic
 function useDateEdit() {
-  const [editingDate, setEditingDate] = useState<string | null>(null);
-  const [newDate, setNewDate] = useState<string>('');
+  const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
-  const startEdit = (itemId: string, currentDate: string) => {
-    setEditingDate(itemId);
-    setNewDate(currentDate);
+  const startEdit = (itemId: string) => {
+    setEditingItemId(itemId);
   };
 
   const cancelEdit = () => {
-    setEditingDate(null);
-    setNewDate('');
+    setEditingItemId(null);
   };
 
-  const isEditing = (itemId: string) => editingDate === itemId;
+  const isEditing = (itemId: string) => editingItemId === itemId;
 
   return {
-    editingDate,
-    newDate,
-    setNewDate,
+    editingItemId,
     startEdit,
     cancelEdit,
     isEditing
@@ -259,11 +254,10 @@ export default function DailyPublishedScheduleSimple() {
               </h2>
               <div className="space-y-4">
                 {activeItems.map((item) => (
-                  <ScheduleCard 
-                    key={item.id} 
-                    item={item} 
-                    onDateEdit={(id, date) => handleDateChange(id, date)}
-                  />
+                    <ScheduleCard 
+                      key={item.id} 
+                      item={item} 
+                    />
                 ))}
               </div>
             </div>
@@ -290,7 +284,6 @@ export default function DailyPublishedScheduleSimple() {
                       <ScheduleCard 
                         key={item.id} 
                         item={item} 
-                        onDateEdit={(id, date) => handleDateChange(id, date)}
                         isDraggable={true}
                       />
                     ))}
@@ -358,20 +351,11 @@ function ScheduleThumbnail({ imageUrl, title }: { imageUrl?: string; title: stri
 
 function ScheduleDates({ 
   item, 
-  onDateEdit, 
   dateEdit 
 }: { 
   item: ScheduleCardItem; 
-  onDateEdit: (id: string, date: string) => void;
   dateEdit: ReturnType<typeof useDateEdit>;
 }) {
-  const today = new Date().toISOString().split('T')[0];
-
-  const handleDateSave = (newDate: string) => {
-    onDateEdit(item.id, newDate);
-    dateEdit.cancelEdit();
-  };
-
   // Format the date/time display using the new flexible columns if available
   const formatDateTime = (date?: string, time?: string, fallbackTimestamp?: string) => {
     if (date && time) {
@@ -392,71 +376,32 @@ function ScheduleDates({
 
   return (
     <div className="flex flex-col gap-1 text-sm text-muted-foreground">
-      <div className="flex items-center gap-2">
-        <span>Starts {formatDateTime(item.start_date, item.start_time, item.published_at || item.publish_date)}</span>
-      </div>
-      <div className="flex items-center gap-2">
-        {dateEdit.isEditing(item.id) ? (
-          <div className="flex flex-col gap-2 p-2 bg-muted rounded" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium">Start:</label>
-              <Input
-                type="date"
-                value={dateEdit.newDate}
-                onChange={(e) => dateEdit.setNewDate(e.target.value)}
-                min={today}
-                className="w-auto text-xs"
-              />
-              <Input
-                type="time"
-                defaultValue="07:01"
-                className="w-auto text-xs"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-xs font-medium">End:</label>
-              <Input
-                type="date"
-                defaultValue={item.expire_date || new Date(new Date(dateEdit.newDate).getTime() + 24*60*60*1000).toISOString().split('T')[0]}
-                className="w-auto text-xs"
-              />
-              <Input
-                type="time"
-                defaultValue="07:01"
-                className="w-auto text-xs"
-              />
-            </div>
-            <div className="flex gap-2">
-              <Button
-                size="sm"
-                onClick={() => handleDateSave(dateEdit.newDate)}
-                disabled={!dateEdit.newDate}
-                className="text-xs"
-              >
-                Save
-              </Button>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={dateEdit.cancelEdit}
-                className="text-xs"
-              >
-                Cancel
-              </Button>
-            </div>
+      {dateEdit.isEditing(item.id) ? (
+        <ScheduleEditor 
+          item={item} 
+          onCancel={dateEdit.cancelEdit}
+        />
+      ) : (
+        <>
+          <div className="flex items-center gap-2">
+            <span>Starts {formatDateTime(item.start_date, item.start_time, item.published_at || item.publish_date)}</span>
           </div>
-        ) : (
-          <span 
-            className="cursor-pointer hover:text-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              dateEdit.startEdit(item.id, item.expire_date || item.expires_at);
-            }}
-          >
-            Expires {formatDateTime(item.expire_date, item.expire_time, item.expires_at)}
-          </span>
-        )}
-      </div>
+          <div className="flex items-center gap-2">
+            <span>Expires {formatDateTime(item.expire_date, item.expire_time, item.expires_at)}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 w-6 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+              onClick={(e) => {
+                e.stopPropagation();
+                dateEdit.startEdit(item.id);
+              }}
+            >
+              <Edit3 className="h-3 w-3" />
+            </Button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -466,13 +411,11 @@ type ScheduleCardItem = DailyPublishedWithBook;
 
 interface ScheduleCardProps {
   item: ScheduleCardItem;
-  onDateEdit: (id: string, date: string) => void;
   isDraggable?: boolean;
 }
 
 function ScheduleCard({ 
   item, 
-  onDateEdit,
   isDraggable = false
 }: ScheduleCardProps) {
   const navigate = useNavigate();
@@ -503,7 +446,7 @@ function ScheduleCard({
   };
 
   const cardContent = (
-    <Card className="cursor-pointer hover:shadow-lg transition-shadow" onClick={handleCardClick}>
+    <Card className="cursor-pointer hover:shadow-lg transition-shadow group" onClick={handleCardClick}>
       <CardHeader className="pb-3">
         <div className="flex flex-col md:flex-row gap-3 relative">
           {/* Conditional Drag Handle */}
@@ -548,7 +491,6 @@ function ScheduleCard({
             {/* Dates Component */}
             <ScheduleDates 
               item={item}
-              onDateEdit={onDateEdit}
               dateEdit={dateEdit}
             />
           </div>

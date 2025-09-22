@@ -17,7 +17,6 @@ export interface DailyPublished {
   qr_code_public_url?: string;
   qr_code_config?: any;
   qr_code_generated_at?: string;
-  pdf_url?: string; // New field for storing uploaded PDF URLs
 }
 
 export interface DailyPublishedWithBook extends DailyPublished {

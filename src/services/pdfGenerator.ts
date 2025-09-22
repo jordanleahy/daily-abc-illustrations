@@ -12,7 +12,6 @@ import { supabase } from '@/integrations/supabase/client';
 export interface PDFGenerationOptions {
   onProgress?: (current: number, total: number, currentPage?: string) => void;
   onError?: (error: string, pageId?: string) => void;
-  returnBytes?: boolean;
 }
 
 export interface PageImageData {
@@ -214,17 +213,13 @@ export async function generateBookPDF(
   bookId: string, 
   bookName: string,
   options: PDFGenerationOptions = {}
-): Promise<Uint8Array | void> {
+): Promise<void> {
   try {
     // Fetch page images
     const pages = await fetchBookPageImages(bookId);
     
     // Generate PDF
     const pdfBytes = await generatePDF(pages, options);
-    
-    if (options.returnBytes) {
-      return pdfBytes;
-    }
     
     // Create download
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });
@@ -250,7 +245,7 @@ export async function generatePagePDF(
   pageId: string,
   pageName: string,
   options: PDFGenerationOptions = {}
-): Promise<Uint8Array | void> {
+): Promise<void> {
   try {
     // Fetch page image
     const pageData = await fetchPageImage(pageId);
@@ -261,10 +256,6 @@ export async function generatePagePDF(
     
     // Generate PDF
     const pdfBytes = await generatePDF([pageData], options);
-    
-    if (options.returnBytes) {
-      return pdfBytes;
-    }
     
     // Create download
     const blob = new Blob([pdfBytes], { type: 'application/pdf' });

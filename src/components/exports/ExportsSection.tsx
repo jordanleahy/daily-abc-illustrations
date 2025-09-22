@@ -17,7 +17,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Globe, Eye, Copy, Download } from 'lucide-react';
+import { FileText, Globe, Eye, Copy } from 'lucide-react';
 import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,16 +80,13 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       // Import the PDF generator service
       const { generateBookPDF, generatePagePDF } = await import('@/services/pdfGenerator');
 
-      let pdfBytes: Uint8Array | null = null;
-
       const options = {
         onProgress: (current: number, total: number, currentPage?: string) => {
           setPdfProgress({ current, total, currentPage: currentPage || '' });
         },
         onError: (error: string, pageId?: string) => {
           console.warn(`PDF generation warning: ${error}`, pageId);
-        },
-        returnBytes: true // Request raw bytes instead of triggering download
+        }
       };
 
       toast({
@@ -98,75 +95,14 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       });
 
       if (contentType === 'book') {
-        const result = await generateBookPDF(contentId, contentName, options);
-        pdfBytes = result || null;
+        await generateBookPDF(contentId, contentName, options);
       } else {
-        const result = await generatePagePDF(contentId, contentName, options);
-        pdfBytes = result || null;
-      }
-
-      // Upload PDF to storage bucket if we have bytes and this is part of daily published content
-      if (pdfBytes && contentType === 'book' && existingPublication) {
-        // Check if user is authenticated before attempting upload
-        if (!user?.id) {
-          throw new Error('You must be logged in to save PDFs to daily published content.');
-        }
-
-        setPdfProgress({ current: 0, total: 0, currentPage: 'Uploading PDF...' });
-        
-        const fileName = `${contentId}-${Date.now()}.pdf`;
-        const filePath = `daily-published/${fileName}`;
-
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('exports')
-          .upload(filePath, pdfBytes, {
-            contentType: 'application/pdf',
-            upsert: true
-          });
-
-        if (uploadError) {
-          console.error('Error uploading PDF:', uploadError);
-          throw new Error(`Failed to upload PDF: ${uploadError.message}`);
-        }
-
-        // Get public URL
-        const { data: urlData } = supabase.storage
-          .from('exports')
-          .getPublicUrl(filePath);
-
-        if (urlData?.publicUrl) {
-          // Update daily_published table with PDF URL
-          const { error: updateError } = await supabase
-            .from('daily_published')
-            .update({ pdf_url: urlData.publicUrl })
-            .eq('id', existingPublication.id);
-
-          if (updateError) {
-            console.error('Error updating PDF URL:', updateError);
-            throw new Error(`Failed to save PDF URL: ${updateError.message}. Please try again or contact support.`);
-          }
-
-          // Update local state
-          setExistingPublication(prev => prev ? { ...prev, pdf_url: urlData.publicUrl } : prev);
-        }
-      }
-
-      // Trigger download
-      if (pdfBytes) {
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${contentName}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+        await generatePagePDF(contentId, contentName, options);
       }
 
       toast({
         title: "PDF Generated Successfully",
-        description: existingPublication ? "Your PDF has been saved and downloaded successfully." : "Your PDF has been downloaded successfully."
+        description: "Your PDF has been downloaded successfully."
       });
 
     } catch (error) {
@@ -184,139 +120,33 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   };
 
   /**
-   * Downloads the existing PDF from storage
-   */
-  const handleDownloadExistingPdf = async () => {
-    if (!existingPublication?.pdf_url) return;
-
-    try {
-      const response = await fetch(existingPublication.pdf_url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch PDF');
-      }
-
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${contentName}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-
-      toast({
-        title: "PDF Downloaded",
-        description: "Your existing PDF has been downloaded successfully."
-      });
-    } catch (error) {
-      console.error('Error downloading PDF:', error);
-      toast({
-        variant: "destructive",
-        title: "Download Failed",
-        description: "Failed to download the existing PDF. Please try generating a new one."
-      });
-    }
-  };
-
-  /**
-   * Set up real-time subscription for daily publication changes
+   * Check for existing daily publication entries on component mount
    * Only runs for book content type
    */
   useEffect(() => {
-    if (contentType !== 'book') return;
-    
     const checkExistingPublication = async () => {
-      setIsCheckingPublication(true);
+      if (contentType !== 'book') return;
       
+      setIsCheckingPublication(true);
       try {
-        // First verify the user owns this book
-        if (!user?.id) {
-          console.log('No authenticated user found');
-          return;
-        }
+         const { data, error } = await supabase
+           .from('daily_published')
+           .select('*')
+           .eq('book_id', contentId)
+           .in('status', ['draft', 'queued', 'active'])
+           .maybeSingle();
 
-        const { data: bookData, error: bookError } = await supabase
-          .from('books')
-          .select('user_id')
-          .eq('id', contentId)
-          .single();
-
-        if (bookError) {
-          console.error('Error checking book ownership:', bookError);
-          return;
-        }
-
-        if (bookData?.user_id !== user.id) {
-          console.error('User does not own this book:', { bookUserId: bookData?.user_id, currentUserId: user.id });
-          return;
-        }
-
-        const { data, error } = await supabase
-          .from('daily_published')
-          .select('*')
-          .eq('book_id', contentId)
-          .in('status', ['draft', 'queued', 'active'])
-          .maybeSingle();
-
-        if (error) {
-          console.error('Error fetching daily published data:', error);
-          return;
-        }
-
-        if (data) {
+        if (!error && data) {
           setExistingPublication(data);
         }
       } catch (error) {
-        console.error('Error checking existing publication:', error);
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to check existing publication status."
-        });
+        console.error('Error checking publication:', error);
       } finally {
         setIsCheckingPublication(false);
       }
     };
 
-    // Initial fetch
     checkExistingPublication();
-
-    // Set up real-time subscription
-    const channel = supabase
-      .channel(`daily_published_changes_${contentId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'daily_published',
-          filter: `book_id=eq.${contentId}`
-        },
-        (payload) => {
-          console.log('Daily published updated:', payload);
-          setExistingPublication(payload.new as any);
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'daily_published',
-          filter: `book_id=eq.${contentId}`
-        },
-        (payload) => {
-          console.log('Daily published created:', payload);
-          setExistingPublication(payload.new as any);
-        }
-      )
-      .subscribe();
-
-    // Cleanup subscription
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [contentId, contentType]);
 
   /**
@@ -544,16 +374,6 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             </p>
           </div>
           <div className="flex items-center gap-2">
-            {existingPublication?.pdf_url && (
-              <Button 
-                onClick={handleDownloadExistingPdf}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Download className="h-4 w-4" />
-                Download
-              </Button>
-            )}
             <Button 
               onClick={action}
               disabled={disabled}

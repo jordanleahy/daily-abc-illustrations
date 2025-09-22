@@ -52,8 +52,8 @@ serve(async (req) => {
       throw new Error('Book not found or access denied');
     }
 
-    // Ensure book has a daily published entry
-    const { data: dailyPublished, error: dpError } = await supabase
+    // Get or create daily published entry
+    let { data: dailyPublished, error: dpError } = await supabase
       .from('daily_published')
       .select('*')
       .eq('book_id', bookId)
@@ -64,8 +64,30 @@ serve(async (req) => {
       throw new Error('Failed to fetch daily published entry');
     }
 
+    // If no daily published entry exists, create one
     if (!dailyPublished) {
-      throw new Error('Book must have a daily published entry to generate QR code');
+      console.log('No daily published entry found, creating one for book:', bookId);
+      
+      const { data: newDailyPublished, error: createError } = await supabase
+        .from('daily_published')
+        .insert({
+          book_id: bookId,
+          title: book.book_name,
+          description: `QR code generated for ${book.book_name}`,
+          status: 'draft', // Set as draft initially
+          is_active: false,
+          publish_date: new Date().toISOString().split('T')[0] // Today's date
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating daily published entry:', createError);
+        throw new Error('Failed to create daily published entry for QR code generation');
+      }
+
+      dailyPublished = newDailyPublished;
+      console.log('Created daily published entry:', dailyPublished.id);
     }
 
     // Generate public URL for the daily published content

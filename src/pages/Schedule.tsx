@@ -205,7 +205,7 @@ function PublicScheduleCard({
   return (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow group" onClick={handleCardClick}>
       <CardHeader className="pb-3">
-        <div className="flex gap-3 items-center">
+        <div className="flex flex-col md:flex-row gap-3 md:items-center">
           {/* Thumbnail */}
           <ScheduleThumbnail 
             imageUrl={seoMetadata?.og_image_url}

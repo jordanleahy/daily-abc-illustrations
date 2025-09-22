@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { MetaHead } from '@/components/common/MetaHead';
-import { PageLayout } from '@/components/layout/PageLayout';
+import { FreemiumHeader } from '@/components/daily-published/FreemiumHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -60,19 +60,35 @@ export default function Schedule() {
     error
   } = useDailyPublishedSchedule();
   if (isLoading) {
-    return <PageLayout>
-        <div className="text-center py-8">
+    return (
+      <div className="min-h-screen bg-background">
+        <FreemiumHeader 
+          title="Schedule"
+          bookId=""
+          showPageIndicator={false}
+          showQRCode={false}
+        />
+        <div className="pt-16 text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="text-muted-foreground mt-2">Loading schedule...</p>
         </div>
-      </PageLayout>;
+      </div>
+    );
   }
   if (error) {
-    return <PageLayout>
-        <div className="text-center py-8">
+    return (
+      <div className="min-h-screen bg-background">
+        <FreemiumHeader 
+          title="Schedule"
+          bookId=""
+          showPageIndicator={false}
+          showQRCode={false}
+        />
+        <div className="pt-16 text-center py-8">
           <p className="text-destructive">Error loading schedule: {error.message}</p>
         </div>
-      </PageLayout>;
+      </div>
+    );
   }
   const activeItems = scheduleItems?.filter(item => item.status === 'active') || [];
   const queuedItems = scheduleItems?.filter(item => item.status === 'queued').sort((a, b) => (a.queue_order || 0) - (b.queue_order || 0)) || [];
@@ -84,8 +100,14 @@ export default function Schedule() {
       type: "website"
     }} />
       
-      <PageLayout>
-        <div className="container mx-auto px-4 pb-8 max-w-4xl">
+      <div className="min-h-screen bg-background">
+        <FreemiumHeader 
+          title="Schedule"
+          bookId={activeItems[0]?.book_id}
+          showPageIndicator={false}
+          showQRCode={true}
+        />
+        <div className="pt-16 container mx-auto px-4 pb-8 max-w-4xl">
           <div className="mb-8">
             
             
@@ -140,7 +162,7 @@ export default function Schedule() {
               </details>
             </div>}
         </div>
-      </PageLayout>
+      </div>
     </>;
 }
 

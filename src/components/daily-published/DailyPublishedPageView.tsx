@@ -79,13 +79,25 @@ export function DailyPublishedPageView({
   return <div className="h-screen bg-background flex flex-col overflow-hidden" style={{
     touchAction: 'none'
   }}>
-      {/* Fixed Header with countdown and page number */}
+      {/* Fixed Header with countdown, back button, and page controls */}
       <div className="fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-background/95 backdrop-blur-sm border-b">
-        <div className="text-sm font-medium text-muted-foreground">
-          {timeRemaining}
+        {/* Left section: Timer and back button */}
+        <div className="flex items-center gap-3">
+          <div className="text-sm font-medium text-muted-foreground">
+            {timeRemaining}
+          </div>
+          
+          {/* Previous page back button on the outside */}
+          {previousPage && onPrevious && (
+            <Button variant="ghost" size="sm" onClick={onPrevious} className="p-1 h-8 w-8 rounded border border-border hover:bg-muted">
+              <div className="w-6 h-6 bg-muted rounded-sm overflow-hidden">
+                <PublicPageImage pageId={previousPage.id} bookId={bookId} />
+              </div>
+            </Button>
+          )}
         </div>
         
-        {/* Center section with QR button, previous page thumbnail and page indicator */}
+        {/* Right section: QR button and page indicator grouped together */}
         <div className="flex items-center gap-2">
           {/* QR Code Button */}
           <Sheet>
@@ -120,11 +132,6 @@ export function DailyPublishedPageView({
             </SheetContent>
           </Sheet>
           
-          {previousPage && onPrevious && <Button variant="ghost" size="sm" onClick={onPrevious} className="p-1 h-8 w-8 rounded border border-border hover:bg-muted">
-              <div className="w-6 h-6 bg-muted rounded-sm overflow-hidden">
-                <PublicPageImage pageId={previousPage.id} bookId={bookId} />
-              </div>
-            </Button>}
           <div className="text-xs text-muted-foreground font-medium">
             Page {pageNumber} of {totalPages}
           </div>

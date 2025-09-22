@@ -478,17 +478,17 @@ function ScheduleCard({
 
           {/* Content */}
           <div className="md:flex-1 md:min-w-0">
-            <div className="flex justify-between items-start">
-              <div className={`flex-1 min-w-0 ${isDraggable ? 'pr-8 md:pr-0' : ''}`}>
+            <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-2 md:gap-0">
+              <Badge className={`${getStatusColor(item.status)} self-start md:order-2`} variant="secondary">
+                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
+              </Badge>
+              <div className={`flex-1 min-w-0 md:order-1 ${isDraggable ? 'pr-8 md:pr-0' : ''}`}>
                 <CardTitle className="text-lg truncate">{item.title}</CardTitle>
                 <CardDescription className="mt-1">
                   {item.book.book_name}
                   {item.description && ` • ${item.description}`}
                 </CardDescription>
               </div>
-              <Badge className={getStatusColor(item.status)} variant="secondary">
-                {item.status.charAt(0).toUpperCase() + item.status.slice(1)}
-              </Badge>
             </div>
           </div>
         </div>

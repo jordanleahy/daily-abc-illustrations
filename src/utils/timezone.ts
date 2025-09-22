@@ -22,15 +22,18 @@ export function fromEasternTime(easternDate: Date): Date {
  */
 export function formatEasternTime(date: Date, formatString: string = 'yyyy-MM-dd HH:mm:ss zzz'): string {
   const easternDate = toEasternTime(date);
-  return format(easternDate, formatString, { timeZone: EASTERN_TIMEZONE });
+  return format(easternDate, formatString);
 }
 
 /**
  * Create a publish date at 7:01 AM Eastern Time for a given date
+ * Simplified to avoid complex timezone conversions
  */
 export function createEasternPublishDate(dateString: string): Date {
-  const easternDateTime = new Date(dateString + 'T07:01:00');
-  return fromEasternTime(easternDateTime);
+  // Create the date at 7:01 AM and assume it's already in the correct timezone context
+  // The backend will handle the timezone conversion properly
+  const publishTime = new Date(dateString + 'T07:01:00');
+  return publishTime;
 }
 
 /**

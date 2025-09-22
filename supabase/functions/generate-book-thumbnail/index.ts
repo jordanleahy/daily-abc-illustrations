@@ -173,13 +173,12 @@ serve(async (req) => {
     }), `}`);
 
     try {
-      // Find the daily_published entry for this book (active or draft)
+      // Find the daily_published entry for this book (any status)
       const { data: dailyPublishedData, error: dailyPublishedError } = await supabase
         .from('daily_published')
         .select('id')
         .eq('book_id', bookId)
-        .eq('is_active', true)
-        .gt('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false })
         .maybeSingle();
 
       if (dailyPublishedError) {
@@ -209,7 +208,7 @@ serve(async (req) => {
           dailyPublishedId: dailyPublishedData.id
         }), `}`);
       } else {
-        console.log(`[${new Date().toISOString()}] [INFO] [SEO_UPDATE] - No active daily_published entry found for book - thumbnail stored for future use {`, JSON.stringify({
+        console.log(`[${new Date().toISOString()}] [INFO] [SEO_UPDATE] - No daily_published entry found for book - thumbnail stored for future use {`, JSON.stringify({
           requestId
         }), `}`);
       }

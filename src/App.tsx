@@ -12,6 +12,7 @@ import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
 import DailyPublished from "./pages/DailyPublished";
 import DailyPublishedSchedule from "./pages/DailyPublishedSchedule";
+import Schedule from "./pages/Schedule";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -44,6 +45,7 @@ const App = () => (
           <Route path="/books/:id" element={<BookDetail />} />
           <Route path="/daily-published/:id" element={<DailyPublished />} />
           <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
+          <Route path="/schedule" element={<Schedule />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -191,7 +191,6 @@ function PublicScheduleCard({
                   <div className="text-muted-foreground text-xs">Until tomorrow 7:01 AM ET</div>
                 </>}
               {isQueued && <>
-                  <div className="text-blue-600">📅 Position #{position}</div>
                   <div className="text-muted-foreground text-xs">
                     Publishes {position === 1 ? 'Tomorrow' : `in ${position} days`} at 7:01 AM ET
                   </div>
@@ -213,7 +212,6 @@ function PublicScheduleCard({
                   <div className="text-muted-foreground text-xs">Until tomorrow 7:01 AM ET</div>
                 </>}
               {isQueued && <>
-                  <div className="text-blue-600">📅 Position #{position}</div>
                   <div className="text-muted-foreground text-xs">
                     Publishes {position === 1 ? 'Tomorrow' : `in ${position} days`} at 7:01 AM ET
                   </div>

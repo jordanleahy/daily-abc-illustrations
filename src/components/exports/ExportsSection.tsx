@@ -399,54 +399,61 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
        }
      };
 
-     try {
-       // Check if there's already a draft entry for this book
-       if (existingPublication && existingPublication.status === 'draft') {
-         // Convert draft to queued
-         const { data: nextPosition } = await supabase.rpc('get_next_queue_position');
-         
-         const { data: updatedPublication, error: updateError } = await supabase
-           .from('daily_published')
-           .update({
-             status: 'queued' as const,
-             queue_position: nextPosition || 1,
-             is_active: false // Still not active until processed by queue
-           })
-           .eq('id', existingPublication.id)
-           .select()
-           .single();
+      try {
+        // Check if there's already a draft entry for this book
+        if (existingPublication && existingPublication.status === 'draft') {
+          // Convert draft to queued with next available date
+          const { data: nextDate } = await supabase.rpc('get_next_available_publish_date');
+          
+          const { data: updatedPublication, error: updateError } = await supabase
+            .from('daily_published')
+            .update({
+              status: 'queued' as const,
+              publish_date: nextDate,
+              is_active: false // Still not active until processed
+            })
+            .eq('id', existingPublication.id)
+            .select()
+            .single();
 
-         if (updateError) {
-           console.error('Error converting draft to queue:', updateError);
-           throw updateError;
-         }
+          if (updateError) {
+            console.error('Error converting draft to queue:', updateError);
+            throw updateError;
+          }
 
-         toast({
-           title: "Added to Queue!",
-           description: `${contentName} has been added to the daily publication queue at position ${updatedPublication.queue_position}.`,
-         });
+          const formattedDate = new Date(nextDate).toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric', 
+            month: 'long',
+            day: 'numeric'
+          });
 
-         // Update local state
-         setExistingPublication(updatedPublication);
-         
-         // Generate QR code automatically
-         await generateQRCodeSafely();
-       } else {
-         // Get next queue position
-         const { data: nextPosition } = await supabase.rpc('get_next_queue_position');
-         
-         // Create new daily publication in queue
-         const { data: newPublication, error: insertError } = await supabase
-           .from('daily_published')
-           .insert({
-             book_id: contentId,
-             title: contentName,
-             description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
-             status: 'queued' as const,
-             queue_position: nextPosition || 1
-           })
-           .select()
-           .single();
+          toast({
+            title: "Scheduled for Publication!",
+            description: `${contentName} has been scheduled for ${formattedDate} at 12:01 AM UTC.`,
+          });
+
+          // Update local state
+          setExistingPublication(updatedPublication);
+          
+          // Generate QR code automatically
+          await generateQRCodeSafely();
+        } else {
+          // Get next available publish date
+          const { data: nextDate } = await supabase.rpc('get_next_available_publish_date');
+          
+          // Create new daily publication scheduled for next available date
+          const { data: newPublication, error: insertError } = await supabase
+            .from('daily_published')
+            .insert({
+              book_id: contentId,
+              title: contentName,
+              description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
+              status: 'queued' as const,
+              publish_date: nextDate
+            })
+            .select()
+            .single();
 
          if (insertError) {
            console.error('Error adding to queue:', insertError);

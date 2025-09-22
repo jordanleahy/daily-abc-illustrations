@@ -3,6 +3,9 @@ project_id = "foxdnspwzhjxjxuicute"
 [functions.generate-book-qr-metadata]
 verify_jwt = true
 
+[functions.simple-daily-publisher]
+verify_jwt = false
+
 [api]
 enabled = true
 port = 54321
@@ -96,5 +99,5 @@ verify_jwt = true
 [functions.generate-book-thumbnail-prompt]
 verify_jwt = true
 
-[functions.process-daily-published-queue]
-verify_jwt = false
+[functions.generate-book-thumbnail]
+verify_jwt = true

@@ -8,20 +8,17 @@ export const useExpectedPublicationDate = (contentId: string) => {
   return useQuery({
     queryKey: ['expected-publication-date', contentId],
     queryFn: async () => {
-      // Get next queue position
-      const { data: nextPosition } = await supabase.rpc('get_next_queue_position');
+      // Get next available publish date
+      const { data: nextDate } = await supabase.rpc('get_next_available_publish_date');
       
-      if (!nextPosition) {
+      if (!nextDate) {
         return null;
       }
 
-      // Use fixed daily schedule (11:12 PM UTC)
-      // Calculate the activation time for this position
-      const { data: activationTime } = await supabase.rpc('calculate_fixed_schedule_time', {
-        queue_pos: nextPosition
-      });
-
-      return activationTime ? new Date(activationTime) : null;
+      // Convert date to publication time (12:01 AM UTC)
+      const publishDate = new Date(nextDate + 'T00:01:00.000Z');
+      
+      return publishDate;
     },
     enabled: !queueLoading && !!contentId,
     staleTime: 5 * 60 * 1000, // 5 minutes

@@ -818,14 +818,6 @@ export type Database = {
       }
     }
     Functions: {
-      calculate_fixed_schedule_time: {
-        Args: { queue_pos: number }
-        Returns: string
-      }
-      cleanup_daily_published_queue: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
       get_book_thumbnail: {
         Args: { p_book_id: string }
         Returns: {
@@ -883,20 +875,12 @@ export type Database = {
         Args: { p_book_id: string }
         Returns: number
       }
-      get_next_fixed_activation_time: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
       get_next_page_image_version_number: {
         Args: { p_page_id: string }
         Returns: number
       }
       get_next_page_prompt_version_number: {
         Args: { p_page_id: string }
-        Returns: number
-      }
-      get_next_queue_position: {
-        Args: Record<PropertyKey, never>
         Returns: number
       }
       get_next_seo_version_number: {
@@ -917,10 +901,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      process_daily_published_queue_fixed: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
       }
       process_simple_daily_publishing: {
         Args: Record<PropertyKey, never>

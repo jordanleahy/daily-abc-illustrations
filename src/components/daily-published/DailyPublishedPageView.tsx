@@ -11,6 +11,7 @@ import { MetaHead } from '@/components/common';
 import { useNavigate } from 'react-router-dom';
 import { QrCode } from 'lucide-react';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
+import { UpcomingBooksPreview } from './UpcomingBooksPreview';
 interface DailyPublishedPageViewProps {
   page: Page;
   bookId: string;
@@ -152,9 +153,15 @@ export function DailyPublishedPageView({
         </div>
       </div>
 
-      {/* Slide to unlock at bottom - sticky with proper mobile support */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 py-4 px-10 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
-        <SlideToUnlock onUnlock={onNext} disabled={isLastPage} className="w-full" />
+      {/* Slide to unlock or upcoming books preview at bottom */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 py-4 px-4 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
+        {isLastPage ? (
+          <UpcomingBooksPreview />
+        ) : (
+          <div className="px-6">
+            <SlideToUnlock onUnlock={onNext} disabled={isLastPage} className="w-full" />
+          </div>
+        )}
       </div>
     </div>;
 }

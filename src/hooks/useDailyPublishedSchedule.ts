@@ -29,26 +29,7 @@ export const useDailyPublishedSchedule = () => {
         throw error;
       }
 
-      const items = (data as DailyPublishedWithBook[]) || [];
-      
-      // Client-side filtering for expired items (for immediate UI responsiveness)
-      const now = new Date();
-      const today = now.toISOString().split('T')[0]; // Get today's date in YYYY-MM-DD format
-      
-      return items.filter(item => {
-        // Keep items that are not expired based on status and publish_date
-        if (item.status === 'expired') {
-          return false; // Hide expired items
-        }
-        
-        // For active items, only hide if expires_at has passed
-        if (item.status === 'active' && new Date(item.expires_at) <= now) {
-          console.log(`Client-side detected expired item: ${item.title} (expires at ${item.expires_at})`);
-          return false; // Hide items that have actually expired
-        }
-        
-        return true;
-      });
+      return (data as DailyPublishedWithBook[]) || [];
     },
     staleTime: 30 * 1000, // 30 seconds - more frequent updates for schedule
     gcTime: 60 * 1000, // 1 minute

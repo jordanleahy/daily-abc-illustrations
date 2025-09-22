@@ -330,33 +330,8 @@ function ScheduleCard({
     navigate(`/books/${item.book_id}`);
   };
 
-  // Calculate when this item will be active
-  const getPublishInfo = () => {
-    if (item.status === 'active') {
-      return {
-        title: "📺 LIVE NOW",
-        subtitle: `Until tomorrow 7:01 AM ET`,
-        color: "text-green-600 font-semibold"
-      };
-    }
-    
-    if (typeof position === 'number') {
-      const days = position === 1 ? 'Tomorrow' : `In ${position} days`;
-      return {
-        title: `📅 Position #${position}`,
-        subtitle: `Publishes ${days} at 7:01 AM ET`,
-        color: "text-blue-600"
-      };
-    }
-    
-    return {
-      title: "Queued",
-      subtitle: "Waiting to publish",
-      color: "text-muted-foreground"
-    };
-  };
-
-  const publishInfo = getPublishInfo();
+  const isActive = item.status === 'active';
+  const isQueued = item.status === 'queued' && typeof position === 'number';
 
   const cardContent = (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow group" onClick={handleCardClick}>
@@ -398,8 +373,20 @@ function ScheduleCard({
             
             {/* Publishing Info */}
             <div className="mt-2 text-sm">
-              <div className={publishInfo.color}>{publishInfo.title}</div>
-              <div className="text-muted-foreground text-xs">{publishInfo.subtitle}</div>
+              {isActive && (
+                <>
+                  <div className="text-green-600 font-semibold">📺 LIVE NOW</div>
+                  <div className="text-muted-foreground text-xs">Until tomorrow 7:01 AM ET</div>
+                </>
+              )}
+              {isQueued && (
+                <>
+                  <div className="text-blue-600">📅 Position #{position}</div>
+                  <div className="text-muted-foreground text-xs">
+                    Publishes {position === 1 ? 'Tomorrow' : `in ${position} days`} at 7:01 AM ET
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
 interface UpdateExpirationRequest {
   dailyPublishedId: string;
@@ -19,15 +20,23 @@ interface UpdateExpirationResponse {
 export const useAdminUpdateExpiration = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { session } = useAuth();
 
   return useMutation({
     mutationFn: async ({ dailyPublishedId, newExpiresAt }: UpdateExpirationRequest): Promise<UpdateExpirationResponse> => {
       console.log('Calling admin-update-expiration function...', { dailyPublishedId, newExpiresAt });
       
+      if (!session?.access_token) {
+        throw new Error('No valid session found');
+      }
+      
       const { data, error } = await supabase.functions.invoke('admin-update-expiration', {
         body: { 
           dailyPublishedId,
           newExpiresAt
+        },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
         }
       });
 

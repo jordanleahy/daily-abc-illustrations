@@ -6,6 +6,12 @@ verify_jwt = true
 [functions.simple-daily-publisher]
 verify_jwt = false
 
+[functions.admin-update-expiration]
+verify_jwt = true
+
+[functions.fix-current-expiration]
+verify_jwt = false
+
 [api]
 enabled = true
 port = 54321

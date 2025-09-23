@@ -16,6 +16,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
+import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
 
 interface PageHeaderProps {
@@ -34,6 +35,9 @@ export const PageHeader = ({ title = "ABC Cards Platform" }: PageHeaderProps) =>
   const navigation = [
     { name: 'Chat', href: '/' },
     { name: 'My Books', href: '/books' },
+  ];
+
+  const adminNavigation = [
     { name: 'Agents', href: '/agents' },
     { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },
   ];
@@ -58,6 +62,17 @@ export const PageHeader = ({ title = "ABC Cards Platform" }: PageHeaderProps) =>
                 {item.name}
               </Link>
             ))}
+            <AdminOnly>
+              {adminNavigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </AdminOnly>
           </nav>
 
           {/* Mobile Menu / Auth Buttons */}
@@ -85,6 +100,19 @@ export const PageHeader = ({ title = "ABC Cards Platform" }: PageHeaderProps) =>
                       {item.name}
                     </Link>
                   ))}
+                  
+                  {/* Admin Navigation Links */}
+                  <AdminOnly>
+                    {adminNavigation.map((item) => (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                      >
+                        {item.name}
+                      </Link>
+                    ))}
+                  </AdminOnly>
                   
                   {/* User Section */}
                   {isAuthenticated ? (

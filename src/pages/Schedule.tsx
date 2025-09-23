@@ -151,13 +151,14 @@ export default function Schedule() {
                   <Clock className="h-4 w-4" />
                   Show {expiredItems.length} past books
                 </summary>
-                <div className="mt-4 space-y-2 opacity-60">
-                  {expiredItems.map(item => <div key={item.id} className="text-sm p-3 bg-muted rounded-lg">
-                      <div className="flex justify-between items-center">
-                        <span>{item.title} • {item.book.book_name}</span>
-                        <span className="text-xs">{formatScheduleDate(item.publish_date)}</span>
-                      </div>
-                    </div>)}
+                <div className="mt-4 space-y-4 opacity-60">
+                  {expiredItems.map(item => (
+                    <PublicScheduleCard 
+                      key={item.id} 
+                      item={item}
+                      position="expired"
+                    />
+                  ))}
                 </div>
               </details>
             </div>}
@@ -193,7 +194,7 @@ function ScheduleThumbnail({
 type ScheduleCardItem = DailyPublishedWithBook;
 interface PublicScheduleCardProps {
   item: ScheduleCardItem;
-  position: number | "active";
+  position: number | "active" | "expired";
 }
 function PublicScheduleCard({
   item,
@@ -208,6 +209,7 @@ function PublicScheduleCard({
   };
   const isActive = item.status === 'active';
   const isQueued = item.status === 'queued' && typeof position === 'number';
+  const isExpired = position === "expired";
    return <Card 
      className={`transition-shadow group ${isActive ? "cursor-pointer hover:shadow-lg" : ""}`} 
      onClick={isActive ? handleCardClick : undefined}
@@ -230,6 +232,12 @@ function PublicScheduleCard({
                     {getPublishDayName(position as number)}
                   </div>
                 </>}
+              {isExpired && <>
+                  <div className="text-muted-foreground font-semibold">⏰ EXPIRED</div>
+                  <div className="text-muted-foreground text-xs">
+                    Published {formatScheduleDate(item.publish_date)}
+                  </div>
+                </>}
             </div>
             
             <div className="flex-1 min-w-0">
@@ -249,6 +257,12 @@ function PublicScheduleCard({
               {isQueued && <>
                   <div className="text-muted-foreground text-xs">
                     {getPublishDayName(position as number)}
+                  </div>
+                </>}
+              {isExpired && <>
+                  <div className="text-muted-foreground font-semibold">⏰ EXPIRED</div>
+                  <div className="text-muted-foreground text-xs">
+                    Published {formatScheduleDate(item.publish_date)}
                   </div>
                 </>}
             </div>

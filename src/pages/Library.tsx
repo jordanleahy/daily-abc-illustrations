@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { MetaHead } from '@/components/common/MetaHead';
-import { FreemiumHeader } from '@/components/daily-published/FreemiumHeader';
+import { UserHeader } from '@/components/layout/UserHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -65,10 +65,8 @@ export default function Library() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <FreemiumHeader 
+        <UserHeader 
           title="Library"
-          bookId=""
-          showPageIndicator={false}
           showQRCode={false}
         />
         <div className="pt-16 text-center py-8">
@@ -82,10 +80,8 @@ export default function Library() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <FreemiumHeader 
+        <UserHeader 
           title="Library"
-          bookId=""
-          showPageIndicator={false}
           showQRCode={false}
         />
         <div className="pt-16 text-center py-8">
@@ -107,10 +103,9 @@ export default function Library() {
     }} />
     
     <div className="min-h-screen bg-background">
-      <FreemiumHeader 
+      <UserHeader 
         title="Library"
         bookId={activeItems[0]?.book_id}
-        showPageIndicator={false}
         showQRCode={true}
       />
       <div className="pt-16 container mx-auto px-4 pb-8 max-w-4xl">

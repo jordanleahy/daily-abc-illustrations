@@ -755,6 +755,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_update_daily_published_expiration: {
+        Args: { p_daily_published_id: string; p_new_expires_at: string }
+        Returns: Json
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]

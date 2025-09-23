@@ -34,6 +34,7 @@ import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
 import { OpenGraphEditor } from "@/components/book/OpenGraphEditor";
 import { ExportsSection } from '@/components/exports/ExportsSection';
+import { UploadDebugger } from '@/components/UploadDebugger';
 
 import { PageImageSection } from "@/components/PageImageSection";
 import { PageCard, UserPageCard, FocusedPageView } from '@/components/page-prompts';
@@ -548,6 +549,9 @@ export default function BookDetail() {
                   </div>
                 </CardContent>
               </Card>
+
+               {/* Upload Debugger - Temporary */}
+                <UploadDebugger />
 
                {/* OpenGraph Editor Section */}
                 <OpenGraphEditor 

@@ -230,7 +230,9 @@ function PublicScheduleCard({
   } = useSeoMetadata(item.id);
 
   const handleCardClick = () => {
-    navigate(`/daily-published/${item.id}`);
+    if (item.status === 'active') {
+      navigate(`/library/${item.id}`);
+    }
   };
 
   const isActive = item.status === 'active';

@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import Agents from "./pages/Agents";
 import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
+import Library from "./pages/Library";
 import DailyPublished from "./pages/DailyPublished";
 import DailyPublishedSchedule from "./pages/DailyPublishedSchedule";
 import Schedule from "./pages/Schedule";
@@ -45,6 +46,7 @@ const App = () => (
           <Route path="/agents" element={<Agents />} />
           <Route path="/books" element={<Books />} />
           <Route path="/books/:id" element={<BookDetail />} />
+          <Route path="/library" element={<Library />} />
           <Route path="/daily-published/:id" element={<DailyPublished />} />
           <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
           <Route path="/schedule" element={<Schedule />} />

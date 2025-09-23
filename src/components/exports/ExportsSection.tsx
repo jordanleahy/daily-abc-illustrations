@@ -10,6 +10,7 @@
  * - Automatic QR code generation when adding to queue
  * - Expected publication date calculations
  * - Public link sharing and copying functionality
+ * - Product description generation for sales-focused content
  * 
  * All PDF generation is handled client-side using pdf-lib for optimal performance.
  */
@@ -17,7 +18,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Globe, Eye, Copy, History, RefreshCw } from 'lucide-react';
+import { FileText, Globe, Eye, Copy, History, RefreshCw, ShoppingCart } from 'lucide-react';
 import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { formatScheduleTimestamp } from '@/utils/timezone';
@@ -48,6 +49,7 @@ interface ExportsSectionProps {
  * - Automatically generate QR codes when adding to queue
  * - View publication status and expected dates
  * - Copy public links for shared content
+ * - Generate sales-focused product descriptions
  * 
  * @param props - Component props
  * @param props.contentType - Type of content ('book' or 'page')
@@ -66,6 +68,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const [existingPublication, setExistingPublication] = useState<any>(null);
   const [publicationHistory, setPublicationHistory] = useState<any[]>([]);
   const [isCheckingPublication, setIsCheckingPublication] = useState(false);
+  const [isGeneratingProductDescription, setIsGeneratingProductDescription] = useState(false);
+  const [productDescription, setProductDescription] = useState<string>('');
 
   /**
    * Handles client-side PDF generation for the content
@@ -291,6 +295,62 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   };
 
   /**
+   * Generates a sales-focused product description for the book
+   */
+  const handleGenerateProductDescription = async () => {
+    if (contentType !== 'book') return;
+    
+    setIsGeneratingProductDescription(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('create-product-description', {
+        body: { bookId: contentId }
+      });
+
+      if (error) throw error;
+
+      if (data?.productDescription) {
+        setProductDescription(data.productDescription);
+        toast({
+          title: "Product Description Generated!",
+          description: "Your sales-focused product description is ready to copy."
+        });
+      } else {
+        throw new Error('No product description generated');
+      }
+    } catch (error: any) {
+      console.error('Error generating product description:', error);
+      toast({
+        title: "Generation Failed",
+        description: error.message || "Failed to generate product description. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingProductDescription(false);
+    }
+  };
+
+  /**
+   * Copies the product description to clipboard
+   */
+  const handleCopyProductDescription = async () => {
+    try {
+      await navigator.clipboard.writeText(productDescription);
+      toast({
+        title: "Product description copied!",
+        description: "The product description has been copied to your clipboard."
+      });
+    } catch (error) {
+      console.error('Failed to copy product description:', error);
+      toast({
+        title: "Copy failed",
+        description: "Unable to copy product description to clipboard.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  /**
    * Copies the public daily published link to clipboard
    * Only works when there's an existing publication
    */
@@ -500,6 +560,48 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             )}
           </div>
         </div>
+
+        {/* Product Description Section - Only for books */}
+        {contentType === 'book' && (
+          <div className="flex flex-col gap-3 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h4 className="text-sm font-medium">Product Description</h4>
+                <p className="text-sm text-muted-foreground">
+                  Sales-focused description for online publishing
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={handleGenerateProductDescription}
+                  disabled={isGeneratingProductDescription}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <ShoppingCart className="h-4 w-4" />
+                  {isGeneratingProductDescription ? 'Generating...' : 'Generate'}
+                </Button>
+                {productDescription && (
+                  <Button 
+                    onClick={handleCopyProductDescription}
+                    variant="outline"
+                    className="flex items-center gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy
+                  </Button>
+                )}
+              </div>
+            </div>
+            {productDescription && (
+              <div className="bg-muted/50 rounded-md p-3 text-sm">
+                <div className="whitespace-pre-line text-muted-foreground">
+                  {productDescription}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* LinkedIn Post Section */}
         {existingPublication && existingPublication.status !== 'draft' && (

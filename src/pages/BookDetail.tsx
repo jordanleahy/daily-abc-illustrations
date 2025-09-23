@@ -30,6 +30,7 @@ import { ProcessStatus } from '@/types/process';
 import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
+import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
@@ -57,6 +58,7 @@ export default function BookDetail() {
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
+  const [isEditingDescription, setIsEditingDescription] = useState(false);
   
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
@@ -209,6 +211,28 @@ export default function BookDetail() {
     }
   };
 
+  const handleUpdateDescription = async (newDescription: string) => {
+    if (!book?.id) return;
+    
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({ book_description: newDescription })
+        .eq('id', book.id);
+
+      if (error) throw error;
+
+      // Invalidate and refetch the book data
+      queryClient.invalidateQueries({ queryKey: ['book', book.id] });
+      
+      toast.success("Book description updated successfully");
+      setIsEditingDescription(false);
+    } catch (error) {
+      console.error('Error updating book description:', error);
+      toast.error("Failed to update book description");
+    }
+  };
+
   const handleUpdateBookName = async (newName: string) => {
     if (!book?.id || newName === book.book_name) {
       setIsEditingTitle(false);
@@ -358,11 +382,21 @@ export default function BookDetail() {
               <Card>
                 <CardHeader>
                   <CardTitle className="text-2xl">{book.book_name}</CardTitle>
-                  {book.book_description && (
-                    <CardDescription className="text-base">
-                      {book.book_description}
-                    </CardDescription>
-                  )}
+                  <InlineEditTextarea
+                    value={book.book_description || ''}
+                    onSave={handleUpdateDescription}
+                    isEditing={isEditingDescription}
+                    className="text-base text-muted-foreground"
+                    placeholder="Enter book description"
+                    renderDisplay={(value) => (
+                      <CardDescription 
+                        className="text-base cursor-pointer hover:text-primary transition-colors" 
+                        onClick={() => setIsEditingDescription(true)}
+                      >
+                        {value}
+                      </CardDescription>
+                    )}
+                  />
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
@@ -542,11 +576,21 @@ export default function BookDetail() {
                           </CardTitle>
                         )}
                       />
-                      {book.book_description && (
-                        <CardDescription className="text-base">
-                          {book.book_description}
-                        </CardDescription>
-                      )}
+                      <InlineEditTextarea
+                        value={book.book_description || ''}
+                        onSave={handleUpdateDescription}
+                        isEditing={isEditingDescription}
+                        className="text-base text-muted-foreground"
+                        placeholder="Enter book description"
+                        renderDisplay={(value) => (
+                          <CardDescription 
+                            className="text-base cursor-pointer hover:text-primary transition-colors" 
+                            onClick={() => setIsEditingDescription(true)}
+                          >
+                            {value}
+                          </CardDescription>
+                        )}
+                      />
                     </div>
                     <div className="flex items-center gap-2">
                       

@@ -65,17 +65,167 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   });
 
   const handleTitleSave = async (newTitle: string) => {
-    // Note: SEO metadata is now read-only as it's generated at book creation
-    // Manual editing would require implementing new update logic
+    if (!user?.id || !newTitle.trim()) {
+      toast.error('Title cannot be empty');
+      return;
+    }
+
+    try {
+      // Find the appropriate daily_published entry for this book
+      const { data: dailyPublishedEntries, error: dailyError } = await supabase
+        .from('daily_published')
+        .select('id, status, created_at')
+        .eq('book_id', bookId)
+        .order('created_at', { ascending: false });
+
+      if (dailyError) {
+        throw new Error(`Failed to find daily published entry: ${dailyError.message}`);
+      }
+
+      if (!dailyPublishedEntries || dailyPublishedEntries.length === 0) {
+        throw new Error('No daily published entry found for this book. Please queue the book for publishing first.');
+      }
+
+      // Prioritize active/queued over expired/draft
+      const priorityOrder = ['active', 'queued', 'expired', 'draft'];
+      let targetDailyPublished = null;
+
+      for (const priority of priorityOrder) {
+        const entry = dailyPublishedEntries.find(entry => entry.status === priority);
+        if (entry) {
+          targetDailyPublished = entry;
+          break;
+        }
+      }
+
+      if (!targetDailyPublished) {
+        targetDailyPublished = dailyPublishedEntries[0];
+      }
+
+      // Get next version number
+      const { data: versionData } = await supabase
+        .rpc('get_next_seo_version_number', { p_daily_published_id: targetDailyPublished.id });
+      const nextVersion = versionData || 1;
+
+      // Update existing SEO metadata to mark as not latest
+      await supabase
+        .from('seo_metadata')
+        .update({ is_latest: false })
+        .eq('daily_published_id', targetDailyPublished.id)
+        .eq('is_latest', true);
+
+      // Create new SEO metadata record with updated title
+      const { error: insertError } = await supabase
+        .from('seo_metadata')
+        .insert({
+          daily_published_id: targetDailyPublished.id,
+          user_id: user.id,
+          og_image_url: currentImage,
+          seo_title: newTitle,
+          seo_description: currentDescription,
+          optimization_status: 'complete',
+          version_number: nextVersion,
+          is_latest: true,
+          is_active: true,
+          source_data: {
+            book_id: bookId,
+            action_type: 'manual_title_update'
+          }
+        });
+
+      if (insertError) {
+        throw new Error(`Failed to save SEO metadata: ${insertError.message}`);
+      }
+
+      refetch();
+      toast.success('Title updated successfully');
+    } catch (error) {
+      console.error('Title update error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update title');
+    }
     setIsEditingTitle(false);
-    toast.error('SEO editing is currently disabled - SEO is generated at book creation');
   };
 
   const handleDescriptionSave = async (newDescription: string) => {
-    // Note: SEO metadata is now read-only as it's generated at book creation
-    // Manual editing would require implementing new update logic
+    if (!user?.id) {
+      toast.error('User not authenticated');
+      return;
+    }
+
+    try {
+      // Find the appropriate daily_published entry for this book
+      const { data: dailyPublishedEntries, error: dailyError } = await supabase
+        .from('daily_published')
+        .select('id, status, created_at')
+        .eq('book_id', bookId)
+        .order('created_at', { ascending: false });
+
+      if (dailyError) {
+        throw new Error(`Failed to find daily published entry: ${dailyError.message}`);
+      }
+
+      if (!dailyPublishedEntries || dailyPublishedEntries.length === 0) {
+        throw new Error('No daily published entry found for this book. Please queue the book for publishing first.');
+      }
+
+      // Prioritize active/queued over expired/draft
+      const priorityOrder = ['active', 'queued', 'expired', 'draft'];
+      let targetDailyPublished = null;
+
+      for (const priority of priorityOrder) {
+        const entry = dailyPublishedEntries.find(entry => entry.status === priority);
+        if (entry) {
+          targetDailyPublished = entry;
+          break;
+        }
+      }
+
+      if (!targetDailyPublished) {
+        targetDailyPublished = dailyPublishedEntries[0];
+      }
+
+      // Get next version number
+      const { data: versionData } = await supabase
+        .rpc('get_next_seo_version_number', { p_daily_published_id: targetDailyPublished.id });
+      const nextVersion = versionData || 1;
+
+      // Update existing SEO metadata to mark as not latest
+      await supabase
+        .from('seo_metadata')
+        .update({ is_latest: false })
+        .eq('daily_published_id', targetDailyPublished.id)
+        .eq('is_latest', true);
+
+      // Create new SEO metadata record with updated description
+      const { error: insertError } = await supabase
+        .from('seo_metadata')
+        .insert({
+          daily_published_id: targetDailyPublished.id,
+          user_id: user.id,
+          og_image_url: currentImage,
+          seo_title: currentTitle,
+          seo_description: newDescription,
+          optimization_status: 'complete',
+          version_number: nextVersion,
+          is_latest: true,
+          is_active: true,
+          source_data: {
+            book_id: bookId,
+            action_type: 'manual_description_update'
+          }
+        });
+
+      if (insertError) {
+        throw new Error(`Failed to save SEO metadata: ${insertError.message}`);
+      }
+
+      refetch();
+      toast.success('Description updated successfully');
+    } catch (error) {
+      console.error('Description update error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update description');
+    }
     setIsEditingDescription(false);
-    toast.error('SEO editing is currently disabled - SEO is generated at book creation');
   };
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,36 +246,182 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
 
     setIsUploading(true);
     try {
-      // Upload to page-images bucket with user ID as folder (required by RLS)
+      // Upload to book-covers bucket (consistent with thumbnail generation)
       const fileName = `${user?.id}/og-${bookId}-${Date.now()}.${file.name.split('.').pop()}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('page-images')
+        .from('book-covers')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
       // Get public URL
       const { data: publicUrl } = supabase.storage
-        .from('page-images')
+        .from('book-covers')
         .getPublicUrl(fileName);
 
-      // Note: Image upload functionality needs to be reimplemented
-      // to work with the new SEO system where metadata is generated at book creation
-      toast.error('Image upload is currently disabled - SEO is generated at book creation');
+      if (!publicUrl?.publicUrl) {
+        throw new Error('Failed to get public URL for uploaded image');
+      }
+
+      // Find the appropriate daily_published entry for this book
+      const { data: dailyPublishedEntries, error: dailyError } = await supabase
+        .from('daily_published')
+        .select('id, status, created_at')
+        .eq('book_id', bookId)
+        .order('created_at', { ascending: false });
+
+      if (dailyError) {
+        throw new Error(`Failed to find daily published entry: ${dailyError.message}`);
+      }
+
+      if (!dailyPublishedEntries || dailyPublishedEntries.length === 0) {
+        throw new Error('No daily published entry found for this book. Please queue the book for publishing first.');
+      }
+
+      // Prioritize active/queued over expired/draft
+      const priorityOrder = ['active', 'queued', 'expired', 'draft'];
+      let targetDailyPublished = null;
+
+      for (const priority of priorityOrder) {
+        const entry = dailyPublishedEntries.find(entry => entry.status === priority);
+        if (entry) {
+          targetDailyPublished = entry;
+          break;
+        }
+      }
+
+      if (!targetDailyPublished) {
+        targetDailyPublished = dailyPublishedEntries[0]; // Fallback to most recent
+      }
+
+      // Get next version number for SEO metadata
+      const { data: versionData, error: versionError } = await supabase
+        .rpc('get_next_seo_version_number', { p_daily_published_id: targetDailyPublished.id });
+
+      if (versionError) {
+        console.error('Failed to get version number, using 1:', versionError);
+      }
+
+      const nextVersion = versionData || 1;
+
+      // Update existing SEO metadata to mark as not latest
+      await supabase
+        .from('seo_metadata')
+        .update({ is_latest: false })
+        .eq('daily_published_id', targetDailyPublished.id)
+        .eq('is_latest', true);
+
+      // Create new SEO metadata record with the uploaded image
+      const { error: insertError } = await supabase
+        .from('seo_metadata')
+        .insert({
+          daily_published_id: targetDailyPublished.id,
+          user_id: user?.id,
+          og_image_url: publicUrl.publicUrl,
+          seo_title: currentTitle,
+          seo_description: currentDescription,
+          optimization_status: 'complete',
+          version_number: nextVersion,
+          is_latest: true,
+          is_active: true,
+          source_data: {
+            book_id: bookId,
+            upload_type: 'manual_image_upload',
+            original_filename: file.name
+          }
+        });
+
+      if (insertError) {
+        throw new Error(`Failed to save SEO metadata: ${insertError.message}`);
+      }
 
       refetch();
-      toast.success('Image uploaded successfully');
+      toast.success('Image uploaded and SEO metadata updated successfully');
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error('Failed to upload image');
+      toast.error(error instanceof Error ? error.message : 'Failed to upload image');
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleRemoveImage = async () => {
-    // Note: SEO metadata is now read-only as it's generated at book creation
-    toast.error('Image removal is currently disabled - SEO is generated at book creation');
+    if (!currentImage) return;
+
+    try {
+      // Find the appropriate daily_published entry for this book
+      const { data: dailyPublishedEntries, error: dailyError } = await supabase
+        .from('daily_published')
+        .select('id, status, created_at')
+        .eq('book_id', bookId)
+        .order('created_at', { ascending: false });
+
+      if (dailyError) {
+        throw new Error(`Failed to find daily published entry: ${dailyError.message}`);
+      }
+
+      if (!dailyPublishedEntries || dailyPublishedEntries.length === 0) {
+        throw new Error('No daily published entry found for this book');
+      }
+
+      // Prioritize active/queued over expired/draft
+      const priorityOrder = ['active', 'queued', 'expired', 'draft'];
+      let targetDailyPublished = null;
+
+      for (const priority of priorityOrder) {
+        const entry = dailyPublishedEntries.find(entry => entry.status === priority);
+        if (entry) {
+          targetDailyPublished = entry;
+          break;
+        }
+      }
+
+      if (!targetDailyPublished) {
+        targetDailyPublished = dailyPublishedEntries[0];
+      }
+
+      // Get next version number for SEO metadata
+      const { data: versionData, error: versionError } = await supabase
+        .rpc('get_next_seo_version_number', { p_daily_published_id: targetDailyPublished.id });
+
+      const nextVersion = versionData || 1;
+
+      // Update existing SEO metadata to mark as not latest
+      await supabase
+        .from('seo_metadata')
+        .update({ is_latest: false })
+        .eq('daily_published_id', targetDailyPublished.id)
+        .eq('is_latest', true);
+
+      // Create new SEO metadata record without the custom image
+      const { error: insertError } = await supabase
+        .from('seo_metadata')
+        .insert({
+          daily_published_id: targetDailyPublished.id,
+          user_id: user?.id,
+          og_image_url: null, // Remove the custom image
+          seo_title: currentTitle,
+          seo_description: currentDescription,
+          optimization_status: 'complete',
+          version_number: nextVersion,
+          is_latest: true,
+          is_active: true,
+          source_data: {
+            book_id: bookId,
+            action_type: 'manual_image_removal'
+          }
+        });
+
+      if (insertError) {
+        throw new Error(`Failed to save SEO metadata: ${insertError.message}`);
+      }
+
+      refetch();
+      toast.success('Custom image removed - will use fallback image when shared');
+    } catch (error) {
+      console.error('Remove error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to remove image');
+    }
   };
 
 
@@ -243,7 +539,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
             Social Media Preview
           </CardTitle>
           <CardDescription>
-            SEO metadata is generated automatically when the book is created
+            Customize social media preview with manual uploads or AI-generated content
           </CardDescription>
         </div>
       </CardHeader>

@@ -646,6 +646,20 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                     month: 'long', 
                     day: 'numeric' 
                   })} - Now expired`
+                : existingPublication && existingPublication.status === 'queued'
+                  ? `Scheduled to publish on ${new Date(existingPublication.publish_date).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })} at 7:01 AM ET`
+                : existingPublication && existingPublication.status === 'active'
+                  ? `Currently active, published on ${new Date(existingPublication.publish_date).toLocaleDateString('en-US', { 
+                      weekday: 'long', 
+                      year: 'numeric', 
+                      month: 'long', 
+                      day: 'numeric' 
+                    })} at 7:01 AM ET`
                 : existingPublication && existingPublication.status !== 'draft' 
                   ? `Currently ${existingPublication.status} in the publication queue`
                   : dateLoading 

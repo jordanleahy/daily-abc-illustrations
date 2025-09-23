@@ -32,12 +32,9 @@ export const PageHeader = ({ title = "ABC Cards Platform" }: PageHeaderProps) =>
     navigate('/auth');
   };
 
-  const navigation = [
+  const adminNavigation = [
     { name: 'Chat', href: '/' },
     { name: 'My Books', href: '/books' },
-  ];
-
-  const adminNavigation = [
     { name: 'Agents', href: '/agents' },
     { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },
   ];
@@ -53,15 +50,6 @@ export const PageHeader = ({ title = "ABC Cards Platform" }: PageHeaderProps) =>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex md:items-center md:space-x-6">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-              >
-                {item.name}
-              </Link>
-            ))}
             <AdminOnly>
               {adminNavigation.map((item) => (
                 <Link
@@ -90,17 +78,6 @@ export const PageHeader = ({ title = "ABC Cards Platform" }: PageHeaderProps) =>
                   <SheetTitle>{title}</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 space-y-2">
-                  {/* Navigation Links */}
-                  {navigation.map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
-                  
                   {/* Admin Navigation Links */}
                   <AdminOnly>
                     {adminNavigation.map((item) => (

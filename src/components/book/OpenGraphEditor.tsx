@@ -232,6 +232,12 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // Critical: Validate user is authenticated
+    if (!user?.id) {
+      toast.error('User not authenticated. Please log in and try again.');
+      return;
+    }
+
     // Validate file type
     if (!file.type.startsWith('image/')) {
       toast.error('Please select an image file');
@@ -247,7 +253,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     setIsUploading(true);
     try {
       // Upload to book-covers bucket (consistent with thumbnail generation)
-      const fileName = `${user?.id}/og-${bookId}-${Date.now()}.${file.name.split('.').pop()}`;
+      const fileName = `${user.id}/og-${bookId}-${Date.now()}.${file.name.split('.').pop()}`;
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('book-covers')
         .upload(fileName, file);
@@ -263,10 +269,22 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         throw new Error('Failed to get public URL for uploaded image');
       }
 
+      // Verify book ownership first (critical for RLS)
+      const { data: bookData, error: bookError } = await supabase
+        .from('books')
+        .select('id, user_id')
+        .eq('id', bookId)
+        .eq('user_id', user.id)
+        .single();
+
+      if (bookError || !bookData) {
+        throw new Error('Book not found or access denied');
+      }
+
       // Find the appropriate daily_published entry for this book
       const { data: dailyPublishedEntries, error: dailyError } = await supabase
         .from('daily_published')
-        .select('id, status, created_at')
+        .select('id, status, created_at, book_id')
         .eq('book_id', bookId)
         .order('created_at', { ascending: false });
 
@@ -294,6 +312,13 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         targetDailyPublished = dailyPublishedEntries[0]; // Fallback to most recent
       }
 
+      console.log('🔧 [Upload Debug] Target daily published:', {
+        id: targetDailyPublished.id,
+        status: targetDailyPublished.status,
+        book_id: targetDailyPublished.book_id,
+        user_id: user.id
+      });
+
       // Get next version number for SEO metadata
       const { data: versionData, error: versionError } = await supabase
         .rpc('get_next_seo_version_number', { p_daily_published_id: targetDailyPublished.id });
@@ -305,33 +330,47 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
       const nextVersion = versionData || 1;
 
       // Update existing SEO metadata to mark as not latest
-      await supabase
+      const { error: updateError } = await supabase
         .from('seo_metadata')
         .update({ is_latest: false })
         .eq('daily_published_id', targetDailyPublished.id)
         .eq('is_latest', true);
 
+      if (updateError) {
+        console.warn('Failed to update existing SEO metadata:', updateError);
+      }
+
       // Create new SEO metadata record with the uploaded image
+      const seoMetadataInsert = {
+        daily_published_id: targetDailyPublished.id,
+        user_id: user.id, // Explicitly set user_id for RLS
+        og_image_url: publicUrl.publicUrl,
+        seo_title: currentTitle,
+        seo_description: currentDescription,
+        optimization_status: 'complete' as const,
+        version_number: nextVersion,
+        is_latest: true,
+        is_active: true,
+        source_data: {
+          book_id: bookId,
+          upload_type: 'manual_image_upload',
+          original_filename: file.name
+        }
+      };
+
+      console.log('🔧 [Upload Debug] Inserting SEO metadata:', seoMetadataInsert);
+
       const { error: insertError } = await supabase
         .from('seo_metadata')
-        .insert({
-          daily_published_id: targetDailyPublished.id,
-          user_id: user?.id,
-          og_image_url: publicUrl.publicUrl,
-          seo_title: currentTitle,
-          seo_description: currentDescription,
-          optimization_status: 'complete',
-          version_number: nextVersion,
-          is_latest: true,
-          is_active: true,
-          source_data: {
-            book_id: bookId,
-            upload_type: 'manual_image_upload',
-            original_filename: file.name
-          }
-        });
+        .insert(seoMetadataInsert);
 
       if (insertError) {
+        console.error('🚨 [Upload Debug] Insert error details:', {
+          error: insertError,
+          code: insertError.code,
+          message: insertError.message,
+          details: insertError.details
+        });
         throw new Error(`Failed to save SEO metadata: ${insertError.message}`);
       }
 

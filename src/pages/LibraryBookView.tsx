@@ -28,12 +28,13 @@ export default function LibraryBookView() {
 
   const isLoading = isLoadingDaily || isLoadingPages;
 
-  // Redirect to library if content is expired
-  useEffect(() => {
-    if (!isLoadingDaily && isExpired) {
-      navigate('/library', { replace: true });
-    }
-  }, [isLoadingDaily, isExpired, navigate]);
+  // Don't redirect for library viewing - users should be able to view their own books
+  // regardless of publication status
+  // useEffect(() => {
+  //   if (!isLoadingDaily && isExpired) {
+  //     navigate('/library', { replace: true });
+  //   }
+  // }, [isLoadingDaily, isExpired, navigate]);
 
   const handleBack = () => {
     navigate('/library');

@@ -29,6 +29,7 @@ import { ProgressConsole, type ProgressMessage } from '@/components/ProgressCons
 import { ProcessStatus } from '@/types/process';
 import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import { InlineEditInput } from '@/components/ui/inline-edit-input';
 
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
@@ -54,6 +55,8 @@ export default function BookDetail() {
   const [generateAllPromptsLoading, setGenerateAllPromptsLoading] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [isEditingCategory, setIsEditingCategory] = useState(false);
   
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
@@ -221,6 +224,56 @@ export default function BookDetail() {
       toast.error('An error occurred while deleting the book');
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleUpdateBookName = async (newName: string) => {
+    if (!book?.id || newName === book.book_name) {
+      setIsEditingTitle(false);
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({ book_name: newName })
+        .eq('id', book.id);
+
+      if (error) throw error;
+
+      // Invalidate and refetch the book query
+      queryClient.invalidateQueries({ queryKey: ['book', book.id] });
+      toast.success('Book title updated successfully');
+    } catch (error) {
+      console.error('Error updating book name:', error);
+      toast.error('Failed to update book title');
+    } finally {
+      setIsEditingTitle(false);
+    }
+  };
+
+  const handleUpdateCategory = async (newCategory: string) => {
+    if (!book?.id || newCategory === book.category) {
+      setIsEditingCategory(false);
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({ category: newCategory })
+        .eq('id', book.id);
+
+      if (error) throw error;
+
+      // Invalidate and refetch the book query
+      queryClient.invalidateQueries({ queryKey: ['book', book.id] });
+      toast.success('Book theme updated successfully');
+    } catch (error) {
+      console.error('Error updating book theme:', error);
+      toast.error('Failed to update book theme');
+    } finally {
+      setIsEditingCategory(false);
     }
   };
   if (authLoading || (user && !bookFetched)) {
@@ -440,7 +493,21 @@ export default function BookDetail() {
 
                   <div className="flex justify-between items-start">
                     <div className="space-y-2">
-                      <CardTitle className="text-2xl">{book.book_name}</CardTitle>
+                      <InlineEditInput
+                        value={book.book_name}
+                        onSave={handleUpdateBookName}
+                        isEditing={isEditingTitle}
+                        className="text-2xl font-semibold"
+                        placeholder="Enter book title"
+                        renderDisplay={(value) => (
+                          <CardTitle 
+                            className="text-2xl cursor-pointer hover:text-primary transition-colors" 
+                            onClick={() => setIsEditingTitle(true)}
+                          >
+                            {value}
+                          </CardTitle>
+                        )}
+                      />
                       {book.book_description && (
                         <CardDescription className="text-base">
                           {book.book_description}
@@ -533,7 +600,21 @@ export default function BookDetail() {
                         </div>
                         <div className="flex items-center gap-1">
                           <Users className="w-4 h-4" />
-                          {book.category}
+                          <InlineEditInput
+                            value={book.category || ''}
+                            onSave={handleUpdateCategory}
+                            isEditing={isEditingCategory}
+                            className="text-sm"
+                            placeholder="Enter theme"
+                            renderDisplay={(value) => (
+                              <span 
+                                className="cursor-pointer hover:text-primary transition-colors" 
+                                onClick={() => setIsEditingCategory(true)}
+                              >
+                                {value || 'No theme set'}
+                              </span>
+                            )}
+                          />
                         </div>
                          <Badge variant={book?.status === 'published' ? 'default' : 'secondary'}>
                            {book?.status}

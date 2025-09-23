@@ -265,7 +265,7 @@ function PublicScheduleCard({
             )}
             {isExpired && (
               <>
-                <div className="text-muted-foreground font-semibold">⏰ EXPIRED</div>
+                <div className="text-orange-600 font-semibold">⏰ EXPIRED</div>
                 <div className="text-muted-foreground text-xs">
                   Published {formatScheduleDate(item.publish_date)}
                 </div>
@@ -298,7 +298,7 @@ function PublicScheduleCard({
             )}
             {isExpired && (
               <>
-                <div className="text-muted-foreground font-semibold">⏰ EXPIRED</div>
+                <div className="text-orange-600 font-semibold">⏰ EXPIRED</div>
                 <div className="text-muted-foreground text-xs">
                   Published {formatScheduleDate(item.publish_date)}
                 </div>

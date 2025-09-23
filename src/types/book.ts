@@ -13,6 +13,8 @@ export interface Book {
   category?: string;
   /** Detailed description of the book's content and educational goals */
   book_description?: string;
+  /** AI-generated product description for marketing purposes */
+  product_description?: string;
   /** Total number of pages in the book (typically 26 for A-Z) */
   total_pages: number;
   /** Publication status of the book */

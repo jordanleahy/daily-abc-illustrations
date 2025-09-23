@@ -162,6 +162,7 @@ export type Database = {
           current_system_prompt_id: string | null
           id: string
           pdf_url: string | null
+          product_description: string | null
           status: Database["public"]["Enums"]["publication_status"]
           total_pages: number | null
           updated_at: string
@@ -175,6 +176,7 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           pdf_url?: string | null
+          product_description?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
           total_pages?: number | null
           updated_at?: string
@@ -188,6 +190,7 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           pdf_url?: string | null
+          product_description?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
           total_pages?: number | null
           updated_at?: string

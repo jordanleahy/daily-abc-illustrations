@@ -18,9 +18,10 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Globe, Eye, Copy, History, RefreshCw, ShoppingCart } from 'lucide-react';
+import { FileText, Globe, Eye, Copy, History, RefreshCw, ShoppingCart, Save, Check } from 'lucide-react';
 import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
+import { useBook } from '@/hooks/useBook';
 import { formatScheduleTimestamp } from '@/utils/timezone';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -65,11 +66,14 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const { user } = useAuth();
   const { data: expectedDate, isLoading: dateLoading } = useExpectedPublicationDate(contentId);
   const { generateQRCode } = useBookQRCode(contentType === 'book' ? contentId : undefined);
+  const { data: bookData } = useBook(contentType === 'book' ? contentId : undefined);
   const [existingPublication, setExistingPublication] = useState<any>(null);
   const [publicationHistory, setPublicationHistory] = useState<any[]>([]);
   const [isCheckingPublication, setIsCheckingPublication] = useState(false);
   const [isGeneratingProductDescription, setIsGeneratingProductDescription] = useState(false);
   const [productDescription, setProductDescription] = useState<string>('');
+  const [isProductDescriptionSaved, setIsProductDescriptionSaved] = useState(true);
+  const [isSavingProductDescription, setIsSavingProductDescription] = useState(false);
 
   /**
    * Handles client-side PDF generation for the content
@@ -162,6 +166,16 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
     checkExistingPublication();
   }, [contentId, contentType]);
+
+  /**
+   * Load existing product description from book data
+   */
+  useEffect(() => {
+    if (contentType === 'book' && bookData?.product_description) {
+      setProductDescription(bookData.product_description);
+      setIsProductDescriptionSaved(true);
+    }
+  }, [contentType, bookData?.product_description]);
 
   /**
    * Determines the button text, action, and state based on PDF generation status
@@ -295,6 +309,40 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   };
 
   /**
+   * Saves the product description to the database
+   */
+  const saveProductDescription = async () => {
+    if (contentType !== 'book' || !productDescription.trim()) return;
+    
+    setIsSavingProductDescription(true);
+    
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({ product_description: productDescription.trim() })
+        .eq('id', contentId)
+        .eq('user_id', user?.id);
+
+      if (error) throw error;
+
+      setIsProductDescriptionSaved(true);
+      toast({
+        title: "Product Description Saved!",
+        description: "Your product description has been saved to the database."
+      });
+    } catch (error: any) {
+      console.error('Error saving product description:', error);
+      toast({
+        title: "Save Failed",
+        description: error.message || "Failed to save product description. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSavingProductDescription(false);
+    }
+  };
+
+  /**
    * Generates a sales-focused product description for the book
    */
   const handleGenerateProductDescription = async () => {
@@ -311,9 +359,26 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
       if (data?.productDescription) {
         setProductDescription(data.productDescription);
+        setIsProductDescriptionSaved(false); // Mark as unsaved initially
+        
+        // Auto-save the generated description
+        try {
+          const { error: saveError } = await supabase
+            .from('books')
+            .update({ product_description: data.productDescription })
+            .eq('id', contentId)
+            .eq('user_id', user?.id);
+
+          if (!saveError) {
+            setIsProductDescriptionSaved(true);
+          }
+        } catch (saveError) {
+          console.warn('Auto-save failed, description generated but not saved:', saveError);
+        }
+        
         toast({
           title: "Product Description Generated!",
-          description: "Your sales-focused product description is ready to copy."
+          description: "Your sales-focused product description is ready to copy and has been saved."
         });
       } else {
         throw new Error('No product description generated');
@@ -566,9 +631,21 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           <div className="flex flex-col gap-3 pt-4 border-t">
             <div className="flex items-center justify-between">
               <div className="space-y-1">
-                <h4 className="text-sm font-medium">Product Description</h4>
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  Product Description
+                  {productDescription && (
+                    isProductDescriptionSaved ? (
+                      <Check className="h-4 w-4 text-green-600" />
+                    ) : (
+                      <div className="h-2 w-2 rounded-full bg-orange-500" />
+                    )
+                  )}
+                </h4>
                 <p className="text-sm text-muted-foreground">
                   Sales-focused description for online publishing
+                  {productDescription && !isProductDescriptionSaved && (
+                    <span className="text-orange-600 ml-1">(Unsaved changes)</span>
+                  )}
                 </p>
               </div>
               <div className="flex items-center gap-2">
@@ -581,6 +658,17 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                   <ShoppingCart className="h-4 w-4" />
                   {isGeneratingProductDescription ? 'Generating...' : 'Generate'}
                 </Button>
+                {productDescription && !isProductDescriptionSaved && (
+                  <Button 
+                    onClick={saveProductDescription}
+                    disabled={isSavingProductDescription}
+                    variant="default"
+                    className="flex items-center gap-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    {isSavingProductDescription ? 'Saving...' : 'Save'}
+                  </Button>
+                )}
                 {productDescription && (
                   <Button 
                     onClick={handleCopyProductDescription}

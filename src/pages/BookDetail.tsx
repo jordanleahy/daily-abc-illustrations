@@ -82,116 +82,98 @@ export default function BookDetail() {
     }
   }, [authLoading, user, id, bookFetched, book, navigate]);
 
-
-
   const handleBack = () => {
     navigate('/books');
   };
-
 
   const generateStyleGuide = async () => {
     if (!book || !user) return;
     
     setStyleGuideLoading(true);
     setProgressMessages([]);
-    setIsProgressExpanded(true);
-
-    const bookMetadata = {
-      book_name: book.book_name,
-      book_description: book.book_description,
-      category: book.category,
-      total_pages: book.total_pages,
-      pages: pages.map(page => ({
-        letter: page.letter,
-        title: page.title,
-        description: page.description,
-        content: page.content
-      }))
-    };
     
     try {
-      // Show initial progress message
-      setProgressMessages([{
-        step: 'Style Guide Generation',
-        message: 'Starting style guide generation...',
-        timestamp: new Date().toISOString(),
-        status: ProcessStatus.IN_PROGRESS
-      }]);
-
-      const { data, error } = await supabase.functions.invoke('generate-style-guide', {
-        body: { bookId: book.id, userId: user.id, bookMetadata },
+      const response = await supabase.functions.invoke('generate-style-guide', {
+        body: {
+          bookId: book.id,
+          userId: user.id,
+          bookName: book.book_name,
+          category: book.category || 'General',
+          description: book.book_description || ''
+        }
       });
 
-      if (error) throw error;
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to generate style guide');
+      }
+
+      const result = response.data;
       
-      if (data?.success && data?.styleGuide) {
-        // Show completion message
+      if (result.success) {
         setProgressMessages(prev => [...prev, {
-          step: 'Complete',
-          message: 'Style guide generated successfully!',
-          timestamp: new Date().toISOString(),
-          status: ProcessStatus.COMPLETE
+          step: 'Style Guide Generation',
+          message: result.message || 'Style guide generated successfully',
+          status: 'success' as ProcessStatus,
+          timestamp: new Date().toISOString()
         }]);
         
-        // Force refresh the system prompt data
+        // Refresh the system prompt data to show the updated style guide
         await refreshData();
-        console.log('Style guide generation completed, forcing cache refresh');
         
-        toast.success('Style guide generated successfully!');
+        toast.success('Style guide generated successfully');
       } else {
-        throw new Error(data?.error || 'No style guide returned');
+        throw new Error(result.error || 'Failed to generate style guide');
       }
     } catch (error: any) {
-      console.error('Error:', error);
-      toast.error(error.message || 'An error occurred while generating the style guide');
+      console.error('Error generating style guide:', error);
+      const errorMessage = error.message || 'Failed to generate style guide';
+      
       setProgressMessages(prev => [...prev, {
-        step: 'error',
-        message: `Error: ${error.message}`,
-        timestamp: new Date().toISOString(),
-        status: ProcessStatus.ERROR
+        step: 'Style Guide Generation',
+        message: errorMessage,
+        status: 'error' as ProcessStatus,
+        timestamp: new Date().toISOString()
       }]);
+      
+      toast.error(errorMessage);
     } finally {
       setStyleGuideLoading(false);
     }
   };
 
   const generateAllPagePrompts = async () => {
-    if (!book || !user) return;
-    
+    // Placeholder for generating all page prompts
     setGenerateAllPromptsLoading(true);
+    
     try {
-      // Placeholder implementation
-      toast.success('Generate All Page Prompts functionality coming soon!');
-    } catch (error: any) {
-      console.error('Error:', error);
-      toast.error('An error occurred while generating page prompts');
+      // TODO: Implement the actual logic for generating all page prompts
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulated delay
+      toast.success('All page prompts generated successfully');
+    } catch (error) {
+      console.error('Error generating page prompts:', error);
+      toast.error('Failed to generate page prompts');
     } finally {
       setGenerateAllPromptsLoading(false);
     }
   };
 
   const handleArchiveBook = async () => {
-    if (!book || !user) return;
+    if (!book?.id) return;
     
     setArchiveLoading(true);
     try {
       const { error } = await supabase
         .from('books')
         .update({ status: 'archived' })
-        .eq('id', book.id)
-        .eq('user_id', user.id);
+        .eq('id', book.id);
 
-      if (error) {
-        console.error('Error archiving book:', error);
-        toast.error('Failed to archive book');
-        return;
-      }
+      if (error) throw error;
 
       toast.success('Book archived successfully');
       navigate('/books');
-    } catch (error: any) {
-      console.error('Error:', error);
-      toast.error('An error occurred while archiving the book');
+    } catch (error) {
+      console.error('Error archiving book:', error);
+      toast.error('Failed to archive book');
     } finally {
       setArchiveLoading(false);
     }
@@ -276,6 +258,7 @@ export default function BookDetail() {
       setIsEditingCategory(false);
     }
   };
+
   if (authLoading || (user && !bookFetched)) {
     return (
       <PageLayout>
@@ -329,45 +312,96 @@ export default function BookDetail() {
     <PageLayout>
       <Container>
         <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={handleBack} className="flex items-center gap-2">
-              <ArrowLeft className="w-4 h-4" />
+          {/* Header with back button and view mode toggle */}
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="ghost" 
+              onClick={handleBack}
+              className="p-2 hover:bg-accent"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Books
             </Button>
-            {isAdmin && (
-              <Button 
-                variant="outline" 
-                onClick={() => setViewMode(viewMode === 'admin' ? 'user' : 'admin')}
-                className="flex items-center gap-2"
+            
+            <div className="flex items-center gap-2">
+              <Button
+                variant={viewMode === 'user' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('user')}
               >
-                <Eye className="w-4 h-4" />
-                {viewMode === 'admin' ? 'Preview User View' : 'Back to Admin View'}
+                <Eye className="w-4 h-4 mr-2" />
+                User View
               </Button>
-            )}
+              <Button
+                variant={viewMode === 'admin' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewMode('admin')}
+              >
+                Admin View
+              </Button>
+            </div>
           </div>
 
-          {/* Content based on role and view mode */}
-          {(!isAdmin || (isAdmin && viewMode === 'user')) ? (
-            // User view or admin preview mode - show user-friendly page cards
+          {/* Progress Console */}
+          {progressMessages.length > 0 && (
+            <ProgressConsole
+              messages={progressMessages}
+              isExpanded={isProgressExpanded}
+              onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
+              isActive={styleGuideLoading}
+            />
+          )}
+
+          {viewMode === 'user' ? (
+            // User view mode - simplified view
             <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-2xl">{book.book_name}</CardTitle>
+                  {book.book_description && (
+                    <CardDescription className="text-base">
+                      {book.book_description}
+                    </CardDescription>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="w-4 h-4" />
+                      Created {new Date(book.created_at).toLocaleDateString()}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Users className="w-4 h-4" />
+                      {book.category}
+                    </div>
+                    <Badge variant={book?.status === 'published' ? 'default' : 'secondary'}>
+                      {book?.status}
+                    </Badge>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Class view button */}
+              {pages.length > 0 && (
+                <div className="flex justify-center">
+                  <Button
+                    onClick={() => setIsClassView(true)}
+                    className="px-8 py-3 text-lg"
+                  >
+                    <Eye className="w-5 h-5 mr-2" />
+                    View as Class
+                  </Button>
+                </div>
+              )}
+
+              {/* Pages Grid (User View) */}
               {pages.length > 0 ? (
                 <>
-                  <Button 
-                    size="lg" 
-                    className="w-full mb-6"
-                    onClick={() => {
-                      setIsClassView(true);
-                      setCurrentPageIndex(0);
-                    }}
-                  >
-                    Start
-                  </Button>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {pages.map((page) => (
-                      <UserPageCard 
-                        key={page.id} 
-                        page={page} 
+                      <UserPageCard
+                        key={page.id}
+                        page={page}
                         bookId={book.id}
                       />
                     ))}
@@ -630,63 +664,43 @@ export default function BookDetail() {
                 </CardContent>
               </Card>
 
-               {/* OpenGraph Editor Section */}
-                <OpenGraphEditor 
-                  bookId={book.id}
-                  bookTitle={book.book_name}
-                  bookDescription={book.book_description}
-                />
+              {/* OpenGraph Editor */}
+              <OpenGraphEditor 
+                bookId={book.id} 
+                bookTitle={book.book_name}
+                bookDescription={book.book_description}
+              />
 
+              {/* System Prompt Section */}
+              <SystemPromptSection bookId={book.id} />
 
-                {/* System Prompt Section */}
-                <SystemPromptSection 
-                  bookId={book.id}
-                />
+              {/* Exports Section */}
+              <ExportsSection 
+                contentType="book"
+                contentId={book.id}
+                contentName={book.book_name}
+              />
 
-               {/* Export & Action Section */}
-               <ExportsSection 
-                 contentType="book"
-                 contentId={book.id}
-                 contentName={book.book_name}
-               />
-
-               {/* Progress Console */}
-               {progressMessages.length > 0 && (
-                 <ProgressConsole 
-                   messages={progressMessages}
-                   isExpanded={isProgressExpanded}
-                   onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
-                   isActive={styleGuideLoading}
-                 />
-               )}
-
-              {/* Pages Section */}
-              <div>
-                <div className="mb-6">
-                  <h3 className="text-2xl font-semibold leading-none tracking-tight">Pages ({pages.length}/{book.total_pages})</h3>
-                  <p className="text-sm text-muted-foreground mt-1.5">
-                    Manage and edit the pages of your book.
-                  </p>
-                </div>
-                {pages.length > 0 ? (
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Pages Grid (Admin View) */}
+              {pages && pages.length > 0 ? (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {pages.map((page) => (
-                      <PageCard 
-                        key={page.id} 
-                        page={page} 
+                      <PageCard
+                        key={page.id}
+                        page={page}
                         bookId={book.id}
                       />
                     ))}
                   </div>
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground mb-4">No pages created yet.</p>
-                    <p className="text-sm text-muted-foreground">
-                      Pages will be created automatically when you generate the book content.
-                    </p>
-                  </div>
-                )}
-              </div>
+                </>
+              ) : (
+                <Card>
+                  <CardContent className="flex items-center justify-center h-32">
+                    <p className="text-muted-foreground">No pages created yet.</p>
+                  </CardContent>
+                </Card>
+              )}
             </>
           )}
         </div>

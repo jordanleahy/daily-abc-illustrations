@@ -118,7 +118,7 @@ export default function LibraryBookView() {
           
           {/* Navigation */}
           {!isLastPage && (
-            <div className="px-4 pb-4">
+            <div className="px-24 pb-4">
               <SlideToUnlock onUnlock={handleNext} />
             </div>
           )}

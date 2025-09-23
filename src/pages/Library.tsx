@@ -230,9 +230,7 @@ function PublicScheduleCard({
   } = useSeoMetadata(item.id);
 
   const handleCardClick = () => {
-    if (item.status === 'active') {
-      navigate(`/library/${item.id}`);
-    }
+    navigate(`/library/${item.id}`);
   };
 
   const isActive = item.status === 'active';
@@ -240,8 +238,8 @@ function PublicScheduleCard({
   const isExpired = position === "expired";
 
   return <Card 
-    className={`transition-shadow group ${isActive ? "cursor-pointer hover:shadow-lg" : ""}`} 
-    onClick={isActive ? handleCardClick : undefined}
+    className="transition-shadow group cursor-pointer hover:shadow-lg" 
+    onClick={handleCardClick}
   >
     <CardHeader className="pb-3">
       <div className="flex flex-col md:flex-row gap-3 md:items-center">

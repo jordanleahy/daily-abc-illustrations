@@ -101,7 +101,6 @@ Focus on how this book will help toddlers learn, grow, and have fun while develo
           }
         ],
         max_completion_tokens: 500,
-        top_p: 0.9,
       }),
     });
 

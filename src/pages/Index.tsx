@@ -27,6 +27,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { PageLayout } from '@/components/layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailyPublished } from '@/hooks/useDailyPublished';
+import { useHasRole } from '@/hooks/useUserRole';
+import { AdminOnly } from '@/components/AdminOnly';
 import { toast } from 'sonner';
 
 /**
@@ -58,6 +60,7 @@ interface Message {
 const Index = () => {
   const { session, isAuthenticated, loading } = useAuth();
   const { data: activeDaily, isLoading: isDailyLoading } = useDailyPublished();
+  const isAdmin = useHasRole('admin');
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -90,6 +93,13 @@ const Index = () => {
       navigate(`/daily-published/${activeDaily.id}`, { replace: true });
     }
   }, [activeDaily, loading, isDailyLoading, isAuthenticated, navigate]);
+
+  // Redirect regular authenticated users (non-admin) to library
+  useEffect(() => {
+    if (!loading && isAuthenticated && !isAdmin) {
+      navigate('/library', { replace: true });
+    }
+  }, [loading, isAuthenticated, isAdmin, navigate]);
 
   // Handle scroll events to detect if user scrolled up
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {
@@ -329,7 +339,8 @@ const Index = () => {
 
   return (
     <PageLayout title="ABC Cards Chat" showHeader={true} fullHeight={false}>
-      <div className="flex-1 flex flex-col h-[calc(100vh-3.5rem)]">
+      <AdminOnly>
+        <div className="flex-1 flex flex-col h-[calc(100vh-3.5rem)]">
         {/* Chat Container */}
         <div className="flex-1 flex flex-col max-w-4xl mx-auto w-full p-4 pb-24">
           
@@ -518,7 +529,8 @@ const Index = () => {
             </form>
           </div>
         </div>
-      </div>
+        </div>
+      </AdminOnly>
     </PageLayout>
   );
 };

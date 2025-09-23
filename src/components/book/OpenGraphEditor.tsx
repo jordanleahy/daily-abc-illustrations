@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { useBookPages } from '@/hooks/useBookPages';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
-
+import { getBookCoverUploadInfo } from '@/utils/storagePaths';
 import { useAuth } from '@/hooks/useAuth';
 
 interface OpenGraphEditorProps {
@@ -252,18 +252,22 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
 
     setIsUploading(true);
     try {
-      // Upload to book-covers bucket (consistent with thumbnail generation)
-      const fileName = `${user.id}/og-${bookId}-${Date.now()}.${file.name.split('.').pop()}`;
+      // Upload to book-covers bucket (RLS requires first folder = bookId)
+      const { path: storagePath, contentType } = getBookCoverUploadInfo(bookId, file);
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('book-covers')
-        .upload(fileName, file);
+        .upload(storagePath, file, {
+          contentType,
+          cacheControl: '31536000, immutable',
+          upsert: true,
+        });
 
       if (uploadError) throw uploadError;
 
       // Get public URL
       const { data: publicUrl } = supabase.storage
         .from('book-covers')
-        .getPublicUrl(fileName);
+        .getPublicUrl(storagePath);
 
       if (!publicUrl?.publicUrl) {
         throw new Error('Failed to get public URL for uploaded image');

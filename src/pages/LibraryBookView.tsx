@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useDailyPublishedById } from '@/hooks/useDailyPublishedById';
+import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { MetaHead } from '@/components/common';
@@ -16,9 +16,7 @@ import { SITE_CONFIG } from '@/config/site';
 export default function LibraryBookView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: result, isLoading: isLoadingDaily, error: dailyError } = useDailyPublishedById(id);
-  const dailyContent = result?.data;
-  const isExpired = result?.isExpired;
+  const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(id);
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -27,14 +25,6 @@ export default function LibraryBookView() {
   const { openGraphMetadata } = useDailyPublishedOpenGraph(id, currentPageIndex);
 
   const isLoading = isLoadingDaily || isLoadingPages;
-
-  // Don't redirect for library viewing - users should be able to view their own books
-  // regardless of publication status
-  // useEffect(() => {
-  //   if (!isLoadingDaily && isExpired) {
-  //     navigate('/library', { replace: true });
-  //   }
-  // }, [isLoadingDaily, isExpired, navigate]);
 
   const handleBack = () => {
     navigate('/library');
@@ -59,10 +49,10 @@ export default function LibraryBookView() {
           <div className="p-6 text-center space-y-4">
             <div className="flex items-center justify-center gap-2">
               <Calendar className="h-5 w-5" />
-              <h2 className="text-lg font-semibold">Content Not Available</h2>
+              <h2 className="text-lg font-semibold">Book Not Found</h2>
             </div>
             <p className="text-sm text-muted-foreground">
-              This content is no longer available or may have expired.
+              This book could not be found in your library.
             </p>
           </div>
         </Card>

@@ -319,59 +319,60 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         user_id: user.id
       });
 
-      // Get next version number for SEO metadata
-      const { data: versionData, error: versionError } = await supabase
-        .rpc('get_next_seo_version_number', { p_daily_published_id: targetDailyPublished.id });
-
-      if (versionError) {
-        console.error('Failed to get version number, using 1:', versionError);
-      }
-
-      const nextVersion = versionData || 1;
-
-      // Update existing SEO metadata to mark as not latest
-      const { error: updateError } = await supabase
+      // Update existing latest SEO metadata in place (RLS-friendly)
+      const { data: updatedRows, error: updateLatestError } = await supabase
         .from('seo_metadata')
-        .update({ is_latest: false })
+        .update({
+          og_image_url: publicUrl.publicUrl,
+          seo_title: currentTitle,
+          seo_description: currentDescription,
+          is_active: true,
+          is_latest: true,
+        })
         .eq('daily_published_id', targetDailyPublished.id)
-        .eq('is_latest', true);
+        .eq('is_latest', true)
+        .select('id');
 
-      if (updateError) {
-        console.warn('Failed to update existing SEO metadata:', updateError);
+      if (updateLatestError) {
+        console.warn('⚠️ Update latest SEO metadata failed, will try insert fallback:', updateLatestError);
       }
 
-      // Create new SEO metadata record with the uploaded image
-      const seoMetadataInsert = {
-        daily_published_id: targetDailyPublished.id,
-        user_id: user.id, // Explicitly set user_id for RLS
-        og_image_url: publicUrl.publicUrl,
-        seo_title: currentTitle,
-        seo_description: currentDescription,
-        optimization_status: 'complete' as const,
-        version_number: nextVersion,
-        is_latest: true,
-        is_active: true,
-        source_data: {
-          book_id: bookId,
-          upload_type: 'manual_image_upload',
-          original_filename: file.name
+      if (!updatedRows || updatedRows.length === 0) {
+        // Fallback: create a new versioned row
+        const { data: versionData } = await supabase
+          .rpc('get_next_seo_version_number', { p_daily_published_id: targetDailyPublished.id });
+        const nextVersion = versionData || 1;
+
+        // Mark any existing latest row as not latest (best effort)
+        await supabase
+          .from('seo_metadata')
+          .update({ is_latest: false })
+          .eq('daily_published_id', targetDailyPublished.id)
+          .eq('is_latest', true);
+
+        const { error: insertError } = await supabase
+          .from('seo_metadata')
+          .insert({
+            daily_published_id: targetDailyPublished.id,
+            user_id: user.id,
+            og_image_url: publicUrl.publicUrl,
+            seo_title: currentTitle,
+            seo_description: currentDescription,
+            optimization_status: 'complete',
+            version_number: nextVersion,
+            is_latest: true,
+            is_active: true,
+            source_data: {
+              book_id: bookId,
+              upload_type: 'manual_image_upload',
+              original_filename: file.name
+            }
+          });
+
+        if (insertError) {
+          console.error('🚨 [Upload Debug] Insert error details:', insertError);
+          throw new Error(`Failed to save SEO metadata: ${insertError.message}`);
         }
-      };
-
-      console.log('🔧 [Upload Debug] Inserting SEO metadata:', seoMetadataInsert);
-
-      const { error: insertError } = await supabase
-        .from('seo_metadata')
-        .insert(seoMetadataInsert);
-
-      if (insertError) {
-        console.error('🚨 [Upload Debug] Insert error details:', {
-          error: insertError,
-          code: insertError.code,
-          message: insertError.message,
-          details: insertError.details
-        });
-        throw new Error(`Failed to save SEO metadata: ${insertError.message}`);
       }
 
       refetch();
@@ -419,40 +420,22 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         targetDailyPublished = dailyPublishedEntries[0];
       }
 
-      // Get next version number for SEO metadata
-      const { data: versionData, error: versionError } = await supabase
-        .rpc('get_next_seo_version_number', { p_daily_published_id: targetDailyPublished.id });
-
-      const nextVersion = versionData || 1;
-
-      // Update existing SEO metadata to mark as not latest
-      await supabase
+      // Update latest SEO metadata to remove custom image (RLS-friendly)
+      const { data: updatedRows, error: updateError } = await supabase
         .from('seo_metadata')
-        .update({ is_latest: false })
+        .update({ og_image_url: null })
         .eq('daily_published_id', targetDailyPublished.id)
-        .eq('is_latest', true);
+        .eq('is_latest', true)
+        .select('id');
 
-      // Create new SEO metadata record without the custom image
-      const { error: insertError } = await supabase
-        .from('seo_metadata')
-        .insert({
-          daily_published_id: targetDailyPublished.id,
-          user_id: user?.id,
-          og_image_url: null, // Remove the custom image
-          seo_title: currentTitle,
-          seo_description: currentDescription,
-          optimization_status: 'complete',
-          version_number: nextVersion,
-          is_latest: true,
-          is_active: true,
-          source_data: {
-            book_id: bookId,
-            action_type: 'manual_image_removal'
-          }
-        });
+      if (updateError) {
+        throw new Error(updateError.message);
+      }
 
-      if (insertError) {
-        throw new Error(`Failed to save SEO metadata: ${insertError.message}`);
+      if (!updatedRows || updatedRows.length === 0) {
+        // No existing row to update; nothing else to do
+        toast.message('No custom image was set');
+        return;
       }
 
       refetch();

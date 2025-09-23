@@ -57,8 +57,65 @@ serve(async (req) => {
       hasDescription: !!bookData.book_description
     });
 
-    // Create sales-focused prompt for toddler audience
-    const prompt = `Create a compelling product description for this children's ABC book that will drive sales. 
+    // Helper function to try generating with OpenAI
+    const tryOpenAI = async (model: string, systemPrompt: string, userPrompt: string, attempt: number = 1) => {
+      console.log(`Attempt ${attempt}: Making OpenAI API call with model ${model}`);
+      
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${openAIApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+          ],
+          max_completion_tokens: 500,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error(`OpenAI API error (attempt ${attempt}):`, errorData);
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log(`OpenAI response (attempt ${attempt}):`, { 
+        hasChoices: !!data.choices, 
+        choicesLength: data.choices?.length,
+        finishReason: data.choices?.[0]?.finish_reason,
+        hasContent: !!data.choices?.[0]?.message?.content,
+        contentLength: data.choices?.[0]?.message?.content?.length || 0
+      });
+
+      if (!data.choices || data.choices.length === 0) {
+        throw new Error(`No response generated from OpenAI (attempt ${attempt})`);
+      }
+
+      const choice = data.choices[0];
+      const content = choice.message?.content;
+      
+      // Log detailed response info for debugging
+      console.log(`Raw content (attempt ${attempt}):`, { 
+        content, 
+        finishReason: choice.finish_reason,
+        refusal: choice.message?.refusal || 'none'
+      });
+
+      if (!content || content.trim().length === 0) {
+        console.warn(`Empty content received (attempt ${attempt}). Finish reason: ${choice.finish_reason}`);
+        return null;
+      }
+
+      return content.trim();
+    };
+
+    // Primary prompt - sales-focused for toddlers
+    const primaryPrompt = `Create a compelling product description for this children's ABC book.
 
 Book Title: "${bookData.book_name}"
 Book Description: "${bookData.book_description || 'Educational ABC book for children'}"
@@ -66,59 +123,73 @@ Category: "${bookData.category || 'Early Learning'}"
 
 TARGET AUDIENCE: Parents of toddlers (ages 1-3)
 
-REQUIREMENTS:
-- Sales-focused and persuasive tone
-- Emphasize immediate benefits for toddlers
-- Include urgency elements ("get today", "limited time", etc.)
-- Highlight educational value and development benefits
-- Use emotional appeal to parents
-- Include key benefits and features
-- Add a strong call-to-action
-- Keep it under 200 words
-- Make it engaging and easy to read
+Write a persuasive product description that:
+- Highlights educational benefits for toddlers
+- Uses emotional appeal to parents
+- Emphasizes learning and development value
+- Includes key features and benefits
+- Keeps under 200 words
+- Makes parents excited to get this book
 
-Focus on how this book will help toddlers learn, grow, and have fun while developing essential early literacy skills. Make parents feel this is a must-have educational tool they should get today.`;
+Focus on how this ABC book will help toddlers develop literacy skills while having fun.`;
 
-    console.log('Making OpenAI API call with sales-focused prompt');
+    // Fallback prompt - simpler and safer
+    const fallbackPrompt = `Write a product description for this educational ABC book for toddlers:
 
-    // Call OpenAI API
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-5-2025-08-07',
-        messages: [
-          {
-            role: 'system',
-            content: 'You are a expert copywriter specializing in children\'s educational products. Create compelling, sales-driven product descriptions that convert browsers into buyers.'
-          },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_completion_tokens: 500,
-      }),
-    });
+Title: "${bookData.book_name}"
+Description: "${bookData.book_description || 'Educational ABC book for children'}"
+Category: "${bookData.category || 'Early Learning'}"
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${response.status}`);
+Create a 150-word description that explains:
+- What the book teaches
+- Why it's good for toddlers (ages 1-3)
+- How it helps with learning
+- What makes it special
+
+Write in a friendly, parent-focused tone.`;
+
+    const systemPrompt = 'You are an expert copywriter specializing in children\'s educational products. Create engaging, clear product descriptions that help parents understand the value.';
+    const fallbackSystemPrompt = 'You are a helpful writer creating educational product descriptions. Write clear, informative descriptions for parents.';
+
+    let productDescription: string | null = null;
+
+    try {
+      // First attempt with primary model and prompt
+      productDescription = await tryOpenAI('gpt-5-2025-08-07', systemPrompt, primaryPrompt, 1);
+      
+      if (!productDescription) {
+        console.log('Primary attempt returned empty content, trying fallback...');
+        // Fallback attempt with different model and simpler prompt
+        productDescription = await tryOpenAI('gpt-5-mini-2025-08-07', fallbackSystemPrompt, fallbackPrompt, 2);
+      }
+      
+    } catch (error) {
+      console.error('Primary attempt failed:', error);
+      console.log('Trying fallback model and prompt...');
+      
+      try {
+        // Fallback attempt after primary failure
+        productDescription = await tryOpenAI('gpt-5-mini-2025-08-07', fallbackSystemPrompt, fallbackPrompt, 2);
+      } catch (fallbackError) {
+        console.error('Fallback attempt also failed:', fallbackError);
+        throw new Error('Both primary and fallback AI generation attempts failed');
+      }
     }
 
-    const data = await response.json();
-    console.log('OpenAI response received:', { hasChoices: !!data.choices, choicesLength: data.choices?.length });
-
-    if (!data.choices || data.choices.length === 0) {
-      throw new Error('No response generated from OpenAI');
+    if (!productDescription || productDescription.length === 0) {
+      console.error('All generation attempts returned empty content');
+      return new Response(JSON.stringify({ 
+        error: 'Generation failed - no content produced',
+        details: 'AI model returned empty response despite successful API calls',
+        bookTitle: bookData.book_name,
+        debug: 'Check edge function logs for detailed response information'
+      }), {
+        status: 502,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
     }
 
-    const productDescription = data.choices[0].message.content.trim();
-    console.log('Generated product description length:', productDescription.length);
+    console.log('Final product description length:', productDescription.length);
 
     console.log('=== Function completed successfully ===');
 

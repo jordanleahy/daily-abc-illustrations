@@ -32,6 +32,10 @@ export const PageHeader = ({ title = "ABC Cards Platform" }: PageHeaderProps) =>
     navigate('/auth');
   };
 
+  const regularNavigation = [
+    { name: 'Library', href: '/library' },
+  ];
+
   const adminNavigation = [
     { name: 'Chat', href: '/' },
     { name: 'My Books', href: '/books' },
@@ -50,17 +54,30 @@ export const PageHeader = ({ title = "ABC Cards Platform" }: PageHeaderProps) =>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex md:items-center md:space-x-6">
-            <AdminOnly>
-              {adminNavigation.map((item) => (
-                <Link
-                  key={item.name}
-                  to={item.href}
-                  className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-                >
-                  {item.name}
-                </Link>
-              ))}
-            </AdminOnly>
+            {isAuthenticated && (
+              <>
+                {regularNavigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+                <AdminOnly>
+                  {adminNavigation.map((item) => (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className="text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      {item.name}
+                    </Link>
+                  ))}
+                </AdminOnly>
+              </>
+            )}
           </nav>
 
           {/* Mobile Menu / Auth Buttons */}
@@ -78,18 +95,33 @@ export const PageHeader = ({ title = "ABC Cards Platform" }: PageHeaderProps) =>
                   <SheetTitle>{title}</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 space-y-2">
-                  {/* Admin Navigation Links */}
-                  <AdminOnly>
-                    {adminNavigation.map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </AdminOnly>
+                  {/* Regular User Navigation Links */}
+                  {isAuthenticated && (
+                    <>
+                      {regularNavigation.map((item) => (
+                        <Link
+                          key={item.name}
+                          to={item.href}
+                          className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        >
+                          {item.name}
+                        </Link>
+                      ))}
+                      
+                      {/* Admin Navigation Links */}
+                      <AdminOnly>
+                        {adminNavigation.map((item) => (
+                          <Link
+                            key={item.name}
+                            to={item.href}
+                            className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                          >
+                            {item.name}
+                          </Link>
+                        ))}
+                      </AdminOnly>
+                    </>
+                  )}
                   
                   {/* User Section */}
                   {isAuthenticated ? (

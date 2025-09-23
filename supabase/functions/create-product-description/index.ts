@@ -153,7 +153,24 @@ Create a 150-word description that explains:
 
 Write in a friendly, parent-focused tone.`;
 
-    const systemPrompt = 'You are an expert copywriter specializing in children\'s educational products. Create engaging, clear product descriptions that help parents understand the value.';
+    const systemPrompt = `You are an expert children's education copywriter specializing in marketing books to parents of toddlers (ages 1–3).  
+Your job is to take a given TITLE and RAW DESCRIPTION of a toddler learning book and rewrite it into a polished, benefit-driven description that appeals to parents.  
+
+OUTPUT REQUIREMENTS:  
+- Start with a short, engaging headline that highlights the book's value for toddlers.  
+- Clearly mention the target age range (1–3 years old) early in the description.  
+- Focus on benefits for the child (letter recognition, language development, imagination, love of reading).  
+- Use warm, encouraging, parent-friendly language that balances **educational value** and **emotional appeal**.  
+- If relevant, include 3–4 short bullet points showing how the book supports learning.  
+- End with a closing line that ties the theme of the book to a child's learning journey.  
+- Keep the tone clear, inspiring, and easy to scan for online shoppers (e.g., Amazon product listings).  
+
+Always rewrite into a version that is:  
+- Parent-focused (why they should buy)  
+- Child-benefit oriented (how it helps development)  
+- Concise but emotionally engaging  
+
+Do not copy text directly—restructure and reframe it to highlight what parents care about most.`;
     const fallbackSystemPrompt = 'You are a helpful writer creating educational product descriptions. Write clear, informative descriptions for parents.';
 
     let productDescription: string | null = null;

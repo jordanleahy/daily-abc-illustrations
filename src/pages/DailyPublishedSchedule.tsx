@@ -255,14 +255,14 @@ export default function DailyPublishedScheduleSimple() {
                   <Clock className="h-4 w-4" />
                   Show {expiredItems.length} expired items
                 </summary>
-                <div className="mt-4 space-y-2 opacity-60">
+                <div className="mt-4 space-y-4 opacity-60">
                   {expiredItems.map((item) => (
-                    <div key={item.id} className="text-sm p-3 bg-muted rounded-lg">
-                      <div className="flex justify-between items-center">
-                        <span>{item.title} • {item.book.book_name}</span>
-                        <span className="text-xs">{formatScheduleDate(item.publish_date)}</span>
-                      </div>
-                    </div>
+                    <ScheduleCard 
+                      key={item.id} 
+                      item={item}
+                      position="expired"
+                      isDraggable={false}
+                    />
                   ))}
                 </div>
               </details>
@@ -316,7 +316,7 @@ type ScheduleCardItem = DailyPublishedWithBook;
 
 interface ScheduleCardProps {
   item: ScheduleCardItem;
-  position: number | "active";
+  position: number | "active" | "expired";
   isDraggable?: boolean;
 }
 
@@ -354,6 +354,7 @@ function ScheduleCard({
 
   const isActive = item.status === 'active';
   const isQueued = item.status === 'queued' && typeof position === 'number';
+  const isExpired = item.status === 'expired';
 
   const cardContent = (
     <Card className="cursor-pointer hover:shadow-lg transition-shadow group" onClick={handleCardClick}>
@@ -382,6 +383,14 @@ function ScheduleCard({
                     <div className="text-blue-600">📅 Position #{position}</div>
                     <div className="text-muted-foreground text-xs">
                       Publishes {position === 1 ? 'Tomorrow' : `in ${position} days`} at 7:01 AM ET
+                    </div>
+                  </>
+                )}
+                {isExpired && (
+                  <>
+                    <div className="text-muted-foreground font-semibold">⏰ EXPIRED</div>
+                    <div className="text-muted-foreground text-xs">
+                      Published {formatScheduleDate(item.publish_date)}
                     </div>
                   </>
                 )}
@@ -456,6 +465,14 @@ function ScheduleCard({
                       <div className="text-blue-600">📅 Position #{position}</div>
                       <div className="text-muted-foreground text-xs">
                         Publishes {position === 1 ? 'Tomorrow' : `in ${position} days`} at 7:01 AM ET
+                      </div>
+                    </>
+                  )}
+                  {isExpired && (
+                    <>
+                      <div className="text-muted-foreground font-semibold">⏰ EXPIRED</div>
+                      <div className="text-muted-foreground text-xs">
+                        Published {formatScheduleDate(item.publish_date)}
                       </div>
                     </>
                   )}

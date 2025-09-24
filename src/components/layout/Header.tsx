@@ -55,12 +55,6 @@ import { Container } from './Container';
  *   showQRCode={true}
  * />
  * 
- * @example
- * // With back navigation
- * <Header 
- *   title="Edit Mode"
- *   onBack={() => history.goBack()}
- * />
  */
 interface HeaderProps {
   /** Header title text - defaults to "ABC Cards Platform" */
@@ -71,8 +65,6 @@ interface HeaderProps {
   bookId?: string;
   /** Whether to show the QR code sharing functionality */
   showQRCode?: boolean;
-  /** Handler for back navigation - shows back button when provided */
-  onBack?: () => void;
 }
 
 /**
@@ -84,8 +76,7 @@ export function Header({
   title = "ABC Cards Platform",
   subtitle,
   bookId,
-  showQRCode = true,
-  onBack
+  showQRCode = true
 }: HeaderProps) {
   const { isAuthenticated, user, signOut } = useAuth();
   const isAdmin = useHasRole('admin');
@@ -101,12 +92,10 @@ export function Header({
 
   /** 
    * Smart title click navigation based on user state and context
-   * Prioritizes back navigation, then role-appropriate default routes
+   * Routes to role-appropriate default routes
    */
   const handleTitleClick = () => {
-    if (onBack) {
-      onBack();
-    } else if (isAdmin) {
+    if (isAdmin) {
       navigate('/agents'); // Admin default route
     } else if (isAuthenticated) {
       navigate('/library');
@@ -192,22 +181,8 @@ export function Header({
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container>
         <div className="flex h-14 items-center justify-between">
-          {/* Left section: Back navigation + Admin indicator */}
-          <div className="flex items-center gap-3">
-            {onBack && (
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={onBack} 
-                className={`p-2 h-8 rounded border ${isAdmin ? 'border-primary/30 hover:bg-primary/10' : 'border-border hover:bg-muted'}`}
-              >
-                <span className="text-xs">← Back</span>
-              </Button>
-            )}
-          </div>
-          
-          {/* Middle section: Title and subtitle */}
-          <div className="flex flex-col items-center">
+          {/* Left section: Subtitle */}
+          <div className="flex flex-col">
             {subtitle && (
               <div className="text-xs text-muted-foreground">
                 {subtitle}

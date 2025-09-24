@@ -29,7 +29,7 @@ const Agents = () => {
 
   if (isInitialLoading) {
     return (
-      <PageLayout title="Agent Configuration" showHeader={true}>
+      <PageLayout showHeader={true}>
         <Container size="xl" className="py-8">
           <div className="flex items-center justify-center h-64">
             <div className="text-center space-y-2">
@@ -43,7 +43,7 @@ const Agents = () => {
   }
 
   return (
-    <PageLayout title="Agent Configuration" showHeader={true}>
+    <PageLayout showHeader={true}>
       <Container size="xl" className="py-8">
         <div className="space-y-8">
           {/* Header */}

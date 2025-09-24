@@ -128,12 +128,6 @@ export function Header({
     { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },
   ];
 
-  /** Admin panel specific navigation with system management tools */
-  const adminPanelNavigation = [
-    { name: 'Agents', icon: Activity, route: '/agents' },
-    { name: 'Users', icon: Users, route: '/admin/users' },
-    { name: 'Settings', icon: Settings, route: '/admin/settings' },
-  ];
 
   // UNAUTHENTICATED STATE: Public header with authentication prompts
   if (!isAuthenticated) {
@@ -286,37 +280,6 @@ export function Header({
           
           {/* Right section: Admin controls + QR button */}
           <div className="flex items-center gap-2">
-            {/* Admin Menu */}
-            {isAdmin && (
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="sm" className="p-1 h-8 w-8 rounded border border-primary/30 hover:bg-primary/10">
-                    <Settings className="w-4 h-4" />
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="right" className="w-80">
-                  <SheetHeader>
-                    <SheetTitle className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-primary rounded-full"></div>
-                      Admin Panel
-                    </SheetTitle>
-                  </SheetHeader>
-                  <div className="mt-6 space-y-2">
-                    {adminPanelNavigation.map((item) => (
-                      <Button
-                        key={item.name}
-                        variant="ghost"
-                        className="w-full justify-start"
-                        onClick={() => navigate(item.route)}
-                      >
-                        <item.icon className="mr-2 h-4 w-4" />
-                        {item.name}
-                      </Button>
-                    ))}
-                  </div>
-                </SheetContent>
-              </Sheet>
-            )}
 
             {/* Mobile Menu for authenticated users */}
             <Sheet>

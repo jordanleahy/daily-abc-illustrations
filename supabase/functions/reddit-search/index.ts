@@ -272,7 +272,7 @@ async function searchReddit(
       ...post,
       relevance_score: computeRelevanceScore(post, query)
     }))
-    .filter(post => post.relevance_score > 0.5) // Only include posts with decent relevance
+    // No relevance threshold - include all posts that pass content filtering
     .sort((a, b) => b.relevance_score - a.relevance_score); // Sort by relevance
   
   // Deduplicate results

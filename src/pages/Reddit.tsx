@@ -1,12 +1,15 @@
+import { useState } from 'react';
 import { PageLayout } from '@/components/layout';
 import { RedditConversationCard } from '@/components/reddit/RedditConversationCard';
 import { RedditCardSkeleton } from '@/components/reddit/RedditCardSkeleton';
+import { RedditSearchBar } from '@/components/reddit/RedditSearchBar';
 import { useRedditSearch } from '@/hooks/useRedditSearch';
 import { mockRedditPosts } from '@/data/mockRedditData';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Reddit = () => {
-  const { data: redditPosts, isLoading, error } = useRedditSearch();
+  const [searchQuery, setSearchQuery] = useState('ABC learning alphabet letters children education');
+  const { data: redditPosts, isLoading, error } = useRedditSearch(searchQuery);
 
   return (
     <PageLayout title="Reddit ABC Learning Conversations">
@@ -16,6 +19,11 @@ const Reddit = () => {
             Discover conversations about ABC learning across Reddit communities
           </p>
         </div>
+        
+        <RedditSearchBar 
+          onSearch={setSearchQuery}
+          currentQuery={searchQuery}
+        />
         
         {error && (
           <Alert className="mb-6">

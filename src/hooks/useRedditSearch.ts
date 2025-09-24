@@ -52,13 +52,13 @@ const generateLearningTags = (title: string, selftext: string): string[] => {
   return tags.slice(0, 3); // Limit to 3 tags
 };
 
-export const useRedditSearch = () => {
+export const useRedditSearch = (query: string = 'ABC learning alphabet letters children education') => {
   return useQuery({
-    queryKey: ['reddit-search', 'abc-learning'],
+    queryKey: ['reddit-search', query],
     queryFn: async (): Promise<RedditPost[]> => {
       const { data, error } = await supabase.functions.invoke('reddit-search', {
         body: { 
-          query: 'ABC learning alphabet letters children education',
+          query,
           limit: 10
         }
       });

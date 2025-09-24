@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, User, LogOut, QrCode, Settings, Users, Activity } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -91,6 +91,7 @@ export function Header({
   const isAdmin = useHasRole('admin');
   const { qrCodeData } = useBookQRCode(bookId || '');
   const navigate = useNavigate();
+  const location = useLocation();
 
   /** Sign out handler with automatic redirect to authentication page */
   const handleSignOut = async () => {
@@ -235,6 +236,53 @@ export function Header({
               </div>
             )}
           </div>
+          
+          {/* Desktop Navigation */}
+          <nav className="hidden md:flex items-center space-x-1">
+            {isAdmin ? (
+              <>
+                {adminNavigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      location.pathname === item.href
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </>
+            ) : (
+              <>
+                <Link
+                  to="/"
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    location.pathname === '/'
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
+                >
+                  Home
+                </Link>
+                {regularNavigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      location.pathname === item.href
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </>
+            )}
+          </nav>
           
           {/* Right section: Admin controls + QR button */}
           <div className="flex items-center gap-2">

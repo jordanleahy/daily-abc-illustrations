@@ -191,9 +191,9 @@ export function Header({
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container>
-        <div className="grid grid-cols-3 h-14 items-center">
+        <div className="flex h-14 items-center justify-between">
           {/* Left section: Back navigation + Admin indicator */}
-          <div className="flex items-center gap-3 justify-self-start">
+          <div className="flex items-center gap-3">
             {onBack && (
               <Button 
                 variant="ghost" 
@@ -207,7 +207,7 @@ export function Header({
           </div>
           
           {/* Middle section: Title and subtitle */}
-          <div className="flex flex-col items-center justify-self-center">
+          <div className="flex flex-col items-center">
             {subtitle && (
               <div className="text-xs text-muted-foreground">
                 {subtitle}
@@ -263,7 +263,7 @@ export function Header({
           </nav>
           
           {/* Right section: Admin controls + QR button */}
-          <div className="flex items-center gap-2 justify-self-end">
+          <div className="flex items-center gap-2">
 
             {/* Mobile Menu for authenticated users */}
             <Sheet>

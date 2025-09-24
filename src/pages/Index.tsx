@@ -27,7 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PageLayout } from '@/components/layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailyPublished } from '@/hooks/useDailyPublished';
-import { useHasRole } from '@/hooks/useUserRole';
+import { useHasRole, useUserRole } from '@/hooks/useUserRole';
 import { AdminOnly } from '@/components/AdminOnly';
 import { toast } from 'sonner';
 
@@ -60,6 +60,7 @@ interface Message {
 const Index = () => {
   const { session, isAuthenticated, loading } = useAuth();
   const { data: activeDaily, isLoading: isDailyLoading } = useDailyPublished();
+  const userRole = useUserRole();
   const isAdmin = useHasRole('admin');
   const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -96,10 +97,10 @@ const Index = () => {
 
   // Redirect regular authenticated users (non-admin) to library
   useEffect(() => {
-    if (!loading && isAuthenticated && !isAdmin) {
+    if (!loading && !userRole.isLoading && isAuthenticated && !isAdmin) {
       navigate('/library', { replace: true });
     }
-  }, [loading, isAuthenticated, isAdmin, navigate]);
+  }, [loading, userRole.isLoading, isAuthenticated, isAdmin, navigate]);
 
   // Handle scroll events to detect if user scrolled up
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {

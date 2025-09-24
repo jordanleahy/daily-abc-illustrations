@@ -159,22 +159,24 @@ async function searchReddit(
   // Filter and transform results
   return resultsListing.data.children
     .map(child => ({
-      id: child.data.id,
-      title: child.data.title,
+      id: child.data.id || '',
+      title: child.data.title || '',
       selftext: child.data.selftext || '',
-      subreddit: child.data.subreddit,
-      score: child.data.score,
-      num_comments: child.data.num_comments,
-      url: child.data.url,
-      permalink: child.data.permalink,
-      created_utc: child.data.created_utc,
-      author: child.data.author,
+      subreddit: child.data.subreddit || '',
+      score: child.data.score || 0,
+      num_comments: child.data.num_comments || 0,
+      url: child.data.url || '',
+      permalink: child.data.permalink || '',
+      created_utc: child.data.created_utc || 0,
+      author: child.data.author || 'unknown',
     }))
+    .filter(post => post.title && post.subreddit) // Only include posts with valid title and subreddit
     .filter(post => {
       // Basic content filtering for educational appropriateness
-      const title = post.title.toLowerCase();
-      const text = post.selftext.toLowerCase();
-      const subredditName = post.subreddit.toLowerCase();
+      // Safely handle potentially undefined/null values
+      const title = (post.title || '').toLowerCase();
+      const text = (post.selftext || '').toLowerCase();
+      const subredditName = (post.subreddit || '').toLowerCase();
       
       // Filter out inappropriate subreddits
       const blockedSubreddits = ['nsfw', 'gonewild', 'wtf', 'morbidreality'];
@@ -187,12 +189,12 @@ async function searchReddit(
         'education', 'teachers', 'homeschool', 'parenting', 'kids', 'learning',
         'appgiveaway', 'genaiapps', 'apps', 'freebies', 'deals', 'preschool',
         'kindergarten', 'earlychildhood', 'toddlers', 'babybumps', 'mommit',
-        'daddit', 'beyondthebump', 'elementary', 'specialneeds'
+        'daddit', 'beyondthebump', 'elementary', 'specialneeds', 'futuretechfinds'
       ];
       const isFromRelevantSubreddit = relevantSubreddits.some(sub => subredditName.includes(sub));
       
       // Check for ABC/alphabet specific content keywords
-      const abcKeywords = ['abc', 'alphabet', 'letters', 'tracing', 'phonics', 'reading'];
+      const abcKeywords = ['abc', 'alphabet', 'letters', 'tracing', 'phonics', 'reading', 'teach', 'learn', 'child'];
       const hasAbcContent = abcKeywords.some(keyword => 
         title.includes(keyword) || text.includes(keyword)
       );
@@ -204,7 +206,7 @@ async function searchReddit(
       );
       
       // Allow content if: no profanity AND (relevant subreddit OR has ABC content OR decent score)
-      return !hasProfanity && (isFromRelevantSubreddit || hasAbcContent || post.score > 2);
+      return !hasProfanity && (isFromRelevantSubreddit || hasAbcContent || post.score > 1);
     })
     .slice(0, limit);
 }

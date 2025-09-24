@@ -95,12 +95,6 @@ const navigate = useNavigate();
     }
   }, [activeDaily, loading, isDailyLoading, isAuthenticated, navigate]);
 
-  // Redirect regular authenticated users (non-admin) to library
-  useEffect(() => {
-    if (!loading && !userRole.isLoading && isAuthenticated && !isAdmin) {
-      navigate('/library', { replace: true });
-    }
-  }, [loading, userRole.isLoading, isAuthenticated, isAdmin, navigate]);
 
   // Handle scroll events to detect if user scrolled up
   const handleScroll = (event: React.UIEvent<HTMLDivElement>) => {

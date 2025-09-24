@@ -27,7 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { PageLayout } from '@/components/layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailyPublished } from '@/hooks/useDailyPublished';
-import { useHasRole, useUserRole } from '@/hooks/useUserRole';
+import { useUserRole } from '@/hooks/useUserRole';
 import { AdminOnly } from '@/components/AdminOnly';
 import { toast } from 'sonner';
 
@@ -60,9 +60,9 @@ interface Message {
 const Index = () => {
   const { session, isAuthenticated, loading } = useAuth();
   const { data: activeDaily, isLoading: isDailyLoading } = useDailyPublished();
-  const userRole = useUserRole();
-  const isAdmin = useHasRole('admin');
-  const navigate = useNavigate();
+const userRole = useUserRole();
+const isAdmin = userRole.data?.isAdmin ?? false;
+const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);

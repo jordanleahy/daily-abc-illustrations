@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { useHasRole } from '@/hooks/useUserRole';
+import { useIsAdmin, useIsModerator } from '@/contexts/RoleContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ShieldX } from 'lucide-react';
 
@@ -14,8 +14,8 @@ export const ModeratorOnly = ({
   fallback, 
   showMessage = false 
 }: ModeratorOnlyProps) => {
-  const isModerator = useHasRole('moderator');
-  const isAdmin = useHasRole('admin'); // Admins can access moderator features
+  const isModerator = useIsModerator();
+  const isAdmin = useIsAdmin(); // Admins can access moderator features
   
   if (isModerator || isAdmin) {
     return <>{children}</>;

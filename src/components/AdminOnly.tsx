@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { useHasRole } from '@/hooks/useUserRole';
+import { useIsAdmin } from '@/contexts/RoleContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ShieldX } from 'lucide-react';
 
@@ -14,7 +14,7 @@ export const AdminOnly = ({
   fallback, 
   showMessage = false 
 }: AdminOnlyProps) => {
-  const isAdmin = useHasRole('admin');
+  const isAdmin = useIsAdmin();
   
   if (isAdmin) {
     return <>{children}</>;

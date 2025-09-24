@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
+import { RoleProvider } from "@/contexts/RoleContext";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Profile from "./pages/Profile";
@@ -36,26 +37,28 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <HelmetProvider>
       <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <GA4Tracker />
-          <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/profile" element={<Profile />} />
-          <Route path="/agents" element={<Agents />} />
-          <Route path="/books" element={<Books />} />
-          <Route path="/books/:id" element={<BookDetail />} />
-           <Route path="/library" element={<Library />} />
-           <Route path="/library/:id" element={<LibraryBookView />} />
-           <Route path="/daily-published/:id" element={<DailyPublished />} />
-          <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
-          <Route path="/schedule" element={<Schedule />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+        <RoleProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <GA4Tracker />
+            <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/agents" element={<Agents />} />
+            <Route path="/books" element={<Books />} />
+            <Route path="/books/:id" element={<BookDetail />} />
+             <Route path="/library" element={<Library />} />
+             <Route path="/library/:id" element={<LibraryBookView />} />
+             <Route path="/daily-published/:id" element={<DailyPublished />} />
+            <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
+            <Route path="/schedule" element={<Schedule />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+        </RoleProvider>
       </TooltipProvider>
     </HelmetProvider>
   </QueryClientProvider>

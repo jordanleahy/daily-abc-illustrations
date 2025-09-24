@@ -16,7 +16,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
-import { useHasRole } from '@/hooks/useUserRole';
+import { useIsAdmin } from '@/contexts/RoleContext';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
@@ -79,7 +79,7 @@ export function Header({
   showQRCode = true
 }: HeaderProps) {
   const { isAuthenticated, user, signOut } = useAuth();
-  const isAdmin = useHasRole('admin');
+  const isAdmin = useIsAdmin();
   const { qrCodeData } = useBookQRCode(bookId || '');
   const navigate = useNavigate();
   const location = useLocation();

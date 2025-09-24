@@ -4,7 +4,7 @@ import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { MetaHead } from '@/components/common';
-import { Header } from '@/components/layout';
+import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { PublicPageImage } from '@/components/daily-published';
 import { Card } from '@/components/ui/card';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
@@ -46,7 +46,7 @@ export default function LibraryBookView() {
   if (dailyError || !dailyContent) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Header title="Library" onBack={handleBack} showQRCode={false} />
+        <ReadingHeader title="Library" onBack={handleBack} showQRCode={false} />
         <Card className="max-w-md w-full mt-20">
           <div className="p-6 text-center space-y-4">
             <div className="flex items-center justify-center gap-2">
@@ -65,7 +65,7 @@ export default function LibraryBookView() {
   if (!pages || pages.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
-        <Header title="Library" onBack={handleBack} showQRCode={false} />
+        <ReadingHeader title="Library" onBack={handleBack} showQRCode={false} />
         <Card className="max-w-md w-full mt-20">
           <div className="p-6 text-center space-y-4">
             <h2 className="text-lg font-semibold">{dailyContent.title}</h2>
@@ -100,7 +100,7 @@ export default function LibraryBookView() {
       {openGraphMetadata && <MetaHead metadata={openGraphMetadata} />}
       
       <div className="flex flex-col h-screen" style={{ touchAction: 'none' }}>
-        <Header 
+        <ReadingHeader 
           title={dailyContent.title}
           subtitle={`${currentPageIndex + 1} of ${pages.length}`}
           bookId={dailyContent.book_id}

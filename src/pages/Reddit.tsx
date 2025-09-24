@@ -31,7 +31,7 @@ const Reddit = () => {
               <RedditCardSkeleton key={index} />
             ))
           ) : (
-            (redditPosts || mockRedditPosts).map((post) => (
+            (redditPosts && redditPosts.length > 0 ? redditPosts : mockRedditPosts).map((post) => (
               <RedditConversationCard key={post.id} post={post} />
             ))
           )}

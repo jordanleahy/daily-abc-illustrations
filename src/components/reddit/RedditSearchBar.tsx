@@ -8,14 +8,6 @@ interface RedditSearchBarProps {
   currentQuery: string;
 }
 
-const quickSearches = [
-  'ABC Help',
-  'Letter Learning',
-  'Phonics Activities',
-  'Alphabet Games',
-  'Reading Readiness'
-];
-
 export const RedditSearchBar = ({ onSearch, currentQuery }: RedditSearchBarProps) => {
   const [searchInput, setSearchInput] = useState(currentQuery);
 
@@ -24,11 +16,6 @@ export const RedditSearchBar = ({ onSearch, currentQuery }: RedditSearchBarProps
     if (searchInput.trim()) {
       onSearch(searchInput.trim());
     }
-  };
-
-  const handleQuickSearch = (query: string) => {
-    setSearchInput(query);
-    onSearch(query);
   };
 
   return (
@@ -48,21 +35,6 @@ export const RedditSearchBar = ({ onSearch, currentQuery }: RedditSearchBarProps
           Search
         </Button>
       </form>
-      
-      <div className="flex flex-wrap gap-2">
-        <span className="text-sm text-muted-foreground self-center">Quick searches:</span>
-        {quickSearches.map((query) => (
-          <Button
-            key={query}
-            variant="outline"
-            size="sm"
-            onClick={() => handleQuickSearch(query)}
-            className="text-xs"
-          >
-            {query}
-          </Button>
-        ))}
-      </div>
       
       {currentQuery && (
         <div className="text-sm text-muted-foreground">

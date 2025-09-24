@@ -120,7 +120,7 @@ export function SlideToUnlock({ onUnlock, disabled = false, className }: SlideTo
   const getText = () => {
     if (disabled) return 'The End!';
     if (isCompleted) return 'Release to continue';
-    return 'Slide to continue';
+    return 'Slide';
   };
 
   return (

@@ -189,11 +189,7 @@ export function Header({
 
   // AUTHENTICATED STATE: Smart header with role-based styling and functionality
   return (
-    <header className={`sticky top-0 z-50 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-background/60 ${
-      isAdmin 
-        ? 'bg-gradient-to-r from-primary/10 via-background/95 to-primary/10 border-primary/20' 
-        : 'border-border/40 bg-background/95'
-    }`}>
+    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container>
         <div className="flex h-14 items-center justify-between">
           {/* Left section: Back navigation + Admin indicator */}

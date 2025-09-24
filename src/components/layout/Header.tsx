@@ -204,12 +204,6 @@ export function Header({
                 <span className="text-xs">← Back</span>
               </Button>
             )}
-            {isAdmin && (
-              <div className="hidden sm:flex items-center gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-                <span className="text-xs font-medium text-primary">ADMIN</span>
-              </div>
-            )}
           </div>
           
           {/* Middle section: Title and subtitle */}

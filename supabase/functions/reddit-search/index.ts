@@ -123,6 +123,14 @@ async function searchReddit(
   
   const data: RedditSearchResponse = await response.json();
   
+  console.log('Reddit API raw response:', JSON.stringify(data, null, 2));
+  
+  // Check if response has expected structure
+  if (!data || !data.data || !data.data.children) {
+    console.error('Reddit API response missing expected structure:', data);
+    return []; // Return empty array instead of crashing
+  }
+  
   // Filter and transform results
   return data.data.children
     .map(child => child.data)

@@ -98,20 +98,8 @@ export function ReadingHeader({
         )}
       </div>
       
-      {/* Middle section: Clickable title and subtitle */}
-      <div className="flex flex-col items-center">
-        <div 
-          className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
-          onClick={handleTitleClick}
-        >
-          {title}
-        </div>
-        {subtitle && (
-          <div className="text-xs text-muted-foreground">
-            {subtitle}
-          </div>
-        )}
-      </div>
+      {/* Spacer for center alignment */}
+      <div></div>
       
       {/* Right section: Content sharing controls */}
       <div className="flex items-center gap-2">

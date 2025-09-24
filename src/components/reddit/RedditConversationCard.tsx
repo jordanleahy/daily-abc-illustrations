@@ -10,17 +10,36 @@ interface RedditConversationCardProps {
 
 const formatTimeAgo = (timestamp: number) => {
   const now = Date.now();
-  const diffInHours = Math.floor((now - timestamp) / (1000 * 60 * 60));
+  // Convert Reddit's Unix timestamp (seconds) to JavaScript timestamp (milliseconds)
+  const postTime = timestamp * 1000;
+  const diffInMinutes = Math.floor((now - postTime) / (1000 * 60));
   
-  if (diffInHours < 1) {
-    const diffInMinutes = Math.floor((now - timestamp) / (1000 * 60));
+  if (diffInMinutes < 60) {
     return `${diffInMinutes}m ago`;
-  } else if (diffInHours < 24) {
+  }
+  
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) {
     return `${diffInHours}h ago`;
-  } else {
-    const diffInDays = Math.floor(diffInHours / 24);
+  }
+  
+  const diffInDays = Math.floor(diffInHours / 24);
+  if (diffInDays < 7) {
     return `${diffInDays}d ago`;
   }
+  
+  const diffInWeeks = Math.floor(diffInDays / 7);
+  if (diffInWeeks < 4) {
+    return `${diffInWeeks}w ago`;
+  }
+  
+  const diffInMonths = Math.floor(diffInDays / 30);
+  if (diffInMonths < 12) {
+    return `${diffInMonths} mo. ago`;
+  }
+  
+  const diffInYears = Math.floor(diffInDays / 365);
+  return `${diffInYears}y ago`;
 };
 
 const getSubredditColor = (subreddit: string) => {

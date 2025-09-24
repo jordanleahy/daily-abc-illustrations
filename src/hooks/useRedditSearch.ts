@@ -13,6 +13,7 @@ interface RedditSearchResult {
   selftext: string;
   url: string;
   permalink: string;
+  relevance_score: number;
 }
 
 interface RedditSearchResponse {
@@ -32,7 +33,7 @@ const transformRedditData = (results: RedditSearchResult[]): RedditPost[] => {
     selftext: post.selftext || '',
     url: post.url,
     reddit_url: `https://www.reddit.com${post.permalink}`,
-    relevance_score: Math.random() * 0.3 + 0.7, // 0.7-1.0 range for ABC learning relevance
+    relevance_score: post.relevance_score, // Use computed relevance from backend
     abc_learning_tags: generateLearningTags(post.title, post.selftext)
   }));
 };
@@ -41,15 +42,21 @@ const generateLearningTags = (title: string, selftext: string): string[] => {
   const text = `${title} ${selftext}`.toLowerCase();
   const tags: string[] = [];
   
+  // Enhanced tag generation with more specific categories
   if (text.includes('alphabet') || text.includes('abc')) tags.push('Alphabet');
-  if (text.includes('letter') || text.includes('phonics')) tags.push('Letters');
-  if (text.includes('read') || text.includes('reading')) tags.push('Reading');
+  if (text.includes('letter') || text.includes('phonics') || text.includes('sound')) tags.push('Phonics');
+  if (text.includes('read') || text.includes('reading') || text.includes('literacy')) tags.push('Reading');
+  if (text.includes('write') || text.includes('writing') || text.includes('tracing')) tags.push('Writing');
   if (text.includes('child') || text.includes('kid') || text.includes('toddler')) tags.push('Early Learning');
-  if (text.includes('preschool') || text.includes('kindergarten')) tags.push('Preschool');
-  if (text.includes('education') || text.includes('teaching')) tags.push('Education');
-  if (text.includes('parent') || text.includes('mom') || text.includes('dad')) tags.push('Parenting');
+  if (text.includes('preschool') || text.includes('kindergarten') || text.includes('pre-k')) tags.push('Preschool');
+  if (text.includes('education') || text.includes('teaching') || text.includes('curriculum')) tags.push('Education');
+  if (text.includes('parent') || text.includes('mom') || text.includes('dad') || text.includes('family')) tags.push('Parenting');
+  if (text.includes('app') || text.includes('game') || text.includes('digital')) tags.push('Educational Apps');
+  if (text.includes('activity') || text.includes('craft') || text.includes('worksheet')) tags.push('Activities');
+  if (text.includes('montessori') || text.includes('waldorf') || text.includes('reggio')) tags.push('Learning Method');
+  if (text.includes('special needs') || text.includes('autism') || text.includes('adhd')) tags.push('Special Needs');
   
-  return tags.slice(0, 3); // Limit to 3 tags
+  return tags.slice(0, 4); // Limit to 4 tags for better display
 };
 
 export const useRedditSearch = (query: string = 'ABC learning alphabet letters children education') => {

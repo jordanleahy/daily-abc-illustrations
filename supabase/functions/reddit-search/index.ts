@@ -99,19 +99,92 @@ async function getRedditToken(): Promise<string> {
   return tokenData.access_token;
 }
 
+interface RedditPostWithRelevance extends RedditSearchResult {
+  relevance_score: number;
+}
+
+function computeRelevanceScore(post: RedditSearchResult, query: string): number {
+  const title = (post.title || '').toLowerCase();
+  const text = (post.selftext || '').toLowerCase();
+  const subredditName = (post.subreddit || '').toLowerCase();
+  const queryLower = query.toLowerCase();
+  
+  let score = 0;
+  
+  // Enhanced ABC/learning keyword detection (+3 points)
+  const abcKeywords = [
+    'abc', 'alphabet', 'letters', 'tracing', 'phonics', 'reading', 
+    'teach', 'learn', 'child', 'education', 'preschool', 'kindergarten',
+    'toddler', 'early learning', 'literacy', 'writing', 'spelling'
+  ];
+  const hasAbcContent = abcKeywords.some(keyword => 
+    title.includes(keyword) || text.includes(keyword)
+  );
+  if (hasAbcContent) score += 3;
+  
+  // Relevant subreddit boost (+2 points)
+  const relevantSubreddits = [
+    'education', 'teachers', 'homeschool', 'parenting', 'kids', 'learning',
+    'preschool', 'kindergarten', 'earlychildhood', 'toddlers', 'babybumps', 
+    'mommit', 'daddit', 'beyondthebump', 'elementary', 'specialneeds'
+  ];
+  const isFromRelevantSubreddit = relevantSubreddits.some(sub => subredditName.includes(sub));
+  if (isFromRelevantSubreddit) score += 2;
+  
+  // Direct query match bonus (+2 points)
+  if (title.includes(queryLower) || text.includes(queryLower)) score += 2;
+  
+  // Post score (normalized, max +2 points)
+  score += Math.min(post.score / 10, 2);
+  
+  // Comment engagement (normalized, max +2 points)
+  score += Math.min(post.num_comments / 5, 2);
+  
+  // Penalty for app/giveaway posts unless specifically searched (-2 points)
+  const hasAppGiveawayTerms = title.includes('app') || title.includes('free') || 
+                              subredditName.includes('giveaway') || subredditName.includes('deals');
+  const isAppSearch = queryLower.includes('app') || queryLower.includes('giveaway');
+  if (hasAppGiveawayTerms && !isAppSearch) score -= 2;
+  
+  // Recency bonus (posts less than 30 days old get slight boost)
+  const daysSincePost = (Date.now() - (post.created_utc * 1000)) / (1000 * 60 * 60 * 24);
+  if (daysSincePost < 30) score += 0.5;
+  
+  return Math.max(score, 0); // Ensure non-negative score
+}
+
+function deduplicatePosts(posts: RedditPostWithRelevance[]): RedditPostWithRelevance[] {
+  const uniquePosts: RedditPostWithRelevance[] = [];
+  const seen = new Set<string>();
+  
+  for (const post of posts) {
+    // Create a key based on title similarity and author
+    const titleWords = post.title.toLowerCase().split(' ').filter(word => word.length > 3);
+    const titleKey = titleWords.slice(0, 3).join('-'); // First 3 significant words
+    const key = `${titleKey}-${post.author}`;
+    
+    if (!seen.has(key)) {
+      uniquePosts.push(post);
+      seen.add(key);
+    }
+  }
+  
+  return uniquePosts;
+}
+
 async function searchReddit(
   token: string,
   query: string,
   subreddit?: string,
   limit: number = 10
-): Promise<RedditSearchResult[]> {
+): Promise<RedditPostWithRelevance[]> {
   const userAgent = Deno.env.get('REDDIT_USER_AGENT') || 'dailyabcillustrations/1.0';
   
-  // Construct search URL
+  // Construct search URL - get more results initially to allow for filtering
   let searchUrl = 'https://oauth.reddit.com/search';
   const params = new URLSearchParams({
     q: query,
-    limit: Math.min(limit, 25).toString(), // Reddit max is 25
+    limit: Math.min(limit * 2, 25).toString(), // Get 2x results to filter
     sort: 'relevance',
     type: 'link,sr',
   });
@@ -156,8 +229,8 @@ async function searchReddit(
     return [];
   }
   
-  // Filter and transform results
-  return resultsListing.data.children
+  // Transform and filter results
+  const posts = resultsListing.data.children
     .map(child => ({
       id: child.data.id || '',
       title: child.data.title || '',
@@ -172,43 +245,42 @@ async function searchReddit(
     }))
     .filter(post => post.title && post.subreddit) // Only include posts with valid title and subreddit
     .filter(post => {
-      // Basic content filtering for educational appropriateness
-      // Safely handle potentially undefined/null values
+      // Enhanced content filtering
       const title = (post.title || '').toLowerCase();
       const text = (post.selftext || '').toLowerCase();
       const subredditName = (post.subreddit || '').toLowerCase();
       
       // Filter out inappropriate subreddits
-      const blockedSubreddits = ['nsfw', 'gonewild', 'wtf', 'morbidreality'];
+      const blockedSubreddits = ['nsfw', 'gonewild', 'wtf', 'morbidreality', 'watchpeopledie'];
       if (blockedSubreddits.some(blocked => subredditName.includes(blocked))) {
         return false;
       }
       
-      // Expanded list of relevant subreddits for ABC learning content
-      const relevantSubreddits = [
-        'education', 'teachers', 'homeschool', 'parenting', 'kids', 'learning',
-        'appgiveaway', 'genaiapps', 'apps', 'freebies', 'deals', 'preschool',
-        'kindergarten', 'earlychildhood', 'toddlers', 'babybumps', 'mommit',
-        'daddit', 'beyondthebump', 'elementary', 'specialneeds', 'futuretechfinds'
-      ];
-      const isFromRelevantSubreddit = relevantSubreddits.some(sub => subredditName.includes(sub));
-      
-      // Check for ABC/alphabet specific content keywords
-      const abcKeywords = ['abc', 'alphabet', 'letters', 'tracing', 'phonics', 'reading', 'teach', 'learn', 'child'];
-      const hasAbcContent = abcKeywords.some(keyword => 
-        title.includes(keyword) || text.includes(keyword)
-      );
-      
-      // Basic profanity filter (simple implementation)
-      const profanityWords = ['fuck', 'shit', 'damn', 'hell'];
+      // Enhanced profanity filter
+      const profanityWords = ['fuck', 'shit', 'damn', 'hell', 'bitch', 'asshole'];
       const hasProfanity = profanityWords.some(word => 
         title.includes(word) || text.includes(word)
       );
       
-      // Allow content if: no profanity AND (relevant subreddit OR has ABC content OR decent score)
-      return !hasProfanity && (isFromRelevantSubreddit || hasAbcContent || post.score > 1);
+      // Filter out spam/low quality indicators
+      const spamIndicators = ['click here', 'amazing deal', 'limited time', 'act now'];
+      const isSpam = spamIndicators.some(indicator => title.includes(indicator));
+      
+      return !hasProfanity && !isSpam;
     })
-    .slice(0, limit);
+    .map(post => ({
+      ...post,
+      relevance_score: computeRelevanceScore(post, query)
+    }))
+    .filter(post => post.relevance_score > 0.5) // Only include posts with decent relevance
+    .sort((a, b) => b.relevance_score - a.relevance_score); // Sort by relevance
+  
+  // Deduplicate results
+  const uniquePosts = deduplicatePosts(posts);
+  
+  console.log(`Filtered ${posts.length} posts to ${uniquePosts.length} unique results`);
+  
+  return uniquePosts.slice(0, limit);
 }
 
 serve(async (req) => {

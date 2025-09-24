@@ -135,7 +135,7 @@ export const RedditConversationCard = ({ post }: RedditConversationCardProps) =>
           </div>
           
           <div className="text-xs text-muted-foreground">
-            {post.relevance_score}% match
+            {Math.round(post.relevance_score * 10)/10} relevance
           </div>
         </div>
 

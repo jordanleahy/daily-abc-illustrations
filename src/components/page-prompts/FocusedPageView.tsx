@@ -1,6 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
+import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { PageImageSection } from '@/components/PageImageSection';
 import { ArrowLeft } from 'lucide-react';
 import type { Page } from '@/types/book';
@@ -77,14 +77,12 @@ export function FocusedPageView({
         </div>
       </div>
 
-      {/* Slide to unlock at bottom - sticky with proper mobile support */}
-      <div className="fixed bottom-0 left-0 right-0 z-50 py-4 px-10 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
-        <SlideToUnlock 
-          onUnlock={onNext}
-          disabled={isLastPage}
-          className="w-full"
-        />
-      </div>
+      {/* Unified bottom slide navigation */}
+      <BottomSlideNavigation 
+        onSlide={onNext}
+        disabled={isLastPage}
+        variant="wide"
+      />
     </div>
   );
 }

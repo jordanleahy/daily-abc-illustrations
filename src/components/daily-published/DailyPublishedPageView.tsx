@@ -1,5 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
+import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { PublicPageImage } from './PublicPageImage';
 import { FreemiumHeader } from './FreemiumHeader';
@@ -100,14 +100,13 @@ export function DailyPublishedPageView({
         </div>
       </div>
 
-      {/* Slide to unlock at bottom - only show when not last page */}
-      {!isLastPage && (
-        <div className="fixed bottom-0 left-0 right-0 z-50 py-4 px-4 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
-          <div className="px-6">
-            <SlideToUnlock onUnlock={onNext} disabled={isLastPage} className="w-full" />
-          </div>
-        </div>
-      )}
+      {/* Unified bottom slide navigation */}
+      <BottomSlideNavigation 
+        onSlide={onNext}
+        disabled={isLastPage}
+        variant="compact"
+        show={!isLastPage}
+      />
 
       {/* Swipe up drawer for upcoming books - only show on last page */}
       {isLastPage && (

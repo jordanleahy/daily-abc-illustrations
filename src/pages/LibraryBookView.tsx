@@ -7,7 +7,7 @@ import { MetaHead } from '@/components/common';
 import { Header } from '@/components/layout';
 import { PublicPageImage } from '@/components/daily-published';
 import { Card } from '@/components/ui/card';
-import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
+import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { UpcomingBooksPreview } from '@/components/daily-published';
@@ -123,11 +123,12 @@ export default function LibraryBookView() {
           </div>
           
           {/* Navigation */}
-          {!isLastPage && (
-            <div className="px-24 pb-4">
-              <SlideToUnlock onUnlock={handleNext} />
-            </div>
-          )}
+          <BottomSlideNavigation 
+            onSlide={handleNext}
+            disabled={isLastPage}
+            variant="inline"
+            show={!isLastPage}
+          />
           
           {isLastPage && (
             <SwipeUpDrawer>

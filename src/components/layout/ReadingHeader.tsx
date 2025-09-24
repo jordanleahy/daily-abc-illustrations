@@ -5,12 +5,12 @@ import { useNavigate } from 'react-router-dom';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 
 /**
- * UserHeader Component
+ * ReadingHeader Component
  * 
- * A simplified, lightweight header component designed for specific user contexts
- * where a minimal navigation interface is preferred over the full Header component.
- * Ideal for focused user experiences like reading modes, editing interfaces, or
- * specialized workflows.
+ * A simplified, lightweight header component designed for reading experiences and
+ * content-focused contexts where a minimal navigation interface is preferred over 
+ * the full Header component. Ideal for focused user experiences like reading modes, 
+ * editing interfaces, or specialized workflows.
  * 
  * Key Features:
  * - Minimal, distraction-free design
@@ -23,31 +23,31 @@ import { useBookQRCode } from '@/hooks/useBookQRCode';
  * - Use for content-focused pages where minimal navigation is desired
  * - Suitable for modal-like interfaces or specialized workflows  
  * - Prefer the main Header component for general application navigation
- * - Ideal for user-specific contexts like profile editing or content creation
+ * - Ideal for reading contexts like book viewing or content consumption
  * 
  * @component
  * @example
  * // Basic usage for content-focused pages
- * <UserHeader title="Reading Mode" />
+ * <ReadingHeader title="Reading Mode" />
  * 
  * @example
  * // With back navigation and sharing
- * <UserHeader
- *   title="Edit Profile"
- *   subtitle="Personal Information" 
+ * <ReadingHeader
+ *   title="Chapter 1"
+ *   subtitle="The Beginning" 
  *   onBack={() => history.goBack()}
- *   bookId="profile-content"
+ *   bookId="book-123"
  *   showQRCode={true}
  * />
  * 
  * @example
  * // Minimal header for focused workflows
- * <UserHeader 
- *   title="Book Creator"
+ * <ReadingHeader 
+ *   title="Book Reader"
  *   showQRCode={false}
  * />
  */
-interface UserHeaderProps {
+interface ReadingHeaderProps {
   /** Header title text - defaults to "Library" */
   title?: string;
   /** Optional subtitle text displayed below the main title */
@@ -61,17 +61,17 @@ interface UserHeaderProps {
 }
 
 /**
- * UserHeader implementation providing a clean, focused navigation experience.
+ * ReadingHeader implementation providing a clean, focused navigation experience.
  * Uses fixed positioning for persistent access while maintaining a minimal
  * footprint to avoid interfering with content consumption.
  */
-export function UserHeader({
+export function ReadingHeader({
   title = "Library",
   subtitle,
   bookId,
   showQRCode = true,
   onBack
-}: UserHeaderProps) {
+}: ReadingHeaderProps) {
   const { qrCodeData } = useBookQRCode(bookId || '');
   const navigate = useNavigate();
 

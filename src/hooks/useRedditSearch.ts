@@ -8,7 +8,7 @@ interface RedditSearchResult {
   subreddit: string;
   author: string;
   created_utc: number;
-  upvotes: number;
+  score: number;
   num_comments: number;
   selftext: string;
   url: string;
@@ -26,7 +26,7 @@ const transformRedditData = (results: RedditSearchResult[]): RedditPost[] => {
     subreddit: post.subreddit,
     author: post.author,
     created_utc: post.created_utc,
-    upvotes: post.upvotes,
+    upvotes: post.score,
     num_comments: post.num_comments,
     selftext: post.selftext || '',
     url: post.url,

@@ -12,6 +12,7 @@ interface RedditTokenResponse {
 }
 
 interface RedditSearchResult {
+  id: string;
   title: string;
   selftext: string;
   subreddit: string;
@@ -28,6 +29,18 @@ interface RedditSearchResponse {
     children: Array<{
       data: RedditSearchResult;
     }>;
+  };
+}
+
+interface RedditListingResponse {
+  kind: string;
+  data: {
+    children: Array<{
+      kind: string;
+      data: RedditSearchResult;
+    }>;
+    after?: string;
+    before?: string;
   };
 }
 
@@ -121,18 +134,30 @@ async function searchReddit(
     throw new Error(`Reddit search failed: ${response.status}`);
   }
   
-  const data: RedditSearchResponse = await response.json();
+  const data: RedditListingResponse[] | RedditListingResponse = await response.json();
   
   console.log('Reddit API raw response:', JSON.stringify(data, null, 2));
   
-  // Check if response has expected structure
-  if (!data || !data.data || !data.data.children) {
-    console.error('Reddit API response missing expected structure:', data);
-    return []; // Return empty array instead of crashing
+  // Handle both single listing and array of listings
+  let listings: RedditListingResponse[];
+  if (Array.isArray(data)) {
+    listings = data;
+  } else {
+    listings = [data];
+  }
+  
+  // Find the listing with children (results)
+  const resultsListing = listings.find(listing => 
+    listing.data && listing.data.children && listing.data.children.length > 0
+  );
+  
+  if (!resultsListing) {
+    console.log('No results found in any listing');
+    return [];
   }
   
   // Filter and transform results
-  return data.data.children
+  return resultsListing.data.children
     .map(child => child.data)
     .filter(post => {
       // Basic content filtering for educational appropriateness

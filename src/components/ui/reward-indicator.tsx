@@ -1,4 +1,4 @@
-import { Coins } from 'lucide-react';
+import { Circle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface RewardIndicatorProps {
@@ -8,8 +8,8 @@ interface RewardIndicatorProps {
 
 export function RewardIndicator({ className, size = 20 }: RewardIndicatorProps) {
   return (
-    <Coins 
-      className={cn("fill-amber-500 text-amber-500 animate-scale-in", className)}
+    <Circle 
+      className={cn("fill-amber-600 text-amber-700 animate-scale-in", className)}
       size={size}
     />
   );

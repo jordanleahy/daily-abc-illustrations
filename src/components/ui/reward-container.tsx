@@ -10,7 +10,7 @@ export function RewardContainer({ earnedRewards, className }: RewardContainerPro
 
   return (
     <div className={className}>
-      <div className="flex justify-start gap-1 flex-wrap">
+      <div className="flex justify-start gap-1 flex-wrap p-4">
         {Array.from({ length: earnedRewards }, (_, index) => (
           <RewardIndicator key={index} />
         ))}

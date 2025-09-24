@@ -232,7 +232,7 @@ Do not copy text directly—restructure and reframe it to highlight what parents
   } catch (error) {
     console.error('Error in create-product-description function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       details: 'Failed to generate product description'
     }), {
       status: 500,

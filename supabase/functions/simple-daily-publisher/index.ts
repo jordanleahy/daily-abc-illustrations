@@ -89,7 +89,10 @@ Deno.serve(async (req) => {
     // Call the enhanced database function to process daily publishing with safety measures
     console.log('📅 Processing daily publishing for date:', new Date().toISOString().split('T')[0]);
     
-    const { data: result, error: processError } = await supabase.rpc('process_enhanced_daily_publishing');
+    const { data: result, error: processError } = await supabase.rpc('process_enhanced_daily_publishing') as { 
+      data: any; 
+      error: any; 
+    };
 
     if (processError) {
       console.error('❌ Error processing daily publishing:', processError);
@@ -137,7 +140,7 @@ Deno.serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Unknown error',
         timestamp: new Date().toISOString()
       }),
       {

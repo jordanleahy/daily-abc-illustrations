@@ -275,8 +275,10 @@ ${conversationContext}`;
     });
 
     // Use EdgeRuntime.waitUntil for background processing
-    if (typeof EdgeRuntime !== 'undefined' && EdgeRuntime.waitUntil) {
-      EdgeRuntime.waitUntil(generateSEOPromise);
+    // @ts-ignore - EdgeRuntime is available in Deno Deploy environment
+    if (typeof globalThis.EdgeRuntime !== 'undefined' && globalThis.EdgeRuntime?.waitUntil) {
+      // @ts-ignore
+      globalThis.EdgeRuntime.waitUntil(generateSEOPromise);
     }
 
     return new Response(
@@ -295,7 +297,7 @@ ${conversationContext}`;
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message || 'An unexpected error occurred',
+        error: error instanceof Error ? error.message : 'An unexpected error occurred',
       }),
       {
         status: 500,

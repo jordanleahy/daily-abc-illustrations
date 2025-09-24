@@ -128,25 +128,25 @@ serve(async (req) => {
       throw new Error(`Failed to fetch page: ${pageError.message}`);
     }
 
-    if (!pageData || pageData.books.user_id !== userId) {
+    if (!pageData || (pageData as any).books?.user_id !== userId) {
       log('ERROR', ProcessStatus.ERROR, currentStep, 'Page not found or access denied', { 
         requestId, 
         duration: fetchDuration,
         pageExists: !!pageData,
-        userIdMatch: pageData?.books?.user_id === userId
+        userIdMatch: (pageData as any)?.books?.user_id === userId
       });
       throw new Error('Page not found or access denied');
     }
 
     // Find the deployed book system prompt
-    const deployedPrompt = pageData.books.book_system_prompts?.find((prompt: any) => prompt.is_deployed);
+    const deployedPrompt = (pageData as any).books.book_system_prompts?.find((prompt: any) => prompt.is_deployed);
     if (!deployedPrompt) {
       log('ERROR', ProcessStatus.ERROR, currentStep, 'No deployed book system prompt found', { 
         requestId, 
         duration: fetchDuration,
         pageId: pageId?.substring(0, 8) + '...',
         bookId: pageData.book_id?.substring(0, 8) + '...',
-        availablePrompts: pageData.books.book_system_prompts?.length || 0
+        availablePrompts: (pageData as any).books.book_system_prompts?.length || 0
       });
       throw new Error('No deployed book system prompt found. Please create and deploy a system prompt for this book first.');
     }
@@ -474,14 +474,14 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
     log('ERROR', ProcessStatus.ERROR, currentStep || 'UNKNOWN', 'Image prompt generation failed', { 
       requestId,
       totalDuration,
-      error: error.message,
-      stack: error.stack
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
     });
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Unknown error' 
       }),
       {
         status: 500,

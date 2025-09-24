@@ -409,7 +409,7 @@ CRITICAL: Always reference the specific colors, design elements, and visual meta
     } catch (parseError) {
       log('WARN', ProcessStatus.WARNING, currentStep, 'JSON parsing failed, using fallback text-based prompt', { 
         requestId, 
-        parseError: parseError.message 
+        parseError: parseError instanceof Error ? parseError.message : 'Parse error' 
       });
       
       // Fallback for non-JSON response
@@ -470,14 +470,14 @@ CRITICAL: Always reference the specific colors, design elements, and visual meta
     log('ERROR', ProcessStatus.ERROR, currentStep || 'UNKNOWN', 'Two-stage Graphics Designer prompt generation failed', { 
       requestId,
       totalDuration,
-      error: error.message,
-      stack: error.stack
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
     });
     
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message 
+        error: error instanceof Error ? error.message : 'Unknown error' 
       }),
       {
         status: 500,

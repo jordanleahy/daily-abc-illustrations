@@ -174,7 +174,7 @@ serve(async (req) => {
         }
       } catch (retryError) {
         console.error('QR generation retry also failed:', retryError);
-        throw new Error(`Failed to generate QR code: ${qrError.message}. Retry failed: ${retryError.message}`);
+        throw new Error(`Failed to generate QR code: ${qrError instanceof Error ? qrError.message : 'Unknown QR error'}. Retry failed: ${retryError instanceof Error ? retryError.message : 'Unknown retry error'}`);
       }
     }
     
@@ -222,7 +222,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in generate-book-qr-metadata function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Internal server error' 
+      error: error instanceof Error ? error.message : 'Internal server error' 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

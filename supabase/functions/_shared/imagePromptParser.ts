@@ -131,7 +131,7 @@ export function parseImagePromptResponse(rawResponse: string): ParsedImagePrompt
     try {
       parsedJSON = JSON.parse(jsonString);
     } catch (parseError) {
-      result.parseError = `JSON parsing failed: ${parseError.message}`;
+      result.parseError = `JSON parsing failed: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`;
       result.transformedText = rawResponse.trim(); // Fallback to raw text
       return result;
     }
@@ -151,7 +151,7 @@ export function parseImagePromptResponse(rawResponse: string): ParsedImagePrompt
     return result;
 
   } catch (error) {
-    result.parseError = `Unexpected error: ${error.message}`;
+    result.parseError = `Unexpected error: ${error instanceof Error ? error.message : 'Unknown error'}`;
     result.transformedText = rawResponse.trim(); // Fallback to raw text
     return result;
   }

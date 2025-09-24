@@ -464,7 +464,7 @@ Required JSON Schema:
     } catch (parseError) {
       log('WARN', ProcessStatus.IN_PROGRESS, 'JSON_PARSE_FALLBACK', 'JSON parsing failed, storing as structured text', {
         requestId,
-        parseError: parseError.message,
+        parseError: parseError instanceof Error ? parseError.message : 'Parse error',
         responseLength: styleGuideText.length
       });
       
@@ -601,13 +601,13 @@ Required JSON Schema:
     log('ERROR', ProcessStatus.ERROR, currentStep || 'UNKNOWN', 'Style guide generation failed', { 
       requestId,
       totalDuration,
-      error: error.message,
-      stack: error.stack
+      error: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : 'No stack trace'
     });
     
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : 'Unknown error' 
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

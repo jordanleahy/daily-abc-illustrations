@@ -219,18 +219,17 @@ async function searchReddit(
     listings = [data];
   }
   
-  // Find the listing with children (results)
-  const resultsListing = listings.find(listing => 
-    listing.data && listing.data.children && listing.data.children.length > 0
-  );
+  // Collect all children across listings and keep only posts (kind 't3')
+  const allChildren = listings.flatMap(l => (l.data?.children ?? []));
+  const postChildren = allChildren.filter(child => child.kind === 't3');
   
-  if (!resultsListing) {
-    console.log('No results found in any listing');
+  if (postChildren.length === 0) {
+    console.log('No post results found (kind t3) in any listing');
     return [];
   }
   
   // Transform and filter results
-  const posts = resultsListing.data.children
+  const posts = postChildren
     .map(child => ({
       id: child.data.id || '',
       title: child.data.title || '',

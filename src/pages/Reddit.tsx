@@ -4,7 +4,6 @@ import { RedditConversationCard } from '@/components/reddit/RedditConversationCa
 import { RedditCardSkeleton } from '@/components/reddit/RedditCardSkeleton';
 import { RedditSearchBar } from '@/components/reddit/RedditSearchBar';
 import { useRedditSearch } from '@/hooks/useRedditSearch';
-import { mockRedditPosts } from '@/data/mockRedditData';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Reddit = () => {
@@ -28,7 +27,7 @@ const Reddit = () => {
         {error && (
           <Alert className="mb-6">
             <AlertDescription>
-              Unable to load live Reddit data. Showing sample conversations instead.
+              Unable to load Reddit data. Please try a different search term.
             </AlertDescription>
           </Alert>
         )}
@@ -38,10 +37,15 @@ const Reddit = () => {
             Array.from({ length: 10 }).map((_, index) => (
               <RedditCardSkeleton key={index} />
             ))
-          ) : (
-            (redditPosts && redditPosts.length > 0 ? redditPosts : mockRedditPosts).map((post) => (
+          ) : redditPosts && redditPosts.length > 0 ? (
+            redditPosts.map((post) => (
               <RedditConversationCard key={post.id} post={post} />
             ))
+          ) : (
+            <div className="col-span-full text-center py-12">
+              <p className="text-muted-foreground text-lg">No conversations found for "{searchQuery}"</p>
+              <p className="text-sm text-muted-foreground mt-2">Try a different search term or one of the quick searches above.</p>
+            </div>
           )}
         </div>
       </div>

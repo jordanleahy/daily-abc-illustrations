@@ -16,6 +16,7 @@ import LibraryBookView from "./pages/LibraryBookView";
 import DailyPublished from "./pages/DailyPublished";
 import DailyPublishedSchedule from "./pages/DailyPublishedSchedule";
 import Schedule from "./pages/Schedule";
+import Reddit from "./pages/Reddit";
 import NotFound from "./pages/NotFound";
 import { GA4Tracker } from "./components/GA4Tracker";
 
@@ -52,9 +53,10 @@ const App = () => (
              <Route path="/library" element={<Library />} />
              <Route path="/library/:id" element={<LibraryBookView />} />
              <Route path="/daily-published/:id" element={<DailyPublished />} />
-            <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
-            <Route path="/schedule" element={<Schedule />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+             <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
+             <Route path="/schedule" element={<Schedule />} />
+             <Route path="/reddit" element={<Reddit />} />
+             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

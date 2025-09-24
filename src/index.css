@@ -38,9 +38,6 @@ All colors MUST be HSL.
 
     --radius: 0.5rem;
     
-    /* Primary gradient variants */
-    --primary-glow: 222.2 47.4% 21.2%;
-    
     /* Status colors */
     --success: 142.1 76.2% 36.3%;
     --success-foreground: 142.1 76.2% 16.3%;
@@ -69,7 +66,6 @@ All colors MUST be HSL.
 
     --primary: 210 40% 98%;
     --primary-foreground: 222.2 47.4% 11.2%;
-    --primary-glow: 210 40% 88%;
 
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;

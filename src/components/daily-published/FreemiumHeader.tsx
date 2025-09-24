@@ -6,18 +6,66 @@ import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { PublicPageImage } from './PublicPageImage';
 import type { Page } from '@/types/book';
 
+/**
+ * FreemiumHeader Component
+ * 
+ * A specialized header component designed for public/unauthenticated users viewing 
+ * daily published content. This header provides a freemium experience with time-limited 
+ * access indicators, navigation controls, and social sharing capabilities.
+ * 
+ * Key Features:
+ * - Time remaining countdown display for limited access
+ * - Visual navigation with page thumbnails  
+ * - QR code sharing functionality
+ * - Page progress indicators
+ * - Fixed positioning for persistent visibility during content consumption
+ * 
+ * @component
+ * @example
+ * // Basic usage for daily published content
+ * <FreemiumHeader 
+ *   title="Daily ABC Story"
+ *   timeRemaining="2:30 remaining"
+ *   bookId="book-123"
+ *   pageNumber={3}
+ *   totalPages={26}
+ * />
+ * 
+ * @example  
+ * // With previous page navigation
+ * <FreemiumHeader
+ *   title="Letter Adventures" 
+ *   previousPage={previousPageData}
+ *   onPrevious={() => goToPreviousPage()}
+ *   bookId="book-456"
+ * />
+ */
 interface FreemiumHeaderProps {
+  /** Header title text - defaults to "Schedule" */
   title?: string;
-  timeRemaining?: string;
+  /** Time remaining text for freemium access limitations */
+  timeRemaining?: string;  
+  /** Previous page data for back navigation with thumbnail */
   previousPage?: Page;
+  /** Handler for previous page navigation */
   onPrevious?: () => void;
+  /** Book ID for QR code generation and sharing */
   bookId: string;
+  /** Current page number for progress display */
   pageNumber?: number;
+  /** Total pages count for progress calculation */
   totalPages?: number;
+  /** Whether to show the QR code sharing button */
   showQRCode?: boolean;
+  /** Whether to show the page progress indicator */
   showPageIndicator?: boolean;
 }
 
+/**
+ * FreemiumHeader implementation providing a user-friendly header for public content access.
+ * Uses fixed positioning to remain visible during content scrolling and provides essential
+ * navigation and sharing controls for the freemium user experience.
+ */
 export function FreemiumHeader({
   title = "Schedule",
   timeRemaining,
@@ -32,17 +80,21 @@ export function FreemiumHeader({
   const { qrCodeData } = useBookQRCode(bookId);
   const navigate = useNavigate();
 
+  // Handle title click to navigate to schedule page
+  const handleTitleClick = () => navigate('/schedule');
+
   return (
     <div className="fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-background/95 backdrop-blur-sm border-b">
-      {/* Left section: Timer and back button */}
+      {/* Left section: Timer and back navigation */}
       <div className="flex items-center gap-3">
+        {/* Freemium access timer - shows remaining time for limited access */}
         {timeRemaining && (
           <div className="text-sm font-medium text-muted-foreground">
             {timeRemaining}
           </div>
         )}
         
-        {/* Previous page back button */}
+        {/* Previous page navigation with visual thumbnail preview */}
         {previousPage && onPrevious && (
           <Button variant="ghost" size="sm" onClick={onPrevious} className="p-1 h-8 w-8 rounded border border-border hover:bg-muted">
             <div className="w-6 h-6 bg-muted rounded-sm overflow-hidden">
@@ -52,17 +104,17 @@ export function FreemiumHeader({
         )}
       </div>
       
-      {/* Middle section: Title */}
+      {/* Middle section: Clickable title for navigation */}
       <div 
         className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
-        onClick={() => navigate('/schedule')}
+        onClick={handleTitleClick}
       >
         {title}
       </div>
       
-      {/* Right section: QR button and page indicator */}
+      {/* Right section: Sharing and progress controls */}
       <div className="flex items-center gap-2">
-        {/* QR Code Button */}
+        {/* QR Code sharing functionality */}
         {showQRCode && (
           <Sheet>
             <SheetTrigger asChild>
@@ -97,7 +149,7 @@ export function FreemiumHeader({
           </Sheet>
         )}
         
-        {/* Page indicator */}
+        {/* Reading progress indicator */}
         {showPageIndicator && pageNumber && totalPages && (
           <div className="text-xs text-muted-foreground font-medium">
             Page {pageNumber} of {totalPages}

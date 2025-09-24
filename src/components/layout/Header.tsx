@@ -21,14 +21,65 @@ import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
 
+/**
+ * Header Component
+ * 
+ * The primary navigation header component that adapts its appearance and functionality
+ * based on the user's authentication status and role. Serves as the main navigation
+ * hub throughout the application with role-based access control.
+ * 
+ * Key Features:
+ * - Responsive design with mobile-friendly navigation
+ * - Role-based rendering (unauthenticated, regular user, admin)
+ * - Admin-specific styling with gradient background and special indicators
+ * - QR code sharing functionality for content
+ * - Contextual navigation based on user permissions
+ * - Sticky positioning for persistent navigation access
+ * 
+ * Authentication States:
+ * - **Unauthenticated**: Shows public branding with sign-in/sign-up options
+ * - **Regular User**: Shows library navigation with user profile controls
+ * - **Admin User**: Enhanced UI with admin panel access and special styling
+ * 
+ * @component
+ * @example
+ * // Basic usage for authenticated users
+ * <Header title="My Library" />
+ * 
+ * @example
+ * // With book sharing functionality  
+ * <Header 
+ *   title="Book Details"
+ *   subtitle="Chapter 1: Getting Started"
+ *   bookId="book-123"
+ *   showQRCode={true}
+ * />
+ * 
+ * @example
+ * // With back navigation
+ * <Header 
+ *   title="Edit Mode"
+ *   onBack={() => history.goBack()}
+ * />
+ */
 interface HeaderProps {
+  /** Header title text - defaults to "ABC Cards Platform" */
   title?: string;
+  /** Optional subtitle text displayed below the main title */
   subtitle?: string;
+  /** Book ID for QR code generation and content sharing */
   bookId?: string;
+  /** Whether to show the QR code sharing functionality */
   showQRCode?: boolean;
+  /** Handler for back navigation - shows back button when provided */
   onBack?: () => void;
 }
 
+/**
+ * Header implementation with intelligent role-based rendering and navigation.
+ * Automatically detects user authentication state and role to provide the
+ * appropriate interface and navigation options.
+ */
 export function Header({
   title = "ABC Cards Platform",
   subtitle,
@@ -41,11 +92,16 @@ export function Header({
   const { qrCodeData } = useBookQRCode(bookId || '');
   const navigate = useNavigate();
 
+  /** Sign out handler with automatic redirect to authentication page */
   const handleSignOut = async () => {
     await signOut();
     navigate('/auth');
   };
 
+  /** 
+   * Smart title click navigation based on user state and context
+   * Prioritizes back navigation, then role-appropriate default routes
+   */
   const handleTitleClick = () => {
     if (onBack) {
       onBack();
@@ -58,10 +114,12 @@ export function Header({
     }
   };
 
+  /** Navigation configuration for regular authenticated users */
   const regularNavigation = [
     { name: 'Library', href: '/library' },
   ];
 
+  /** Extended navigation menu for admin users with full system access */
   const adminNavigation = [
     { name: 'Chat', href: '/' },
     { name: 'My Books', href: '/books' },
@@ -69,13 +127,14 @@ export function Header({
     { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },
   ];
 
+  /** Admin panel specific navigation with system management tools */
   const adminPanelNavigation = [
     { name: 'Agents', icon: Activity, route: '/agents' },
     { name: 'Users', icon: Users, route: '/admin/users' },
     { name: 'Settings', icon: Settings, route: '/admin/settings' },
   ];
 
-  // Not authenticated - show public header
+  // UNAUTHENTICATED STATE: Public header with authentication prompts
   if (!isAuthenticated) {
     return (
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -133,7 +192,7 @@ export function Header({
     );
   }
 
-  // Authenticated users - show smart header with role-based styling
+  // AUTHENTICATED STATE: Smart header with role-based styling and functionality
   return (
     <header className={`sticky top-0 z-50 w-full border-b backdrop-blur supports-[backdrop-filter]:bg-background/60 ${
       isAdmin 

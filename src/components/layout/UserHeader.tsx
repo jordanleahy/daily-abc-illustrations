@@ -4,14 +4,67 @@ import { QrCode } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 
+/**
+ * UserHeader Component
+ * 
+ * A simplified, lightweight header component designed for specific user contexts
+ * where a minimal navigation interface is preferred over the full Header component.
+ * Ideal for focused user experiences like reading modes, editing interfaces, or
+ * specialized workflows.
+ * 
+ * Key Features:
+ * - Minimal, distraction-free design
+ * - Fixed positioning for persistent access during content interaction
+ * - Basic back navigation functionality
+ * - QR code sharing for content distribution
+ * - Simplified title/subtitle display
+ * 
+ * Usage Guidelines:
+ * - Use for content-focused pages where minimal navigation is desired
+ * - Suitable for modal-like interfaces or specialized workflows  
+ * - Prefer the main Header component for general application navigation
+ * - Ideal for user-specific contexts like profile editing or content creation
+ * 
+ * @component
+ * @example
+ * // Basic usage for content-focused pages
+ * <UserHeader title="Reading Mode" />
+ * 
+ * @example
+ * // With back navigation and sharing
+ * <UserHeader
+ *   title="Edit Profile"
+ *   subtitle="Personal Information" 
+ *   onBack={() => history.goBack()}
+ *   bookId="profile-content"
+ *   showQRCode={true}
+ * />
+ * 
+ * @example
+ * // Minimal header for focused workflows
+ * <UserHeader 
+ *   title="Book Creator"
+ *   showQRCode={false}
+ * />
+ */
 interface UserHeaderProps {
+  /** Header title text - defaults to "Library" */
   title?: string;
+  /** Optional subtitle text displayed below the main title */
   subtitle?: string;
+  /** Book ID for QR code generation and sharing functionality */
   bookId?: string;
+  /** Whether to show the QR code sharing button */
   showQRCode?: boolean;
+  /** Handler for back navigation - shows back button when provided */
   onBack?: () => void;
 }
 
+/**
+ * UserHeader implementation providing a clean, focused navigation experience.
+ * Uses fixed positioning for persistent access while maintaining a minimal
+ * footprint to avoid interfering with content consumption.
+ */
 export function UserHeader({
   title = "Library",
   subtitle,
@@ -22,6 +75,10 @@ export function UserHeader({
   const { qrCodeData } = useBookQRCode(bookId || '');
   const navigate = useNavigate();
 
+  /** 
+   * Handle title click for contextual navigation
+   * Prioritizes custom back handler, falls back to library navigation
+   */
   const handleTitleClick = () => {
     if (onBack) {
       onBack();
@@ -32,7 +89,7 @@ export function UserHeader({
 
   return (
     <div className="fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-background/95 backdrop-blur-sm border-b">
-      {/* Left section: Back navigation */}
+      {/* Left section: Optional back navigation */}
       <div className="flex items-center gap-3">
         {onBack && (
           <Button variant="ghost" size="sm" onClick={onBack} className="p-2 h-8 rounded border border-border hover:bg-muted">
@@ -41,7 +98,7 @@ export function UserHeader({
         )}
       </div>
       
-      {/* Middle section: Title and subtitle */}
+      {/* Middle section: Clickable title and subtitle */}
       <div className="flex flex-col items-center">
         <div 
           className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
@@ -56,9 +113,9 @@ export function UserHeader({
         )}
       </div>
       
-      {/* Right section: QR button */}
+      {/* Right section: Content sharing controls */}
       <div className="flex items-center gap-2">
-        {/* QR Code Button */}
+        {/* QR Code sharing functionality */}
         {showQRCode && bookId && (
           <Sheet>
             <SheetTrigger asChild>

@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { MetaHead } from '@/components/common/MetaHead';
-import { SmartHeader } from '@/components/layout/SmartHeader';
+import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Image } from 'lucide-react';
@@ -19,7 +19,7 @@ export default function Library() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <SmartHeader 
+        <Header 
           title="Library"
           showQRCode={false}
         />
@@ -34,7 +34,7 @@ export default function Library() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <SmartHeader 
+        <Header 
           title="Library"
           showQRCode={false}
         />
@@ -58,7 +58,7 @@ export default function Library() {
     }} />
     
     <div className="min-h-screen bg-background">
-      <SmartHeader 
+      <Header 
         title="Library"
         showQRCode={false}
       />

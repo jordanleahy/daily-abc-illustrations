@@ -1,0 +1,331 @@
+import { Link, useNavigate } from 'react-router-dom';
+import { Menu, User, LogOut, QrCode, Settings, Users, Activity } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from '@/components/ui/sheet';
+import { useAuth } from '@/hooks/useAuth';
+import { useHasRole } from '@/hooks/useUserRole';
+import { useBookQRCode } from '@/hooks/useBookQRCode';
+import { AdminOnly } from '@/components/AdminOnly';
+import { Container } from './Container';
+
+interface HeaderProps {
+  title?: string;
+  subtitle?: string;
+  bookId?: string;
+  showQRCode?: boolean;
+  onBack?: () => void;
+}
+
+export function Header({
+  title = "ABC Cards Platform",
+  subtitle,
+  bookId,
+  showQRCode = true,
+  onBack
+}: HeaderProps) {
+  const { isAuthenticated, user, signOut } = useAuth();
+  const isAdmin = useHasRole('admin');
+  const { qrCodeData } = useBookQRCode(bookId || '');
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/auth');
+  };
+
+  const handleTitleClick = () => {
+    if (onBack) {
+      onBack();
+    } else if (isAdmin) {
+      navigate('/agents'); // Admin default route
+    } else if (isAuthenticated) {
+      navigate('/library');
+    } else {
+      navigate('/');
+    }
+  };
+
+  const regularNavigation = [
+    { name: 'Library', href: '/library' },
+  ];
+
+  const adminNavigation = [
+    { name: 'Chat', href: '/' },
+    { name: 'My Books', href: '/books' },
+    { name: 'Agents', href: '/agents' },
+    { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },
+  ];
+
+  const adminPanelNavigation = [
+    { name: 'Agents', icon: Activity, route: '/agents' },
+    { name: 'Users', icon: Users, route: '/admin/users' },
+    { name: 'Settings', icon: Settings, route: '/admin/settings' },
+  ];
+
+  // Not authenticated - show public header
+  if (!isAuthenticated) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <Container>
+          <div className="flex h-14 items-center justify-between">
+            {/* Logo */}
+            <Link to="/" className="flex items-center space-x-2">
+              <span className="text-xl font-bold text-foreground">{title}</span>
+            </Link>
+
+            {/* Mobile Menu / Auth Buttons */}
+            <div className="flex items-center space-x-4">
+              {/* Mobile Side Panel */}
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="ghost" size="sm" className="md:hidden">
+                    <Menu className="h-5 w-5" />
+                    <span className="sr-only">Open menu</span>
+                  </Button>
+                </SheetTrigger>
+                <SheetContent side="right" className="w-80">
+                  <SheetHeader>
+                    <SheetTitle>{title}</SheetTitle>
+                  </SheetHeader>
+                  <div className="mt-6 space-y-2">
+                    <Link
+                      to="/auth"
+                      className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      to="/auth"
+                      className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                    >
+                      Create Account
+                    </Link>
+                  </div>
+                </SheetContent>
+              </Sheet>
+
+              {/* Desktop Auth Buttons */}
+              <div className="hidden md:flex md:items-center md:space-x-2">
+                <Button asChild variant="outline" size="sm">
+                  <Link to="/auth">Sign In</Link>
+                </Button>
+                <Button asChild variant="default" size="sm">
+                  <Link to="/auth">Create Account</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Container>
+      </header>
+    );
+  }
+
+  // Authenticated users - show smart header with role-based styling
+  const headerClassName = isAdmin 
+    ? "fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-gradient-to-r from-primary/10 via-background/95 to-primary/10 backdrop-blur-sm border-b border-primary/20"
+    : "fixed top-0 left-0 right-0 z-40 flex justify-between items-center p-4 pb-2 bg-background/95 backdrop-blur-sm border-b";
+
+  return (
+    <div className={headerClassName}>
+      {/* Left section: Back navigation + Admin indicator */}
+      <div className="flex items-center gap-3">
+        {onBack && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={onBack} 
+            className={`p-2 h-8 rounded border ${isAdmin ? 'border-primary/30 hover:bg-primary/10' : 'border-border hover:bg-muted'}`}
+          >
+            <span className="text-xs">← Back</span>
+          </Button>
+        )}
+        {isAdmin && (
+          <div className="hidden sm:flex items-center gap-2">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <span className="text-xs font-medium text-primary">ADMIN</span>
+          </div>
+        )}
+      </div>
+      
+      {/* Middle section: Title and subtitle */}
+      <div className="flex flex-col items-center">
+        <div 
+          className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
+          onClick={handleTitleClick}
+        >
+          {title}
+        </div>
+        {subtitle && (
+          <div className="text-xs text-muted-foreground">
+            {subtitle}
+          </div>
+        )}
+      </div>
+      
+      {/* Right section: Admin controls + QR button */}
+      <div className="flex items-center gap-2">
+        {/* Admin Menu */}
+        {isAdmin && (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-1 h-8 w-8 rounded border border-primary/30 hover:bg-primary/10">
+                <Settings className="w-4 h-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-80">
+              <SheetHeader>
+                <SheetTitle className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-primary rounded-full"></div>
+                  Admin Panel
+                </SheetTitle>
+              </SheetHeader>
+              <div className="mt-6 space-y-2">
+                {adminPanelNavigation.map((item) => (
+                  <Button
+                    key={item.name}
+                    variant="ghost"
+                    className="w-full justify-start"
+                    onClick={() => navigate(item.route)}
+                  >
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.name}
+                  </Button>
+                ))}
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
+
+        {/* Mobile Menu for authenticated users */}
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button variant="ghost" size="sm" className="md:hidden">
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Open menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="right" className="w-80">
+            <SheetHeader>
+              <SheetTitle>{title}</SheetTitle>
+            </SheetHeader>
+            <div className="mt-6 space-y-2">
+              {/* Regular User Navigation Links */}
+              {regularNavigation.map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                >
+                  {item.name}
+                </Link>
+              ))}
+              
+              {/* Admin Navigation Links */}
+              <AdminOnly>
+                {adminNavigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.href}
+                    className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </AdminOnly>
+              
+              {/* User Section */}
+              <Link
+                to="/profile"
+                className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </Link>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign out
+              </button>
+            </div>
+          </SheetContent>
+        </Sheet>
+
+        {/* Desktop User Menu */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="relative hidden md:flex">
+              <User className="h-4 w-4" />
+              <span className="sr-only">User menu</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <div className="flex items-center justify-start gap-2 p-2">
+              <div className="flex flex-col space-y-1 leading-none">
+                <p className="font-medium text-sm">{user?.email}</p>
+              </div>
+            </div>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => navigate('/profile')}>
+              <User className="mr-2 h-4 w-4" />
+              Profile
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign out
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        {/* QR Code Button */}
+        {showQRCode && bookId && (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="sm" className="p-1 h-8 w-8 rounded border border-border hover:bg-muted">
+                <QrCode className="w-4 h-4" />
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[80vh]">
+              <SheetHeader>
+                <SheetTitle>Share to Share</SheetTitle>
+              </SheetHeader>
+              <div className="flex flex-col items-center justify-center h-full space-y-4">
+                <div className="w-64 h-64 rounded-lg flex items-center justify-center">
+                  {qrCodeData.isLoading ? (
+                    <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
+                      <QrCode className="w-16 h-16 text-muted-foreground animate-pulse" />
+                    </div>
+                  ) : qrCodeData.qrCodeImage ? (
+                    <img 
+                      src={qrCodeData.qrCodeImage} 
+                      alt="QR Code for sharing this content"
+                      className="w-64 h-64 rounded-lg"
+                    />
+                  ) : (
+                    <div className="w-64 h-64 bg-muted rounded-lg flex items-center justify-center border-2 border-dashed border-border">
+                      <QrCode className="w-16 h-16 text-muted-foreground" />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        )}
+      </div>
+    </div>
+  );
+}

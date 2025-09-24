@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
-import { PageHeader } from './PageHeader';
+import { Header } from './Header';
 import { PageContent } from './PageContent';
 
 interface PageLayoutProps {
@@ -20,7 +20,7 @@ export const PageLayout = ({
 }: PageLayoutProps) => {
   return (
     <div className={cn('min-h-screen bg-background flex flex-col', className)}>
-      {showHeader && <PageHeader title={title} />}
+      {showHeader && <Header title={title} />}
       <PageContent fullHeight={fullHeight}>
         {children}
       </PageContent>

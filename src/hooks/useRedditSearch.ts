@@ -59,7 +59,7 @@ const generateLearningTags = (title: string, selftext: string): string[] => {
   return tags.slice(0, 4); // Limit to 4 tags for better display
 };
 
-export const useRedditSearch = (query: string = 'ABC learning alphabet letters children education') => {
+export const useRedditSearch = (query: string = 'ABC learning for kids') => {
   return useQuery({
     queryKey: ['reddit-search', query],
     queryFn: async (): Promise<RedditPost[]> => {

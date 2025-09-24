@@ -10,28 +10,28 @@ interface RedditSearchBarProps {
 
 const quickSearches = [
   {
-    label: "Educational Discussions",
-    query: "ABC alphabet learning early childhood education teaching",
+    label: "Alphabet Activities",
+    query: "alphabet activities for preschool",
     icon: BookOpen,
-    description: "Find educational discussions and teaching strategies"
+    description: "Find hands-on alphabet learning activities"
   },
   {
-    label: "Parent Advice",
-    query: "toddler preschool alphabet letters reading parenting advice",
-    icon: Users,
-    description: "Parent experiences and advice about ABC learning"
-  },
-  {
-    label: "Learning Apps & Games",
-    query: "educational apps games ABC alphabet children learning digital",
+    label: "Phonics Games",
+    query: "phonics games for kindergarten",
     icon: Gamepad2,
-    description: "Digital tools and apps for alphabet learning"
+    description: "Discover phonics games and activities"
   },
   {
-    label: "Teaching Resources",
-    query: "curriculum worksheets activities ABC alphabet phonics classroom",
+    label: "Letter Tracing Tips",
+    query: "how to teach letter tracing to children",
     icon: GraduationCap,
-    description: "Resources and materials for educators"
+    description: "Get advice on teaching letter formation"
+  },
+  {
+    label: "Early Childhood Education",
+    query: "ABC learning for kids early childhood",
+    icon: Users,
+    description: "Explore early learning discussions and tips"
   }
 ];
 
@@ -57,7 +57,7 @@ export const RedditSearchBar = ({ onSearch, currentQuery }: RedditSearchBarProps
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
           <Input
             type="text"
-            placeholder="Search for ABC learning topics..."
+            placeholder="Search for ABC learning topics (e.g. 'alphabet games for preschool')"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
             className="pl-10"

@@ -111,25 +111,25 @@ function computeRelevanceScore(post: RedditSearchResult, query: string): number 
   
   let score = 0;
   
-  // Enhanced ABC/learning keyword detection (+3 points)
-  const abcKeywords = [
-    'abc', 'alphabet', 'letters', 'tracing', 'phonics', 'reading', 
-    'teach', 'learn', 'child', 'education', 'preschool', 'kindergarten',
-    'toddler', 'early learning', 'literacy', 'writing', 'spelling'
+  // Expanded educational keywords (+3 points)
+  const educationalKeywords = [
+    'abc', 'alphabet', 'letter', 'letters', 'phonics', 'reading', 'teach', 'learn', 
+    'child', 'children', 'kids', 'preschool', 'kindergarten', 'toddler', 'toddlers',
+    'education', 'educational', 'learning', 'literacy', 'writing', 'spelling',
+    'tracing', 'early childhood', 'activities', 'games', 'curriculum', 'teaching'
   ];
-  const hasAbcContent = abcKeywords.some(keyword => 
+  const hasEducationalContent = educationalKeywords.some(keyword => 
     title.includes(keyword) || text.includes(keyword)
   );
-  if (hasAbcContent) score += 3;
+  if (hasEducationalContent) score += 3;
   
-  // Relevant subreddit boost (+2 points)
-  const relevantSubreddits = [
-    'education', 'teachers', 'homeschool', 'parenting', 'kids', 'learning',
-    'preschool', 'kindergarten', 'earlychildhood', 'toddlers', 'babybumps', 
-    'mommit', 'daddit', 'beyondthebump', 'elementary', 'specialneeds'
+  // Refined educational subreddits (+2 points)
+  const educationalSubreddits = [
+    'education', 'teachers', 'homeschool', 'parenting', 'preschool', 'kindergarten',
+    'earlychildhood', 'elementary', 'toddlers', 'mommit', 'daddit', 'beyondthebump'
   ];
-  const isFromRelevantSubreddit = relevantSubreddits.some(sub => subredditName.includes(sub));
-  if (isFromRelevantSubreddit) score += 2;
+  const isFromEducationalSubreddit = educationalSubreddits.some(sub => subredditName.includes(sub));
+  if (isFromEducationalSubreddit) score += 2;
   
   // Direct query match bonus (+2 points)
   if (title.includes(queryLower) || text.includes(queryLower)) score += 2;
@@ -244,10 +244,27 @@ async function searchReddit(
     }))
     .filter(post => post.title && post.subreddit) // Only include posts with valid title and subreddit
     .filter(post => {
-      // Enhanced content filtering
       const title = (post.title || '').toLowerCase();
       const text = (post.selftext || '').toLowerCase();
       const subredditName = (post.subreddit || '').toLowerCase();
+      
+      // Educational relevance filter: must be from relevant subreddit OR contain educational keywords
+      const educationalSubreddits = [
+        'education', 'teachers', 'homeschool', 'parenting', 'preschool', 'kindergarten',
+        'earlychildhood', 'elementary', 'toddlers', 'mommit', 'daddit', 'beyondthebump'
+      ];
+      const educationalKeywords = [
+        'abc', 'alphabet', 'letter', 'phonics', 'reading', 'teach', 'learn', 'child', 
+        'kids', 'preschool', 'kindergarten', 'education', 'learning', 'literacy'
+      ];
+      
+      const isRelevantSub = educationalSubreddits.some(sub => subredditName.includes(sub));
+      const hasKeyword = educationalKeywords.some(kw => title.includes(kw) || text.includes(kw));
+      
+      // Must pass educational relevance check
+      if (!isRelevantSub && !hasKeyword) {
+        return false;
+      }
       
       // Filter out inappropriate subreddits
       const blockedSubreddits = ['nsfw', 'gonewild', 'wtf', 'morbidreality', 'watchpeopledie'];
@@ -265,7 +282,11 @@ async function searchReddit(
       const spamIndicators = ['click here', 'amazing deal', 'limited time', 'act now'];
       const isSpam = spamIndicators.some(indicator => title.includes(indicator));
       
-      return !hasProfanity && !isSpam;
+      // Prefer discussion posts over promotional content
+      const promotionalIndicators = ['buy now', 'discount', 'sale', 'promo code'];
+      const isPromotional = promotionalIndicators.some(indicator => title.includes(indicator));
+      
+      return !hasProfanity && !isSpam && !isPromotional;
     })
     .map(post => ({
       ...post,

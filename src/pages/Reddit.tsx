@@ -7,7 +7,7 @@ import { useRedditSearch } from '@/hooks/useRedditSearch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Reddit = () => {
-  const [searchQuery, setSearchQuery] = useState('ABC learning alphabet letters children education');
+  const [searchQuery, setSearchQuery] = useState('ABC learning for kids');
   const { data: redditPosts, isLoading, error } = useRedditSearch(searchQuery);
 
   return (

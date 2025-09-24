@@ -1,5 +1,8 @@
 project_id = "foxdnspwzhjxjxuicute"
 
+[functions.reddit-search]
+verify_jwt = false
+
 [functions.create-product-description]
 verify_jwt = true
 

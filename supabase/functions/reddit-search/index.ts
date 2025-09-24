@@ -158,7 +158,18 @@ async function searchReddit(
   
   // Filter and transform results
   return resultsListing.data.children
-    .map(child => child.data)
+    .map(child => ({
+      id: child.data.id,
+      title: child.data.title,
+      selftext: child.data.selftext || '',
+      subreddit: child.data.subreddit,
+      score: child.data.score,
+      num_comments: child.data.num_comments,
+      url: child.data.url,
+      permalink: child.data.permalink,
+      created_utc: child.data.created_utc,
+      author: child.data.author,
+    }))
     .filter(post => {
       // Basic content filtering for educational appropriateness
       const title = post.title.toLowerCase();

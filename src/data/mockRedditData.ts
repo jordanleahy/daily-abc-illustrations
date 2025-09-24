@@ -11,6 +11,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 23,
     selftext: "My daughter is 3 and we've been working on ABCs for months but she still confuses similar letters like b and d. Has anyone found activities that really help with letter recognition?",
     url: "https://reddit.com/r/Parenting/comments/abc123",
+    reddit_url: "https://reddit.com/r/Parenting/comments/abc123",
     relevance_score: 95,
     abc_learning_tags: ["Letter Recognition", "Preschool", "Activities"]
   },
@@ -24,6 +25,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 31,
     selftext: "Looking for recommendations on ABC learning apps for my classroom. There are so many options - are the paid versions significantly better than free ones like PBS Kids?",
     url: "https://reddit.com/r/Teachers/comments/def456",
+    reddit_url: "https://reddit.com/r/Teachers/comments/def456",
     relevance_score: 92,
     abc_learning_tags: ["Apps", "Technology", "Kindergarten", "Resources"]
   },
@@ -37,6 +39,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 45,
     selftext: "I'm torn between phonics-based ABC teaching and whole word recognition. My 5-year-old seems to respond better to phonics but I'm worried about reading comprehension later.",
     url: "https://reddit.com/r/homeschool/comments/ghi789",
+    reddit_url: "https://reddit.com/r/homeschool/comments/ghi789",
     relevance_score: 88,
     abc_learning_tags: ["Phonics", "Teaching Methods", "Reading"]
   },
@@ -50,6 +53,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 67,
     selftext: "After trying dozens of alphabet activities, here are the 5 that my twins actually enjoyed and learned from. All using materials you probably have at home!",
     url: "https://reddit.com/r/toddlers/comments/jkl012",
+    reddit_url: "https://reddit.com/r/toddlers/comments/jkl012",
     relevance_score: 96,
     abc_learning_tags: ["DIY", "Activities", "Toddlers", "Success Story"]
   },
@@ -63,6 +67,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 18,
     selftext: "Just got dyslexia diagnosis for my 6-year-old. Are there specific approaches or tools that work better for teaching letters to kids with dyslexia?",
     url: "https://reddit.com/r/specialneeds/comments/mno345",
+    reddit_url: "https://reddit.com/r/specialneeds/comments/mno345",
     relevance_score: 85,
     abc_learning_tags: ["Dyslexia", "Special Needs", "Learning Differences"]
   },
@@ -76,6 +81,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 12,
     selftext: "Considering investing in proper Montessori sandpaper letters and moveable alphabet. For those who've used them, do they make a significant difference?",
     url: "https://reddit.com/r/Montessori/comments/pqr678",
+    reddit_url: "https://reddit.com/r/Montessori/comments/pqr678",
     relevance_score: 78,
     abc_learning_tags: ["Montessori", "Materials", "Investment"]
   },
@@ -89,6 +95,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 29,
     selftext: "My 2-year-old can already identify all uppercase letters and is starting lowercase. She's constantly asking about letters everywhere we go. How can I support this interest appropriately?",
     url: "https://reddit.com/r/GiftedKids/comments/stu901",
+    reddit_url: "https://reddit.com/r/GiftedKids/comments/stu901",
     relevance_score: 82,
     abc_learning_tags: ["Gifted", "Early Learning", "Letter Interest"]
   },
@@ -102,6 +109,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 38,
     selftext: "We have a 6-hour drive coming up and my 4-year-old gets bored easily. Looking for alphabet games we can play in the car that are actually educational.",
     url: "https://reddit.com/r/Parenting/comments/vwx234",
+    reddit_url: "https://reddit.com/r/Parenting/comments/vwx234",
     relevance_score: 90,
     abc_learning_tags: ["Games", "Car Activities", "Entertainment"]
   },
@@ -115,6 +123,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 22,
     selftext: "Working with 5-6 year olds who are learning English as second language. Their native language uses different script. What are most effective ABC teaching methods for ESL students?",
     url: "https://reddit.com/r/ESL/comments/yza567",
+    reddit_url: "https://reddit.com/r/ESL/comments/yza567",
     relevance_score: 87,
     abc_learning_tags: ["ESL", "Second Language", "Teaching Methods"]
   },
@@ -128,6 +137,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 15,
     selftext: "Interested in incorporating more Reggio Emilia principles into our alphabet curriculum. Has anyone successfully used this approach for letter learning?",
     url: "https://reddit.com/r/ECEProfessionals/comments/bcd890",
+    reddit_url: "https://reddit.com/r/ECEProfessionals/comments/bcd890",
     relevance_score: 75,
     abc_learning_tags: ["Reggio Emilia", "Early Childhood", "Curriculum"]
   },
@@ -141,6 +151,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 84,
     selftext: "My 3-year-old loves ABC videos on YouTube but I feel guilty about screen time. Are these actually educational or just entertainment? Looking for evidence-based opinions.",
     url: "https://reddit.com/r/Parenting/comments/efg123",
+    reddit_url: "https://reddit.com/r/Parenting/comments/efg123",
     relevance_score: 93,
     abc_learning_tags: ["Screen Time", "Videos", "Education vs Entertainment"]
   },
@@ -154,6 +165,7 @@ export const mockRedditPosts: RedditPost[] = [
     num_comments: 11,
     selftext: "Considering Waldorf school for my child. I understand they wait longer to introduce formal reading. At what age do they typically start with letters and alphabet?",
     url: "https://reddit.com/r/WaldorfEducation/comments/hij456",
+    reddit_url: "https://reddit.com/r/WaldorfEducation/comments/hij456",
     relevance_score: 71,
     abc_learning_tags: ["Waldorf", "Delayed Academics", "Philosophy"]
   }

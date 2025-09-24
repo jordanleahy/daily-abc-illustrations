@@ -8,6 +8,7 @@ export interface RedditPost {
   num_comments: number;
   selftext: string;
   url: string;
+  reddit_url: string;
   relevance_score: number;
   abc_learning_tags: string[];
 }

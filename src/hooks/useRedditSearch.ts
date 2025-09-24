@@ -12,6 +12,7 @@ interface RedditSearchResult {
   num_comments: number;
   selftext: string;
   url: string;
+  permalink: string;
 }
 
 interface RedditSearchResponse {
@@ -30,6 +31,7 @@ const transformRedditData = (results: RedditSearchResult[]): RedditPost[] => {
     num_comments: post.num_comments,
     selftext: post.selftext || '',
     url: post.url,
+    reddit_url: `https://www.reddit.com${post.permalink}`,
     relevance_score: Math.random() * 0.3 + 0.7, // 0.7-1.0 range for ABC learning relevance
     abc_learning_tags: generateLearningTags(post.title, post.selftext)
   }));

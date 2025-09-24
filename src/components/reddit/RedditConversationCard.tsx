@@ -39,19 +39,47 @@ const getSubredditColor = (subreddit: string) => {
   return colors[subreddit] || 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300';
 };
 
+const validateRedditUrl = (url: string): boolean => {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname === 'www.reddit.com' || urlObj.hostname === 'reddit.com';
+  } catch {
+    return false;
+  }
+};
+
+const openRedditLink = (url: string) => {
+  if (validateRedditUrl(url)) {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+};
+
 export const RedditConversationCard = ({ post }: RedditConversationCardProps) => {
   return (
     <Card className="h-full hover:shadow-md transition-shadow duration-200">
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-semibold text-sm leading-tight line-clamp-2 flex-1">
+          <h3 
+            className="font-semibold text-sm leading-tight line-clamp-2 flex-1 cursor-pointer hover:text-primary transition-colors"
+            onClick={() => openRedditLink(post.reddit_url)}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                openRedditLink(post.reddit_url);
+              }
+            }}
+            aria-label={`Open Reddit discussion: ${post.title}`}
+          >
             {post.title}
           </h3>
           <Button
             variant="ghost"
             size="icon"
             className="h-6 w-6 text-muted-foreground hover:text-foreground shrink-0"
-            onClick={() => window.open(post.url, '_blank')}
+            onClick={() => openRedditLink(post.reddit_url)}
+            aria-label="Open Reddit discussion"
           >
             <ExternalLink className="h-3 w-3" />
           </Button>

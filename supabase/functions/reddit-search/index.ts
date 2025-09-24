@@ -171,9 +171,20 @@ async function searchReddit(
         return false;
       }
       
-      // Prefer educational subreddits
-      const educationalSubreddits = ['education', 'teachers', 'homeschool', 'parenting', 'kids', 'learning'];
-      const isEducational = educationalSubreddits.some(edu => subredditName.includes(edu));
+      // Expanded list of relevant subreddits for ABC learning content
+      const relevantSubreddits = [
+        'education', 'teachers', 'homeschool', 'parenting', 'kids', 'learning',
+        'appgiveaway', 'genaiapps', 'apps', 'freebies', 'deals', 'preschool',
+        'kindergarten', 'earlychildhood', 'toddlers', 'babybumps', 'mommit',
+        'daddit', 'beyondthebump', 'elementary', 'specialneeds'
+      ];
+      const isFromRelevantSubreddit = relevantSubreddits.some(sub => subredditName.includes(sub));
+      
+      // Check for ABC/alphabet specific content keywords
+      const abcKeywords = ['abc', 'alphabet', 'letters', 'tracing', 'phonics', 'reading'];
+      const hasAbcContent = abcKeywords.some(keyword => 
+        title.includes(keyword) || text.includes(keyword)
+      );
       
       // Basic profanity filter (simple implementation)
       const profanityWords = ['fuck', 'shit', 'damn', 'hell'];
@@ -181,7 +192,8 @@ async function searchReddit(
         title.includes(word) || text.includes(word)
       );
       
-      return !hasProfanity && (isEducational || post.score > 5);
+      // Allow content if: no profanity AND (relevant subreddit OR has ABC content OR decent score)
+      return !hasProfanity && (isFromRelevantSubreddit || hasAbcContent || post.score > 2);
     })
     .slice(0, limit);
 }

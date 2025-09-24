@@ -9,6 +9,7 @@ import { PublicPageImage } from '@/components/daily-published';
 import { Card } from '@/components/ui/card';
 import { SlideToUnlock } from '@/components/ui/slide-to-unlock';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
+import { RewardContainer } from '@/components/ui/reward-container';
 import { UpcomingBooksPreview } from '@/components/daily-published';
 import { Calendar, Clock } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
@@ -20,6 +21,7 @@ export default function LibraryBookView() {
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [earnedRewards, setEarnedRewards] = useState(0);
   
   // Generate OpenGraph metadata for the current page
   const { openGraphMetadata } = useDailyPublishedOpenGraph(id, currentPageIndex);
@@ -82,6 +84,7 @@ export default function LibraryBookView() {
   const handleNext = () => {
     if (!isLastPage) {
       setCurrentPageIndex(prev => prev + 1);
+      setEarnedRewards(prev => prev + 1);
     }
   };
 
@@ -104,8 +107,11 @@ export default function LibraryBookView() {
           onBack={handleBack}
         />
         
+        {/* Reward System */}
+        <RewardContainer earnedRewards={earnedRewards} className="pt-20 pb-2" />
+        
         {/* Main content area */}
-        <div className="flex-1 flex flex-col pt-16 pb-4">
+        <div className="flex-1 flex flex-col pb-4">
           <div className="flex-1 flex items-center justify-center p-4">
             <Card className="w-full max-w-sm mx-auto shadow-lg">
               <PublicPageImage 

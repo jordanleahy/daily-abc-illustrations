@@ -107,7 +107,6 @@ export function Header({
   /** Navigation configuration for regular authenticated users */
   const regularNavigation = [
     { name: 'Library', href: '/library' },
-    { name: 'Reddit', href: '/reddit' },
   ];
 
   /** Extended navigation menu for admin users with full system access */

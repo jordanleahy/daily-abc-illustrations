@@ -5,12 +5,11 @@ import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Eye, Users, Calendar, BookOpen, Download } from 'lucide-react';
+import { ArrowLeft, Eye, Calendar, BookOpen, Download } from 'lucide-react';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
-import { PageCard, UserPageCard } from '@/components/page-prompts';
-import { TeacherOnly } from '@/components/TeacherOnly';
+import { LibraryCard } from '@/components/page-prompts';
 import { MetaHead } from '@/components/common/MetaHead';
 import { generateBookPDF } from '@/services/pdfGenerator';
 import { useToast } from '@/hooks/use-toast';
@@ -19,7 +18,6 @@ import { DailyPublished } from '@/types/dailyPublished';
 export default function LibraryDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [viewMode, setViewMode] = useState<'teacher' | 'user'>('teacher');
   
   const { data: dailyPublished, isLoading: bookLoading } = useLibraryBookById(id);
   const { data: pages = [], isLoading: pagesLoading } = useDailyPublishedPages(dailyPublished?.book_id);
@@ -195,23 +193,6 @@ export default function LibraryDetail() {
                 <Eye className="w-4 h-4 mr-2" />
                 Reading View
               </Button>
-              
-              <TeacherOnly>
-                <Button
-                  variant={viewMode === 'user' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('user')}
-                >
-                  User View
-                </Button>
-                <Button
-                  variant={viewMode === 'teacher' ? 'default' : 'outline'}
-                  size="sm"
-                  onClick={() => setViewMode('teacher')}
-                >
-                  Teacher View
-                </Button>
-              </TeacherOnly>
             </div>
           </div>
 
@@ -235,7 +216,7 @@ export default function LibraryDetail() {
                   Published {new Date(dailyPublished.publish_date).toLocaleDateString()}
                 </div>
                 <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
+                  <BookOpen className="w-4 h-4" />
                   {pages.length} pages
                 </div>
                 <Badge variant={getStatusBadgeVariant(dailyPublished.status)}>
@@ -257,27 +238,11 @@ export default function LibraryDetail() {
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {pages.map((page) => (
-                  <TeacherOnly
+                  <LibraryCard
                     key={page.id}
-                    fallback={
-                      <UserPageCard
-                        page={page}
-                        bookId={dailyPublished.book_id}
-                      />
-                    }
-                  >
-                    {viewMode === 'teacher' ? (
-                      <PageCard
-                        page={page}
-                        bookId={dailyPublished.book_id}
-                      />
-                    ) : (
-                      <UserPageCard
-                        page={page}
-                        bookId={dailyPublished.book_id}
-                      />
-                    )}
-                  </TeacherOnly>
+                    page={page}
+                    bookId={dailyPublished.book_id}
+                  />
                 ))}
               </div>
             </div>

@@ -4,3 +4,4 @@ export { PageVersionHistoryModal } from './PageVersionHistoryModal';
 export { PageCard } from './PageCard';
 export { UserPageCard } from './UserPageCard';
 export { FocusedPageView } from './FocusedPageView';
+export { LibraryCard } from './LibraryCard';

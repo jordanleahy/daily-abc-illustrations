@@ -16,7 +16,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
-import { useIsAdmin } from '@/contexts/RoleContext';
+import { useIsAdmin, useIsTeacher } from '@/contexts/RoleContext';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
@@ -80,6 +80,7 @@ export function Header({
 }: HeaderProps) {
   const { isAuthenticated, user, signOut } = useAuth();
   const isAdmin = useIsAdmin();
+  const isTeacher = useIsTeacher();
   const { qrCodeData } = useBookQRCode(bookId || '');
   const navigate = useNavigate();
   const location = useLocation();
@@ -211,16 +212,18 @@ export function Header({
               </>
             ) : (
               <>
-                <Link
-                  to="/"
-                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                    location.pathname === '/'
-                      ? 'bg-primary/10 text-primary'
-                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                  }`}
-                >
-                  Home
-                </Link>
+                {!isTeacher && (
+                  <Link
+                    to="/"
+                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                      location.pathname === '/'
+                        ? 'bg-primary/10 text-primary'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    Home
+                  </Link>
+                )}
                 {regularNavigation.map((item) => (
                   <Link
                     key={item.name}

@@ -17,6 +17,14 @@ export default function DailyPublished() {
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+
+  // Set random starting page once pages are loaded
+  useEffect(() => {
+    if (pages.length > 0) {
+      const randomIndex = Math.floor(Math.random() * pages.length);
+      setCurrentPageIndex(randomIndex);
+    }
+  }, [pages.length]);
   
   // Generate OpenGraph metadata for the current page
   const { openGraphMetadata } = useDailyPublishedOpenGraph(id, currentPageIndex);

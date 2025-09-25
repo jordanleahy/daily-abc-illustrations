@@ -173,9 +173,9 @@ function LibraryBookCard({ item }: LibraryBookCardProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {item.description && (
+        {(seoMetadata?.seo_description || item.description) && (
           <CardDescription className="line-clamp-3">
-            {item.description}
+            {seoMetadata?.seo_description || item.description}
           </CardDescription>
         )}
         

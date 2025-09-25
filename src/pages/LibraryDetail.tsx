@@ -174,17 +174,6 @@ export default function LibraryDetail() {
       
       <Container>
         <div className="space-y-6">
-          {/* Header */}
-          <div className="flex items-center justify-between">
-            <Button 
-              variant="ghost" 
-              onClick={handleBack}
-              className="p-2 hover:bg-accent"
-            >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Library
-            </Button>
-          </div>
 
           {/* Book Info */}
           <Card>

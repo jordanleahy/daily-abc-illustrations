@@ -18,6 +18,10 @@ import DailyPublished from "./pages/DailyPublished";
 import DailyPublishedSchedule from "./pages/DailyPublishedSchedule";
 import Schedule from "./pages/Schedule";
 import Reddit from "./pages/Reddit";
+import Subscription from "./pages/Subscription";
+import SubscriptionSuccess from "./pages/SubscriptionSuccess";
+import SubscriptionCancel from "./pages/SubscriptionCancel";
+import SubscriptionManage from "./pages/SubscriptionManage";
 import NotFound from "./pages/NotFound";
 import { GA4Tracker } from "./components/GA4Tracker";
 
@@ -58,6 +62,10 @@ const App = () => (
              <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
              <Route path="/schedule" element={<Schedule />} />
              <Route path="/reddit" element={<Reddit />} />
+             <Route path="/subscription" element={<Subscription />} />
+             <Route path="/subscription/success" element={<SubscriptionSuccess />} />
+             <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
+             <Route path="/subscription/manage" element={<SubscriptionManage />} />
              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -216,7 +216,7 @@ function LibraryBookCard({ item }: LibraryBookCardProps) {
       <CardHeader>
         <div className="flex justify-between items-start">
           <CardTitle className="text-xl line-clamp-2">
-            {item.title}
+            {seoMetadata?.seo_title || item.title}
           </CardTitle>
           <div className="flex flex-col gap-2 items-end">
             <Badge variant={getStatusBadgeVariant(item.status)}>

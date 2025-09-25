@@ -9,7 +9,7 @@ import type { SEOMetadata } from '@/types/openGraph';
 import { useState, useEffect } from 'react';
 import { MetaHead } from '@/components/common';
 import { useNavigate } from 'react-router-dom';
-import { UpcomingBooksPreview } from './UpcomingBooksPreview';
+import { SchedulePreview } from './SchedulePreview';
 interface DailyPublishedPageViewProps {
   page: Page;
   bookId: string;
@@ -109,11 +109,11 @@ export function DailyPublishedPageView({
         show={!isLastPage}
       />
 
-      {/* Swipe up drawer for upcoming books - only show on last page */}
+      {/* Swipe up drawer for schedule preview - only show on last page */}
       {isLastPage && (
         <SwipeUpDrawer>
           <div className="px-4 py-2 h-full">
-            <UpcomingBooksPreview />
+            <SchedulePreview />
           </div>
         </SwipeUpDrawer>
       )}

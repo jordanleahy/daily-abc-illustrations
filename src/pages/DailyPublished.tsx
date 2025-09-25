@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useDailyPublishedById } from '@/hooks/useDailyPublishedById';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { DailyPublishedPageView, useDailyPublishedPages } from '@/components/daily-published';
+import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
 import { MetaHead } from '@/components/common';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock } from 'lucide-react';
@@ -11,20 +12,45 @@ import { SITE_CONFIG } from '@/config/site';
 export default function DailyPublished() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { data: result, isLoading: isLoadingDaily, error: dailyError } = useDailyPublishedById(id);
   const dailyContent = result?.data;
   const isExpired = result?.isExpired;
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
 
   // Set random starting page once pages are loaded
   useEffect(() => {
-    if (pages.length > 0) {
+    if (pages.length > 0 && !sessionStarted) {
       const randomIndex = Math.floor(Math.random() * pages.length);
       setCurrentPageIndex(randomIndex);
+      
+      // Start analytics session
+      if (dailyContent) {
+        const entryPoint = location.state?.from === 'homepage' ? 'homepage_redirect' : 'direct_link';
+        
+        startSession({
+          contentType: 'daily_published',
+          contentId: dailyContent.id,
+          bookId: dailyContent.book_id,
+          totalPages: pages.length,
+          entryPoint,
+          startingPage: randomIndex + 1,
+        });
+        
+        // Track initial page view
+        const startingPage = pages[randomIndex];
+        if (startingPage) {
+          trackPageView(randomIndex + 1, startingPage.letter, 'session_start');
+        }
+        
+        setSessionStarted(true);
+      }
     }
-  }, [pages.length]);
+  }, [pages.length, dailyContent, sessionStarted, startSession, trackPageView, location.state]);
   
   // Generate OpenGraph metadata for the current page
   const { openGraphMetadata } = useDailyPublishedOpenGraph(id, currentPageIndex);
@@ -109,13 +135,25 @@ export default function DailyPublished() {
 
   const handleNext = () => {
     if (!isLastPage) {
-      setCurrentPageIndex(prev => prev + 1);
+      const newIndex = currentPageIndex + 1;
+      setCurrentPageIndex(newIndex);
+      
+      // Track page view
+      if (sessionStarted && pages[newIndex]) {
+        trackPageView(newIndex + 1, pages[newIndex].letter, 'next_swipe');
+      }
     }
   };
 
   const handlePrevious = () => {
     if (currentPageIndex > 0) {
-      setCurrentPageIndex(prev => prev - 1);
+      const newIndex = currentPageIndex - 1;
+      setCurrentPageIndex(newIndex);
+      
+      // Track page view
+      if (sessionStarted && pages[newIndex]) {
+        trackPageView(newIndex + 1, pages[newIndex].letter, 'previous_swipe');
+      }
     }
   };
 

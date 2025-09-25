@@ -45,6 +45,7 @@ export function DailyPublishedPageView({
   useEffect(() => {
     if (isExpired) {
       console.log('Content has expired, redirecting to home...');
+      // Note: Session end tracking is handled by the parent component's cleanup
       navigate('/', {
         replace: true
       });

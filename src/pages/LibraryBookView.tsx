@@ -1,8 +1,9 @@
-import { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
+import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { PublicPageImage } from '@/components/daily-published';
@@ -19,8 +20,10 @@ import { isValidUUID } from '@/utils/uuid';
 export default function LibraryBookView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const safeId = id && isValidUUID(id) ? id : undefined;
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
+  const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
 
   // Debug information for troubleshooting
   console.log('LibraryBookView Debug:', {
@@ -34,13 +37,45 @@ export default function LibraryBookView() {
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [earnedRewards, setEarnedRewards] = useState(0);
+  const [sessionStarted, setSessionStarted] = useState(false);
+  const [initialPageTracked, setInitialPageTracked] = useState(false);
   
   // Generate OpenGraph metadata for the current page
   const { openGraphMetadata } = useDailyPublishedOpenGraph(safeId, currentPageIndex);
 
   const isLoading = isLoadingDaily || isLoadingPages;
 
+  // Start analytics session when content loads
+  useEffect(() => {
+    if (dailyContent && pages.length > 0 && !sessionStarted) {
+      const entryPoint = location.state?.from === 'library-detail' ? 'reading_view_button' : 'library_card';
+      
+      startSession({
+        contentType: 'library_book',
+        contentId: dailyContent.id,
+        bookId: dailyContent.book_id,
+        totalPages: pages.length,
+        entryPoint,
+        startingPage: 1,
+      });
+      
+      setSessionStarted(true);
+    }
+  }, [dailyContent, pages, sessionStarted, startSession, location.state]);
+
+  // Track initial page view once session starts
+  useEffect(() => {
+    if (sessionStarted && pages.length > 0 && !initialPageTracked) {
+      const currentPage = pages[currentPageIndex];
+      if (currentPage) {
+        trackPageView(currentPageIndex + 1, currentPage.letter, 'session_start');
+        setInitialPageTracked(true);
+      }
+    }
+  }, [sessionStarted, pages, currentPageIndex, trackPageView, initialPageTracked]);
+
   const handleBack = () => {
+    endSession('back_button');
     navigate('/library');
   };
 
@@ -103,14 +138,26 @@ export default function LibraryBookView() {
 
   const handleNext = () => {
     if (!isLastPage) {
-      setCurrentPageIndex(prev => prev + 1);
+      const newIndex = currentPageIndex + 1;
+      setCurrentPageIndex(newIndex);
       setEarnedRewards(prev => prev + 1);
+      
+      // Track page view
+      if (sessionStarted && pages[newIndex]) {
+        trackPageView(newIndex + 1, pages[newIndex].letter, 'next_swipe');
+      }
     }
   };
 
   const handlePrevious = () => {
     if (currentPageIndex > 0) {
-      setCurrentPageIndex(prev => prev - 1);
+      const newIndex = currentPageIndex - 1;
+      setCurrentPageIndex(newIndex);
+      
+      // Track page view
+      if (sessionStarted && pages[newIndex]) {
+        trackPageView(newIndex + 1, pages[newIndex].letter, 'previous_swipe');
+      }
     }
   };
 

@@ -1,5 +1,6 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, User, LogOut, QrCode, Settings, Users, Activity } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -20,6 +21,7 @@ import { useIsAdmin, useIsTeacher } from '@/contexts/RoleContext';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
+import { UserProfileModal } from '@/components/profile/UserProfileModal';
 
 /**
  * Header Component
@@ -84,6 +86,7 @@ export function Header({
   const { qrCodeData } = useBookQRCode(bookId || '');
   const navigate = useNavigate();
   const location = useLocation();
+  const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
 
   /** Sign out handler with automatic redirect to authentication page */
   const handleSignOut = async () => {
@@ -282,13 +285,13 @@ export function Header({
                   </AdminOnly>
                   
                   {/* User Section */}
-                  <Link
-                    to="/profile"
-                    className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                  <button
+                    onClick={() => setIsProfileModalOpen(true)}
+                    className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <User className="mr-2 h-4 w-4" />
                     Profile
-                  </Link>
+                  </button>
                   <button
                     onClick={handleSignOut}
                     className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -315,7 +318,7 @@ export function Header({
                   </div>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <DropdownMenuItem onClick={() => setIsProfileModalOpen(true)}>
                   <User className="mr-2 h-4 w-4" />
                   Profile
                 </DropdownMenuItem>
@@ -363,6 +366,11 @@ export function Header({
           </div>
         </div>
         </Container>
-      </header>
+      
+      <UserProfileModal 
+        open={isProfileModalOpen} 
+        onOpenChange={setIsProfileModalOpen} 
+      />
+    </header>
     );
   }

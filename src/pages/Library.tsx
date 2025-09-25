@@ -263,12 +263,14 @@ function LibraryBookCard({ item }: LibraryBookCardProps) {
           </div>
         </div>
         
-        <div className="aspect-square bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+        <div className="aspect-[1200/630] bg-muted rounded-lg flex items-center justify-center overflow-hidden">
           {seoMetadata?.og_image_url ? (
             <img 
               src={seoMetadata.og_image_url} 
               alt={`Preview of ${item.title}`}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-center"
+              loading="lazy"
+              decoding="async"
             />
           ) : (
             <BookOpen className="w-8 h-8 text-muted-foreground" />

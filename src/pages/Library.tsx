@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
@@ -7,12 +7,10 @@ import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Calendar, Users, GraduationCap, Download } from 'lucide-react';
+import { BookOpen, Calendar, Users, GraduationCap } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useIsTeacher } from '@/contexts/RoleContext';
-import { generateBookPDF } from '@/services/pdfGenerator';
-import { useToast } from '@/hooks/use-toast';
 
 export default function Library() {
   const {
@@ -117,9 +115,6 @@ interface LibraryBookCardProps {
 
 function LibraryBookCard({ item }: LibraryBookCardProps) {
   const navigate = useNavigate();
-  const { toast } = useToast();
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [pdfProgress, setPdfProgress] = useState(0);
   
   const {
     data: seoMetadata
@@ -135,52 +130,6 @@ function LibraryBookCard({ item }: LibraryBookCardProps) {
     }
   };
 
-  const handleDownloadPDF = async (event: React.MouseEvent) => {
-    event.stopPropagation(); // Prevent card navigation
-    
-    if (!item.book_id) {
-      toast({
-        title: "Error",
-        description: "Book information not available",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsGeneratingPdf(true);
-    setPdfProgress(0);
-
-    try {
-      await generateBookPDF(item.book_id, item.book.book_name || 'ABC Book', {
-        onProgress: (progress) => {
-          setPdfProgress(progress);
-        },
-        onError: (error) => {
-          console.error('PDF generation error:', error);
-          toast({
-            title: "Error generating PDF",
-            description: "An error occurred while generating the PDF",
-            variant: "destructive"
-          });
-        }
-      });
-
-      toast({
-        title: "PDF Downloaded",
-        description: `${item.book.book_name} has been downloaded successfully`,
-      });
-    } catch (error) {
-      console.error('PDF generation failed:', error);
-      toast({
-        title: "Download Failed",
-        description: "Failed to generate PDF. Please try again.",
-        variant: "destructive"
-      });
-    } finally {
-      setIsGeneratingPdf(false);
-      setPdfProgress(0);
-    }
-  };
 
   const getStatusBadgeVariant = (status: string) => {
     switch (status) {
@@ -218,32 +167,9 @@ function LibraryBookCard({ item }: LibraryBookCardProps) {
           <CardTitle className="text-xl line-clamp-2">
             {seoMetadata?.seo_title || item.title}
           </CardTitle>
-          <div className="flex flex-col gap-2 items-end">
-            <Badge variant={getStatusBadgeVariant(item.status)}>
-              {getStatusLabel(item.status)}
-            </Badge>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleDownloadPDF}
-              disabled={isGeneratingPdf}
-              className="gap-1 h-8"
-            >
-              {isGeneratingPdf ? (
-                <>
-                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
-                  {pdfProgress > 0 && (
-                    <span className="text-xs">{Math.round(pdfProgress)}%</span>
-                  )}
-                </>
-              ) : (
-                <>
-                  <Download className="h-3 w-3" />
-                  <span className="text-xs">PDF</span>
-                </>
-              )}
-            </Button>
-          </div>
+          <Badge variant={getStatusBadgeVariant(item.status)}>
+            {getStatusLabel(item.status)}
+          </Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">

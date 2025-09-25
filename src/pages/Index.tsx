@@ -28,6 +28,7 @@ import { PageLayout } from '@/components/layout';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailyPublished } from '@/hooks/useDailyPublished';
 import { useUserRole } from '@/hooks/useUserRole';
+import { useIsTeacher } from '@/contexts/RoleContext';
 import { AdminOnly } from '@/components/AdminOnly';
 import { toast } from 'sonner';
 
@@ -62,6 +63,7 @@ const Index = () => {
   const { data: activeDaily, isLoading: isDailyLoading } = useDailyPublished();
 const userRole = useUserRole();
 const isAdmin = userRole.data?.isAdmin ?? false;
+const isTeacher = useIsTeacher();
 const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
@@ -87,6 +89,13 @@ const navigate = useNavigate();
   useEffect(() => {
     setUserScrolledUp(false);
   }, [messages.length]);
+
+  // Redirect teachers to library
+  useEffect(() => {
+    if (!loading && isAuthenticated && isTeacher) {
+      navigate('/library', { replace: true });
+    }
+  }, [loading, isAuthenticated, isTeacher, navigate]);
 
   // Redirect non-authenticated users to active daily published content
   useEffect(() => {

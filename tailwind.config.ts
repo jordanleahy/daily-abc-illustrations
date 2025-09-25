@@ -74,6 +74,14 @@ export default {
         "color-purple": "hsl(var(--color-purple))",
         "color-pink": "hsl(var(--color-pink))",
         "color-black": "hsl(var(--color-black))",
+        // Duolingo-inspired colors
+        "duolingo-green": "hsl(var(--duolingo-green))",
+        "duolingo-green-light": "hsl(var(--duolingo-green-light))",
+        "duolingo-orange": "hsl(var(--duolingo-orange))",
+        "duolingo-blue": "hsl(var(--duolingo-blue))",
+        "duolingo-red": "hsl(var(--duolingo-red))",
+        "duolingo-purple": "hsl(var(--duolingo-purple))",
+        "duolingo-yellow": "hsl(var(--duolingo-yellow))",
       },
       borderRadius: {
         lg: "var(--radius)",

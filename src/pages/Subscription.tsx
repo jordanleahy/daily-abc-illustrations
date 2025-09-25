@@ -1,5 +1,5 @@
 import { PageLayout } from "@/components/layout/PageLayout";
-import { PricingSection } from "@/components/subscription/PricingSection";
+import { DuolingoStylePricing } from "@/components/subscription/DuolingoStylePricing";
 import { SubscriptionStatus } from "@/components/subscription/SubscriptionStatus";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,56 +8,32 @@ const Subscription = () => {
   const { user } = useAuth();
 
   return (
-    <PageLayout>
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold mb-4">Subscription Management</h1>
-            <p className="text-muted-foreground text-lg">
-              Manage your Daily ABC Illustrations subscription
-            </p>
-          </div>
-
-          {user && (
-            <div className="mb-8">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Current Status</CardTitle>
-                  <CardDescription>
-                    Your current subscription status and benefits
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <SubscriptionStatus />
-                </CardContent>
-              </Card>
-            </div>
-          )}
-
-          <PricingSection />
-
-          {!user && (
-            <div className="mt-8">
-              <Card className="bg-blue-50/50 border-blue-200">
-                <CardHeader className="text-center">
-                  <CardTitle>Sign In Required</CardTitle>
-                  <CardDescription>
-                    Please sign in to view your subscription status and manage your account
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="text-center">
-                  <a 
-                    href="/auth" 
-                    className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2"
-                  >
-                    Sign In
-                  </a>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+    <PageLayout showHeader={false}>
+      <DuolingoStylePricing />
+      
+      {!user && (
+        <div className="fixed bottom-6 right-6 z-50">
+          <Card className="bg-duolingo-blue/95 border-duolingo-blue text-white backdrop-blur-sm shadow-2xl">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
+                  👋
+                </div>
+                <div>
+                  <div className="font-semibold text-sm">New here?</div>
+                  <div className="text-xs opacity-90">Sign in to track your progress!</div>
+                </div>
+                <a 
+                  href="/auth" 
+                  className="bg-white text-duolingo-blue px-4 py-2 rounded-full text-sm font-bold hover:bg-white/90 transition-colors ml-2"
+                >
+                  Sign In
+                </a>
+              </div>
+            </CardContent>
+          </Card>
         </div>
-      </div>
+      )}
     </PageLayout>
   );
 };

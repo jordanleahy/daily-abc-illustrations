@@ -319,26 +319,15 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             onLoad={() => console.log('🖼️ Image loaded successfully:', currentImage.image_url)}
             onError={() => console.error('🚫 Image failed to load:', currentImage.image_url)}
           />
-          {/* Source indicator */}
-          <div className="absolute top-2 left-2">
-            <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-              isUserUploaded 
-                ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' 
-                : 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
-            }`}>
-              {isUserUploaded ? (
-                <>
-                  <Upload className="w-3 h-3" />
-                  Uploaded
-                </>
-              ) : (
-                <>
-                  <Sparkles className="w-3 h-3" />
-                  AI Generated
-                </>
-              )}
+          {/* Source indicator - only show for AI generated */}
+          {!isUserUploaded && (
+            <div className="absolute top-2 left-2">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                <Sparkles className="w-3 h-3" />
+                AI Generated
+              </div>
             </div>
-          </div>
+          )}
         </div>
       ) : isGenerating ? (
         // Show generating state

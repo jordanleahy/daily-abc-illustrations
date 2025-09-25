@@ -5,7 +5,8 @@ import { Container } from '@/components/layout/Container';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Eye, Calendar, BookOpen, Download } from 'lucide-react';
+import { ArrowLeft, Eye, Calendar, BookOpen, Download, Image as ImageIcon } from 'lucide-react';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
@@ -178,39 +179,66 @@ export default function LibraryDetail() {
           {/* Book Info */}
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-start">
-                <div>
-                  <CardTitle className="text-2xl">{seoMetadata?.seo_title || dailyPublished.title}</CardTitle>
-                  {dailyPublished.description && (
-                    <p className="text-muted-foreground">{dailyPublished.description}</p>
-                  )}
+              <div className="flex flex-col md:flex-row gap-6">
+                {/* OG Thumbnail */}
+                <div className="flex-shrink-0">
+                  <div className="w-32 h-32 rounded-lg overflow-hidden bg-muted">
+                    {seoMetadata?.og_image_url ? (
+                      <AspectRatio ratio={1} className="w-full h-full">
+                        <img
+                          src={seoMetadata.og_image_url}
+                          alt={`${dailyPublished.title} thumbnail`}
+                          className="w-full h-full object-cover"
+                        />
+                      </AspectRatio>
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleReadingView}
-                  >
-                    <Eye className="w-4 h-4 mr-2" />
-                    Reading View
-                  </Button>
-                  <DownloadButton dailyPublished={dailyPublished} />
+
+                {/* Content */}
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-col md:flex-row md:justify-between md:items-start gap-4">
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-2xl mb-2">{seoMetadata?.seo_title || dailyPublished.title}</CardTitle>
+                      {dailyPublished.description && (
+                        <p className="text-muted-foreground mb-4">{dailyPublished.description}</p>
+                      )}
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          Published {new Date(dailyPublished.publish_date).toLocaleDateString()}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <BookOpen className="w-4 h-4" />
+                          {pages.length} pages
+                        </div>
+                        <Badge variant={getStatusBadgeVariant(dailyPublished.status)}>
+                          {getStatusLabel(dailyPublished.status)}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <Button
+                        variant="outline"
+                        onClick={handleReadingView}
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Reading View
+                      </Button>
+                      <DownloadButton dailyPublished={dailyPublished} />
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  Published {new Date(dailyPublished.publish_date).toLocaleDateString()}
-                </div>
-                <div className="flex items-center gap-1">
-                  <BookOpen className="w-4 h-4" />
-                  {pages.length} pages
-                </div>
-                <Badge variant={getStatusBadgeVariant(dailyPublished.status)}>
-                  {getStatusLabel(dailyPublished.status)}
-                </Badge>
-              </div>
+              {/* Content moved to CardHeader */}
             </CardContent>
           </Card>
 

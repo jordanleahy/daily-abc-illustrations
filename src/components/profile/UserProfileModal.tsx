@@ -44,7 +44,8 @@ export function UserProfileModal({ open, onOpenChange }: UserProfileModalProps) 
                 <Button
                   key={tab.id}
                   variant={activeTab === tab.id ? 'default' : 'ghost'}
-                  className="w-full justify-start text-left text-sm md:text-base"
+                  size="sm"
+                  className="w-full justify-start text-left text-xs"
                   onClick={() => setActiveTab(tab.id as TabType)}
                 >
                   {tab.label}

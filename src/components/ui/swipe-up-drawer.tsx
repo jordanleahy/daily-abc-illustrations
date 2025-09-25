@@ -5,9 +5,15 @@ interface SwipeUpDrawerProps {
   children: React.ReactNode;
   className?: string;
   onStateChange?: (isOpen: boolean) => void;
+  fullHeight?: boolean;
 }
 
-export function SwipeUpDrawer({ children, className, onStateChange }: SwipeUpDrawerProps) {
+export function SwipeUpDrawer({ 
+  children, 
+  className, 
+  onStateChange,
+  fullHeight = false
+}: SwipeUpDrawerProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
@@ -15,7 +21,7 @@ export function SwipeUpDrawer({ children, className, onStateChange }: SwipeUpDra
   const startY = useRef(0);
   const currentY = useRef(0);
 
-  const DRAWER_HEIGHT = 80; // vh
+  const DRAWER_HEIGHT = fullHeight ? 100 : 80; // vh
   const THRESHOLD = 50; // pixels to trigger open/close
 
   useEffect(() => {
@@ -37,12 +43,12 @@ export function SwipeUpDrawer({ children, className, onStateChange }: SwipeUpDra
     if (isOpen) {
       // When open, allow dragging down to close
       if (deltaY < 0) {
-        setDragOffset(Math.max(deltaY, -window.innerHeight * 0.8));
+        setDragOffset(Math.max(deltaY, -window.innerHeight * (fullHeight ? 1 : 0.8)));
       }
     } else {
       // When closed, allow dragging up to open
       if (deltaY > 0) {
-        setDragOffset(Math.min(deltaY, window.innerHeight * 0.8));
+        setDragOffset(Math.min(deltaY, window.innerHeight * (fullHeight ? 1 : 0.8)));
       }
     }
   };
@@ -82,11 +88,11 @@ export function SwipeUpDrawer({ children, className, onStateChange }: SwipeUpDra
     
     if (isOpen) {
       if (deltaY < 0) {
-        setDragOffset(Math.max(deltaY, -window.innerHeight * 0.8));
+        setDragOffset(Math.max(deltaY, -window.innerHeight * (fullHeight ? 1 : 0.8)));
       }
     } else {
       if (deltaY > 0) {
-        setDragOffset(Math.min(deltaY, window.innerHeight * 0.8));
+        setDragOffset(Math.min(deltaY, window.innerHeight * (fullHeight ? 1 : 0.8)));
       }
     }
   };

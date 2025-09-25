@@ -13,6 +13,7 @@ import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
 import Library from "./pages/Library";
 import LibraryBookView from "./pages/LibraryBookView";
+import LibraryDetail from "./pages/LibraryDetail";
 import DailyPublished from "./pages/DailyPublished";
 import DailyPublishedSchedule from "./pages/DailyPublishedSchedule";
 import Schedule from "./pages/Schedule";
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/books/:id" element={<BookDetail />} />
              <Route path="/library" element={<Library />} />
              <Route path="/library/:id" element={<LibraryBookView />} />
+             <Route path="/library/:id/detail" element={<LibraryDetail />} />
              <Route path="/daily-published/:id" element={<DailyPublished />} />
              <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
              <Route path="/schedule" element={<Schedule />} />

@@ -125,8 +125,14 @@ function LibraryBookCard({ item }: LibraryBookCardProps) {
     data: seoMetadata
   } = useSeoMetadata(item.id);
 
+  const isTeacher = useIsTeacher();
+  
   const handleCardClick = () => {
-    navigate(`/library/${item.id}`);
+    if (isTeacher) {
+      navigate(`/library/${item.id}/detail`);
+    } else {
+      navigate(`/library/${item.id}`);
+    }
   };
 
   const handleDownloadPDF = async (event: React.MouseEvent) => {

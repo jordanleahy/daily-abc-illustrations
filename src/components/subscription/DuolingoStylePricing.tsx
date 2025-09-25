@@ -37,7 +37,7 @@ export const DuolingoStylePricing = () => {
         <div className="max-w-4xl mx-auto">
           <div className="flex justify-center mb-6">
             <div className="relative">
-              <div className="w-20 h-20 bg-gradient-green rounded-full flex items-center justify-center text-4xl animate-bounce">
+              <div className="w-20 h-20 bg-gradient-to-br from-duolingo-green to-duolingo-green-light rounded-full flex items-center justify-center text-4xl animate-bounce">
                 📚
               </div>
               <div className="absolute -top-2 -right-2 w-8 h-8 bg-duolingo-orange rounded-full flex items-center justify-center">
@@ -152,7 +152,7 @@ export const DuolingoStylePricing = () => {
               </Badge>
             )}
             <CardHeader className="text-center pb-4 pt-8">
-              <div className="w-16 h-16 bg-gradient-green rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-duolingo-green to-duolingo-green-light rounded-full flex items-center justify-center mx-auto mb-4">
                 <Star className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-2xl">Super Learner</CardTitle>
@@ -184,7 +184,7 @@ export const DuolingoStylePricing = () => {
             </CardContent>
             <CardFooter>
               <Button 
-                className="w-full bg-gradient-green hover:opacity-90 text-white font-bold py-3 text-lg shadow-lg" 
+                className="w-full bg-gradient-to-r from-duolingo-green to-duolingo-green-light hover:opacity-90 text-white font-bold py-3 text-lg shadow-lg"
                 onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id)}
                 disabled={loading || (isSubscribed && currentTier?.interval === 'month')}
               >
@@ -211,7 +211,7 @@ export const DuolingoStylePricing = () => {
           {/* Annual Plan */}
           <Card className={`relative border-2 ${currentTier?.interval === 'year' ? 'border-duolingo-purple ring-4 ring-duolingo-purple/20' : 'border-duolingo-purple'} hover:border-duolingo-purple/70 transition-all duration-300`}>
             <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <Badge className="bg-gradient-premium text-white px-4 py-1 text-sm font-bold">
+              <Badge className="bg-gradient-to-r from-duolingo-purple to-purple-600 text-white px-4 py-1 text-sm font-bold">
                 <Trophy className="w-4 h-4 mr-1" />
                 BEST VALUE
               </Badge>
@@ -223,7 +223,7 @@ export const DuolingoStylePricing = () => {
               </Badge>
             )}
             <CardHeader className="text-center pb-4 pt-8">
-              <div className="w-16 h-16 bg-gradient-premium rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-duolingo-purple to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Trophy className="w-8 h-8 text-white" />
               </div>
               <CardTitle className="text-2xl">Master Learner</CardTitle>
@@ -266,7 +266,7 @@ export const DuolingoStylePricing = () => {
             </CardContent>
             <CardFooter>
               <Button 
-                className="w-full bg-gradient-premium hover:opacity-90 text-white font-bold py-3 text-lg shadow-lg" 
+                className="w-full bg-gradient-to-r from-duolingo-purple to-purple-600 hover:opacity-90 text-white font-bold py-3 text-lg shadow-lg" 
                 onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.standard_annual.price_id)}
                 disabled={loading || (isSubscribed && currentTier?.interval === 'year')}
               >

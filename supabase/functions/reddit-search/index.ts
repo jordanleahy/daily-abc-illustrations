@@ -176,7 +176,8 @@ async function searchReddit(
   token: string,
   query: string,
   subreddit?: string,
-  limit: number = 10
+  limit: number = 10,
+  timeFilter?: string
 ): Promise<RedditPostWithRelevance[]> {
   const userAgent = Deno.env.get('REDDIT_USER_AGENT') || 'dailyabcillustrations/1.0';
   
@@ -188,6 +189,11 @@ async function searchReddit(
     sort: 'relevance',
     type: 'link,sr',
   });
+  
+  // Add time filter if specified
+  if (timeFilter) {
+    params.append('t', timeFilter);
+  }
   
   if (subreddit) {
     params.append('restrict_sr', 'true');
@@ -247,6 +253,14 @@ async function searchReddit(
       const title = (post.title || '').toLowerCase();
       const text = (post.selftext || '').toLowerCase();
       const subredditName = (post.subreddit || '').toLowerCase();
+      
+      // Time filter: for 48 hours, filter posts created in last 2 days
+      if (timeFilter === '48h') {
+        const hoursAgo = (Date.now() - (post.created_utc * 1000)) / (1000 * 60 * 60);
+        if (hoursAgo > 48) {
+          return false;
+        }
+      }
       
       // Educational relevance filter: must be from relevant subreddit OR contain educational keywords
       const educationalSubreddits = [
@@ -320,7 +334,7 @@ serve(async (req) => {
   }
   
   try {
-    const { query, subreddit, limit = 10 } = await req.json();
+    const { query, subreddit, limit = 10, timeFilter } = await req.json();
     
     if (!query || typeof query !== 'string') {
       return new Response(
@@ -338,7 +352,7 @@ serve(async (req) => {
     const token = await getRedditToken();
     
     // Search Reddit
-    const results = await searchReddit(token, query, subreddit, limit);
+    const results = await searchReddit(token, query, subreddit, limit, timeFilter);
     
     console.log(`Reddit search completed: ${results.length} results found`);
     

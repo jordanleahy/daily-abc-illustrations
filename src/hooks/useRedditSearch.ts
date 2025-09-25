@@ -59,14 +59,15 @@ const generateLearningTags = (title: string, selftext: string): string[] => {
   return tags.slice(0, 4); // Limit to 4 tags for better display
 };
 
-export const useRedditSearch = (query: string = 'ABC learning for kids') => {
+export const useRedditSearch = (query: string = 'ABC learning for kids', timeFilter?: string) => {
   return useQuery({
-    queryKey: ['reddit-search', query],
+    queryKey: ['reddit-search', query, timeFilter],
     queryFn: async (): Promise<RedditPost[]> => {
       const { data, error } = await supabase.functions.invoke('reddit-search', {
         body: { 
           query,
-          limit: 10
+          limit: 20,
+          timeFilter
         }
       });
 

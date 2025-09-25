@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
 interface RedditSearchBarProps {
-  onSearch: (query: string) => void;
+  onSearch: (query: string, timeFilter?: string) => void;
   currentQuery: string;
 }
 
@@ -37,17 +37,18 @@ const quickSearches = [
 
 export const RedditSearchBar = ({ onSearch, currentQuery }: RedditSearchBarProps) => {
   const [searchInput, setSearchInput] = useState(currentQuery);
+  const [timeFilter, setTimeFilter] = useState<string>('');
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchInput.trim()) {
-      onSearch(searchInput.trim());
+      onSearch(searchInput.trim(), timeFilter || undefined);
     }
   };
 
   const handleQuickSearch = (query: string) => {
     setSearchInput(query);
-    onSearch(query);
+    onSearch(query, timeFilter || undefined);
   };
 
   return (
@@ -63,6 +64,21 @@ export const RedditSearchBar = ({ onSearch, currentQuery }: RedditSearchBarProps
             className="pl-10"
           />
         </div>
+        <Button 
+          variant={timeFilter === '48h' ? 'default' : 'outline'} 
+          size="sm"
+          type="button"
+          onClick={() => {
+            const newFilter = timeFilter === '48h' ? '' : '48h';
+            setTimeFilter(newFilter);
+            if (searchInput.trim()) {
+              onSearch(searchInput.trim(), newFilter || undefined);
+            }
+          }}
+          className="whitespace-nowrap"
+        >
+          {timeFilter === '48h' ? 'Last 48h ✓' : 'Last 48h'}
+        </Button>
         <Button type="submit" disabled={!searchInput.trim()}>
           Search
         </Button>

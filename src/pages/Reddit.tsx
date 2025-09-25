@@ -8,7 +8,13 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const Reddit = () => {
   const [searchQuery, setSearchQuery] = useState('ABC learning for kids');
-  const { data: redditPosts, isLoading, error } = useRedditSearch(searchQuery);
+  const [timeFilter, setTimeFilter] = useState<string | undefined>(undefined);
+  const { data: redditPosts, isLoading, error } = useRedditSearch(searchQuery, timeFilter);
+
+  const handleSearch = (query: string, newTimeFilter?: string) => {
+    setSearchQuery(query);
+    setTimeFilter(newTimeFilter);
+  };
 
   return (
     <PageLayout title="Reddit ABC Learning Conversations">
@@ -20,7 +26,7 @@ const Reddit = () => {
         </div>
         
         <RedditSearchBar 
-          onSearch={setSearchQuery}
+          onSearch={handleSearch}
           currentQuery={searchQuery}
         />
         

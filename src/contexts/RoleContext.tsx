@@ -1,13 +1,14 @@
 import { createContext, useContext, useMemo, ReactNode } from 'react';
 import { useUserRole } from '@/hooks/useUserRole';
 
-type AppRole = 'user' | 'moderator' | 'admin';
+type AppRole = 'user' | 'teacher' | 'moderator' | 'admin';
 
 interface RoleContextValue {
   roles: AppRole[];
   primaryRole: AppRole;
   isAdmin: boolean;
   isModerator: boolean;
+  isTeacher: boolean;
   isUser: boolean;
   isLoading: boolean;
   error: Error | null;
@@ -29,6 +30,7 @@ export const RoleProvider = ({ children }: RoleProviderProps) => {
       primaryRole: 'user' as AppRole,
       isAdmin: false,
       isModerator: false,
+      isTeacher: false,
       isUser: true,
     };
 
@@ -66,6 +68,11 @@ export const useIsAdmin = () => {
 export const useIsModerator = () => {
   const { isModerator } = useRole();
   return isModerator;
+};
+
+export const useIsTeacher = () => {
+  const { isTeacher } = useRole();
+  return isTeacher;
 };
 
 export const useIsUser = () => {

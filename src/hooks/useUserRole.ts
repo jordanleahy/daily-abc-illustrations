@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
-type AppRole = 'user' | 'moderator' | 'admin';
+type AppRole = 'user' | 'teacher' | 'moderator' | 'admin';
 
 export const useUserRole = () => {
   const { user } = useAuth();
@@ -13,6 +13,7 @@ export const useUserRole = () => {
     primaryRole: AppRole;
     isAdmin: boolean;
     isModerator: boolean;
+    isTeacher: boolean;
     isUser: boolean;
   } | null>(null);
   
@@ -32,13 +33,15 @@ export const useUserRole = () => {
       // Return all roles and primary role
       const roles = data.map(r => r.role as AppRole);
       const primaryRole = roles.includes('admin') ? 'admin' as AppRole : 
-                         roles.includes('moderator') ? 'moderator' as AppRole : 'user' as AppRole;
+                         roles.includes('moderator') ? 'moderator' as AppRole :
+                         roles.includes('teacher') ? 'teacher' as AppRole : 'user' as AppRole;
       
       return {
         roles,
         primaryRole,
         isAdmin: roles.includes('admin'),
         isModerator: roles.includes('moderator'),
+        isTeacher: roles.includes('teacher'),
         isUser: roles.includes('user')
       };
     },
@@ -74,13 +77,15 @@ export const useUserRole = () => {
             if (!current.includes(newRole)) {
               const updatedRoles = [...current, newRole];
               const primaryRole = updatedRoles.includes('admin') ? 'admin' as AppRole : 
-                               updatedRoles.includes('moderator') ? 'moderator' as AppRole : 'user' as AppRole;
+                               updatedRoles.includes('moderator') ? 'moderator' as AppRole :
+                               updatedRoles.includes('teacher') ? 'teacher' as AppRole : 'user' as AppRole;
               
               const newRoleData = {
                 roles: updatedRoles,
                 primaryRole,
                 isAdmin: updatedRoles.includes('admin'),
                 isModerator: updatedRoles.includes('moderator'),
+                isTeacher: updatedRoles.includes('teacher'),
                 isUser: updatedRoles.includes('user')
               };
               setRoleData(newRoleData);
@@ -104,13 +109,15 @@ export const useUserRole = () => {
             const deletedRole = payload.old.role as AppRole;
             const updatedRoles = current.filter(role => role !== deletedRole);
             const primaryRole = updatedRoles.includes('admin') ? 'admin' as AppRole : 
-                             updatedRoles.includes('moderator') ? 'moderator' as AppRole : 'user' as AppRole;
+                             updatedRoles.includes('moderator') ? 'moderator' as AppRole :
+                             updatedRoles.includes('teacher') ? 'teacher' as AppRole : 'user' as AppRole;
             
             const newRoleData = {
               roles: updatedRoles,
               primaryRole,
               isAdmin: updatedRoles.includes('admin'),
               isModerator: updatedRoles.includes('moderator'),
+              isTeacher: updatedRoles.includes('teacher'),
               isUser: updatedRoles.includes('user')
             };
             setRoleData(newRoleData);

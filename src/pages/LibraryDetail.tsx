@@ -182,9 +182,9 @@ export default function LibraryDetail() {
               <div className="flex flex-col md:flex-row gap-6">
                 {/* OG Thumbnail */}
                 <div className="flex-shrink-0">
-                  <div className="w-32 h-32 rounded-lg overflow-hidden bg-muted">
+                  <div className="w-40 rounded-lg overflow-hidden bg-muted">
                     {seoMetadata?.og_image_url ? (
-                      <AspectRatio ratio={1} className="w-full h-full">
+                      <AspectRatio ratio={16/9} className="w-full">
                         <img
                           src={seoMetadata.og_image_url}
                           alt={`${dailyPublished.title} thumbnail`}
@@ -192,8 +192,8 @@ export default function LibraryDetail() {
                         />
                       </AspectRatio>
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <ImageIcon className="w-12 h-12 text-muted-foreground" />
+                      <div className="w-full aspect-video flex items-center justify-center">
+                        <ImageIcon className="w-8 h-8 text-muted-foreground" />
                       </div>
                     )}
                   </div>

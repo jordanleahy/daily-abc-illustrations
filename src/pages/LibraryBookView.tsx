@@ -11,6 +11,7 @@ import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { UpcomingBooksPreview } from '@/components/daily-published';
+import { RoleDebugger } from '@/components/RoleDebugger';
 import { Calendar, Clock } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
 
@@ -18,6 +19,14 @@ export default function LibraryBookView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(id);
+
+  // Debug information for teachers
+  console.log('LibraryBookView Debug:', {
+    id,
+    dailyContent,
+    isLoadingDaily,
+    dailyError: dailyError?.message
+  });
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -45,7 +54,7 @@ export default function LibraryBookView() {
 
   if (dailyError || !dailyContent) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 gap-4">
         <ReadingHeader title="Library" onBack={handleBack} showQRCode={false} />
         <Card className="max-w-md w-full mt-20">
           <div className="p-6 text-center space-y-4">
@@ -56,8 +65,16 @@ export default function LibraryBookView() {
             <p className="text-sm text-muted-foreground">
               This book could not be found in your library.
             </p>
+            {dailyError && (
+              <p className="text-sm text-destructive">
+                Error: {dailyError.message}
+              </p>
+            )}
           </div>
         </Card>
+        
+        {/* Role debugger for troubleshooting */}
+        <RoleDebugger />
       </div>
     );
   }

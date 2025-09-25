@@ -12,6 +12,8 @@ export const useLibraryBookById = (id: string | undefined) => {
     queryFn: async () => {
       if (!id) return null;
       
+      console.log('useLibraryBookById: Fetching book with id:', id);
+      
       // For authenticated users, get any daily published content they own (regardless of status)
       // RLS policies will ensure users can only see their own content
       const { data, error } = await supabase
@@ -19,6 +21,8 @@ export const useLibraryBookById = (id: string | undefined) => {
         .select('*')
         .eq('id', id)
         .maybeSingle();
+
+      console.log('useLibraryBookById: Query result:', { data, error });
 
       if (error) {
         console.error('Error fetching library book by id:', error);

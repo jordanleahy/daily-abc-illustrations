@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
@@ -6,10 +6,13 @@ import { MetaHead } from '@/components/common/MetaHead';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Image, GraduationCap } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Image, GraduationCap, FileText, Download } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useIsTeacher } from '@/contexts/RoleContext';
+import { generateBookPDF } from '@/services/pdfGenerator';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Library() {
   const {
@@ -145,12 +148,63 @@ function PublicScheduleCard({
   hideStatus = false
 }: PublicScheduleCardProps) {
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfProgress, setPdfProgress] = useState(0);
+  
   const {
     data: seoMetadata
   } = useSeoMetadata(item.id);
 
   const handleCardClick = () => {
     navigate(`/library/${item.id}`);
+  };
+
+  const handleDownloadPDF = async (event: React.MouseEvent) => {
+    event.stopPropagation(); // Prevent card navigation
+    
+    if (!item.book_id) {
+      toast({
+        title: "Error",
+        description: "Book information not available",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsGeneratingPdf(true);
+    setPdfProgress(0);
+
+    try {
+      await generateBookPDF(item.book_id, item.book.book_name || 'ABC Book', {
+        onProgress: (progress) => {
+          setPdfProgress(progress);
+        },
+        onError: (error) => {
+          console.error('PDF generation error:', error);
+          toast({
+            title: "Error generating PDF",
+            description: "An error occurred while generating the PDF",
+            variant: "destructive"
+          });
+        }
+      });
+
+      toast({
+        title: "PDF Downloaded",
+        description: `${item.book.book_name} has been downloaded successfully`,
+      });
+    } catch (error) {
+      console.error('PDF generation failed:', error);
+      toast({
+        title: "Download Failed",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingPdf(false);
+      setPdfProgress(0);
+    }
   };
 
   return <Card 
@@ -169,6 +223,31 @@ function PublicScheduleCard({
             {item.book.book_name}
             {item.description && ` • ${item.description}`}
           </CardDescription>
+        </div>
+
+        {/* PDF Download Button */}
+        <div className="flex-shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleDownloadPDF}
+            disabled={isGeneratingPdf}
+            className="gap-2"
+          >
+            {isGeneratingPdf ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
+                {pdfProgress > 0 && (
+                  <span className="text-xs">{Math.round(pdfProgress)}%</span>
+                )}
+              </>
+            ) : (
+              <>
+                <Download className="h-4 w-4" />
+                <span className="hidden sm:inline">PDF</span>
+              </>
+            )}
+          </Button>
         </div>
       </div>
     </CardHeader>

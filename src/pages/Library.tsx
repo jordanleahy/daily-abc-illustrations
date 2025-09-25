@@ -245,11 +245,6 @@ function LibraryBookCard({ item }: LibraryBookCardProps) {
             </Button>
           </div>
         </div>
-        {item.book.book_name && (
-          <Badge variant="outline" className="w-fit">
-            {item.book.book_name}
-          </Badge>
-        )}
       </CardHeader>
       <CardContent className="space-y-4">
         {item.description && (

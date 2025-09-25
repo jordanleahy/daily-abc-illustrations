@@ -10,6 +10,8 @@ export const useDailyPublished = () => {
   return useQuery({
     queryKey: ['daily-published'],
     queryFn: async () => {
+      console.log('useDailyPublished: Starting query');
+      
       const { data, error } = await supabase
         .from('daily_published')
         .select('*')
@@ -20,10 +22,11 @@ export const useDailyPublished = () => {
         .maybeSingle();
 
       if (error) {
-        console.error('Error fetching active daily published content:', error);
+        console.error('useDailyPublished: Error fetching active daily published content:', error);
         throw error;
       }
 
+      console.log('useDailyPublished: Query result:', data);
       return data as DailyPublished | null;
     },
     staleTime: 5 * 60 * 1000, // 5 minutes

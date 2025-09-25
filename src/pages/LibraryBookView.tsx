@@ -14,15 +14,18 @@ import { UpcomingBooksPreview } from '@/components/daily-published';
 import { RoleDebugger } from '@/components/RoleDebugger';
 import { Calendar, Clock } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
+import { isValidUUID } from '@/utils/uuid';
 
 export default function LibraryBookView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(id);
+  const safeId = id && isValidUUID(id) ? id : undefined;
+  const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
 
-  // Debug information for teachers
+  // Debug information for troubleshooting
   console.log('LibraryBookView Debug:', {
     id,
+    safeId,
     dailyContent,
     isLoadingDaily,
     dailyError: dailyError?.message
@@ -33,7 +36,7 @@ export default function LibraryBookView() {
   const [earnedRewards, setEarnedRewards] = useState(0);
   
   // Generate OpenGraph metadata for the current page
-  const { openGraphMetadata } = useDailyPublishedOpenGraph(id, currentPageIndex);
+  const { openGraphMetadata } = useDailyPublishedOpenGraph(safeId, currentPageIndex);
 
   const isLoading = isLoadingDaily || isLoadingPages;
 

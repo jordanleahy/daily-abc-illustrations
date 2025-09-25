@@ -8,8 +8,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Image, GraduationCap } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
-import { TeacherOnly } from '@/components/TeacherOnly';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useIsTeacher } from '@/contexts/RoleContext';
 
 export default function Library() {
   const {
@@ -54,61 +54,47 @@ export default function Library() {
 
   return <>
     <MetaHead metadata={{
-      title: "Teacher Library - Daily ABC Illustrations",
-      description: "Teacher access to view all published ABC illustration books and educational content.",
+      title: "Library - Daily ABC Illustrations",
+      description: "Explore all queued, active, and past ABC illustration books.",
       type: "website"
     }} />
     
-    <TeacherOnly fallback={
-      <div className="min-h-screen bg-background">
-        <Header 
-          title="Library"
-          showQRCode={false}
-        />
-        <div className="pt-16 container mx-auto px-4 pb-8 max-w-4xl">
-          <Alert>
-            <GraduationCap className="h-4 w-4" />
-            <AlertDescription>
-              Teacher access required to view the full library. Please contact an administrator if you need teacher privileges.
-            </AlertDescription>
-          </Alert>
-        </div>
-      </div>
-    }>
-      <div className="min-h-screen bg-background">
-        <Header 
-          title="Teacher Library"
-          showQRCode={false}
-        />
-        <div className="pt-16 container mx-auto px-4 pb-8 max-w-4xl">
-          {/* Teacher Access Indicator */}
+    {/* Public Library - visible to everyone */}
+    <div className="min-h-screen bg-background">
+      <Header 
+        title="Library"
+        showQRCode={false}
+      />
+      <div className="pt-16 container mx-auto px-4 pb-8 max-w-4xl">
+        {/* Optional Teacher Indicator */}
+        {useIsTeacher() && (
           <Alert className="mb-6">
             <GraduationCap className="h-4 w-4" />
             <AlertDescription>
-              <strong>Teacher Access:</strong> You're viewing all published books in the system. Students can only see active daily content.
+              You're a teacher. You can view all published books. This library is public for everyone.
             </AlertDescription>
           </Alert>
+        )}
 
-          {/* All Books - No Status Filtering */}
-          {allBooks.length > 0 ? (
-            <div className="space-y-4">
-              {allBooks.map(item => (
-                <PublicScheduleCard key={item.id} item={item} hideStatus={true} />
-              ))}
-            </div>
-          ) : (
-            <Card>
-              <CardContent className="text-center py-12">
-                <h3 className="text-lg font-semibold mb-2">No books in library</h3>
-                <p className="text-muted-foreground">
-                  Check back soon for new daily illustrations!
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {/* All Books - Public view (queued, active, expired) */}
+        {allBooks.length > 0 ? (
+          <div className="space-y-4">
+            {allBooks.map(item => (
+              <PublicScheduleCard key={item.id} item={item} hideStatus={true} />
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="text-center py-12">
+              <h3 className="text-lg font-semibold mb-2">No books in library</h3>
+              <p className="text-muted-foreground">
+                Check back soon for new daily illustrations!
+              </p>
+            </CardContent>
+          </Card>
+        )}
       </div>
-    </TeacherOnly>
+    </div>
   </>;
 }
 

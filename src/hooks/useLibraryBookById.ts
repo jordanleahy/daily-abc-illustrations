@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DailyPublished } from '@/types/dailyPublished';
 import { useDailyPublishedSubscription } from './useDailyPublishedSubscription';
+import { isValidUUID } from '@/utils/uuid';
 
 export const useLibraryBookById = (id: string | undefined) => {
   // Enable real-time subscriptions
@@ -10,9 +11,10 @@ export const useLibraryBookById = (id: string | undefined) => {
   return useQuery({
     queryKey: ['library-book', id],
     queryFn: async () => {
-      if (!id) return null;
-      
-      console.log('useLibraryBookById: Fetching book with id:', id);
+      if (!id || !isValidUUID(id)) {
+        console.warn('useLibraryBookById: Invalid id provided, skipping query', id);
+        return null;
+      }
       
       // For authenticated users, get any daily published content they own (regardless of status)
       // RLS policies will ensure users can only see their own content
@@ -31,7 +33,7 @@ export const useLibraryBookById = (id: string | undefined) => {
 
       return data as DailyPublished | null;
     },
-    enabled: !!id,
+    enabled: !!id && isValidUUID(id),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
   });

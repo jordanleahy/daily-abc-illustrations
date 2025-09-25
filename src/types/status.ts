@@ -1,12 +1,5 @@
 /**
- * Publication status enum for content lifecycle management
- * Used across books, pages, and other publishable content
+ * @deprecated Use PublicationStatus from '@/types/shared' instead
+ * Re-export for backward compatibility
  */
-export enum PublicationStatus {
-  /** Content is being created/edited and not visible to public */
-  DRAFT = 'draft',
-  /** Content is live and available to users */
-  PUBLISHED = 'published',
-  /** Content is hidden from normal view but retained */
-  ARCHIVED = 'archived'
-}
+export { PublicationStatus } from '@/types/shared/status';

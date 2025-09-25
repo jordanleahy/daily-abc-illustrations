@@ -9,21 +9,15 @@
  */
 
 /**
- * Enumeration representing the status of a process or operation
- * Used throughout edge functions for consistent status tracking
+ * @deprecated Import from frontend shared types instead
+ * ProcessStatus enum - use consistent frontend definition
  */
 export enum ProcessStatus {
-  /** Process has not been initiated */
   NOT_STARTED = 'not-started',
-  /** Process is currently running */
   IN_PROGRESS = 'in-progress', 
-  /** Process completed successfully */
   COMPLETE = 'complete',
-  /** Process failed with an error */
   ERROR = 'error',
-  /** Process completed but with warnings */
   WARNING = 'warning',
-  /** Process was intentionally skipped */
   SKIPPED = 'skipped'
 }
 
@@ -73,51 +67,38 @@ export const generateRequestId = () => `req-${Date.now()}-${Math.random().toStri
 export const isLegacyModel = (model: string) => model === 'gpt-4o' || model === 'gpt-4o-mini';
 
 /**
- * Publication status enum for content lifecycle management
- * Used across books, pages, and other publishable content
+ * @deprecated Import from frontend shared types instead
+ * Publication status enum - use consistent frontend definition
  */
 export enum PublicationStatus {
-  /** Content is being created/edited and not visible to public */
   DRAFT = 'draft',
-  /** Content is live and available to users */
   PUBLISHED = 'published',
-  /** Content is hidden from normal view but retained */
   ARCHIVED = 'archived'
 }
 
 /**
+ * @deprecated Use AgentConfigBackend from frontend shared types instead
  * Agent configuration interface for edge function operations
- * Simplified version of the frontend AgentConfig for edge function use
  */
 export interface AgentConfig {
-  /** Display name of the agent */
+  id: string;
   name: string;
-  /** Agent type - determines behavior and capabilities */
   type: 'chat' | 'book-creation' | 'illustration-director' | 'graphic-designer';
-  /** Purpose or goal description of the agent */
   intent: string;
-  /** Current operational status */
   status: 'online' | 'offline' | 'processing';
-  /** System instructions that define agent behavior */
   instructions: string;
-  /** AI model configuration settings */
   modelSettings: {
-    /** OpenAI model identifier */
     model: string;
-    /** Maximum tokens for completion */
     maxCompletionTokens: number;
-    /** Nucleus sampling parameter (0.0 to 1.0) */
     topP: number;
   };
 }
 
 /**
+ * @deprecated Use CompareAgentRequest from frontend shared types instead
  * Request interface for comparing two agent configurations
- * Used by the what_changed_in_agent edge function
  */
 export interface CompareRequest {
-  /** Previous agent configuration */
   originalConfig: AgentConfig;
-  /** New agent configuration to compare against */
   newConfig: AgentConfig;
 }

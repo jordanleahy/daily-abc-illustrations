@@ -5,9 +5,9 @@ import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { MetaHead } from '@/components/common/MetaHead';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Image, GraduationCap, FileText, Download } from 'lucide-react';
+import { BookOpen, Calendar, Users, GraduationCap, Download } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useIsTeacher } from '@/contexts/RoleContext';
@@ -50,7 +50,7 @@ export default function Library() {
     );
   }
 
-  // Sort all books by publish_date (newest first) for authenticated users
+  // Sort all books by publish_date (newest first)
   const allBooks = libraryItems?.sort((a, b) => 
     new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime()
   ) || [];
@@ -62,16 +62,25 @@ export default function Library() {
       type: "website"
     }} />
     
-    {/* Public Library - visible to everyone */}
     <div className="min-h-screen bg-background">
       <Header 
         title="Library"
         showQRCode={false}
       />
-      <div className="pt-16 container mx-auto px-4 pb-8 max-w-4xl">
+      <div className="pt-16 container mx-auto px-4 pb-8">
+        <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">ABC Books Library</h1>
+            <p className="text-muted-foreground">
+              Explore all published daily ABC illustration books
+            </p>
+          </div>
+        </div>
+
         {/* Optional Teacher Indicator */}
         {useIsTeacher() && (
-          <Alert className="mb-6">
+          <Alert>
             <GraduationCap className="h-4 w-4" />
             <AlertDescription>
               You're a teacher. You can view all published books. This library is public for everyone.
@@ -79,74 +88,34 @@ export default function Library() {
           </Alert>
         )}
 
-        {/* All Books - Public view (queued, active, expired) */}
-        {allBooks.length > 0 ? (
-          <div className="space-y-4">
-            {allBooks.map(item => (
-              <PublicScheduleCard key={item.id} item={item} hideStatus={true} />
-            ))}
-          </div>
-        ) : (
-          <Card>
-            <CardContent className="text-center py-12">
+        {allBooks.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold mb-2">No books in library</h3>
               <p className="text-muted-foreground">
                 Check back soon for new daily illustrations!
               </p>
             </CardContent>
           </Card>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {allBooks.map((item) => (
+              <LibraryBookCard key={item.id} item={item} />
+            ))}
+          </div>
         )}
+        </div>
       </div>
     </div>
   </>;
 }
 
-// Reusable components (adapted from Schedule)
-function ScheduleThumbnail({
-  imageUrl,
-  title
-}: {
-  imageUrl?: string;
-  title: string;
-}) {
-  return <>
-    {/* Mobile: Full width with aspect ratio */}
-    <div className="md:hidden w-full">
-      <AspectRatio ratio={1.91} className="rounded-lg overflow-hidden bg-muted">
-        {imageUrl ? (
-          <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Image className="h-8 w-8 text-muted-foreground" />
-          </div>
-        )}
-      </AspectRatio>
-    </div>
-    
-    {/* Desktop: Fixed size */}
-    <div className="hidden md:block w-32 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-      {imageUrl ? (
-        <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
-      ) : (
-        <Image className="h-6 w-6 text-muted-foreground" />
-      )}
-    </div>
-  </>;
+interface LibraryBookCardProps {
+  item: DailyPublishedWithBook;
 }
 
-type ScheduleCardItem = DailyPublishedWithBook;
-
-interface PublicScheduleCardProps {
-  item: ScheduleCardItem;
-  position?: number | "active" | "expired";
-  hideStatus?: boolean;
-}
-
-function PublicScheduleCard({
-  item,
-  position,
-  hideStatus = false
-}: PublicScheduleCardProps) {
+function LibraryBookCard({ item }: LibraryBookCardProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -207,49 +176,105 @@ function PublicScheduleCard({
     }
   };
 
-  return <Card 
-    className="transition-shadow group cursor-pointer hover:shadow-lg" 
-    onClick={handleCardClick}
-  >
-    <CardHeader className="pb-3">
-      <div className="flex flex-col md:flex-row gap-3 md:items-center">
-        {/* Thumbnail */}
-        <ScheduleThumbnail imageUrl={seoMetadata?.og_image_url} title={item.title} />
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'default';
+      case 'queued':
+        return 'secondary';
+      case 'expired':
+        return 'outline';
+      default:
+        return 'secondary';
+    }
+  };
 
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <CardTitle className="text-lg truncate">{item.title}</CardTitle>
-          <CardDescription className="mt-1">
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'Active';
+      case 'queued':
+        return 'Queued';
+      case 'expired':
+        return 'Past';
+      default:
+        return 'Draft';
+    }
+  };
+
+  return (
+    <Card 
+      className="hover:shadow-md transition-shadow cursor-pointer hover:shadow-lg" 
+      onClick={handleCardClick}
+    >
+      <CardHeader>
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-xl line-clamp-2">
+            {item.title}
+          </CardTitle>
+          <div className="flex flex-col gap-2 items-end">
+            <Badge variant={getStatusBadgeVariant(item.status)}>
+              {getStatusLabel(item.status)}
+            </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleDownloadPDF}
+              disabled={isGeneratingPdf}
+              className="gap-1 h-8"
+            >
+              {isGeneratingPdf ? (
+                <>
+                  <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-primary"></div>
+                  {pdfProgress > 0 && (
+                    <span className="text-xs">{Math.round(pdfProgress)}%</span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <Download className="h-3 w-3" />
+                  <span className="text-xs">PDF</span>
+                </>
+              )}
+            </Button>
+          </div>
+        </div>
+        {item.book.book_name && (
+          <Badge variant="outline" className="w-fit">
             {item.book.book_name}
-            {item.description && ` • ${item.description}`}
+          </Badge>
+        )}
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {item.description && (
+          <CardDescription className="line-clamp-3">
+            {item.description}
           </CardDescription>
+        )}
+        
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-1">
+            <Users className="w-4 h-4" />
+            26 pages
+          </div>
+          <div className="flex items-center gap-1">
+            <Calendar className="w-4 h-4" />
+            {new Date(item.publish_date).toLocaleDateString()}
+          </div>
         </div>
-
-        {/* PDF Download Button */}
-        <div className="flex-shrink-0">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleDownloadPDF}
-            disabled={isGeneratingPdf}
-            className="gap-2"
-          >
-            {isGeneratingPdf ? (
-              <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary"></div>
-                {pdfProgress > 0 && (
-                  <span className="text-xs">{Math.round(pdfProgress)}%</span>
-                )}
-              </>
-            ) : (
-              <>
-                <Download className="h-4 w-4" />
-                <span className="hidden sm:inline">PDF</span>
-              </>
-            )}
-          </Button>
+        
+        <div className="aspect-square bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+          {seoMetadata?.og_image_url ? (
+            <img 
+              src={seoMetadata.og_image_url} 
+              alt={`Preview of ${item.title}`}
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <BookOpen className="w-8 h-8 text-muted-foreground" />
+          )}
         </div>
-      </div>
-    </CardHeader>
-  </Card>;
+      </CardContent>
+    </Card>
+  );
 }

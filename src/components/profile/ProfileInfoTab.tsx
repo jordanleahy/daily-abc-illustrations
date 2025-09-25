@@ -74,113 +74,106 @@ export function ProfileInfoTab() {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold mb-1">Profile Information</h2>
-        <p className="text-sm text-muted-foreground">
-          Update your personal information and how others see you.
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Personal Details</CardTitle>
-          <CardDescription>
-            This information will be displayed on your profile.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isEditing ? (
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
-                <Input
-                  id="firstName"
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
-                  placeholder="Enter your first name"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
-                <Input
-                  id="lastName"
-                  value={lastName}
-                  onChange={(e) => setLastName(e.target.value)}
-                  placeholder="Enter your last name"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  value={user?.email || ''}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="memberSince">Member Since</Label>
-                <Input
-                  id="memberSince"
-                  value={user?.created_at ? format(new Date(user.created_at), 'MMMM d, yyyy') : ''}
-                  disabled
-                  className="bg-muted"
-                />
-              </div>
-              
-              <div className="flex gap-2 pt-4">
-                <Button 
-                  type="submit" 
-                  disabled={updateProfile.isPending}
-                >
-                  {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={handleCancel}
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label>Full Name</Label>
-                <div className="text-sm font-medium">
-                  {profile.first_name || profile.last_name 
-                    ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
-                    : 'Not set'
-                  }
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Email</Label>
-                <div className="text-sm text-muted-foreground">{user?.email}</div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Member Since</Label>
-                <div className="text-sm text-muted-foreground">
-                  {user?.created_at ? format(new Date(user.created_at), 'MMMM d, yyyy') : 'Unknown'}
-                </div>
-              </div>
-              
-              <div className="pt-4">
-                <Button onClick={() => setIsEditing(true)}>
-                  Edit Profile
-                </Button>
+    <div className="space-y-3">
+      {isEditing ? (
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Enter your first name"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Enter your last name"
+              />
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                value={user?.email || ''}
+                disabled
+                className="bg-muted text-sm"
+              />
+            </div>
+            
+            <div className="space-y-1">
+              <Label htmlFor="memberSince">Member Since</Label>
+              <Input
+                id="memberSince"
+                value={user?.created_at ? format(new Date(user.created_at), 'MMMM d, yyyy') : ''}
+                disabled
+                className="bg-muted text-sm"
+              />
+            </div>
+          </div>
+          
+          <div className="flex gap-2 pt-2">
+            <Button 
+              type="submit" 
+              size="sm"
+              disabled={updateProfile.isPending}
+            >
+              {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
+            </Button>
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              onClick={handleCancel}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Full Name</Label>
+              <div className="text-sm font-medium">
+                {profile.first_name || profile.last_name 
+                  ? `${profile.first_name || ''} ${profile.last_name || ''}`.trim()
+                  : 'Not set'
+                }
               </div>
             </div>
-          )}
-        </CardContent>
-      </Card>
+            
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Email</Label>
+              <div className="text-sm">{user?.email}</div>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Member Since</Label>
+              <div className="text-sm">
+                {user?.created_at ? format(new Date(user.created_at), 'MMMM d, yyyy') : 'Unknown'}
+              </div>
+            </div>
+          </div>
+          
+          <div className="pt-2">
+            <Button onClick={() => setIsEditing(true)} size="sm">
+              Edit Profile
+            </Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

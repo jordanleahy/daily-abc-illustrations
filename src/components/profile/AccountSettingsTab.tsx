@@ -1,125 +1,85 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Shield, Key, Trash2 } from 'lucide-react';
 
 export function AccountSettingsTab() {
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-lg font-semibold mb-1">Account Settings</h2>
-        <p className="text-sm text-muted-foreground">
-          Manage your account security and preferences.
-        </p>
+    <div className="space-y-3">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Key className="h-3 w-3" />
+          Security
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-2 rounded-md border">
+            <div>
+              <p className="font-medium text-sm">Password</p>
+              <p className="text-xs text-muted-foreground">Last updated 30 days ago</p>
+            </div>
+            <Button variant="outline" size="sm" disabled>
+              Change
+              <span className="ml-1 text-xs text-muted-foreground">(Soon)</span>
+            </Button>
+          </div>
+          
+          <div className="flex items-center justify-between p-2 rounded-md border">
+            <div>
+              <p className="font-medium text-sm">Two-Factor Authentication</p>
+              <p className="text-xs text-muted-foreground">Extra security layer</p>
+            </div>
+            <Button variant="outline" size="sm" disabled>
+              Enable
+              <span className="ml-1 text-xs text-muted-foreground">(Soon)</span>
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Key className="h-4 w-4" />
-            Password & Security
-          </CardTitle>
-          <CardDescription>
-            Update your password and manage security settings.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+          <Shield className="h-3 w-3" />
+          Privacy
+        </div>
+        <div className="space-y-2">
+          <div className="flex items-center justify-between p-2 rounded-md border">
             <div>
-              <p className="font-medium">Password</p>
-              <p className="text-sm text-muted-foreground">
-                Last updated 30 days ago
-              </p>
+              <p className="font-medium text-sm">Email Notifications</p>
+              <p className="text-xs text-muted-foreground">Account updates & features</p>
             </div>
-            <Button variant="outline" disabled>
-              Change Password
-              <span className="ml-2 text-xs text-muted-foreground">(Coming Soon)</span>
-            </Button>
-          </div>
-          
-          <Separator />
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Two-Factor Authentication</p>
-              <p className="text-sm text-muted-foreground">
-                Add an extra layer of security to your account
-              </p>
-            </div>
-            <Button variant="outline" disabled>
-              Enable 2FA
-              <span className="ml-2 text-xs text-muted-foreground">(Coming Soon)</span>
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Shield className="h-4 w-4" />
-            Privacy & Data
-          </CardTitle>
-          <CardDescription>
-            Control how your data is used and shared.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Email Notifications</p>
-              <p className="text-sm text-muted-foreground">
-                Receive updates about your account and new features
-              </p>
-            </div>
-            <Button variant="outline" disabled>
+            <Button variant="outline" size="sm" disabled>
               Manage
-              <span className="ml-2 text-xs text-muted-foreground">(Coming Soon)</span>
+              <span className="ml-1 text-xs text-muted-foreground">(Soon)</span>
             </Button>
           </div>
           
-          <Separator />
-          
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between p-2 rounded-md border">
             <div>
-              <p className="font-medium">Data Export</p>
-              <p className="text-sm text-muted-foreground">
-                Download a copy of your account data
-              </p>
+              <p className="font-medium text-sm">Data Export</p>
+              <p className="text-xs text-muted-foreground">Download account data</p>
             </div>
-            <Button variant="outline" disabled>
-              Export Data
-              <span className="ml-2 text-xs text-muted-foreground">(Coming Soon)</span>
+            <Button variant="outline" size="sm" disabled>
+              Export
+              <span className="ml-1 text-xs text-muted-foreground">(Soon)</span>
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      <Card className="border-destructive/20">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-destructive">
-            <Trash2 className="h-4 w-4" />
-            Danger Zone
-          </CardTitle>
-          <CardDescription>
-            Irreversible and destructive actions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Delete Account</p>
-              <p className="text-sm text-muted-foreground">
-                Permanently delete your account and all associated data
-              </p>
-            </div>
-            <Button variant="destructive" disabled>
-              Delete Account
-              <span className="ml-2 text-xs text-muted-foreground">(Coming Soon)</span>
-            </Button>
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-sm font-medium text-destructive">
+          <Trash2 className="h-3 w-3" />
+          Danger Zone
+        </div>
+        <div className="flex items-center justify-between p-2 rounded-md border border-destructive/20 bg-destructive/5">
+          <div>
+            <p className="font-medium text-sm">Delete Account</p>
+            <p className="text-xs text-muted-foreground">Permanently delete all data</p>
           </div>
-        </CardContent>
-      </Card>
+          <Button variant="destructive" size="sm" disabled>
+            Delete
+            <span className="ml-1 text-xs text-muted-foreground">(Soon)</span>
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

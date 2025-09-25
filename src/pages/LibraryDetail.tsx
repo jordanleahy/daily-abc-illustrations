@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Eye, Users, Calendar, BookOpen, Download } from 'lucide-react';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
+import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { PageCard, UserPageCard } from '@/components/page-prompts';
 import { TeacherOnly } from '@/components/TeacherOnly';
 import { MetaHead } from '@/components/common/MetaHead';
@@ -22,6 +23,7 @@ export default function LibraryDetail() {
   
   const { data: dailyPublished, isLoading: bookLoading } = useLibraryBookById(id);
   const { data: pages = [], isLoading: pagesLoading } = useDailyPublishedPages(dailyPublished?.book_id);
+  const { data: seoMetadata } = useSeoMetadata(id);
 
   const handleBack = () => {
     navigate('/library');
@@ -218,7 +220,7 @@ export default function LibraryDetail() {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-2xl">{dailyPublished.title}</CardTitle>
+                  <CardTitle className="text-2xl">{seoMetadata?.seo_title || dailyPublished.title}</CardTitle>
                   {dailyPublished.description && (
                     <p className="text-muted-foreground">{dailyPublished.description}</p>
                   )}

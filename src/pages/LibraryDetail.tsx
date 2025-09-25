@@ -184,16 +184,6 @@ export default function LibraryDetail() {
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Library
             </Button>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant="outline"
-                onClick={handleReadingView}
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                Reading View
-              </Button>
-            </div>
           </div>
 
           {/* Book Info */}
@@ -206,7 +196,16 @@ export default function LibraryDetail() {
                     <p className="text-muted-foreground">{dailyPublished.description}</p>
                   )}
                 </div>
-                <DownloadButton dailyPublished={dailyPublished} />
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleReadingView}
+                  >
+                    <Eye className="w-4 h-4 mr-2" />
+                    Reading View
+                  </Button>
+                  <DownloadButton dailyPublished={dailyPublished} />
+                </div>
               </div>
             </CardHeader>
             <CardContent>

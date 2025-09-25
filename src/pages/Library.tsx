@@ -76,15 +76,6 @@ export default function Library() {
           </div>
         </div>
 
-        {/* Optional Teacher Indicator */}
-        {useIsTeacher() && (
-          <Alert>
-            <GraduationCap className="h-4 w-4" />
-            <AlertDescription>
-              You're a teacher. You can view all published books. This library is public for everyone.
-            </AlertDescription>
-          </Alert>
-        )}
 
         {allBooks.length === 0 ? (
           <Card className="text-center py-12">

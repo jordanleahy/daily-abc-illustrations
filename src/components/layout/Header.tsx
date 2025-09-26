@@ -75,7 +75,7 @@ interface HeaderProps {
  * appropriate interface and navigation options.
  */
 export function Header({
-  title = "ABC Cards Platform",
+  title = "Daily ABC Illustrations",
   subtitle,
   bookId,
   showQRCode = true

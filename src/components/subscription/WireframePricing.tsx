@@ -138,23 +138,25 @@ export const WireframePricing = () => {
                 ))}
               </ul>
             </CardContent>
-            <CardFooter className="space-y-3">
-              {/* Coupon Code Input for paid plans */}
+            <CardFooter className="flex flex-col gap-3">
+              {/* Coupon Code Input for paid plans - always above the button */}
               {plan.onClick && !plan.current && (
-                <CouponCodeInput
-                  onApplyCoupon={(couponCode) => handleApplyCoupon(
-                    index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id, 
-                    couponCode
-                  )}
-                  onRemoveCoupon={() => handleRemoveCoupon(
-                    index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id
-                  )}
-                  appliedCoupon={appliedCoupons[
-                    index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id
-                  ]}
-                  loading={loading}
-                  disabled={plan.buttonDisabled}
-                />
+                <div className="w-full">
+                  <CouponCodeInput
+                    onApplyCoupon={(couponCode) => handleApplyCoupon(
+                      index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id, 
+                      couponCode
+                    )}
+                    onRemoveCoupon={() => handleRemoveCoupon(
+                      index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id
+                    )}
+                    appliedCoupon={appliedCoupons[
+                      index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id
+                    ]}
+                    loading={loading}
+                    disabled={plan.buttonDisabled}
+                  />
+                </div>
               )}
               
               <Button 

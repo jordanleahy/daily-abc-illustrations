@@ -45,6 +45,10 @@ serve(async (req) => {
     if (!price_id) throw new Error("Price ID is required");
     logStep("Price ID received", { price_id });
 
+    // Check if this is the annual plan to apply automatic discount  
+    const isAnnualPlan = price_id === "price_1SBKvfC8Q85n0xWF1nxvGfau";
+    logStep("Plan type determined", { price_id, isAnnualPlan });
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     
     // Check if customer exists
@@ -59,7 +63,8 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "https://dailyabcillustrations.com";
     
-    const session = await stripe.checkout.sessions.create({
+    // Prepare checkout session configuration
+    const sessionConfig = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
@@ -68,13 +73,21 @@ serve(async (req) => {
           quantity: 1,
         },
       ],
-      mode: "subscription",
+      mode: "subscription" as const,
       success_url: `${origin}/subscription/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/subscription/cancel`,
       metadata: {
         user_id: user.id,
       },
-    });
+      // Auto-apply 20% discount for annual plan
+      ...(isAnnualPlan && {
+        discounts: [{
+          coupon: "SK7YocEs" // 20% off coupon for annual plan
+        }]
+      })
+    };
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     logStep("Checkout session created", { sessionId: session.id, url: session.url });
 

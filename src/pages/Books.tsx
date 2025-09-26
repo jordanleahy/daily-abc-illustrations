@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,12 +8,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { useBooks } from '@/hooks/useBooks';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { Container } from '@/components/layout/Container';
+import { CreateBookModal } from '@/components/books/CreateBookModal';
 
 export default function Books() {
   const { user, loading: authLoading } = useAuth();
   const { books, loading } = useBooks();
   const navigate = useNavigate();
   const location = useLocation();
+  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Redirect to auth if not authenticated (but not if already on auth page)
   if (!authLoading && !user && location.pathname !== '/auth') {
@@ -25,7 +28,7 @@ export default function Books() {
   };
 
   const handleCreateNewBook = () => {
-    navigate('/');
+    setShowCreateModal(true);
   };
 
 
@@ -156,6 +159,11 @@ export default function Books() {
           )}
         </div>
       </Container>
+      
+      <CreateBookModal 
+        open={showCreateModal} 
+        onOpenChange={setShowCreateModal} 
+      />
     </PageLayout>
   );
 }

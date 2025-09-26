@@ -45,10 +45,6 @@ serve(async (req) => {
     if (!price_id) throw new Error("Price ID is required");
     logStep("Request data received", { price_id, hasCouponCode: !!coupon_code });
 
-    // Check if this is the annual plan to apply automatic discount  
-    const isAnnualPlan = price_id === "price_1SBKvfC8Q85n0xWF1nxvGfau";
-    logStep("Plan type determined", { price_id, isAnnualPlan });
-
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     
     // Check if customer exists
@@ -81,10 +77,6 @@ serve(async (req) => {
         logStep("Coupon validation failed", { coupon_code, error: errorMessage });
         throw new Error("Invalid coupon code provided");
       }
-    } else if (isAnnualPlan) {
-      // No manual coupon, apply automatic annual discount
-      discountConfig = [{ coupon: "SK7YocEs" }]; // 20% off coupon for annual plan
-      logStep("Automatic annual discount applied", { coupon: "SK7YocEs" });
     }
     
     // Prepare checkout session configuration
@@ -102,7 +94,7 @@ serve(async (req) => {
       cancel_url: `${origin}/subscription/cancel`,
       metadata: {
         user_id: user.id,
-        coupon_applied: coupon_code || (isAnnualPlan ? "SK7YocEs" : "none"),
+        coupon_applied: coupon_code || "none",
       },
       // Apply discount if available
       ...(discountConfig && { discounts: discountConfig }),

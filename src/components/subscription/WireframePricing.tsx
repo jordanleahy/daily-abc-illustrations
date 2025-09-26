@@ -81,11 +81,9 @@ export const WireframePricing = () => {
     },
     {
       name: "Annual Plan",
-      price: "$29.99", 
-      originalPrice: "$29.99",
-      discountedPrice: "$23.99", // 20% off = $6 discount  
+      price: "$99.99", 
       period: "year",
-      savings: "Save $89.89 + 20% OFF",
+      savings: "Save $19.89",
       features: [
         "Access to all daily published ABC books",
         "Download PDF version", 
@@ -97,8 +95,7 @@ export const WireframePricing = () => {
       buttonText: currentTier?.interval === 'year' ? "Current Plan" : "Select",
       buttonDisabled: loading || (isSubscribed && currentTier?.interval === 'year'),
       current: currentTier?.interval === 'year',
-      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS.standard_annual.price_id),
-      hasDiscount: true
+      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS.standard_annual.price_id)
     }
   ];
 
@@ -117,26 +114,10 @@ export const WireframePricing = () => {
             <CardHeader className="text-center">
               <CardTitle className="text-xl">{plan.name}</CardTitle>
               <div className="mt-4">
-                {plan.hasDiscount ? (
-                  <div>
-                    <div className="text-lg text-muted-foreground line-through">{plan.originalPrice}</div>
-                    <span className="text-3xl font-bold text-green-600">{plan.discountedPrice}</span>
-                    <span className="text-muted-foreground">/{plan.period}</span>
-                    <div className="text-sm text-green-600 font-medium mt-1">20% OFF Applied Automatically!</div>
-                  </div>
-                ) : (
-                  <div>
-                    <span className="text-3xl font-bold">{plan.price}</span>
-                    <span className="text-muted-foreground">/{plan.period}</span>
-                  </div>
-                )}
+                <span className="text-3xl font-bold">{plan.price}</span>
+                <span className="text-muted-foreground">/{plan.period}</span>
               </div>
-              {plan.savings && !plan.hasDiscount && (
-                <div className="text-sm text-green-600 font-medium">
-                  {plan.savings}
-                </div>
-              )}
-              {plan.savings && plan.hasDiscount && (
+              {plan.savings && (
                 <div className="text-sm text-green-600 font-medium">
                   {plan.savings}
                 </div>

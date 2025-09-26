@@ -70,7 +70,7 @@ export const useSubscription = () => {
     }
   }, [user]);
 
-  const createCheckoutSession = useCallback(async (price_id: string) => {
+  const createCheckoutSession = useCallback(async (price_id: string, coupon_code?: string) => {
     if (!user) {
       toast({
         title: "Authentication Required",
@@ -82,7 +82,7 @@ export const useSubscription = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
-        body: { price_id }
+        body: { price_id, coupon_code }
       });
 
       if (error) throw error;

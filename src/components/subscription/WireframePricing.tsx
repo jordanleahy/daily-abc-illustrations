@@ -4,22 +4,50 @@ import { Check } from "lucide-react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { CouponCodeInput } from "./CouponCodeInput";
+import { useState } from "react";
+import { useToast } from "@/hooks/use-toast";
 
 export const WireframePricing = () => {
   const { createCheckoutSession, isSubscribed, getSubscriptionTier, loading, openCustomerPortal, hasActiveSubscription } = useSubscription();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const currentTier = getSubscriptionTier();
+  
+  // Coupon state management
+  const [appliedCoupons, setAppliedCoupons] = useState<Record<string, string>>({});
   
   // For free authenticated users, all plans should be available
   const isCurrentlyFree = Boolean(user && !hasActiveSubscription);
+
+  const handleApplyCoupon = (priceId: string, couponCode: string) => {
+    setAppliedCoupons(prev => ({ ...prev, [priceId]: couponCode }));
+    toast({
+      title: "Coupon Applied",
+      description: `Coupon code ${couponCode} will be applied at checkout`,
+    });
+  };
+
+  const handleRemoveCoupon = (priceId: string) => {
+    setAppliedCoupons(prev => {
+      const newCoupons = { ...prev };
+      delete newCoupons[priceId];
+      return newCoupons;
+    });
+    toast({
+      title: "Coupon Removed",
+      description: "Coupon code has been removed",
+    });
+  };
 
   const handlePlanSelection = (priceId: string) => {
     if (!user) {
       navigate(`/auth?mode=signup&returnUrl=/subscription&plan=${priceId}`);
       return;
     }
-    createCheckoutSession(priceId);
+    const couponCode = appliedCoupons[priceId];
+    createCheckoutSession(priceId, couponCode);
   };
 
   const plans = [
@@ -129,7 +157,25 @@ export const WireframePricing = () => {
                 ))}
               </ul>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="space-y-3">
+              {/* Coupon Code Input for paid plans */}
+              {plan.onClick && !plan.current && (
+                <CouponCodeInput
+                  onApplyCoupon={(couponCode) => handleApplyCoupon(
+                    index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id, 
+                    couponCode
+                  )}
+                  onRemoveCoupon={() => handleRemoveCoupon(
+                    index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id
+                  )}
+                  appliedCoupon={appliedCoupons[
+                    index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id
+                  ]}
+                  loading={loading}
+                  disabled={plan.buttonDisabled}
+                />
+              )}
+              
               <Button 
                 className="w-full" 
                 variant={plan.current ? "outline" : "default"}

@@ -66,7 +66,7 @@ export const CouponCodeInput = ({
         size="sm"
         onClick={() => setIsExpanded(true)}
         disabled={disabled}
-        className="text-sm"
+        className="text-sm w-full"
       >
         <Tag className="w-4 h-4 mr-2" />
         Have a coupon code?

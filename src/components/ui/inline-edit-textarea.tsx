@@ -16,15 +16,22 @@ export const InlineEditTextarea = ({
   onSave, 
   className, 
   placeholder,
-  isEditing = false,
+  isEditing: externalIsEditing,
   renderDisplay 
 }: InlineEditTextareaProps) => {
   const [editValue, setEditValue] = useState(value);
+  const [isEditing, setIsEditing] = useState(externalIsEditing || false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     setEditValue(value);
   }, [value]);
+
+  useEffect(() => {
+    if (externalIsEditing !== undefined) {
+      setIsEditing(externalIsEditing);
+    }
+  }, [externalIsEditing]);
 
   useEffect(() => {
     if (isEditing && textareaRef.current) {
@@ -36,20 +43,33 @@ export const InlineEditTextarea = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       setEditValue(value);
+      setIsEditing(false);
     }
     // Allow Ctrl+Enter or Cmd+Enter to save
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       onSave(editValue);
+      setIsEditing(false);
     }
   };
 
   const handleBlur = () => {
     onSave(editValue);
+    setIsEditing(false);
+  };
+
+  const handleClick = () => {
+    if (!isEditing) {
+      setIsEditing(true);
+    }
   };
 
   if (!isEditing) {
-    return renderDisplay ? renderDisplay(value) : (
-      <span className={className}>{value}</span>
+    return (
+      <div onClick={handleClick} className="cursor-pointer">
+        {renderDisplay ? renderDisplay(value) : (
+          <span className={className}>{value}</span>
+        )}
+      </div>
     );
   }
 

@@ -16,15 +16,22 @@ export const InlineEditInput = ({
   onSave, 
   className, 
   placeholder,
-  isEditing = false,
+  isEditing: externalIsEditing,
   renderDisplay 
 }: InlineEditInputProps) => {
   const [editValue, setEditValue] = useState(value);
+  const [isEditing, setIsEditing] = useState(externalIsEditing || false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setEditValue(value);
   }, [value]);
+
+  useEffect(() => {
+    if (externalIsEditing !== undefined) {
+      setIsEditing(externalIsEditing);
+    }
+  }, [externalIsEditing]);
 
   useEffect(() => {
     if (isEditing && inputRef.current) {
@@ -36,19 +43,32 @@ export const InlineEditInput = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       onSave(editValue);
+      setIsEditing(false);
     }
     if (e.key === 'Escape') {
       setEditValue(value);
+      setIsEditing(false);
     }
   };
 
   const handleBlur = () => {
     onSave(editValue);
+    setIsEditing(false);
+  };
+
+  const handleClick = () => {
+    if (!isEditing) {
+      setIsEditing(true);
+    }
   };
 
   if (!isEditing) {
-    return renderDisplay ? renderDisplay(value) : (
-      <span className={className}>{value}</span>
+    return (
+      <div onClick={handleClick} className="cursor-pointer">
+        {renderDisplay ? renderDisplay(value) : (
+          <span className={className}>{value}</span>
+        )}
+      </div>
     );
   }
 

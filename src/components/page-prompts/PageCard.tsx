@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
-import { RefreshCw, FileText, Copy, Trash2, Edit3, Image, Upload, Download } from 'lucide-react';
+import { RefreshCw, FileText, Copy, Trash2, Image, Upload, Download } from 'lucide-react';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageSystemPromptEditor } from './PageSystemPromptEditor';
 import { PageImageSection } from '@/components/PageImageSection';
@@ -12,6 +12,9 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeletePage } from '@/hooks/useDeletePage';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
+import { useAutoSave } from '@/hooks/useAutoSave';
+import { InlineEditInput } from '@/components/ui/inline-edit-input';
+import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,23 +49,44 @@ export function PageCard({ page, bookId }: PageCardProps) {
   const { currentImage } = usePageImageUrls(page.id);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(page.title);
-  const [editDescription, setEditDescription] = useState(page.description || '');
-  const [showSaveConfirm, setShowSaveConfirm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
 
+  // Auto-save functionality for page title and description
+  const { autoSave, setOriginalValues } = useAutoSave({
+    onSave: async (values) => {
+      const { error } = await supabase
+        .from('pages')
+        .update({
+          title: values.title?.trim(),
+          description: values.description?.trim() || null,
+        })
+        .eq('id', page.id);
+
+      if (error) throw error;
+    },
+    delay: 500
+  });
+
+  // Set original values when component mounts
+  useEffect(() => {
+    setOriginalValues({
+      title: page.title,
+      description: page.description || ''
+    });
+  }, [page.title, page.description, setOriginalValues]);
+
+  const handleTitleSave = (value: string) => {
+    autoSave({ title: value, description: page.description || '' });
+  };
+
+  const handleDescriptionSave = (value: string) => {
+    autoSave({ title: page.title, description: value });
+  };
+
   const handleRegeneratePrompt = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to regenerate prompts",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!user) return;
 
     try {
       setIsRegenerating(true);
@@ -76,34 +100,17 @@ export function PageCard({ page, bookId }: PageCardProps) {
 
       if (error) throw error;
 
-      toast({
-        title: "Success",
-        description: "Page prompt regenerated successfully",
-      });
-
       // Refresh the prompt data to show the new version
       refreshData();
     } catch (error) {
       console.error('Error regenerating prompt:', error);
-      toast({
-        title: "Error",
-        description: "Failed to regenerate page prompt",
-        variant: "destructive",
-      });
     } finally {
       setIsRegenerating(false);
     }
   };
 
   const handleRegenerateImage = async () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to regenerate images",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!user) return;
 
     try {
       setIsRegeneratingImage(true);
@@ -120,14 +127,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
 
       if (promptError) throw promptError;
 
-      if (!deployedPrompt) {
-        toast({
-          title: "No Deployed Prompt",
-          description: "Please deploy a page system prompt before generating an image",
-          variant: "destructive",
-        });
-        return;
-      }
+      if (!deployedPrompt) return;
 
       // Get the next version number for this page's images
       const { data: existingImages, error: fetchError } = await supabase
@@ -165,11 +165,6 @@ export function PageCard({ page, bookId }: PageCardProps) {
       const token = sessionRes.session?.access_token;
 
       if (!token) {
-        toast({
-          title: "Authentication Required",
-          description: "Please log in again to regenerate images",
-          variant: "destructive",
-        });
         setIsRegeneratingImage(false);
         return;
       }
@@ -186,72 +181,11 @@ export function PageCard({ page, bookId }: PageCardProps) {
 
       if (generateError) throw generateError;
 
-      toast({
-        title: "Success",
-        description: "Image regeneration started successfully",
-      });
-
     } catch (error) {
       console.error('Error regenerating image:', error);
-      toast({
-        title: "Error",
-        description: "Failed to regenerate image",
-        variant: "destructive",
-      });
     } finally {
       setIsRegeneratingImage(false);
     }
-  };
-
-  const handleEditPage = () => {
-    if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to edit pages",
-        variant: "destructive",
-      });
-      return;
-    }
-    setIsEditing(true);
-  };
-
-  const handleSaveEdit = async () => {
-    try {
-      const { error } = await supabase
-        .from('pages')
-        .update({
-          title: editTitle.trim(),
-          description: editDescription.trim() || null,
-        })
-        .eq('id', page.id);
-
-      if (error) throw error;
-
-      toast({
-        title: "Page Updated",
-        description: "Page title and description have been updated successfully.",
-      });
-
-      setIsEditing(false);
-      setShowSaveConfirm(false);
-    } catch (error) {
-      console.error('Error updating page:', error);
-      toast({
-        title: "Update Failed",
-        description: "Failed to update the page. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleConfirmSave = () => {
-    setShowSaveConfirm(true);
-  };
-
-  const handleCancelEdit = () => {
-    setEditTitle(page.title);
-    setEditDescription(page.description || '');
-    setIsEditing(false);
   };
 
   const handleDeletePage = async () => {
@@ -361,17 +295,6 @@ export function PageCard({ page, bookId }: PageCardProps) {
               variant="ghost"
               size="icon"
               className="w-6 h-6"
-              onClick={handleEditPage}
-              disabled={isEditing}
-              title="Edit page title and description"
-              aria-label="Edit page title and description"
-            >
-              <Edit3 className="w-3 h-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-6 h-6"
               onClick={() => setShowUpload(true)}
               title="Upload image for this page"
               aria-label="Upload image for this page"
@@ -424,38 +347,29 @@ export function PageCard({ page, bookId }: PageCardProps) {
             </span>
           </div>
         </div>
-        {isEditing ? (
-          <div className="space-y-2">
-            <input
-              type="text"
-              value={editTitle}
-              onChange={(e) => setEditTitle(e.target.value)}
-              className="w-full text-lg font-semibold bg-transparent border-b border-border focus:border-primary outline-none"
-              placeholder="Enter page title"
-            />
-            <textarea
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
-              className="w-full text-sm text-muted-foreground bg-transparent border-b border-border focus:border-primary outline-none resize-none"
-              placeholder="Enter page description"
-              rows={2}
-            />
-            <div className="flex gap-2 pt-2">
-              <Button size="sm" onClick={handleConfirmSave}>Save</Button>
-              <Button size="sm" variant="outline" onClick={handleCancelEdit}>Cancel</Button>
-            </div>
-          </div>
-        ) : (
-          <>
+        <InlineEditInput
+          value={page.title}
+          onSave={handleTitleSave}
+          className="text-lg font-semibold"
+          placeholder="Enter page title"
+          renderDisplay={(value) => (
             <CardTitle className="text-lg line-clamp-2">
-              {page.title}
+              {value}
             </CardTitle>
-            {page.description && (
+          )}
+        />
+        {page.description !== undefined && (
+          <InlineEditTextarea
+            value={page.description || ''}
+            onSave={handleDescriptionSave}
+            className="text-sm text-muted-foreground"
+            placeholder="Enter page description"
+            renderDisplay={(value) => value ? (
               <CardDescription className="line-clamp-2">
-                {page.description}
+                {value}
               </CardDescription>
-            )}
-          </>
+            ) : null}
+          />
         )}
       </CardHeader>
       <CardContent className="p-4 space-y-3">
@@ -473,7 +387,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
                     title="Edit system prompt"
                     aria-label="Edit system prompt"
                   >
-                    <Edit3 className="w-3 h-3" />
+                    <FileText className="w-3 h-3" />
                   </Button>
                 )}
                 <Button
@@ -512,29 +426,6 @@ export function PageCard({ page, bookId }: PageCardProps) {
           />
         )}
       </CardContent>
-
-      {/* Save Confirmation Dialog */}
-      <AlertDialog open={showSaveConfirm} onOpenChange={setShowSaveConfirm}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Save changes to "{page.title}"?</AlertDialogTitle>
-            <AlertDialogDescription>
-              <div className="space-y-2 mt-4">
-                <div>
-                  <span className="font-medium">Title:</span> {editTitle}
-                </div>
-                <div>
-                  <span className="font-medium">Description:</span> {editDescription || '(No description)'}
-                </div>
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleSaveEdit}>OK</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

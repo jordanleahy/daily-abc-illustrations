@@ -17,16 +17,14 @@ export const WireframePricing = () => {
   
   // Coupon state management
   const [appliedCoupons, setAppliedCoupons] = useState<Record<string, string>>({});
+  const [couponDetails, setCouponDetails] = useState<Record<string, any>>({});
   
   // For free authenticated users, all plans should be available
   const isCurrentlyFree = Boolean(user && !hasActiveSubscription);
 
-  const handleApplyCoupon = (priceId: string, couponCode: string) => {
+  const handleApplyCoupon = (priceId: string, couponCode: string, couponData: any) => {
     setAppliedCoupons(prev => ({ ...prev, [priceId]: couponCode }));
-    toast({
-      title: "Coupon Applied",
-      description: `Coupon code ${couponCode} will be applied at checkout`,
-    });
+    setCouponDetails(prev => ({ ...prev, [priceId]: couponData }));
   };
 
   const handleRemoveCoupon = (priceId: string) => {
@@ -35,9 +33,10 @@ export const WireframePricing = () => {
       delete newCoupons[priceId];
       return newCoupons;
     });
-    toast({
-      title: "Coupon Removed",
-      description: "Coupon code has been removed",
+    setCouponDetails(prev => {
+      const newDetails = { ...prev };
+      delete newDetails[priceId];
+      return newDetails;
     });
   };
 
@@ -143,14 +142,18 @@ export const WireframePricing = () => {
               {plan.onClick && !plan.current && (
                 <div className="w-full">
                   <CouponCodeInput
-                    onApplyCoupon={(couponCode) => handleApplyCoupon(
+                    onApplyCoupon={(couponCode, couponData) => handleApplyCoupon(
                       index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id, 
-                      couponCode
+                      couponCode,
+                      couponData
                     )}
                     onRemoveCoupon={() => handleRemoveCoupon(
                       index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id
                     )}
                     appliedCoupon={appliedCoupons[
+                      index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id
+                    ]}
+                    appliedCouponDetails={couponDetails[
                       index === 1 ? SUBSCRIPTION_TIERS.standard_monthly.price_id : SUBSCRIPTION_TIERS.standard_annual.price_id
                     ]}
                     loading={loading}

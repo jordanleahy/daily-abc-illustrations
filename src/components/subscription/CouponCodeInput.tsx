@@ -2,47 +2,115 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Tag, X } from "lucide-react";
+import { Tag, X, Check, Loader2, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+
+interface CouponDetails {
+  id: string;
+  percent_off?: number;
+  amount_off?: number;
+  currency?: string;
+  duration?: string;
+  duration_in_months?: number;
+  name?: string;
+}
 
 interface CouponCodeInputProps {
-  onApplyCoupon: (couponCode: string) => void;
+  onApplyCoupon: (couponCode: string, couponDetails: CouponDetails) => void;
   onRemoveCoupon: () => void;
   appliedCoupon?: string;
+  appliedCouponDetails?: CouponDetails;
   loading?: boolean;
   disabled?: boolean;
 }
+
+type ValidationState = 'idle' | 'validating' | 'valid' | 'invalid' | 'error';
 
 export const CouponCodeInput = ({ 
   onApplyCoupon, 
   onRemoveCoupon, 
   appliedCoupon, 
+  appliedCouponDetails,
   loading = false,
   disabled = false
 }: CouponCodeInputProps) => {
   const [couponCode, setCouponCode] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
+  const [validationState, setValidationState] = useState<ValidationState>('idle');
+  const [validationError, setValidationError] = useState<string>("");
+  const [validCouponDetails, setValidCouponDetails] = useState<CouponDetails | null>(null);
+  const { toast } = useToast();
 
-  const handleApply = () => {
-    if (couponCode.trim()) {
-      onApplyCoupon(couponCode.trim());
-      setCouponCode("");
-      setIsExpanded(false);
+  const handleApply = async () => {
+    if (!couponCode.trim()) return;
+
+    setValidationState('validating');
+    setValidationError("");
+
+    try {
+      const { data, error } = await supabase.functions.invoke('validate-coupon', {
+        body: { coupon_code: couponCode.trim().toUpperCase() }
+      });
+
+      if (error) throw error;
+
+      if (data.valid) {
+        setValidationState('valid');
+        setValidCouponDetails(data.coupon);
+        onApplyCoupon(couponCode.trim().toUpperCase(), data.coupon);
+        toast({
+          title: "Coupon Applied!",
+          description: `${getDiscountText(data.coupon)} discount will be applied at checkout.`,
+        });
+      } else {
+        setValidationState('invalid');
+        setValidationError(data.error || "Invalid coupon code");
+      }
+    } catch (error) {
+      console.error('Coupon validation error:', error);
+      setValidationState('error');
+      setValidationError("Failed to validate coupon. Please try again.");
+      toast({
+        title: "Validation Failed",
+        description: "Unable to validate coupon code. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 
   const handleRemove = () => {
     onRemoveCoupon();
     setCouponCode("");
+    setValidationState('idle');
+    setValidationError("");
+    setValidCouponDetails(null);
   };
 
-  if (appliedCoupon) {
+  const getDiscountText = (coupon: CouponDetails): string => {
+    if (coupon.percent_off) {
+      return `${coupon.percent_off}%`;
+    }
+    if (coupon.amount_off && coupon.currency) {
+      const amount = coupon.amount_off / 100; // Convert cents to dollars
+      return `$${amount.toFixed(2)}`;
+    }
+    return "Discount";
+  };
+
+  if (appliedCoupon && appliedCouponDetails) {
     return (
       <Card className="bg-green-50 border-green-200">
         <CardContent className="p-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-green-700">
-              <Tag className="w-4 h-4" />
-              <span className="text-sm font-medium">Coupon applied: {appliedCoupon}</span>
+              <Check className="w-4 h-4" />
+              <div className="flex flex-col">
+                <span className="text-sm font-medium">Coupon applied: {appliedCoupon}</span>
+                <span className="text-xs text-green-600">
+                  {getDiscountText(appliedCouponDetails)} discount
+                </span>
+              </div>
             </div>
             <Button
               variant="ghost"
@@ -75,22 +143,75 @@ export const CouponCodeInput = ({
   }
 
   return (
-    <Card className="bg-slate-50 border-slate-200">
+    <Card className={`border-2 ${
+      validationState === 'valid' ? 'bg-green-50 border-green-200' : 
+      validationState === 'invalid' || validationState === 'error' ? 'bg-red-50 border-red-200' :
+      'bg-slate-50 border-slate-200'
+    }`}>
       <CardContent className="p-3">
         <div className="space-y-3">
-          <div className="flex items-center gap-2 text-slate-700">
-            <Tag className="w-4 h-4" />
-            <span className="text-sm font-medium">Enter coupon code</span>
+          <div className="flex items-center gap-2">
+            {validationState === 'validating' && <Loader2 className="w-4 h-4 animate-spin text-blue-600" />}
+            {validationState === 'valid' && <Check className="w-4 h-4 text-green-600" />}
+            {(validationState === 'invalid' || validationState === 'error') && <AlertCircle className="w-4 h-4 text-red-600" />}
+            {validationState === 'idle' && <Tag className="w-4 h-4 text-slate-700" />}
+            <span className={`text-sm font-medium ${
+              validationState === 'valid' ? 'text-green-700' :
+              validationState === 'invalid' || validationState === 'error' ? 'text-red-700' :
+              'text-slate-700'
+            }`}>
+              {validationState === 'validating' ? 'Validating coupon...' :
+               validationState === 'valid' ? `Valid coupon: ${getDiscountText(validCouponDetails!)} discount` :
+               validationState === 'invalid' || validationState === 'error' ? 'Invalid coupon code' :
+               'Enter coupon code'}
+            </span>
           </div>
+          
+          {(validationState === 'invalid' || validationState === 'error') && validationError && (
+            <div className="text-xs text-red-600 bg-red-100 p-2 rounded">
+              {validationError}
+            </div>
+          )}
+
+          {validationState === 'valid' && validCouponDetails && (
+            <div className="text-xs text-green-600 bg-green-100 p-2 rounded">
+              <Check className="w-3 h-3 inline mr-1" />
+              Coupon validated! {getDiscountText(validCouponDetails)} discount will be applied at checkout.
+              <div className="mt-1">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    onApplyCoupon(couponCode.trim().toUpperCase(), validCouponDetails);
+                    setIsExpanded(false);
+                  }}
+                  className="text-xs h-6"
+                >
+                  Use This Coupon
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="flex gap-2">
             <Input
               placeholder="Enter code"
               value={couponCode}
-              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-              disabled={loading || disabled}
-              className="text-sm"
+              onChange={(e) => {
+                setCouponCode(e.target.value.toUpperCase());
+                if (validationState !== 'idle') {
+                  setValidationState('idle');
+                  setValidationError("");
+                  setValidCouponDetails(null);
+                }
+              }}
+              disabled={loading || disabled || validationState === 'validating'}
+              className={`text-sm ${
+                validationState === 'valid' ? 'border-green-300' :
+                validationState === 'invalid' || validationState === 'error' ? 'border-red-300' :
+                ''
+              }`}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === 'Enter' && validationState !== 'validating') {
                   handleApply();
                 }
               }}
@@ -98,14 +219,25 @@ export const CouponCodeInput = ({
             <Button
               size="sm"
               onClick={handleApply}
-              disabled={loading || disabled || !couponCode.trim()}
+              disabled={loading || disabled || !couponCode.trim() || validationState === 'validating'}
             >
-              {loading ? "Applying..." : "Apply"}
+              {validationState === 'validating' ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin mr-1" />
+                  Checking...
+                </>
+              ) : 'Apply'}
             </Button>
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => setIsExpanded(false)}
+              onClick={() => {
+                setIsExpanded(false);
+                setCouponCode("");
+                setValidationState('idle');
+                setValidationError("");
+                setValidCouponDetails(null);
+              }}
               disabled={disabled}
             >
               Cancel

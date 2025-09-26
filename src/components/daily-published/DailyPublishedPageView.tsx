@@ -81,8 +81,6 @@ export function DailyPublishedPageView({
         previousPage={previousPage}
         onPrevious={onPrevious}
         bookId={bookId}
-        pageNumber={pageNumber}
-        totalPages={totalPages}
       />
 
       {/* Focused page card - Fixed height to prevent scrolling */}

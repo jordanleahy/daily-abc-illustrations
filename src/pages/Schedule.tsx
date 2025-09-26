@@ -65,7 +65,6 @@ export default function Schedule() {
         <FreemiumHeader 
           title="Schedule"
           bookId=""
-          showPageIndicator={false}
           showQRCode={false}
         />
         <div className="pt-16 text-center py-8">
@@ -81,7 +80,6 @@ export default function Schedule() {
         <FreemiumHeader 
           title="Schedule"
           bookId=""
-          showPageIndicator={false}
           showQRCode={false}
         />
         <div className="pt-16 text-center py-8">
@@ -104,7 +102,6 @@ export default function Schedule() {
         <FreemiumHeader 
           title="Schedule"
           bookId={activeItems[0]?.book_id}
-          showPageIndicator={false}
           showQRCode={true}
         />
         <div className="pt-16 container mx-auto px-4 pb-8 max-w-4xl">

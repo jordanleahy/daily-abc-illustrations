@@ -51,14 +51,8 @@ interface FreemiumHeaderProps {
   onPrevious?: () => void;
   /** Book ID for QR code generation and sharing */
   bookId: string;
-  /** Current page number for progress display */
-  pageNumber?: number;
-  /** Total pages count for progress calculation */
-  totalPages?: number;
   /** Whether to show the QR code sharing button */
   showQRCode?: boolean;
-  /** Whether to show the page progress indicator */
-  showPageIndicator?: boolean;
 }
 
 /**
@@ -72,10 +66,7 @@ export function FreemiumHeader({
   previousPage,
   onPrevious,
   bookId,
-  pageNumber,
-  totalPages,
-  showQRCode = true,
-  showPageIndicator = true
+  showQRCode = true
 }: FreemiumHeaderProps) {
   const { qrCodeData } = useBookQRCode(bookId);
   const navigate = useNavigate();
@@ -149,12 +140,6 @@ export function FreemiumHeader({
           </Sheet>
         )}
         
-        {/* Reading progress indicator */}
-        {showPageIndicator && pageNumber && totalPages && (
-          <div className="text-xs text-muted-foreground font-medium">
-            Page {pageNumber} of {totalPages}
-          </div>
-        )}
       </div>
     </div>
   );

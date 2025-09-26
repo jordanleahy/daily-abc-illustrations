@@ -44,7 +44,7 @@ export const WireframePricing = () => {
         "Premium feature C",
         "Premium feature D"
       ],
-      buttonText: currentTier?.interval === 'month' ? "Current Plan" : (isAuthenticated ? "Choose Monthly" : "Create Account & Subscribe Monthly"),
+      buttonText: currentTier?.interval === 'month' ? "Current Plan" : "Select",
       buttonDisabled: loading || (isSubscribed && currentTier?.interval === 'month'),
       current: currentTier?.interval === 'month',
       onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS.standard_monthly.price_id)
@@ -62,7 +62,7 @@ export const WireframePricing = () => {
         "Premium feature D",
         "Bonus feature E"
       ],
-      buttonText: currentTier?.interval === 'year' ? "Current Plan" : (isAuthenticated ? "Choose Annual" : "Create Account & Subscribe Annually"),
+      buttonText: currentTier?.interval === 'year' ? "Current Plan" : "Select",
       buttonDisabled: loading || (isSubscribed && currentTier?.interval === 'year'),
       current: currentTier?.interval === 'year',
       onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS.standard_annual.price_id)

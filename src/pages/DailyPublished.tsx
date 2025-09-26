@@ -23,9 +23,9 @@ export default function DailyPublished() {
   const [sessionStarted, setSessionStarted] = useState(false);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
 
-  // Reorder pages to start from deterministic letter based on publication date
+  // Reorder pages to start from random letter on each refresh
   const pages = dailyContent && originalPages.length > 0 
-    ? reorderPagesFromStartingLetter(originalPages, getStartingLetterIndex(dailyContent.published_at))
+    ? reorderPagesFromStartingLetter(originalPages, Math.floor(Math.random() * originalPages.length))
     : originalPages;
 
   // Initialize session once pages are loaded and reordered

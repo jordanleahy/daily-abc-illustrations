@@ -25,9 +25,9 @@ export const WireframePricing = () => {
       price: "$0",
       period: "forever",
       features: [
-        "Basic feature A",
-        "Basic feature B", 
-        "Basic feature C"
+        "View today's ABC book",
+        "Limited daily access", 
+        "Basic reading experience"
       ],
       buttonText: "Current Plan",
       buttonDisabled: true,
@@ -38,11 +38,10 @@ export const WireframePricing = () => {
       price: "$9.99",
       period: "month",
       features: [
-        "All basic features",
-        "Premium feature A",
-        "Premium feature B",
-        "Premium feature C",
-        "Premium feature D"
+        "Access to all daily published ABC books",
+        "Download PDF version",
+        "Full library access",
+        "Premium reading experience"
       ],
       buttonText: currentTier?.interval === 'month' ? "Current Plan" : "Select",
       buttonDisabled: loading || (isSubscribed && currentTier?.interval === 'month'),
@@ -55,12 +54,12 @@ export const WireframePricing = () => {
       period: "year",
       savings: "Save $89.89",
       features: [
-        "All basic features",
-        "Premium feature A", 
-        "Premium feature B",
-        "Premium feature C",
-        "Premium feature D",
-        "Bonus feature E"
+        "Access to all daily published ABC books",
+        "Download PDF version", 
+        "Full library access",
+        "Premium reading experience",
+        "Early access to new books",
+        "Educational activity guides"
       ],
       buttonText: currentTier?.interval === 'year' ? "Current Plan" : "Select",
       buttonDisabled: loading || (isSubscribed && currentTier?.interval === 'year'),

@@ -10,6 +10,7 @@ import Auth from "./pages/Auth";
 import Agents from "./pages/Agents";
 import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
+import { AdminOnly } from "@/components/AdminOnly";
 import Library from "./pages/Library";
 import LibraryBookView from "./pages/LibraryBookView";
 import LibraryDetail from "./pages/LibraryDetail";
@@ -52,8 +53,8 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/agents" element={<Agents />} />
-            <Route path="/books" element={<Books />} />
-            <Route path="/books/:id" element={<BookDetail />} />
+            <Route path="/editor" element={<AdminOnly><Books /></AdminOnly>} />
+            <Route path="/editor/:id" element={<AdminOnly><BookDetail /></AdminOnly>} />
              <Route path="/library" element={<Library />} />
              <Route path="/library/:id" element={<LibraryBookView />} />
              <Route path="/library/:id/detail" element={<LibraryDetail />} />

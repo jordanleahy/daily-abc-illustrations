@@ -50,7 +50,7 @@ export function DailyPublishedQueueCard({
   };
 
   const handleCardClick = () => {
-    navigate(`/books/${item.book_id}`);
+    navigate(`/editor/${item.book_id}`);
   };
   
   const getStatusVariant = (status: string) => {

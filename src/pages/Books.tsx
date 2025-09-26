@@ -24,7 +24,7 @@ export default function Books() {
   }
 
   const handleViewBook = (bookId: string) => {
-    navigate(`/books/${bookId}`);
+    navigate(`/editor/${bookId}`);
   };
 
   const handleCreateNewBook = () => {
@@ -62,14 +62,14 @@ export default function Books() {
   }
 
   return (
-    <PageLayout title="My Books">
+    <PageLayout title="Book Editor">
       <Container className="py-8">
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">My ABC Books</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Book Editor</h1>
               <p className="text-muted-foreground">
-                Create and manage your personalized ABC learning books
+                Create and manage ABC learning books for the platform
               </p>
             </div>
             <Button onClick={handleCreateNewBook} className="flex items-center gap-2">

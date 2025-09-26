@@ -120,7 +120,7 @@ export const BookSystemPromptDisplay = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => window.open(`/books/${promptData.bookId}`, '_blank')}
+                onClick={() => window.open(`/editor/${promptData.bookId}`, '_blank')}
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
                 View Book

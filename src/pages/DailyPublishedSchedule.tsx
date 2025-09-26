@@ -349,7 +349,7 @@ function ScheduleCard({
   } : {};
 
   const handleCardClick = () => {
-    navigate(`/books/${item.book_id}`);
+    navigate(`/editor/${item.book_id}`);
   };
 
   const isActive = item.status === 'active';

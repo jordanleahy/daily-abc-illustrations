@@ -80,12 +80,12 @@ export default function BookDetail() {
   useEffect(() => {
     if (!authLoading && user && id && bookFetched && !book) {
       toast.error('Book not found');
-      navigate('/books');
+      navigate('/editor');
     }
   }, [authLoading, user, id, bookFetched, book, navigate]);
 
   const handleBack = () => {
-    navigate('/books');
+    navigate('/editor');
   };
 
   const generateStyleGuide = async () => {
@@ -174,7 +174,7 @@ export default function BookDetail() {
       if (error) throw error;
 
       toast.success('Book archived successfully');
-      navigate('/books');
+      navigate('/editor');
     } catch (error) {
       console.error('Error archiving book:', error);
       toast.error('Failed to archive book');
@@ -204,7 +204,7 @@ export default function BookDetail() {
       queryClient.invalidateQueries({ queryKey: ['books', user.id] });
 
       toast.success('Book deleted successfully');
-      navigate('/books');
+      navigate('/editor');
     } catch (error: any) {
       console.error('Error:', error);
       toast.error('An error occurred while deleting the book');

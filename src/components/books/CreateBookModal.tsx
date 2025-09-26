@@ -52,7 +52,7 @@ export function CreateBookModal({ open, onOpenChange }: CreateBookModalProps) {
 
       if (result.success && result.bookId) {
         onOpenChange(false);
-        navigate(`/books/${result.bookId}`);
+        navigate(`/editor/${result.bookId}`);
       }
     } catch (error) {
       // Error is already handled by the mutation

@@ -75,7 +75,7 @@ export function generateBookOpenGraph(
 ): SEOMetadata {
   const title = `${bookTitle} | ${SITE_CONFIG.name}`;
   const description = bookDescription || `Explore "${bookTitle}" - an illustrated story created with ${SITE_CONFIG.name}`;
-  const path = bookId ? `/books/${bookId}` : undefined;
+  const path = bookId ? `/editor/${bookId}` : undefined;
   
   return {
     title,

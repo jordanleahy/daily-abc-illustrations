@@ -410,7 +410,7 @@ const navigate = useNavigate();
                           <p className="text-sm font-medium">{bookCreated.message}</p>
                           <Button 
                             size="sm" 
-                            onClick={() => navigate(`/books/${bookCreated.id}`)}
+                            onClick={() => navigate(`/editor/${bookCreated.id}`)}
                             className="flex items-center gap-1"
                           >
                             View Book <ExternalLink className="w-3 h-3" />

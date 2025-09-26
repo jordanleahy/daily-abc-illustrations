@@ -64,6 +64,40 @@ export default function DailyPublished() {
     openGraphDescription: openGraphMetadata?.description
   });
 
+  // Keyboard navigation for desktop users (moved above early returns to keep hooks order stable)
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        // Handle next page
+        if (currentPageIndex < pages.length - 1) {
+          const newIndex = currentPageIndex + 1;
+          setCurrentPageIndex(newIndex);
+          
+          // Track page view
+          if (sessionStarted && pages[newIndex]) {
+            trackPageView(newIndex + 1, pages[newIndex].letter, 'keyboard_next');
+          }
+        }
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        // Handle previous page
+        if (currentPageIndex > 0) {
+          const newIndex = currentPageIndex - 1;
+          setCurrentPageIndex(newIndex);
+          
+          // Track page view
+          if (sessionStarted && pages[newIndex]) {
+            trackPageView(newIndex + 1, pages[newIndex].letter, 'keyboard_previous');
+          }
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentPageIndex, pages, sessionStarted, trackPageView]);
+
   const isLoading = isLoadingDaily || isLoadingPages;
 
   // Redirect to homepage if content is expired
@@ -157,39 +191,8 @@ export default function DailyPublished() {
     }
   };
 
-  // Keyboard navigation for desktop users
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'ArrowRight') {
-        event.preventDefault();
-        // Handle next page
-        if (currentPageIndex < pages.length - 1) {
-          const newIndex = currentPageIndex + 1;
-          setCurrentPageIndex(newIndex);
-          
-          // Track page view
-          if (sessionStarted && pages[newIndex]) {
-            trackPageView(newIndex + 1, pages[newIndex].letter, 'keyboard_next');
-          }
-        }
-      } else if (event.key === 'ArrowLeft') {
-        event.preventDefault();
-        // Handle previous page
-        if (currentPageIndex > 0) {
-          const newIndex = currentPageIndex - 1;
-          setCurrentPageIndex(newIndex);
-          
-          // Track page view
-          if (sessionStarted && pages[newIndex]) {
-            trackPageView(newIndex + 1, pages[newIndex].letter, 'keyboard_previous');
-          }
-        }
-      }
-    };
+  // (keyboard navigation hook moved above to keep hooks order consistent)
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPageIndex, pages, sessionStarted, trackPageView]); // Include all dependencies
 
   return (
     <div className="min-h-screen bg-background">

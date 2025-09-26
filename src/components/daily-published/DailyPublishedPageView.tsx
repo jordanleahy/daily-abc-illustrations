@@ -2,7 +2,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { PublicPageImage } from './PublicPageImage';
 import { FreemiumHeader } from './FreemiumHeader';
-import { EmbeddedScheduleView } from './EmbeddedScheduleView';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { Page } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
@@ -37,7 +36,6 @@ export function DailyPublishedPageView({
 }: DailyPublishedPageViewProps) {
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
-  const [showEmbeddedSchedule, setShowEmbeddedSchedule] = useState(false);
   const navigate = useNavigate();
 
   // Simple expiration check - redirect to home if expired
@@ -71,15 +69,6 @@ export function DailyPublishedPageView({
     return () => clearInterval(interval);
   }, [expiresAt, navigate]);
 
-  // Handle slide action based on page position
-  const handleSlideAction = () => {
-    if (isLastPage) {
-      setShowEmbeddedSchedule(!showEmbeddedSchedule);
-    } else {
-      onNext();
-    }
-  };
-
   // Don't render anything if expired (navigation will happen)
   if (isExpired) {
     return null;
@@ -96,41 +85,26 @@ export function DailyPublishedPageView({
         totalPages={totalPages}
       />
 
-      {/* Main content area */}
-      <div className="flex-1 mt-16 relative overflow-hidden">
-        {/* Page content */}
-        <div className={`h-full px-4 flex items-center justify-center transition-transform duration-300 ${
-          showEmbeddedSchedule ? '-translate-y-full' : 'translate-y-0'
-        }`}>
-          <div className="max-w-md w-full">
-            <Card className="overflow-hidden shadow-lg">
-              <CardContent className="p-0">
-                {/* Large illustration area */}
-                <div className="aspect-square bg-gradient-to-br from-background to-muted/50">
-                  <PublicPageImage pageId={page.id} bookId={bookId} />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-
-        {/* Embedded schedule view */}
-        <div className={`absolute inset-0 transition-transform duration-300 ${
-          showEmbeddedSchedule ? 'translate-y-0' : 'translate-y-full'
-        }`}>
-          <div className="h-full overflow-y-auto">
-            <EmbeddedScheduleView currentContentId={contentId} />
-          </div>
+      {/* Focused page card - Fixed height to prevent scrolling */}
+      <div className="h-[calc(100vh-8rem)] mt-16 px-4 flex items-center justify-center">
+        <div className="max-w-md w-full">
+          <Card className="overflow-hidden shadow-lg">
+            <CardContent className="p-0">
+              {/* Large illustration area */}
+              <div className="aspect-square bg-gradient-to-br from-background to-muted/50">
+                <PublicPageImage pageId={page.id} bookId={bookId} />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
       {/* Unified bottom slide navigation */}
       <BottomSlideNavigation 
-        onSlide={handleSlideAction}
-        disabled={false}
+        onSlide={onNext}
+        disabled={isLastPage}
         variant="compact"
-        show={true}
-        slideText={isLastPage ? (showEmbeddedSchedule ? "Back to page" : "View upcoming") : undefined}
+        show={!isLastPage}
       />
     </div>;
 }

@@ -1,7 +1,6 @@
 export { DailyPublishedPageView } from './DailyPublishedPageView';
 export { FreemiumHeader } from './FreemiumHeader';
 export { PublicPageImage } from './PublicPageImage';
-export { EmbeddedScheduleView } from './EmbeddedScheduleView';
 export { UpcomingBooksPreview } from './UpcomingBooksPreview';
 export { SchedulePreview } from './SchedulePreview';
 export { FullScheduleView } from './FullScheduleView';

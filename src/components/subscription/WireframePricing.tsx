@@ -2,10 +2,22 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
+import { useAuth } from "@/hooks/useAuth";
+import { useNavigate } from "react-router-dom";
 
 export const WireframePricing = () => {
   const { createCheckoutSession, isSubscribed, getSubscriptionTier, loading, openCustomerPortal } = useSubscription();
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
   const currentTier = getSubscriptionTier();
+
+  const handlePlanSelection = (priceId: string) => {
+    if (!isAuthenticated) {
+      navigate(`/auth?mode=signup&returnUrl=/subscription&plan=${priceId}`);
+      return;
+    }
+    createCheckoutSession(priceId);
+  };
 
   const plans = [
     {
@@ -32,10 +44,10 @@ export const WireframePricing = () => {
         "Premium feature C",
         "Premium feature D"
       ],
-      buttonText: currentTier?.interval === 'month' ? "Current Plan" : "Choose Monthly",
+      buttonText: currentTier?.interval === 'month' ? "Current Plan" : (isAuthenticated ? "Choose Monthly" : "Create Account & Subscribe Monthly"),
       buttonDisabled: loading || (isSubscribed && currentTier?.interval === 'month'),
       current: currentTier?.interval === 'month',
-      onClick: () => createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id)
+      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS.standard_monthly.price_id)
     },
     {
       name: "Annual Plan",
@@ -50,10 +62,10 @@ export const WireframePricing = () => {
         "Premium feature D",
         "Bonus feature E"
       ],
-      buttonText: currentTier?.interval === 'year' ? "Current Plan" : "Choose Annual",
+      buttonText: currentTier?.interval === 'year' ? "Current Plan" : (isAuthenticated ? "Choose Annual" : "Create Account & Subscribe Annually"),
       buttonDisabled: loading || (isSubscribed && currentTier?.interval === 'year'),
       current: currentTier?.interval === 'year',
-      onClick: () => createCheckoutSession(SUBSCRIPTION_TIERS.standard_annual.price_id)
+      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS.standard_annual.price_id)
     }
   ];
 

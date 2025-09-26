@@ -12,16 +12,21 @@ import { Container } from '@/components/layout/Container';
 import { SITE_CONFIG } from '@/config/site';
 
 const Auth = () => {
-  const [isLogin, setIsLogin] = useState(true);
+  const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isAuthenticated } = useAuth();
+  
+  const searchParams = new URLSearchParams(location.search);
+  const mode = searchParams.get('mode');
+  const returnUrl = searchParams.get('returnUrl');
+  
+  const [isLogin, setIsLogin] = useState(mode !== 'signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { isAuthenticated } = useAuth();
 
   // Only redirect if already authenticated AND not on auth page
   useEffect(() => {
@@ -52,7 +57,7 @@ const Auth = () => {
             title: "Welcome back!",
             description: "You have successfully logged in.",
           });
-          navigate('/');
+          navigate(returnUrl || '/');
         }
       } else {
         const redirectUrl = `${window.location.origin}/`;
@@ -86,8 +91,10 @@ const Auth = () => {
         } else {
           toast({
             title: "Account created!",
-            description: "Please check your email to verify your account.",
+            description: returnUrl ? "Please check your email to verify your account, then you'll be redirected to complete your subscription." : "Please check your email to verify your account.",
           });
+          // For email verification flow, we can't redirect immediately
+          // The user will be redirected after email verification
         }
       }
     } catch (error) {

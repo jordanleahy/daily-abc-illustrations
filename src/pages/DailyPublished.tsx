@@ -8,6 +8,7 @@ import { MetaHead } from '@/components/common';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
+import { reorderPagesFromStartingLetter, getStartingLetterIndex } from '@/utils/pageOrdering';
 
 export default function DailyPublished() {
   const { id } = useParams<{ id: string }>();
@@ -17,38 +18,41 @@ export default function DailyPublished() {
   const dailyContent = result?.data;
   const isExpired = result?.isExpired;
   
-  const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
+  const { data: originalPages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [sessionStarted, setSessionStarted] = useState(false);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
 
-  // Set random starting page once pages are loaded
+  // Reorder pages to start from deterministic letter based on publication date
+  const pages = dailyContent && originalPages.length > 0 
+    ? reorderPagesFromStartingLetter(originalPages, getStartingLetterIndex(dailyContent.published_at))
+    : originalPages;
+
+  // Initialize session once pages are loaded and reordered
   useEffect(() => {
-    if (pages.length > 0 && !sessionStarted) {
-      const randomIndex = Math.floor(Math.random() * pages.length);
-      setCurrentPageIndex(randomIndex);
+    if (pages.length > 0 && !sessionStarted && dailyContent) {
+      // Start from page 0 (first reordered page)
+      setCurrentPageIndex(0);
       
       // Start analytics session
-      if (dailyContent) {
-        const entryPoint = location.state?.from === 'homepage' ? 'homepage_redirect' : 'direct_link';
-        
-        startSession({
-          contentType: 'daily_published',
-          contentId: dailyContent.id,
-          bookId: dailyContent.book_id,
-          totalPages: pages.length,
-          entryPoint,
-          startingPage: randomIndex + 1,
-        });
-        
-        // Track initial page view
-        const startingPage = pages[randomIndex];
-        if (startingPage) {
-          trackPageView(randomIndex + 1, startingPage.letter, 'session_start');
-        }
-        
-        setSessionStarted(true);
+      const entryPoint = location.state?.from === 'homepage' ? 'homepage_redirect' : 'direct_link';
+      
+      startSession({
+        contentType: 'daily_published',
+        contentId: dailyContent.id,
+        bookId: dailyContent.book_id,
+        totalPages: pages.length,
+        entryPoint,
+        startingPage: 1, // Always start at page 1 in the reordered sequence
+      });
+      
+      // Track initial page view
+      const startingPage = pages[0];
+      if (startingPage) {
+        trackPageView(1, startingPage.letter, 'session_start');
       }
+      
+      setSessionStarted(true);
     }
   }, [pages.length, dailyContent, sessionStarted, startSession, trackPageView, location.state]);
   

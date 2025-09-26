@@ -5,6 +5,8 @@ import { useNavigate } from 'react-router-dom';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { PublicPageImage } from './PublicPageImage';
 import type { Page } from '@/types/book';
+import { useSubscription } from '@/hooks/useSubscription';
+import { Crown } from 'lucide-react';
 
 /**
  * FreemiumHeader Component
@@ -70,6 +72,7 @@ export function FreemiumHeader({
 }: FreemiumHeaderProps) {
   const { qrCodeData } = useBookQRCode(bookId);
   const navigate = useNavigate();
+  const { hasActiveSubscription } = useSubscription();
 
   // Handle title click to navigate to schedule page
   const handleTitleClick = () => navigate('/schedule');
@@ -87,11 +90,16 @@ export function FreemiumHeader({
       </div>
       
       {/* Middle section: Clickable title for navigation */}
-      <div 
-        className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
-        onClick={handleTitleClick}
-      >
-        {title}
+      <div className="flex items-center gap-2">
+        <div 
+          className="text-sm font-medium text-foreground cursor-pointer hover:text-primary transition-colors"
+          onClick={handleTitleClick}
+        >
+          {title}
+        </div>
+        {hasActiveSubscription && (
+          <Crown className="h-4 w-4 text-yellow-500" />
+        )}
       </div>
       
       {/* Right section: Navigation and sharing controls */}

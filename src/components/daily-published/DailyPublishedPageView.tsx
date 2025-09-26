@@ -8,6 +8,10 @@ import type { SEOMetadata } from '@/types/openGraph';
 import { useState, useEffect } from 'react';
 import { MetaHead } from '@/components/common';
 import { useNavigate } from 'react-router-dom';
+import { PremiumGate } from '@/components/subscription/PremiumGate';
+import { useSubscription } from '@/hooks/useSubscription';
+import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
 interface DailyPublishedPageViewProps {
   page: Page;
   bookId: string;
@@ -37,6 +41,7 @@ export function DailyPublishedPageView({
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
   const navigate = useNavigate();
+  const { canDownloadPDF } = useSubscription();
 
   // Simple expiration check - redirect to home if expired
   const isExpired = new Date() > new Date(expiresAt);
@@ -95,6 +100,27 @@ export function DailyPublishedPageView({
             </CardContent>
           </Card>
         </div>
+      </div>
+
+      {/* Premium features section */}
+      <div className="fixed bottom-20 right-4 z-30">
+        {canDownloadPDF() ? (
+          <Button size="sm" variant="secondary" className="shadow-lg">
+            <Download className="h-4 w-4 mr-2" />
+            Download PDF
+          </Button>
+        ) : (
+          <PremiumGate 
+            feature="PDF download"
+            description="Download this ABC book as PDF for offline reading."
+            showUpgrade={true}
+          >
+            <Button size="sm" variant="secondary" className="shadow-lg">
+              <Download className="h-4 w-4 mr-2" />
+              Download PDF
+            </Button>
+          </PremiumGate>
+        )}
       </div>
 
       {/* Unified bottom slide navigation */}

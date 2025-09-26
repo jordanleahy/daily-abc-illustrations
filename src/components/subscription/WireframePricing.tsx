@@ -6,13 +6,16 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 
 export const WireframePricing = () => {
-  const { createCheckoutSession, isSubscribed, getSubscriptionTier, loading, openCustomerPortal } = useSubscription();
-  const { isAuthenticated } = useAuth();
+  const { createCheckoutSession, isSubscribed, getSubscriptionTier, loading, openCustomerPortal, hasActiveSubscription } = useSubscription();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const currentTier = getSubscriptionTier();
+  
+  // For free authenticated users, all plans should be available
+  const isCurrentlyFree = user && !hasActiveSubscription;
 
   const handlePlanSelection = (priceId: string) => {
-    if (!isAuthenticated) {
+    if (!user) {
       navigate(`/auth?mode=signup&returnUrl=/subscription&plan=${priceId}`);
       return;
     }
@@ -29,8 +32,8 @@ export const WireframePricing = () => {
         "Limited daily access", 
         "Basic reading experience"
       ],
-      buttonText: "Current Plan",
-      buttonDisabled: true,
+      buttonText: isCurrentlyFree ? "Current Plan" : "Sign Up Free",
+      buttonDisabled: isCurrentlyFree,
       current: !isSubscribed
     },
     {

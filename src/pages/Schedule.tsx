@@ -11,6 +11,8 @@ import { Clock, BookOpen, Image } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { toEasternTime } from '@/utils/timezone';
 import { format } from 'date-fns-tz';
+import { PremiumGate } from '@/components/subscription/PremiumGate';
+import { useSubscription } from '@/hooks/useSubscription';
 
 // Utility functions (reused from DailyPublishedSchedule)
 const getStatusColor = (status: string) => {
@@ -59,6 +61,7 @@ export default function Schedule() {
     isLoading,
     error
   } = useDailyPublishedSchedule();
+  const { canAccessHistoricalContent } = useSubscription();
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -141,24 +144,41 @@ export default function Schedule() {
               </CardContent>
             </Card>}
 
-          {/* Expired Items (collapsible) */}
-          {expiredItems.length > 0 && <div className="mt-8">
-              <details className="group" open>
-                <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Show {expiredItems.length} past books
-                </summary>
-                <div className="mt-4 space-y-4 opacity-60">
-                  {expiredItems.map(item => (
-                    <PublicScheduleCard 
-                      key={item.id} 
-                      item={item}
-                      position="expired"
-                    />
-                  ))}
-                </div>
-              </details>
-            </div>}
+          {/* Expired Items (Premium gated) */}
+          {expiredItems.length > 0 && (
+            <div className="mt-8">
+              {canAccessHistoricalContent() ? (
+                <details className="group" open>
+                  <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Show {expiredItems.length} past books
+                  </summary>
+                  <div className="mt-4 space-y-4 opacity-60">
+                    {expiredItems.map(item => (
+                      <PublicScheduleCard 
+                        key={item.id} 
+                        item={item}
+                        position="expired"
+                      />
+                    ))}
+                  </div>
+                </details>
+              ) : (
+                <PremiumGate 
+                  feature="historical content access"
+                  description="Access all past daily published ABC books and view the complete archive."
+                  showUpgrade={true}
+                >
+                  <details className="group">
+                    <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      Show {expiredItems.length} past books
+                    </summary>
+                  </details>
+                </PremiumGate>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </>;

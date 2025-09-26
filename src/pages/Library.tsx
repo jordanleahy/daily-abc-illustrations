@@ -11,6 +11,8 @@ import { BookOpen, Calendar, Users, GraduationCap } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useIsTeacher } from '@/contexts/RoleContext';
+import { PremiumGate } from '@/components/subscription/PremiumGate';
+import { useSubscription } from '@/hooks/useSubscription';
 
 export default function Library() {
   const {
@@ -18,6 +20,7 @@ export default function Library() {
     isLoading,
     error
   } = useLibraryBooks();
+  const { canAccessFullLibrary } = useSubscription();
 
   if (isLoading) {
     return (
@@ -53,6 +56,11 @@ export default function Library() {
     new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime()
   ) || [];
 
+  // Separate active/queued books from expired books
+  const activeAndQueuedBooks = allBooks.filter(book => book.status === 'active' || book.status === 'queued');
+  const expiredBooks = allBooks.filter(book => book.status === 'expired');
+  const hasAccess = canAccessFullLibrary();
+
   return <>
     <MetaHead metadata={{
       title: "Library - Daily ABC Illustrations",
@@ -76,8 +84,51 @@ export default function Library() {
           </div>
         </div>
 
+        {/* Active and Queued Books - Always accessible */}
+        {activeAndQueuedBooks.length > 0 && (
+          <div className="">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-green-500" />
+              Current & Upcoming Books
+            </h2>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {activeAndQueuedBooks.map((item) => (
+                <LibraryBookCard key={item.id} item={item} />
+              ))}
+            </div>
+          </div>
+        )}
 
-        {allBooks.length === 0 ? (
+        {/* Expired Books - Premium gated */}
+        {expiredBooks.length > 0 && (
+          <div className="">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-gray-500" />
+              Past Books ({expiredBooks.length})
+            </h2>
+            {hasAccess ? (
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                {expiredBooks.map((item) => (
+                  <LibraryBookCard key={item.id} item={item} />
+                ))}
+              </div>
+            ) : (
+              <PremiumGate 
+                feature="full library access"
+                description="Access all past daily published ABC books and view the complete library."
+                showUpgrade={true}
+              >
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {expiredBooks.slice(0, 3).map((item) => (
+                    <LibraryBookCard key={item.id} item={item} />
+                  ))}
+                </div>
+              </PremiumGate>
+            )}
+          </div>
+        )}
+
+        {allBooks.length === 0 && (
           <Card className="text-center py-12">
             <CardContent>
               <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -87,12 +138,6 @@ export default function Library() {
               </p>
             </CardContent>
           </Card>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {allBooks.map((item) => (
-              <LibraryBookCard key={item.id} item={item} />
-            ))}
-          </div>
         )}
         </div>
       </div>

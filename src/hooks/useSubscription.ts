@@ -155,6 +155,25 @@ export const useSubscription = () => {
     return () => clearInterval(interval);
   }, [user, checkSubscription]);
 
+  // Helper methods for checking specific premium features
+  const canAccessHistoricalContent = useCallback(() => {
+    return subscription.subscribed && subscription.subscription_end 
+      ? new Date(subscription.subscription_end) > new Date() 
+      : subscription.subscribed;
+  }, [subscription.subscribed, subscription.subscription_end]);
+
+  const canDownloadPDF = useCallback(() => {
+    return subscription.subscribed && subscription.subscription_end 
+      ? new Date(subscription.subscription_end) > new Date() 
+      : subscription.subscribed;
+  }, [subscription.subscribed, subscription.subscription_end]);
+
+  const canAccessFullLibrary = useCallback(() => {
+    return subscription.subscribed && subscription.subscription_end 
+      ? new Date(subscription.subscription_end) > new Date() 
+      : subscription.subscribed;
+  }, [subscription.subscribed, subscription.subscription_end]);
+
   return {
     ...subscription,
     checkSubscription,
@@ -165,5 +184,9 @@ export const useSubscription = () => {
     hasActiveSubscription: subscription.subscribed && subscription.subscription_end 
       ? new Date(subscription.subscription_end) > new Date() 
       : subscription.subscribed,
+    // Premium feature helpers
+    canAccessHistoricalContent,
+    canDownloadPDF,
+    canAccessFullLibrary,
   };
 };

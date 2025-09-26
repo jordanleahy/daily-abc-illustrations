@@ -12,7 +12,7 @@ export const WireframePricing = () => {
   const currentTier = getSubscriptionTier();
   
   // For free authenticated users, all plans should be available
-  const isCurrentlyFree = user && !hasActiveSubscription;
+  const isCurrentlyFree = Boolean(user && !hasActiveSubscription);
 
   const handlePlanSelection = (priceId: string) => {
     if (!user) {

@@ -99,9 +99,11 @@ export default function BookDetail() {
         body: {
           bookId: book.id,
           userId: user.id,
-          bookName: book.book_name,
-          category: book.category || 'General',
-          description: book.book_description || ''
+          bookMetadata: {
+            book_name: book.book_name,
+            category: book.category || 'General',
+            book_description: book.book_description || ''
+          }
         }
       });
 

@@ -162,16 +162,34 @@ export default function DailyPublished() {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowRight') {
         event.preventDefault();
-        handleNext();
+        // Handle next page
+        if (currentPageIndex < pages.length - 1) {
+          const newIndex = currentPageIndex + 1;
+          setCurrentPageIndex(newIndex);
+          
+          // Track page view
+          if (sessionStarted && pages[newIndex]) {
+            trackPageView(newIndex + 1, pages[newIndex].letter, 'keyboard_next');
+          }
+        }
       } else if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        handlePrevious();
+        // Handle previous page
+        if (currentPageIndex > 0) {
+          const newIndex = currentPageIndex - 1;
+          setCurrentPageIndex(newIndex);
+          
+          // Track page view
+          if (sessionStarted && pages[newIndex]) {
+            trackPageView(newIndex + 1, pages[newIndex].letter, 'keyboard_previous');
+          }
+        }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPageIndex, pages.length, sessionStarted]); // Dependencies ensure handlers have latest state
+  }, [currentPageIndex, pages, sessionStarted, trackPageView]); // Include all dependencies
 
   return (
     <div className="min-h-screen bg-background">

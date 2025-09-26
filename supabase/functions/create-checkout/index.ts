@@ -40,10 +40,10 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Get the price_id and optional coupon_code from request body
-    const { price_id, coupon_code } = await req.json();
+    // Get the price_id from request body
+    const { price_id } = await req.json();
     if (!price_id) throw new Error("Price ID is required");
-    logStep("Request data received", { price_id, hasCouponCode: !!coupon_code });
+    logStep("Request data received", { price_id });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     
@@ -58,26 +58,6 @@ serve(async (req) => {
     }
 
     const origin = req.headers.get("origin") || "https://dailyabcillustrations.com";
-    
-    // Handle coupon code validation and discount logic
-    let discountConfig = null;
-    
-    if (coupon_code) {
-      // Manual coupon code provided - validate it with Stripe
-      try {
-        const coupon = await stripe.coupons.retrieve(coupon_code);
-        if (coupon && coupon.valid) {
-          discountConfig = [{ coupon: coupon_code }];
-          logStep("Manual coupon validated", { coupon_code, couponValid: true });
-        } else {
-          throw new Error("Invalid coupon code");
-        }
-      } catch (couponError) {
-        const errorMessage = couponError instanceof Error ? couponError.message : String(couponError);
-        logStep("Coupon validation failed", { coupon_code, error: errorMessage });
-        throw new Error("Invalid coupon code provided");
-      }
-    }
     
     // Prepare checkout session configuration
     const sessionConfig = {
@@ -94,12 +74,9 @@ serve(async (req) => {
       cancel_url: `${origin}/subscription/cancel`,
       metadata: {
         user_id: user.id,
-        coupon_applied: coupon_code || "none",
       },
-      // Apply discount if available
-      ...(discountConfig && { discounts: discountConfig }),
-      // Allow promotion codes to be entered during checkout as well
-      allow_promotion_codes: !discountConfig, // Only allow if no discount already applied
+      // Allow promotion codes to be entered during checkout
+      allow_promotion_codes: true,
     };
 
     const session = await stripe.checkout.sessions.create(sessionConfig);

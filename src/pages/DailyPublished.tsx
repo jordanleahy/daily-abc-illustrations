@@ -157,6 +157,22 @@ export default function DailyPublished() {
     }
   };
 
+  // Keyboard navigation for desktop users
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        handleNext();
+      } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        handlePrevious();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentPageIndex, pages.length, sessionStarted]); // Dependencies ensure handlers have latest state
+
   return (
     <div className="min-h-screen bg-background">
       {/* Dynamic meta tags for social sharing */}

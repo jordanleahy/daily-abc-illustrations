@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
+import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { PublicPageImage } from './PublicPageImage';
 import { FreemiumHeader } from './FreemiumHeader';
 import { formatTimeRemaining } from '@/utils/timeUtils';
@@ -8,6 +9,7 @@ import type { SEOMetadata } from '@/types/openGraph';
 import { useState, useEffect } from 'react';
 import { MetaHead } from '@/components/common';
 import { useNavigate } from 'react-router-dom';
+import { SchedulePreview } from './SchedulePreview';
 interface DailyPublishedPageViewProps {
   page: Page;
   bookId: string;
@@ -106,5 +108,14 @@ export function DailyPublishedPageView({
         variant="compact"
         show={!isLastPage}
       />
+
+      {/* Swipe up drawer for schedule preview - only show on last page */}
+      {isLastPage && (
+        <SwipeUpDrawer>
+          <div className="px-4 py-2 h-full">
+            <SchedulePreview />
+          </div>
+        </SwipeUpDrawer>
+      )}
     </div>;
 }

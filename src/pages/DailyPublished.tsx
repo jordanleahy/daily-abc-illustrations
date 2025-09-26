@@ -175,7 +175,10 @@ export default function DailyPublished() {
   const isLastPage = currentPageIndex >= reorderedPages.length - 1;
 
   const handleNext = () => {
-    if (!isLastPage) {
+    if (isLastPage) {
+      // On last page, navigate to schedule
+      navigate('/schedule');
+    } else {
       const newIndex = currentPageIndex + 1;
       setCurrentPageIndex(newIndex);
       

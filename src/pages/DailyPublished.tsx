@@ -8,6 +8,7 @@ import { MetaHead } from '@/components/common';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
+import { reorderPagesFromStartingLetter } from '@/utils/pageNavigation';
 
 export default function DailyPublished() {
   const { id } = useParams<{ id: string }>();
@@ -20,13 +21,19 @@ export default function DailyPublished() {
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [sessionStarted, setSessionStarted] = useState(false);
+  const [reorderedPages, setReorderedPages] = useState<typeof pages>([]);
+  const [originalStartingIndex, setOriginalStartingIndex] = useState(0);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
 
-  // Set random starting page once pages are loaded
+  // Set random starting page and create reordered circular array
   useEffect(() => {
     if (pages.length > 0 && !sessionStarted) {
       const randomIndex = Math.floor(Math.random() * pages.length);
-      setCurrentPageIndex(randomIndex);
+      const circularPages = reorderPagesFromStartingLetter(pages, randomIndex);
+      
+      setReorderedPages(circularPages);
+      setOriginalStartingIndex(randomIndex);
+      setCurrentPageIndex(0); // Start at index 0 in the reordered array
       
       // Start analytics session
       if (dailyContent) {
@@ -38,13 +45,13 @@ export default function DailyPublished() {
           bookId: dailyContent.book_id,
           totalPages: pages.length,
           entryPoint,
-          startingPage: randomIndex + 1,
+          startingPage: randomIndex + 1, // Use original index for analytics
         });
         
-        // Track initial page view
-        const startingPage = pages[randomIndex];
+        // Track initial page view with the starting letter
+        const startingPage = circularPages[0];
         if (startingPage) {
-          trackPageView(randomIndex + 1, startingPage.letter, 'session_start');
+          trackPageView(1, startingPage.letter, 'session_start');
         }
         
         setSessionStarted(true);
@@ -64,19 +71,19 @@ export default function DailyPublished() {
     openGraphDescription: openGraphMetadata?.description
   });
 
-  // Keyboard navigation for desktop users (moved above early returns to keep hooks order stable)
+  // Keyboard navigation for desktop users (works with reordered circular array)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'ArrowRight') {
         event.preventDefault();
-        // Handle next page
-        if (currentPageIndex < pages.length - 1) {
+        // Handle next page - stop at the end of reordered array (letter before starting letter)
+        if (currentPageIndex < reorderedPages.length - 1) {
           const newIndex = currentPageIndex + 1;
           setCurrentPageIndex(newIndex);
           
           // Track page view
-          if (sessionStarted && pages[newIndex]) {
-            trackPageView(newIndex + 1, pages[newIndex].letter, 'keyboard_next');
+          if (sessionStarted && reorderedPages[newIndex]) {
+            trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'keyboard_next');
           }
         }
       } else if (event.key === 'ArrowLeft') {
@@ -87,8 +94,8 @@ export default function DailyPublished() {
           setCurrentPageIndex(newIndex);
           
           // Track page view
-          if (sessionStarted && pages[newIndex]) {
-            trackPageView(newIndex + 1, pages[newIndex].letter, 'keyboard_previous');
+          if (sessionStarted && reorderedPages[newIndex]) {
+            trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'keyboard_previous');
           }
         }
       }
@@ -96,7 +103,7 @@ export default function DailyPublished() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPageIndex, pages, sessionStarted, trackPageView]);
+  }, [currentPageIndex, reorderedPages, sessionStarted, trackPageView]);
 
   const isLoading = isLoadingDaily || isLoadingPages;
 
@@ -145,7 +152,7 @@ export default function DailyPublished() {
     );
   }
 
-  if (!pages || pages.length === 0) {
+  if (!reorderedPages || reorderedPages.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full">
@@ -163,9 +170,9 @@ export default function DailyPublished() {
     );
   }
 
-  const currentPage = pages[currentPageIndex];
-  const previousPage = currentPageIndex > 0 ? pages[currentPageIndex - 1] : undefined;
-  const isLastPage = currentPageIndex >= pages.length - 1;
+  const currentPage = reorderedPages[currentPageIndex];
+  const previousPage = currentPageIndex > 0 ? reorderedPages[currentPageIndex - 1] : undefined;
+  const isLastPage = currentPageIndex >= reorderedPages.length - 1;
 
   const handleNext = () => {
     if (!isLastPage) {
@@ -173,8 +180,8 @@ export default function DailyPublished() {
       setCurrentPageIndex(newIndex);
       
       // Track page view
-      if (sessionStarted && pages[newIndex]) {
-        trackPageView(newIndex + 1, pages[newIndex].letter, 'next_swipe');
+      if (sessionStarted && reorderedPages[newIndex]) {
+        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'next_swipe');
       }
     }
   };
@@ -185,14 +192,11 @@ export default function DailyPublished() {
       setCurrentPageIndex(newIndex);
       
       // Track page view
-      if (sessionStarted && pages[newIndex]) {
-        trackPageView(newIndex + 1, pages[newIndex].letter, 'previous_swipe');
+      if (sessionStarted && reorderedPages[newIndex]) {
+        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'previous_swipe');
       }
     }
   };
-
-  // (keyboard navigation hook moved above to keep hooks order consistent)
-
 
   return (
     <div className="min-h-screen bg-background">
@@ -203,7 +207,7 @@ export default function DailyPublished() {
         page={currentPage}
         bookId={dailyContent.book_id}
         pageNumber={currentPageIndex + 1}
-        totalPages={pages.length}
+        totalPages={pages.length} // Use original pages length for consistency
         previousPage={previousPage}
         expiresAt={dailyContent.expires_at}
         onNext={handleNext}

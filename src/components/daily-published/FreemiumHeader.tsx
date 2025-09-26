@@ -84,15 +84,6 @@ export function FreemiumHeader({
             {timeRemaining}
           </div>
         )}
-        
-        {/* Previous page navigation with visual thumbnail preview */}
-        {previousPage && onPrevious && (
-          <Button variant="ghost" size="sm" onClick={onPrevious} className="p-1 h-8 w-8 rounded border border-border hover:bg-muted">
-            <div className="w-6 h-6 bg-muted rounded-sm overflow-hidden">
-              <PublicPageImage pageId={previousPage.id} bookId={bookId} />
-            </div>
-          </Button>
-        )}
       </div>
       
       {/* Middle section: Clickable title for navigation */}
@@ -103,8 +94,17 @@ export function FreemiumHeader({
         {title}
       </div>
       
-      {/* Right section: Sharing and progress controls */}
+      {/* Right section: Navigation and sharing controls */}
       <div className="flex items-center gap-2">
+        {/* Previous page navigation with visual thumbnail preview */}
+        {previousPage && onPrevious && (
+          <Button variant="ghost" size="sm" onClick={onPrevious} className="p-1 h-8 w-8 rounded border border-border hover:bg-muted">
+            <div className="w-6 h-6 bg-muted rounded-sm overflow-hidden">
+              <PublicPageImage pageId={previousPage.id} bookId={bookId} />
+            </div>
+          </Button>
+        )}
+        
         {/* QR Code sharing functionality */}
         {showQRCode && (
           <Sheet>

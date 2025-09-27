@@ -68,7 +68,8 @@ const App = () => (
              <Route path="/subscription/success" element={<SubscriptionSuccess />} />
              <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
              <Route path="/subscription/manage" element={<SubscriptionManage />} />
-             <Route path="/test-inline-edit" element={<QuickTestInlineEdit />} />
+              <Route path="/test-inline-edit" element={<div className="container mx-auto py-8"><QuickTestInlineEdit /></div>} />
+              <Route path="/test" element={<div className="container mx-auto py-8"><QuickTestInlineEdit /></div>} />
              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

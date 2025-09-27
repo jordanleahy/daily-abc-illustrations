@@ -23,6 +23,7 @@ import Subscription from "./pages/Subscription";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import SubscriptionCancel from "./pages/SubscriptionCancel";
 import SubscriptionManage from "./pages/SubscriptionManage";
+import { QuickTestInlineEdit } from "@/components/demo/QuickTestInlineEdit";
 import NotFound from "./pages/NotFound";
 import { GA4Tracker } from "./components/GA4Tracker";
 
@@ -67,6 +68,7 @@ const App = () => (
              <Route path="/subscription/success" element={<SubscriptionSuccess />} />
              <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
              <Route path="/subscription/manage" element={<SubscriptionManage />} />
+             <Route path="/test-inline-edit" element={<QuickTestInlineEdit />} />
              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

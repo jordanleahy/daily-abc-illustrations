@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Facebook, Twitter, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
+import { UniversalInlineEdit } from '@/components/ui/universal-inline-edit';
 import { HeroSidebar } from './HeroSidebar';
 import { HeroTitleSection } from './HeroTitleSection';
 import { HeroSpecsOnly } from './HeroSpecsOnly';
-import { HeroSpecs } from './HeroSpecs';
+import { HeroSpecsOptimized } from './HeroSpecsOptimized';
 import { DailyContent } from './types';
 
 interface HeroContentProps {
@@ -67,21 +67,22 @@ export const HeroContent = ({
 
         {/* Specs Panel - Hidden on mobile and tablet, shown on desktop */}
         <div className="hidden lg:block lg:col-span-3">
-          <HeroSpecs
-            title={content.title}
-            price={content.price}
+          <HeroSpecsOptimized
+            content={content}
+            onSave={async (updatedContent) => {
+              console.log('Saving optimized content:', updatedContent);
+              if (onUpdateField) {
+                Object.keys(updatedContent).forEach(key => {
+                  if (key === 'subjects' || key === 'tags') {
+                    // Handle array fields
+                    onUpdateField(key, updatedContent[key as keyof typeof updatedContent]);
+                  } else {
+                    onUpdateField(key, updatedContent[key as keyof typeof updatedContent]);
+                  }
+                });
+              }
+            }}
             downloadUrl={content.downloadUrl}
-            publishedDate={content.publishedDate}
-            grade={content.grade}
-            subjects={content.subjects}
-            tags={content.tags}
-            isEditing={isEditing}
-            hasChanges={hasChanges}
-            onEditClick={onEditClick}
-            onSaveClick={onSaveClick}
-            onCancelClick={onCancelClick}
-            onUpdateField={onUpdateField}
-            onUpdateArrayField={onUpdateArrayField}
           />
         </div>
       </div>
@@ -111,18 +112,23 @@ export const HeroContent = ({
         />
       </div>
 
-      {/* Description */}
+      {/* Optimized Description Edit with auto-save */}
       <div className="mt-4">
         <h2 className="text-xl font-bold text-foreground mb-3">Description</h2>
-        <InlineEditTextarea
-          value={content.description}
-          onSave={(value) => onUpdateField?.('description', value)}
-          isEditing={isEditing}
+        <UniversalInlineEdit
+          value={content.description || ''}
+          onSave={async (description) => {
+            console.log('Auto-saving description:', description);
+            onUpdateField?.('description', description);
+          }}
+          multiline
+          rows={4}
+          placeholder="Add a description..."
           renderDisplay={(value) => (
-            <p className="text-muted-foreground leading-relaxed">{value}</p>
+            <p className="text-muted-foreground leading-relaxed">
+              {value || "Click to add a description..."}
+            </p>
           )}
-          className="text-muted-foreground leading-relaxed w-full border-none p-0 focus-visible:ring-1 bg-transparent resize-none"
-          placeholder="Enter description..."
         />
       </div>
 

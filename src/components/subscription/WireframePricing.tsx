@@ -34,7 +34,8 @@ export const WireframePricing = () => {
       ],
       buttonText: isCurrentlyFree ? "Current Plan" : "Sign Up Free",
       buttonDisabled: isCurrentlyFree,
-      current: !isSubscribed
+      current: !isSubscribed,
+      onClick: () => navigate('/auth?mode=signup')
     },
     {
       name: "Monthly Plan", 
@@ -46,16 +47,16 @@ export const WireframePricing = () => {
         "Full library access",
         "Premium reading experience"
       ],
-      buttonText: currentTier?.interval === 'month' ? "Current Plan" : "Select",
+      buttonText: currentTier?.interval === 'month' ? "Current Plan" : "Select Monthly",
       buttonDisabled: loading || (isSubscribed && currentTier?.interval === 'month'),
       current: currentTier?.interval === 'month',
-      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS.standard_monthly.price_id)
+      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS?.standard_monthly?.price_id || '')
     },
     {
       name: "Annual Plan",
       price: "$99.99", 
       period: "year",
-      savings: "Save $19.89",
+      savings: "Save $19.89 (17% off)",
       features: [
         "Access to all daily published ABC books",
         "Download PDF version", 
@@ -64,10 +65,10 @@ export const WireframePricing = () => {
         "Early access to new books",
         "Educational activity guides"
       ],
-      buttonText: currentTier?.interval === 'year' ? "Current Plan" : "Select",
+      buttonText: currentTier?.interval === 'year' ? "Current Plan" : "Select Annual",
       buttonDisabled: loading || (isSubscribed && currentTier?.interval === 'year'),
       current: currentTier?.interval === 'year',
-      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS.standard_annual.price_id)
+      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS?.standard_annual?.price_id || '')
     }
   ];
 
@@ -82,7 +83,7 @@ export const WireframePricing = () => {
       {/* Simple 3-column layout */}
       <div className="grid md:grid-cols-3 gap-8 mb-12">
         {plans.map((plan, index) => (
-          <Card key={index} className={`${plan.current ? 'border-primary' : 'border-border'}`}>
+          <Card key={index} className={`${plan.current ? 'border-primary border-2' : ''}`}>
             <CardHeader className="text-center">
               <CardTitle className="text-xl">{plan.name}</CardTitle>
               <div className="mt-4">
@@ -90,7 +91,7 @@ export const WireframePricing = () => {
                 <span className="text-muted-foreground">/{plan.period}</span>
               </div>
               {plan.savings && (
-                <div className="text-sm text-green-600 font-medium">
+                <div className="text-sm text-success font-medium">
                   {plan.savings}
                 </div>
               )}
@@ -104,7 +105,7 @@ export const WireframePricing = () => {
               <ul className="space-y-3">
                 {plan.features.map((feature, featureIndex) => (
                   <li key={featureIndex} className="flex items-center gap-2">
-                    <Check className="w-4 h-4 text-green-600 flex-shrink-0" />
+                    <Check className="w-4 h-4 text-success flex-shrink-0" />
                     <span className="text-sm">{feature}</span>
                   </li>
                 ))}
@@ -114,10 +115,10 @@ export const WireframePricing = () => {
               <Button 
                 className="w-full" 
                 variant={plan.current ? "outline" : "default"}
-                disabled={plan.buttonDisabled}
+                disabled={plan.buttonDisabled || loading}
                 onClick={plan.onClick}
               >
-                {loading ? "Loading..." : plan.buttonText}
+                {loading ? "Processing..." : plan.buttonText}
               </Button>
             </CardFooter>
           </Card>

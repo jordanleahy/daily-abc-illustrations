@@ -50,7 +50,7 @@ export const useAuth = () => {
   useEffect(() => {
     console.log('useAuth: Setting up auth listener');
     
-    // Set up auth state listener FIRST
+    // Single source of truth: auth state listener handles both initial load and changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('useAuth: Auth state changed:', event, session?.user?.email || 'no user');
@@ -60,23 +60,8 @@ export const useAuth = () => {
       }
     );
 
-    // THEN check for existing session
-    console.log('useAuth: Checking for existing session');
-    supabase.auth.getSession()
-      .then(({ data: { session }, error }) => {
-        if (error) {
-          console.error('useAuth: Error getting session:', error);
-        } else {
-          console.log('useAuth: Initial session check:', session?.user?.email || 'no session');
-        }
-        setSession(session);
-        setUser(session?.user ?? null);
-        setLoading(false);
-      })
-      .catch((error) => {
-        console.error('useAuth: Session check failed:', error);
-        setLoading(false);
-      });
+    // The auth listener automatically fires on setup with current session
+    // No need for separate getSession() call which was causing race condition
 
     return () => subscription.unsubscribe();
   }, []);

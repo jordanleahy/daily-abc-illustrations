@@ -1,43 +1,34 @@
+import { HeroSpecsOptimized } from './HeroSpecsOptimized';
 import { HeroContent } from './HeroContent';
+import { HeroSidebar } from './HeroSidebar';
 import { DailyContent } from './types';
 import { Section } from '@/components/layout/Section';
-import { useInlineEdit } from '@/hooks/useInlineEdit';
 
-interface HeroSectionProps {
+interface HeroProps {
   content: DailyContent;
   onSave?: (updatedContent: DailyContent) => Promise<void>;
+  downloadUrl?: string;
 }
 
-export const HeroSection = ({ content, onSave }: HeroSectionProps) => {
-  const {
-    isEditing,
-    editedContent,
-    hasChanges,
-    startEdit,
-    cancelEdit,
-    updateField,
-    updateArrayField,
-    saveChanges,
-  } = useInlineEdit(content);
-
-  const handleSave = () => {
-    saveChanges(onSave);
-  };
-
+export const Hero: React.FC<HeroProps> = ({
+  content,
+  onSave,
+  downloadUrl,
+}) => {
   return (
     <Section id="hero" variant="hero">
+      <HeroSpecsOptimized
+        content={content}
+        onSave={onSave || (async () => {})}
+        downloadUrl={downloadUrl}
+      />
       <HeroContent 
-        content={editedContent}
-        isEditing={isEditing}
-        hasChanges={hasChanges}
-        onEditClick={startEdit}
-        onSaveClick={handleSave}
-        onCancelClick={cancelEdit}
-        onUpdateField={updateField}
-        onUpdateArrayField={updateArrayField}
+        content={content}
+        isEditing={false}
+        onUpdateField={() => {}}
       />
     </Section>
   );
 };
 
-export type { DailyContent, HeroSectionProps } from './types';
+export type { DailyContent } from './types';

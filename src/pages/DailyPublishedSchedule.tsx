@@ -28,7 +28,7 @@ import {
   useSortable 
 } from '@dnd-kit/sortable';
 import { arrayMove } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { LoadingState } from '@/components/ui/loading-state';
 
 // Utility functions
 const getStatusColor = (status: string) => {
@@ -129,10 +129,7 @@ export default function DailyPublishedScheduleSimple() {
   if (isLoading) {
     return (
       <PageLayout>
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground mt-2">Loading schedule...</p>
-        </div>
+        <LoadingState text="Loading schedule..." />
       </PageLayout>
     );
   }
@@ -343,7 +340,7 @@ function ScheduleCard({
   });
 
   const style = isDraggable ? {
-    transform: CSS.Transform.toString(transform),
+    transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
     transition,
     opacity: isDragging ? 0.5 : 1,
   } : {};

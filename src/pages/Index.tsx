@@ -31,6 +31,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { useIsTeacher } from '@/contexts/RoleContext';
 import { AdminOnly } from '@/components/AdminOnly';
 import { toast } from 'sonner';
+import { LoadingState } from '@/components/ui/loading-state';
 
 /**
  * Chat message interface
@@ -119,10 +120,7 @@ const navigate = useNavigate();
     return (
       <PageLayout title="ABC Cards" showHeader={true} fullHeight={false}>
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-2">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
+        <LoadingState />
         </div>
       </PageLayout>
     );
@@ -150,10 +148,7 @@ const navigate = useNavigate();
     return (
       <PageLayout title="ABC Cards" showHeader={true} fullHeight={false}>
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-center space-y-2">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
+        <LoadingState />
         </div>
       </PageLayout>
     );

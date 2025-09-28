@@ -31,6 +31,7 @@ import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, Fil
 import { toast } from 'sonner';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
+import { LoadingState } from '@/components/ui/loading-state';
 
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
@@ -289,9 +290,7 @@ export default function BookDetail() {
     return (
       <PageLayout>
         <Container>
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-pulse text-muted-foreground">Loading book...</div>
-          </div>
+        <LoadingState text="Loading book..." />
         </Container>
       </PageLayout>
     );

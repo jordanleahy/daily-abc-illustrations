@@ -4,6 +4,7 @@ import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { MetaHead } from '@/components/common/MetaHead';
 import { PageLayout } from '@/components/layout/PageLayout';
+import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -25,10 +26,7 @@ export default function Library() {
   if (isLoading) {
     return (
       <PageLayout title="Library">
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-muted-foreground mt-2">Loading library...</p>
-        </div>
+        <LoadingState text="Loading library..." />
       </PageLayout>
     );
   }

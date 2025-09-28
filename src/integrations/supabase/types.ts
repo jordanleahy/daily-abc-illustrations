@@ -343,6 +343,47 @@ export type Database = {
         }
         Relationships: []
       }
+      kid_profiles: {
+        Row: {
+          created_at: string
+          first_name: string
+          id: string
+          is_active: boolean
+          last_name: string
+          parent_user_id: string
+          profile_image_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          first_name: string
+          id?: string
+          is_active?: boolean
+          last_name: string
+          parent_user_id: string
+          profile_image_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          first_name?: string
+          id?: string
+          is_active?: boolean
+          last_name?: string
+          parent_user_id?: string
+          profile_image_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kid_profiles_parent_user_id_fkey"
+            columns: ["parent_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_image_urls: {
         Row: {
           book_id: string
@@ -819,6 +860,19 @@ export type Database = {
       get_next_version_number: {
         Args: { p_book_id: string }
         Returns: number
+      }
+      get_user_kids: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          created_at: string
+          first_name: string
+          id: string
+          is_active: boolean
+          last_name: string
+          parent_user_id: string
+          profile_image_url: string | null
+          updated_at: string
+        }[]
       }
       has_role: {
         Args: {

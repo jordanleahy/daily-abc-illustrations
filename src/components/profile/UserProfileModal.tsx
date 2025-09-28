@@ -10,19 +10,21 @@ import { Separator } from '@/components/ui/separator';
 import { ProfileInfoTab } from './ProfileInfoTab';
 import { AccountSettingsTab } from './AccountSettingsTab';
 import { SubscriptionTab } from './SubscriptionTab';
+import { KidsManagementTab } from './KidsManagementTab';
 
 interface UserProfileModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-type TabType = 'profile' | 'account' | 'subscription';
+type TabType = 'profile' | 'account' | 'subscription' | 'kids';
 
 export function UserProfileModal({ open, onOpenChange }: UserProfileModalProps) {
   const [activeTab, setActiveTab] = useState<TabType>('profile');
 
   const tabs = [
     { id: 'profile', label: 'Profile Info', component: ProfileInfoTab },
+    { id: 'kids', label: 'Kids', component: KidsManagementTab },
     { id: 'account', label: 'Account Settings', component: AccountSettingsTab },
     { id: 'subscription', label: 'Subscription', component: SubscriptionTab },
   ] as const;

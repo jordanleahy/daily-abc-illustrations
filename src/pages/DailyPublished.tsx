@@ -62,15 +62,6 @@ export default function DailyPublished() {
   // Generate OpenGraph metadata for the current page
   const { openGraphMetadata } = useDailyPublishedOpenGraph(id, currentPageIndex);
   
-  // Debug logging for troubleshooting
-  console.log('🏠 [DEBUG] DailyPublished page rendering with:', {
-    id,
-    currentPageIndex,
-    hasOpenGraphMetadata: !!openGraphMetadata,
-    openGraphTitle: openGraphMetadata?.title,
-    openGraphDescription: openGraphMetadata?.description
-  });
-
   // Keyboard navigation for desktop users (works with reordered circular array)
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

@@ -4,14 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { User, Edit2, Calendar, Mail } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { ProfileForm } from '@/components/ProfileForm';
 import { StandardPageLayout } from '@/components/layout';
 
 const Profile = () => {
   const [isEditing, setIsEditing] = useState(false);
-  const { isAuthenticated, user, loading: authLoading } = useAuth();
+  const { isAuthenticated, user, loading: authLoading } = useAuthContext();
   const { data: profile, isLoading, error } = useProfile();
   const navigate = useNavigate();
   const location = useLocation();

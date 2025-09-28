@@ -24,15 +24,6 @@ export default function LibraryBookView() {
   const safeId = id && isValidUUID(id) ? id : undefined;
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
-
-  // Debug information for troubleshooting
-  console.log('LibraryBookView Debug:', {
-    id,
-    safeId,
-    dailyContent,
-    isLoadingDaily,
-    dailyError: dailyError?.message
-  });
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);

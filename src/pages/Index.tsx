@@ -25,7 +25,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Send, BookOpen, ExternalLink, Image, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { PageLayout } from '@/components/layout';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useDailyPublished } from '@/hooks/useDailyPublished';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useIsTeacher } from '@/contexts/RoleContext';
@@ -60,7 +60,7 @@ interface Message {
  * @returns {JSX.Element} The rendered landing page
  */
 const Index = () => {
-  const { session, isAuthenticated, loading } = useAuth();
+  const { session, isAuthenticated, loading } = useAuthContext();
   const { data: activeDaily, isLoading: isDailyLoading } = useDailyPublished();
 const userRole = useUserRole();
 const isAdmin = userRole.data?.isAdmin ?? false;

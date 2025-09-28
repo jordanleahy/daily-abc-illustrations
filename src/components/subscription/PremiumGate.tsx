@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Crown, Lock, Zap } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface PremiumGateProps {
   children: ReactNode;
@@ -19,7 +19,7 @@ export const PremiumGate = ({
   showUpgrade = true 
 }: PremiumGateProps) => {
   const { isSubscribed, hasActiveSubscription, loading } = useSubscription();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   // Premium gate temporarily disabled - always show content
   return <>{children}</>;

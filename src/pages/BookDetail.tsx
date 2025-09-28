@@ -17,7 +17,7 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { InlineQRCode } from '@/components/book/InlineQRCode';
 import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';
@@ -42,7 +42,7 @@ import { PageCard, UserPageCard, FocusedPageView } from '@/components/page-promp
 
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuthContext();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();

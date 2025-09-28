@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
@@ -15,7 +15,7 @@ import { useIsTeacher } from '@/contexts/RoleContext';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { useSubscription } from '@/hooks/useSubscription';
 
-export default function Library() {
+export default memo(function Library() {
   const {
     data: libraryItems,
     isLoading,
@@ -129,13 +129,13 @@ export default function Library() {
       </StandardPageLayout>
     </>
   );
-}
+});
 
 interface LibraryBookCardProps {
   item: DailyPublishedWithBook;
 }
 
-function LibraryBookCard({ item }: LibraryBookCardProps) {
+const LibraryBookCard = memo(function LibraryBookCard({ item }: LibraryBookCardProps) {
   const navigate = useNavigate();
   
   const {
@@ -227,4 +227,4 @@ function LibraryBookCard({ item }: LibraryBookCardProps) {
       </CardContent>
     </Card>
   );
-}
+});

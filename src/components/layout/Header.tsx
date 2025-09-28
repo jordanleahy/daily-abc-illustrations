@@ -16,7 +16,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsAdmin, useIsTeacher } from '@/contexts/RoleContext';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { AdminOnly } from '@/components/AdminOnly';
@@ -80,7 +80,7 @@ export function Header({
   bookId,
   showQRCode = true
 }: HeaderProps) {
-  const { isAuthenticated, user, signOut } = useAuth();
+  const { isAuthenticated, user, signOut } = useAuthContext();
   const isAdmin = useIsAdmin();
   const isTeacher = useIsTeacher();
   const { qrCodeData } = useBookQRCode(bookId || '');

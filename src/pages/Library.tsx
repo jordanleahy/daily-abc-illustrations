@@ -6,7 +6,7 @@ import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import { Button } from '@/components/ui/button';
 import { BookOpen, Calendar, Users, GraduationCap } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
@@ -152,46 +152,15 @@ const LibraryBookCard = memo(function LibraryBookCard({ item }: LibraryBookCardP
     }
   };
 
-  const getStatusBadgeVariant = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'default';
-      case 'queued':
-        return 'secondary';
-      case 'expired':
-        return 'outline';
-      default:
-        return 'secondary';
-    }
-  };
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'Active';
-      case 'queued':
-        return 'Queued';
-      case 'expired':
-        return 'Past';
-      default:
-        return 'Draft';
-    }
-  };
-
   return (
     <Card 
       className="hover:shadow-md transition-shadow cursor-pointer hover:shadow-lg" 
       onClick={handleCardClick}
     >
       <CardHeader>
-        <div className="flex justify-between items-start">
-          <CardTitle className="text-xl line-clamp-2">
-            {seoMetadata?.seo_title || item.title}
-          </CardTitle>
-          <Badge variant={getStatusBadgeVariant(item.status)}>
-            {getStatusLabel(item.status)}
-          </Badge>
-        </div>
+        <CardTitle className="text-xl line-clamp-2">
+          {seoMetadata?.seo_title || item.title}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {(seoMetadata?.seo_description || item.description) && (

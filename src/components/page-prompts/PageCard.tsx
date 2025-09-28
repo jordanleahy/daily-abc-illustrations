@@ -12,9 +12,8 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeletePage } from '@/hooks/useDeletePage';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
-import { useAutoSave } from '@/hooks/useAutoSave';
-import { InlineEditInput } from '@/components/ui/inline-edit-input';
-import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
+import { useOptimisticInlineEdit } from '@/hooks/useOptimisticInlineEdit';
+import { UniversalInlineEdit } from '@/components/ui/universal-inline-edit';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -53,37 +52,40 @@ export function PageCard({ page, bookId }: PageCardProps) {
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
   const [showUpload, setShowUpload] = useState(false);
 
-  // Auto-save functionality for page title and description
-  const { autoSave, setOriginalValues } = useAutoSave({
-    onSave: async (values) => {
+  // Optimistic inline editing for title
+  const titleEdit = useOptimisticInlineEdit({
+    initialValue: page.title,
+    onSave: async (newTitle: string) => {
       const { error } = await supabase
         .from('pages')
-        .update({
-          title: values.title?.trim(),
-          description: values.description?.trim() || null,
-        })
+        .update({ title: newTitle.trim() })
         .eq('id', page.id);
-
       if (error) throw error;
     },
-    delay: 500
+    debounceMs: 800,
+    validateFn: (value: string) => {
+      if (!value.trim()) return 'Title cannot be empty';
+      if (value.length > 100) return 'Title is too long (max 100 characters)';
+      return null;
+    }
   });
 
-  // Set original values when component mounts
-  useEffect(() => {
-    setOriginalValues({
-      title: page.title,
-      description: page.description || ''
-    });
-  }, [page.title, page.description, setOriginalValues]);
-
-  const handleTitleSave = (value: string) => {
-    autoSave({ title: value, description: page.description || '' });
-  };
-
-  const handleDescriptionSave = (value: string) => {
-    autoSave({ title: page.title, description: value });
-  };
+  // Optimistic inline editing for description
+  const descriptionEdit = useOptimisticInlineEdit({
+    initialValue: page.description || '',
+    onSave: async (newDescription: string) => {
+      const { error } = await supabase
+        .from('pages')
+        .update({ description: newDescription.trim() || null })
+        .eq('id', page.id);
+      if (error) throw error;
+    },
+    debounceMs: 1000,
+    validateFn: (value: string) => {
+      if (value.length > 500) return 'Description is too long (max 500 characters)';
+      return null;
+    }
+  });
 
   const handleRegeneratePrompt = async () => {
     if (!user) return;
@@ -347,28 +349,51 @@ export function PageCard({ page, bookId }: PageCardProps) {
             </span>
           </div>
         </div>
-        <InlineEditInput
-          value={page.title}
-          onSave={handleTitleSave}
-          className="text-lg font-semibold"
+        <UniversalInlineEdit
+          value={titleEdit.value}
+          onSave={async (value: string) => {
+            titleEdit.updateValue(value);
+          }}
+          isEditing={titleEdit.isEditing}
+          onEditStart={titleEdit.startEdit}
+          onEditCancel={titleEdit.cancelEdit}
+          isSaving={titleEdit.isSaving}
+          saveStatus={titleEdit.saveStatus}
+          error={titleEdit.error}
+          hasChanges={titleEdit.hasChanges}
           placeholder="Enter page title"
+          className="text-lg font-semibold"
           renderDisplay={(value) => (
-            <CardTitle className="text-lg line-clamp-2">
+            <CardTitle className="text-lg line-clamp-2 hover:bg-muted/50 rounded px-2 py-1 transition-colors">
               {value}
             </CardTitle>
           )}
         />
         {page.description !== undefined && (
-          <InlineEditTextarea
-            value={page.description || ''}
-            onSave={handleDescriptionSave}
-            className="text-sm text-muted-foreground"
+          <UniversalInlineEdit
+            value={descriptionEdit.value}
+            onSave={async (value: string) => {
+              descriptionEdit.updateValue(value);
+            }}
+            isEditing={descriptionEdit.isEditing}
+            onEditStart={descriptionEdit.startEdit}
+            onEditCancel={descriptionEdit.cancelEdit}
+            isSaving={descriptionEdit.isSaving}
+            saveStatus={descriptionEdit.saveStatus}
+            error={descriptionEdit.error}
+            hasChanges={descriptionEdit.hasChanges}
+            multiline
             placeholder="Enter page description"
+            className="text-sm text-muted-foreground"
             renderDisplay={(value) => value ? (
-              <CardDescription className="line-clamp-2">
+              <CardDescription className="line-clamp-2 hover:bg-muted/50 rounded px-2 py-1 transition-colors">
                 {value}
               </CardDescription>
-            ) : null}
+            ) : (
+              <CardDescription className="text-muted-foreground/60 hover:bg-muted/50 rounded px-2 py-1 transition-colors italic">
+                Click to add description...
+              </CardDescription>
+            )}
           />
         )}
       </CardHeader>

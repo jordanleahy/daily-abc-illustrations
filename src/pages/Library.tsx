@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { MetaHead } from '@/components/common/MetaHead';
-import { Header } from '@/components/layout/Header';
+import { PageLayout } from '@/components/layout/PageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -24,30 +24,22 @@ export default function Library() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header 
-          title="Library"
-          showQRCode={false}
-        />
-        <div className="pt-16 text-center py-8">
+      <PageLayout title="Library">
+        <div className="text-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
           <p className="text-muted-foreground mt-2">Loading library...</p>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header 
-          title="Library"
-          showQRCode={false}
-        />
-        <div className="pt-16 text-center py-8">
+      <PageLayout title="Library">
+        <div className="text-center py-8">
           <p className="text-destructive">Error loading library: {error.message}</p>
         </div>
-      </div>
+      </PageLayout>
     );
   }
 
@@ -68,12 +60,8 @@ export default function Library() {
       type: "website"
     }} />
     
-    <div className="min-h-screen bg-background">
-      <Header 
-        title="Library"
-        showQRCode={false}
-      />
-      <div className="pt-16 container mx-auto px-4 pb-8">
+    <PageLayout title="Library">
+      <div className="container mx-auto px-4 pb-8">
         <div className="space-y-6">
         <div className="flex justify-between items-center">
           <div>
@@ -141,7 +129,7 @@ export default function Library() {
         )}
         </div>
       </div>
-    </div>
+    </PageLayout>
   </>;
 }
 

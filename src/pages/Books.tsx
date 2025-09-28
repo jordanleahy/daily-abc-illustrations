@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { PageLayout } from '@/components/layout/PageLayout';
+import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useBooks } from '@/hooks/useBooks';
 import { BookOpen, Calendar, Users } from 'lucide-react';
-import { Container } from '@/components/layout/Container';
 import { CreateBookModal } from '@/components/books/CreateBookModal';
 import { LoadingState } from '@/components/ui/loading-state';
 
@@ -32,15 +31,12 @@ export default function Books() {
     setShowCreateModal(true);
   };
 
-
   // Show loading while auth is being checked
   if (authLoading) {
     return (
-      <PageLayout title="My Books">
-        <Container className="py-8">
+      <StandardPageLayout title="My Books" containerClassName="py-8">
         <LoadingState />
-        </Container>
-      </PageLayout>
+      </StandardPageLayout>
     );
   }
 
@@ -50,117 +46,93 @@ export default function Books() {
 
   if (loading) {
     return (
-      <PageLayout title="My Books">
-        <Container className="py-8">
+      <StandardPageLayout title="My Books" containerClassName="py-8">
         <LoadingState text="Loading your books..." />
-        </Container>
-      </PageLayout>
+      </StandardPageLayout>
     );
   }
 
   return (
-    <PageLayout title="Book Editor">
-      <Container className="py-8">
-        <div className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Book Editor</h1>
-              <p className="text-muted-foreground">
-                Create and manage ABC learning books for the platform
-              </p>
-            </div>
-            <Button onClick={handleCreateNewBook} className="flex items-center gap-2">
-              <BookOpen className="w-4 h-4" />
-              Create New Book
-            </Button>
+    <StandardPageLayout title="My Books" containerClassName="py-8">
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">My Books</h1>
+            <p className="text-muted-foreground">
+              Create and manage your ABC books
+            </p>
           </div>
+          <Button onClick={handleCreateNewBook}>
+            <BookOpen className="mr-2 h-4 w-4" />
+            Create New Book
+          </Button>
+        </div>
 
-          {books.length === 0 ? (
-            <Card className="text-center py-12">
-              <CardContent>
-                <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No books yet</h3>
-                <p className="text-muted-foreground mb-4">
-                  Start a conversation with our AI to create your first ABC book!
-                </p>
-                <Button onClick={handleCreateNewBook}>
-                  Create Your First Book
-                </Button>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {books.map((book) => (
-                <Card 
-                  key={book.id} 
-                  className="hover:shadow-md transition-shadow cursor-pointer hover:shadow-lg" 
-                  onClick={() => handleViewBook(book.id)}
-                >
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <CardTitle className="text-xl line-clamp-2">
-                        {book.book_name}
-                      </CardTitle>
-                      <Badge variant={
-                        book.dailyPublishedStatus === 'active' ? "default" : 
-                        book.dailyPublishedStatus === 'queued' ? "secondary" :
-                        book.dailyPublishedStatus === 'expired' ? "outline" : 
-                        "secondary"
-                      }>
-                        {book.dailyPublishedStatus === 'active' ? 'Active' : 
-                         book.dailyPublishedStatus === 'queued' ? 'Queued' :
-                         book.dailyPublishedStatus === 'expired' ? 'Expired' :
-                         book.dailyPublishedStatus === 'draft' ? 'Draft' :
-                         'Draft'}
-                      </Badge>
-                    </div>
-                    {book.category && (
-                      <Badge variant="outline" className="w-fit">
-                        {book.category}
-                      </Badge>
-                    )}
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {book.book_description && (
-                      <CardDescription className="line-clamp-3">
-                        {book.book_description}
-                      </CardDescription>
-                    )}
-                    
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        {book.total_pages} pages
-                      </div>
+        {/* Books Grid */}
+        {books && books.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {books.map((book) => (
+              <Card 
+                key={book.id} 
+                className="cursor-pointer hover:shadow-lg transition-shadow group"
+                onClick={() => handleViewBook(book.id)}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                      {book.book_name}
+                    </CardTitle>
+                    <Badge variant={book.status === 'published' ? 'default' : 'secondary'}>
+                      {book.status}
+                    </Badge>
+                  </div>
+                  <CardDescription className="line-clamp-2">
+                    {book.book_description || "No description provided"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
                         {new Date(book.created_at).toLocaleDateString()}
                       </div>
+                      <div className="flex items-center gap-1">
+                        <Users className="w-4 h-4" />
+                        {book.category || 'General'}
+                      </div>
                     </div>
-                    
-                    <div className="aspect-square bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-                      {book.firstPageImageUrl ? (
-                        <img 
-                          src={book.firstPageImageUrl} 
-                          alt={`Preview of ${book.book_name}`}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <BookOpen className="w-8 h-8 text-muted-foreground" />
-                      )}
+                    <div className="text-xs bg-muted px-2 py-1 rounded">
+                      {book.total_pages || 0} pages
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
-      </Container>
-      
-      <CreateBookModal 
-        open={showCreateModal} 
-        onOpenChange={setShowCreateModal} 
-      />
-    </PageLayout>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <Card>
+            <CardContent className="flex flex-col items-center justify-center h-64 text-center">
+              <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No books yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Create your first ABC book to get started
+              </p>
+              <Button onClick={handleCreateNewBook}>
+                <BookOpen className="mr-2 h-4 w-4" />
+                Create Your First Book
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Create Book Modal */}
+        <CreateBookModal
+          open={showCreateModal}
+          onOpenChange={setShowCreateModal}
+        />
+      </div>
+    </StandardPageLayout>
   );
 }

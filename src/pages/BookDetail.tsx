@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { Container } from '@/components/layout/Container';
+import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -288,26 +288,22 @@ export default function BookDetail() {
 
   if (authLoading || (user && !bookFetched)) {
     return (
-      <PageLayout>
-        <Container>
+      <StandardPageLayout>
         <LoadingState text="Loading book..." />
-        </Container>
-      </PageLayout>
+      </StandardPageLayout>
     );
   }
 
   if (!book) {
     return (
-      <PageLayout>
-        <Container>
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Book not found</p>
-            <Button onClick={handleBack} className="mt-4">
-              Back to Books
-            </Button>
-          </div>
-        </Container>
-      </PageLayout>
+      <StandardPageLayout>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Book not found</p>
+          <Button onClick={handleBack} className="mt-4">
+            Back to Books
+          </Button>
+        </div>
+      </StandardPageLayout>
     );
   }
 
@@ -334,38 +330,37 @@ export default function BookDetail() {
   }
 
   return (
-    <PageLayout>
-      <Container>
-        <div className="space-y-6">
-          {/* Header with back button and view mode toggle */}
-          <div className="flex items-center justify-between">
-            <Button 
-              variant="ghost" 
-              onClick={handleBack}
-              className="p-2 hover:bg-accent"
+    <StandardPageLayout>
+      <div className="space-y-6">
+        {/* Header with back button and view mode toggle */}
+        <div className="flex items-center justify-between">
+          <Button 
+            variant="ghost" 
+            onClick={handleBack}
+            className="p-2 hover:bg-accent"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Books
+          </Button>
+          
+          <div className="flex items-center gap-2">
+            <Button
+              variant={viewMode === 'user' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('user')}
             >
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Books
+              <Eye className="w-4 h-4 mr-2" />
+              User View
             </Button>
-            
-            <div className="flex items-center gap-2">
-              <Button
-                variant={viewMode === 'user' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('user')}
-              >
-                <Eye className="w-4 h-4 mr-2" />
-                User View
-              </Button>
-              <Button
-                variant={viewMode === 'admin' ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => setViewMode('admin')}
-              >
-                Admin View
-              </Button>
-            </div>
+            <Button
+              variant={viewMode === 'admin' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setViewMode('admin')}
+            >
+              Admin View
+            </Button>
           </div>
+        </div>
 
           {/* Progress Console */}
           {progressMessages.length > 0 && (
@@ -748,8 +743,7 @@ export default function BookDetail() {
               )}
             </>
           )}
-        </div>
-      </Container>
-    </PageLayout>
+      </div>
+    </StandardPageLayout>
   );
 }

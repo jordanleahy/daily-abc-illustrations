@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PageLayout } from '@/components/layout';
+import { StandardPageLayout } from '@/components/layout';
 import { RedditConversationCard } from '@/components/reddit/RedditConversationCard';
 import { RedditCardSkeleton } from '@/components/reddit/RedditCardSkeleton';
 import { RedditSearchBar } from '@/components/reddit/RedditSearchBar';
@@ -17,13 +17,12 @@ const Reddit = () => {
   };
 
   return (
-    <PageLayout title="Reddit ABC Learning Conversations">
-      <div className="container mx-auto px-4 py-6">
-        <div className="mb-6">
-          <p className="text-muted-foreground">
-            Discover conversations about ABC learning across Reddit communities
-          </p>
-        </div>
+    <StandardPageLayout title="Reddit ABC Learning Conversations" containerClassName="py-6">
+      <div className="mb-6">
+        <p className="text-muted-foreground">
+          Discover conversations about ABC learning across Reddit communities
+        </p>
+      </div>
         
         <RedditSearchBar 
           onSearch={handleSearch}
@@ -74,9 +73,8 @@ const Reddit = () => {
               <p className="text-sm text-muted-foreground mt-2">Try a different search term or one of the quick searches above.</p>
             </div>
           )}
-        </div>
       </div>
-    </PageLayout>
+    </StandardPageLayout>
   );
 };
 

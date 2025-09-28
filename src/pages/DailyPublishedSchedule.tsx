@@ -6,7 +6,7 @@ import { useReorderQueue } from '@/hooks/useReorderQueue';
 import { useExpireContent } from '@/hooks/useExpireContent';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { MetaHead } from '@/components/common/MetaHead';
-import { PageLayout } from '@/components/layout/PageLayout';
+import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -118,29 +118,29 @@ export default function DailyPublishedScheduleSimple() {
 
   if (!user) {
     return (
-      <PageLayout>
+      <StandardPageLayout>
         <div className="text-center py-8">
           <p className="text-muted-foreground">Please sign in to view the publishing schedule.</p>
         </div>
-      </PageLayout>
+      </StandardPageLayout>
     );
   }
 
   if (isLoading) {
     return (
-      <PageLayout>
+      <StandardPageLayout>
         <LoadingState text="Loading schedule..." />
-      </PageLayout>
+      </StandardPageLayout>
     );
   }
 
   if (error) {
     return (
-      <PageLayout>
+      <StandardPageLayout>
         <div className="text-center py-8">
           <p className="text-destructive">Error loading schedule: {error.message}</p>
         </div>
-      </PageLayout>
+      </StandardPageLayout>
     );
   }
 
@@ -159,114 +159,112 @@ export default function DailyPublishedScheduleSimple() {
         }}
       />
       
-      <PageLayout>
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-3xl font-bold">Publishing Queue</h1>
-              <p className="text-muted-foreground mt-2">
-                📚 Books publish daily at <strong>7:01 AM Eastern Time</strong><br/>
-                📋 Drag to reorder • Next book publishes tomorrow
-              </p>
-            </div>
-            
-            <div className="flex gap-2">
-              <Button 
-                variant="outline" 
-                onClick={handleExpireContent}
-                disabled={expireContent.isPending}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${expireContent.isPending ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
+      <StandardPageLayout containerSize="xl" containerClassName="py-8">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h1 className="text-3xl font-bold">Publishing Queue</h1>
+            <p className="text-muted-foreground mt-2">
+              📚 Books publish daily at <strong>7:01 AM Eastern Time</strong><br/>
+              📋 Drag to reorder • Next book publishes tomorrow
+            </p>
+          </div>
+          
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={handleExpireContent}
+              disabled={expireContent.isPending}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${expireContent.isPending ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {/* Active Item */}
+        {activeItems.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-green-500" />
+              📺 Currently Live
+            </h2>
+            <div className="space-y-4">
+              {activeItems.map((item) => (
+                <ScheduleCard 
+                  key={item.id} 
+                  item={item}
+                  position="active"
+                />
+              ))}
             </div>
           </div>
+        )}
 
-          {/* Active Item */}
-          {activeItems.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-green-500" />
-                📺 Currently Live
-              </h2>
-              <div className="space-y-4">
-                {activeItems.map((item) => (
-                  <ScheduleCard 
-                    key={item.id} 
-                    item={item}
-                    position="active"
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Queued Items */}
-          {queuedItems.length > 0 && (
-            <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                📅 Publishing Queue ({queuedItems.length})
-                <span className="text-sm text-muted-foreground font-normal ml-2">Drag to reorder</span>
-              </h2>
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={handleDragEnd}
+        {/* Queued Items */}
+        {queuedItems.length > 0 && (
+          <div className="mb-8">
+            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              📅 Publishing Queue ({queuedItems.length})
+              <span className="text-sm text-muted-foreground font-normal ml-2">Drag to reorder</span>
+            </h2>
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={queuedItems.map(item => item.id)}
+                strategy={verticalListSortingStrategy}
               >
-                <SortableContext
-                  items={queuedItems.map(item => item.id)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  <div className="space-y-4">
-                    {queuedItems.map((item, index) => (
-                      <ScheduleCard 
-                        key={item.id} 
-                        item={item}
-                        position={index + 1}
-                        isDraggable={true}
-                      />
-                    ))}
-                  </div>
-                </SortableContext>
-              </DndContext>
-            </div>
-          )}
-
-          {/* Empty State */}
-          {(!scheduleItems || scheduleItems.length === 0) && (
-            <Card>
-              <CardContent className="text-center py-12">
-                <h3 className="text-lg font-semibold mb-2">No books in queue</h3>
-                <p className="text-muted-foreground">
-                  Publish books to see them in the daily schedule.
-                </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Expired Items (collapsible) */}
-          {expiredItems.length > 0 && (
-            <div className="mt-8">
-              <details className="group">
-                <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
-                  <Clock className="h-4 w-4" />
-                  Show {expiredItems.length} expired items
-                </summary>
-                <div className="mt-4 space-y-4 opacity-60">
-                  {expiredItems.map((item) => (
+                <div className="space-y-4">
+                  {queuedItems.map((item, index) => (
                     <ScheduleCard 
                       key={item.id} 
                       item={item}
-                      position="expired"
-                      isDraggable={false}
+                      position={index + 1}
+                      isDraggable={true}
                     />
                   ))}
                 </div>
-              </details>
-            </div>
-          )}
-        </div>
-      </PageLayout>
+              </SortableContext>
+            </DndContext>
+          </div>
+        )}
+
+        {/* Empty State */}
+        {(!scheduleItems || scheduleItems.length === 0) && (
+          <Card>
+            <CardContent className="text-center py-12">
+              <h3 className="text-lg font-semibold mb-2">No books in queue</h3>
+              <p className="text-muted-foreground">
+                Publish books to see them in the daily schedule.
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Expired Items (collapsible) */}
+        {expiredItems.length > 0 && (
+          <div className="mt-8">
+            <details className="group">
+              <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
+                <Clock className="h-4 w-4" />
+                Show {expiredItems.length} expired items
+              </summary>
+              <div className="mt-4 space-y-4 opacity-60">
+                {expiredItems.map((item) => (
+                  <ScheduleCard 
+                    key={item.id} 
+                    item={item}
+                    position="expired"
+                    isDraggable={false}
+                  />
+                ))}
+              </div>
+            </details>
+          </div>
+        )}
+      </StandardPageLayout>
     </>
   );
 }

@@ -116,6 +116,7 @@ export function Header({
   /** Extended navigation menu for admin users with full system access */
   const adminNavigation = [
     { name: 'Chat', href: '/' },
+    { name: 'Library', href: '/library' },
     { name: 'Editor', href: '/editor' },
     { name: 'Agents', href: '/agents' },
     { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },

@@ -9,6 +9,7 @@ import { useBooks } from '@/hooks/useBooks';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { Container } from '@/components/layout/Container';
 import { CreateBookModal } from '@/components/books/CreateBookModal';
+import { LoadingState } from '@/components/ui/loading-state';
 
 export default function Books() {
   const { user, loading: authLoading } = useAuth();
@@ -37,9 +38,7 @@ export default function Books() {
     return (
       <PageLayout title="My Books">
         <Container className="py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-pulse text-muted-foreground">Loading...</div>
-          </div>
+        <LoadingState />
         </Container>
       </PageLayout>
     );
@@ -53,9 +52,7 @@ export default function Books() {
     return (
       <PageLayout title="My Books">
         <Container className="py-8">
-          <div className="flex items-center justify-center h-64">
-            <div className="animate-pulse text-muted-foreground">Loading your books...</div>
-          </div>
+        <LoadingState text="Loading your books..." />
         </Container>
       </PageLayout>
     );

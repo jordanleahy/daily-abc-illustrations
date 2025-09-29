@@ -346,6 +346,7 @@ export type Database = {
       kid_profiles: {
         Row: {
           created_at: string
+          earned_coins: number
           first_name: string
           id: string
           is_active: boolean
@@ -356,6 +357,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          earned_coins?: number
           first_name: string
           id?: string
           is_active?: boolean
@@ -366,6 +368,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          earned_coins?: number
           first_name?: string
           id?: string
           is_active?: boolean
@@ -865,6 +868,7 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: {
           created_at: string
+          earned_coins: number
           first_name: string
           id: string
           is_active: boolean

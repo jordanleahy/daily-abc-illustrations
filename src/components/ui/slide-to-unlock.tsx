@@ -6,9 +6,10 @@ interface SlideToUnlockProps {
   onUnlock: () => void;
   disabled?: boolean;
   className?: string;
+  text?: string;
 }
 
-export function SlideToUnlock({ onUnlock, disabled = false, className }: SlideToUnlockProps) {
+export function SlideToUnlock({ onUnlock, disabled = false, className, text }: SlideToUnlockProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [dragProgress, setDragProgress] = useState(0);
   const [isCompleted, setIsCompleted] = useState(false);
@@ -120,7 +121,7 @@ export function SlideToUnlock({ onUnlock, disabled = false, className }: SlideTo
   const getText = () => {
     if (disabled) return 'The End!';
     if (isCompleted) return 'Release to continue';
-    return 'Slide';
+    return text || 'Slide';
   };
 
   return (

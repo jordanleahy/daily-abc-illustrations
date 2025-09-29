@@ -5,6 +5,8 @@ import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { useKidCoins } from '@/hooks/useKidCoins';
+import { toast } from '@/hooks/use-toast';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { PublicPageImage } from '@/components/daily-published';
@@ -35,6 +37,9 @@ export default function LibraryBookView() {
   
   // Auto-select kid if only one exists
   const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
+  const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
+  
+  const isLastPage = currentPageIndex === pages.length - 1;
   
   // Generate OpenGraph metadata for the current page
   const { openGraphMetadata } = useDailyPublishedOpenGraph(safeId, currentPageIndex);
@@ -130,15 +135,43 @@ export default function LibraryBookView() {
   }
 
   const currentPage = pages[currentPageIndex];
-  const isLastPage = currentPageIndex >= pages.length - 1;
 
-  const handleNext = () => {
-    if (!isLastPage) {
+  const handleNext = async () => {
+    if (isLastPage) {
+      // User finished the book - deposit coins and navigate to rewards
+      if (selectedKidId && earnedRewards > 0) {
+        try {
+          await addCoins({ 
+            kidId: selectedKidId, 
+            coinsToAdd: earnedRewards 
+          });
+          
+          toast({
+            title: `You earned ${earnedRewards} coins! 🎉`,
+            description: "Great job reading!",
+          });
+          
+          endSession('book_completed');
+          navigate('/rewards');
+        } catch (error) {
+          console.error('Failed to deposit coins:', error);
+          toast({
+            title: "Oops!",
+            description: "Couldn't save your coins. Try again.",
+            variant: "destructive",
+          });
+        }
+      } else {
+        // No kid selected or no rewards - just navigate back
+        endSession('book_completed');
+        navigate('/library');
+      }
+    } else {
+      // Normal page navigation
       const newIndex = currentPageIndex + 1;
       setCurrentPageIndex(newIndex);
       setEarnedRewards(prev => prev + 1);
       
-      // Track page view
       if (sessionStarted && pages[newIndex]) {
         trackPageView(newIndex + 1, pages[newIndex].letter, 'next_swipe');
       }
@@ -189,16 +222,10 @@ export default function LibraryBookView() {
           {/* Navigation */}
           <BottomSlideNavigation 
             onSlide={handleNext}
-            disabled={isLastPage}
-            variant="inline"
-            show={!isLastPage}
+            disabled={isAddingCoins}
+            variant="compact"
+            slideText={isLastPage ? "Finish & Collect Coins" : undefined}
           />
-          
-          {isLastPage && (
-            <SwipeUpDrawer>
-              <UpcomingBooksPreview />
-            </SwipeUpDrawer>
-          )}
         </div>
       </div>
     </div>

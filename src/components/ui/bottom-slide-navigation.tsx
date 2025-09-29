@@ -78,6 +78,7 @@ export function BottomSlideNavigation({
         <SlideToUnlock 
           onUnlock={onSlide}
           disabled={disabled}
+          text={slideText}
           className="w-full"
         />
       </div>

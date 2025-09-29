@@ -15,27 +15,49 @@ export const useKidCoins = (kidId?: string) => {
       
       const { data, error } = await supabase
         .from('kid_profiles')
-        .select('*')
+        .select('earned_coins')
         .eq('id', kidId)
         .eq('parent_user_id', user.id)
         .eq('is_active', true)
         .single();
         
       if (error) throw error;
-      // Return 0 for now since earned_coins column doesn't exist yet
-      return (data as any)?.earned_coins || 0;
+      return data?.earned_coins || 0;
     },
     enabled: !!user?.id && !!kidId,
   });
 
-  // Add coins to a kid's balance (placeholder for when DB is ready)
+  // Add coins to a kid's balance
   const addCoinsMutation = useMutation({
     mutationFn: async ({ kidId, coinsToAdd }: { kidId: string; coinsToAdd: number }) => {
       if (!user?.id) throw new Error('User not authenticated');
+      if (coinsToAdd <= 0) throw new Error('Coins to add must be positive');
       
-      // Placeholder implementation - will be replaced when database migration is complete
-      console.log(`Would add ${coinsToAdd} coins to kid ${kidId}`);
-      return { success: true };
+      // Fetch current balance
+      const { data: kidData, error: fetchError } = await supabase
+        .from('kid_profiles')
+        .select('earned_coins')
+        .eq('id', kidId)
+        .eq('parent_user_id', user.id)
+        .eq('is_active', true)
+        .single();
+      
+      if (fetchError) throw fetchError;
+      
+      const newBalance = (kidData?.earned_coins || 0) + coinsToAdd;
+      
+      // Update with new balance
+      const { data, error } = await supabase
+        .from('kid_profiles')
+        .update({ earned_coins: newBalance })
+        .eq('id', kidId)
+        .eq('parent_user_id', user.id)
+        .eq('is_active', true)
+        .select('earned_coins')
+        .single();
+      
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       toast({

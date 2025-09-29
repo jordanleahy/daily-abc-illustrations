@@ -4,6 +4,7 @@ import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { PublicPageImage } from '@/components/daily-published';
@@ -24,12 +25,16 @@ export default function LibraryBookView() {
   const safeId = id && isValidUUID(id) ? id : undefined;
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
+  const { data: kidProfiles } = useKidProfiles();
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [earnedRewards, setEarnedRewards] = useState(0);
   const [sessionStarted, setSessionStarted] = useState(false);
   const [initialPageTracked, setInitialPageTracked] = useState(false);
+  
+  // Auto-select kid if only one exists
+  const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
   
   // Generate OpenGraph metadata for the current page
   const { openGraphMetadata } = useDailyPublishedOpenGraph(safeId, currentPageIndex);
@@ -163,6 +168,7 @@ export default function LibraryBookView() {
           subtitle={`${currentPageIndex + 1} of ${pages.length}`}
           bookId={dailyContent.book_id}
           onBack={handleBack}
+          kidId={selectedKidId}
         />
         
         {/* Reward System */}

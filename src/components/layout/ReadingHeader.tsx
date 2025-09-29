@@ -1,8 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { QrCode } from 'lucide-react';
+import { Circle, QrCode } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { useKidCoins } from '@/hooks/useKidCoins';
 
 /**
  * ReadingHeader Component
@@ -58,6 +60,8 @@ interface ReadingHeaderProps {
   showQRCode?: boolean;
   /** Handler for back navigation - shows back button when provided */
   onBack?: () => void;
+  /** Kid ID for displaying kid's name and coin balance */
+  kidId?: string;
 }
 
 /**
@@ -70,10 +74,20 @@ export function ReadingHeader({
   subtitle,
   bookId,
   showQRCode = true,
-  onBack
+  onBack,
+  kidId
 }: ReadingHeaderProps) {
   const { qrCodeData } = useBookQRCode(bookId || '');
   const navigate = useNavigate();
+  const { data: kidProfiles } = useKidProfiles();
+  const { kidCoins } = useKidCoins(kidId || '');
+  
+  // Find the kid to display
+  const displayKid = kidId 
+    ? kidProfiles?.find(k => k.id === kidId)
+    : kidProfiles?.length === 1 
+      ? kidProfiles[0] 
+      : null;
 
   /** 
    * Handle title click for contextual navigation
@@ -98,8 +112,19 @@ export function ReadingHeader({
         )}
       </div>
       
-      {/* Spacer for center alignment */}
-      <div></div>
+      {/* Center section: Kid info */}
+      <div className="flex items-center gap-2 text-sm">
+        {displayKid && (
+          <>
+            <span className="font-medium text-foreground">{displayKid.first_name}</span>
+            <span className="text-muted-foreground">•</span>
+            <div className="flex items-center gap-1">
+              <Circle className="w-3 h-3 fill-amber-600 text-amber-700" />
+              <span className="text-amber-700 font-medium">{kidCoins}¢</span>
+            </div>
+          </>
+        )}
+      </div>
       
       {/* Right section: Content sharing controls */}
       <div className="flex items-center gap-2">

@@ -118,6 +118,7 @@ export function Header({
   const adminNavigation = [
     { name: 'Chat', href: '/' },
     { name: 'Library', href: '/library' },
+    { name: 'Rewards', href: '/rewards' },
     { name: 'Editor', href: '/editor' },
     { name: 'Agents', href: '/agents' },
     { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },

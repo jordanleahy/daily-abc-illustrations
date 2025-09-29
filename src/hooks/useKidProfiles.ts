@@ -9,6 +9,7 @@ export interface KidProfile {
   last_name: string;
   profile_image_url?: string;
   is_active: boolean;
+  earned_coins: number;
   created_at: string;
   updated_at: string;
 }

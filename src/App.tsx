@@ -15,6 +15,7 @@ import { AdminOnly } from "@/components/AdminOnly";
 import Library from "./pages/Library";
 import LibraryBookView from "./pages/LibraryBookView";
 import LibraryDetail from "./pages/LibraryDetail";
+import Rewards from "./pages/Rewards";
 import DailyPublished from "./pages/DailyPublished";
 import DailyPublishedSchedule from "./pages/DailyPublishedSchedule";
 import Schedule from "./pages/Schedule";
@@ -59,9 +60,10 @@ const App = () => (
               <Route path="/agents" element={<Agents />} />
               <Route path="/editor" element={<AdminOnly><Books /></AdminOnly>} />
               <Route path="/editor/:id" element={<AdminOnly><BookDetail /></AdminOnly>} />
-               <Route path="/library" element={<Library key="library" />} />
-               <Route path="/library/:id" element={<LibraryBookView />} />
-               <Route path="/library/:id/detail" element={<LibraryDetail />} />
+                <Route path="/library" element={<Library key="library" />} />
+                <Route path="/library/:id" element={<LibraryBookView />} />
+                <Route path="/library/:id/detail" element={<LibraryDetail />} />
+                <Route path="/rewards" element={<Rewards />} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />
                <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
                <Route path="/schedule" element={<Schedule />} />

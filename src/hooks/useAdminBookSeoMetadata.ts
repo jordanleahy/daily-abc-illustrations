@@ -25,12 +25,13 @@ export const useAdminBookSeoMetadata = (bookId?: string) => {
 
       if (!dailyPublished) return null;
 
-      // Get the latest complete SEO metadata
+      // Get the latest complete SEO metadata with an actual image
       const { data: seoData } = await supabase
         .from('seo_metadata')
         .select('*')
         .eq('daily_published_id', dailyPublished.id)
         .eq('optimization_status', 'complete')
+        .not('og_image_url', 'is', null)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();

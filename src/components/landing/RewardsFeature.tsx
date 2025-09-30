@@ -50,7 +50,7 @@ export const RewardsFeature = () => {
               </p>
             </div>
             <div className="space-y-2">
-              <h3 className="font-semibold text-xl">🏆 Celebrate Success</h3>
+              <h3 className="font-semibold text-xl">Buy Screen Time & Bubble Tea</h3>
               <p className="text-muted-foreground">
                 Build confidence with every milestone reached together
               </p>

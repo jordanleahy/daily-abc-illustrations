@@ -2,7 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { PublicPageImage } from './PublicPageImage';
 import { FreemiumHeader } from './FreemiumHeader';
-import { CoinCounter } from '@/components/ui/coin-counter';
+import { RewardContainer } from '@/components/ui/reward-container';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { Page } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
@@ -95,9 +95,10 @@ export function DailyPublishedPageView({
       {/* Coin counter display */}
       {sessionCoins > 0 && (
         <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-2">
-          <div className="bg-card/95 backdrop-blur-sm rounded-lg shadow-lg border border-border px-4 py-2">
-            <CoinCounter coins={sessionCoins} size="sm" showLabel={false} />
-          </div>
+          <RewardContainer 
+            earnedRewards={sessionCoins} 
+            className="bg-card/95 backdrop-blur-sm rounded-lg shadow-lg border border-border" 
+          />
         </div>
       )}
 

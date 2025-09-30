@@ -57,7 +57,6 @@ function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
               onLoad={() => setImageLoaded(true)}
               onError={() => setImageError(true)}
               decoding="async"
-              fetchPriority={inView ? "high" : "low"}
             />
           )}
         </AspectRatio>

@@ -4,9 +4,7 @@ import { useResponsiveImageSize } from './useResponsiveImageSize';
 
 interface Book {
   id: string;
-  seoMetadata?: {
-    og_image_url?: string;
-  };
+  firstPageImageUrl?: string;
 }
 
 /**
@@ -27,9 +25,8 @@ export function useImagePreloading(books: Book[] | undefined) {
     const criticalBooks = books.slice(0, 2);
     
     criticalBooks.forEach((book) => {
-      const seoMetadata = book.seoMetadata;
-      if (seoMetadata?.og_image_url) {
-        const optimizedUrl = getOptimizedImageUrl(seoMetadata.og_image_url, {
+      if (book.firstPageImageUrl) {
+        const optimizedUrl = getOptimizedImageUrl(book.firstPageImageUrl, {
           width,
           height,
         });
@@ -46,9 +43,8 @@ export function useImagePreloading(books: Book[] | undefined) {
       const secondaryBooks = books.slice(2, 6);
       
       secondaryBooks.forEach((book) => {
-        const seoMetadata = book.seoMetadata;
-        if (seoMetadata?.og_image_url) {
-          const optimizedUrl = getOptimizedImageUrl(seoMetadata.og_image_url, {
+        if (book.firstPageImageUrl) {
+          const optimizedUrl = getOptimizedImageUrl(book.firstPageImageUrl, {
             width,
             height,
           });

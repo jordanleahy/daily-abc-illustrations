@@ -58,7 +58,6 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
           onLoad={() => setImageLoaded(true)}
           onError={() => setImageError(true)}
           decoding="async"
-          fetchPriority="high"
         />
       )}
     </div>

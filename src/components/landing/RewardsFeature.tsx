@@ -21,11 +21,13 @@ export const RewardsFeature = () => {
             <CardContent className="p-8">
               <div className="space-y-6">
                 <div className="flex justify-center">
-                  <CoinCounter coins={125} size="lg" />
+                  <div className="text-6xl font-bold text-primary">
+                    $1.24
+                  </div>
                 </div>
                 <div className="text-center">
                   <p className="text-sm text-muted-foreground mb-4">
-                    Coins earned this week
+                    Earned this week
                   </p>
                   <RewardContainer earnedRewards={5} />
                 </div>

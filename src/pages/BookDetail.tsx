@@ -26,13 +26,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
-import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText, Folder } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText } from 'lucide-react';
 import { toast } from 'sonner';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
@@ -593,113 +587,79 @@ export default function BookDetail() {
                         )}
                       />
                     </div>
-                    <TooltipProvider>
-                      <div className="flex items-center gap-2">
-                        {/* Folder button */}
-                        {!isMobile && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Organize"
-                                aria-label="Organize book"
-                              >
-                                <Folder className="h-4 w-4" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Organize Book</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                        
-                        {/* Archive button on desktop only */}
-                        {!isMobile && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    disabled={archiveLoading || book?.status === 'archived'}
-                                    title="Archive book"
-                                    aria-label="Archive book"
-                                  >
-                                    {archiveLoading ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <Archive className="w-4 h-4" />
-                                    )}
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Archive Book</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to archive "{book?.book_name}"? Archived books will be hidden from your main book list but can be restored later.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleArchiveBook}>
-                                      Archive Book
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Archive Book</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                        
-                        {/* Delete button on desktop only */}
-                        {!isMobile && (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    disabled={deleteLoading}
-                                    title="Delete book"
-                                    aria-label="Delete book"
-                                    className="text-destructive hover:text-destructive"
-                                  >
-                                    {deleteLoading ? (
-                                      <Loader2 className="w-4 h-4 animate-spin" />
-                                    ) : (
-                                      <Trash2 className="w-4 h-4" />
-                                    )}
-                                  </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Delete Book</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                      Are you sure you want to delete "{book.book_name}"? This action cannot be undone and will permanently delete the book and all its pages, prompts, and images.
-                                    </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDeleteBook} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                                      Delete Book
-                                    </AlertDialogAction>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Delete Book</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                      </div>
-                    </TooltipProvider>
+                    <div className="flex items-center gap-2">
+                      
+                      {/* Archive button on desktop only */}
+                      {!isMobile && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              disabled={archiveLoading || book?.status === 'archived'}
+                              title="Archive book"
+                              aria-label="Archive book"
+                            >
+                              {archiveLoading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Archive className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Archive Book</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to archive "{book?.book_name}"? Archived books will be hidden from your main book list but can be restored later.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleArchiveBook}>
+                                Archive Book
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                      
+                      {/* Delete button on desktop only */}
+                      {!isMobile && (
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              disabled={deleteLoading}
+                              title="Delete book"
+                              aria-label="Delete book"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              {deleteLoading ? (
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Book</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete "{book.book_name}"? This action cannot be undone and will permanently delete the book and all its pages, prompts, and images.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDeleteBook} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Delete Book
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      )}
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>

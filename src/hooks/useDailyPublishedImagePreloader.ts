@@ -1,8 +1,6 @@
 import { useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { getOptimizedImageUrl, hasDataSavingEnabled } from '@/utils/imageOptimization';
-import { useResponsiveImageSize } from './useResponsiveImageSize';
 
 interface Page {
   id: string;
@@ -14,8 +12,6 @@ interface Page {
  * Loads image metadata immediately and preloads critical images
  */
 export function useDailyPublishedImagePreloader(pages: Page[] | undefined, bookId: string | undefined) {
-  const { width, height } = useResponsiveImageSize();
-  
   // Prefetch all image URLs in a single query
   const { data: imageUrls } = useQuery({
     queryKey: ['daily-published-images-batch', bookId, pages?.map(p => p.id)],
@@ -45,7 +41,6 @@ export function useDailyPublishedImagePreloader(pages: Page[] | undefined, bookI
   // Preload critical images (first 3) immediately
   useEffect(() => {
     if (!imageUrls || imageUrls.length === 0 || !pages) return;
-    if (hasDataSavingEnabled()) return;
     
     // Create a map for quick lookup
     const imageUrlMap = new Map(imageUrls.map(img => [img.page_id, img.image_url]));
@@ -55,11 +50,8 @@ export function useDailyPublishedImagePreloader(pages: Page[] | undefined, bookI
     criticalPages.forEach((page) => {
       const imageUrl = imageUrlMap.get(page.id);
       if (imageUrl) {
-        const optimizedUrl = getOptimizedImageUrl(imageUrl, { width, height });
-        if (optimizedUrl) {
-          const img = new Image();
-          img.src = optimizedUrl;
-        }
+        const img = new Image();
+        img.src = imageUrl;
       }
     });
     
@@ -70,18 +62,15 @@ export function useDailyPublishedImagePreloader(pages: Page[] | undefined, bookI
         remainingPages.forEach((page) => {
           const imageUrl = imageUrlMap.get(page.id);
           if (imageUrl) {
-            const optimizedUrl = getOptimizedImageUrl(imageUrl, { width, height });
-            if (optimizedUrl) {
-              const img = new Image();
-              img.src = optimizedUrl;
-            }
+            const img = new Image();
+            img.src = imageUrl;
           }
         });
       }, 500);
       
       return () => clearTimeout(timeoutId);
     }
-  }, [imageUrls, pages, width, height]);
+  }, [imageUrls, pages]);
   
   return imageUrls;
 }

@@ -1,0 +1,9 @@
+# Cache transformed images aggressively for optimal mobile performance
+/storage/v1/object/public/book-covers/*
+  Cache-Control: public, max-age=31536000, immutable
+  Vary: Accept
+
+# Cache transformed images with query parameters
+/storage/v1/object/public/book-covers*
+  Cache-Control: public, max-age=31536000
+  Vary: Accept

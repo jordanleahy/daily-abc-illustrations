@@ -11,23 +11,55 @@ import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { CreateBookModal } from '@/components/books/CreateBookModal';
 import { LoadingState } from '@/components/ui/loading-state';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useResponsiveImageSize } from '@/hooks/useResponsiveImageSize';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { useImagePreloading } from '@/hooks/useImagePreloading';
+import { getOptimizedImageUrl } from '@/utils/imageOptimization';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
+  const { width, height } = useResponsiveImageSize();
+  const isMobile = useIsMobile();
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   
+  // Custom lazy loading with mobile-optimized threshold
+  const { ref, inView } = useIntersectionObserver({
+    rootMargin: isMobile ? '300px' : '500px',
+    threshold: 0.1,
+    triggerOnce: true,
+  });
+  
+  const optimizedImageUrl = getOptimizedImageUrl(seoMetadata?.og_image_url, {
+    width,
+    height,
+  });
+
   return (
     <Card 
       className="cursor-pointer hover:shadow-lg transition-shadow group overflow-hidden"
       onClick={onClick}
     >
-      {seoMetadata?.og_image_url && (
-        <AspectRatio ratio={3/2}>
-          <img 
-            src={seoMetadata.og_image_url}
-            alt={book.book_name}
-            className="object-cover w-full h-full"
-            loading="lazy"
-            onError={(e) => e.currentTarget.style.display = 'none'}
-          />
+      {optimizedImageUrl && !imageError && (
+        <AspectRatio ratio={3/2} ref={ref}>
+          {!inView || !imageLoaded ? (
+            <Skeleton className="w-full h-full" />
+          ) : null}
+          {inView && (
+            <img 
+              src={optimizedImageUrl}
+              alt={book.book_name}
+              className={`object-cover w-full h-full transition-opacity duration-300 ${
+                imageLoaded ? 'opacity-100' : 'opacity-0'
+              }`}
+              onLoad={() => setImageLoaded(true)}
+              onError={() => setImageError(true)}
+              decoding="async"
+              fetchPriority={inView ? "high" : "low"}
+            />
+          )}
         </AspectRatio>
       )}
       <CardHeader>
@@ -70,6 +102,9 @@ export default function Books() {
   const navigate = useNavigate();
   const location = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
+  
+  // Preload critical images for better performance
+  useImagePreloading(books);
 
   // Redirect to auth if not authenticated (but not if already on auth page)
   if (!authLoading && !user && location.pathname !== '/auth') {

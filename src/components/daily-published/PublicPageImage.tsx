@@ -1,5 +1,10 @@
+import { useState } from 'react';
 import { usePublicPageImage } from '@/hooks/usePublicPageImage';
 import { Shimmer } from '@/components/ui/shimmer';
+import { useResponsiveImageSize } from '@/hooks/useResponsiveImageSize';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { getOptimizedImageUrl } from '@/utils/imageOptimization';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface PublicPageImageProps {
   pageId: string;
@@ -9,12 +14,28 @@ interface PublicPageImageProps {
 
 export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageImageProps) {
   const { data: imageData, isLoading } = usePublicPageImage(pageId);
+  const { width, height } = useResponsiveImageSize();
+  const isMobile = useIsMobile();
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  
+  // Custom lazy loading with mobile-optimized threshold
+  const { ref, inView } = useIntersectionObserver({
+    rootMargin: isMobile ? '300px' : '500px',
+    threshold: 0.1,
+    triggerOnce: true,
+  });
+
+  const optimizedImageUrl = getOptimizedImageUrl(imageData?.image_url, {
+    width,
+    height,
+  });
 
   if (isLoading) {
     return <Shimmer className={`w-full h-full ${className}`} />;
   }
 
-  if (!imageData?.image_url) {
+  if (!optimizedImageUrl || imageError) {
     return (
       <div className={`w-full h-full bg-muted/50 flex items-center justify-center ${className}`}>
         <div className="text-xs text-muted-foreground">No image</div>
@@ -23,12 +44,23 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
   }
 
   return (
-    <img
-      src={imageData.image_url}
-      alt="Page illustration"
-      className={`w-full h-full object-cover object-top ${className}`}
-      loading="lazy"
-      decoding="async"
-    />
+    <div ref={ref} className="w-full h-full">
+      {!inView || !imageLoaded ? (
+        <Shimmer className={`w-full h-full ${className}`} />
+      ) : null}
+      {inView && (
+        <img
+          src={optimizedImageUrl}
+          alt="Page illustration"
+          className={`w-full h-full object-cover object-top transition-opacity duration-300 ${className} ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={() => setImageLoaded(true)}
+          onError={() => setImageError(true)}
+          decoding="async"
+          fetchPriority="high"
+        />
+      )}
+    </div>
   );
 }

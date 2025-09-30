@@ -7,14 +7,13 @@ import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
-import { useAdminBookSeoMetadata } from '@/hooks/useAdminBookSeoMetadata';
+import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { CreateBookModal } from '@/components/books/CreateBookModal';
 import { LoadingState } from '@/components/ui/loading-state';
-import { getOptimizedImageUrl } from '@/utils/imageOptimization';
 
 function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
-  const { data: seoMetadata } = useAdminBookSeoMetadata(book.id);
+  const { data: seoMetadata } = useSeoMetadata(book.dailyPublishedId);
 
   return (
     <Card 
@@ -38,7 +37,7 @@ function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
         <div className="px-6 pb-4">
           <AspectRatio ratio={16/9}>
             <img 
-              src={getOptimizedImageUrl(seoMetadata.og_image_url, { width: 400, height: 225 })}
+              src={seoMetadata.og_image_url}
               alt={book.book_name}
               className="object-cover w-full h-full rounded-md"
             />

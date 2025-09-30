@@ -4,13 +4,18 @@ import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
+import { useAdminBookSeoMetadata } from '@/hooks/useAdminBookSeoMetadata';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { CreateBookModal } from '@/components/books/CreateBookModal';
 import { LoadingState } from '@/components/ui/loading-state';
+import { getOptimizedImageUrl } from '@/utils/imageOptimization';
 
 function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
+  const { data: seoMetadata } = useAdminBookSeoMetadata(book.id);
+
   return (
     <Card 
       className="cursor-pointer hover:shadow-lg transition-shadow group overflow-hidden"
@@ -29,6 +34,17 @@ function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
           {book.book_description || "No description provided"}
         </CardDescription>
       </CardHeader>
+      {seoMetadata?.og_image_url && (
+        <div className="px-6 pb-4">
+          <AspectRatio ratio={16/9}>
+            <img 
+              src={getOptimizedImageUrl(seoMetadata.og_image_url, { width: 400, height: 225 })}
+              alt={book.book_name}
+              className="object-cover w-full h-full rounded-md"
+            />
+          </AspectRatio>
+        </div>
+      )}
       <CardContent>
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-4">

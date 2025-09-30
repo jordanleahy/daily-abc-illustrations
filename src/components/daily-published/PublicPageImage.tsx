@@ -25,8 +25,8 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
   // Custom lazy loading with mobile-optimized threshold
   const { ref, inView } = useIntersectionObserver({
     rootMargin: isMobile ? '300px' : '500px',
-    threshold: 0.1,
-    triggerOnce: false, // Changed to false for debugging
+    threshold: 0,
+    triggerOnce: true,
   });
 
   const optimizedImageUrl = getOptimizedImageUrl(imageData?.image_url, {
@@ -50,21 +50,20 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
 
   return (
     <div ref={ref} className="w-full h-full">
-      {!inView || !imageLoaded ? (
+      {!imageLoaded && (
         <Shimmer className={`w-full h-full ${className}`} />
-      ) : null}
-      {inView && (
-        <img
-          src={optimizedImageUrl}
-          alt="Page illustration"
-          className={`w-full h-full object-cover object-top transition-opacity duration-300 ${className} ${
-            imageLoaded ? 'opacity-100' : 'opacity-0'
-          }`}
-          onLoad={() => setImageLoaded(true)}
-          onError={() => setImageError(true)}
-          decoding="async"
-        />
       )}
+      <img
+        src={optimizedImageUrl}
+        alt="Page illustration"
+        loading="lazy"
+        className={`w-full h-full object-cover object-top transition-opacity duration-300 ${className} ${
+          imageLoaded ? 'opacity-100' : 'opacity-0'
+        }`}
+        onLoad={() => setImageLoaded(true)}
+        onError={() => setImageError(true)}
+        decoding="async"
+      />
     </div>
   );
 }

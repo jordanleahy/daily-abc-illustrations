@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
-import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
+import { useAdminBookSeoMetadata } from '@/hooks/useAdminBookSeoMetadata';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { CreateBookModal } from '@/components/books/CreateBookModal';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -19,7 +19,7 @@ import { getOptimizedImageUrl } from '@/utils/imageOptimization';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
-  const { data: seoMetadata } = useBookSeoMetadata(book.id);
+  const { data: seoMetadata } = useAdminBookSeoMetadata(book.id);
   const { width, height } = useResponsiveImageSize();
   const isMobile = useIsMobile();
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -99,17 +99,10 @@ export default function Books() {
   const { user, loading: authLoading } = useAuthContext();
   const { books, loading } = useBooks();
   const navigate = useNavigate();
-  const location = useLocation();
   const [showCreateModal, setShowCreateModal] = useState(false);
   
   // Preload critical images for better performance
   useImagePreloading(books);
-
-  // Redirect to auth if not authenticated (but not if already on auth page)
-  if (!authLoading && !user && location.pathname !== '/auth') {
-    navigate('/auth');
-    return null;
-  }
 
   const handleViewBook = (bookId: string) => {
     navigate(`/editor/${bookId}`);

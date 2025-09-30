@@ -9,12 +9,10 @@ export const PricingSection = () => {
 
   const features = [
     'Daily new ABC book at 7:01 AM ET',
-    'Educational phonics-focused content',
-    'Earn money system (1 page = 1 penny)',
-    'Track progress and achievements',
-    'High-quality AI illustrations',
-    'Seasonal and relevant themes',
     'Unlimited access to all books',
+    'Learn to Earn for Kids Gamification',
+    'Track progress and achievements',
+    'Seasonal and relevant themes',
     'Cancel anytime'
   ];
 

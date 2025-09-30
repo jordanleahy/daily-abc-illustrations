@@ -7,13 +7,14 @@ export interface ImageSize {
 
 /**
  * Hook to determine optimal image dimensions based on device type
- * Mobile: 400x267px (3:2 ratio, optimized for small screens)
- * Desktop: 600x400px (3:2 ratio, higher quality for larger displays)
+ * Returns square dimensions to match aspect-square containers
+ * Mobile: 768x768px (optimized for small screens)
+ * Desktop: 1024x1024px (matches source image size)
  */
 export function useResponsiveImageSize(): ImageSize {
   const isMobile = useIsMobile();
   
   return isMobile 
-    ? { width: 400, height: 267 }    // Mobile-optimized size
-    : { width: 600, height: 400 };   // Desktop size
+    ? { width: 768, height: 768 }    // Mobile-optimized square
+    : { width: 1024, height: 1024 }; // Desktop square
 }

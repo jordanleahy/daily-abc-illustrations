@@ -11,6 +11,19 @@ export interface ImageOptimizationOptions {
 }
 
 /**
+ * Check if browser supports WebP format
+ */
+export function supportsWebP(): boolean {
+  if (typeof document === 'undefined') return true; // SSR default
+  
+  const canvas = document.createElement('canvas');
+  if (canvas.getContext && canvas.getContext('2d')) {
+    return canvas.toDataURL('image/webp').indexOf('data:image/webp') === 0;
+  }
+  return false;
+}
+
+/**
  * Detect user's connection speed and adjust quality accordingly
  */
 export function getConnectionAwareQuality(): number {
@@ -69,14 +82,15 @@ export function getOptimizedImageUrl(
     // Add image transformation parameters
     transformedUrl.searchParams.set('width', options.width.toString());
     transformedUrl.searchParams.set('height', options.height.toString());
-    transformedUrl.searchParams.set('resize', 'contain'); // Maintain aspect ratio
-    transformedUrl.searchParams.set('format', options.format || 'webp');
+    transformedUrl.searchParams.set('resize', 'cover'); // Cover for square crops
+    
+    // Use WebP if supported, otherwise fallback to JPEG
+    const format = options.format || (supportsWebP() ? 'webp' : 'jpeg');
+    transformedUrl.searchParams.set('format', format);
     
     // Use connection-aware quality
     const quality = options.quality || getConnectionAwareQuality();
     transformedUrl.searchParams.set('quality', quality.toString());
-    
-    console.log('Image transformation:', { original: originalUrl, transformed: transformedUrl.toString() });
     
     return transformedUrl.toString();
   } catch (error) {

@@ -23,6 +23,7 @@ export default function DailyPublished() {
   const [sessionStarted, setSessionStarted] = useState(false);
   const [reorderedPages, setReorderedPages] = useState<typeof pages>([]);
   const [originalStartingIndex, setOriginalStartingIndex] = useState(0);
+  const [sessionCoins, setSessionCoins] = useState(0);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
 
   // Set random starting page and create reordered circular array
@@ -166,6 +167,9 @@ export default function DailyPublished() {
   const isLastPage = currentPageIndex >= reorderedPages.length - 1;
 
   const handleNext = () => {
+    // Award a coin for completing this page
+    setSessionCoins(prev => prev + 1);
+    
     if (isLastPage) {
       // On last page, navigate to schedule
       navigate('/schedule');
@@ -208,6 +212,7 @@ export default function DailyPublished() {
         onPrevious={currentPageIndex > 0 ? handlePrevious : undefined}
         openGraphMetadata={openGraphMetadata}
         contentId={dailyContent.id}
+        sessionCoins={sessionCoins}
       />
     </div>
   );

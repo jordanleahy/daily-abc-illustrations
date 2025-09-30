@@ -2,6 +2,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { PublicPageImage } from './PublicPageImage';
 import { FreemiumHeader } from './FreemiumHeader';
+import { RewardContainer } from '@/components/ui/reward-container';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { Page } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
@@ -25,6 +26,8 @@ interface DailyPublishedPageViewProps {
   openGraphMetadata?: SEOMetadata;
   /** Current daily published content ID for transition handling */
   contentId?: string;
+  /** Session coins accumulated (not saved for non-auth users) */
+  sessionCoins?: number;
 }
 export function DailyPublishedPageView({
   page,
@@ -36,7 +39,8 @@ export function DailyPublishedPageView({
   onNext,
   onPrevious,
   openGraphMetadata,
-  contentId
+  contentId,
+  sessionCoins = 0
 }: DailyPublishedPageViewProps) {
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
@@ -87,6 +91,13 @@ export function DailyPublishedPageView({
         onPrevious={onPrevious}
         bookId={bookId}
       />
+
+      {/* Coin counter display */}
+      {sessionCoins > 0 && (
+        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-2">
+          <RewardContainer earnedRewards={sessionCoins} className="bg-card/95 backdrop-blur-sm rounded-full shadow-lg border border-border px-3 py-1" />
+        </div>
+      )}
 
       {/* Focused page card - Fixed height to prevent scrolling */}
       <div className="h-[calc(100vh-8rem)] mt-16 px-4 flex items-center justify-center">

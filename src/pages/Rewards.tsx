@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Coins, BookOpen, Star } from 'lucide-react';
 import { RewardContainer } from '@/components/ui/reward-container';
+import { CoinCounter } from '@/components/ui/coin-counter';
 
 export default function Rewards() {
   const { user, loading: authLoading } = useAuth();
@@ -123,13 +124,7 @@ export default function Rewards() {
                       <p className="text-muted-foreground">Reading Champion</p>
                     </div>
                   </div>
-                  <div className="text-right">
-                    <div className="flex items-center gap-2 justify-end mb-1">
-                      <Coins className="h-6 w-6 text-yellow-500" />
-                      <span className="text-3xl font-bold">{currentKid.earned_coins || 0}</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Total Coins</p>
-                  </div>
+                  <CoinCounter coins={currentKid.earned_coins || 0} size="md" />
                 </div>
               </CardContent>
             </Card>

@@ -1,31 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Book } from '@/types/book';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Library, Star, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-const useAllPublishedBooks = () => {
-  return useQuery({
-    queryKey: ['all-published-books'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('books')
-        .select('*')
-        .eq('status', 'published')
-        .order('updated_at', { ascending: false });
-
-      if (error) throw error;
-      return (data || []) as Book[];
-    },
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 20 * 60 * 1000, // 20 minutes
-  });
-};
+import { useAllDailyPublished } from '@/hooks/useAllDailyPublished';
 
 export const LibrarySection = () => {
-  const { data: books, isLoading } = useAllPublishedBooks();
+  const { data: dailyPublished, isLoading } = useAllDailyPublished();
 
   return (
     <section className="py-16 px-4 bg-gradient-to-b from-background to-secondary/5">
@@ -36,11 +16,11 @@ export const LibrarySection = () => {
           </div>
           <h2 className="text-4xl font-bold mb-4">Complete Library</h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Browse our entire collection of educational ABC books
+            Browse our complete daily published collection
           </p>
-          {books && (
+          {dailyPublished && (
             <p className="text-sm text-muted-foreground mt-2">
-              {books.length} {books.length === 1 ? 'book' : 'books'} available
+              {dailyPublished.length} {dailyPublished.length === 1 ? 'book' : 'books'} published
             </p>
           )}
         </div>
@@ -59,33 +39,38 @@ export const LibrarySection = () => {
               </Card>
             ))}
           </div>
-        ) : books && books.length > 0 ? (
+        ) : dailyPublished && dailyPublished.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {books.map((book) => (
-              <Link key={book.id} to={`/library/${book.id}`}>
+            {dailyPublished.map((item) => (
+              <Link key={item.id} to={`/daily-published/${item.id}`}>
                 <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2">
                   <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20">
-                    {book.is_highlighted && (
+                    {item.books?.is_highlighted && (
                       <Badge className="absolute top-3 right-3 bg-foreground text-background">
                         <Star className="w-3 h-3 mr-1 fill-current" />
                         Featured
                       </Badge>
                     )}
+                    {item.status === 'active' && (
+                      <Badge className="absolute top-3 left-3 bg-green-600 text-white">
+                        Active Now
+                      </Badge>
+                    )}
                     <div className="absolute inset-0 flex items-center justify-center">
                       <div className="text-6xl font-bold text-primary/20">
-                        {book.book_name.charAt(0)}
+                        {item.title.charAt(0)}
                       </div>
                     </div>
                   </div>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-xl line-clamp-2">
-                      {book.book_name}
+                      {item.title}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {book.book_description && (
+                    {item.description && (
                       <CardDescription className="line-clamp-2 text-base mb-4">
-                        {book.book_description}
+                        {item.description}
                       </CardDescription>
                     )}
                   </CardContent>

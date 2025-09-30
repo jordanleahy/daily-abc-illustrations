@@ -4,6 +4,7 @@ import { useDailyPublishedById } from '@/hooks/useDailyPublishedById';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { DailyPublishedPageView, useDailyPublishedPages } from '@/components/daily-published';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
+import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImagePreloader';
 import { MetaHead } from '@/components/common';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock } from 'lucide-react';
@@ -19,6 +20,10 @@ export default function DailyPublished() {
   const isExpired = result?.isExpired;
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
+  
+  // Prefetch and preload all page images
+  useDailyPublishedImagePreloader(pages, dailyContent?.book_id);
+  
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [sessionStarted, setSessionStarted] = useState(false);
   const [reorderedPages, setReorderedPages] = useState<typeof pages>([]);

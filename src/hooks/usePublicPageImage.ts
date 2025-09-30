@@ -9,7 +9,7 @@ export const usePublicPageImage = (pageId?: string) => {
       if (!pageId) return null;
       const { data, error } = await supabase
         .from('page_image_urls')
-        .select('*')
+        .select('image_url')
         .eq('page_id', pageId)
         .eq('is_latest', true)
         .eq('generation_status', 'complete')
@@ -23,7 +23,7 @@ export const usePublicPageImage = (pageId?: string) => {
       return data as PageImageUrl | null;
     },
     enabled: !!pageId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 30 * 60 * 1000, // 30 minutes
+    gcTime: 60 * 60 * 1000, // 1 hour
   });
 };

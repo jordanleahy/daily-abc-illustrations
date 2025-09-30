@@ -40,7 +40,7 @@ export const RewardsFeature = () => {
             <div className="space-y-2">
               <h3 className="font-semibold text-xl">🎯 Daily Achievements</h3>
               <p className="text-muted-foreground">
-                Complete books to earn coins and unlock special rewards
+                Complete books, each money buy bubble team
               </p>
             </div>
             <div className="space-y-2">

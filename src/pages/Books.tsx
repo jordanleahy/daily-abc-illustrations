@@ -4,13 +4,17 @@ import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
+import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { CreateBookModal } from '@/components/books/CreateBookModal';
 import { LoadingState } from '@/components/ui/loading-state';
 
 function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
+  const { data: seoMetadata } = useBookSeoMetadata(book.id);
+
   return (
     <Card 
       className="cursor-pointer hover:shadow-lg transition-shadow group overflow-hidden"
@@ -29,7 +33,25 @@ function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
           {book.book_description || "No description provided"}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-4">
+        {/* Book Thumbnail */}
+        <AspectRatio ratio={1200/630} className="bg-muted rounded-lg overflow-hidden">
+          {seoMetadata?.og_image_url ? (
+            <img
+              src={seoMetadata.og_image_url}
+              alt={book.book_name}
+              className="w-full h-full object-cover object-center"
+              loading="lazy"
+              decoding="async"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
+              <BookOpen className="h-12 w-12 text-muted-foreground" />
+            </div>
+          )}
+        </AspectRatio>
+
+        {/* Book Metadata */}
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">

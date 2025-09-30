@@ -8,7 +8,7 @@ export const RewardsFeature = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Watch Your Child's Progress
+            1 Page = 1 Penny
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Every book completed earns coins and builds confidence. Track progress and celebrate learning milestones together.

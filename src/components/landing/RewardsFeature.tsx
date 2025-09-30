@@ -38,7 +38,7 @@ export const RewardsFeature = () => {
           {/* Benefits List */}
           <div className="space-y-6">
             <div className="space-y-2">
-              <h3 className="font-semibold text-xl">🎯 Daily Achievements</h3>
+              <h3 className="font-semibold text-xl">🎯 Earn Money</h3>
               <p className="text-muted-foreground">
                 Complete books, each money buy bubble team
               </p>

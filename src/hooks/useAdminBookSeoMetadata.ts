@@ -14,23 +14,25 @@ export const useAdminBookSeoMetadata = (bookId?: string) => {
     queryFn: async () => {
       if (!bookId) return null;
 
-      // Get any daily_published entry for this book
-      const { data: dailyPublished } = await supabase
+      // Get recent daily_published entries for this book (most recent first)
+      const { data: dailyPublishedList } = await supabase
         .from('daily_published')
-        .select('id')
+        .select('id, status')
         .eq('book_id', bookId)
         .order('created_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+        .limit(10);
 
-      if (!dailyPublished) return null;
+      if (!dailyPublishedList || dailyPublishedList.length === 0) return null;
 
-      // Get the latest complete SEO metadata with an actual image
+      const dpIds = dailyPublishedList.map((d) => d.id);
+
+      // Get the latest complete SEO metadata with an actual image across recent daily_published entries
       const { data: seoData } = await supabase
         .from('seo_metadata')
         .select('*')
-        .eq('daily_published_id', dailyPublished.id)
+        .in('daily_published_id', dpIds)
         .eq('optimization_status', 'complete')
+        .eq('is_active', true)
         .not('og_image_url', 'is', null)
         .order('created_at', { ascending: false })
         .limit(1)

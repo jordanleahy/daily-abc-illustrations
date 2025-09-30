@@ -4,63 +4,18 @@ import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
-import { useAdminBookSeoMetadata } from '@/hooks/useAdminBookSeoMetadata';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { CreateBookModal } from '@/components/books/CreateBookModal';
 import { LoadingState } from '@/components/ui/loading-state';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useResponsiveImageSize } from '@/hooks/useResponsiveImageSize';
-import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
-import { useImagePreloading } from '@/hooks/useImagePreloading';
-import { getOptimizedImageUrl } from '@/utils/imageOptimization';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
-  const { data: seoMetadata } = useAdminBookSeoMetadata(book.id);
-  const { width, height } = useResponsiveImageSize();
-  const isMobile = useIsMobile();
-  const [imageLoaded, setImageLoaded] = useState(false);
-  const [imageError, setImageError] = useState(false);
-  
-  // Custom lazy loading with mobile-optimized threshold
-  const { ref, inView } = useIntersectionObserver({
-    rootMargin: isMobile ? '300px' : '500px',
-    threshold: 0.1,
-    triggerOnce: true,
-  });
-  
-  const optimizedImageUrl = getOptimizedImageUrl(seoMetadata?.og_image_url, {
-    width,
-    height,
-  });
-
   return (
     <Card 
       className="cursor-pointer hover:shadow-lg transition-shadow group overflow-hidden"
       onClick={onClick}
     >
-      {optimizedImageUrl && !imageError && (
-        <AspectRatio ratio={3/2} ref={ref}>
-          {!inView || !imageLoaded ? (
-            <Skeleton className="w-full h-full" />
-          ) : null}
-          {inView && (
-            <img 
-              src={optimizedImageUrl}
-              alt={book.book_name}
-              className={`object-cover w-full h-full transition-opacity duration-300 ${
-                imageLoaded ? 'opacity-100' : 'opacity-0'
-              }`}
-              onLoad={() => setImageLoaded(true)}
-              onError={() => setImageError(true)}
-              decoding="async"
-            />
-          )}
-        </AspectRatio>
-      )}
       <CardHeader>
         <div className="flex items-start justify-between">
           <CardTitle className="text-lg group-hover:text-primary transition-colors">
@@ -100,9 +55,6 @@ export default function Books() {
   const { books, loading } = useBooks();
   const navigate = useNavigate();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  
-  // Preload critical images for better performance
-  useImagePreloading(books);
 
   const handleViewBook = (bookId: string) => {
     navigate(`/editor/${bookId}`);

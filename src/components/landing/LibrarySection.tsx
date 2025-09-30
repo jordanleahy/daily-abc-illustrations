@@ -44,7 +44,20 @@ export const LibrarySection = () => {
             {dailyPublished.map((item) => (
               <Link key={item.id} to={`/daily-published/${item.id}`}>
                 <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2">
-                  <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20">
+                  <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
+                    {item.og_image_url ? (
+                      <img 
+                        src={item.og_image_url} 
+                        alt={item.title}
+                        className="absolute inset-0 w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center">
+                        <div className="text-6xl font-bold text-primary/20">
+                          {item.title.charAt(0)}
+                        </div>
+                      </div>
+                    )}
                     {item.books?.is_highlighted && (
                       <Badge className="absolute top-3 right-3 bg-foreground text-background">
                         <Star className="w-3 h-3 mr-1 fill-current" />
@@ -56,11 +69,6 @@ export const LibrarySection = () => {
                         Active Now
                       </Badge>
                     )}
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="text-6xl font-bold text-primary/20">
-                        {item.title.charAt(0)}
-                      </div>
-                    </div>
                   </div>
                   <CardHeader className="pb-3">
                     <CardTitle className="text-xl line-clamp-2">

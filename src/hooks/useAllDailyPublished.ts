@@ -11,6 +11,7 @@ export interface DailyPublishedWithBook {
   expires_at: string | null;
   is_active: boolean;
   queue_position: number | null;
+  og_image_url: string | null;
   books: {
     book_name: string;
     category: string | null;
@@ -29,7 +30,8 @@ export const useAllDailyPublished = () => {
     queryFn: async () => {
       console.log('🔍 Fetching all daily published items for library');
 
-      const { data, error } = await supabase
+      // Fetch daily published items
+      const { data: dailyData, error: dailyError } = await supabase
         .from('daily_published')
         .select(`
           id,
@@ -51,13 +53,35 @@ export const useAllDailyPublished = () => {
         .in('status', ['active', 'queued', 'expired'])
         .order('published_at', { ascending: false });
 
-      if (error) {
-        console.error('❌ Error fetching daily published items:', error);
-        throw error;
+      if (dailyError) {
+        console.error('❌ Error fetching daily published items:', dailyError);
+        throw dailyError;
       }
 
-      console.log('✅ Found daily published items:', data?.length || 0);
-      return (data || []) as DailyPublishedWithBook[];
+      // Fetch all latest SEO metadata
+      const { data: seoData, error: seoError } = await supabase
+        .from('seo_metadata')
+        .select('daily_published_id, og_image_url')
+        .eq('is_latest', true)
+        .eq('is_active', true);
+
+      if (seoError) {
+        console.error('❌ Error fetching SEO metadata:', seoError);
+      }
+
+      // Create a map of daily_published_id to og_image_url
+      const seoMap = new Map(
+        (seoData || []).map(item => [item.daily_published_id, item.og_image_url])
+      );
+
+      // Combine the data
+      const combined = (dailyData || []).map(item => ({
+        ...item,
+        og_image_url: seoMap.get(item.id) || null
+      }));
+
+      console.log('✅ Found daily published items:', combined.length);
+      return combined as DailyPublishedWithBook[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes

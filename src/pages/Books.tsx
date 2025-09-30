@@ -4,11 +4,65 @@ import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
+import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { CreateBookModal } from '@/components/books/CreateBookModal';
 import { LoadingState } from '@/components/ui/loading-state';
+function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
+  const { data: seoMetadata } = useBookSeoMetadata(book.id);
+  
+  return (
+    <Card 
+      className="cursor-pointer hover:shadow-lg transition-shadow group overflow-hidden"
+      onClick={onClick}
+    >
+      {seoMetadata?.og_image_url && (
+        <AspectRatio ratio={3/2}>
+          <img 
+            src={seoMetadata.og_image_url}
+            alt={book.book_name}
+            className="object-cover w-full h-full"
+            loading="lazy"
+            onError={(e) => e.currentTarget.style.display = 'none'}
+          />
+        </AspectRatio>
+      )}
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <CardTitle className="text-lg group-hover:text-primary transition-colors">
+            {book.book_name}
+          </CardTitle>
+          <Badge variant={book.status === 'published' ? 'default' : 'secondary'}>
+            {book.status}
+          </Badge>
+        </div>
+        <CardDescription className="line-clamp-2">
+          {book.book_description || "No description provided"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between text-sm text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              {new Date(book.created_at).toLocaleDateString()}
+            </div>
+            <div className="flex items-center gap-1">
+              <Users className="w-4 h-4" />
+              {book.category || 'General'}
+            </div>
+          </div>
+          <div className="text-xs bg-muted px-2 py-1 rounded">
+            {book.total_pages || 0} pages
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Books() {
   const { user, loading: authLoading } = useAuthContext();
@@ -73,42 +127,11 @@ export default function Books() {
         {books && books.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {books.map((book) => (
-              <Card 
-                key={book.id} 
-                className="cursor-pointer hover:shadow-lg transition-shadow group"
+              <BookCard
+                key={book.id}
+                book={book}
                 onClick={() => handleViewBook(book.id)}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <CardTitle className="text-lg group-hover:text-primary transition-colors">
-                      {book.book_name}
-                    </CardTitle>
-                    <Badge variant={book.status === 'published' ? 'default' : 'secondary'}>
-                      {book.status}
-                    </Badge>
-                  </div>
-                  <CardDescription className="line-clamp-2">
-                    {book.book_description || "No description provided"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center justify-between text-sm text-muted-foreground">
-                    <div className="flex items-center gap-4">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {new Date(book.created_at).toLocaleDateString()}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Users className="w-4 h-4" />
-                        {book.category || 'General'}
-                      </div>
-                    </div>
-                    <div className="text-xs bg-muted px-2 py-1 rounded">
-                      {book.total_pages || 0} pages
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              />
             ))}
           </div>
         ) : (

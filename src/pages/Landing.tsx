@@ -6,7 +6,8 @@ import {
   LandingHero, 
   PopularBooks, 
   RewardsFeature, 
-  Testimonials, 
+  Testimonials,
+  PricingSection,
   SignupSection 
 } from '@/components/landing';
 import { Header } from '@/components/layout';
@@ -44,6 +45,7 @@ const Landing = () => {
         <PopularBooks />
         <RewardsFeature />
         <Testimonials />
+        <PricingSection />
         <SignupSection />
       </div>
     </>

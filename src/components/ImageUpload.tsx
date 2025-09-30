@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Upload, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { processImage, formatFileSize } from "@/utils/imageProcessor";
 
 interface ImageUploadProps {
   onImageSelect: (file: File) => void;
@@ -12,6 +13,7 @@ interface ImageUploadProps {
 export function ImageUpload({ onImageSelect, disabled = false, className = "" }: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateImage = (file: File): string | null => {
@@ -61,14 +63,39 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "" }:
       return;
     }
 
-    // Create preview
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      setPreview(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
+    // Process and compress the image
+    setIsProcessing(true);
+    try {
+      const processed = await processImage(file, {
+        maxWidth: 1024,
+        maxHeight: 1024,
+        targetSizeBytes: 500 * 1024, // 500KB target
+        quality: 0.85,
+      });
 
-    onImageSelect(file);
+      // Show compression results
+      const savedPercentage = Math.round((1 - processed.compressionRatio) * 100);
+      toast.success(
+        `Image optimized: ${formatFileSize(processed.originalSize)} → ${formatFileSize(processed.compressedSize)} (${savedPercentage}% smaller)`
+      );
+
+      // Set preview from processed image
+      setPreview(processed.dataUrl);
+
+      // Create a File object from the compressed blob
+      const compressedFile = new File(
+        [processed.blob],
+        file.name.replace(/\.[^.]+$/, '.webp'), // Change extension to webp
+        { type: processed.blob.type }
+      );
+
+      onImageSelect(compressedFile);
+    } catch (error) {
+      console.error('Image processing error:', error);
+      toast.error('Failed to process image. Please try another image.');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -102,7 +129,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "" }:
   };
 
   const openFileSelector = () => {
-    if (!disabled && fileInputRef.current) {
+    if (!disabled && !isProcessing && fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
@@ -122,7 +149,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "" }:
         className={`
           w-full h-full border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer
           ${dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
-          ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/5'}
+          ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/5'}
           ${preview ? 'p-0' : 'p-6'}
         `}
         onDragEnter={handleDrag}
@@ -131,7 +158,15 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "" }:
         onDrop={handleDrop}
         onClick={openFileSelector}
       >
-        {preview ? (
+        {isProcessing ? (
+          <div className="flex flex-col items-center justify-center text-center space-y-3">
+            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm font-medium">Optimizing image...</p>
+            <p className="text-xs text-muted-foreground">
+              Compressing and resizing for faster uploads
+            </p>
+          </div>
+        ) : preview ? (
           <div className="relative w-full h-full">
             <img
               src={preview}

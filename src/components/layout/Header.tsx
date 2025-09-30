@@ -263,8 +263,8 @@ export function Header({
                   <SheetTitle>{title}</SheetTitle>
                 </SheetHeader>
                 <div className="mt-6 space-y-2">
-                  {/* Regular User Navigation Links */}
-                  {regularNavigation.map((item) => (
+                  {/* Navigation Links - show admin nav for admins, regular nav for others */}
+                  {(isAdmin ? adminNavigation : regularNavigation).map((item) => (
                     <Link
                       key={item.name}
                       to={item.href}
@@ -273,19 +273,6 @@ export function Header({
                       {item.name}
                     </Link>
                   ))}
-                  
-                  {/* Admin Navigation Links */}
-                  <AdminOnly>
-                    {adminNavigation.map((item) => (
-                      <Link
-                        key={item.name}
-                        to={item.href}
-                        className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
-                      >
-                        {item.name}
-                      </Link>
-                    ))}
-                  </AdminOnly>
                   
                   {/* User Section */}
                   <button

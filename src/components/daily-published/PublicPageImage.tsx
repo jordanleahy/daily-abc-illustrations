@@ -19,17 +19,22 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   
+  // Debug logging
+  console.log('PublicPageImage render:', { pageId, bookId, imageData, isLoading });
+  
   // Custom lazy loading with mobile-optimized threshold
   const { ref, inView } = useIntersectionObserver({
     rootMargin: isMobile ? '300px' : '500px',
     threshold: 0.1,
-    triggerOnce: true,
+    triggerOnce: false, // Changed to false for debugging
   });
 
   const optimizedImageUrl = getOptimizedImageUrl(imageData?.image_url, {
     width,
     height,
   });
+  
+  console.log('Image state:', { inView, optimizedImageUrl, imageLoaded, imageError });
 
   if (isLoading) {
     return <Shimmer className={`w-full h-full ${className}`} />;

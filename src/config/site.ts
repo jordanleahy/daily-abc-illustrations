@@ -6,8 +6,9 @@
 export const SITE_CONFIG = {
   // Basic site information
   name: 'Daily ABC Illustrations',
-  tagline: 'Digital Drawing Canvas',
-  description: 'A new book published daily at 7:01 AM Eastern Time',
+  tagline: 'A new book every 24 hours',
+  description: 'My daughter loves digital learning, so I build her a new book every day',
+  subheading: 'Phonics-focused stories based on seasonality and relevancy',
   author: 'Lovable',
   
   // URLs and social

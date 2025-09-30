@@ -26,8 +26,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
-import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText, Star } from 'lucide-react';
 import { toast } from 'sonner';
+import { useToggleBookHighlight } from '@/hooks/useToggleBookHighlight';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -64,6 +65,8 @@ export default function BookDetail() {
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
   const [isClassView, setIsClassView] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  
+  const { mutate: toggleHighlight, isPending: isHighlightLoading } = useToggleBookHighlight();
   
 
   useEffect(() => {
@@ -479,6 +482,21 @@ export default function BookDetail() {
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : (
                         <FileText className="w-4 h-4" />
+                      )}
+                    </Button>
+                    
+                    <Button
+                      variant={book.is_highlighted ? "default" : "outline"}
+                      size="icon"
+                      onClick={() => toggleHighlight({ bookId: book.id, isHighlighted: book.is_highlighted || false })}
+                      disabled={isHighlightLoading}
+                      title={book.is_highlighted ? "Remove from Landing Page" : "Highlight on Landing Page"}
+                      aria-label={book.is_highlighted ? "Remove from Landing Page" : "Highlight on Landing Page"}
+                    >
+                      {isHighlightLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Star className={`w-4 h-4 ${book.is_highlighted ? 'fill-current' : ''}`} />
                       )}
                     </Button>
                     

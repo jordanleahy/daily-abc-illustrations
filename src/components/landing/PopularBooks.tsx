@@ -1,14 +1,20 @@
 import { useBooks } from '@/hooks/useBooks';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { Book } from 'lucide-react';
+import { Book, Star } from 'lucide-react';
 
 export const PopularBooks = () => {
   const { books, loading } = useBooks();
   const navigate = useNavigate();
   
-  // Get first 6 published books
-  const popularBooks = books.filter(book => book.status === 'published').slice(0, 6);
+  // Get published books and prioritize highlighted ones
+  const publishedBooks = books.filter(book => book.status === 'published');
+  const highlightedBooks = publishedBooks.filter(book => book.is_highlighted);
+  const otherBooks = publishedBooks.filter(book => !book.is_highlighted);
+  
+  // Show highlighted books first, then fill with other books (max 6 total)
+  const popularBooks = [...highlightedBooks, ...otherBooks].slice(0, 6);
 
   if (loading) {
     return (
@@ -43,10 +49,18 @@ export const PopularBooks = () => {
           {popularBooks.map((book) => (
             <Card 
               key={book.id}
-              className="cursor-pointer hover:shadow-lg transition-shadow"
+              className={`cursor-pointer hover:shadow-lg transition-all relative ${
+                book.is_highlighted ? 'ring-2 ring-primary shadow-md' : ''
+              }`}
               onClick={() => navigate(`/library/${book.id}`)}
             >
               <CardContent className="p-6">
+                {book.is_highlighted && (
+                  <Badge className="absolute top-4 right-4 bg-primary">
+                    <Star className="h-3 w-3 mr-1 fill-current" />
+                    Featured
+                  </Badge>
+                )}
                 {book.firstPageImageUrl ? (
                   <div className="aspect-square bg-muted rounded-lg mb-4 overflow-hidden">
                     <img 

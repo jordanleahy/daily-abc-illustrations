@@ -25,6 +25,8 @@ export interface Book {
   current_system_prompt_id?: string;
   /** URL of the first created page image (if any) */
   firstPageImageUrl?: string;
+  /** Whether the book is highlighted/featured on the landing page */
+  is_highlighted?: boolean;
   /** ISO timestamp when the book was created */
   created_at: string;
   /** ISO timestamp when the book was last modified */

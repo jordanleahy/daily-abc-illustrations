@@ -61,19 +61,9 @@ export const PopularBooks = () => {
                     Featured
                   </Badge>
                 )}
-                {book.firstPageImageUrl ? (
-                  <div className="aspect-square bg-muted rounded-lg mb-4 overflow-hidden">
-                    <img 
-                      src={book.firstPageImageUrl} 
-                      alt={book.book_name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center">
-                    <Book className="h-12 w-12 text-muted-foreground" />
-                  </div>
-                )}
+                <div className="aspect-square bg-muted rounded-lg mb-4 flex items-center justify-center">
+                  <Book className="h-12 w-12 text-muted-foreground" />
+                </div>
                 <h3 className="font-semibold text-lg mb-2 line-clamp-2">
                   {book.book_name}
                 </h3>

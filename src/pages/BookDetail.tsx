@@ -26,12 +26,20 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
+import { PublicationStatus } from '@/types/status';
 import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText, Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { useToggleBookHighlight } from '@/hooks/useToggleBookHighlight';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 import { LoadingState } from '@/components/ui/loading-state';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
@@ -60,6 +68,7 @@ export default function BookDetail() {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
   
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
@@ -285,6 +294,34 @@ export default function BookDetail() {
       toast.error('Failed to update book theme');
     } finally {
       setIsEditingCategory(false);
+    }
+  };
+
+  const handleUpdateStatus = async (newStatus: string) => {
+    if (!book?.id || newStatus === book.status) {
+      setIsEditingStatus(false);
+      return;
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({ status: newStatus as PublicationStatus })
+        .eq('id', book.id);
+
+      if (error) throw error;
+
+      // Invalidate and refetch the book query
+      queryClient.invalidateQueries({ queryKey: ['book', book.id] });
+      // Also invalidate highlighted books query if status changed to/from published
+      queryClient.invalidateQueries({ queryKey: ['public-highlighted-books'] });
+      
+      toast.success(`Book status changed to ${newStatus}`);
+    } catch (error) {
+      console.error('Error updating book status:', error);
+      toast.error('Failed to update book status');
+    } finally {
+      setIsEditingStatus(false);
     }
   };
 
@@ -707,9 +744,31 @@ export default function BookDetail() {
                             )}
                           />
                         </div>
-                         <Badge variant={book?.status === 'published' ? 'default' : 'secondary'}>
-                           {book?.status}
-                         </Badge>
+                        {isEditingStatus ? (
+                          <Select 
+                            value={book.status} 
+                            onValueChange={(value) => {
+                              handleUpdateStatus(value);
+                            }}
+                          >
+                            <SelectTrigger className="w-[120px] h-7 text-sm">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="draft">Draft</SelectItem>
+                              <SelectItem value="published">Published</SelectItem>
+                              <SelectItem value="archived">Archived</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <Badge 
+                            variant={book?.status === 'published' ? 'default' : 'secondary'}
+                            className="cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => setIsEditingStatus(true)}
+                          >
+                            {book?.status}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                     

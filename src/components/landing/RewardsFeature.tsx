@@ -44,7 +44,7 @@ export const RewardsFeature = () => {
               </p>
             </div>
             <div className="space-y-2">
-              <h3 className="font-semibold text-xl">📈 Track Growth</h3>
+              <h3 className="font-semibold text-xl">💰Save Money</h3>
               <p className="text-muted-foreground">
                 See reading progress and phonics mastery over time
               </p>

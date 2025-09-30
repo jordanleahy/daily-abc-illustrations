@@ -2,7 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Book } from '@/types/book';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, Library } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Library, Star, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const useAllPublishedBooks = () => {
@@ -62,36 +63,31 @@ export const LibrarySection = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {books.map((book) => (
               <Link key={book.id} to={`/library/${book.id}`}>
-                <Card className="h-full transition-all duration-300 hover:shadow-lg hover:scale-105 cursor-pointer">
-                  <CardHeader>
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <BookOpen className="w-6 h-6 text-primary" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <CardTitle className="text-lg line-clamp-2 mb-1">
-                          {book.book_name}
-                        </CardTitle>
-                        {book.category && (
-                          <span className="inline-block px-2 py-1 text-xs rounded-full bg-secondary text-secondary-foreground">
-                            {book.category}
-                          </span>
-                        )}
+                <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2">
+                  <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20">
+                    {book.is_highlighted && (
+                      <Badge className="absolute top-3 right-3 bg-foreground text-background">
+                        <Star className="w-3 h-3 mr-1 fill-current" />
+                        Featured
+                      </Badge>
+                    )}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="text-6xl font-bold text-primary/20">
+                        {book.book_name.charAt(0)}
                       </div>
                     </div>
+                  </div>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-xl line-clamp-2">
+                      {book.book_name}
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     {book.book_description && (
-                      <CardDescription className="line-clamp-3">
+                      <CardDescription className="line-clamp-2 text-base mb-4">
                         {book.book_description}
                       </CardDescription>
                     )}
-                    <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
-                      <span>{book.total_pages || 26} pages</span>
-                      <span className="text-primary font-medium hover:underline">
-                        View Book →
-                      </span>
-                    </div>
                   </CardContent>
                 </Card>
               </Link>

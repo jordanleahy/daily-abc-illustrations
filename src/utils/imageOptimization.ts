@@ -38,7 +38,7 @@ export function getConnectionAwareQuality(): number {
 
 /**
  * Generate optimized image URL with Supabase transformation parameters
- * Includes WebP format, dynamic quality, and CDN cache optimization
+ * Converts Supabase storage URLs to use the render/image endpoint for transformations
  */
 export function getOptimizedImageUrl(
   originalUrl: string | null | undefined,
@@ -49,20 +49,36 @@ export function getOptimizedImageUrl(
   try {
     const url = new URL(originalUrl);
     
-    // Image transformation parameters
-    url.searchParams.set('width', options.width.toString());
-    url.searchParams.set('height', options.height.toString());
-    url.searchParams.set('format', options.format || 'webp');
+    // Check if this is a Supabase storage URL
+    if (!url.hostname.includes('supabase.co')) {
+      return originalUrl; // Not a Supabase URL, return as-is
+    }
     
-    // Use connection-aware quality or provided quality
+    // Transform /storage/v1/object/public/ to /storage/v1/render/image/public/
+    const path = url.pathname;
+    if (!path.includes('/storage/v1/object/public/')) {
+      return originalUrl; // Not a standard Supabase storage path
+    }
+    
+    // Replace object endpoint with render/image endpoint
+    const transformedPath = path.replace('/storage/v1/object/public/', '/storage/v1/render/image/public/');
+    
+    // Build new URL with transformation parameters
+    const transformedUrl = new URL(transformedPath, url.origin);
+    
+    // Add image transformation parameters
+    transformedUrl.searchParams.set('width', options.width.toString());
+    transformedUrl.searchParams.set('height', options.height.toString());
+    transformedUrl.searchParams.set('resize', 'contain'); // Maintain aspect ratio
+    transformedUrl.searchParams.set('format', options.format || 'webp');
+    
+    // Use connection-aware quality
     const quality = options.quality || getConnectionAwareQuality();
-    url.searchParams.set('quality', quality.toString());
+    transformedUrl.searchParams.set('quality', quality.toString());
     
-    // Cache optimization for CDN
-    url.searchParams.set('cache', '31536000'); // 1 year
-    url.searchParams.set('immutable', 'true');
+    console.log('Image transformation:', { original: originalUrl, transformed: transformedUrl.toString() });
     
-    return url.toString();
+    return transformedUrl.toString();
   } catch (error) {
     console.error('Error generating optimized image URL:', error);
     return originalUrl;

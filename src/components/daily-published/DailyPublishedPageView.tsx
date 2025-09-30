@@ -94,11 +94,8 @@ export function DailyPublishedPageView({
 
       {/* Coin counter display */}
       {sessionCoins > 0 && (
-        <div className="fixed top-20 left-1/2 -translate-x-1/2 z-40 animate-in fade-in slide-in-from-top-2">
-          <RewardContainer 
-            earnedRewards={sessionCoins} 
-            className="bg-card/95 backdrop-blur-sm rounded-lg shadow-lg border border-border" 
-          />
+        <div className="fixed top-20 left-4 z-40 animate-in fade-in slide-in-from-top-2">
+          <RewardContainer earnedRewards={sessionCoins} />
         </div>
       )}
 

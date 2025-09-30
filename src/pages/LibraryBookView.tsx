@@ -205,7 +205,9 @@ export default function LibraryBookView() {
         />
         
         {/* Reward System */}
-        <RewardContainer earnedRewards={earnedRewards} className="pt-20 pb-2" />
+        <div className="pt-20 pb-2">
+          <RewardContainer earnedRewards={earnedRewards} />
+        </div>
         
         {/* Main content area */}
         <div className="flex-1 flex flex-col pb-4">

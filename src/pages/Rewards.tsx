@@ -139,10 +139,9 @@ export default function Rewards() {
               </CardHeader>
               <CardContent>
                 {currentKid.earned_coins > 0 ? (
-                  <RewardContainer 
-                    earnedRewards={currentKid.earned_coins} 
-                    className="bg-muted/50 rounded-lg"
-                  />
+                  <div className="bg-muted/50 rounded-lg">
+                    <RewardContainer earnedRewards={currentKid.earned_coins} />
+                  </div>
                 ) : (
                   <div className="text-center py-8">
                     <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />

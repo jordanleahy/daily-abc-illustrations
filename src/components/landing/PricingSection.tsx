@@ -1,11 +1,32 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Check } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
+import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useState } from 'react';
 
 export const PricingSection = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuthContext();
+  const { createCheckoutSession } = useSubscription();
+  const [loadingPlan, setLoadingPlan] = useState<'monthly' | 'annual' | null>(null);
+
+  const handleCheckout = async (priceId: string, planType: 'monthly' | 'annual') => {
+    if (!isAuthenticated) {
+      // Redirect to auth with return URL
+      navigate('/auth?mode=signup&returnUrl=/landing');
+      return;
+    }
+
+    setLoadingPlan(planType);
+    try {
+      await createCheckoutSession(priceId);
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   const features = [
     'Daily new ABC book at 7:01 AM ET',
@@ -60,8 +81,10 @@ export const PricingSection = () => {
                 className="w-full text-lg py-6"
                 size="lg"
                 variant="outline"
-                onClick={() => navigate('/auth')}
+                onClick={() => handleCheckout(SUBSCRIPTION_TIERS.standard_monthly.price_id, 'monthly')}
+                disabled={loadingPlan !== null}
               >
+                {loadingPlan === 'monthly' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Get Started Now
               </Button>
               
@@ -103,8 +126,10 @@ export const PricingSection = () => {
               <Button 
                 className="w-full text-lg py-6"
                 size="lg"
-                onClick={() => navigate('/auth')}
+                onClick={() => handleCheckout(SUBSCRIPTION_TIERS.standard_annual.price_id, 'annual')}
+                disabled={loadingPlan !== null}
               >
+                {loadingPlan === 'annual' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
                 Get Started Now
               </Button>
               

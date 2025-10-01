@@ -220,18 +220,6 @@ export function Header({
               </>
             ) : (
               <>
-                {!isTeacher && (
-                  <Link
-                    to="/"
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      location.pathname === '/'
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    Home
-                  </Link>
-                )}
                 {regularNavigation.map((item) => (
                   <Link
                     key={item.name}

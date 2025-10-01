@@ -6,7 +6,6 @@ import {
   LandingHero, 
   PopularBooks, 
   RewardsFeature, 
-  Testimonials,
   PricingSection,
   LibrarySection,
   SignupSection 
@@ -45,7 +44,6 @@ const Landing = () => {
         <LandingHero />
         <PopularBooks />
         <RewardsFeature />
-        <Testimonials />
         <PricingSection />
         <LibrarySection />
         <SignupSection />

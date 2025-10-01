@@ -57,7 +57,7 @@ site_url = "https://dailyabcillustrations.com"
 additional_redirect_urls = ["https://foxdnspwzhjxjxuicute.supabase.co", "http://localhost:3000", "https://dailyabcillustrations.com", "http://127.0.0.1:3000"]
 jwt_expiry = 3600
 enable_signup = true
-enable_email_confirmations = false
+enable_email_confirmations = true
 
 [auth.email]
 

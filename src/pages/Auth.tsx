@@ -107,8 +107,8 @@ const Auth = () => {
       } else {
         // Preserve priceId and planType in email verification redirect
         const redirectUrl = priceId && planType 
-          ? `${window.location.origin}/auth?priceId=${priceId}&planType=${planType}`
-          : `${window.location.origin}/`;
+          ? `${window.location.origin}/auth/confirm?priceId=${priceId}&planType=${planType}`
+          : `${window.location.origin}/auth/confirm`;
         
         const { error } = await supabase.auth.signUp({
           email,

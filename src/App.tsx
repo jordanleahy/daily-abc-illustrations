@@ -9,6 +9,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import AuthConfirm from "./pages/AuthConfirm";
 import Agents from "./pages/Agents";
 import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
@@ -60,7 +61,8 @@ const App = () => (
               <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/landing" element={<Landing />} />
-              <Route path="/auth" element={<Auth />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/confirm" element={<AuthConfirm />} />
               <Route path="/agents" element={<Agents />} />
               <Route path="/editor" element={<AdminOnly><Books /></AdminOnly>} />
               <Route path="/editor/:id" element={<AdminOnly><BookDetail /></AdminOnly>} />

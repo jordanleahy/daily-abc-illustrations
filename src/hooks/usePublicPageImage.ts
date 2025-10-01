@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { PageImageUrl } from '@/types/pageImageUrl';
 
 export const usePublicPageImage = (pageId?: string) => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['public-page-image', pageId],
     queryFn: async () => {
       if (!pageId) return null;
@@ -26,4 +27,14 @@ export const usePublicPageImage = (pageId?: string) => {
     staleTime: 30 * 60 * 1000, // 30 minutes
     gcTime: 60 * 60 * 1000, // 1 hour
   });
+
+  // Preload the image as soon as the URL is available
+  useEffect(() => {
+    if (query.data?.image_url) {
+      const img = new Image();
+      img.src = query.data.image_url;
+    }
+  }, [query.data?.image_url]);
+
+  return query;
 };

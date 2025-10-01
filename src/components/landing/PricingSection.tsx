@@ -62,11 +62,11 @@ export const PricingSection = () => {
                 variant="outline"
                 onClick={() => navigate('/auth')}
               >
-                Start Your Free Trial
+                Get Started Now
               </Button>
               
               <p className="text-xs text-center text-muted-foreground">
-                7-day free trial • Cancel anytime
+                30-day money-back guarantee • Cancel anytime
               </p>
             </CardContent>
           </Card>
@@ -105,11 +105,11 @@ export const PricingSection = () => {
                 size="lg"
                 onClick={() => navigate('/auth')}
               >
-                Start Your Free Trial
+                Get Started Now
               </Button>
               
               <p className="text-xs text-center text-muted-foreground">
-                7-day free trial • Cancel anytime
+                30-day money-back guarantee • Cancel anytime
               </p>
             </CardContent>
           </Card>

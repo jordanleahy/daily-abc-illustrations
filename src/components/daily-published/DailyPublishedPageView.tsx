@@ -89,13 +89,13 @@ export function DailyPublishedPageView({
 
       {/* Coin counter display */}
       {sessionCoins > 0 && (
-        <div className="fixed top-16 right-4 z-40 animate-in fade-in slide-in-from-top-2 max-w-32">
+        <div className="fixed top-14 right-4 z-40 animate-in fade-in slide-in-from-top-2 max-w-32">
           <RewardContainer earnedRewards={sessionCoins} />
         </div>
       )}
 
       {/* Focused page card - Fixed height to prevent scrolling */}
-      <div className="h-[calc(100vh-10rem)] mt-12 px-4 flex items-center justify-center">
+      <div className="h-[calc(100vh-8rem)] mt-4 px-4 flex items-center justify-center">
         <div className="max-w-md w-full">
           <Card className="overflow-hidden shadow-lg">
             <CardContent className="p-0">

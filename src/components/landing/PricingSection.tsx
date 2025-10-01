@@ -15,8 +15,8 @@ export const PricingSection = () => {
 
   const handleCheckout = async (priceId: string, planType: 'monthly' | 'annual') => {
     if (!isAuthenticated) {
-      // Redirect to auth with return URL
-      navigate('/auth?mode=signup&returnUrl=/landing');
+      // Redirect to auth with price details for post-auth checkout
+      navigate(`/auth?mode=signup&priceId=${priceId}&planType=${planType}`);
       return;
     }
 

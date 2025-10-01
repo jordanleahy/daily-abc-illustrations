@@ -6,10 +6,11 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { useAuthContext } from '@/contexts/AuthContext'; // Fixed import
+import { useAuthContext } from '@/contexts/AuthContext';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Container } from '@/components/layout/Container';
 import { SITE_CONFIG } from '@/config/site';
+import { SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 
 const Auth = () => {
   const { toast } = useToast();
@@ -20,6 +21,8 @@ const Auth = () => {
   const searchParams = new URLSearchParams(location.search);
   const mode = searchParams.get('mode');
   const returnUrl = searchParams.get('returnUrl');
+  const priceId = searchParams.get('priceId');
+  const planType = searchParams.get('planType') as 'monthly' | 'annual' | null;
   
   const [isLogin, setIsLogin] = useState(mode !== 'signup');
   const [email, setEmail] = useState('');
@@ -27,13 +30,58 @@ const Auth = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
-  // Only redirect if already authenticated AND not on auth page
+  // Validate priceId against known tiers
+  const isValidPriceId = (id: string | null): boolean => {
+    if (!id) return false;
+    return Object.values(SUBSCRIPTION_TIERS).some(tier => tier.price_id === id);
+  };
+
+  // Handle post-authentication checkout redirect
   useEffect(() => {
-    if (isAuthenticated && location.pathname !== '/auth') {
-      navigate('/');
-    }
-  }, [isAuthenticated, navigate, location.pathname]);
+    const handlePostAuthCheckout = async () => {
+      if (isAuthenticated && priceId && isValidPriceId(priceId) && !isCheckingOut) {
+        setIsCheckingOut(true);
+        try {
+          const { data, error } = await supabase.functions.invoke('create-checkout', {
+            body: { price_id: priceId }
+          });
+
+          if (error) throw error;
+
+          if (data?.url) {
+            // Redirect to Stripe checkout in same tab for seamless experience
+            window.location.href = data.url;
+          } else {
+            throw new Error('No checkout URL returned');
+          }
+        } catch (error: any) {
+          console.error('Checkout creation error:', error);
+          toast({
+            title: "Checkout Error",
+            description: error.message || "Failed to create checkout session. Please try again.",
+            variant: "destructive",
+          });
+          setIsCheckingOut(false);
+          navigate('/landing');
+        }
+      } else if (isAuthenticated && !priceId) {
+        // No checkout needed, just redirect normally
+        navigate(returnUrl || '/');
+      } else if (isAuthenticated && priceId && !isValidPriceId(priceId)) {
+        // Invalid price ID detected
+        toast({
+          title: "Invalid Plan",
+          description: "The selected plan is not valid. Please try again.",
+          variant: "destructive",
+        });
+        navigate('/landing');
+      }
+    };
+
+    handlePostAuthCheckout();
+  }, [isAuthenticated, priceId, navigate, returnUrl, toast, isCheckingOut]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,14 +220,14 @@ const Auth = () => {
                 minLength={6}
               />
             </div>
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={loading}
-            >
-              {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {isLogin ? 'Sign In' : 'Sign Up'}
-            </Button>
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={loading || isCheckingOut}
+          >
+            {(loading || isCheckingOut) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {isCheckingOut ? 'Redirecting to checkout...' : isLogin ? 'Sign In' : 'Sign Up'}
+          </Button>
           </form>
           
           <div className="mt-4 text-center">

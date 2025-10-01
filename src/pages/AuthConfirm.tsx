@@ -25,9 +25,9 @@ export default function AuthConfirm() {
           setStatus("success");
           setTimeout(() => {
             if (priceId && planType) {
-              navigate(`/auth?priceId=${priceId}&planType=${planType}`);
+              navigate(`/auth?priceId=${priceId}&planType=${planType}`, { replace: true });
             } else {
-              navigate("/");
+              navigate("/library", { replace: true });
             }
           }, 2000);
           return;
@@ -56,9 +56,9 @@ export default function AuthConfirm() {
           setStatus("success");
           setTimeout(() => {
             if (priceId && planType) {
-              navigate(`/auth?priceId=${priceId}&planType=${planType}`);
+              navigate(`/auth?priceId=${priceId}&planType=${planType}`, { replace: true });
             } else {
-              navigate("/");
+              navigate("/library", { replace: true });
             }
           }, 2000);
           return;
@@ -88,9 +88,9 @@ export default function AuthConfirm() {
         setStatus("success");
         setTimeout(() => {
           if (priceId && planType) {
-            navigate(`/auth?priceId=${priceId}&planType=${planType}`);
+            navigate(`/auth?priceId=${priceId}&planType=${planType}`, { replace: true });
           } else {
-            navigate("/");
+            navigate("/library", { replace: true });
           }
         }, 2000);
       } catch (error) {

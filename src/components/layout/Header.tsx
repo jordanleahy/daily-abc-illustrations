@@ -19,6 +19,7 @@ import {
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsAdmin, useIsTeacher } from '@/contexts/RoleContext';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
+import { useSubscription } from '@/hooks/useSubscription';
 import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
 import { UserProfileModal } from '@/components/profile/UserProfileModal';
@@ -84,6 +85,7 @@ export function Header({
   const isAdmin = useIsAdmin();
   const isTeacher = useIsTeacher();
   const { qrCodeData } = useBookQRCode(bookId || '');
+  const { hasActiveSubscription } = useSubscription();
   const navigate = useNavigate();
   const location = useLocation();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -111,7 +113,7 @@ export function Header({
   /** Navigation configuration for regular authenticated users */
   const regularNavigation = [
     { name: 'Library', href: '/library' },
-    { name: 'Rewards', href: '/rewards' },
+    ...(hasActiveSubscription ? [{ name: 'Rewards', href: '/rewards' }] : []),
   ];
 
   /** Extended navigation menu for admin users with full system access */

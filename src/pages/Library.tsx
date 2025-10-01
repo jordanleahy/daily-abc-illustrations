@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useIsTeacher } from '@/contexts/RoleContext';
+import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 export default memo(function Library() {
   const {
@@ -99,8 +101,17 @@ const LibraryBookCard = memo(function LibraryBookCard({ item }: LibraryBookCardP
   } = useSeoMetadata(item.id);
 
   const isTeacher = useIsTeacher();
+  const { isAuthenticated } = useAuthContext();
+  const { hasActiveSubscription, createCheckoutSession } = useSubscription();
   
-  const handleCardClick = () => {
+  const handleCardClick = async () => {
+    // If user is authenticated but doesn't have an active subscription, redirect to Stripe
+    if (isAuthenticated && !hasActiveSubscription) {
+      await createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id);
+      return;
+    }
+    
+    // Otherwise, proceed with normal navigation
     if (isTeacher) {
       navigate(`/library/${item.id}/detail`);
     } else {

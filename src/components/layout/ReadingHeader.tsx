@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidCoins } from '@/hooks/useKidCoins';
+import { formatCoinsAsCurrency } from '@/utils/currency';
 
 /**
  * ReadingHeader Component
@@ -120,7 +121,7 @@ export function ReadingHeader({
             <span className="text-muted-foreground">•</span>
             <div className="flex items-center gap-1">
               <Circle className="w-3 h-3 fill-amber-600 text-amber-700" />
-              <span className="text-amber-700 font-medium">{kidCoins}¢</span>
+              <span className="text-amber-700 font-medium">{formatCoinsAsCurrency(kidCoins)}</span>
             </div>
           </>
         )}

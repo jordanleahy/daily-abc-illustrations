@@ -1,5 +1,6 @@
 import { Coins } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { formatCoinsAsCurrency } from '@/utils/currency';
 
 interface CoinCounterProps {
   coins: number;
@@ -38,10 +39,10 @@ export function CoinCounter({
     <div className={cn("text-right", className)}>
       <div className="flex items-center gap-2 justify-end mb-1">
         <Coins className={cn(sizes.icon, "text-amber-500")} />
-        <span className={cn(sizes.text, "font-bold")}>{coins}</span>
+        <span className={cn(sizes.text, "font-bold")}>{formatCoinsAsCurrency(coins)}</span>
       </div>
       {showLabel && (
-        <p className={cn(sizes.label, "text-muted-foreground")}>Total Coins</p>
+        <p className={cn(sizes.label, "text-muted-foreground")}>Total Earned</p>
       )}
     </div>
   );

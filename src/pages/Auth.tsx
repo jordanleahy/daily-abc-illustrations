@@ -113,7 +113,9 @@ const Auth = () => {
       <Container size="sm" className="flex items-center justify-center min-h-screen py-8">
         <Card className="w-full">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl font-bold">{SITE_CONFIG.name}</CardTitle>
+            <CardTitle className="text-2xl font-bold">
+              {isLogin ? SITE_CONFIG.name : 'Create Account to Subscribe'}
+            </CardTitle>
             <CardDescription className="space-y-1">
               <div>
                 {isLogin ? 'Sign in to manage your subscription' : 'Create your account to start your subscription'}

@@ -51,7 +51,6 @@ const Auth = () => {
           if (error) throw error;
 
           if (data?.url) {
-            // Redirect to Stripe checkout in same tab for seamless experience
             window.location.href = data.url;
           } else {
             throw new Error('No checkout URL returned');
@@ -67,10 +66,8 @@ const Auth = () => {
           navigate('/landing');
         }
       } else if (isAuthenticated && !priceId) {
-        // No checkout needed, just redirect normally
         navigate(returnUrl || '/');
       } else if (isAuthenticated && priceId && !isValidPriceId(priceId)) {
-        // Invalid price ID detected
         toast({
           title: "Invalid Plan",
           description: "The selected plan is not valid. Please try again.",
@@ -81,7 +78,7 @@ const Auth = () => {
     };
 
     handlePostAuthCheckout();
-  }, [isAuthenticated, priceId, navigate, returnUrl, toast, isCheckingOut]);
+  }, [isAuthenticated, priceId, navigate, returnUrl, toast]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,10 +102,13 @@ const Auth = () => {
             title: "Welcome back!",
             description: "You have successfully logged in.",
           });
-          navigate(returnUrl || '/');
+          // Let useEffect handle navigation and checkout
         }
       } else {
-        const redirectUrl = `${window.location.origin}/`;
+        // Preserve priceId and planType in email verification redirect
+        const redirectUrl = priceId && planType 
+          ? `${window.location.origin}/auth?priceId=${priceId}&planType=${planType}`
+          : `${window.location.origin}/`;
         
         const { error } = await supabase.auth.signUp({
           email,

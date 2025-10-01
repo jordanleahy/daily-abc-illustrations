@@ -114,8 +114,13 @@ const Auth = () => {
         <Card className="w-full">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">{SITE_CONFIG.name}</CardTitle>
-            <CardDescription>
-              {isLogin ? 'Sign in to your account' : 'Create a new account'}
+            <CardDescription className="space-y-1">
+              <div>
+                {isLogin ? 'Sign in to manage your subscription' : 'Create your account to start your subscription'}
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Daily ABC books delivered at 7:01 AM ET
+              </div>
             </CardDescription>
           </CardHeader>
         <CardContent>
@@ -183,7 +188,7 @@ const Auth = () => {
               className="text-sm"
             >
               {isLogin 
-                ? "Don't have an account? Sign up" 
+                ? "Need an account? Sign up to subscribe" 
                 : "Already have an account? Sign in"
               }
             </Button>

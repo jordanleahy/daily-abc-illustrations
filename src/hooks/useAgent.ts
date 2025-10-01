@@ -43,6 +43,7 @@ export const useAgent = (agentType: AgentConfig['type']) => {
         lastModified: new Date(data.last_modified),
         assistantId: data.assistant_id || undefined,
         instructions: data.instructions,
+        provider: (data.provider || 'openai') as AgentConfig['provider'],
         whatChanged: data.what_changed || undefined,
         versionNumber: data.version_number,
         isLatest: data.is_latest,
@@ -110,6 +111,7 @@ export const useAgentMutations = (agentType: AgentConfig['type']) => {
           lastModified: new Date(existingAgent.last_modified),
           assistantId: existingAgent.assistant_id || undefined,
           instructions: existingAgent.instructions,
+          provider: (existingAgent.provider || 'openai') as AgentConfig['provider'],
           modelSettings: {
             model: existingAgent.model,
             maxCompletionTokens: existingAgent.max_completion_tokens,
@@ -265,6 +267,7 @@ export const useAgentRealtime = (agentType: AgentConfig['type']) => {
               lastModified: new Date(data.last_modified),
               assistantId: data.assistant_id || undefined,
               instructions: data.instructions,
+              provider: (data.provider || 'openai') as AgentConfig['provider'],
               whatChanged: data.what_changed || undefined,
               versionNumber: data.version_number,
               isLatest: data.is_latest,

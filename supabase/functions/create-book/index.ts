@@ -33,7 +33,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
-import { corsHeaders, isLegacyModel } from '../_shared/types.ts';
+import { corsHeaders } from '../_shared/types.ts';
+import type { AgentConfig } from '../_shared/types.ts';
+import { callAIProvider } from '../_shared/aiProviders.ts';
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -48,11 +50,10 @@ serve(async (req) => {
     console.log('Conversation history length:', conversationHistory?.length || 0);
 
     // Validate required environment variables
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!openAIApiKey || !supabaseUrl || !supabaseServiceKey) {
+    if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error('Missing required environment variables');
     }
 
@@ -96,67 +97,49 @@ serve(async (req) => {
       id: agentConfig.id,
       name: agentConfig.name,
       model: agentConfig.model,
+      provider: agentConfig.provider || 'openai',
       version: agentConfig.version
     });
+
+    // Prepare the agent config object for the AI provider
+    const agent: AgentConfig = {
+      id: agentConfig.id,
+      name: agentConfig.name,
+      type: agentConfig.type,
+      intent: agentConfig.intent,
+      status: agentConfig.operational_status,
+      instructions: agentConfig.instructions,
+      provider: agentConfig.provider || 'openai', // Default to openai for backwards compatibility
+      model: agentConfig.model,
+      max_completion_tokens: agentConfig.max_completion_tokens,
+      top_p: agentConfig.top_p,
+    };
 
     // Prepare conversation context for the Book Creation Agent
     const conversationContext = conversationHistory
       ?.map((msg: any) => `${msg.role}: ${msg.content}`)
       .join('\n') || '';
 
-    // Append conversation context and JSON output requirements to agent's instructions
+    // Append conversation context to agent's instructions
     const conversationAndFormatRequirements = `
 
 ${conversationContext}`;
 
-    const bookCreationPrompt = agentConfig.instructions + conversationAndFormatRequirements;
+    const bookCreationPrompt = agent.instructions + conversationAndFormatRequirements;
 
-    console.log('Calling OpenAI API for book generation with model:', agentConfig.model);
+    console.log(`Calling ${agent.provider} API for book generation with model:`, agent.model);
 
-    // Prepare OpenAI API parameters based on model
-    const apiParams: any = {
-      model: agentConfig.model,
-      messages: [
-        { 
-          role: 'system', 
-          content: bookCreationPrompt 
-        },
-        { 
-          role: 'user', 
-          content: 'Please create the book based on our conversation.' 
-        }
-      ],
-    };
-
-    // Use correct token parameter based on model
-    if (isLegacyModel(agentConfig.model)) {
-      apiParams.max_tokens = agentConfig.max_completion_tokens;
-    } else {
-      apiParams.max_completion_tokens = agentConfig.max_completion_tokens;
-    }
-
-    // Add top_p if it's not the default
-    if (agentConfig.top_p && agentConfig.top_p !== 1.0) {
-      apiParams.top_p = agentConfig.top_p;
-    }
-
-    console.log('OpenAI API parameters:', apiParams);
-
-    // Call OpenAI API with the Book Creation Agent's configuration
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
+    // Call AI provider using the shared utility
+    const response = await callAIProvider(agent, [
+      { 
+        role: 'system', 
+        content: bookCreationPrompt 
       },
-      body: JSON.stringify(apiParams),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || 'Unknown error'}`);
-    }
+      { 
+        role: 'user', 
+        content: 'Please create the book based on our conversation.' 
+      }
+    ]);
 
     const aiResponse = await response.json();
     const generatedContent = aiResponse.choices[0].message.content;

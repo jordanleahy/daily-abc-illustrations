@@ -28,7 +28,9 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import { corsHeaders, isLegacyModel } from '../_shared/types.ts';
+import { corsHeaders } from '../_shared/types.ts';
+import type { AgentConfig } from '../_shared/types.ts';
+import { callAIProvider } from '../_shared/aiProviders.ts';
 
 
 serve(async (req) => {
@@ -41,13 +43,8 @@ serve(async (req) => {
     const { messages } = await req.json();
     
     // Environment variables
-    const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-
-    if (!OPENAI_API_KEY) {
-      throw new Error('OpenAI API key not configured');
-    }
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
       throw new Error('Supabase configuration not found');
@@ -92,13 +89,22 @@ serve(async (req) => {
     console.log('Using agent configuration:', {
       name: agent.name,
       model: agent.model,
+      provider: agent.provider || 'openai',
       max_completion_tokens: agent.max_completion_tokens
     });
 
-    // Prepare messages with system instructions
-    const systemMessage = {
-      role: 'system',
-      content: agent.instructions
+    // Prepare the agent config object for the AI provider
+    const agentConfig: AgentConfig = {
+      id: agent.id,
+      name: agent.name,
+      type: agent.type,
+      intent: agent.intent,
+      status: agent.operational_status,
+      instructions: agent.instructions,
+      provider: agent.provider || 'openai', // Default to openai for backwards compatibility
+      model: agent.model,
+      max_completion_tokens: agent.max_completion_tokens,
+      top_p: agent.top_p,
     };
 
     // Check if any message contains images
@@ -134,55 +140,29 @@ serve(async (req) => {
       }
     });
 
+    // Prepare system message
+    const systemMessage = {
+      role: 'system',
+      content: agentConfig.instructions
+    };
+
     // Combine system message with formatted user messages
     const allMessages = [systemMessage, ...formattedMessages];
 
-    // Prepare OpenAI API parameters based on model
-    const apiParams: any = {
-      model: hasImages ? 'gpt-4o' : agent.model, // Use vision-capable model for images
-      messages: allMessages,
-    };
-
-    // Use correct token parameter based on model
-    const effectiveModel = hasImages ? 'gpt-4o' : agent.model;
-    if (isLegacyModel(effectiveModel)) {
-      apiParams.max_tokens = agent.max_completion_tokens;
-    } else {
-      apiParams.max_completion_tokens = agent.max_completion_tokens;
+    // Override model to vision-capable if images are present
+    if (hasImages && agentConfig.provider === 'openai') {
+      agentConfig.model = 'gpt-4o'; // Use vision-capable model for images
     }
 
-    // Add top_p if it's not the default
-    if (agent.top_p && agent.top_p !== 1.0) {
-      apiParams.top_p = agent.top_p;
-    }
+    console.log(`Making ${agentConfig.provider} API call with model:`, agentConfig.model);
 
-    console.log('OpenAI API parameters:', {
-      model: apiParams.model,
-      messageCount: apiParams.messages.length,
-      hasImages: hasImages
-    });
-
-    // Make API call to OpenAI
-    console.log('Making OpenAI API call...');
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(apiParams),
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error('OpenAI API error:', errorData);
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
-    }
+    // Call AI provider using the shared utility
+    const response = await callAIProvider(agentConfig, allMessages);
 
     const data = await response.json();
     const assistantMessage = data.choices[0].message.content;
 
-    console.log('OpenAI response received');
+    console.log(`${agentConfig.provider} response received`);
 
     return new Response(JSON.stringify({ 
       response: assistantMessage 

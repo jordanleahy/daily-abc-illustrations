@@ -7,10 +7,15 @@ import { BaseEntity, VersionTracked, DeploymentTracked, Optional } from './base'
 export type AgentType = 'chat' | 'book-creation' | 'illustration-director' | 'graphic-designer';
 
 /**
+ * AI provider types
+ */
+export type AIProvider = 'openai' | 'deepseek';
+
+/**
  * Base agent model settings shared between frontend and backend
  */
 export interface BaseModelSettings {
-  /** OpenAI model identifier */
+  /** AI model identifier */
   model: string;
   /** Maximum tokens for completion */
   maxCompletionTokens: number;
@@ -32,6 +37,8 @@ export interface BaseAgentConfig {
   status: AgentStatus;
   /** System instructions that define the agent's behavior and responses */
   instructions: string;
+  /** AI provider (OpenAI or DeepSeek) */
+  provider: AIProvider;
   /** Configuration for the underlying AI model */
   modelSettings: BaseModelSettings;
 }

@@ -23,6 +23,8 @@ export interface AgentConfig {
   assistantId?: string;
   /** System instructions that define the agent's behavior and responses */
   instructions: string;
+  /** AI provider (OpenAI or DeepSeek) */
+  provider: 'openai' | 'deepseek';
   /** AI-generated description of what changed in the latest version */
   whatChanged?: string;
   /** Human-readable description of the last change */
@@ -35,7 +37,7 @@ export interface AgentConfig {
   parentAgentId?: string;
   /** Configuration for the underlying AI model */
   modelSettings: {
-    /** OpenAI model identifier (e.g., "gpt-5-2025-08-07") */
+    /** AI model identifier (e.g., "gpt-5-2025-08-07" or "deepseek-chat") */
     model: string;
     /** Maximum tokens the model can generate in response */
     maxCompletionTokens: number;

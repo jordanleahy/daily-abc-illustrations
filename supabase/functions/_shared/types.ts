@@ -86,29 +86,35 @@ export enum PublicationStatus {
 }
 
 /**
- * Agent configuration interface for edge function operations
- * Simplified version of the frontend AgentConfig for edge function use
+ * AI provider types
+ */
+export type AIProvider = 'openai' | 'deepseek';
+
+/**
+ * Agent configuration structure for edge functions
+ * Represents a configured AI agent with its behavior and model settings
  */
 export interface AgentConfig {
-  /** Display name of the agent */
+  /** Unique identifier for the agent */
+  id: string;
+  /** Display name shown to users */
   name: string;
-  /** Agent type - determines behavior and capabilities */
+  /** Agent type determining its specialized capabilities */
   type: 'chat' | 'book-creation' | 'illustration-director' | 'graphic-designer';
-  /** Purpose or goal description of the agent */
+  /** Description of the agent's purpose and goals */
   intent: string;
   /** Current operational status */
-  status: 'online' | 'offline' | 'processing';
+  status: string;
   /** System instructions that define agent behavior */
   instructions: string;
-  /** AI model configuration settings */
-  modelSettings: {
-    /** OpenAI model identifier */
-    model: string;
-    /** Maximum tokens for completion */
-    maxCompletionTokens: number;
-    /** Nucleus sampling parameter (0.0 to 1.0) */
-    topP: number;
-  };
+  /** AI provider (OpenAI or DeepSeek) */
+  provider: AIProvider;
+  /** AI model identifier */
+  model: string;
+  /** Maximum tokens the model can generate */
+  max_completion_tokens: number;
+  /** Nucleus sampling parameter (0.0 to 1.0) */
+  top_p: number;
 }
 
 /**

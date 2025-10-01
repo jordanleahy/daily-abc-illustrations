@@ -3,16 +3,12 @@
  * 
  * This edge function generates detailed image prompts for individual ABC book pages using
  * the user's Graphics Design Agent configuration and applies safe space rules. It fetches
- * page data, calls OpenAI to generate contextual image prompts, and saves them to the database.
+ * page data, calls Lovable AI to generate contextual image prompts, and saves them to the database.
  * 
- * @requires OPENAI_API_KEY - OpenAI API key for GPT model access
+ * @requires LOVABLE_API_KEY - Lovable AI Gateway API key
  * @requires SUPABASE_URL - Supabase project URL
  * @requires SUPABASE_ANON_KEY - Supabase anonymous key for database access
  */
-
-// XMLHttpRequest polyfill - Required for OpenAI API calls in Deno runtime
-// Provides browser-compatible XMLHttpRequest functionality that some libraries expect
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 // Deno HTTP server - Core server functionality for handling HTTP requests
 // Used to create the edge function endpoint that responds to HTTP requests
@@ -219,11 +215,11 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
 
     const aspectRatio = extractAspectRatio(deployedPrompt.content);
 
-    // Get OpenAI API key
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      log('ERROR', ProcessStatus.ERROR, currentStep, 'OpenAI API key not configured', { requestId });
-      throw new Error('OpenAI API key not configured');
+    // Get Lovable AI API key
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      log('ERROR', ProcessStatus.ERROR, currentStep, 'Lovable AI API key not configured', { requestId });
+      throw new Error('Lovable AI API key not configured');
     }
 
     const promptDuration = Date.now() - promptStartTime;
@@ -234,20 +230,20 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
       letter: pageData.letter
     });
 
-    currentStep = 'OPENAI_API';
+    currentStep = 'LOVABLE_AI_API';
     const aiStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling OpenAI API for image prompt generation...', { 
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling Lovable AI for image prompt generation...', { 
       requestId,
       model: agentConfig.model,
       maxTokens: agentConfig.max_completion_tokens,
       topP: agentConfig.top_p
     });
 
-    // Call OpenAI API using the agent's configuration and instructions from database
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Lovable AI Gateway using the agent's configuration and instructions from database
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -270,13 +266,19 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
     const aiDuration = Date.now() - aiStartTime;
 
     if (!response.ok) {
-      const errorData = await response.json();
-      const errorMsg = `OpenAI API error: ${errorData.error?.message || response.statusText}`;
+      let errorMsg = 'AI API error';
+      if (response.status === 429) {
+        errorMsg = 'Rate limit exceeded. Please try again later.';
+      } else if (response.status === 402) {
+        errorMsg = 'Payment required. Please add credits to your Lovable AI workspace.';
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        errorMsg = `AI API error: ${errorData.error?.message || response.statusText}`;
+      }
       log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
         requestId, 
         duration: aiDuration,
-        statusCode: response.status,
-        error: errorData
+        statusCode: response.status
       });
       throw new Error(errorMsg);
     }

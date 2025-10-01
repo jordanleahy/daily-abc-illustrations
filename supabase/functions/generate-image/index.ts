@@ -1,18 +1,14 @@
 /**
  * Generate Image Edge Function
  * 
- * This edge function generates images using OpenAI's gpt-image-1 model based on prompts
- * stored in the page_image_urls table. It handles the complete workflow from API call
- * to storage upload and database updates.
+ * This edge function generates images using Google Gemini's image model via Lovable AI Gateway
+ * based on prompts stored in the page_image_urls table. It handles the complete workflow from
+ * API call to storage upload and database updates.
  * 
- * @requires OPENAI_API_KEY - OpenAI API key for image generation
+ * @requires LOVABLE_API_KEY - Lovable AI Gateway API key for image generation
  * @requires SUPABASE_URL - Supabase project URL
  * @requires SUPABASE_SERVICE_ROLE_KEY - Supabase service role key for database/storage access
  */
-
-// XMLHttpRequest polyfill - Required for OpenAI API calls in Deno runtime
-// Provides browser-compatible XMLHttpRequest functionality that some libraries expect
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 // Deno HTTP server - Core server functionality for handling HTTP requests
 // Used to create the edge function endpoint that responds to HTTP requests
@@ -124,22 +120,22 @@ serve(async (req) => {
 
     console.log(`[${requestId}] Updated status to in_progress`);
 
-    // Get OpenAI API key
-    const openaiApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openaiApiKey) {
-      console.log(`[${requestId}] OpenAI API key not configured`);
+    // Get Lovable AI API key
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      console.log(`[${requestId}] Lovable AI API key not configured`);
       
       await supabase
         .from('page_image_urls')
         .update({
           generation_status: 'error',
-          error_message: 'OpenAI API key not configured'
+          error_message: 'Lovable AI API key not configured'
         })
         .eq('id', recordId);
 
       return new Response(JSON.stringify({
         success: false,
-        error: 'OpenAI API key not configured'
+        error: 'Lovable AI API key not configured'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -167,31 +163,40 @@ serve(async (req) => {
       });
     }
 
-    console.log(`[${requestId}] Calling OpenAI Image Generation API with prompt length: ${imageRecord.prompt_used.length}`);
+    console.log(`[${requestId}] Calling Lovable AI Gateway with Gemini image model, prompt length: ${imageRecord.prompt_used.length}`);
 
     const generationStartTime = Date.now();
 
-    // Call OpenAI Image Generation API
-    const openaiResponse = await fetch('https://api.openai.com/v1/images/generations', {
+    // Call Lovable AI Gateway with Google Gemini image model
+    const aiResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openaiApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-image-1',
-        prompt: imageRecord.prompt_used,
-        n: 1,
-        size: '1024x1024',
-        quality: 'high'
+        model: 'google/gemini-2.5-flash-image-preview',
+        messages: [
+          {
+            role: 'user',
+            content: imageRecord.prompt_used
+          }
+        ],
+        modalities: ['image', 'text']
       }),
     });
 
-    if (!openaiResponse.ok) {
-      const errorText = await openaiResponse.text();
-      console.log(`[${requestId}] OpenAI API error:`, errorText);
+    if (!aiResponse.ok) {
+      const errorText = await aiResponse.text();
+      console.log(`[${requestId}] Lovable AI API error:`, errorText);
       
-      const errorMessage = 'Failed to generate image';
+      let errorMessage = 'Failed to generate image';
+      if (aiResponse.status === 429) {
+        errorMessage = 'Rate limit exceeded. Please try again later.';
+      } else if (aiResponse.status === 402) {
+        errorMessage = 'Payment required. Please add credits to your Lovable AI workspace.';
+      }
+      
       await supabase
         .from('page_image_urls')
         .update({
@@ -204,56 +209,61 @@ serve(async (req) => {
         success: false,
         error: errorMessage
       }), {
-        status: 500,
+        status: aiResponse.status,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    const imageData = await openaiResponse.json();
-    console.log(`[${requestId}] OpenAI response received successfully`);
+    const imageData = await aiResponse.json();
+    console.log(`[${requestId}] Lovable AI response received successfully`);
 
-    if (!imageData.data || !imageData.data[0]) {
-      console.log(`[${requestId}] No image data returned from OpenAI`);
+    // Extract image from Gemini response format
+    const images = imageData.choices?.[0]?.message?.images;
+    if (!images || !images[0]?.image_url?.url) {
+      console.log(`[${requestId}] No image data returned from Lovable AI`);
       
       await supabase
         .from('page_image_urls')
         .update({
           generation_status: 'error',
-          error_message: 'No image data returned from OpenAI'
+          error_message: 'No image data returned from AI'
         })
         .eq('id', recordId);
 
       return new Response(JSON.stringify({
         success: false,
-        error: 'No image data returned from OpenAI'
+        error: 'No image data returned from AI'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
 
-    // For gpt-image-1, the response contains base64 data in the b64_json field
-    const base64Data = imageData.data[0].b64_json;
-
-    if (!base64Data) {
-      console.log(`[${requestId}] No base64 data in OpenAI response`);
+    // Extract base64 data from data URI (format: data:image/png;base64,...)
+    const dataUri = images[0].image_url.url;
+    const base64Match = dataUri.match(/^data:image\/\w+;base64,(.+)$/);
+    
+    if (!base64Match || !base64Match[1]) {
+      console.log(`[${requestId}] Invalid data URI format from Lovable AI`);
       
       await supabase
         .from('page_image_urls')
         .update({
           generation_status: 'error',
-          error_message: 'No image data in OpenAI response'
+          error_message: 'Invalid image data format'
         })
         .eq('id', recordId);
 
       return new Response(JSON.stringify({
         success: false,
-        error: 'No image data in OpenAI response'
+        error: 'Invalid image data format'
       }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       });
     }
+
+    const base64Data = base64Match[1];
 
     console.log(`[${requestId}] Uploading image to Supabase Storage`);
 

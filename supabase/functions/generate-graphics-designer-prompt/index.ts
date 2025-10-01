@@ -7,13 +7,10 @@
  * 
  * This ensures consistent, structured visual guidelines across all image prompts.
  * 
- * @requires OPENAI_API_KEY - OpenAI API key for GPT model access
+ * @requires LOVABLE_API_KEY - Lovable AI Gateway API key
  * @requires SUPABASE_URL - Supabase project URL
  * @requires SUPABASE_ANON_KEY - Supabase anonymous key for database access
  */
-
-// XMLHttpRequest polyfill - Required for OpenAI API calls in Deno runtime
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 // Deno HTTP server - Core server functionality for handling HTTP requests
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
@@ -277,11 +274,11 @@ Book Details:
 
 Please provide your response as valid JSON following the exact schema structure you are designed to output. This style guide will be used to ensure visual consistency across all illustrations in the book.`;
 
-    // Get OpenAI API key
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      log('ERROR', ProcessStatus.ERROR, currentStep, 'OpenAI API key not configured', { requestId });
-      throw new Error('OpenAI API key not configured');
+    // Get Lovable AI API key
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      log('ERROR', ProcessStatus.ERROR, currentStep, 'Lovable AI API key not configured', { requestId });
+      throw new Error('Lovable AI API key not configured');
     }
 
     log('INFO', ProcessStatus.COMPLETE, currentStep, 'Stage 1 prompt prepared', { 
@@ -290,20 +287,20 @@ Please provide your response as valid JSON following the exact schema structure 
       contentLength: styleGuidePrompt.length
     });
 
-    currentStep = 'STAGE1_OPENAI_API';
+    currentStep = 'STAGE1_LOVABLE_AI_API';
     const stage1ApiStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Stage 1: Calling OpenAI API for JSON style guide generation...', { 
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Stage 1: Calling Lovable AI for JSON style guide generation...', { 
       requestId,
       model: agentConfig.model_settings?.model || agentConfig.model,
       maxTokens: agentConfig.model_settings?.max_completion_tokens || agentConfig.max_completion_tokens,
       topP: agentConfig.model_settings?.top_p || agentConfig.top_p
     });
 
-    // Call OpenAI API using the Illustration Director agent's configuration
-    const stage1Response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Lovable AI Gateway using the Illustration Director agent's configuration
+    const stage1Response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
@@ -326,13 +323,19 @@ Please provide your response as valid JSON following the exact schema structure 
     const stage1Duration = Date.now() - stage1ApiStartTime;
 
     if (!stage1Response.ok) {
-      const errorData = await stage1Response.json();
-      const errorMsg = `Stage 1 OpenAI API error: ${errorData.error?.message || stage1Response.statusText}`;
+      let errorMsg = 'Stage 1 AI API error';
+      if (stage1Response.status === 429) {
+        errorMsg = 'Rate limit exceeded. Please try again later.';
+      } else if (stage1Response.status === 402) {
+        errorMsg = 'Payment required. Please add credits to your Lovable AI workspace.';
+      } else {
+        const errorData = await stage1Response.json().catch(() => ({}));
+        errorMsg = `Stage 1 AI API error: ${errorData.error?.message || stage1Response.statusText}`;
+      }
       log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
         requestId, 
         duration: stage1Duration,
-        statusCode: stage1Response.status,
-        error: errorData
+        statusCode: stage1Response.status
       });
       throw new Error(errorMsg);
     }

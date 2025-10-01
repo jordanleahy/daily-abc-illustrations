@@ -133,7 +133,7 @@ export function Header({
         <Container>
           <div className="flex h-14 items-center justify-between">
             {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
+            <Link to="/landing" className="flex items-center space-x-2">
               <span className="text-xl font-bold text-foreground">{title}</span>
             </Link>
 

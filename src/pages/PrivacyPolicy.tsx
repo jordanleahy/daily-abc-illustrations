@@ -4,9 +4,12 @@ import { MetaHead } from '@/components/common';
 import { SITE_CONFIG, getSiteTitle } from '@/config/site';
 import { Container } from '@/components/layout';
 import { Header } from '@/components/layout';
+import { Footer } from '@/components/landing/Footer';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const PrivacyPolicy = () => {
   const { trackEvent } = useGA4();
+  const { isAuthenticated, loading } = useAuthContext();
 
   useEffect(() => {
     trackEvent('page_view', {
@@ -17,6 +20,7 @@ const PrivacyPolicy = () => {
   }, [trackEvent]);
 
   const lastUpdated = "October 1, 2025";
+  const shouldShowFooter = !isAuthenticated && !loading;
 
   return (
     <>
@@ -344,6 +348,7 @@ const PrivacyPolicy = () => {
             </article>
           </Container>
         </main>
+        {shouldShowFooter && <Footer />}
       </div>
     </>
   );

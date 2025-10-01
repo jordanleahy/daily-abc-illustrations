@@ -4,9 +4,12 @@ import { MetaHead } from '@/components/common';
 import { SITE_CONFIG, getSiteTitle } from '@/config/site';
 import { Container } from '@/components/layout';
 import { Header } from '@/components/layout';
+import { Footer } from '@/components/landing/Footer';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const TermsOfService = () => {
   const { trackEvent } = useGA4();
+  const { isAuthenticated, loading } = useAuthContext();
 
   useEffect(() => {
     trackEvent('page_view', {
@@ -17,6 +20,7 @@ const TermsOfService = () => {
   }, [trackEvent]);
 
   const lastUpdated = "January 15, 2025";
+  const shouldShowFooter = !isAuthenticated && !loading;
 
   return (
     <>
@@ -445,6 +449,7 @@ const TermsOfService = () => {
             </article>
           </Container>
         </main>
+        {shouldShowFooter && <Footer />}
       </div>
     </>
   );

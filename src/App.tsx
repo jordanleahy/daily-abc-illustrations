@@ -26,6 +26,8 @@ import Subscription from "./pages/Subscription";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import SubscriptionCancel from "./pages/SubscriptionCancel";
 import SubscriptionManage from "./pages/SubscriptionManage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 import { QuickTestInlineEdit } from '@/components/demo/QuickTestInlineEdit';
 import PerformanceComparison from '@/components/demo/PerformanceComparison';
 import NotFound from "./pages/NotFound";
@@ -75,6 +77,8 @@ const App = () => (
                <Route path="/subscription/success" element={<SubscriptionSuccess />} />
                <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
                <Route path="/subscription/manage" element={<SubscriptionManage />} />
+               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+               <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/test-inline-edit" element={<div className="container mx-auto py-8"><QuickTestInlineEdit /></div>} />
                 <Route path="/test" element={<div className="container mx-auto py-8"><QuickTestInlineEdit /></div>} />
                 <Route path="/performance" element={<PerformanceComparison />} />

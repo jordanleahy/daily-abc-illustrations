@@ -1,7 +1,10 @@
 import { ReactNode } from 'react';
+import { useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Header } from './Header';
 import { PageContent } from './PageContent';
+import { Footer } from '@/components/landing/Footer';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface PageLayoutProps {
   children: ReactNode;
@@ -18,12 +21,18 @@ export const PageLayout = ({
   showHeader = true,
   fullHeight = true
 }: PageLayoutProps) => {
+  const location = useLocation();
+  const { isAuthenticated, loading } = useAuthContext();
+  
+  const shouldShowFooter = !isAuthenticated && !loading && location.pathname !== '/auth';
+  
   return (
     <div className={cn('min-h-screen bg-background flex flex-col', className)}>
       {showHeader && <Header title={title} />}
       <PageContent fullHeight={fullHeight}>
         {children}
       </PageContent>
+      {shouldShowFooter && <Footer />}
     </div>
   );
 };

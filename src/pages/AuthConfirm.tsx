@@ -16,10 +16,57 @@ export default function AuthConfirm() {
   useEffect(() => {
     const confirmEmail = async () => {
       try {
-        const token_hash = searchParams.get("token_hash");
-        const type = searchParams.get("type");
         const priceId = searchParams.get("priceId");
         const planType = searchParams.get("planType");
+
+        // Check for existing session (Supabase auto-detects hash tokens)
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          setStatus("success");
+          setTimeout(() => {
+            if (priceId && planType) {
+              navigate(`/auth?priceId=${priceId}&planType=${planType}`);
+            } else {
+              navigate("/");
+            }
+          }, 2000);
+          return;
+        }
+
+        // Parse hash tokens (access_token, refresh_token)
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const access_token = hashParams.get("access_token");
+        const refresh_token = hashParams.get("refresh_token");
+
+        if (access_token && refresh_token) {
+          const { error } = await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+
+          if (error) {
+            setStatus("error");
+            setErrorMessage(error.message);
+            return;
+          }
+
+          // Clean up URL hash
+          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+
+          setStatus("success");
+          setTimeout(() => {
+            if (priceId && planType) {
+              navigate(`/auth?priceId=${priceId}&planType=${planType}`);
+            } else {
+              navigate("/");
+            }
+          }, 2000);
+          return;
+        }
+
+        // Fallback to OTP verification (token_hash method)
+        const token_hash = searchParams.get("token_hash");
+        const type = searchParams.get("type");
 
         if (!token_hash || !type) {
           setStatus("error");
@@ -39,9 +86,6 @@ export default function AuthConfirm() {
         }
 
         setStatus("success");
-        
-        // Redirect to auth page with priceId/planType if they exist (for subscription flow)
-        // Otherwise redirect to home
         setTimeout(() => {
           if (priceId && planType) {
             navigate(`/auth?priceId=${priceId}&planType=${planType}`);

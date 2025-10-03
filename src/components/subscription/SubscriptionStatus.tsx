@@ -80,9 +80,9 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
             <Crown className="h-5 w-5 text-yellow-500" />
             {currentTier?.interval === 'month' ? 'Monthly Plan' : currentTier?.interval === 'year' ? 'Annual Plan' : 'Premium Plan'}
           </CardTitle>
-          {currentTier && currentTier.price && (
+          {currentTier && typeof currentTier.price === 'number' && (
             <p className="text-base font-semibold mt-1">
-              ${(Number(currentTier.price) / 100).toFixed(2)}/{currentTier.interval === 'month' ? 'month' : 'year'}
+              ${(currentTier.price / 100).toFixed(2)}/{currentTier.interval === 'month' ? 'month' : 'year'}
             </p>
           )}
           <CardDescription>

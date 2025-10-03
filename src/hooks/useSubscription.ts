@@ -20,14 +20,14 @@ export const SUBSCRIPTION_TIERS = {
     price_id: "price_1SBKtlC8Q85n0xWFlMZa2qdZ",
     product_id: "prod_T7a3qkxm69uttK",
     name: "Standard Monthly",
-    price: "$19.99/month",
+    price: 1999, // Price in cents
     interval: "month"
   },
   standard_annual: {
     price_id: "price_1SEEd8C8Q85n0xWFLL92SUJy",
     product_id: "prod_T7a5vTweAt6UZm",
     name: "Standard Annual",
-    price: "$99.99/year",
+    price: 9999, // Price in cents
     interval: "year"
   }
 } as const;

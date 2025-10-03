@@ -10,6 +10,7 @@ interface SubscriptionStatus {
   price_id?: string;
   interval?: string;
   subscription_end?: string;
+  cancel_at_period_end?: boolean;
   loading: boolean;
   error?: string;
 }
@@ -46,13 +47,14 @@ export const useSubscription = () => {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed === 'object') {
-        const { subscribed, product_id, price_id, interval, subscription_end, updatedAt } = parsed as any;
+        const { subscribed, product_id, price_id, interval, subscription_end, cancel_at_period_end, updatedAt } = parsed as any;
         initialData = {
           subscribed: !!subscribed,
           product_id,
           price_id,
           interval,
           subscription_end,
+          cancel_at_period_end,
           loading: false,
         };
         initialUpdatedAt = typeof updatedAt === 'number' ? updatedAt : Date.now();
@@ -84,6 +86,7 @@ export const useSubscription = () => {
           price_id: data.price_id,
           interval: data.interval,
           subscription_end: data.subscription_end,
+          cancel_at_period_end: data.cancel_at_period_end,
           loading: false,
         };
       } catch (error) {
@@ -216,6 +219,45 @@ export const useSubscription = () => {
       : s?.subscribed || false;
   }, [query.data]);
 
+  const updateAutoRenewal = useCallback(async (autoRenew: boolean) => {
+    if (!user) {
+      toast({
+        title: "Authentication Required",
+        description: "Please sign in to update your subscription",
+        variant: "destructive",
+      });
+      return { success: false };
+    }
+
+    try {
+      const { data, error } = await supabase.functions.invoke('update-subscription-renewal', {
+        body: { auto_renew: autoRenew }
+      });
+
+      if (error) throw error;
+
+      // Refresh subscription status after update
+      await query.refetch();
+
+      toast({
+        title: "Subscription Updated",
+        description: autoRenew 
+          ? "Your subscription will now renew automatically" 
+          : "Your subscription will not renew at the end of the current period",
+      });
+
+      return { success: true, data };
+    } catch (error) {
+      console.error('Error updating subscription renewal:', error);
+      toast({
+        title: "Update Error",
+        description: error instanceof Error ? error.message : 'Failed to update subscription',
+        variant: "destructive",
+      });
+      return { success: false };
+    }
+  }, [user, toast, query]);
+
   const finalData: SubscriptionStatus = (query.data as SubscriptionStatus) || { subscribed: false, loading: false };
 
   return {
@@ -226,6 +268,7 @@ export const useSubscription = () => {
     createCheckoutSession,
     openCustomerPortal,
     getSubscriptionTier,
+    updateAutoRenewal,
     isSubscribed: finalData.subscribed,
     hasActiveSubscription: finalData.subscribed && finalData.subscription_end 
       ? new Date(finalData.subscription_end) > new Date() 

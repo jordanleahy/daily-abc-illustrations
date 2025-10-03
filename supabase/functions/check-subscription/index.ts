@@ -70,6 +70,7 @@ serve(async (req) => {
     let subscriptionEnd = null;
     let priceId = null;
     let interval = null;
+    let cancelAtPeriodEnd = false;
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
@@ -105,7 +106,8 @@ serve(async (req) => {
       productId = subscription.items.data[0].price.product;
       priceId = subscription.items.data[0].price.id;
       interval = subscription.items.data[0].price.recurring?.interval || null;
-      logStep("Determined subscription details", { productId, priceId, interval });
+      cancelAtPeriodEnd = subscription.cancel_at_period_end || false;
+      logStep("Determined subscription details", { productId, priceId, interval, cancelAtPeriodEnd });
     } else {
       logStep("No active subscription found");
     }
@@ -115,7 +117,8 @@ serve(async (req) => {
       product_id: productId,
       price_id: priceId,
       interval: interval,
-      subscription_end: subscriptionEnd
+      subscription_end: subscriptionEnd,
+      cancel_at_period_end: cancelAtPeriodEnd
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

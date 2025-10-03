@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Crown, Calendar, CreditCard, Settings, RefreshCw } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { format } from "date-fns";
@@ -12,15 +14,28 @@ interface SubscriptionStatusProps {
 export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusProps) => {
   const { 
     isSubscribed, 
-    subscription_end, 
+    subscription_end,
+    cancel_at_period_end,
     loading, 
     checkSubscription, 
     openCustomerPortal, 
     getSubscriptionTier,
-    hasActiveSubscription 
+    hasActiveSubscription,
+    updateAutoRenewal,
+    isRefreshing
   } = useSubscription();
 
+  const [isUpdatingRenewal, setIsUpdatingRenewal] = useState(false);
   const currentTier = getSubscriptionTier();
+  
+  // Auto-renewal is enabled when cancel_at_period_end is false (or undefined for legacy subscriptions)
+  const autoRenewEnabled = !cancel_at_period_end;
+
+  const handleAutoRenewChange = async (checked: boolean) => {
+    setIsUpdatingRenewal(true);
+    await updateAutoRenewal(checked);
+    setIsUpdatingRenewal(false);
+  };
 
   if (loading) {
     return (
@@ -96,12 +111,38 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
       <CardContent>
         <div className="space-y-4">
           {subscription_end && (
-            <div className="flex items-center gap-2 text-sm">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {hasActiveSubscription ? "Renews" : "Expired"} on{" "}
-                {format(new Date(subscription_end), "MMMM d, yyyy")}
-              </span>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 text-sm">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <span>
+                  {autoRenewEnabled ? "Renews" : "Expires"} on{" "}
+                  {format(new Date(subscription_end), "MMMM d, yyyy")}
+                </span>
+              </div>
+              
+              <div className="flex items-center space-x-2 p-3 bg-background rounded-lg border">
+                <Checkbox 
+                  id="auto-renew" 
+                  checked={autoRenewEnabled}
+                  onCheckedChange={handleAutoRenewChange}
+                  disabled={isUpdatingRenewal || isRefreshing}
+                />
+                <label
+                  htmlFor="auto-renew"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                >
+                  Renew automatically
+                </label>
+                {isUpdatingRenewal && (
+                  <RefreshCw className="h-4 w-4 animate-spin ml-auto" />
+                )}
+              </div>
+              
+              {!autoRenewEnabled && (
+                <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-200 rounded p-2">
+                  Your subscription will not renew. You'll lose access to premium features after {format(new Date(subscription_end), "MMMM d, yyyy")}.
+                </p>
+              )}
             </div>
           )}
 

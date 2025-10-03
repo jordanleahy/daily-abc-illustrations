@@ -15,13 +15,13 @@ export const KidsManagementTab = () => {
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingKid, setEditingKid] = useState<KidProfile | null>(null);
   const { isAuthenticated } = useAuthContext();
-  const { hasActiveSubscription, createCheckoutSession } = useSubscription();
+  const { hasActiveSubscription, createCheckoutSession, loading: subscriptionLoading } = useSubscription();
 
   const handleUpgradeClick = async () => {
     await createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id);
   };
 
-  if (isLoading) {
+  if (isLoading || subscriptionLoading) {
     return (
       <div className="space-y-4">
         <div className="h-4 bg-muted animate-pulse rounded" />

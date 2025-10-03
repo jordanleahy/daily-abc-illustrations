@@ -34,42 +34,79 @@ export function useDailyPublishedImagePreloader(pages: Page[] | undefined, bookI
       return data || [];
     },
     enabled: !!pages && !!bookId && pages.length > 0,
-    staleTime: 30 * 60 * 1000, // 30 minutes
-    gcTime: 60 * 60 * 1000, // 1 hour
+    staleTime: 60 * 60 * 1000, // 1 hour - aggressive caching for performance
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
   });
   
-  // Preload critical images (first 3) immediately
+  // Progressive batch image preloading with Supabase transformations
   useEffect(() => {
     if (!imageUrls || imageUrls.length === 0 || !pages) return;
     
     // Create a map for quick lookup
     const imageUrlMap = new Map(imageUrls.map(img => [img.page_id, img.image_url]));
     
-    // Preload first 3 page images immediately
-    const criticalPages = pages.slice(0, 3);
-    criticalPages.forEach((page) => {
+    // Helper to add Supabase image transformations
+    const optimizeImageUrl = (url: string): string => {
+      if (!url.includes('supabase.co/storage')) return url;
+      const separator = url.includes('?') ? '&' : '?';
+      return `${url}${separator}width=800&quality=80&format=webp`;
+    };
+    
+    const timeouts: NodeJS.Timeout[] = [];
+    
+    // Batch 1: First 5 images immediately (critical)
+    const batch1 = pages.slice(0, 5);
+    batch1.forEach((page) => {
       const imageUrl = imageUrlMap.get(page.id);
       if (imageUrl) {
         const img = new Image();
-        img.src = imageUrl;
+        img.src = optimizeImageUrl(imageUrl);
       }
     });
     
-    // Preload remaining images with delay
-    if (pages.length > 3) {
-      const timeoutId = setTimeout(() => {
-        const remainingPages = pages.slice(3);
-        remainingPages.forEach((page) => {
+    // Batch 2: Next 5 images after 100ms
+    if (pages.length > 5) {
+      timeouts.push(setTimeout(() => {
+        const batch2 = pages.slice(5, 10);
+        batch2.forEach((page) => {
           const imageUrl = imageUrlMap.get(page.id);
           if (imageUrl) {
             const img = new Image();
-            img.src = imageUrl;
+            img.src = optimizeImageUrl(imageUrl);
           }
         });
-      }, 500);
-      
-      return () => clearTimeout(timeoutId);
+      }, 100));
     }
+    
+    // Batch 3: Next 5 images after 250ms
+    if (pages.length > 10) {
+      timeouts.push(setTimeout(() => {
+        const batch3 = pages.slice(10, 15);
+        batch3.forEach((page) => {
+          const imageUrl = imageUrlMap.get(page.id);
+          if (imageUrl) {
+            const img = new Image();
+            img.src = optimizeImageUrl(imageUrl);
+          }
+        });
+      }, 250));
+    }
+    
+    // Batch 4: Remaining images after 500ms
+    if (pages.length > 15) {
+      timeouts.push(setTimeout(() => {
+        const batch4 = pages.slice(15);
+        batch4.forEach((page) => {
+          const imageUrl = imageUrlMap.get(page.id);
+          if (imageUrl) {
+            const img = new Image();
+            img.src = optimizeImageUrl(imageUrl);
+          }
+        });
+      }, 500));
+    }
+    
+    return () => timeouts.forEach(clearTimeout);
   }, [imageUrls, pages]);
   
   return imageUrls;

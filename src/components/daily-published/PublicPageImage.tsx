@@ -12,7 +12,15 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
   const { data: imageData, isLoading } = usePublicPageImage(pageId);
   const [imageLoaded, setImageLoaded] = useState(false);
   
-  const imageUrl = imageData?.image_url;
+  // Add Supabase image transformations for mobile optimization
+  const optimizeImageUrl = (url: string | undefined): string | undefined => {
+    if (!url || !url.includes('supabase.co/storage')) return url;
+    const separator = url.includes('?') ? '&' : '?';
+    return `${url}${separator}width=800&quality=80&format=webp`;
+  };
+  
+  const imageUrl = optimizeImageUrl(imageData?.image_url);
+  const originalUrl = imageData?.image_url;
 
   if (isLoading) {
     return <Shimmer className={`w-full h-full ${className}`} />;
@@ -33,7 +41,11 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
       )}
       <img
         src={imageUrl}
+        srcSet={originalUrl ? `${imageUrl} 800w, ${originalUrl} 1200w` : undefined}
+        sizes="(max-width: 768px) 100vw, 800px"
         alt="Page illustration"
+        loading="eager"
+        fetchPriority="high"
         className={`w-full h-full object-cover object-top transition-opacity duration-200 ${className} ${
           imageLoaded ? 'opacity-100' : 'opacity-0'
         }`}

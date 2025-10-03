@@ -24,8 +24,8 @@ export const usePublicPageImage = (pageId?: string) => {
       return data as PageImageUrl | null;
     },
     enabled: !!pageId,
-    staleTime: 30 * 60 * 1000, // 30 minutes
-    gcTime: 60 * 60 * 1000, // 1 hour
+    staleTime: 60 * 60 * 1000, // 1 hour - aggressive caching
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
   });
 
   // Preload the image as soon as the URL is available

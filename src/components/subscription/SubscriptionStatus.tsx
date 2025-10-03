@@ -110,19 +110,6 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
               <li>• Early access to new features</li>
             </ul>
           </div>
-
-          {showActions && (
-            <div className="flex flex-col gap-2">
-              <Button variant="outline" onClick={openCustomerPortal}>
-                <Settings className="h-4 w-4 mr-2" />
-                Manage Subscription
-              </Button>
-              <Button variant="outline" size="sm" onClick={checkSubscription}>
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Refresh Status
-              </Button>
-            </div>
-          )}
         </div>
       </CardContent>
     </Card>

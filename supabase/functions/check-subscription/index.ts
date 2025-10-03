@@ -73,8 +73,34 @@ serve(async (req) => {
 
     if (hasActiveSub) {
       const subscription = subscriptions.data[0];
-      subscriptionEnd = new Date(subscription.current_period_end * 1000).toISOString();
+      logStep("Raw subscription data", { 
+        subscriptionId: subscription.id, 
+        currentPeriodEnd: subscription.current_period_end,
+        status: subscription.status 
+      });
+      
+      // Handle null/undefined current_period_end (can happen with 100% off coupons)
+      try {
+        if (subscription.current_period_end && typeof subscription.current_period_end === 'number') {
+          const endDate = new Date(subscription.current_period_end * 1000);
+          if (!isNaN(endDate.getTime())) {
+            subscriptionEnd = endDate.toISOString();
+            logStep("Parsed subscription end date", { subscriptionEnd });
+          } else {
+            logStep("Invalid date from current_period_end", { current_period_end: subscription.current_period_end });
+          }
+        } else {
+          logStep("No current_period_end or invalid type", { current_period_end: subscription.current_period_end });
+        }
+      } catch (dateError) {
+        logStep("Error parsing subscription end date", { 
+          error: dateError instanceof Error ? dateError.message : String(dateError),
+          current_period_end: subscription.current_period_end 
+        });
+      }
+      
       logStep("Active subscription found", { subscriptionId: subscription.id, endDate: subscriptionEnd });
+      
       // Subscription tier is the product ID
       productId = subscription.items.data[0].price.product;
       priceId = subscription.items.data[0].price.id;

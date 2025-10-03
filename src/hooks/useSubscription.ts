@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -34,41 +35,50 @@ export const SUBSCRIPTION_TIERS = {
 export const useSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
-  const [subscription, setSubscription] = useState<SubscriptionStatus>({
-    subscribed: false,
-    loading: false,
+
+  // Use React Query for caching subscription status
+  const { data: subscription, isLoading, refetch } = useQuery<SubscriptionStatus>({
+    queryKey: ['subscription', user?.id],
+    queryFn: async (): Promise<SubscriptionStatus> => {
+      if (!user) {
+        return {
+          subscribed: false,
+          loading: false,
+        };
+      }
+
+      try {
+        const { data, error } = await supabase.functions.invoke('check-subscription');
+
+        if (error) throw error;
+
+        return {
+          subscribed: data.subscribed || false,
+          product_id: data.product_id,
+          price_id: data.price_id,
+          interval: data.interval,
+          subscription_end: data.subscription_end,
+          loading: false,
+        };
+      } catch (error) {
+        console.error('Error checking subscription:', error);
+        return {
+          subscribed: false,
+          loading: false,
+          error: error instanceof Error ? error.message : 'Failed to check subscription',
+        };
+      }
+    },
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes (formerly cacheTime)
+    refetchOnMount: false, // Don't refetch on mount if data is fresh
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 
   const checkSubscription = useCallback(async () => {
-    if (!user) {
-      setSubscription({ subscribed: false, loading: false });
-      return;
-    }
-
-    setSubscription(prev => ({ ...prev, loading: true, error: undefined }));
-
-    try {
-      const { data, error } = await supabase.functions.invoke('check-subscription');
-
-      if (error) throw error;
-
-      setSubscription({
-        subscribed: data.subscribed || false,
-        product_id: data.product_id,
-        price_id: data.price_id,
-        interval: data.interval,
-        subscription_end: data.subscription_end,
-        loading: false,
-      });
-    } catch (error) {
-      console.error('Error checking subscription:', error);
-      setSubscription({
-        subscribed: false,
-        loading: false,
-        error: error instanceof Error ? error.message : 'Failed to check subscription',
-      });
-    }
-  }, [user]);
+    await refetch();
+  }, [refetch]);
 
   const createCheckoutSession = useCallback(async (price_id: string, coupon_code?: string) => {
     if (!user) {
@@ -132,58 +142,46 @@ export const useSubscription = () => {
 
   // Get subscription tier info
   const getSubscriptionTier = useCallback(() => {
-    if (!subscription.subscribed || !subscription.price_id) return null;
+    if (!subscription?.subscribed || !subscription?.price_id) return null;
     
     return Object.values(SUBSCRIPTION_TIERS).find(
       tier => tier.price_id === subscription.price_id
     );
-  }, [subscription.subscribed, subscription.price_id]);
+  }, [subscription]);
 
-  // Check subscription on mount and when user changes
-  useEffect(() => {
-    checkSubscription();
-  }, [checkSubscription]);
-
-  // Auto-refresh subscription every 5 minutes
-  useEffect(() => {
-    if (!user) return;
-
-    const interval = setInterval(() => {
-      checkSubscription();
-    }, 5 * 60 * 1000); // 5 minutes
-
-    return () => clearInterval(interval);
-  }, [user, checkSubscription]);
 
   // Helper methods for checking specific premium features
   const canAccessHistoricalContent = useCallback(() => {
-    return subscription.subscribed && subscription.subscription_end 
+    return subscription?.subscribed && subscription?.subscription_end 
       ? new Date(subscription.subscription_end) > new Date() 
-      : subscription.subscribed;
-  }, [subscription.subscribed, subscription.subscription_end]);
+      : subscription?.subscribed || false;
+  }, [subscription]);
 
   const canDownloadPDF = useCallback(() => {
-    return subscription.subscribed && subscription.subscription_end 
+    return subscription?.subscribed && subscription?.subscription_end 
       ? new Date(subscription.subscription_end) > new Date() 
-      : subscription.subscribed;
-  }, [subscription.subscribed, subscription.subscription_end]);
+      : subscription?.subscribed || false;
+  }, [subscription]);
 
   const canAccessFullLibrary = useCallback(() => {
-    return subscription.subscribed && subscription.subscription_end 
+    return subscription?.subscribed && subscription?.subscription_end 
       ? new Date(subscription.subscription_end) > new Date() 
-      : subscription.subscribed;
-  }, [subscription.subscribed, subscription.subscription_end]);
+      : subscription?.subscribed || false;
+  }, [subscription]);
+
+  const subscriptionData: SubscriptionStatus = subscription || { subscribed: false, loading: false };
 
   return {
-    ...subscription,
+    ...subscriptionData,
+    loading: isLoading,
     checkSubscription,
     createCheckoutSession,
     openCustomerPortal,
     getSubscriptionTier,
-    isSubscribed: subscription.subscribed,
-    hasActiveSubscription: subscription.subscribed && subscription.subscription_end 
-      ? new Date(subscription.subscription_end) > new Date() 
-      : subscription.subscribed,
+    isSubscribed: subscriptionData.subscribed,
+    hasActiveSubscription: subscriptionData.subscribed && subscriptionData.subscription_end 
+      ? new Date(subscriptionData.subscription_end) > new Date() 
+      : subscriptionData.subscribed,
     // Premium feature helpers
     canAccessHistoricalContent,
     canDownloadPDF,

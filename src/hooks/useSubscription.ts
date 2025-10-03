@@ -32,12 +32,38 @@ export const SUBSCRIPTION_TIERS = {
   }
 } as const;
 
+const SUBSCRIPTION_CACHE_KEY = 'subscription-status-v1';
+
 export const useSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
+  // Read cached subscription from localStorage for instant, no-jump UI
+  let initialData: SubscriptionStatus | undefined = undefined;
+  let initialUpdatedAt: number | undefined = undefined;
+  try {
+    const raw = localStorage.getItem(SUBSCRIPTION_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        const { subscribed, product_id, price_id, interval, subscription_end, updatedAt } = parsed as any;
+        initialData = {
+          subscribed: !!subscribed,
+          product_id,
+          price_id,
+          interval,
+          subscription_end,
+          loading: false,
+        };
+        initialUpdatedAt = typeof updatedAt === 'number' ? updatedAt : Date.now();
+      }
+    }
+  } catch (_) {
+    // ignore cache errors
+  }
+
   // Use React Query for caching subscription status
-  const { data: subscription, isLoading, refetch } = useQuery<SubscriptionStatus>({
+  const query = useQuery<SubscriptionStatus>({
     queryKey: ['subscription', user?.id],
     queryFn: async (): Promise<SubscriptionStatus> => {
       if (!user) {
@@ -74,11 +100,26 @@ export const useSubscription = () => {
     gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes (formerly cacheTime)
     refetchOnMount: false, // Don't refetch on mount if data is fresh
     refetchOnWindowFocus: false, // Don't refetch on window focus
+    placeholderData: initialData, // Show cached data instantly while refetching
+    initialData,
+    initialDataUpdatedAt: initialUpdatedAt,
+    onSuccess: (data) => {
+      try {
+        localStorage.setItem(
+          SUBSCRIPTION_CACHE_KEY,
+          JSON.stringify({ ...data, updatedAt: Date.now() })
+        );
+      } catch (_) {
+        // ignore cache errors
+      }
+    },
   });
 
+  const effectiveLoading = query.isLoading && !initialData;
+
   const checkSubscription = useCallback(async () => {
-    await refetch();
-  }, [refetch]);
+    await query.refetch();
+  }, [query]);
 
   const createCheckoutSession = useCallback(async (price_id: string, coupon_code?: string) => {
     if (!user) {
@@ -142,38 +183,42 @@ export const useSubscription = () => {
 
   // Get subscription tier info
   const getSubscriptionTier = useCallback(() => {
-    if (!subscription?.subscribed || !subscription?.price_id) return null;
-    
+    const s = query.data;
+    if (!s?.subscribed || !s?.price_id) return null;
     return Object.values(SUBSCRIPTION_TIERS).find(
-      tier => tier.price_id === subscription.price_id
+      tier => tier.price_id === s.price_id
     );
-  }, [subscription]);
+  }, [query.data]);
 
 
   // Helper methods for checking specific premium features
   const canAccessHistoricalContent = useCallback(() => {
-    return subscription?.subscribed && subscription?.subscription_end 
-      ? new Date(subscription.subscription_end) > new Date() 
-      : subscription?.subscribed || false;
-  }, [subscription]);
+    const s = query.data;
+    return s?.subscribed && s?.subscription_end 
+      ? new Date(s.subscription_end) > new Date() 
+      : s?.subscribed || false;
+  }, [query.data]);
 
   const canDownloadPDF = useCallback(() => {
-    return subscription?.subscribed && subscription?.subscription_end 
-      ? new Date(subscription.subscription_end) > new Date() 
-      : subscription?.subscribed || false;
-  }, [subscription]);
+    const s = query.data;
+    return s?.subscribed && s?.subscription_end 
+      ? new Date(s.subscription_end) > new Date() 
+      : s?.subscribed || false;
+  }, [query.data]);
 
   const canAccessFullLibrary = useCallback(() => {
-    return subscription?.subscribed && subscription?.subscription_end 
-      ? new Date(subscription.subscription_end) > new Date() 
-      : subscription?.subscribed || false;
-  }, [subscription]);
+    const s = query.data;
+    return s?.subscribed && s?.subscription_end 
+      ? new Date(s.subscription_end) > new Date() 
+      : s?.subscribed || false;
+  }, [query.data]);
 
-  const subscriptionData: SubscriptionStatus = subscription || { subscribed: false, loading: false };
+  const subscriptionData: SubscriptionStatus = query.data || { subscribed: false, loading: false };
 
   return {
     ...subscriptionData,
-    loading: isLoading,
+    loading: effectiveLoading,
+    isRefreshing: query.isFetching,
     checkSubscription,
     createCheckoutSession,
     openCustomerPortal,

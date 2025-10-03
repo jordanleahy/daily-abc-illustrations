@@ -103,17 +103,20 @@ export const useSubscription = () => {
     placeholderData: initialData, // Show cached data instantly while refetching
     initialData,
     initialDataUpdatedAt: initialUpdatedAt,
-    onSuccess: (data) => {
-      try {
-        localStorage.setItem(
-          SUBSCRIPTION_CACHE_KEY,
-          JSON.stringify({ ...data, updatedAt: Date.now() })
-        );
-      } catch (_) {
-        // ignore cache errors
-      }
-    },
   });
+
+  // Cache subscription data to localStorage whenever it updates
+  const subscriptionData = query.data;
+  if (subscriptionData && !query.isLoading) {
+    try {
+      localStorage.setItem(
+        SUBSCRIPTION_CACHE_KEY,
+        JSON.stringify({ ...subscriptionData, updatedAt: Date.now() })
+      );
+    } catch (_) {
+      // ignore cache errors
+    }
+  }
 
   const effectiveLoading = query.isLoading && !initialData;
 
@@ -183,7 +186,7 @@ export const useSubscription = () => {
 
   // Get subscription tier info
   const getSubscriptionTier = useCallback(() => {
-    const s = query.data;
+    const s = query.data as SubscriptionStatus | undefined;
     if (!s?.subscribed || !s?.price_id) return null;
     return Object.values(SUBSCRIPTION_TIERS).find(
       tier => tier.price_id === s.price_id
@@ -193,40 +196,40 @@ export const useSubscription = () => {
 
   // Helper methods for checking specific premium features
   const canAccessHistoricalContent = useCallback(() => {
-    const s = query.data;
+    const s = query.data as SubscriptionStatus | undefined;
     return s?.subscribed && s?.subscription_end 
       ? new Date(s.subscription_end) > new Date() 
       : s?.subscribed || false;
   }, [query.data]);
 
   const canDownloadPDF = useCallback(() => {
-    const s = query.data;
+    const s = query.data as SubscriptionStatus | undefined;
     return s?.subscribed && s?.subscription_end 
       ? new Date(s.subscription_end) > new Date() 
       : s?.subscribed || false;
   }, [query.data]);
 
   const canAccessFullLibrary = useCallback(() => {
-    const s = query.data;
+    const s = query.data as SubscriptionStatus | undefined;
     return s?.subscribed && s?.subscription_end 
       ? new Date(s.subscription_end) > new Date() 
       : s?.subscribed || false;
   }, [query.data]);
 
-  const subscriptionData: SubscriptionStatus = query.data || { subscribed: false, loading: false };
+  const finalData: SubscriptionStatus = (query.data as SubscriptionStatus) || { subscribed: false, loading: false };
 
   return {
-    ...subscriptionData,
+    ...finalData,
     loading: effectiveLoading,
     isRefreshing: query.isFetching,
     checkSubscription,
     createCheckoutSession,
     openCustomerPortal,
     getSubscriptionTier,
-    isSubscribed: subscriptionData.subscribed,
-    hasActiveSubscription: subscriptionData.subscribed && subscriptionData.subscription_end 
-      ? new Date(subscriptionData.subscription_end) > new Date() 
-      : subscriptionData.subscribed,
+    isSubscribed: finalData.subscribed,
+    hasActiveSubscription: finalData.subscribed && finalData.subscription_end 
+      ? new Date(finalData.subscription_end) > new Date() 
+      : finalData.subscribed,
     // Premium feature helpers
     canAccessHistoricalContent,
     canDownloadPDF,

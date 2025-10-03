@@ -31,9 +31,9 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
   // Auto-renewal is enabled when cancel_at_period_end is false (or undefined for legacy subscriptions)
   const autoRenewEnabled = !cancel_at_period_end;
 
-  const handleAutoRenewChange = async (checked: boolean) => {
+  const handleAutoRenewChange = async (checked: boolean | "indeterminate") => {
     setIsUpdatingRenewal(true);
-    await updateAutoRenewal(checked);
+    await updateAutoRenewal(checked === true);
     setIsUpdatingRenewal(false);
   };
 

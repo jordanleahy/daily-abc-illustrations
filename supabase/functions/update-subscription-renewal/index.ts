@@ -90,7 +90,9 @@ serve(async (req) => {
     return new Response(JSON.stringify({
       success: true,
       cancel_at_period_end: updatedSubscription.cancel_at_period_end,
-      subscription_end: new Date(updatedSubscription.current_period_end * 1000).toISOString(),
+      subscription_end: updatedSubscription.current_period_end 
+        ? new Date(updatedSubscription.current_period_end * 1000).toISOString() 
+        : null,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,

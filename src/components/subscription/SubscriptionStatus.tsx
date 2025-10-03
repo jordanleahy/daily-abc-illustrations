@@ -78,8 +78,13 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
         <div>
           <CardTitle className="text-lg flex items-center gap-2">
             <Crown className="h-5 w-5 text-yellow-500" />
-            {currentTier?.name || "Premium Plan"}
+            {currentTier?.interval === 'month' ? 'Monthly Plan' : currentTier?.interval === 'year' ? 'Annual Plan' : 'Premium Plan'}
           </CardTitle>
+          {currentTier && currentTier.price && (
+            <p className="text-base font-semibold mt-1">
+              ${(Number(currentTier.price) / 100).toFixed(2)}/{currentTier.interval === 'month' ? 'month' : 'year'}
+            </p>
+          )}
           <CardDescription>
             You have access to all premium features
           </CardDescription>

@@ -77,26 +77,39 @@ serve(async (req) => {
       logStep("Raw subscription data", { 
         subscriptionId: subscription.id, 
         currentPeriodEnd: subscription.current_period_end,
-        status: subscription.status 
+        status: subscription.status,
+        itemsCount: subscription.items?.data?.length 
       });
+      
+      // Get current_period_end - check both subscription root and first item
+      let periodEnd = subscription.current_period_end;
+      
+      // Fallback to subscription item's current_period_end if not found at root level
+      if (!periodEnd && subscription.items?.data?.[0]?.current_period_end) {
+        periodEnd = subscription.items.data[0].current_period_end;
+        logStep("Using current_period_end from subscription item", { periodEnd });
+      }
       
       // Handle null/undefined current_period_end (can happen with 100% off coupons)
       try {
-        if (subscription.current_period_end && typeof subscription.current_period_end === 'number') {
-          const endDate = new Date(subscription.current_period_end * 1000);
+        if (periodEnd && typeof periodEnd === 'number') {
+          const endDate = new Date(periodEnd * 1000);
           if (!isNaN(endDate.getTime())) {
             subscriptionEnd = endDate.toISOString();
             logStep("Parsed subscription end date", { subscriptionEnd });
           } else {
-            logStep("Invalid date from current_period_end", { current_period_end: subscription.current_period_end });
+            logStep("Invalid date from current_period_end", { current_period_end: periodEnd });
           }
         } else {
-          logStep("No current_period_end or invalid type", { current_period_end: subscription.current_period_end });
+          logStep("No current_period_end found", { 
+            rootPeriodEnd: subscription.current_period_end,
+            itemPeriodEnd: subscription.items?.data?.[0]?.current_period_end 
+          });
         }
       } catch (dateError) {
         logStep("Error parsing subscription end date", { 
           error: dateError instanceof Error ? dateError.message : String(dateError),
-          current_period_end: subscription.current_period_end 
+          current_period_end: periodEnd 
         });
       }
       

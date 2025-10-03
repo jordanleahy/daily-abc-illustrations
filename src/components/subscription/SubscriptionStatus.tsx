@@ -110,8 +110,8 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {subscription_end && (
-            <div className="space-y-3">
+          <div className="space-y-3">
+            {subscription_end && (
               <div className="flex items-center gap-2 text-sm">
                 <Calendar className="h-4 w-4 text-muted-foreground" />
                 <span>
@@ -119,32 +119,38 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
                   {format(new Date(subscription_end), "MMMM d, yyyy")}
                 </span>
               </div>
-              
-              <div className="flex items-center space-x-2 p-3 bg-background rounded-lg border">
-                <Checkbox 
-                  id="auto-renew" 
-                  checked={autoRenewEnabled}
-                  onCheckedChange={handleAutoRenewChange}
-                  disabled={isUpdatingRenewal || isRefreshing}
-                />
-                <label
-                  htmlFor="auto-renew"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                >
-                  Renew automatically
-                </label>
-                {isUpdatingRenewal && (
-                  <RefreshCw className="h-4 w-4 animate-spin ml-auto" />
-                )}
-              </div>
-              
-              {!autoRenewEnabled && (
-                <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-200 rounded p-2">
-                  Your subscription will not renew. You'll lose access to premium features after {format(new Date(subscription_end), "MMMM d, yyyy")}.
-                </p>
+            )}
+            
+            <div className="flex items-center space-x-2 p-3 bg-background rounded-lg border">
+              <Checkbox 
+                id="auto-renew" 
+                checked={autoRenewEnabled}
+                onCheckedChange={handleAutoRenewChange}
+                disabled={isUpdatingRenewal || isRefreshing}
+              />
+              <label
+                htmlFor="auto-renew"
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+              >
+                Renew automatically
+              </label>
+              {isUpdatingRenewal && (
+                <RefreshCw className="h-4 w-4 animate-spin ml-auto" />
               )}
             </div>
-          )}
+            
+            {!autoRenewEnabled && subscription_end && (
+              <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-200 rounded p-2">
+                Your subscription will not renew. You'll lose access to premium features after {format(new Date(subscription_end), "MMMM d, yyyy")}.
+              </p>
+            )}
+            
+            {!autoRenewEnabled && !subscription_end && (
+              <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-200 rounded p-2">
+                Your subscription will not renew at the end of the current period.
+              </p>
+            )}
+          </div>
 
           <div className="text-sm text-muted-foreground">
             <p>Premium benefits:</p>

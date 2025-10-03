@@ -10,10 +10,9 @@ export const PricingSection = () => {
 
   const features = [
     "Access to all daily published ABC books",
-    "Download PDF versions", 
-    "Ad-free experience",
-    "Premium support",
-    "Early access to new features"
+    "Download PDF version",
+    "Full library access",
+    "Premium reading experience"
   ];
 
   return (

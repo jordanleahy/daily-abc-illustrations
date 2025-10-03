@@ -104,10 +104,9 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
             <p>Premium benefits:</p>
             <ul className="mt-2 space-y-1 ml-4">
               <li>• Access to all daily published ABC books</li>
-              <li>• Download PDF versions</li>
-              <li>• Ad-free experience</li>
-              <li>• Premium support</li>
-              <li>• Early access to new features</li>
+              <li>• Download PDF version</li>
+              <li>• Full library access</li>
+              <li>• Premium reading experience</li>
             </ul>
           </div>
         </div>

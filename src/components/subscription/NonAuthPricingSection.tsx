@@ -16,12 +16,10 @@ export const NonAuthPricingSection = () => {
   ];
 
   const premiumFeatures = [
-    'Unlimited book creation',
-    'Advanced AI features',
-    'Export to PDF',
-    'Priority support',
-    'Custom illustrations',
-    'Detailed analytics'
+    'Access to all daily published ABC books',
+    'Download PDF version',
+    'Full library access',
+    'Premium reading experience'
   ];
 
   return (

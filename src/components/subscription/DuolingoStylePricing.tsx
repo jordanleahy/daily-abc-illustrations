@@ -16,12 +16,10 @@ export const DuolingoStylePricing = () => {
   ];
 
   const premiumFeatures = [
-    { text: "Unlimited learning streaks", icon: "🔥", benefit: "Never lose momentum!" },
-    { text: "All story collections", icon: "📚", benefit: "200+ premium books" },
-    { text: "Mistake-free learning", icon: "❌", benefit: "No ads interrupting" },
-    { text: "Offline mode", icon: "📱", benefit: "Learn anywhere" },
-    { text: "Progress insights", icon: "📊", benefit: "Track your growth" },
-    { text: "Priority support", icon: "🎯", benefit: "Get help instantly" },
+    'Access to all daily published ABC books',
+    'Download PDF version',
+    'Full library access',
+    'Premium reading experience'
   ];
 
   const testimonials = [
@@ -174,10 +172,7 @@ export const DuolingoStylePricing = () => {
                     <div className="w-6 h-6 bg-duolingo-green rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <CheckCircle className="w-4 h-4 text-white" />
                     </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{feature.icon} {feature.text}</div>
-                      <div className="text-xs text-duolingo-green font-medium">{feature.benefit}</div>
-                    </div>
+                    <span className="text-sm font-medium">{feature}</span>
                   </li>
                 ))}
               </ul>
@@ -250,10 +245,7 @@ export const DuolingoStylePricing = () => {
                     <div className="w-6 h-6 bg-duolingo-purple rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <CheckCircle className="w-4 h-4 text-white" />
                     </div>
-                    <div className="flex-1">
-                      <div className="text-sm font-medium">{feature.icon} {feature.text}</div>
-                      <div className="text-xs text-duolingo-purple font-medium">{feature.benefit}</div>
-                    </div>
+                    <span className="text-sm font-medium">{feature}</span>
                   </li>
                 ))}
               </ul>

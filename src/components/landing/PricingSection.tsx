@@ -29,12 +29,10 @@ export const PricingSection = () => {
   };
 
   const features = [
-    'Daily new ABC book at 7:01 AM ET',
-    'Unlimited access to all books',
-    'Learn to Earn for Kids Gamification',
-    'Track progress and achievements',
-    'Seasonal and relevant themes',
-    'Cancel anytime'
+    'Access to all daily published ABC books',
+    'Download PDF version',
+    'Full library access',
+    'Premium reading experience'
   ];
 
   return (

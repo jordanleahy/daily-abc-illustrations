@@ -57,7 +57,7 @@ export const PricingSection = () => {
               <CardTitle className="text-2xl mb-2">Monthly Plan</CardTitle>
               <div className="mt-4">
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-bold">$9.99</span>
+                  <span className="text-5xl font-bold">$19.99</span>
                   <span className="text-muted-foreground text-lg">/month</span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">

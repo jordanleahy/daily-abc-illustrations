@@ -67,7 +67,7 @@ export const NonAuthPricingSection = () => {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold mb-6">
-              $9.99<span className="text-sm font-normal text-muted-foreground">/month</span>
+              $19.99<span className="text-sm font-normal text-muted-foreground">/month</span>
             </div>
             <ul className="space-y-3 mb-6">
               {premiumFeatures.map((feature, index) => (

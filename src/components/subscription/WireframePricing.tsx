@@ -39,7 +39,7 @@ export const WireframePricing = () => {
     },
     {
       name: "Monthly Plan", 
-      price: "$9.99",
+      price: "$19.99",
       period: "month",
       features: [
         "Access to all daily published ABC books",

@@ -56,7 +56,7 @@ export const WireframePricing = () => {
       name: "Annual Plan",
       price: "$99.99", 
       period: "year",
-      savings: "Save $19.89 (17% off)",
+      savings: "Save $139.89 (58% off)",
       features: [
         "Access to all daily published ABC books",
         "Download PDF version", 

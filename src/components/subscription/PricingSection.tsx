@@ -71,7 +71,7 @@ export const PricingSection = () => {
           {/* Annual Plan */}
           <Card className={`relative ${currentTier?.interval === 'year' ? 'ring-2 ring-primary' : ''}`}>
             <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-600">
-              Save 75%
+              Save 58%
             </Badge>
             {currentTier?.interval === 'year' && (
               <Badge className="absolute -top-3 right-4 bg-primary">
@@ -85,11 +85,11 @@ export const PricingSection = () => {
               <CardTitle className="text-2xl">Standard Annual</CardTitle>
               <CardDescription>Best value for committed learners</CardDescription>
               <div className="text-4xl font-bold mt-4">
-                $29.99
+                $99.99
                 <span className="text-lg font-normal text-muted-foreground">/year</span>
               </div>
               <div className="text-sm text-green-600 font-medium">
-                Save $89.89 compared to monthly
+                Save $139.89 compared to monthly
               </div>
             </CardHeader>
             <CardContent>

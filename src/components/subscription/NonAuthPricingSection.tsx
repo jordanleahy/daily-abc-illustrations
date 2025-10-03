@@ -88,20 +88,20 @@ export const NonAuthPricingSection = () => {
         <Card className="relative border-2 border-primary shadow-lg">
           <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground">
             <Star className="h-3 w-3 mr-1" />
-            Save 75%
+            Save 58%
           </Badge>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               Standard Annual
             </CardTitle>
-            <CardDescription>Best value - save $89.88 per year</CardDescription>
+            <CardDescription>Best value - save $139.89 per year</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold mb-2">
-              $29.99<span className="text-sm font-normal text-muted-foreground">/year</span>
+              $99.99<span className="text-sm font-normal text-muted-foreground">/year</span>
             </div>
             <div className="text-sm text-muted-foreground mb-6">
-              <span className="line-through">$119.88</span> - You save $89.88
+              <span className="line-through">$239.88</span> - You save $139.89
             </div>
             <ul className="space-y-3 mb-6">
               {premiumFeatures.map((feature, index) => (

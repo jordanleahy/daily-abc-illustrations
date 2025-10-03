@@ -4,12 +4,18 @@ import { Check } from "lucide-react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
+import { ActiveSubscriptionView } from "./ActiveSubscriptionView";
 
 export const WireframePricing = () => {
   const { createCheckoutSession, isSubscribed, getSubscriptionTier, loading, openCustomerPortal, hasActiveSubscription } = useSubscription();
   const { user } = useAuth();
   const navigate = useNavigate();
   const currentTier = getSubscriptionTier();
+  
+  // If user has active subscription, show active subscription view
+  if (hasActiveSubscription && currentTier) {
+    return <ActiveSubscriptionView />;
+  }
   
   // For free authenticated users, all plans should be available
   const isCurrentlyFree = Boolean(user && !hasActiveSubscription);

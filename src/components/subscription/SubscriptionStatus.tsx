@@ -79,14 +79,6 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>HD illustrations</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Interactive activities</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                   <span>PDF downloads</span>
                 </li>
                 <li className="flex items-center gap-2 text-sm">

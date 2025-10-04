@@ -40,12 +40,48 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Get the price_id from request body
-    const { price_id } = await req.json();
-    if (!price_id) throw new Error("Price ID is required");
-    logStep("Request data received", { price_id });
+    // Get checkout params
+    const { price_id, product_id, plan_type } = await req.json();
+    logStep("Request data received", { price_id, product_id, plan_type });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
+    
+    // Resolve to an active price ID before creating the session
+    const PRODUCT_MAP: Record<string, string> = {
+      monthly: "prod_T7a3qkxm69uttK",
+      annual: "prod_T7a5vTweAt6UZm",
+    };
+
+    let resolvedPriceId: string | undefined = price_id as string | undefined;
+    let targetProductId: string | undefined = product_id || (plan_type ? PRODUCT_MAP[plan_type] : undefined);
+
+    const resolveActivePrice = async () => {
+      if (resolvedPriceId) {
+        try {
+          const p = await stripe.prices.retrieve(resolvedPriceId);
+          if (!p.active) {
+            if (!targetProductId) targetProductId = String(p.product);
+          } else {
+            return; // already active
+          }
+        } catch (_) {
+          // price retrieval failed; fall back to product below
+        }
+      }
+
+      if (!targetProductId) {
+        throw new Error("No valid price or product provided");
+      }
+
+      const active = await stripe.prices.list({ product: targetProductId, active: true, limit: 1 });
+      if (active.data.length === 0) {
+        throw new Error("No active price found for the selected product");
+      }
+      resolvedPriceId = active.data[0].id;
+      logStep("Resolved active price", { resolvedPriceId, targetProductId });
+    };
+
+    await resolveActivePrice();
     
     // Check if customer exists
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
@@ -65,7 +101,7 @@ serve(async (req) => {
       customer_email: customerId ? undefined : user.email,
       line_items: [
         {
-          price: price_id,
+          price: resolvedPriceId!,
           quantity: 1,
         },
       ],

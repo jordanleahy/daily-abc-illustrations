@@ -24,14 +24,14 @@ export default function AuthConfirm() {
           setStatus("success");
           
           // If planType exists, redirect to Stripe checkout
-          if (planType === 'monthly' || planType === 'annual') {
-            const price_id = planType === 'monthly' 
-              ? 'price_1RBtNc2MKKFuWh0y5PaSjZPj' // standard_monthly
-              : 'price_1RBtOj2MKKFuWh0y12X4xPLv'; // standard_annual
-            
-            const { data, error } = await supabase.functions.invoke('create-checkout', {
-              body: { price_id }
-            });
+            if (planType === 'monthly' || planType === 'annual') {
+              const body = planType === 'monthly'
+                ? { plan_type: 'monthly' }
+                : { plan_type: 'annual' };
+              
+              const { data, error } = await supabase.functions.invoke('create-checkout', {
+                body
+              });
 
             if (error) {
               setStatus("error");
@@ -76,12 +76,12 @@ export default function AuthConfirm() {
           
           // If planType exists, redirect to Stripe checkout
           if (planType === 'monthly' || planType === 'annual') {
-            const price_id = planType === 'monthly' 
-              ? 'price_1RBtNc2MKKFuWh0y5PaSjZPj' // standard_monthly
-              : 'price_1RBtOj2MKKFuWh0y12X4xPLv'; // standard_annual
+            const body = planType === 'monthly' 
+              ? { plan_type: 'monthly' }
+              : { plan_type: 'annual' };
             
             const { data, error } = await supabase.functions.invoke('create-checkout', {
-              body: { price_id }
+              body
             });
 
             if (error) {
@@ -128,12 +128,12 @@ export default function AuthConfirm() {
         
         // If planType exists, redirect to Stripe checkout
         if (planType === 'monthly' || planType === 'annual') {
-          const price_id = planType === 'monthly' 
-            ? 'price_1RBtNc2MKKFuWh0y5PaSjZPj' // standard_monthly
-            : 'price_1RBtOj2MKKFuWh0y12X4xPLv'; // standard_annual
+          const body = planType === 'monthly'
+            ? { plan_type: 'monthly' }
+            : { plan_type: 'annual' };
           
           const { data, error } = await supabase.functions.invoke('create-checkout', {
-            body: { price_id }
+            body
           });
 
           if (error) {

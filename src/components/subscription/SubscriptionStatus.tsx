@@ -135,42 +135,6 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                   <span className="font-medium">Everything in Monthly</span>
                 </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Early access to new books</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Exclusive seasonal content</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Ad-free experience</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Offline downloads</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Family sharing (up to 3 kids)</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Priority support</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Custom book requests</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Historical content archive</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Educator tools & resources</span>
-                </li>
               </ul>
               {showActions && (
                 <Button 

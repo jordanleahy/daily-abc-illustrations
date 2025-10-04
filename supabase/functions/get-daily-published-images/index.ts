@@ -10,6 +10,7 @@ interface PageImage {
   letter: string;
   page_number: number;
   image_url: string;
+  placeholder_base64?: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -61,48 +62,43 @@ Deno.serve(async (req) => {
       targetBookId = dpData.book_id;
     }
 
-    // Fetch all pages for the book
-    const { data: pages, error: pagesError } = await supabase
+    // Fetch pages with images using JOIN for better performance
+    const { data: pagesWithImages, error: fetchError } = await supabase
       .from('pages')
-      .select('id, letter, page_number')
+      .select(`
+        id, 
+        letter, 
+        page_number,
+        page_image_urls!inner(image_url, placeholder_base64)
+      `)
       .eq('book_id', targetBookId)
+      .eq('page_image_urls.is_latest', true)
+      .eq('page_image_urls.generation_status', 'complete')
       .order('page_number', { ascending: true });
 
-    if (pagesError || !pages || pages.length === 0) {
-      console.error('Error fetching pages:', pagesError);
+    if (fetchError) {
+      console.error('Error fetching pages with images:', fetchError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch pages and images' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!pagesWithImages || pagesWithImages.length === 0) {
+      console.log('No pages with complete images found');
       return new Response(
         JSON.stringify({ error: 'No pages found', images: [] }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const pageIds = pages.map(p => p.id);
-
-    // Fetch all latest image URLs in one query
-    const { data: images, error: imagesError } = await supabase
-      .from('page_image_urls')
-      .select('page_id, image_url')
-      .in('page_id', pageIds)
-      .eq('is_latest', true)
-      .eq('generation_status', 'complete');
-
-    if (imagesError) {
-      console.error('Error fetching images:', imagesError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch images' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Map images to pages for easier lookup
-    const imageMap = new Map(images?.map(img => [img.page_id, img.image_url]) || []);
-
     // Build response with page metadata
-    const pageImages: PageImage[] = pages.map(page => ({
+    const pageImages: PageImage[] = pagesWithImages.map(page => ({
       page_id: page.id,
       letter: page.letter,
       page_number: page.page_number,
-      image_url: imageMap.get(page.id) || '',
+      image_url: Array.isArray(page.page_image_urls) ? page.page_image_urls[0]?.image_url || '' : '',
+      placeholder_base64: Array.isArray(page.page_image_urls) ? page.page_image_urls[0]?.placeholder_base64 || null : null,
     }));
 
     // Add aggressive caching headers (1 hour for active content)
@@ -118,8 +114,8 @@ Deno.serve(async (req) => {
       JSON.stringify({
         bookId: targetBookId,
         dailyPublishedId: dailyPublishedId || null,
-        totalPages: pages.length,
-        imagesFound: images?.length || 0,
+        totalPages: pageImages.length,
+        imagesFound: pageImages.length,
         images: pageImages,
         cachedAt: new Date().toISOString(),
       }),

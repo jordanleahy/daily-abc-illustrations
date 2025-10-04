@@ -119,3 +119,9 @@ verify_jwt = true
 
 [functions.get-daily-published-images]
 verify_jwt = false
+
+[functions.create-blank-book]
+verify_jwt = true
+
+[functions.create-themed-book]
+verify_jwt = true

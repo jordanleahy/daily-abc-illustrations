@@ -13,7 +13,8 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCreateBlankBook } from '@/hooks/useCreateBlankBook';
-import { BookOpen, MessageSquare, Zap } from 'lucide-react';
+import { useCreateThemedBook } from '@/hooks/useCreateThemedBook';
+import { BookOpen, MessageSquare, Zap, Sparkles } from 'lucide-react';
 
 interface CreateBookModalProps {
   open: boolean;
@@ -36,7 +37,9 @@ const categories = [
 export function CreateBookModal({ open, onOpenChange }: CreateBookModalProps) {
   const [bookName, setBookName] = useState('');
   const [category, setCategory] = useState('General');
+  const [theme, setTheme] = useState('');
   const createBlankBook = useCreateBlankBook();
+  const createThemedBook = useCreateThemedBook();
   const navigate = useNavigate();
 
   const handleCreateTemplate = async () => {
@@ -59,6 +62,25 @@ export function CreateBookModal({ open, onOpenChange }: CreateBookModalProps) {
     }
   };
 
+  const handleCreateThemed = async () => {
+    if (!theme.trim()) {
+      return;
+    }
+
+    try {
+      const result = await createThemedBook.mutateAsync({
+        theme: theme.trim(),
+      });
+
+      if (result.success && result.bookId) {
+        onOpenChange(false);
+        navigate(`/editor/${result.bookId}`);
+      }
+    } catch (error) {
+      // Error is already handled by the mutation
+    }
+  };
+
   const handleChatWithAI = () => {
     onOpenChange(false);
     navigate('/');
@@ -67,6 +89,7 @@ export function CreateBookModal({ open, onOpenChange }: CreateBookModalProps) {
   const resetForm = () => {
     setBookName('');
     setCategory('General');
+    setTheme('');
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -86,7 +109,7 @@ export function CreateBookModal({ open, onOpenChange }: CreateBookModalProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-4 md:grid-cols-3">
           <Card className="cursor-pointer hover:shadow-md transition-shadow">
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -133,6 +156,43 @@ export function CreateBookModal({ open, onOpenChange }: CreateBookModalProps) {
                 className="w-full"
               >
                 {createBlankBook.isPending ? 'Creating...' : 'Create Template'}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-accent/10 rounded-full">
+                  <Sparkles className="w-5 h-5 text-accent-foreground" />
+                </div>
+                <CardTitle className="text-lg">AI Themed Book</CardTitle>
+              </div>
+              <CardDescription>
+                Describe a theme and let AI create a complete book with content for all 26 letters
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="theme">Book Theme</Label>
+                <Input
+                  id="theme"
+                  placeholder="e.g., Kitchen Syllables - things you find in the kitchen"
+                  value={theme}
+                  onChange={(e) => setTheme(e.target.value)}
+                  maxLength={200}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Describe what you want the book to be about
+                </p>
+              </div>
+
+              <Button 
+                onClick={handleCreateThemed}
+                disabled={!theme.trim() || createThemedBook.isPending}
+                className="w-full"
+              >
+                {createThemedBook.isPending ? 'Creating...' : 'Create with AI'}
               </Button>
             </CardContent>
           </Card>

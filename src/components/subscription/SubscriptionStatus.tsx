@@ -87,19 +87,11 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Printable worksheets</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                   <span>PDF downloads</span>
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                   <span>Progress tracking</span>
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
-                  <span>Mobile app access</span>
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <Check className="h-4 w-4 text-green-600 flex-shrink-0" />

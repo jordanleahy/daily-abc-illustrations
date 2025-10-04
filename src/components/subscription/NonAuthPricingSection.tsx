@@ -69,12 +69,6 @@ export const NonAuthPricingSection = () => {
                 </li>
               ))}
             </ul>
-            <Button 
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white"
-              onClick={handleSignup}
-            >
-              Sign Up Free
-            </Button>
           </CardContent>
         </Card>
 

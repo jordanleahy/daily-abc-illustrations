@@ -105,9 +105,9 @@ const Auth = () => {
           // Let useEffect handle navigation and checkout
         }
       } else {
-        // Preserve priceId and planType in email verification redirect
-        const redirectUrl = priceId && planType 
-          ? `${window.location.origin}/auth/confirm?priceId=${priceId}&planType=${planType}`
+        // Preserve planType in email verification redirect
+        const redirectUrl = planType 
+          ? `${window.location.origin}/auth/confirm?planType=${planType}`
           : `${window.location.origin}/auth/confirm`;
         
         const { error } = await supabase.auth.signUp({

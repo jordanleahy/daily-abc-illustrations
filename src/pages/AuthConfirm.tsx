@@ -16,20 +16,39 @@ export default function AuthConfirm() {
   useEffect(() => {
     const confirmEmail = async () => {
       try {
-        const priceId = searchParams.get("priceId");
-        const planType = searchParams.get("planType");
+        const planType = searchParams.get("planType") as 'monthly' | 'annual' | null;
 
         // Check for existing session (Supabase auto-detects hash tokens)
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           setStatus("success");
-          setTimeout(() => {
-            if (priceId && planType) {
-              navigate(`/auth?priceId=${priceId}&planType=${planType}`, { replace: true });
-            } else {
-              navigate("/library", { replace: true });
+          
+          // If planType exists, redirect to Stripe checkout
+          if (planType === 'monthly' || planType === 'annual') {
+            const price_id = planType === 'monthly' 
+              ? 'price_1RBtNc2MKKFuWh0y5PaSjZPj' // standard_monthly
+              : 'price_1RBtOj2MKKFuWh0y12X4xPLv'; // standard_annual
+            
+            const { data, error } = await supabase.functions.invoke('create-checkout', {
+              body: { price_id }
+            });
+
+            if (error) {
+              setStatus("error");
+              setErrorMessage("Failed to create checkout session");
+              return;
             }
-          }, 2000);
+
+            if (data?.url) {
+              window.location.href = data.url;
+              return;
+            }
+          } else {
+            // No plan selected, go to library
+            setTimeout(() => {
+              navigate("/library", { replace: true });
+            }, 2000);
+          }
           return;
         }
 
@@ -54,13 +73,33 @@ export default function AuthConfirm() {
           window.history.replaceState(null, '', window.location.pathname + window.location.search);
 
           setStatus("success");
-          setTimeout(() => {
-            if (priceId && planType) {
-              navigate(`/auth?priceId=${priceId}&planType=${planType}`, { replace: true });
-            } else {
-              navigate("/library", { replace: true });
+          
+          // If planType exists, redirect to Stripe checkout
+          if (planType === 'monthly' || planType === 'annual') {
+            const price_id = planType === 'monthly' 
+              ? 'price_1RBtNc2MKKFuWh0y5PaSjZPj' // standard_monthly
+              : 'price_1RBtOj2MKKFuWh0y12X4xPLv'; // standard_annual
+            
+            const { data, error } = await supabase.functions.invoke('create-checkout', {
+              body: { price_id }
+            });
+
+            if (error) {
+              setStatus("error");
+              setErrorMessage("Failed to create checkout session");
+              return;
             }
-          }, 2000);
+
+            if (data?.url) {
+              window.location.href = data.url;
+              return;
+            }
+          } else {
+            // No plan selected, go to library
+            setTimeout(() => {
+              navigate("/library", { replace: true });
+            }, 2000);
+          }
           return;
         }
 
@@ -86,13 +125,33 @@ export default function AuthConfirm() {
         }
 
         setStatus("success");
-        setTimeout(() => {
-          if (priceId && planType) {
-            navigate(`/auth?priceId=${priceId}&planType=${planType}`, { replace: true });
-          } else {
-            navigate("/library", { replace: true });
+        
+        // If planType exists, redirect to Stripe checkout
+        if (planType === 'monthly' || planType === 'annual') {
+          const price_id = planType === 'monthly' 
+            ? 'price_1RBtNc2MKKFuWh0y5PaSjZPj' // standard_monthly
+            : 'price_1RBtOj2MKKFuWh0y12X4xPLv'; // standard_annual
+          
+          const { data, error } = await supabase.functions.invoke('create-checkout', {
+            body: { price_id }
+          });
+
+          if (error) {
+            setStatus("error");
+            setErrorMessage("Failed to create checkout session");
+            return;
           }
-        }, 2000);
+
+          if (data?.url) {
+            window.location.href = data.url;
+            return;
+          }
+        } else {
+          // No plan selected, go to library
+          setTimeout(() => {
+            navigate("/library", { replace: true });
+          }, 2000);
+        }
       } catch (error) {
         setStatus("error");
         setErrorMessage("An unexpected error occurred");
@@ -110,7 +169,9 @@ export default function AuthConfirm() {
             <CardTitle className="text-center">Email Confirmation</CardTitle>
             <CardDescription className="text-center">
               {status === "loading" && "Confirming your email..."}
-              {status === "success" && "Email confirmed successfully!"}
+              {status === "success" && searchParams.get("planType") 
+                ? "Email confirmed! Redirecting you to checkout..."
+                : "Email confirmed successfully!"}
               {status === "error" && "Confirmation failed"}
             </CardDescription>
           </CardHeader>

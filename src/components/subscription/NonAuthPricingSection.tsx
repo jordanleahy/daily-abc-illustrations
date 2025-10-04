@@ -7,8 +7,8 @@ export const NonAuthPricingSection = () => {
   const navigate = useNavigate();
 
   const handleUpgrade = (planType: 'monthly' | 'annual') => {
-    // Navigate to auth page for checkout
-    navigate(`/auth?mode=signup&plan=${planType}`);
+    // Navigate to auth page for checkout with planType parameter
+    navigate(`/auth?mode=signup&planType=${planType}`);
   };
 
   const handleSignup = () => {

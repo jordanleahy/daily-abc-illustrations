@@ -59,30 +59,51 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
         <div className="grid md:grid-cols-2 gap-6">
           {/* Monthly Plan */}
           <Card className="border-2 hover:border-primary/50 transition-colors">
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="text-xl">Monthly Plan</CardTitle>
               <div className="mt-2">
                 <span className="text-3xl font-bold">$19.99</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
+              <div className="flex gap-3 mt-3 text-xs text-muted-foreground">
+                <span>~30 books/month</span>
+                <span>•</span>
+                <span>$0.67/book</span>
+              </div>
             </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                  <span>Access to all daily published ABC books</span>
+            <CardContent className="pt-0">
+              <ul className="space-y-2 mb-4">
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Unlimited daily ABC books</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                  <span>Download PDF version</span>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>HD illustrations</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Interactive activities</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Printable worksheets</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>PDF downloads</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Progress tracking</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Mobile app access</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                   <span>Full library access</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                  <span>Premium reading experience</span>
                 </li>
               </ul>
               {showActions && (
@@ -98,41 +119,65 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
 
           {/* Annual Plan */}
           <Card className="border-2 border-primary relative">
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-              <Badge className="bg-green-600">Save $139.89 (58% off)</Badge>
-            </div>
-            <CardHeader>
+            <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
+              Most Popular
+            </Badge>
+            <CardHeader className="pb-3">
               <CardTitle className="text-xl">Annual Plan</CardTitle>
               <div className="mt-2">
                 <span className="text-3xl font-bold">$99.99</span>
                 <span className="text-muted-foreground">/year</span>
+                <Badge className="ml-2 bg-green-600">Save $139.89 (58% off)</Badge>
+              </div>
+              <div className="flex gap-3 mt-3 text-xs text-muted-foreground">
+                <span>~365 books/year</span>
+                <span>•</span>
+                <span>$0.27/book</span>
+                <span>•</span>
+                <span className="text-green-600 font-medium">Save 60%</span>
               </div>
             </CardHeader>
-            <CardContent>
-              <ul className="space-y-3 mb-6">
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                  <span>Access to all daily published ABC books</span>
+            <CardContent className="pt-0">
+              <ul className="space-y-2 mb-4">
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span className="font-medium">Everything in Monthly</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                  <span>Download PDF version</span>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Early access to new books</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                  <span>Full library access</span>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Exclusive seasonal content</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                  <span>Premium reading experience</span>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Ad-free experience</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Offline downloads</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Family sharing (up to 3 kids)</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
                   <span>Priority support</span>
                 </li>
-                <li className="flex items-start gap-2">
-                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
-                  <span>Save over 58% vs monthly</span>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Custom book requests</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Historical content archive</span>
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <Check className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <span>Educator tools & resources</span>
                 </li>
               </ul>
               {showActions && (

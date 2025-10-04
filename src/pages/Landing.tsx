@@ -5,7 +5,6 @@ import { SITE_CONFIG, getSiteTitle } from '@/config/site';
 import { 
   LandingHero, 
   PopularBooks, 
-  RewardsFeature, 
   PricingSection,
   LibrarySection,
   SignupSection,
@@ -44,7 +43,6 @@ const Landing = () => {
         
         <LandingHero />
         <PopularBooks />
-        <RewardsFeature />
         <PricingSection />
         <LibrarySection />
         <SignupSection />

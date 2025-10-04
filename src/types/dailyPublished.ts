@@ -27,6 +27,7 @@ export interface DailyPublishedWithBook extends DailyPublished {
     book_description?: string;
     user_id: string;
   };
+  og_image_url?: string | null;
 }
 
 export interface CreateDailyPublishedRequest {

@@ -1,7 +1,7 @@
 import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
-import { useSeoMetadata } from '@/hooks/useSeoMetadata';
+import { useLibraryImagePreloader } from '@/hooks/useLibraryImagePreloader';
 import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -19,6 +19,9 @@ export default memo(function Library() {
     isLoading,
     error
   } = useLibraryBooks();
+  
+  // Preload book images for instant display
+  useLibraryImagePreloader(libraryItems);
   
 
   if (isLoading) {
@@ -95,11 +98,6 @@ interface LibraryBookCardProps {
 
 const LibraryBookCard = memo(function LibraryBookCard({ item }: LibraryBookCardProps) {
   const navigate = useNavigate();
-  
-  const {
-    data: seoMetadata
-  } = useSeoMetadata(item.id);
-
   const isTeacher = useIsTeacher();
   const { isAuthenticated } = useAuthContext();
   const { hasActiveSubscription, createCheckoutSession } = useSubscription();
@@ -126,13 +124,13 @@ const LibraryBookCard = memo(function LibraryBookCard({ item }: LibraryBookCardP
     >
       <CardHeader>
         <CardTitle className="text-xl line-clamp-2">
-          {seoMetadata?.seo_title || item.title}
+          {item.title}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {(seoMetadata?.seo_description || item.description) && (
+        {item.description && (
           <CardDescription className="line-clamp-3">
-            {seoMetadata?.seo_description || item.description}
+            {item.description}
           </CardDescription>
         )}
         
@@ -148,9 +146,9 @@ const LibraryBookCard = memo(function LibraryBookCard({ item }: LibraryBookCardP
         </div>
         
         <div className="aspect-[1200/630] bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-          {seoMetadata?.og_image_url ? (
+          {item.og_image_url ? (
             <img 
-              src={seoMetadata.og_image_url} 
+              src={item.og_image_url} 
               alt={`Preview of ${item.title}`}
               className="w-full h-full object-cover object-center"
               loading="lazy"

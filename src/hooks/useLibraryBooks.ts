@@ -10,7 +10,8 @@ export const useLibraryBooks = () => {
   return useQuery({
     queryKey: ['library-books'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // Fetch daily_published with books
+      const { data: dailyPublishedData, error: dpError } = await supabase
         .from('daily_published')
         .select(`
           *,
@@ -20,16 +21,39 @@ export const useLibraryBooks = () => {
             user_id
           )
         `)
-        .neq('status', 'draft') // Filter out draft entries
-        .order('queue_order', { ascending: true }) // Order by simple queue position
-        .order('created_at', { ascending: true }); // Secondary sort by creation time
+        .neq('status', 'draft')
+        .order('queue_order', { ascending: true })
+        .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching library books:', error);
-        throw error;
+      if (dpError) {
+        console.error('Error fetching library books:', dpError);
+        throw dpError;
       }
 
-      return (data as DailyPublishedWithBook[]) || [];
+      // Fetch latest SEO metadata for all daily_published items
+      const { data: seoData, error: seoError } = await supabase
+        .from('seo_metadata')
+        .select('daily_published_id, og_image_url')
+        .eq('is_latest', true)
+        .eq('is_active', true)
+        .eq('optimization_status', 'complete');
+
+      if (seoError) {
+        console.error('Error fetching SEO metadata:', seoError);
+      }
+
+      // Map SEO data to daily_published items
+      const seoMap = new Map(
+        seoData?.map(seo => [seo.daily_published_id, seo.og_image_url]) || []
+      );
+
+      const enrichedData = dailyPublishedData?.map(item => ({
+        ...item,
+        og_image_url: seoMap.get(item.id) || null
+      })) || [];
+
+      return enrichedData as DailyPublishedWithBook[];
+
     },
     staleTime: 30 * 1000, // 30 seconds - more frequent updates for library
     gcTime: 60 * 1000, // 1 minute

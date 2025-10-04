@@ -393,6 +393,117 @@ export type Database = {
           },
         ]
       }
+      kid_purchases: {
+        Row: {
+          coins_spent: number
+          created_at: string
+          fulfilled_at: string | null
+          id: string
+          kid_profile_id: string
+          notes: string | null
+          parent_user_id: string
+          product_id: string
+          purchase_status: string
+          purchased_at: string
+          updated_at: string
+        }
+        Insert: {
+          coins_spent: number
+          created_at?: string
+          fulfilled_at?: string | null
+          id?: string
+          kid_profile_id: string
+          notes?: string | null
+          parent_user_id: string
+          product_id: string
+          purchase_status?: string
+          purchased_at?: string
+          updated_at?: string
+        }
+        Update: {
+          coins_spent?: number
+          created_at?: string
+          fulfilled_at?: string | null
+          id?: string
+          kid_profile_id?: string
+          notes?: string | null
+          parent_user_id?: string
+          product_id?: string
+          purchase_status?: string
+          purchased_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kid_purchases_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kid_purchases_parent_user_id_fkey"
+            columns: ["parent_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "kid_purchases_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "kid_rewards_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      kid_rewards_products: {
+        Row: {
+          coin_price: number
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          parent_user_id: string
+          product_image_url: string | null
+          quantity_available: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          coin_price: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          parent_user_id: string
+          product_image_url?: string | null
+          quantity_available?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          coin_price?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          parent_user_id?: string
+          product_image_url?: string | null
+          quantity_available?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "kid_rewards_products_parent_user_id_fkey"
+            columns: ["parent_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_image_urls: {
         Row: {
           book_id: string

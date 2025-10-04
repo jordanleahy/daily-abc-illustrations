@@ -6,14 +6,32 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Coins, BookOpen, Star } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Coins, BookOpen, Star, ShoppingBag, Package } from 'lucide-react';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { CoinCounter } from '@/components/ui/coin-counter';
+import { ProductCard } from '@/components/rewards/ProductCard';
+import { PurchaseConfirmDialog } from '@/components/rewards/PurchaseConfirmDialog';
+import { useRewardsProducts } from '@/hooks/useRewardsProducts';
+import { usePurchaseReward } from '@/hooks/usePurchaseReward';
+import { useKidPurchases } from '@/hooks/useKidPurchases';
+import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
+import type { RewardsProduct } from '@/types/rewardsProduct';
 
 export default function Rewards() {
   const { user, loading: authLoading } = useAuth();
   const { data: kidProfiles, isLoading } = useKidProfiles();
   const [selectedKidId, setSelectedKidId] = useState<string>('');
+  const [purchaseProduct, setPurchaseProduct] = useState<RewardsProduct | null>(null);
+  
+  const { data: products } = useRewardsProducts();
+  const { data: purchases } = useKidPurchases(selectedKidId || kidProfiles?.[0]?.id);
+  const purchaseReward = usePurchaseReward();
+
+  const activeProducts = products?.filter((p) => p.is_active && (p.quantity_available === null || p.quantity_available > 0)) || [];
+  const kidPurchases = purchases?.filter((p) => p.kid_profile_id === (selectedKidId || kidProfiles?.[0]?.id)) || [];
 
   // Redirect if not authenticated
   if (authLoading) {
@@ -60,6 +78,26 @@ export default function Rewards() {
   if (!currentKid && !selectedKidId && kidProfiles.length > 0) {
     setSelectedKidId(kidProfiles[0].id);
   }
+
+  const handleBuyProduct = (product: RewardsProduct) => {
+    setPurchaseProduct(product);
+  };
+
+  const handleConfirmPurchase = () => {
+    if (!purchaseProduct || !currentKid) return;
+
+    purchaseReward.mutate(
+      {
+        kidProfileId: currentKid.id,
+        productId: purchaseProduct.id,
+      },
+      {
+        onSuccess: () => {
+          setPurchaseProduct(null);
+        },
+      }
+    );
+  };
 
   return (
     <StandardPageLayout>
@@ -166,8 +204,109 @@ export default function Rewards() {
                 </div>
               </CardContent>
             </Card>
+
+            {/* Rewards Store */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingBag className="h-5 w-5 text-primary" />
+                    Rewards Store
+                  </CardTitle>
+                  {user && (
+                    <Button variant="outline" size="sm" asChild>
+                      <Link to="/rewards/manage">
+                        <Package className="h-4 w-4 mr-2" />
+                        Manage Store
+                      </Link>
+                    </Button>
+                  )}
+                </div>
+              </CardHeader>
+              <CardContent>
+                {activeProducts.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Store Coming Soon!</h3>
+                    <p className="text-muted-foreground mb-4">
+                      Your parents will add rewards you can purchase with your coins.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {activeProducts.map((product) => {
+                      const canAfford = (currentKid.earned_coins || 0) >= product.coin_price;
+                      return (
+                        <ProductCard
+                          key={product.id}
+                          product={product}
+                          mode="kid"
+                          canAfford={canAfford}
+                          onBuy={() => handleBuyProduct(product)}
+                          isPurchasing={purchaseReward.isPending}
+                        />
+                      );
+                    })}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* My Purchases */}
+            {kidPurchases.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5 text-primary" />
+                    My Purchases
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {kidPurchases.map((purchase) => (
+                      <div
+                        key={purchase.id}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
+                        <div className="flex items-center gap-3 flex-1">
+                          {purchase.kid_rewards_products?.product_image_url && (
+                            <img
+                              src={purchase.kid_rewards_products.product_image_url}
+                              alt={purchase.kid_rewards_products.title}
+                              className="w-12 h-12 object-cover rounded"
+                            />
+                          )}
+                          <div className="flex-1">
+                            <p className="font-medium">
+                              {purchase.kid_rewards_products?.title}
+                            </p>
+                            <p className="text-sm text-muted-foreground">
+                              {format(new Date(purchase.purchased_at), 'MMM d, yyyy')}
+                            </p>
+                          </div>
+                        </div>
+                        {purchase.purchase_status === 'pending' && (
+                          <Badge variant="secondary">Pending</Badge>
+                        )}
+                        {purchase.purchase_status === 'fulfilled' && (
+                          <Badge variant="default" className="bg-green-500">Fulfilled!</Badge>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
+
+        <PurchaseConfirmDialog
+          open={!!purchaseProduct}
+          onOpenChange={(open) => !open && setPurchaseProduct(null)}
+          product={purchaseProduct}
+          currentCoins={currentKid?.earned_coins || 0}
+          onConfirm={handleConfirmPurchase}
+        />
       </div>
     </StandardPageLayout>
   );

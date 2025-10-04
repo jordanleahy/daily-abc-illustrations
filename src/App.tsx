@@ -18,6 +18,7 @@ import Library from "./pages/Library";
 import LibraryBookView from "./pages/LibraryBookView";
 import LibraryDetail from "./pages/LibraryDetail";
 import Rewards from "./pages/Rewards";
+import RewardsManage from "./pages/RewardsManage";
 import DailyPublished from "./pages/DailyPublished";
 import DailyPublishedSchedule from "./pages/DailyPublishedSchedule";
 import Schedule from "./pages/Schedule";
@@ -70,6 +71,7 @@ const App = () => (
                 <Route path="/library/:id" element={<LibraryBookView />} />
                 <Route path="/library/:id/detail" element={<LibraryDetail />} />
                 <Route path="/rewards" element={<Rewards />} />
+                <Route path="/rewards/manage" element={<RewardsManage />} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />
                <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
                <Route path="/schedule" element={<Schedule />} />

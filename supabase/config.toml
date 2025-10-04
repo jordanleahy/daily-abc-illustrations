@@ -125,3 +125,6 @@ verify_jwt = true
 
 [functions.create-themed-book]
 verify_jwt = true
+
+[functions.purchase-reward]
+verify_jwt = true

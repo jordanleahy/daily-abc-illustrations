@@ -1,152 +1,139 @@
-import { Check, Star } from 'lucide-react';
+import { Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
 
 export const NonAuthPricingSection = () => {
+  const navigate = useNavigate();
+
   const handleUpgrade = (planType: 'monthly' | 'annual') => {
-    // Placeholder for guest checkout functionality
-    console.log(`Upgrade to ${planType} plan`);
+    // Navigate to auth page for checkout
+    navigate(`/auth?mode=signup&plan=${planType}`);
+  };
+
+  const handleSignup = () => {
+    navigate('/auth?mode=signup');
   };
 
   const freeFeatures = [
-    'View daily published content',
-    'Limited access to features',
-    'Basic AI interactions'
+    'View today\'s ABC book',
+    'Limited daily access',
+    'Basic reading experience'
   ];
 
-  const premiumFeatures = [
+  const monthlyFeatures = [
     'Access to all daily published ABC books',
     'Download PDF version',
     'Full library access',
     'Premium reading experience'
   ];
 
+  const annualFeatures = [
+    'Access to all daily published ABC books',
+    'Download PDF version',
+    'Full library access',
+    'Premium reading experience',
+    'Early access to new books',
+    'Educational activity guides'
+  ];
+
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 py-12">
-      {/* Current Plan Status */}
-      <div className="text-center mb-12">
-        <h1 className="text-4xl font-bold text-foreground mb-4">
+    <div className="w-full max-w-7xl mx-auto px-4 py-16">
+      {/* Header */}
+      <div className="text-center mb-16">
+        <h1 className="text-5xl font-bold text-foreground mb-4">
           Choose Your Plan
         </h1>
-        <p className="text-lg text-muted-foreground mb-8">
-          Start with our free plan or upgrade for premium features
+        <p className="text-xl text-muted-foreground">
+          Select the plan that works best for you
         </p>
-        
-        {/* Free Plan Card */}
-        <Card className="max-w-md mx-auto mb-8 border-2 border-muted">
-          <CardHeader>
-            <CardTitle className="text-xl">Free Plan</CardTitle>
-            <CardDescription>Your current plan</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-4">$0<span className="text-sm font-normal text-muted-foreground">/month</span></div>
-            <ul className="space-y-2 text-sm">
-              {freeFeatures.map((feature, index) => (
-                <li key={index} className="flex items-center gap-2">
-                  <Check className="h-4 w-4 text-success" />
-                  <span>{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
       </div>
 
-      {/* Premium Plans */}
-      <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-        {/* Monthly Plan */}
-        <Card className="relative border-2 hover:border-primary/50 transition-colors">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Standard Monthly
-            </CardTitle>
-            <CardDescription>Perfect for getting started</CardDescription>
+      {/* Three Column Pricing Cards */}
+      <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        {/* Free Plan */}
+        <Card className="border">
+          <CardHeader className="text-center pb-8">
+            <CardTitle className="text-2xl mb-4">Free</CardTitle>
+            <div className="text-5xl font-bold mb-2">$0</div>
+            <div className="text-muted-foreground">forever</div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-6">
-              $19.99<span className="text-sm font-normal text-muted-foreground">/month</span>
-            </div>
-            <ul className="space-y-3 mb-6">
-              {premiumFeatures.map((feature, index) => (
-                <li key={index} className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success flex-shrink-0" />
-                  <span>{feature}</span>
+          <CardContent className="space-y-6">
+            <ul className="space-y-4">
+              {freeFeatures.map((feature, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-sm">{feature}</span>
                 </li>
               ))}
             </ul>
             <Button 
-              className="w-full" 
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white"
+              onClick={handleSignup}
+            >
+              Sign Up Free
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Monthly Plan */}
+        <Card className="border">
+          <CardHeader className="text-center pb-8">
+            <CardTitle className="text-2xl mb-4">Monthly</CardTitle>
+            <div className="text-5xl font-bold mb-2">$19.99</div>
+            <div className="text-muted-foreground">per month</div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <ul className="space-y-4">
+              {monthlyFeatures.map((feature, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-sm">{feature}</span>
+                </li>
+              ))}
+            </ul>
+            <Button 
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white"
               onClick={() => handleUpgrade('monthly')}
             >
-              Upgrade to Premium
+              Select Monthly
             </Button>
           </CardContent>
         </Card>
 
         {/* Annual Plan */}
-        <Card className="relative border-2 border-primary shadow-lg">
-          <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary text-primary-foreground">
-            <Star className="h-3 w-3 mr-1" />
-            Save 58%
-          </Badge>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Standard Annual
-            </CardTitle>
-            <CardDescription>Best value - save $139.89 per year</CardDescription>
+        <Card className="border">
+          <CardHeader className="text-center pb-8">
+            <CardTitle className="text-2xl mb-4">Annual</CardTitle>
+            <div className="text-5xl font-bold mb-2">$99.99</div>
+            <div className="text-muted-foreground mb-1">per year</div>
+            <div className="text-green-600 font-semibold text-sm">
+              Save $139.89 (58% off)
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold mb-2">
-              $99.99<span className="text-sm font-normal text-muted-foreground">/year</span>
-            </div>
-            <div className="text-sm text-muted-foreground mb-6">
-              <span className="line-through">$239.88</span> - You save $139.89
-            </div>
-            <ul className="space-y-3 mb-6">
-              {premiumFeatures.map((feature, index) => (
-                <li key={index} className="flex items-center gap-2 text-sm">
-                  <Check className="h-4 w-4 text-success flex-shrink-0" />
-                  <span>{feature}</span>
+          <CardContent className="space-y-6">
+            <ul className="space-y-4">
+              {annualFeatures.map((feature, index) => (
+                <li key={index} className="flex items-start gap-3">
+                  <div className="w-5 h-5 bg-green-500 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-white" />
+                  </div>
+                  <span className="text-sm">{feature}</span>
                 </li>
               ))}
             </ul>
             <Button 
-              className="w-full" 
+              className="w-full bg-slate-900 hover:bg-slate-800 text-white"
               onClick={() => handleUpgrade('annual')}
             >
-              Upgrade to Premium
+              Select Annual
             </Button>
           </CardContent>
         </Card>
-      </div>
-
-      {/* Benefits Section */}
-      <div className="text-center mt-12">
-        <h3 className="text-2xl font-semibold mb-4">Why Upgrade to Premium?</h3>
-        <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
-          <div className="text-center">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Star className="h-6 w-6 text-primary" />
-            </div>
-            <h4 className="font-semibold mb-2">Unlimited Creation</h4>
-            <p className="text-sm text-muted-foreground">Create as many ABC books as you want with no restrictions</p>
-          </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Check className="h-6 w-6 text-success" />
-            </div>
-            <h4 className="font-semibold mb-2">Advanced Features</h4>
-            <p className="text-sm text-muted-foreground">Access powerful AI tools and export capabilities</p>
-          </div>
-          <div className="text-center">
-            <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center mx-auto mb-4">
-              <Check className="h-6 w-6 text-success" />
-            </div>
-            <h4 className="font-semibold mb-2">Priority Support</h4>
-            <p className="text-sm text-muted-foreground">Get help when you need it with dedicated support</p>
-          </div>
-        </div>
       </div>
     </div>
   );

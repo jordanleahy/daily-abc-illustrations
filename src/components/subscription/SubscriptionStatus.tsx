@@ -3,8 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Crown, Calendar, CreditCard, Settings, RefreshCw } from "lucide-react";
-import { useSubscription } from "@/hooks/useSubscription";
+import { Crown, Calendar, Check, RefreshCw } from "lucide-react";
+import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 import { format } from "date-fns";
 
 interface SubscriptionStatusProps {
@@ -18,6 +18,7 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
     cancel_at_period_end,
     loading, 
     checkSubscription, 
+    createCheckoutSession,
     openCustomerPortal, 
     getSubscriptionTier,
     hasActiveSubscription,
@@ -49,41 +50,110 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
   }
 
   if (!isSubscribed) {
+    const handleSelectPlan = async (priceId: string) => {
+      await createCheckoutSession(priceId);
+    };
+
     return (
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-lg">Free Plan</CardTitle>
-            <CardDescription>
-              Upgrade to unlock all features
-            </CardDescription>
-          </div>
-          <Badge variant="secondary">Free</Badge>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="text-sm text-muted-foreground">
-              <p>Current benefits:</p>
-              <ul className="mt-2 space-y-1 ml-4">
-                <li>• View daily published content</li>
-                <li>• Limited access to features</li>
-              </ul>
-            </div>
-            {showActions && (
-              <div className="flex flex-col gap-2">
-                <Button onClick={() => window.location.href = '/subscription'}>
-                  <Crown className="h-4 w-4 mr-2" />
-                  Upgrade to Premium
-                </Button>
-                <Button variant="outline" size="sm" onClick={checkSubscription}>
-                  <RefreshCw className="h-4 w-4 mr-2" />
-                  Refresh Status
-                </Button>
+      <div className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Monthly Plan */}
+          <Card className="border-2 hover:border-primary/50 transition-colors">
+            <CardHeader>
+              <CardTitle className="text-xl">Monthly Plan</CardTitle>
+              <div className="mt-2">
+                <span className="text-3xl font-bold">$19.99</span>
+                <span className="text-muted-foreground">/month</span>
               </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <span>Access to all daily published ABC books</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <span>Download PDF version</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <span>Full library access</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <span>Premium reading experience</span>
+                </li>
+              </ul>
+              {showActions && (
+                <Button 
+                  className="w-full" 
+                  onClick={() => handleSelectPlan(SUBSCRIPTION_TIERS.standard_monthly.price_id)}
+                >
+                  Select Monthly
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Annual Plan */}
+          <Card className="border-2 border-primary relative">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+              <Badge className="bg-green-600">Save $139.89 (58% off)</Badge>
+            </div>
+            <CardHeader>
+              <CardTitle className="text-xl">Annual Plan</CardTitle>
+              <div className="mt-2">
+                <span className="text-3xl font-bold">$99.99</span>
+                <span className="text-muted-foreground">/year</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3 mb-6">
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <span>Access to all daily published ABC books</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <span>Download PDF version</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <span>Full library access</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <span>Premium reading experience</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <span>Priority support</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                  <span>Save over 58% vs monthly</span>
+                </li>
+              </ul>
+              {showActions && (
+                <Button 
+                  className="w-full" 
+                  onClick={() => handleSelectPlan(SUBSCRIPTION_TIERS.standard_annual.price_id)}
+                >
+                  Select Annual
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {showActions && (
+          <Button variant="outline" size="sm" onClick={checkSubscription} className="w-full">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh Status
+          </Button>
+        )}
+      </div>
     );
   }
 

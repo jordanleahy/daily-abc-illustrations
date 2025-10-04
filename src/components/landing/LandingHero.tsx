@@ -44,7 +44,7 @@ export const LandingHero = () => {
             </p>
             <Button 
               size="lg" 
-              className="text-lg px-8 py-6"
+              className="text-lg px-8 py-6 w-full md:w-auto"
               onClick={() => navigate('/pricing')}
             >
               Subscribe

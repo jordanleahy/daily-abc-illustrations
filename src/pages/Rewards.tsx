@@ -15,6 +15,7 @@ import { PurchaseConfirmDialog } from '@/components/rewards/PurchaseConfirmDialo
 import { useRewardsProducts } from '@/hooks/useRewardsProducts';
 import { usePurchaseReward } from '@/hooks/usePurchaseReward';
 import { useKidPurchases } from '@/hooks/useKidPurchases';
+import { useRewardsImagePreloader } from '@/hooks/useRewardsImagePreloader';
 import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
@@ -29,6 +30,9 @@ export default function Rewards() {
   const { data: products } = useRewardsProducts();
   const { data: purchases } = useKidPurchases(selectedKidId || kidProfiles?.[0]?.id);
   const purchaseReward = usePurchaseReward();
+  
+  // Preload product images for instant display
+  useRewardsImagePreloader(products);
 
   const activeProducts = products?.filter((p) => p.is_active && (p.quantity_available === null || p.quantity_available > 0)) || [];
   const kidPurchases = purchases?.filter((p) => p.kid_profile_id === (selectedKidId || kidProfiles?.[0]?.id)) || [];

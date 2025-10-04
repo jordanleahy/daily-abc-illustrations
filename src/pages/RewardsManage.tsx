@@ -9,6 +9,7 @@ import { PurchaseHistoryTable } from '@/components/rewards/PurchaseHistoryTable'
 import { useRewardsProducts } from '@/hooks/useRewardsProducts';
 import { useDeleteRewardsProduct } from '@/hooks/useDeleteRewardsProduct';
 import { useKidPurchases } from '@/hooks/useKidPurchases';
+import { useRewardsImagePreloader } from '@/hooks/useRewardsImagePreloader';
 import { LoadingState } from '@/components/ui/loading-state';
 import type { RewardsProduct } from '@/types/rewardsProduct';
 
@@ -19,6 +20,9 @@ const RewardsManage = () => {
   const { data: products, isLoading: productsLoading } = useRewardsProducts();
   const { data: purchases, isLoading: purchasesLoading } = useKidPurchases();
   const deleteProduct = useDeleteRewardsProduct();
+  
+  // Preload product images for instant display
+  useRewardsImagePreloader(products);
 
   const activeProducts = products?.filter((p) => p.is_active) || [];
   const pendingPurchases = purchases?.filter((p) => p.purchase_status === 'pending') || [];

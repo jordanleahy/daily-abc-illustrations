@@ -3,9 +3,13 @@ import { Badge } from '@/components/ui/badge';
 import { Library, Star, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAllDailyPublished } from '@/hooks/useAllDailyPublished';
+import { useLibraryImagePreloader } from '@/hooks/useLibraryImagePreloader';
 
 export const LibrarySection = () => {
   const { data: dailyPublished, isLoading } = useAllDailyPublished();
+  
+  // Preload library book images for instant display
+  useLibraryImagePreloader(dailyPublished as any);
 
   return (
     <section className="py-16 px-4 bg-gradient-to-b from-background to-secondary/5">

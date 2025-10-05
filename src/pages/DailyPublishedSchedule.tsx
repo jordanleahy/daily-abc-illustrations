@@ -5,6 +5,7 @@ import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useReorderQueue } from '@/hooks/useReorderQueue';
 import { useExpireContent } from '@/hooks/useExpireContent';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
+import { useScheduleImagePreloader } from '@/hooks/useScheduleImagePreloader';
 import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,6 +68,9 @@ export default function DailyPublishedScheduleSimple() {
   const { data: scheduleItems, isLoading, error } = useDailyPublishedSchedule();
   const reorderQueue = useReorderQueue();
   const expireContent = useExpireContent();
+  
+  // Preload schedule images for instant display
+  useScheduleImagePreloader(scheduleItems);
 
   // Drag and drop sensors
   const sensors = useSensors(

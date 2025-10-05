@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
+import { useScheduleImagePreloader } from '@/hooks/useScheduleImagePreloader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -93,6 +94,9 @@ function SchedulePreviewCard({ item, position }: SchedulePreviewCardProps) {
 export function SchedulePreview() {
   const navigate = useNavigate();
   const { data: scheduleItems, isLoading, error } = useDailyPublishedSchedule();
+  
+  // Preload schedule images for instant display
+  useScheduleImagePreloader(scheduleItems);
   
   if (isLoading) {
     return (

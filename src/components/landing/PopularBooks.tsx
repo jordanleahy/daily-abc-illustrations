@@ -10,6 +10,12 @@ function PopularBookCard({ book }: { book: any }) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
   const navigate = useNavigate();
 
+  // Preload image when SEO metadata is available
+  if (seoMetadata?.og_image_url) {
+    const img = new Image();
+    img.src = seoMetadata.og_image_url;
+  }
+
   return (
     <Card 
       className="cursor-pointer hover:shadow-lg transition-all relative ring-2 ring-primary shadow-md"

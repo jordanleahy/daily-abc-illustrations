@@ -3,7 +3,7 @@ import type { DailyPublishedWithBook } from '@/types/dailyPublished';
 
 /**
  * Hook to preload library book images for instant display
- * Images are cached by the service worker for 7 days
+ * Images are cached by the service worker for 30 days
  */
 export function useLibraryImagePreloader(books: DailyPublishedWithBook[] | undefined) {
   useEffect(() => {

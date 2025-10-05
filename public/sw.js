@@ -1,5 +1,5 @@
 const CACHE_NAME = 'dailyabc-images-v1';
-const CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+const CACHE_DURATION = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
 
 // Install event - setup cache
 self.addEventListener('install', (event) => {
@@ -39,7 +39,7 @@ self.addEventListener('fetch', (event) => {
             const cachedDate = new Date(cachedResponse.headers.get('sw-cache-date'));
             const now = new Date();
             
-            // If cache is still fresh (within 7 days), return it
+            // If cache is still fresh (within 30 days), return it
             if (now - cachedDate < CACHE_DURATION) {
               console.log('[Service Worker] Serving from cache:', url);
               return cachedResponse;

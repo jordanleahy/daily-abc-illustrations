@@ -3,7 +3,7 @@ import type { RewardsProduct } from '@/types/rewardsProduct';
 
 /**
  * Hook to preload rewards product images for instant display
- * Images are cached by the service worker for 7 days
+ * Images are cached by the service worker for 30 days
  */
 export function useRewardsImagePreloader(products: RewardsProduct[] | undefined) {
   useEffect(() => {

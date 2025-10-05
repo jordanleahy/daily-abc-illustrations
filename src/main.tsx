@@ -25,7 +25,7 @@ createRoot(document.getElementById("root")!).render(<App />);
 /**
  * Register Service Worker for image caching
  * 
- * Caches Supabase storage images for 7 days to improve performance
+ * Caches Supabase storage images for 30 days to improve performance
  * and reduce network requests on subsequent visits
  */
 if ('serviceWorker' in navigator) {

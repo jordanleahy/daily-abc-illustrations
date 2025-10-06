@@ -103,10 +103,10 @@ export const NonAuthPricingSection = () => {
         <Card className="border">
           <CardHeader className="text-center pb-8">
             <CardTitle className="text-2xl mb-4">Annual</CardTitle>
-            <div className="text-5xl font-bold mb-2">$99.99</div>
+            <div className="text-5xl font-bold mb-2">$29.99</div>
             <div className="text-muted-foreground mb-1">per year</div>
             <div className="text-green-600 font-semibold text-sm">
-              Save $139.89 (58% off)
+              Save $29.89 (50% off)
             </div>
           </CardHeader>
           <CardContent className="space-y-6">

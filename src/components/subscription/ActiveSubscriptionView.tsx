@@ -39,9 +39,9 @@ export const ActiveSubscriptionView = () => {
   const otherPlans = currentTier.interval === 'month' 
     ? [{
         name: "Annual Plan",
-        price: "$99.99",
+        price: "$29.99",
         period: "year",
-        savings: "Save $139.89 (58% off)",
+        savings: "Save $29.89 (50% off)",
         priceId: SUBSCRIPTION_TIERS.standard_annual.price_id,
         buttonText: "Switch to Annual"
       }]

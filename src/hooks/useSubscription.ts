@@ -25,10 +25,10 @@ export const SUBSCRIPTION_TIERS = {
     interval: "month"
   },
   standard_annual: {
-    price_id: "price_1SEEd8C8Q85n0xWFLL92SUJy",
+    price_id: "price_1SBKvfC8Q85n0xWF1nxvGfau",
     product_id: "prod_T7a5vTweAt6UZm",
     name: "Standard Annual",
-    price: 9999, // Price in cents
+    price: 2999, // Price in cents ($29.99)
     interval: "year"
   }
 } as const;

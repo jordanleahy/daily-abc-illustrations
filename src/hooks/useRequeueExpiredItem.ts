@@ -16,9 +16,7 @@ export const useRequeueExpiredItem = () => {
         .update({
           status: 'queued',
           publish_date: data.publish_date,
-          is_active: false,
-          published_at: null,
-          expires_at: null,
+          is_active: false
         })
         .eq('id', data.id);
       

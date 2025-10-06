@@ -3,7 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useReorderQueue } from '@/hooks/useReorderQueue';
+import { useRequeueExpiredItem } from '@/hooks/useRequeueExpiredItem';
 import { useExpireContent } from '@/hooks/useExpireContent';
+import { useHasRole } from '@/hooks/useUserRole';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { useScheduleImagePreloader } from '@/hooks/useScheduleImagePreloader';
 import { MetaHead } from '@/components/common/MetaHead';
@@ -67,7 +69,9 @@ export default function DailyPublishedScheduleSimple() {
   const { user } = useAuth();
   const { data: scheduleItems, isLoading, error } = useDailyPublishedSchedule();
   const reorderQueue = useReorderQueue();
+  const requeueItem = useRequeueExpiredItem();
   const expireContent = useExpireContent();
+  const isAdmin = useHasRole('admin');
   
   // Preload schedule images for instant display
   useScheduleImagePreloader(scheduleItems);
@@ -89,22 +93,77 @@ export default function DailyPublishedScheduleSimple() {
     }
   };
 
-  // Handle drag end for reordering queued items
+  // Handle drag end for reordering queued items and requeueing expired items
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     
     if (!over || active.id === over.id) return;
     
+    const draggedItem = scheduleItems?.find(item => item.id === active.id);
+    const isExpiredItem = draggedItem?.status === 'expired';
+    
+    // Check admin permission for expired items
+    if (isExpiredItem && !isAdmin) {
+      toast.error('Only admins can requeue expired items');
+      return;
+    }
+    
     const queuedItems = scheduleItems?.filter(item => item.status === 'queued') || [];
+    
+    // Handle requeueing expired item
+    if (isExpiredItem && draggedItem) {
+      const overIndex = queuedItems.findIndex(item => item.id === over.id);
+      if (overIndex === -1) return;
+      
+      // Insert expired item at target position
+      const newQueueItems = [...queuedItems];
+      newQueueItems.splice(overIndex, 0, draggedItem);
+      
+      // Recalculate all publish dates
+      const today = new Date();
+      const updates = newQueueItems.map((item, index) => {
+        const futureDate = new Date(today);
+        futureDate.setDate(today.getDate() + index + 1);
+        return {
+          id: item.id,
+          publish_date: futureDate.toISOString().split('T')[0]
+        };
+      });
+      
+      try {
+        toast.loading('Requeueing item...', { id: 'requeue' });
+        
+        // Requeue the expired item
+        const expiredUpdate = updates.find(u => u.id === draggedItem.id);
+        if (expiredUpdate) {
+          await requeueItem.mutateAsync({ 
+            id: expiredUpdate.id, 
+            publish_date: expiredUpdate.publish_date 
+          });
+        }
+        
+        // Update other items' dates
+        const otherUpdates = updates.filter(u => u.id !== draggedItem.id);
+        if (otherUpdates.length > 0) {
+          await reorderQueue.mutateAsync({ items: otherUpdates });
+        }
+        
+        toast.success('Item requeued successfully', { id: 'requeue' });
+      } catch (error) {
+        console.error('Failed to requeue item:', error);
+        toast.error('Failed to requeue item', { id: 'requeue' });
+      }
+      return;
+    }
+    
+    // Normal reordering within queue
     const oldIndex = queuedItems.findIndex(item => item.id === active.id);
     const newIndex = queuedItems.findIndex(item => item.id === over.id);
     
     if (oldIndex === -1 || newIndex === -1) return;
     
-    // Reorder the items
     const reorderedItems = arrayMove(queuedItems, oldIndex, newIndex);
     
-    // Update publish_date for all items to maintain chronological order
     const today = new Date();
     const updateData = reorderedItems.map((item, index) => {
       const futureDate = new Date(today);
@@ -157,6 +216,11 @@ export default function DailyPublishedScheduleSimple() {
   const queuedItems = scheduleItems?.filter(item => item.status === 'queued')
     .sort((a, b) => new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime()) || [];
   const expiredItems = scheduleItems?.filter(item => item.status === 'expired') || [];
+  
+  // All items that can be dragged (queued + expired for admins)
+  const allDraggableItems = isAdmin 
+    ? [...queuedItems, ...expiredItems]
+    : queuedItems;
 
   return (
     <>
@@ -222,7 +286,7 @@ export default function DailyPublishedScheduleSimple() {
               onDragEnd={handleDragEnd}
             >
               <SortableContext
-                items={queuedItems.map(item => item.id)}
+                items={[...queuedItems.map(item => item.id), ...(isAdmin ? expiredItems.map(item => item.id) : [])]}
                 strategy={verticalListSortingStrategy}
               >
                 <div className="space-y-4">
@@ -259,6 +323,7 @@ export default function DailyPublishedScheduleSimple() {
               <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 Show {expiredItems.length} expired items
+                {isAdmin && <span className="text-xs opacity-75">(Drag to requeue)</span>}
               </summary>
               <div className="mt-4 space-y-4 opacity-60">
                 {expiredItems.map((item) => (
@@ -266,7 +331,7 @@ export default function DailyPublishedScheduleSimple() {
                     key={item.id} 
                     item={item}
                     position="expired"
-                    isDraggable={false}
+                    isDraggable={isAdmin}
                   />
                 ))}
               </div>

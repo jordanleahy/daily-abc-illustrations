@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 interface ReorderQueueData {
   items: Array<{ id: string; publish_date: string }>;
@@ -32,12 +31,9 @@ export const useReorderQueue = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
-      queryClient.invalidateQueries({ queryKey: ['daily-published-queue'] });
-      toast.success('Queue reordered successfully');
     },
     onError: (error) => {
       console.error('Failed to reorder queue:', error);
-      toast.error('Failed to reorder queue');
     },
   });
 };

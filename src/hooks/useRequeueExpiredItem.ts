@@ -1,6 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 
 interface RequeueExpiredItemData {
   id: string;
@@ -32,12 +31,9 @@ export const useRequeueExpiredItem = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
-      queryClient.invalidateQueries({ queryKey: ['daily-published-queue'] });
-      toast.success('Item requeued successfully');
     },
     onError: (error) => {
       console.error('Failed to requeue item:', error);
-      toast.error('Failed to requeue item');
     },
   });
 };

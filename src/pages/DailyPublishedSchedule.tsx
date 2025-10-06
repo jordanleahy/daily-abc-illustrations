@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
@@ -72,18 +72,6 @@ export default function DailyPublishedScheduleSimple() {
   const requeueItem = useRequeueExpiredItem();
   const expireContent = useExpireContent();
   const isAdmin = useHasRole('admin');
-  
-  // Local optimistic state for drag-and-drop
-  const [queuedLocal, setQueuedLocal] = useState<DailyPublishedWithBook[]>([]);
-  const [expiredLocal, setExpiredLocal] = useState<DailyPublishedWithBook[]>([]);
-  
-  useEffect(() => {
-    const q = (scheduleItems?.filter(i => i.status === 'queued') || [])
-      .sort((a, b) => new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime());
-    const e = scheduleItems?.filter(i => i.status === 'expired') || [];
-    setQueuedLocal(q);
-    setExpiredLocal(e);
-  }, [scheduleItems]);
 
   // Preload schedule images for instant display
   useScheduleImagePreloader(scheduleItems);
@@ -111,8 +99,14 @@ export default function DailyPublishedScheduleSimple() {
     
     if (!over || active.id === over.id) return;
     
-    const draggedItem = [...queuedLocal, ...expiredLocal].find(item => item.id === active.id);
-    const isExpiredItem = draggedItem?.status === 'expired';
+    const queuedItems = scheduleItems?.filter(i => i.status === 'queued')
+      .sort((a, b) => new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime()) || [];
+    const expiredItems = scheduleItems?.filter(i => i.status === 'expired') || [];
+    
+    const draggedItem = [...queuedItems, ...expiredItems].find(item => item.id === active.id);
+    if (!draggedItem) return;
+    
+    const isExpiredItem = draggedItem.status === 'expired';
     
     // Check admin permission for expired items
     if (isExpiredItem && !isAdmin) {
@@ -120,22 +114,18 @@ export default function DailyPublishedScheduleSimple() {
       return;
     }
     
-    const queuedItems = queuedLocal;
-    
-    // Handle requeueing expired item
-    if (isExpiredItem && draggedItem) {
+    // Handle requeueing expired item into queue
+    if (isExpiredItem) {
       const overIndex = queuedItems.findIndex(item => item.id === over.id);
       if (overIndex === -1) return;
       
-      // Insert expired item at target position
-      const newQueueItems = [...queuedLocal];
-      newQueueItems.splice(overIndex, 0, draggedItem);
-
-      // Optimistic UI update
-      setExpiredLocal(prev => prev.filter(i => i.id !== draggedItem.id));
-      setQueuedLocal(newQueueItems);
+      // Insert at position
+      const newQueue = [...queuedItems];
+      newQueue.splice(overIndex, 0, draggedItem);
+      
+      // Calculate new dates for all items
       const today = new Date();
-      const updates = newQueueItems.map((item, index) => {
+      const updates = newQueue.map((item, index) => {
         const futureDate = new Date(today);
         futureDate.setDate(today.getDate() + index + 1);
         return {
@@ -144,43 +134,41 @@ export default function DailyPublishedScheduleSimple() {
         };
       });
       
-      try {
-        toast.loading('Requeueing item...', { id: 'requeue' });
-        
-        // Requeue the expired item
-        const expiredUpdate = updates.find(u => u.id === draggedItem.id);
-        if (expiredUpdate) {
+      toast.promise(
+        (async () => {
+          // First requeue the expired item
+          const expiredUpdate = updates.find(u => u.id === draggedItem.id)!;
           await requeueItem.mutateAsync({ 
             id: expiredUpdate.id, 
             publish_date: expiredUpdate.publish_date 
           });
+          
+          // Then update other items
+          const otherUpdates = updates.filter(u => u.id !== draggedItem.id);
+          if (otherUpdates.length > 0) {
+            await reorderQueue.mutateAsync({ items: otherUpdates });
+          }
+        })(),
+        {
+          loading: 'Requeueing item...',
+          success: 'Item requeued successfully',
+          error: 'Failed to requeue item'
         }
-        
-        // Update other items' dates
-        const otherUpdates = updates.filter(u => u.id !== draggedItem.id);
-        if (otherUpdates.length > 0) {
-          await reorderQueue.mutateAsync({ items: otherUpdates });
-        }
-        
-        toast.success('Item requeued successfully', { id: 'requeue' });
-      } catch (error) {
-        console.error('Failed to requeue item:', error);
-        toast.error('Failed to requeue item', { id: 'requeue' });
-      }
+      );
       return;
     }
     
     // Normal reordering within queue
-    const oldIndex = queuedLocal.findIndex(item => item.id === active.id);
-    const newIndex = queuedLocal.findIndex(item => item.id === over.id);
+    const oldIndex = queuedItems.findIndex(item => item.id === active.id);
+    const newIndex = queuedItems.findIndex(item => item.id === over.id);
     
     if (oldIndex === -1 || newIndex === -1) return;
     
-    const reorderedItems = arrayMove(queuedLocal, oldIndex, newIndex);
-    setQueuedLocal(reorderedItems);
+    const reordered = arrayMove(queuedItems, oldIndex, newIndex);
     
+    // Calculate new dates
     const today = new Date();
-    const updateData = reorderedItems.map((item, index) => {
+    const updates = reordered.map((item, index) => {
       const futureDate = new Date(today);
       futureDate.setDate(today.getDate() + index + 1);
       return {
@@ -189,14 +177,14 @@ export default function DailyPublishedScheduleSimple() {
       };
     });
     
-    try {
-      toast.loading('Reordering queue...', { id: 'reorder' });
-      await reorderQueue.mutateAsync({ items: updateData });
-      toast.success('Queue reordered successfully', { id: 'reorder' });
-    } catch (error) {
-      console.error('Failed to reorder queue:', error);
-      toast.error('Failed to reorder queue', { id: 'reorder' });
-    }
+    toast.promise(
+      reorderQueue.mutateAsync({ items: updates }),
+      {
+        loading: 'Reordering queue...',
+        success: 'Queue reordered successfully',
+        error: 'Failed to reorder queue'
+      }
+    );
   };
 
   if (!user) {
@@ -228,13 +216,9 @@ export default function DailyPublishedScheduleSimple() {
   }
 
   const activeItems = scheduleItems?.filter(item => item.status === 'active') || [];
-  const queuedItems = queuedLocal;
-  const expiredItems = expiredLocal;
-  
-  // All items that can be dragged (queued + expired for admins)
-  const allDraggableItems = isAdmin 
-    ? [...queuedItems, ...expiredItems]
-    : queuedItems;
+  const queuedItems = scheduleItems?.filter(item => item.status === 'queued')
+    .sort((a, b) => new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime()) || [];
+  const expiredItems = scheduleItems?.filter(item => item.status === 'expired') || [];
 
   return (
     <>

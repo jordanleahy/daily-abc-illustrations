@@ -325,7 +325,7 @@ export default function DailyPublishedScheduleSimple() {
                 Show {expiredItems.length} expired items
                 {isAdmin && <span className="text-xs opacity-75">(Drag to requeue)</span>}
               </summary>
-              <div className="mt-4 space-y-4 opacity-60">
+              <div className={`mt-4 space-y-4 ${isAdmin ? '' : 'opacity-60'}`}>
                 {expiredItems.map((item) => (
                   <ScheduleCard 
                     key={item.id} 

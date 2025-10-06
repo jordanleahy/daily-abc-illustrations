@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Coins, BookOpen, Star, ShoppingBag, Package } from 'lucide-react';
+import { Coins, BookOpen, Star, ShoppingBag, Package, Plus } from 'lucide-react';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { CoinCounter } from '@/components/ui/coin-counter';
 import { ProductCard } from '@/components/rewards/ProductCard';
@@ -20,12 +20,14 @@ import { Badge } from '@/components/ui/badge';
 import { format } from 'date-fns';
 import { Link } from 'react-router-dom';
 import type { RewardsProduct } from '@/types/rewardsProduct';
+import { AddKidModal } from '@/components/profile/AddKidModal';
 
 export default function Rewards() {
   const { user, loading: authLoading } = useAuth();
   const { data: kidProfiles, isLoading } = useKidProfiles();
   const [selectedKidId, setSelectedKidId] = useState<string>('');
   const [purchaseProduct, setPurchaseProduct] = useState<RewardsProduct | null>(null);
+  const [showAddKidModal, setShowAddKidModal] = useState(false);
   
   const { data: products } = useRewardsProducts();
   const { data: purchases } = useKidPurchases(selectedKidId || kidProfiles?.[0]?.id);
@@ -63,13 +65,18 @@ export default function Rewards() {
   if (!kidProfiles || kidProfiles.length === 0) {
     return (
       <StandardPageLayout>
-        <div className="text-center py-8">
+        <div className="text-center py-8 space-y-4">
           <Coins className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
           <h2 className="text-lg font-semibold mb-2">No Kids Added Yet</h2>
-          <p className="text-muted-foreground">
-            Add your kids in the profile section to start tracking their reading rewards!
+          <p className="text-muted-foreground mb-4">
+            Add your kids to start tracking their reading rewards!
           </p>
+          <Button onClick={() => setShowAddKidModal(true)} size="lg">
+            <Plus className="mr-2 h-5 w-5" />
+            Add Kids
+          </Button>
         </div>
+        <AddKidModal open={showAddKidModal} onOpenChange={setShowAddKidModal} />
       </StandardPageLayout>
     );
   }

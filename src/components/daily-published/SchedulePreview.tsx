@@ -125,7 +125,7 @@ export function SchedulePreview() {
   const activeItems = scheduleItems.filter(item => item.status === 'active') || [];
   const queuedItems = scheduleItems
     .filter(item => item.status === 'queued')
-    .sort((a, b) => (a.queue_order || 0) - (b.queue_order || 0))
+    .sort((a, b) => new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime())
     .slice(0, 4) || []; // Show only first 4 queued items
   
   const hasContent = activeItems.length > 0 || queuedItems.length > 0;

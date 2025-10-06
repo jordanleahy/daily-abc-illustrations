@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface ReorderQueueData {
-  items: Array<{ id: string; queue_order: number }>;
+  items: Array<{ id: string; publish_date: string }>;
 }
 
 export const useReorderQueue = () => {
@@ -11,11 +11,11 @@ export const useReorderQueue = () => {
   
   return useMutation({
     mutationFn: async (data: ReorderQueueData) => {
-      // Update queue_order for all items in parallel
+      // Update publish_date for all items in parallel
       const updatePromises = data.items.map(item => 
         supabase
           .from('daily_published')
-          .update({ queue_order: item.queue_order })
+          .update({ publish_date: item.publish_date })
           .eq('id', item.id)
       );
       

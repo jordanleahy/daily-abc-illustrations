@@ -17,7 +17,7 @@ export const useUpcomingDailyPublished = (limit = 5) => {
           )
         `)
         .eq('status', 'queued') // Only queued items
-        .order('queue_order', { ascending: true }) // Order by simple queue position
+        .order('publish_date', { ascending: true }) // Order by publish date chronologically
         .order('created_at', { ascending: true })
         .limit(limit);
 

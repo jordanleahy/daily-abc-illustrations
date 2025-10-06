@@ -104,11 +104,16 @@ export default function DailyPublishedScheduleSimple() {
     // Reorder the items
     const reorderedItems = arrayMove(queuedItems, oldIndex, newIndex);
     
-    // Update queue_order for all items
-    const updateData = reorderedItems.map((item, index) => ({
-      id: item.id,
-      queue_order: index + 1
-    }));
+    // Update publish_date for all items to maintain chronological order
+    const today = new Date();
+    const updateData = reorderedItems.map((item, index) => {
+      const futureDate = new Date(today);
+      futureDate.setDate(today.getDate() + index + 1);
+      return {
+        id: item.id,
+        publish_date: futureDate.toISOString().split('T')[0]
+      };
+    });
     
     try {
       toast.loading('Reordering queue...', { id: 'reorder' });
@@ -150,7 +155,7 @@ export default function DailyPublishedScheduleSimple() {
 
   const activeItems = scheduleItems?.filter(item => item.status === 'active') || [];
   const queuedItems = scheduleItems?.filter(item => item.status === 'queued')
-    .sort((a, b) => (a.queue_order || 0) - (b.queue_order || 0)) || [];
+    .sort((a, b) => new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime()) || [];
   const expiredItems = scheduleItems?.filter(item => item.status === 'expired') || [];
 
   return (

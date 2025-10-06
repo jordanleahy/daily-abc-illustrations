@@ -17,7 +17,7 @@ export const useDailyPublished = () => {
         .select('*')
         .eq('is_active', true)
         .gt('expires_at', new Date().toISOString())
-        .order('queue_order', { ascending: true }) // Order by simple queue position
+        .order('publish_date', { ascending: true }) // Order by publish date chronologically
         .limit(1)
         .maybeSingle();
 

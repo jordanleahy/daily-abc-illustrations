@@ -22,7 +22,7 @@ export const useLibraryBooks = () => {
           )
         `)
         .neq('status', 'draft')
-        .order('queue_order', { ascending: true })
+        .order('publish_date', { ascending: true })
         .order('created_at', { ascending: true });
 
       if (dpError) {

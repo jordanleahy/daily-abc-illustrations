@@ -92,7 +92,7 @@ export default function Schedule() {
     );
   }
   const activeItems = scheduleItems?.filter(item => item.status === 'active') || [];
-  const queuedItems = scheduleItems?.filter(item => item.status === 'queued').sort((a, b) => (a.queue_order || 0) - (b.queue_order || 0)) || [];
+  const queuedItems = scheduleItems?.filter(item => item.status === 'queued').sort((a, b) => new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime()) || [];
   const expiredItems = scheduleItems?.filter(item => item.status === 'expired') || [];
   return <>
       <MetaHead metadata={{

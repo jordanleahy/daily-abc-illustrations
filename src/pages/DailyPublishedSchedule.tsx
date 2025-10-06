@@ -273,22 +273,22 @@ export default function DailyPublishedScheduleSimple() {
           </div>
         )}
 
-        {/* Queued Items */}
-        {queuedItems.length > 0 && (
-          <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-              📅 Publishing Queue ({queuedItems.length})
-              <span className="text-sm text-muted-foreground font-normal ml-2">Drag to reorder</span>
-            </h2>
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={[...queuedItems.map(item => item.id), ...(isAdmin ? expiredItems.map(item => item.id) : [])]}
-                strategy={verticalListSortingStrategy}
-              >
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={[...queuedItems.map(item => item.id), ...(isAdmin ? expiredItems.map(item => item.id) : [])]}
+            strategy={verticalListSortingStrategy}
+          >
+            {/* Queued Items */}
+            {queuedItems.length > 0 && (
+              <div className="mb-8">
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                  📅 Publishing Queue ({queuedItems.length})
+                  <span className="text-sm text-muted-foreground font-normal ml-2">Drag to reorder</span>
+                </h2>
                 <div className="space-y-4">
                   {queuedItems.map((item, index) => (
                     <ScheduleCard 
@@ -299,45 +299,45 @@ export default function DailyPublishedScheduleSimple() {
                     />
                   ))}
                 </div>
-              </SortableContext>
-            </DndContext>
-          </div>
-        )}
-
-        {/* Empty State */}
-        {(!scheduleItems || scheduleItems.length === 0) && (
-          <Card>
-            <CardContent className="text-center py-12">
-              <h3 className="text-lg font-semibold mb-2">No books in queue</h3>
-              <p className="text-muted-foreground">
-                Publish books to see them in the daily schedule.
-              </p>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Expired Items (collapsible) */}
-        {expiredItems.length > 0 && (
-          <div className="mt-8">
-            <details className="group">
-              <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
-                <Clock className="h-4 w-4" />
-                Show {expiredItems.length} expired items
-                {isAdmin && <span className="text-xs opacity-75">(Drag to requeue)</span>}
-              </summary>
-              <div className={`mt-4 space-y-4 ${isAdmin ? '' : 'opacity-60'}`}>
-                {expiredItems.map((item) => (
-                  <ScheduleCard 
-                    key={item.id} 
-                    item={item}
-                    position="expired"
-                    isDraggable={isAdmin}
-                  />
-                ))}
               </div>
-            </details>
-          </div>
-        )}
+            )}
+
+            {/* Empty State */}
+            {(!scheduleItems || scheduleItems.length === 0) && (
+              <Card>
+                <CardContent className="text-center py-12">
+                  <h3 className="text-lg font-semibold mb-2">No books in queue</h3>
+                  <p className="text-muted-foreground">
+                    Publish books to see them in the daily schedule.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Expired Items (collapsible) */}
+            {expiredItems.length > 0 && (
+              <div className="mt-8">
+                <details className="group" open={isAdmin}>
+                  <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
+                    <Clock className="h-4 w-4" />
+                    Show {expiredItems.length} expired items
+                    {isAdmin && <span className="text-xs opacity-75">(Drag to requeue)</span>}
+                  </summary>
+                  <div className={`mt-4 space-y-4 ${isAdmin ? '' : 'opacity-60'}`}>
+                    {expiredItems.map((item) => (
+                      <ScheduleCard 
+                        key={item.id} 
+                        item={item}
+                        position="expired"
+                        isDraggable={isAdmin}
+                      />
+                    ))}
+                  </div>
+                </details>
+              </div>
+            )}
+          </SortableContext>
+        </DndContext>
       </StandardPageLayout>
     </>
   );

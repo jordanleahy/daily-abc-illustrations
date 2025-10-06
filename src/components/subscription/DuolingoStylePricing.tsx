@@ -156,7 +156,7 @@ export const DuolingoStylePricing = () => {
               <CardTitle className="text-2xl">Super Learner</CardTitle>
               <CardDescription>Unlock your full potential</CardDescription>
               <div className="text-4xl font-bold mt-4 text-duolingo-green">
-                $19.99<span className="text-lg font-normal text-muted-foreground">/month</span>
+                $4.99<span className="text-lg font-normal text-muted-foreground">/month</span>
               </div>
             </CardHeader>
             <CardContent className="pt-0">

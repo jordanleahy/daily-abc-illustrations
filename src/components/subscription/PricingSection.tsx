@@ -40,7 +40,7 @@ export const PricingSection = () => {
               <CardTitle className="text-2xl">Standard Monthly</CardTitle>
               <CardDescription>Perfect for getting started</CardDescription>
               <div className="text-4xl font-bold mt-4">
-                $19.99
+                $4.99
                 <span className="text-lg font-normal text-muted-foreground">/month</span>
               </div>
             </CardHeader>

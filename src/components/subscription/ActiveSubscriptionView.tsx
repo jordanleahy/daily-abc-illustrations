@@ -47,7 +47,7 @@ export const ActiveSubscriptionView = () => {
       }]
     : [{
         name: "Monthly Plan", 
-        price: "$19.99",
+        price: "$4.99",
         period: "month",
         priceId: SUBSCRIPTION_TIERS.standard_monthly.price_id,
         buttonText: "Switch to Monthly"

@@ -62,7 +62,7 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
             <CardHeader className="pb-3">
               <CardTitle className="text-xl">Monthly Plan</CardTitle>
               <div className="mt-2">
-                <span className="text-3xl font-bold">$19.99</span>
+                <span className="text-3xl font-bold">$4.99</span>
                 <span className="text-muted-foreground">/month</span>
               </div>
               <div className="flex gap-3 mt-3 text-xs text-muted-foreground">

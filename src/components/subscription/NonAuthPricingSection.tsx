@@ -76,7 +76,7 @@ export const NonAuthPricingSection = () => {
         <Card className="border">
           <CardHeader className="text-center pb-8">
             <CardTitle className="text-2xl mb-4">Monthly</CardTitle>
-            <div className="text-5xl font-bold mb-2">$19.99</div>
+            <div className="text-5xl font-bold mb-2">$4.99</div>
             <div className="text-muted-foreground">per month</div>
           </CardHeader>
           <CardContent className="space-y-6">

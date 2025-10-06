@@ -23,7 +23,9 @@ import {
   DragEndEvent,
   PointerSensor,
   useSensor,
-  useSensors
+  useSensors,
+  DragOverlay,
+  useDroppable
 } from '@dnd-kit/core';
 import { 
   SortableContext, 
@@ -116,8 +118,14 @@ export default function DailyPublishedScheduleSimple() {
     
     // Handle requeueing expired item into queue
     if (isExpiredItem) {
-      const overIndex = queuedItems.findIndex(item => item.id === over.id);
-      if (overIndex === -1) return;
+      let overIndex = queuedItems.findIndex(item => item.id === over.id);
+      
+      // If dropped on the queue container itself (not on a specific card), add to end
+      if (over.id === 'queue-drop-zone') {
+        overIndex = 0; // Add to beginning when dropped on the queue zone
+      } else if (overIndex === -1) {
+        overIndex = queuedItems.length; // Add to end if no specific card found
+      }
       
       // Insert at position
       const newQueue = [...queuedItems];
@@ -159,8 +167,8 @@ export default function DailyPublishedScheduleSimple() {
     }
     
     // Normal reordering within queue
-    const oldIndex = queuedItems.findIndex(item => item.id === active.id);
-    const newIndex = queuedItems.findIndex(item => item.id === over.id);
+    let oldIndex = queuedItems.findIndex(item => item.id === active.id);
+    let newIndex = queuedItems.findIndex(item => item.id === over.id);
     
     if (oldIndex === -1 || newIndex === -1) return;
     
@@ -287,16 +295,18 @@ export default function DailyPublishedScheduleSimple() {
                   📅 Publishing Queue ({queuedItems.length})
                   <span className="text-sm text-muted-foreground font-normal ml-2">Drag to reorder</span>
                 </h2>
-                <div className="space-y-4">
-                  {queuedItems.map((item, index) => (
-                    <ScheduleCard 
-                      key={item.id} 
-                      item={item}
-                      position={index + 1}
-                      isDraggable={true}
-                    />
-                  ))}
-                </div>
+                <QueueDropZone queueLength={queuedItems.length}>
+                  <div className="space-y-4">
+                    {queuedItems.map((item, index) => (
+                      <ScheduleCard 
+                        key={item.id} 
+                        item={item}
+                        position={index + 1}
+                        isDraggable={true}
+                      />
+                    ))}
+                  </div>
+                </QueueDropZone>
               </div>
             )}
 
@@ -342,6 +352,21 @@ export default function DailyPublishedScheduleSimple() {
 }
 
 // Reusable components
+function QueueDropZone({ children, queueLength }: { children: React.ReactNode; queueLength: number }) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: 'queue-drop-zone',
+  });
+  
+  return (
+    <div 
+      ref={setNodeRef} 
+      className={`relative ${isOver ? 'ring-2 ring-primary ring-offset-2 rounded-lg' : ''}`}
+    >
+      {children}
+    </div>
+  );
+}
+
 function ScheduleThumbnail({ imageUrl, title }: { imageUrl?: string; title: string }) {
   const isMobile = useIsMobile();
   

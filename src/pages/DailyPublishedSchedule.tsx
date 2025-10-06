@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
@@ -73,6 +73,18 @@ export default function DailyPublishedScheduleSimple() {
   const expireContent = useExpireContent();
   const isAdmin = useHasRole('admin');
   
+  // Local optimistic state for drag-and-drop
+  const [queuedLocal, setQueuedLocal] = useState<DailyPublishedWithBook[]>([]);
+  const [expiredLocal, setExpiredLocal] = useState<DailyPublishedWithBook[]>([]);
+  
+  useEffect(() => {
+    const q = (scheduleItems?.filter(i => i.status === 'queued') || [])
+      .sort((a, b) => new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime());
+    const e = scheduleItems?.filter(i => i.status === 'expired') || [];
+    setQueuedLocal(q);
+    setExpiredLocal(e);
+  }, [scheduleItems]);
+
   // Preload schedule images for instant display
   useScheduleImagePreloader(scheduleItems);
 
@@ -99,7 +111,7 @@ export default function DailyPublishedScheduleSimple() {
     
     if (!over || active.id === over.id) return;
     
-    const draggedItem = scheduleItems?.find(item => item.id === active.id);
+    const draggedItem = [...queuedLocal, ...expiredLocal].find(item => item.id === active.id);
     const isExpiredItem = draggedItem?.status === 'expired';
     
     // Check admin permission for expired items
@@ -108,7 +120,7 @@ export default function DailyPublishedScheduleSimple() {
       return;
     }
     
-    const queuedItems = scheduleItems?.filter(item => item.status === 'queued') || [];
+    const queuedItems = queuedLocal;
     
     // Handle requeueing expired item
     if (isExpiredItem && draggedItem) {
@@ -116,10 +128,12 @@ export default function DailyPublishedScheduleSimple() {
       if (overIndex === -1) return;
       
       // Insert expired item at target position
-      const newQueueItems = [...queuedItems];
+      const newQueueItems = [...queuedLocal];
       newQueueItems.splice(overIndex, 0, draggedItem);
-      
-      // Recalculate all publish dates
+
+      // Optimistic UI update
+      setExpiredLocal(prev => prev.filter(i => i.id !== draggedItem.id));
+      setQueuedLocal(newQueueItems);
       const today = new Date();
       const updates = newQueueItems.map((item, index) => {
         const futureDate = new Date(today);
@@ -157,12 +171,13 @@ export default function DailyPublishedScheduleSimple() {
     }
     
     // Normal reordering within queue
-    const oldIndex = queuedItems.findIndex(item => item.id === active.id);
-    const newIndex = queuedItems.findIndex(item => item.id === over.id);
+    const oldIndex = queuedLocal.findIndex(item => item.id === active.id);
+    const newIndex = queuedLocal.findIndex(item => item.id === over.id);
     
     if (oldIndex === -1 || newIndex === -1) return;
     
-    const reorderedItems = arrayMove(queuedItems, oldIndex, newIndex);
+    const reorderedItems = arrayMove(queuedLocal, oldIndex, newIndex);
+    setQueuedLocal(reorderedItems);
     
     const today = new Date();
     const updateData = reorderedItems.map((item, index) => {
@@ -213,9 +228,8 @@ export default function DailyPublishedScheduleSimple() {
   }
 
   const activeItems = scheduleItems?.filter(item => item.status === 'active') || [];
-  const queuedItems = scheduleItems?.filter(item => item.status === 'queued')
-    .sort((a, b) => new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime()) || [];
-  const expiredItems = scheduleItems?.filter(item => item.status === 'expired') || [];
+  const queuedItems = queuedLocal;
+  const expiredItems = expiredLocal;
   
   // All items that can be dragged (queued + expired for admins)
   const allDraggableItems = isAdmin 

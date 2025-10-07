@@ -4,10 +4,10 @@ import { SITE_CONFIG } from '@/config/site';
 export const AuthHeader = () => {
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-center">
+      <div className="container flex h-12 items-center justify-center py-2">
         <Link 
           to="/landing" 
-          className="text-xl font-semibold text-foreground hover:text-primary transition-colors"
+          className="text-lg font-semibold text-foreground hover:text-primary transition-colors"
         >
           {SITE_CONFIG.name}
         </Link>

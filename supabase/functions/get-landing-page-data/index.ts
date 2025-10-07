@@ -79,92 +79,86 @@ Deno.serve(async (req) => {
     const popularBooks = popularBooksResult.data || [];
     const libraryBooks = libraryBooksResult.data || [];
 
-    // Fetch pages and images for daily published
+    // Fetch pages and SEO metadata in parallel to eliminate waterfalls
     let dailyPublishedWithPages = null;
-    if (dailyPublished?.book_id) {
-      const { data: pages, error: pagesError } = await supabase
-        .from('pages')
-        .select(`
-          id,
-          letter,
-          page_number,
-          title,
-          description,
-          page_image_urls!inner(
-            image_url,
-            is_latest,
-            generation_status
-          )
-        `)
-        .eq('book_id', dailyPublished.book_id)
-        .eq('page_image_urls.is_latest', true)
-        .eq('page_image_urls.generation_status', 'complete')
-        .order('page_number', { ascending: true });
-
-      if (!pagesError && pages) {
-        dailyPublishedWithPages = {
-          ...dailyPublished,
-          pages: pages.map(p => ({
-            id: p.id,
-            letter: p.letter,
-            page_number: p.page_number,
-            title: p.title,
-            description: p.description,
-            image_url: p.page_image_urls?.[0]?.image_url || null
-          }))
-        };
-      }
-    }
-
-    // Fetch SEO metadata for popular books (in parallel)
     const popularBookIds = popularBooks.map(b => b.id);
-    let popularBooksWithImages = popularBooks;
-    
-    if (popularBookIds.length > 0) {
-      const { data: seoMetadata, error: seoError } = await supabase
-        .from('seo_metadata')
-        .select('daily_published_id, og_image_url, is_latest, optimization_status')
-        .eq('is_latest', true)
-        .eq('optimization_status', 'complete')
-        .in('daily_published_id', 
-          libraryBooks
-            .filter(lb => popularBookIds.includes(lb.book_id))
-            .map(lb => lb.id)
-        );
+    const libraryDpIds = libraryBooks.map(lb => lb.id);
 
-      if (!seoError && seoMetadata) {
-        const seoMap = new Map(seoMetadata.map(s => [s.daily_published_id, s.og_image_url]));
-        
-        popularBooksWithImages = popularBooks.map(book => {
-          const dpEntry = libraryBooks.find(lb => lb.book_id === book.id);
-          return {
-            ...book,
-            image_url: dpEntry ? seoMap.get(dpEntry.id) : null
-          };
-        });
-      }
+    const pagesPromise = dailyPublished?.book_id
+      ? supabase
+          .from('pages')
+          .select(`
+            id,
+            letter,
+            page_number,
+            title,
+            description,
+            page_image_urls!inner(
+              image_url,
+              is_latest,
+              generation_status
+            )
+          `)
+          .eq('book_id', dailyPublished.book_id)
+          .eq('page_image_urls.is_latest', true)
+          .eq('page_image_urls.generation_status', 'complete')
+          .order('page_number', { ascending: true })
+      : Promise.resolve({ data: null, error: null } as any);
+
+    const seoPromise = libraryDpIds.length > 0
+      ? supabase
+          .from('seo_metadata')
+          .select('daily_published_id, og_image_url, is_latest, optimization_status')
+          .eq('is_latest', true)
+          .eq('optimization_status', 'complete')
+          .in('daily_published_id', libraryDpIds)
+      : Promise.resolve({ data: [], error: null } as any);
+
+    const [pagesResult, seoResult] = await Promise.all([pagesPromise, seoPromise]);
+
+    const pages = (pagesResult as any).data;
+    const pagesError = (pagesResult as any).error;
+    const seoMetadata = (seoResult as any).data || [];
+    const seoError = (seoResult as any).error;
+
+    if (!pagesError && pages && dailyPublished) {
+      dailyPublishedWithPages = {
+        ...dailyPublished,
+        pages: pages.map((p: any) => ({
+          id: p.id,
+          letter: p.letter,
+          page_number: p.page_number,
+          title: p.title,
+          description: p.description,
+          image_url: p.page_image_urls?.[0]?.image_url || null
+        }))
+      };
     }
 
-    // Fetch SEO metadata for library books (already queried above, reuse)
-    const libraryDpIds = libraryBooks.map(lb => lb.id);
-    let libraryBooksWithImages = libraryBooks;
-    
-    if (libraryDpIds.length > 0) {
-      const { data: seoMetadata, error: seoError } = await supabase
-        .from('seo_metadata')
-        .select('daily_published_id, og_image_url, is_latest, optimization_status')
-        .eq('is_latest', true)
-        .eq('optimization_status', 'complete')
-        .in('daily_published_id', libraryDpIds);
+    // Build SEO map once and reuse for both popular and library
+    const seoMap = !seoError && seoMetadata
+      ? new Map(seoMetadata.map((s: any) => [s.daily_published_id, s.og_image_url]))
+      : new Map();
 
-      if (!seoError && seoMetadata) {
-        const seoMap = new Map(seoMetadata.map(s => [s.daily_published_id, s.og_image_url]));
-        
-        libraryBooksWithImages = libraryBooks.map(lb => ({
-          ...lb,
-          og_image_url: seoMap.get(lb.id) || null
-        }));
-      }
+    // Map images for popular books using library linkage to daily_published
+    let popularBooksWithImages = popularBooks;
+    if (popularBookIds.length > 0 && libraryBooks.length > 0) {
+      popularBooksWithImages = popularBooks.map(book => {
+        const dpEntry = libraryBooks.find(lb => lb.book_id === book.id);
+        return {
+          ...book,
+          image_url: dpEntry ? (seoMap.get(dpEntry.id) || null) : null
+        };
+      });
+    }
+
+    // Map images for library books directly
+    let libraryBooksWithImages = libraryBooks;
+    if (libraryDpIds.length > 0) {
+      libraryBooksWithImages = libraryBooks.map(lb => ({
+        ...lb,
+        og_image_url: seoMap.get(lb.id) || null
+      }));
     }
 
     console.log('✅ Landing page data fetched successfully');

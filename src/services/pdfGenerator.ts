@@ -222,7 +222,7 @@ export async function generateBookPDF(
     const pdfBytes = await generatePDF(pages, options);
     
     // Create download
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     
     const link = document.createElement('a');
@@ -258,7 +258,7 @@ export async function generatePagePDF(
     const pdfBytes = await generatePDF([pageData], options);
     
     // Create download
-    const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+    const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
     const url = URL.createObjectURL(blob);
     
     const link = document.createElement('a');

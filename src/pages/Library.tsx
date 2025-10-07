@@ -6,6 +6,7 @@ import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
@@ -69,8 +70,8 @@ export default memo(function Library() {
           {/* All Books */}
           {allBooks.length > 0 && (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {allBooks.map((item) => (
-                <LibraryBookCard key={item.id} item={item} />
+              {allBooks.map((item, index) => (
+                <LibraryBookCard key={item.id} item={item} index={index} />
               ))}
             </div>
           )}
@@ -94,9 +95,10 @@ export default memo(function Library() {
 
 interface LibraryBookCardProps {
   item: DailyPublishedWithBook;
+  index: number;
 }
 
-const LibraryBookCard = memo(function LibraryBookCard({ item }: LibraryBookCardProps) {
+const LibraryBookCard = memo(function LibraryBookCard({ item, index }: LibraryBookCardProps) {
   const navigate = useNavigate();
   const isTeacher = useIsTeacher();
   const { isAuthenticated } = useAuthContext();
@@ -154,10 +156,13 @@ const LibraryBookCard = memo(function LibraryBookCard({ item }: LibraryBookCardP
         <div className="aspect-[1200/630] bg-muted rounded-lg flex items-center justify-center overflow-hidden">
           {item.og_image_url ? (
             <img 
-              src={item.og_image_url} 
+              src={optimizeImageUrl(item.og_image_url, { width: 800, quality: 85 }) || item.og_image_url}
+              srcSet={generateSrcSet(item.og_image_url, [600, 800, 1200])}
+              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
               alt={`Preview of ${item.title}`}
               className="w-full h-full object-cover object-center"
-              loading="lazy"
+              loading={index < 6 ? "eager" : "lazy"}
+              fetchPriority={index < 3 ? "high" : "auto"}
               decoding="async"
             />
           ) : (

@@ -1,36 +1,52 @@
 import { useEffect } from 'react';
 import type { DailyPublishedWithBook } from '@/types/dailyPublished';
+import { optimizeImageUrl } from '@/utils/imageOptimization';
 
 /**
- * Hook to preload library book images for instant display
+ * Hook to preload library book images for instant display with Supabase optimizations
  * Images are cached by the service worker for 30 days
  */
 export function useLibraryImagePreloader(books: DailyPublishedWithBook[] | undefined) {
   useEffect(() => {
     if (!books || books.length === 0) return;
 
-    // Preload first 6 book images immediately (2 rows on desktop)
-    const criticalBooks = books.slice(0, 6);
-    criticalBooks.forEach((book) => {
+    const timeouts: NodeJS.Timeout[] = [];
+
+    // Batch 1: First 6 book images immediately (critical - visible on load)
+    const batch1 = books.slice(0, 6);
+    batch1.forEach((book) => {
       if (book.og_image_url) {
         const img = new Image();
-        img.src = book.og_image_url;
+        img.src = optimizeImageUrl(book.og_image_url, { width: 800, quality: 85 }) || book.og_image_url;
       }
     });
 
-    // Preload remaining images after 300ms
+    // Batch 2: Next 6 images after 150ms
     if (books.length > 6) {
-      const timeoutId = setTimeout(() => {
-        const remainingBooks = books.slice(6);
-        remainingBooks.forEach((book) => {
+      timeouts.push(setTimeout(() => {
+        const batch2 = books.slice(6, 12);
+        batch2.forEach((book) => {
           if (book.og_image_url) {
             const img = new Image();
-            img.src = book.og_image_url;
+            img.src = optimizeImageUrl(book.og_image_url, { width: 800, quality: 85 }) || book.og_image_url;
           }
         });
-      }, 300);
-
-      return () => clearTimeout(timeoutId);
+      }, 150));
     }
+
+    // Batch 3: Remaining images after 400ms
+    if (books.length > 12) {
+      timeouts.push(setTimeout(() => {
+        const batch3 = books.slice(12);
+        batch3.forEach((book) => {
+          if (book.og_image_url) {
+            const img = new Image();
+            img.src = optimizeImageUrl(book.og_image_url, { width: 800, quality: 85 }) || book.og_image_url;
+          }
+        });
+      }, 400));
+    }
+
+    return () => timeouts.forEach(clearTimeout);
   }, [books]);
 }

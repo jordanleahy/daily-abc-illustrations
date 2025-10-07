@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { NonAuthPricingSection } from '@/components/subscription/NonAuthPricingSection';
 import { MetaHead } from '@/components/common/MetaHead';
@@ -22,6 +23,10 @@ export default function Pricing() {
       description: 'Choose the perfect plan for your ABC book creation needs. Start free or upgrade to premium.',
     }
   };
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, []);
 
   return (
     <>

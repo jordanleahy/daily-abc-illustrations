@@ -44,6 +44,17 @@ export function generateSrcSet(
 }
 
 /**
+ * Generate a tiny blur placeholder (LQIP) for progressive loading
+ */
+export function generateBlurPlaceholder(
+  url: string | null | undefined
+): string | undefined {
+  if (!url || !url.includes('supabase.co/storage')) return url || undefined;
+  
+  return optimizeImageUrl(url, { width: 20, quality: 20, format: 'webp' });
+}
+
+/**
  * Preload critical images for instant display
  */
 export function preloadImages(urls: (string | null | undefined)[], priority: 'high' | 'low' = 'high') {
@@ -53,7 +64,7 @@ export function preloadImages(urls: (string | null | undefined)[], priority: 'hi
     const link = document.createElement('link');
     link.rel = 'preload';
     link.as = 'image';
-    link.href = optimizeImageUrl(url, { width: 800 }) || url;
+    link.href = optimizeImageUrl(url, { width: 600 }) || url;
     if (priority === 'high') {
       link.setAttribute('fetchpriority', 'high');
     }

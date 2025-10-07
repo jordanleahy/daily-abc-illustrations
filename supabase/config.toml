@@ -120,6 +120,9 @@ verify_jwt = true
 [functions.get-daily-published-images]
 verify_jwt = false
 
+[functions.get-landing-page-data]
+verify_jwt = false
+
 [functions.create-blank-book]
 verify_jwt = true
 

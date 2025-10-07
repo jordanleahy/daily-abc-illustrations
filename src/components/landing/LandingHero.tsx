@@ -1,17 +1,22 @@
 import { Button } from '@/components/ui/button';
-import { useDailyPublished } from '@/hooks/useDailyPublished';
 import { useNavigate } from 'react-router-dom';
 import { SITE_CONFIG } from '@/config/site';
-import { PublicPageImage } from '@/components/daily-published/PublicPageImage';
-import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Book } from 'lucide-react';
+import { LandingDailyPublished } from '@/hooks/useLandingPageData';
+import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
+import { Shimmer } from '@/components/ui/shimmer';
 
-export const LandingHero = () => {
+interface LandingHeroProps {
+  dailyPublished: LandingDailyPublished | null | undefined;
+  isLoading: boolean;
+}
+
+export const LandingHero = ({ dailyPublished, isLoading }: LandingHeroProps) => {
   const navigate = useNavigate();
-  const { data: dailyPublished } = useDailyPublished();
-  const { data: pages = [] } = useDailyPublishedPages(dailyPublished?.book_id);
+  const pages = dailyPublished?.pages || [];
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleNextPage = () => {
     if (currentPageIndex < pages.length - 1) {
@@ -53,7 +58,20 @@ export const LandingHero = () => {
 
           {/* Right Column - Daily Swiper */}
           <div className="relative bg-card rounded-lg shadow-xl p-6 border">
-            {dailyPublished && currentPage ? (
+            {isLoading ? (
+              <div className="space-y-4">
+                <div className="text-center">
+                  <Shimmer className="h-6 w-32 mx-auto mb-2" />
+                  <Shimmer className="h-4 w-48 mx-auto" />
+                </div>
+                <Shimmer className="aspect-square rounded-lg" />
+                <div className="flex items-center justify-between">
+                  <Shimmer className="h-10 w-10 rounded-md" />
+                  <Shimmer className="h-12 w-16" />
+                  <Shimmer className="h-10 w-10 rounded-md" />
+                </div>
+              </div>
+            ) : dailyPublished && currentPage ? (
               <div className="space-y-4">
                 <div className="text-center">
                   <h3 className="text-lg font-semibold text-foreground mb-2">
@@ -65,10 +83,27 @@ export const LandingHero = () => {
                 </div>
 
                 <div className="relative aspect-square bg-background rounded-lg overflow-hidden">
-                  <PublicPageImage
-                    bookId={dailyPublished.book_id}
-                    pageId={currentPage.id}
-                  />
+                  {!imageLoaded && currentPage.image_url && (
+                    <Shimmer className="absolute inset-0" />
+                  )}
+                  {currentPage.image_url ? (
+                    <img
+                      src={optimizeImageUrl(currentPage.image_url, { width: 800 })}
+                      srcSet={generateSrcSet(currentPage.image_url, [600, 800, 1200])}
+                      sizes="(max-width: 768px) 100vw, 600px"
+                      alt={`${currentPage.letter} - ${currentPage.title}`}
+                      loading="eager"
+                      fetchPriority="high"
+                      className={`w-full h-full object-cover transition-opacity duration-200 ${
+                        imageLoaded ? 'opacity-100' : 'opacity-0'
+                      }`}
+                      onLoad={() => setImageLoaded(true)}
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Book className="h-12 w-12 text-muted-foreground" />
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between">

@@ -2,15 +2,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Library, Star, BookOpen } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useAllDailyPublished } from '@/hooks/useAllDailyPublished';
-import { useLibraryImagePreloader } from '@/hooks/useLibraryImagePreloader';
+import { LandingLibraryBook } from '@/hooks/useLandingPageData';
+import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 
-export const LibrarySection = () => {
-  const { data: dailyPublished, isLoading } = useAllDailyPublished();
-  
-  // Preload library book images for instant display
-  useLibraryImagePreloader(dailyPublished as any);
+interface LibrarySectionProps {
+  books: LandingLibraryBook[] | undefined;
+  isLoading: boolean;
+}
 
+export const LibrarySection = ({ books = [], isLoading }: LibrarySectionProps) => {
   return (
     <section className="py-16 px-4 bg-gradient-to-b from-background to-secondary/5">
       <div className="container mx-auto max-w-7xl">
@@ -22,9 +22,9 @@ export const LibrarySection = () => {
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
             Browse our complete daily published collection
           </p>
-          {dailyPublished && (
+          {books && books.length > 0 && (
             <p className="text-sm text-muted-foreground mt-2">
-              {dailyPublished.length} {dailyPublished.length === 1 ? 'book' : 'books'} published
+              {books.length} {books.length === 1 ? 'book' : 'books'} published
             </p>
           )}
         </div>
@@ -43,16 +43,20 @@ export const LibrarySection = () => {
               </Card>
             ))}
           </div>
-        ) : dailyPublished && dailyPublished.length > 0 ? (
+        ) : books && books.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {dailyPublished.map((item) => (
+            {books.map((item) => (
               <Link key={item.id} to={`/daily-published/${item.id}`}>
                 <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2">
                   <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
                     {item.og_image_url ? (
                       <img 
-                        src={item.og_image_url} 
+                        src={optimizeImageUrl(item.og_image_url, { width: 600 })}
+                        srcSet={generateSrcSet(item.og_image_url, [600, 1200])}
+                        sizes="(max-width: 768px) 100vw, 600px"
                         alt={item.title}
+                        loading="lazy"
+                        decoding="async"
                         className="absolute inset-0 w-full h-full object-cover"
                       />
                     ) : (
@@ -62,13 +66,7 @@ export const LibrarySection = () => {
                         </div>
                       </div>
                     )}
-                    {item.books?.is_highlighted && (
-                      <Badge className="absolute top-3 right-3 bg-foreground text-background">
-                        <Star className="w-3 h-3 mr-1 fill-current" />
-                        Featured
-                      </Badge>
-                    )}
-                    {item.status === 'active' && (
+                    {item.status === 'active' && item.is_active && (
                       <Badge className="absolute top-3 left-3 bg-green-600 text-white">
                         Active Now
                       </Badge>

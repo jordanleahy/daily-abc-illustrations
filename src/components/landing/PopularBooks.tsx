@@ -1,20 +1,16 @@
-import { usePublicHighlightedBooks } from '@/hooks/usePublicHighlightedBooks';
-import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useNavigate } from 'react-router-dom';
 import { Book, Star } from 'lucide-react';
+import { LandingPopularBook } from '@/hooks/useLandingPageData';
+import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
+import { useState } from 'react';
+import { Shimmer } from '@/components/ui/shimmer';
 
-function PopularBookCard({ book }: { book: any }) {
-  const { data: seoMetadata } = useBookSeoMetadata(book.id);
+function PopularBookCard({ book }: { book: LandingPopularBook }) {
   const navigate = useNavigate();
-
-  // Preload image when SEO metadata is available
-  if (seoMetadata?.og_image_url) {
-    const img = new Image();
-    img.src = seoMetadata.og_image_url;
-  }
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
     <Card 
@@ -29,14 +25,24 @@ function PopularBookCard({ book }: { book: any }) {
         
         {/* Book Thumbnail */}
         <AspectRatio ratio={1200/630} className="bg-muted rounded-lg overflow-hidden mb-4">
-          {seoMetadata?.og_image_url ? (
-            <img
-              src={seoMetadata.og_image_url}
-              alt={book.book_name}
-              className="w-full h-full object-cover object-center"
-              loading="lazy"
-              decoding="async"
-            />
+          {book.image_url ? (
+            <div className="relative w-full h-full">
+              {!imageLoaded && (
+                <Shimmer className="absolute inset-0" />
+              )}
+              <img
+                src={optimizeImageUrl(book.image_url, { width: 600 })}
+                srcSet={generateSrcSet(book.image_url, [600, 1200])}
+                sizes="(max-width: 768px) 100vw, 600px"
+                alt={book.book_name}
+                loading="eager"
+                fetchPriority="high"
+                className={`w-full h-full object-cover object-center transition-opacity duration-200 ${
+                  imageLoaded ? 'opacity-100' : 'opacity-0'
+                }`}
+                onLoad={() => setImageLoaded(true)}
+              />
+            </div>
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Book className="h-12 w-12 text-muted-foreground" />
@@ -57,10 +63,13 @@ function PopularBookCard({ book }: { book: any }) {
   );
 }
 
-export const PopularBooks = () => {
-  const { data: popularBooks = [], isLoading: loading } = usePublicHighlightedBooks();
+interface PopularBooksProps {
+  books: LandingPopularBook[] | undefined;
+  isLoading: boolean;
+}
 
-  if (loading) {
+export const PopularBooks = ({ books = [], isLoading }: PopularBooksProps) => {
+  if (isLoading) {
     return (
       <section className="w-full py-16 bg-muted/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -84,7 +93,7 @@ export const PopularBooks = () => {
   }
 
   // Don't render the section if there are no books
-  if (popularBooks.length === 0) {
+  if (books.length === 0 && !isLoading) {
     return null;
   }
 
@@ -95,7 +104,7 @@ export const PopularBooks = () => {
           Fall 2025 Themed Books
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {popularBooks.map((book) => (
+          {books.map((book) => (
             <PopularBookCard key={book.id} book={book} />
           ))}
         </div>

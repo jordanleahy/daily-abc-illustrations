@@ -26,7 +26,7 @@ export default memo(function Library() {
 
   if (isLoading) {
     return (
-      <StandardPageLayout title="Library">
+      <StandardPageLayout>
         <LoadingState text="Loading library..." />
       </StandardPageLayout>
     );
@@ -34,7 +34,7 @@ export default memo(function Library() {
 
   if (error) {
     return (
-      <StandardPageLayout title="Library">
+      <StandardPageLayout>
         <div className="text-center py-8">
           <p className="text-destructive">Error loading library: {error.message}</p>
         </div>
@@ -55,7 +55,7 @@ export default memo(function Library() {
         type: "website"
       }} />
       
-      <StandardPageLayout title="Library" containerClassName="pb-8">
+      <StandardPageLayout containerClassName="pb-8">
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <div>

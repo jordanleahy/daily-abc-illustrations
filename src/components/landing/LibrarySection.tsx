@@ -7,10 +7,10 @@ import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 
 interface LibrarySectionProps {
   books: LandingLibraryBook[] | undefined;
-  isLoading: boolean;
 }
 
-export const LibrarySection = ({ books = [], isLoading }: LibrarySectionProps) => {
+export const LibrarySection = ({ books }: LibrarySectionProps) => {
+  const showSkeleton = !books || books.length === 0;
   return (
     <section className="py-16 px-4 bg-gradient-to-b from-background to-secondary/5">
       <div className="container mx-auto max-w-7xl">
@@ -29,7 +29,7 @@ export const LibrarySection = ({ books = [], isLoading }: LibrarySectionProps) =
           )}
         </div>
 
-        {isLoading ? (
+        {showSkeleton ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
               <Card key={i} className="animate-pulse">
@@ -43,7 +43,7 @@ export const LibrarySection = ({ books = [], isLoading }: LibrarySectionProps) =
               </Card>
             ))}
           </div>
-        ) : books && books.length > 0 ? (
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {books.map((item) => (
               <Link key={item.id} to={`/daily-published/${item.id}`}>
@@ -88,11 +88,6 @@ export const LibrarySection = ({ books = [], isLoading }: LibrarySectionProps) =
                 </Card>
               </Link>
             ))}
-          </div>
-        ) : (
-          <div className="text-center py-12">
-            <BookOpen className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <p className="text-lg text-muted-foreground">No books available yet</p>
           </div>
         )}
       </div>

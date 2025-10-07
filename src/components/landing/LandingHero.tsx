@@ -9,10 +9,9 @@ import { Shimmer } from '@/components/ui/shimmer';
 
 interface LandingHeroProps {
   dailyPublished: LandingDailyPublished | null | undefined;
-  isLoading: boolean;
 }
 
-export const LandingHero = ({ dailyPublished, isLoading }: LandingHeroProps) => {
+export const LandingHero = ({ dailyPublished }: LandingHeroProps) => {
   const navigate = useNavigate();
   const pages = dailyPublished?.pages || [];
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
@@ -58,7 +57,7 @@ export const LandingHero = ({ dailyPublished, isLoading }: LandingHeroProps) => 
 
           {/* Right Column - Daily Swiper */}
           <div className="relative bg-card rounded-lg shadow-xl p-6 border">
-            {isLoading ? (
+            {!dailyPublished ? (
               <div className="space-y-4">
                 <div className="text-center">
                   <Shimmer className="h-6 w-32 mx-auto mb-2" />

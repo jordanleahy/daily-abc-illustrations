@@ -52,16 +52,13 @@ const Landing = () => {
         
         <LandingHero 
           dailyPublished={landingData?.dailyPublished} 
-          isLoading={isLoading} 
         />
         <PopularBooks 
           books={landingData?.popularBooks} 
-          isLoading={isLoading} 
         />
         <PricingSection />
         <LibrarySection 
           books={landingData?.libraryBooks} 
-          isLoading={isLoading} 
         />
         <SignupSection />
         <Footer />

@@ -158,9 +158,10 @@ const Auth = () => {
   };
 
   return (
-    <PageLayout showHeader={false}>
+    <>
       <AuthHeader />
-      <Container size="sm" className="flex items-center justify-center min-h-screen py-8">
+      <PageLayout showHeader={false}>
+        <Container size="sm" className="flex items-center justify-center min-h-screen py-8">
         <Card className="w-full">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">
@@ -247,8 +248,9 @@ const Auth = () => {
           </div>
         </CardContent>
       </Card>
-    </Container>
-    </PageLayout>
+      </Container>
+      </PageLayout>
+    </>
   );
 };
 

@@ -90,4 +90,43 @@ self.addEventListener('message', (event) => {
       })
     );
   }
+  
+  // Prefetch library images
+  if (event.data && event.data.type === 'PREFETCH_IMAGES') {
+    const urls = event.data.urls || [];
+    console.log('[Service Worker] Prefetching', urls.length, 'images');
+    
+    event.waitUntil(
+      caches.open(CACHE_NAME).then((cache) => {
+        return Promise.allSettled(
+          urls.map((url) => {
+            return fetch(url)
+              .then((response) => {
+                if (response && response.status === 200) {
+                  const headers = new Headers(response.headers);
+                  headers.append('sw-cache-date', new Date().toISOString());
+                  
+                  const modifiedResponse = new Response(response.clone().body, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: headers
+                  });
+                  
+                  cache.put(url, modifiedResponse);
+                  console.log('[Service Worker] Prefetched:', url);
+                }
+                return response;
+              })
+              .catch((error) => {
+                console.error('[Service Worker] Prefetch failed for:', url, error);
+              });
+          })
+        ).then(() => {
+          if (event.ports[0]) {
+            event.ports[0].postMessage({ success: true, count: urls.length });
+          }
+        });
+      })
+    );
+  }
 });

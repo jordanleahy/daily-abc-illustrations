@@ -6,7 +6,7 @@
 export const SITE_CONFIG = {
   // Basic site information
   name: 'Daily ABC Illustrations',
-  tagline: 'Every 24 Hours',
+  tagline: 'A New Book Every 24 Hours',
   description: 'My daughter loves digital learning, so I build her a new book every day',
   subheading: 'Phonics-focused stories based on seasonality and relevancy',
   author: 'Lovable',

@@ -9,6 +9,7 @@ import { Loader2 } from 'lucide-react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Container } from '@/components/layout/Container';
+import { AuthHeader } from '@/components/layout/AuthHeader';
 import { SITE_CONFIG } from '@/config/site';
 import { SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 
@@ -157,7 +158,8 @@ const Auth = () => {
   };
 
   return (
-    <PageLayout>
+    <PageLayout showHeader={false}>
+      <AuthHeader />
       <Container size="sm" className="flex items-center justify-center min-h-screen py-8">
         <Card className="w-full">
           <CardHeader className="text-center">

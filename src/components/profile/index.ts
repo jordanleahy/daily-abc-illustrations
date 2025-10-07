@@ -6,3 +6,4 @@ export { KidsManagementTab } from './KidsManagementTab';
 export { KidProfileCard } from './KidProfileCard';
 export { AddKidModal } from './AddKidModal';
 export { EditKidModal } from './EditKidModal';
+export { DeleteAccountDialog } from './DeleteAccountDialog';

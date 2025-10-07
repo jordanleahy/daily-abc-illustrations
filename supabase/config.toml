@@ -128,3 +128,6 @@ verify_jwt = true
 
 [functions.purchase-reward]
 verify_jwt = true
+
+[functions.delete-account]
+verify_jwt = true

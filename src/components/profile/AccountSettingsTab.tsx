@@ -1,7 +1,14 @@
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Shield, Key, Trash2 } from 'lucide-react';
+import { DeleteAccountDialog } from './DeleteAccountDialog';
+import { useDeleteAccount } from '@/hooks/useDeleteAccount';
+import { useSubscription } from '@/hooks/useSubscription';
 
 export function AccountSettingsTab() {
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { mutate: deleteAccount, isPending: isDeleting } = useDeleteAccount();
+  const { subscribed } = useSubscription();
   return (
     <div className="space-y-3">
       <div className="space-y-2">
@@ -72,13 +79,28 @@ export function AccountSettingsTab() {
         <div className="flex items-center justify-between p-2 rounded-md border border-destructive/20 bg-destructive/5">
           <div>
             <p className="font-medium text-sm">Delete Account</p>
-            <p className="text-xs text-muted-foreground">Permanently delete all data</p>
+            <p className="text-xs text-muted-foreground">
+              Permanently delete all data
+              {subscribed && <span className="text-destructive"> (will cancel subscription)</span>}
+            </p>
           </div>
-          <Button variant="destructive" size="sm" disabled>
-            Delete
-            <span className="ml-1 text-xs text-muted-foreground">(Soon)</span>
+          <Button 
+            variant="destructive" 
+            size="sm"
+            onClick={() => setShowDeleteDialog(true)}
+            disabled={isDeleting}
+          >
+            {isDeleting ? 'Deleting...' : 'Delete'}
           </Button>
         </div>
+        
+        <DeleteAccountDialog
+          open={showDeleteDialog}
+          onOpenChange={setShowDeleteDialog}
+          onConfirm={() => deleteAccount()}
+          isDeleting={isDeleting}
+          hasSubscription={subscribed}
+        />
       </div>
     </div>
   );

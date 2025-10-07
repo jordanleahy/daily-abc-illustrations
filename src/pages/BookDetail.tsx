@@ -539,6 +539,17 @@ export default function BookDetail() {
                         <Star className={`w-4 h-4 ${book.is_highlighted ? 'fill-current' : ''}`} />
                       )}
                     </Button>
+
+                    {/* Add new page button */}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setIsCreatePageModalOpen(true)}
+                      title="Add new page"
+                      aria-label="Add new page"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
                     
                     {/* Archive button on mobile only */}
                     {isMobile && (
@@ -809,19 +820,6 @@ export default function BookDetail() {
                     bookId={book.id}
                   />
                 ))}
-                
-                {/* Plus Button Card */}
-                <Card 
-                  className="cursor-pointer hover:shadow-md transition-all border-2 border-dashed hover:border-primary/50 bg-muted/20"
-                  onClick={() => setIsCreatePageModalOpen(true)}
-                >
-                  <CardContent className="flex flex-col items-center justify-center h-full min-h-[200px] gap-3">
-                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Plus className="w-8 h-8 text-primary" />
-                    </div>
-                    <p className="text-sm font-medium text-muted-foreground">Add New Page</p>
-                  </CardContent>
-                </Card>
               </div>
 
               {/* Create Page Modal */}

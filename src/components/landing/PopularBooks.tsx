@@ -35,8 +35,8 @@ function PopularBookCard({ book }: { book: LandingPopularBook }) {
                 srcSet={generateSrcSet(book.image_url, [600, 1200])}
                 sizes="(max-width: 768px) 100vw, 600px"
                 alt={book.book_name}
-                loading="eager"
-                fetchPriority="high"
+                loading="lazy"
+                fetchPriority="low"
                 className={`w-full h-full object-cover object-center transition-opacity duration-200 ${
                   imageLoaded ? 'opacity-100' : 'opacity-0'
                 }`}

@@ -13,18 +13,10 @@ import {
 } from '@/components/landing';
 import { Header } from '@/components/layout';
 import { useLandingPageData } from '@/hooks/useLandingPageData';
-import { useLandingImagePreloader } from '@/hooks/useLandingImagePreloader';
 
 const Landing = () => {
   const { trackEvent } = useGA4();
   const { data: landingData, isLoading } = useLandingPageData();
-
-  // Strategically preload images in batches
-  useLandingImagePreloader(
-    landingData?.dailyPublished?.pages?.map(p => p.image_url) || [],
-    landingData?.popularBooks?.map(b => b.image_url) || [],
-    landingData?.libraryBooks?.map(b => b.og_image_url) || []
-  );
 
   useEffect(() => {
     trackEvent('page_view', {

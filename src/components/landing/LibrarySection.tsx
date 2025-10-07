@@ -56,6 +56,7 @@ export const LibrarySection = ({ books = [], isLoading }: LibrarySectionProps) =
                         sizes="(max-width: 768px) 100vw, 600px"
                         alt={item.title}
                         loading="lazy"
+                        fetchPriority="low"
                         decoding="async"
                         className="absolute inset-0 w-full h-full object-cover"
                       />

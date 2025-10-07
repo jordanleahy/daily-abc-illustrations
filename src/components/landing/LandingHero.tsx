@@ -4,7 +4,7 @@ import { SITE_CONFIG } from '@/config/site';
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Book } from 'lucide-react';
 import { LandingDailyPublished } from '@/hooks/useLandingPageData';
-import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
+import { OptimizedImage } from '@/components/ui/optimized-image';
 import { Shimmer } from '@/components/ui/shimmer';
 
 interface LandingHeroProps {
@@ -15,7 +15,6 @@ export const LandingHero = ({ dailyPublished }: LandingHeroProps) => {
   const navigate = useNavigate();
   const pages = dailyPublished?.pages || [];
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleNextPage = () => {
     if (currentPageIndex < pages.length - 1) {
@@ -82,27 +81,19 @@ export const LandingHero = ({ dailyPublished }: LandingHeroProps) => {
                 </div>
 
                 <div className="relative aspect-square bg-background rounded-lg overflow-hidden">
-                  {!imageLoaded && currentPage.image_url && (
-                    <Shimmer className="absolute inset-0" />
-                  )}
-                  {currentPage.image_url ? (
-                    <img
-                      src={optimizeImageUrl(currentPage.image_url, { width: 800 })}
-                      srcSet={generateSrcSet(currentPage.image_url, [600, 800, 1200])}
-                      sizes="(max-width: 768px) 100vw, 600px"
-                      alt={`${currentPage.letter} - ${currentPage.title}`}
-                      loading="eager"
-                      fetchPriority="high"
-                      className={`w-full h-full object-cover transition-opacity duration-200 ${
-                        imageLoaded ? 'opacity-100' : 'opacity-0'
-                      }`}
-                      onLoad={() => setImageLoaded(true)}
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Book className="h-12 w-12 text-muted-foreground" />
-                    </div>
-                  )}
+                  <OptimizedImage
+                    src={currentPage.image_url}
+                    alt={`${currentPage.letter} - ${currentPage.title}`}
+                    priority={true}
+                    width={800}
+                    srcSetSizes={[600, 800, 1200]}
+                    sizes="(max-width: 768px) 100vw, 600px"
+                    fallback={
+                      <div className="w-full h-full flex items-center justify-center">
+                        <Book className="h-12 w-12 text-muted-foreground" />
+                      </div>
+                    }
+                  />
                 </div>
 
                 <div className="flex items-center justify-between">

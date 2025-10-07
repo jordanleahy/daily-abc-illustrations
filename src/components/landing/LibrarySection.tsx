@@ -1,9 +1,10 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Library, Star, BookOpen } from 'lucide-react';
+import { Library } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { LandingLibraryBook } from '@/hooks/useLandingPageData';
-import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
+import { OptimizedImage } from '@/components/ui/optimized-image';
+import { LibraryBookSkeleton } from '@/components/ui/book-card-skeleton';
 
 interface LibrarySectionProps {
   books: LandingLibraryBook[] | undefined;
@@ -32,15 +33,7 @@ export const LibrarySection = ({ books }: LibrarySectionProps) => {
         {showSkeleton ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[...Array(6)].map((_, i) => (
-              <Card key={i} className="animate-pulse">
-                <CardHeader>
-                  <div className="h-6 bg-muted rounded w-3/4 mb-2" />
-                  <div className="h-4 bg-muted rounded w-full" />
-                </CardHeader>
-                <CardContent>
-                  <div className="h-20 bg-muted rounded" />
-                </CardContent>
-              </Card>
+              <LibraryBookSkeleton key={i} />
             ))}
           </div>
         ) : (
@@ -49,26 +42,23 @@ export const LibrarySection = ({ books }: LibrarySectionProps) => {
               <Link key={item.id} to={`/daily-published/${item.id}`}>
                 <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2">
                   <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
-                    {item.og_image_url ? (
-                      <img 
-                        src={optimizeImageUrl(item.og_image_url, { width: 600 })}
-                        srcSet={generateSrcSet(item.og_image_url, [600, 1200])}
-                        sizes="(max-width: 768px) 100vw, 600px"
-                        alt={item.title}
-                        loading="lazy"
-                        fetchPriority="low"
-                        decoding="async"
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-6xl font-bold text-primary/20">
-                          {item.title.charAt(0)}
+                    <OptimizedImage
+                      src={item.og_image_url}
+                      alt={item.title}
+                      width={600}
+                      srcSetSizes={[600, 1200]}
+                      sizes="(max-width: 768px) 100vw, 600px"
+                      className="absolute inset-0"
+                      fallback={
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="text-6xl font-bold text-primary/20">
+                            {item.title.charAt(0)}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      }
+                    />
                     {item.status === 'active' && item.is_active && (
-                      <Badge className="absolute top-3 left-3 bg-green-600 text-white">
+                      <Badge className="absolute top-3 left-3 bg-green-600 text-white z-10">
                         Active Now
                       </Badge>
                     )}

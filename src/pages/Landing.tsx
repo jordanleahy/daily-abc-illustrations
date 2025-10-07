@@ -16,7 +16,7 @@ import { useLandingPageData } from '@/hooks/useLandingPageData';
 
 const Landing = () => {
   const { trackEvent } = useGA4();
-  const { data: landingData, isLoading } = useLandingPageData();
+  const { data: landingData } = useLandingPageData();
 
   useEffect(() => {
     trackEvent('page_view', {

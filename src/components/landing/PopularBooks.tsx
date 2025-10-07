@@ -4,13 +4,11 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useNavigate } from 'react-router-dom';
 import { Book, Star } from 'lucide-react';
 import { LandingPopularBook } from '@/hooks/useLandingPageData';
-import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
-import { useState } from 'react';
-import { Shimmer } from '@/components/ui/shimmer';
+import { OptimizedImage } from '@/components/ui/optimized-image';
+import { PopularBookSkeleton } from '@/components/ui/book-card-skeleton';
 
 function PopularBookCard({ book }: { book: LandingPopularBook }) {
   const navigate = useNavigate();
-  const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
     <Card 
@@ -23,31 +21,19 @@ function PopularBookCard({ book }: { book: LandingPopularBook }) {
           Featured
         </Badge>
         
-        {/* Book Thumbnail */}
         <AspectRatio ratio={1200/630} className="bg-muted rounded-lg overflow-hidden mb-4">
-          {book.image_url ? (
-            <div className="relative w-full h-full">
-              {!imageLoaded && (
-                <Shimmer className="absolute inset-0" />
-              )}
-              <img
-                src={optimizeImageUrl(book.image_url, { width: 600 })}
-                srcSet={generateSrcSet(book.image_url, [600, 1200])}
-                sizes="(max-width: 768px) 100vw, 600px"
-                alt={book.book_name}
-                loading="lazy"
-                fetchPriority="low"
-                className={`w-full h-full object-cover object-center transition-opacity duration-200 ${
-                  imageLoaded ? 'opacity-100' : 'opacity-0'
-                }`}
-                onLoad={() => setImageLoaded(true)}
-              />
-            </div>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Book className="h-12 w-12 text-muted-foreground" />
-            </div>
-          )}
+          <OptimizedImage
+            src={book.image_url}
+            alt={book.book_name}
+            width={600}
+            srcSetSizes={[600, 1200]}
+            sizes="(max-width: 768px) 100vw, 600px"
+            fallback={
+              <div className="w-full h-full flex items-center justify-center">
+                <Book className="h-12 w-12 text-muted-foreground" />
+              </div>
+            }
+          />
         </AspectRatio>
 
         <h3 className="font-semibold text-lg mb-2 line-clamp-2">
@@ -79,13 +65,7 @@ export const PopularBooks = ({ books }: PopularBooksProps) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {showSkeleton ? (
             [1, 2, 3, 4, 5, 6].map((i) => (
-              <Card key={i} className="animate-pulse">
-                <CardContent className="p-6">
-                  <div className="aspect-square bg-muted rounded-lg mb-4" />
-                  <div className="h-6 bg-muted rounded mb-2" />
-                  <div className="h-4 bg-muted rounded w-2/3" />
-                </CardContent>
-              </Card>
+              <PopularBookSkeleton key={i} />
             ))
           ) : (
             books.map((book) => (

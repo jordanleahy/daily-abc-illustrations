@@ -6,14 +6,20 @@ import { Book, Star } from 'lucide-react';
 import { LandingPopularBook } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { PopularBookSkeleton } from '@/components/ui/book-card-skeleton';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 function PopularBookCard({ book }: { book: LandingPopularBook }) {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuthContext();
+
+  const handleCardClick = () => {
+    navigate(isAuthenticated ? `/library/${book.id}` : '/pricing');
+  };
 
   return (
     <Card 
       className="cursor-pointer hover:shadow-lg transition-all relative ring-2 ring-primary shadow-md"
-      onClick={() => navigate(`/library/${book.id}`)}
+      onClick={handleCardClick}
     >
       <CardContent className="p-6">
         <Badge className="absolute top-4 right-4 bg-primary z-10">

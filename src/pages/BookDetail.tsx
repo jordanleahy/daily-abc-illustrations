@@ -48,6 +48,8 @@ import { ExportsSection } from '@/components/exports/ExportsSection';
 
 import { PageImageSection } from "@/components/PageImageSection";
 import { PageCard, UserPageCard, FocusedPageView } from '@/components/page-prompts';
+import { CreatePageModal } from '@/components/page-prompts/CreatePageModal';
+import { Plus } from 'lucide-react';
 
 export default function BookDetail() {
   const { id } = useParams<{ id: string }>();
@@ -74,6 +76,7 @@ export default function BookDetail() {
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
   const [isClassView, setIsClassView] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [isCreatePageModalOpen, setIsCreatePageModalOpen] = useState(false);
   
   const { mutate: toggleHighlight, isPending: isHighlightLoading } = useToggleBookHighlight();
   
@@ -798,25 +801,36 @@ export default function BookDetail() {
               />
 
               {/* Pages Grid (Admin View) */}
-              {pages && pages.length > 0 ? (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {pages.map((page) => (
-                      <PageCard
-                        key={page.id}
-                        page={page}
-                        bookId={book.id}
-                      />
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <Card>
-                  <CardContent className="flex items-center justify-center h-32">
-                    <p className="text-muted-foreground">No pages created yet.</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {pages && pages.length > 0 && pages.map((page) => (
+                  <PageCard
+                    key={page.id}
+                    page={page}
+                    bookId={book.id}
+                  />
+                ))}
+                
+                {/* Plus Button Card */}
+                <Card 
+                  className="cursor-pointer hover:shadow-md transition-all border-2 border-dashed hover:border-primary/50 bg-muted/20"
+                  onClick={() => setIsCreatePageModalOpen(true)}
+                >
+                  <CardContent className="flex flex-col items-center justify-center h-full min-h-[200px] gap-3">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Plus className="w-8 h-8 text-primary" />
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground">Add New Page</p>
                   </CardContent>
                 </Card>
-              )}
+              </div>
+
+              {/* Create Page Modal */}
+              <CreatePageModal
+                open={isCreatePageModalOpen}
+                onOpenChange={setIsCreatePageModalOpen}
+                bookId={book.id}
+                existingPages={pages?.length || 0}
+              />
             </>
           )}
       </div>

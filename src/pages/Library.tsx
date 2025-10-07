@@ -103,6 +103,12 @@ const LibraryBookCard = memo(function LibraryBookCard({ item }: LibraryBookCardP
   const { hasActiveSubscription, createCheckoutSession } = useSubscription();
   
   const handleCardClick = async () => {
+    // If user is not authenticated, redirect to pricing page
+    if (!isAuthenticated) {
+      navigate('/pricing');
+      return;
+    }
+    
     // If user is authenticated but doesn't have an active subscription, redirect to Stripe
     if (isAuthenticated && !hasActiveSubscription) {
       await createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id);

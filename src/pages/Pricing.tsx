@@ -31,7 +31,7 @@ export default function Pricing() {
   return (
     <>
       <MetaHead metadata={seoMetadata} />
-      <PageLayout title={pageTitle}>
+      <PageLayout>
         <main className="min-h-screen">
           <NonAuthPricingSection />
         </main>

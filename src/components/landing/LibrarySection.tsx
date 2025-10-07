@@ -1,17 +1,30 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Library } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { LandingLibraryBook } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { LibraryBookSkeleton } from '@/components/ui/book-card-skeleton';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface LibrarySectionProps {
   books: LandingLibraryBook[] | undefined;
 }
 
 export const LibrarySection = ({ books }: LibrarySectionProps) => {
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthContext();
   const showSkeleton = !books || books.length === 0;
+
+  const handleCardClick = (item: LandingLibraryBook) => {
+    const isActiveNow = item.status === 'active' && item.is_active;
+    
+    if (!isAuthenticated && !isActiveNow) {
+      navigate('/pricing');
+    } else {
+      navigate(`/daily-published/${item.id}`);
+    }
+  };
   return (
     <section className="py-16 px-4 bg-gradient-to-b from-background to-secondary/5">
       <div className="container mx-auto max-w-7xl">
@@ -39,8 +52,11 @@ export const LibrarySection = ({ books }: LibrarySectionProps) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {books.map((item) => (
-              <Link key={item.id} to={`/daily-published/${item.id}`}>
-                <Card className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2">
+              <Card 
+                key={item.id}
+                onClick={() => handleCardClick(item)}
+                className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2"
+              >
                   <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
                     <OptimizedImage
                       src={item.og_image_url}
@@ -76,7 +92,6 @@ export const LibrarySection = ({ books }: LibrarySectionProps) => {
                     )}
                   </CardContent>
                 </Card>
-              </Link>
             ))}
           </div>
         )}

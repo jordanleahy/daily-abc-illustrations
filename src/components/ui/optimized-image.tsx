@@ -52,6 +52,7 @@ export const OptimizedImage = ({
           alt=""
           aria-hidden="true"
           loading="eager"
+          fetchPriority="high"
           className={cn(
             "absolute inset-0 w-full h-full object-cover transition-opacity duration-300",
             blurLoaded && !fullImageLoaded ? "opacity-100 blur-xl scale-110" : "opacity-0"

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +35,23 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
   const [existingImageUrl, setExistingImageUrl] = useState(editProduct?.product_image_url || '');
   const [existingVideoUrl, setExistingVideoUrl] = useState(editProduct?.product_video_url || '');
   const [isUploading, setIsUploading] = useState(false);
+
+  // Sync form state with editProduct when modal opens or editProduct changes
+  useEffect(() => {
+    if (open && editProduct) {
+      setTitle(editProduct.title || '');
+      setDescription(editProduct.description || '');
+      setCoinPrice(editProduct.coin_price?.toString() || '');
+      setHasQuantityLimit(!!editProduct.quantity_available);
+      setQuantityAvailable(editProduct.quantity_available?.toString() || '1');
+      setExistingImageUrl(editProduct.product_image_url || '');
+      setExistingVideoUrl(editProduct.product_video_url || '');
+      setUploadedImage(null);
+      setUploadedVideo(null);
+    } else if (open && !editProduct) {
+      resetForm();
+    }
+  }, [open, editProduct]);
 
   const handleImageSelect = (file: File) => {
     setUploadedImage(file);

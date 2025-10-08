@@ -22,9 +22,25 @@ export const useCreatePage = () => {
         throw new Error('User must be authenticated to create a page');
       }
 
+      // Fetch the current maximum page_number for this book
+      const { data: existingPagesData, error: fetchError } = await supabase
+        .from('pages')
+        .select('page_number')
+        .eq('book_id', bookId)
+        .order('page_number', { ascending: false })
+        .limit(1);
+
+      if (fetchError) {
+        console.error('Error fetching existing pages:', fetchError);
+        throw fetchError;
+      }
+
       // Determine the next page number and letter
-      const pageNumber = existingPages + 1;
-      const letter = alphabet[existingPages % 26] || 'A';
+      const maxPageNumber = existingPagesData && existingPagesData.length > 0 
+        ? existingPagesData[0].page_number 
+        : 0;
+      const pageNumber = maxPageNumber + 1;
+      const letter = alphabet[(pageNumber - 1) % 26] || 'A';
 
       // Insert the new page
       const { data, error } = await supabase

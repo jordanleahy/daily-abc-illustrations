@@ -30,7 +30,17 @@ export const ProductCard = ({
   return (
     <Card className="overflow-hidden hover-scale">
       <div className="aspect-square relative bg-muted">
-        {product.product_image_url ? (
+        {product.product_video_url ? (
+          <video
+            src={product.product_video_url}
+            className="w-full h-full object-cover"
+            controls
+            playsInline
+            loop
+            muted
+            autoPlay={false}
+          />
+        ) : product.product_image_url ? (
           <img
             src={product.product_image_url}
             alt={product.title}

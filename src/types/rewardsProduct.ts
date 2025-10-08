@@ -5,6 +5,7 @@ export interface RewardsProduct {
   description?: string;
   coin_price: number;
   product_image_url?: string;
+  product_video_url?: string;
   is_active: boolean;
   quantity_available?: number;
   created_at: string;
@@ -16,6 +17,7 @@ export interface CreateRewardsProductInput {
   description?: string;
   coin_price: number;
   product_image_url?: string;
+  product_video_url?: string;
   quantity_available?: number;
 }
 
@@ -24,6 +26,7 @@ export interface UpdateRewardsProductInput {
   description?: string;
   coin_price?: number;
   product_image_url?: string;
+  product_video_url?: string;
   is_active?: boolean;
   quantity_available?: number;
 }

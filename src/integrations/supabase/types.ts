@@ -466,6 +466,7 @@ export type Database = {
           is_active: boolean
           parent_user_id: string
           product_image_url: string | null
+          product_video_url: string | null
           quantity_available: number | null
           title: string
           updated_at: string
@@ -478,6 +479,7 @@ export type Database = {
           is_active?: boolean
           parent_user_id: string
           product_image_url?: string | null
+          product_video_url?: string | null
           quantity_available?: number | null
           title: string
           updated_at?: string
@@ -490,6 +492,7 @@ export type Database = {
           is_active?: boolean
           parent_user_id?: string
           product_image_url?: string | null
+          product_video_url?: string | null
           quantity_available?: number | null
           title?: string
           updated_at?: string

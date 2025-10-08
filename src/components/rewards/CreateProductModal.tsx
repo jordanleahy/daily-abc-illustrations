@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ImageUpload } from '@/components/ImageUpload';
+import { VideoUpload } from '@/components/VideoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useCreateRewardsProduct } from '@/hooks/useCreateRewardsProduct';
@@ -30,17 +31,22 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
   const [hasQuantityLimit, setHasQuantityLimit] = useState(!!editProduct?.quantity_available);
   const [quantityAvailable, setQuantityAvailable] = useState(editProduct?.quantity_available?.toString() || '1');
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
+  const [uploadedVideo, setUploadedVideo] = useState<File | null>(null);
   const [existingImageUrl, setExistingImageUrl] = useState(editProduct?.product_image_url || '');
+  const [existingVideoUrl, setExistingVideoUrl] = useState(editProduct?.product_video_url || '');
   const [isUploading, setIsUploading] = useState(false);
 
   const handleImageSelect = (file: File) => {
     setUploadedImage(file);
   };
 
+  const handleVideoSelect = (file: File) => {
+    setUploadedVideo(file);
+  };
+
   const uploadImage = async (): Promise<string | undefined> => {
     if (!uploadedImage || !user?.id) return existingImageUrl || undefined;
 
-    setIsUploading(true);
     try {
       const fileExt = uploadedImage.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
@@ -59,41 +65,72 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
     } catch (error) {
       console.error('Error uploading image:', error);
       throw error;
-    } finally {
-      setIsUploading(false);
+    }
+  };
+
+  const uploadVideo = async (): Promise<string | undefined> => {
+    if (!uploadedVideo || !user?.id) return existingVideoUrl || undefined;
+
+    try {
+      const fileExt = uploadedVideo.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('kid-rewards-images')
+        .upload(fileName, uploadedVideo);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('kid-rewards-images')
+        .getPublicUrl(fileName);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading video:', error);
+      throw error;
     }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const productImageUrl = await uploadImage();
+    setIsUploading(true);
+    try {
+      const productImageUrl = await uploadImage();
+      const productVideoUrl = await uploadVideo();
 
-    const productData = {
-      title,
-      description: description || undefined,
-      coin_price: parseInt(coinPrice),
-      product_image_url: productImageUrl,
-      quantity_available: hasQuantityLimit ? parseInt(quantityAvailable) : undefined,
-    };
+      const productData = {
+        title,
+        description: description || undefined,
+        coin_price: parseInt(coinPrice),
+        product_image_url: productImageUrl,
+        product_video_url: productVideoUrl,
+        quantity_available: hasQuantityLimit ? parseInt(quantityAvailable) : undefined,
+      };
 
-    if (editProduct) {
-      updateProduct.mutate(
-        { id: editProduct.id, updates: productData },
-        {
+      if (editProduct) {
+        updateProduct.mutate(
+          { id: editProduct.id, updates: productData },
+          {
+            onSuccess: () => {
+              onOpenChange(false);
+              resetForm();
+            },
+          }
+        );
+      } else {
+        createProduct.mutate(productData, {
           onSuccess: () => {
             onOpenChange(false);
             resetForm();
           },
-        }
-      );
-    } else {
-      createProduct.mutate(productData, {
-        onSuccess: () => {
-          onOpenChange(false);
-          resetForm();
-        },
-      });
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting product:', error);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -104,7 +141,9 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
     setHasQuantityLimit(false);
     setQuantityAvailable('1');
     setUploadedImage(null);
+    setUploadedVideo(null);
     setExistingImageUrl('');
+    setExistingVideoUrl('');
   };
 
   const coins = parseInt(coinPrice) || 0;
@@ -120,12 +159,26 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="image">Product Image</Label>
-            <ImageUpload onImageSelect={handleImageSelect} />
-            {existingImageUrl && !uploadedImage && (
-              <img src={existingImageUrl} alt="Current" className="w-32 h-32 object-cover rounded-lg" />
-            )}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="image">Product Image</Label>
+              <div className="h-48">
+                <ImageUpload onImageSelect={handleImageSelect} />
+              </div>
+              {existingImageUrl && !uploadedImage && (
+                <img src={existingImageUrl} alt="Current" className="w-32 h-32 object-cover rounded-lg" />
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="video">Product Video (Portrait)</Label>
+              <div className="h-48">
+                <VideoUpload onVideoSelect={handleVideoSelect} />
+              </div>
+              {existingVideoUrl && !uploadedVideo && (
+                <video src={existingVideoUrl} className="w-32 h-48 object-cover rounded-lg" controls />
+              )}
+            </div>
           </div>
 
           <div className="space-y-2">

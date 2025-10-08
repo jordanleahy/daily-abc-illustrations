@@ -102,10 +102,9 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'gpt-image-1',
         prompt: imagePrompt,
-        size: '1024x1024', // Smaller size for OG images (recommended 1200x630, but 1024x1024 is more compatible)
-        quality: 'medium', // Medium quality for smaller file size
-        output_format: 'webp', // WebP format is much smaller than PNG
-        output_compression: 75, // 75% quality for good balance of size and quality
+        size: '1536x1024', // 3:2 aspect ratio, supported by gpt-image-1
+        quality: 'high',
+        output_format: 'png',
       }),
     });
 
@@ -139,13 +138,13 @@ serve(async (req) => {
     for (let i = 0; i < binaryString.length; i++) {
       bytes[i] = binaryString.charCodeAt(i);
     }
-    const imageBlob = new Blob([bytes], { type: 'image/webp' });
-    const fileName = `${bookId}/og-${Date.now()}.webp`; // Use webp extension and timestamp for cache busting
+    const imageBlob = new Blob([bytes], { type: 'image/png' });
+    const fileName = `${bookId}/cover.png`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('book-covers')
       .upload(fileName, imageBlob, {
-        contentType: 'image/webp',
+        contentType: 'image/png',
         upsert: true
       });
 

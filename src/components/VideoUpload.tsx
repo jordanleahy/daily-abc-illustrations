@@ -2,7 +2,7 @@ import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Upload, AlertCircle, Video } from "lucide-react";
 import { toast } from "sonner";
-import { processVideo, validateVideo, formatFileSize } from "@/utils/videoProcessor";
+import { processVideo, validateVideo, validateVideoDuration, formatFileSize } from "@/utils/videoProcessor";
 
 interface VideoUploadProps {
   onVideoSelect: (file: File) => void;
@@ -20,6 +20,13 @@ export function VideoUpload({ onVideoSelect, disabled = false, className = "" }:
     const validationError = validateVideo(file);
     if (validationError) {
       toast.error(validationError);
+      return;
+    }
+
+    // Check video duration
+    const durationError = await validateVideoDuration(file);
+    if (durationError) {
+      toast.error(durationError);
       return;
     }
 
@@ -158,7 +165,7 @@ export function VideoUpload({ onVideoSelect, disabled = false, className = "" }:
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <AlertCircle className="w-3 h-3" />
-              <span>MP4, WebM, MOV • Max 50MB • Portrait recommended</span>
+              <span>MP4, WebM, MOV • Max 50MB • Up to 3 minutes • Portrait</span>
             </div>
           </div>
         )}

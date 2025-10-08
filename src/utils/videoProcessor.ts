@@ -245,3 +245,25 @@ export function validateVideo(file: File): string | null {
 
   return null;
 }
+
+/**
+ * Validate video duration
+ */
+export async function validateVideoDuration(file: File): Promise<string | null> {
+  try {
+    const video = await loadVideoFromFile(file);
+    const maxDuration = 180; // 3 minutes in seconds
+    
+    if (video.duration > maxDuration) {
+      return `Video must be 3 minutes or shorter (current: ${Math.ceil(video.duration / 60)} minutes)`;
+    }
+    
+    // Cleanup
+    video.src = '';
+    URL.revokeObjectURL(video.src);
+    
+    return null;
+  } catch (error) {
+    return 'Failed to validate video duration';
+  }
+}

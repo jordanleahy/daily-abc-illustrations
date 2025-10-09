@@ -105,7 +105,7 @@ async function downloadImage(url: string): Promise<ArrayBuffer> {
 /**
  * Detects image format from array buffer
  */
-function detectImageFormat(buffer: ArrayBuffer): 'png' | 'jpg' | 'jpeg' | null {
+function detectImageFormat(buffer: ArrayBuffer): 'png' | 'jpg' | 'jpeg' | 'webp' | null {
   const bytes = new Uint8Array(buffer);
   
   // PNG signature: 89 50 4E 47 0D 0A 1A 0A
@@ -120,7 +120,57 @@ function detectImageFormat(buffer: ArrayBuffer): 'png' | 'jpg' | 'jpeg' | null {
     return 'jpg';
   }
   
+  // WebP signature: RIFF ... WEBP
+  if (bytes.length >= 12 &&
+      bytes[0] === 0x52 && bytes[1] === 0x49 && bytes[2] === 0x46 && bytes[3] === 0x46 &&
+      bytes[8] === 0x57 && bytes[9] === 0x45 && bytes[10] === 0x42 && bytes[11] === 0x50) {
+    return 'webp';
+  }
+  
   return null;
+}
+
+/**
+ * Converts WebP image to PNG using canvas
+ */
+async function convertWebPToPNG(buffer: ArrayBuffer): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([buffer], { type: 'image/webp' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+      
+      ctx.drawImage(img, 0, 0);
+      
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Failed to convert WebP to PNG'));
+          return;
+        }
+        
+        blob.arrayBuffer().then(resolve).catch(reject);
+      }, 'image/png');
+      
+      URL.revokeObjectURL(url);
+    };
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load WebP image'));
+    };
+    
+    img.src = url;
+  });
 }
 
 /**
@@ -153,13 +203,25 @@ export async function generatePDF(
       }
 
       // Download image
-      const imageBuffer = await downloadImage(page.image_url);
-      const format = detectImageFormat(imageBuffer);
+      let imageBuffer = await downloadImage(page.image_url);
+      let format = detectImageFormat(imageBuffer);
       
       if (!format) {
         failedPages.push(`Page ${page.letter}: Unsupported image format`);
         onError?.(`Unsupported image format for page ${page.letter}`, page.id);
         continue;
+      }
+
+      // Convert WebP to PNG if needed
+      if (format === 'webp') {
+        try {
+          imageBuffer = await convertWebPToPNG(imageBuffer);
+          format = 'png';
+        } catch (conversionError) {
+          failedPages.push(`Page ${page.letter}: Failed to convert WebP image`);
+          onError?.(`Failed to convert WebP image for page ${page.letter}`, page.id);
+          continue;
+        }
       }
 
       // Embed image in PDF

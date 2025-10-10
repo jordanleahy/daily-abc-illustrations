@@ -38,9 +38,9 @@ export default function AuthConfirm() {
             return;
           }
 
-          // No subscription - redirect to pricing page
-          console.log("[AUTH-CONFIRM] No subscription, redirecting to pricing");
-          setTimeout(() => navigate("/pricing", { replace: true }), 1500);
+          // No subscription - redirect to subscription page
+          console.log("[AUTH-CONFIRM] No subscription, redirecting to subscription");
+          setTimeout(() => navigate("/subscription", { replace: true }), 1500);
           return;
         }
 
@@ -77,8 +77,8 @@ export default function AuthConfirm() {
             console.log("[AUTH-CONFIRM] Has subscription, redirecting to library");
             setTimeout(() => navigate("/library", { replace: true }), 1500);
           } else {
-            console.log("[AUTH-CONFIRM] No subscription, redirecting to pricing");
-            setTimeout(() => navigate("/pricing", { replace: true }), 1500);
+            console.log("[AUTH-CONFIRM] No subscription, redirecting to subscription");
+            setTimeout(() => navigate("/subscription", { replace: true }), 1500);
           }
           return;
         }
@@ -117,8 +117,8 @@ export default function AuthConfirm() {
           console.log("[AUTH-CONFIRM] Has subscription, redirecting to library");
           setTimeout(() => navigate("/library", { replace: true }), 1500);
         } else {
-          console.log("[AUTH-CONFIRM] No subscription, redirecting to pricing");
-          setTimeout(() => navigate("/pricing", { replace: true }), 1500);
+          console.log("[AUTH-CONFIRM] No subscription, redirecting to subscription");
+          setTimeout(() => navigate("/subscription", { replace: true }), 1500);
         }
       } catch (error) {
         setStatus("error");

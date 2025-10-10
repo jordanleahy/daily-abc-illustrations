@@ -39,47 +39,12 @@ const Auth = () => {
     return Object.values(SUBSCRIPTION_TIERS).some(tier => tier.price_id === id);
   };
 
-  // Handle post-authentication checkout redirect
+  // Redirect authenticated users if already logged in
   useEffect(() => {
-    const handlePostAuthCheckout = async () => {
-      if (isAuthenticated && priceId && isValidPriceId(priceId) && !isCheckingOut) {
-        setIsCheckingOut(true);
-        try {
-          const { data, error } = await supabase.functions.invoke('create-checkout', {
-            body: { price_id: priceId }
-          });
-
-          if (error) throw error;
-
-          if (data?.url) {
-            window.location.href = data.url;
-          } else {
-            throw new Error('No checkout URL returned');
-          }
-        } catch (error: any) {
-          console.error('Checkout creation error:', error);
-          toast({
-            title: "Checkout Error",
-            description: error.message || "Failed to create checkout session. Please try again.",
-            variant: "destructive",
-          });
-          setIsCheckingOut(false);
-          navigate('/landing');
-        }
-      } else if (isAuthenticated && !priceId) {
-        navigate(returnUrl || '/');
-      } else if (isAuthenticated && priceId && !isValidPriceId(priceId)) {
-        toast({
-          title: "Invalid Plan",
-          description: "The selected plan is not valid. Please try again.",
-          variant: "destructive",
-        });
-        navigate('/landing');
-      }
-    };
-
-    handlePostAuthCheckout();
-  }, [isAuthenticated, priceId, navigate, returnUrl, toast]);
+    if (isAuthenticated) {
+      navigate(returnUrl || '/');
+    }
+  }, [isAuthenticated, navigate, returnUrl]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,23 +74,12 @@ const Auth = () => {
             });
             navigate('/library');
           } else {
-            // Redirect to monthly checkout
-            setIsCheckingOut(true);
-            const { data, error: checkoutError } = await supabase.functions.invoke('create-checkout', {
-              body: { plan_type: 'monthly' }
+            // Redirect to subscription page
+            toast({
+              title: "Welcome back!",
+              description: "Please select a subscription plan to continue.",
             });
-            
-            if (checkoutError || !data?.url) {
-              console.error('Checkout creation error:', checkoutError);
-              toast({
-                title: "Checkout Error",
-                description: "Failed to create checkout session. Redirecting to pricing page.",
-                variant: "destructive",
-              });
-              navigate('/pricing');
-            } else {
-              window.location.href = data.url;
-            }
+            navigate(`/subscription${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`);
           }
         }
       } else {

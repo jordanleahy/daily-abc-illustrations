@@ -45,9 +45,9 @@ export const ProtectedRoute = ({ children, requireSubscription = true }: Protect
 
   // Check subscription requirement
   if (requireSubscription && !hasActiveSubscription) {
-    // Redirect to pricing page with return URL
+    // Redirect to subscription page with return URL
     const returnUrl = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/pricing?returnUrl=${returnUrl}`} replace />;
+    return <Navigate to={`/subscription?returnUrl=${returnUrl}`} replace />;
   }
 
   return <>{children}</>;

@@ -32,10 +32,10 @@ const Landing = () => {
     });
   }, [trackEvent]);
 
-  // Redirect authenticated users without subscription to pricing
+  // Redirect authenticated users without subscription to subscription page
   useEffect(() => {
     if (!authLoading && !subscriptionLoading && isAuthenticated && !hasActiveSubscription) {
-      navigate('/pricing', { replace: true });
+      navigate('/subscription', { replace: true });
     }
   }, [authLoading, subscriptionLoading, isAuthenticated, hasActiveSubscription, navigate]);
 

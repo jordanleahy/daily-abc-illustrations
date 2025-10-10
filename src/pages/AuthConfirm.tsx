@@ -17,6 +17,7 @@ export default function AuthConfirm() {
     const confirmEmail = async () => {
       try {
         const planType = searchParams.get("planType") as 'monthly' | 'annual' | null;
+        const priceId = searchParams.get("priceId");
 
         // Check for existing session (Supabase auto-detects hash tokens)
         const { data: { session } } = await supabase.auth.getSession();
@@ -25,24 +26,32 @@ export default function AuthConfirm() {
           
           // If planType exists, redirect to Stripe checkout
             if (planType === 'monthly' || planType === 'annual') {
-              const body = planType === 'monthly'
-                ? { plan_type: 'monthly' }
-                : { plan_type: 'annual' };
+              console.log("Checkout params:", { priceId, planType });
               
               const { data, error } = await supabase.functions.invoke('create-checkout', {
-                body
+                body: priceId 
+                  ? { price_id: priceId }
+                  : { plan_type: planType }
               });
 
+              console.log("Checkout response:", { data, error });
+
             if (error) {
+              console.error("Checkout error details:", error);
               setStatus("error");
-              setErrorMessage("Failed to create checkout session");
+              setErrorMessage(`Failed to create checkout session: ${error.message}`);
               return;
             }
 
-            if (data?.url) {
-              window.location.href = data.url;
+            if (!data?.url) {
+              console.error("No checkout URL returned");
+              setStatus("error");
+              setErrorMessage("Checkout session created but no URL was returned");
               return;
             }
+
+            window.location.href = data.url;
+            return;
           } else {
             // No plan selected, go to library
             setTimeout(() => {
@@ -76,24 +85,32 @@ export default function AuthConfirm() {
           
           // If planType exists, redirect to Stripe checkout
           if (planType === 'monthly' || planType === 'annual') {
-            const body = planType === 'monthly' 
-              ? { plan_type: 'monthly' }
-              : { plan_type: 'annual' };
+            console.log("Checkout params:", { priceId, planType });
             
             const { data, error } = await supabase.functions.invoke('create-checkout', {
-              body
+              body: priceId 
+                ? { price_id: priceId }
+                : { plan_type: planType }
             });
 
+            console.log("Checkout response:", { data, error });
+
             if (error) {
+              console.error("Checkout error details:", error);
               setStatus("error");
-              setErrorMessage("Failed to create checkout session");
+              setErrorMessage(`Failed to create checkout session: ${error.message}`);
               return;
             }
 
-            if (data?.url) {
-              window.location.href = data.url;
+            if (!data?.url) {
+              console.error("No checkout URL returned");
+              setStatus("error");
+              setErrorMessage("Checkout session created but no URL was returned");
               return;
             }
+
+            window.location.href = data.url;
+            return;
           } else {
             // No plan selected, go to library
             setTimeout(() => {
@@ -128,24 +145,32 @@ export default function AuthConfirm() {
         
         // If planType exists, redirect to Stripe checkout
         if (planType === 'monthly' || planType === 'annual') {
-          const body = planType === 'monthly'
-            ? { plan_type: 'monthly' }
-            : { plan_type: 'annual' };
+          console.log("Checkout params:", { priceId, planType });
           
           const { data, error } = await supabase.functions.invoke('create-checkout', {
-            body
+            body: priceId 
+              ? { price_id: priceId }
+              : { plan_type: planType }
           });
 
+          console.log("Checkout response:", { data, error });
+
           if (error) {
+            console.error("Checkout error details:", error);
             setStatus("error");
-            setErrorMessage("Failed to create checkout session");
+            setErrorMessage(`Failed to create checkout session: ${error.message}`);
             return;
           }
 
-          if (data?.url) {
-            window.location.href = data.url;
+          if (!data?.url) {
+            console.error("No checkout URL returned");
+            setStatus("error");
+            setErrorMessage("Checkout session created but no URL was returned");
             return;
           }
+
+          window.location.href = data.url;
+          return;
         } else {
           // No plan selected, go to library
           setTimeout(() => {

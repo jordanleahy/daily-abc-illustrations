@@ -129,10 +129,20 @@ const Auth = () => {
           }
         }
       } else {
-        // Preserve planType in email verification redirect
-        const redirectUrl = planType 
-          ? `${window.location.origin}/auth/confirm?planType=${planType}`
-          : `${window.location.origin}/auth/confirm`;
+        // Preserve BOTH planType AND priceId in email verification redirect
+        let redirectUrl = `${window.location.origin}/auth/confirm`;
+        const params = new URLSearchParams();
+
+        if (planType) {
+          params.set('planType', planType);
+        }
+        if (priceId) {
+          params.set('priceId', priceId);
+        }
+
+        if (params.toString()) {
+          redirectUrl += `?${params.toString()}`;
+        }
         
         const { error } = await supabase.auth.signUp({
           email,

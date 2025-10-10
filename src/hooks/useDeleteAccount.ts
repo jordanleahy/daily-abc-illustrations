@@ -1,11 +1,9 @@
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuthContext } from '@/contexts/AuthContext';
 
 export const useDeleteAccount = () => {
   const { toast } = useToast();
-  const { signOut } = useAuthContext();
 
   return useMutation({
     mutationFn: async () => {
@@ -24,11 +22,12 @@ export const useDeleteAccount = () => {
         description: "Your account and all associated data have been permanently deleted.",
       });
 
-      // Sign out the user
-      await signOut();
+      // Don't call signOut() - the user no longer exists!
+      // Instead, manually clear the session
+      await supabase.auth.signOut({ scope: 'local' }); // Only clears local storage, no API call
       
-      // Redirect to landing page
-      window.location.href = '/';
+      // Force complete page reload to clear all app state
+      window.location.replace('/'); // Use replace() to prevent back button
     },
     onError: (error: Error) => {
       console.error('Error deleting account:', error);

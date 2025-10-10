@@ -14,6 +14,7 @@ import Agents from "./pages/Agents";
 import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
 import { AdminOnly } from "@/components/AdminOnly";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Library from "./pages/Library";
 import LibraryBookView from "./pages/LibraryBookView";
 import LibraryDetail from "./pages/LibraryDetail";
@@ -67,20 +68,20 @@ const App = () => (
               <Route path="/agents" element={<Agents />} />
               <Route path="/editor" element={<AdminOnly><Books /></AdminOnly>} />
               <Route path="/editor/:id" element={<AdminOnly><BookDetail /></AdminOnly>} />
-                <Route path="/library" element={<Library key="library" />} />
-                <Route path="/library/:id" element={<LibraryBookView />} />
-                <Route path="/library/:id/detail" element={<LibraryDetail />} />
-                <Route path="/rewards" element={<Rewards />} />
-                <Route path="/rewards/manage" element={<RewardsManage />} />
+                <Route path="/library" element={<ProtectedRoute><Library key="library" /></ProtectedRoute>} />
+                <Route path="/library/:id" element={<ProtectedRoute><LibraryBookView /></ProtectedRoute>} />
+                <Route path="/library/:id/detail" element={<ProtectedRoute><LibraryDetail /></ProtectedRoute>} />
+                <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
+                <Route path="/rewards/manage" element={<ProtectedRoute><RewardsManage /></ProtectedRoute>} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />
                <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
-               <Route path="/schedule" element={<Schedule />} />
+               <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
                <Route path="/reddit" element={<Reddit />} />
                <Route path="/pricing" element={<Pricing />} />
-               <Route path="/subscription" element={<Subscription />} />
-               <Route path="/subscription/success" element={<SubscriptionSuccess />} />
-               <Route path="/subscription/cancel" element={<SubscriptionCancel />} />
-               <Route path="/subscription/manage" element={<SubscriptionManage />} />
+               <Route path="/subscription" element={<ProtectedRoute><Subscription /></ProtectedRoute>} />
+               <Route path="/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
+               <Route path="/subscription/cancel" element={<ProtectedRoute><SubscriptionCancel /></ProtectedRoute>} />
+               <Route path="/subscription/manage" element={<ProtectedRoute><SubscriptionManage /></ProtectedRoute>} />
                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                <Route path="/terms-of-service" element={<TermsOfService />} />
                 <Route path="/test-inline-edit" element={<div className="container mx-auto py-8"><QuickTestInlineEdit /></div>} />

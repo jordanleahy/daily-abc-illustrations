@@ -70,7 +70,22 @@ serve(async (req) => {
       // Continue with deletion even if Stripe fails
     }
 
-    // Step 2: Delete storage files
+    // Step 2: Sign out all sessions before deletion
+    logStep("Signing out all user sessions");
+    try {
+      const { error: signOutError } = await supabaseAdmin.auth.admin.signOut(user.id, 'global');
+      if (signOutError) {
+        logStep("Warning: Failed to sign out user sessions", { error: signOutError.message });
+        // Continue anyway - deletion will invalidate tokens
+      } else {
+        logStep("Successfully signed out all user sessions");
+      }
+    } catch (signOutError) {
+      logStep("Error during session sign out", { error: signOutError.message });
+      // Continue anyway
+    }
+
+    // Step 3: Delete storage files
     const storageBuckets = ['kid-profile-images', 'kid-rewards-images', 'page-images', 'book-covers', 'exports'];
     
     for (const bucket of storageBuckets) {
@@ -104,7 +119,7 @@ serve(async (req) => {
       }
     }
 
-    // Step 3: Delete user from Supabase Auth (CASCADE will handle database records)
+    // Step 4: Delete user from Supabase Auth (CASCADE will handle database records)
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(user.id);
     
     if (deleteError) {

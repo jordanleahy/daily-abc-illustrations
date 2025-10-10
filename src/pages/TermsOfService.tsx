@@ -107,7 +107,7 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-3 mt-6">3.3 Termination by You</h3>
                 <p>
-                  You may delete your account at any time in Settings or by contacting support@dailyabcillustrations.com. Export your content 
+                  You may delete your account at any time in Settings or by contacting dailyabcillustrations@gmail.com. Export your content 
                   before deletion.
                 </p>
 
@@ -184,7 +184,7 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-3 mt-6">5.5 DMCA / Takedowns</h3>
                 <p>
-                  We respond to notices under the DMCA and analogous regimes. Submit notices to legal@dailyabcillustrations.com with 
+                  We respond to notices under the DMCA and analogous regimes. Submit notices to dailyabcillustrations@gmail.com with 
                   required details. We may remove content and/or terminate repeat infringers.
                 </p>
               </section>
@@ -279,7 +279,7 @@ const TermsOfService = () => {
                 
                 <h3 className="text-xl font-semibold mb-3">13.1 Informal Resolution</h3>
                 <p>
-                  Contact support@dailyabcillustrations.com first. We will attempt to resolve disputes in good faith within 30 days.
+                  Contact dailyabcillustrations@gmail.com first. We will attempt to resolve disputes in good faith within 30 days.
                 </p>
 
                 <h3 className="text-xl font-semibold mb-3 mt-6">13.2 Binding Arbitration</h3>
@@ -298,7 +298,7 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-3 mt-6">13.4 30-Day Arbitration Opt-Out</h3>
                 <p>
-                  You may opt out of arbitration by emailing legal@dailyabcillustrations.com within 30 days of creating your account or first 
+                  You may opt out of arbitration by emailing dailyabcillustrations@gmail.com within 30 days of creating your account or first 
                   becoming subject to this clause, with subject "Arbitration Opt-Out," and including your full name, account email, and a 
                   statement that you opt out.
                 </p>
@@ -370,8 +370,7 @@ const TermsOfService = () => {
                 <div className="bg-muted p-6 rounded-lg">
                   <p className="font-semibold">Van7, LLC (DBA Daily ABC Illustrations)</p>
                   <p><strong>Address:</strong> [Registered Address]</p>
-                  <p><strong>Support:</strong> support@dailyabcillustrations.com</p>
-                  <p><strong>Legal:</strong> legal@dailyabcillustrations.com</p>
+                  <p><strong>Email:</strong> dailyabcillustrations@gmail.com</p>
                   <p><strong>Website:</strong> https://dailyabcillustrations.com</p>
                 </div>
                 <div className="bg-muted p-4 rounded-lg mt-4">

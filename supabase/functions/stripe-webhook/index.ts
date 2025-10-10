@@ -104,7 +104,8 @@ serve(async (req) => {
     // Get the raw body
     const body = await req.text();
     
-    // Verify the webhook signature
+    // Verify the webhook signature using async method
+    logStep("Verifying webhook signature with constructEventAsync");
     let event: Stripe.Event;
     try {
       event = await stripe.webhooks.constructEventAsync(body, signature, webhookSecret);

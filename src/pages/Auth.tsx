@@ -70,7 +70,7 @@ const Auth = () => {
               title: "Welcome back!",
               description: "Please select a subscription plan to continue.",
             });
-            navigate(`/subscription${returnUrl ? `?returnUrl=${encodeURIComponent(returnUrl)}` : ''}`);
+            navigate('/subscription');
           }
         }
       } else {

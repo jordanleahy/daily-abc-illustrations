@@ -1,14 +1,26 @@
 import { useState } from 'react';
 import { usePublicPageImage } from '@/hooks/usePublicPageImage';
 import { Shimmer } from '@/components/ui/shimmer';
+import { Button } from '@/components/ui/button';
+import { Camera } from 'lucide-react';
 
 interface PublicPageImageProps {
   pageId: string;
   bookId: string;
   className?: string;
+  /** Show upload button overlay for authenticated users */
+  showUploadButton?: boolean;
+  /** Handler when upload button is clicked */
+  onUploadClick?: () => void;
 }
 
-export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageImageProps) {
+export function PublicPageImage({ 
+  pageId, 
+  bookId, 
+  className = "",
+  showUploadButton = false,
+  onUploadClick
+}: PublicPageImageProps) {
   const { data: imageData, isLoading } = usePublicPageImage(pageId);
   const [imageLoaded, setImageLoaded] = useState(false);
   
@@ -35,7 +47,7 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div className="relative w-full h-full group">
       {!imageLoaded && (
         <Shimmer className={`absolute inset-0 ${className}`} />
       )}
@@ -51,6 +63,21 @@ export function PublicPageImage({ pageId, bookId, className = "" }: PublicPageIm
         }`}
         onLoad={() => setImageLoaded(true)}
       />
+      
+      {/* Upload button overlay */}
+      {showUploadButton && onUploadClick && imageLoaded && (
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200">
+          <Button
+            variant="secondary"
+            size="icon"
+            onClick={onUploadClick}
+            className="absolute bottom-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+            aria-label="Upload custom image"
+          >
+            <Camera className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

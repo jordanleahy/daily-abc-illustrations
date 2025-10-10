@@ -6,10 +6,12 @@ import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidCoins } from '@/hooks/useKidCoins';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { PublicPageImage } from '@/components/daily-published';
+import { PageImageUploadModal } from '@/components/PageImageUploadModal';
 import { Card } from '@/components/ui/card';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
@@ -24,6 +26,7 @@ export default function LibraryBookView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { user } = useAuth();
   const safeId = id && isValidUUID(id) ? id : undefined;
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
@@ -33,6 +36,8 @@ export default function LibraryBookView() {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [earnedRewards, setEarnedRewards] = useState(0);
   const [sessionStarted, setSessionStarted] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadingForPageId, setUploadingForPageId] = useState<string | null>(null);
   const [initialPageTracked, setInitialPageTracked] = useState(false);
   
   // Auto-select kid if only one exists
@@ -213,6 +218,14 @@ export default function LibraryBookView() {
     }
   };
 
+  // Handle upload button click
+  const handleUploadClick = () => {
+    if (currentPage) {
+      setUploadingForPageId(currentPage.id);
+      setShowUploadModal(true);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Dynamic meta tags for social sharing */}
@@ -244,6 +257,8 @@ export default function LibraryBookView() {
                 pageId={currentPage.id}
                 bookId={dailyContent.book_id}
                 className="rounded-lg"
+                showUploadButton={!!user}
+                onUploadClick={handleUploadClick}
               />
             </Card>
           </div>
@@ -257,6 +272,16 @@ export default function LibraryBookView() {
           />
         </div>
       </div>
+      
+      {/* Image Upload Modal */}
+      {uploadingForPageId && (
+        <PageImageUploadModal
+          open={showUploadModal}
+          onOpenChange={setShowUploadModal}
+          pageId={uploadingForPageId}
+          bookId={dailyContent.book_id}
+        />
+      )}
     </div>
   );
 }

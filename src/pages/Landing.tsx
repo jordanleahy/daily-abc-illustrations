@@ -14,12 +14,14 @@ import {
 } from '@/components/landing';
 import { Header } from '@/components/layout';
 import { useLandingPageData } from '@/hooks/useLandingPageData';
+import { useLandingPageImagePreloader } from '@/hooks/useLandingPageImagePreloader';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 
 const Landing = () => {
   const { trackEvent } = useGA4();
   const { data: landingData } = useLandingPageData();
+  useLandingPageImagePreloader(landingData);
   const { isAuthenticated, loading: authLoading } = useAuthContext();
   const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();

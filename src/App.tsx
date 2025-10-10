@@ -68,9 +68,9 @@ const App = () => (
               <Route path="/agents" element={<Agents />} />
               <Route path="/editor" element={<AdminOnly><Books /></AdminOnly>} />
               <Route path="/editor/:id" element={<AdminOnly><BookDetail /></AdminOnly>} />
-                <Route path="/library" element={<ProtectedRoute><Library key="library" /></ProtectedRoute>} />
-                <Route path="/library/:id" element={<ProtectedRoute><LibraryBookView /></ProtectedRoute>} />
-                <Route path="/library/:id/detail" element={<ProtectedRoute><LibraryDetail /></ProtectedRoute>} />
+                <Route path="/library" element={<ProtectedRoute requireSubscription={false}><Library key="library" /></ProtectedRoute>} />
+                <Route path="/library/:id" element={<ProtectedRoute requireSubscription={false}><LibraryBookView /></ProtectedRoute>} />
+                <Route path="/library/:id/detail" element={<ProtectedRoute requireSubscription={false}><LibraryDetail /></ProtectedRoute>} />
                 <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
                 <Route path="/rewards/manage" element={<ProtectedRoute><RewardsManage /></ProtectedRoute>} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />

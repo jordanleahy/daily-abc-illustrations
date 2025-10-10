@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { performAccountCleanup, forceApplicationReset } from '@/utils/accountCleanup';
 
 export const useDeleteAccount = () => {
   const { toast } = useToast();
@@ -22,12 +23,11 @@ export const useDeleteAccount = () => {
         description: "Your account and all associated data have been permanently deleted.",
       });
 
-      // Don't call signOut() - the user no longer exists!
-      // Instead, manually clear the session
-      await supabase.auth.signOut({ scope: 'local' }); // Only clears local storage, no API call
+      // Perform comprehensive cleanup of all user-specific data
+      await performAccountCleanup();
       
       // Force complete page reload to clear all app state
-      window.location.replace('/'); // Use replace() to prevent back button
+      forceApplicationReset();
     },
     onError: (error: Error) => {
       console.error('Error deleting account:', error);

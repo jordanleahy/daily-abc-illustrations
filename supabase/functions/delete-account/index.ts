@@ -61,6 +61,13 @@ serve(async (req) => {
             await stripe.subscriptions.cancel(subscription.id);
             logStep("Cancelled Stripe subscription", { subscriptionId: subscription.id });
           }
+          
+          // NOTE: We intentionally DO NOT delete the Stripe customer record for:
+          // 1. Legal/compliance requirements (payment history retention)
+          // 2. Accounting/tax purposes (transaction records)
+          // 3. Dispute resolution (chargeback handling)
+          // The customer record will be retained with cancelled subscriptions.
+          logStep("Stripe customer retained for compliance", { customerId });
         } else {
           logStep("No Stripe customer found");
         }

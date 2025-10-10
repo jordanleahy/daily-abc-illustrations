@@ -58,7 +58,7 @@ export function DeleteAccountDialog({
               <li>Purchase history</li>
               {hasSubscription && (
                 <li className="text-destructive font-semibold">
-                  Your active subscription (cancelled immediately, no refund)
+                  Your active subscription (cancelled immediately, no refund. Payment history retained for legal/accounting purposes.)
                 </li>
               )}
             </ul>

@@ -50,6 +50,7 @@ export function PageImageUploadModal({
             onImageSelect={handleImageSelect}
             disabled={isUploading}
             className="h-64"
+            autoTrigger={true}
           />
         </div>
       </DialogContent>

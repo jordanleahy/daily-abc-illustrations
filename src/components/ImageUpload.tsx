@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Upload, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
@@ -8,13 +8,25 @@ interface ImageUploadProps {
   onImageSelect: (file: File) => void;
   disabled?: boolean;
   className?: string;
+  autoTrigger?: boolean;
 }
 
-export function ImageUpload({ onImageSelect, disabled = false, className = "" }: ImageUploadProps) {
+export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false }: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-trigger file picker when autoTrigger is true
+  useEffect(() => {
+    if (autoTrigger && !disabled && fileInputRef.current) {
+      // Small delay to ensure modal animation completes
+      const timer = setTimeout(() => {
+        fileInputRef.current?.click();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [autoTrigger, disabled]);
 
   const validateImage = (file: File): string | null => {
     // Check file type

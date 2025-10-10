@@ -1,5 +1,8 @@
 project_id = "foxdnspwzhjxjxuicute"
 
+[functions.stripe-webhook]
+verify_jwt = false
+
 [functions.reddit-search]
 verify_jwt = false
 

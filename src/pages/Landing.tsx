@@ -37,7 +37,7 @@ const Landing = () => {
   // Redirect authenticated users without subscription to subscription page
   useEffect(() => {
     if (!authLoading && !subscriptionLoading && isAuthenticated && !hasActiveSubscription) {
-      navigate('/subscription', { replace: true });
+      navigate('/pricing', { replace: true });
     }
   }, [authLoading, subscriptionLoading, isAuthenticated, hasActiveSubscription, navigate]);
 

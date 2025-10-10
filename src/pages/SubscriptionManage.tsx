@@ -53,7 +53,7 @@ const SubscriptionManage = () => {
               </p>
               <div className="flex flex-col sm:flex-row gap-3">
                 <Button asChild>
-                  <a href="/subscription">
+                  <a href="/pricing">
                     View Pricing Plans
                   </a>
                 </Button>

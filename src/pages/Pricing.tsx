@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
-import { NonAuthPricingSection } from '@/components/subscription/NonAuthPricingSection';
+import { WireframePricing } from '@/components/subscription/WireframePricing';
 import { MetaHead } from '@/components/common/MetaHead';
 import { getSiteTitle } from '@/config/site';
 
@@ -33,7 +33,7 @@ export default function Pricing() {
       <MetaHead metadata={seoMetadata} />
       <PageLayout>
         <main className="min-h-screen">
-          <NonAuthPricingSection />
+          <WireframePricing />
         </main>
       </PageLayout>
     </>

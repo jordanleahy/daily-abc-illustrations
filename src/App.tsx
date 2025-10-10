@@ -25,7 +25,6 @@ import DailyPublishedSchedule from "./pages/DailyPublishedSchedule";
 import Schedule from "./pages/Schedule";
 import Reddit from "./pages/Reddit";
 import Pricing from "./pages/Pricing";
-import Subscription from "./pages/Subscription";
 import SubscriptionSuccess from "./pages/SubscriptionSuccess";
 import SubscriptionCancel from "./pages/SubscriptionCancel";
 import SubscriptionManage from "./pages/SubscriptionManage";
@@ -78,7 +77,6 @@ const App = () => (
                <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
                <Route path="/reddit" element={<Reddit />} />
                <Route path="/pricing" element={<Pricing />} />
-               <Route path="/subscription" element={<ProtectedRoute requireSubscription={false}><Subscription /></ProtectedRoute>} />
                <Route path="/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
                <Route path="/subscription/cancel" element={<ProtectedRoute><SubscriptionCancel /></ProtectedRoute>} />
                <Route path="/subscription/manage" element={<ProtectedRoute><SubscriptionManage /></ProtectedRoute>} />

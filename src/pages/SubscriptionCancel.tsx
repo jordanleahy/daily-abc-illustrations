@@ -44,7 +44,7 @@ const SubscriptionCancel = () => {
                 </a>
               </Button>
               <Button asChild variant="outline" className="flex-1">
-                <a href="/subscription">
+                <a href="/pricing">
                   <CreditCard className="h-4 w-4 mr-2" />
                   Try Again
                 </a>

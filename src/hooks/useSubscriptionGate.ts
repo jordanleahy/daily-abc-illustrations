@@ -39,8 +39,8 @@ export const useSubscriptionGate = () => {
           (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
 
         if (!hasActiveSubscription) {
-          console.log('[SUBSCRIPTION-GATE] No active subscription, redirecting to subscription');
-          navigate('/subscription', { replace: true });
+          console.log('[SUBSCRIPTION-GATE] No active subscription, redirecting to pricing');
+          navigate('/pricing', { replace: true });
         } else {
           console.log('[SUBSCRIPTION-GATE] Active subscription found');
         }

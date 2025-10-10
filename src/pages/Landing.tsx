@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { useNavigate } from 'react-router-dom';
 import { useGA4 } from '@/hooks/useGA4';
 import { MetaHead } from '@/components/common';
 import { SITE_CONFIG, getSiteTitle } from '@/config/site';
@@ -13,10 +14,15 @@ import {
 } from '@/components/landing';
 import { Header } from '@/components/layout';
 import { useLandingPageData } from '@/hooks/useLandingPageData';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 
 const Landing = () => {
   const { trackEvent } = useGA4();
   const { data: landingData } = useLandingPageData();
+  const { isAuthenticated, loading: authLoading } = useAuthContext();
+  const { isSubscribed, loading: subscriptionLoading } = useSubscription();
+  const navigate = useNavigate();
 
   useEffect(() => {
     trackEvent('page_view', {
@@ -25,6 +31,13 @@ const Landing = () => {
       page_path: '/landing'
     });
   }, [trackEvent]);
+
+  // Redirect authenticated users without subscription to pricing
+  useEffect(() => {
+    if (!authLoading && !subscriptionLoading && isAuthenticated && !isSubscribed) {
+      navigate('/pricing', { replace: true });
+    }
+  }, [authLoading, subscriptionLoading, isAuthenticated, isSubscribed, navigate]);
 
   return (
     <>

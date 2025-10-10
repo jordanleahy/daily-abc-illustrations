@@ -24,8 +24,8 @@ export default function AuthConfirm() {
         if (session) {
           setStatus("success");
           
-          // If planType exists, redirect to Stripe checkout
-            if (planType === 'monthly' || planType === 'annual') {
+          // If planType or priceId exists, redirect to Stripe checkout
+          if (priceId || planType) {
               console.log("Checkout params:", { priceId, planType });
               
               const { data, error } = await supabase.functions.invoke('create-checkout', {
@@ -53,10 +53,20 @@ export default function AuthConfirm() {
             window.location.href = data.url;
             return;
           } else {
-            // No plan selected, go to library
-            setTimeout(() => {
-              navigate("/library", { replace: true });
-            }, 2000);
+            // No payment parameters - check subscription status
+            const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
+            
+            if (subscriptionData?.subscribed) {
+              // Has subscription - go to library
+              setTimeout(() => {
+                navigate("/library", { replace: true });
+              }, 2000);
+            } else {
+              // No subscription - redirect to pricing
+              setTimeout(() => {
+                navigate("/pricing", { replace: true });
+              }, 2000);
+            }
           }
           return;
         }

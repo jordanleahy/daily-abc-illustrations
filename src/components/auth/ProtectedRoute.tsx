@@ -1,14 +1,18 @@
 import { useEffect } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireSubscription?: boolean;
 }
 
-export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
-  const { isAuthenticated, loading } = useAuthContext();
+export const ProtectedRoute = ({ children, requireSubscription = true }: ProtectedRouteProps) => {
+  const { isAuthenticated, loading: authLoading } = useAuthContext();
+  const { isSubscribed, loading: subscriptionLoading } = useSubscription();
+  const location = useLocation();
 
   useEffect(() => {
     // Periodically validate session is still valid
@@ -27,6 +31,8 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
     }
   }, [isAuthenticated]);
 
+  const loading = authLoading || subscriptionLoading;
+
   if (loading) {
     return <div className="flex items-center justify-center min-h-screen">
       <div className="text-muted-foreground">Loading...</div>
@@ -35,6 +41,13 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/" replace />;
+  }
+
+  // Check subscription requirement
+  if (requireSubscription && !isSubscribed) {
+    // Redirect to pricing page with return URL
+    const returnUrl = encodeURIComponent(location.pathname + location.search);
+    return <Navigate to={`/pricing?returnUrl=${returnUrl}`} replace />;
   }
 
   return <>{children}</>;

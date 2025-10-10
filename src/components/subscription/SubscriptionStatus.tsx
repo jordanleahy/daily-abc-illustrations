@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Crown, Calendar, Check, RefreshCw } from "lucide-react";
+import { Crown, Calendar, Check, RefreshCw, AlertTriangle } from "lucide-react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 import { format } from "date-fns";
 
@@ -33,6 +33,23 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
   const autoRenewEnabled = !cancel_at_period_end;
 
   const handleAutoRenewChange = async (checked: boolean | "indeterminate") => {
+    // If user is trying to disable auto-renew (cancel subscription)
+    if (!checked) {
+      const confirmed = window.confirm(
+        `Cancel your subscription?\n\n` +
+        `You'll keep access until ${subscription_end ? format(new Date(subscription_end), "MMMM d, yyyy") : "the end of your billing period"}.\n\n` +
+        `After that, you'll lose access to:\n` +
+        `• Daily published ABC books\n` +
+        `• PDF downloads\n` +
+        `• Full library access\n\n` +
+        `You can re-subscribe anytime.`
+      );
+      
+      if (!confirmed) {
+        return; // User clicked "Cancel" - do nothing
+      }
+    }
+    
     setIsUpdatingRenewal(true);
     await updateAutoRenewal(checked === true);
     setIsUpdatingRenewal(false);
@@ -193,9 +210,14 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
               />
               <label
                 htmlFor="auto-renew"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                className="leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer flex-1"
               >
-                Renew automatically
+                <div className="flex flex-col gap-1">
+                  <span className="text-sm font-medium">Renew automatically</span>
+                  <span className="text-xs text-muted-foreground font-normal">
+                    Uncheck to cancel subscription at period end
+                  </span>
+                </div>
               </label>
               {isUpdatingRenewal && (
                 <RefreshCw className="h-4 w-4 animate-spin ml-auto" />
@@ -203,15 +225,45 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
             </div>
             
             {!autoRenewEnabled && subscription_end && (
-              <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-200 rounded p-2">
-                Your subscription will not renew. You'll lose access to premium features after {format(new Date(subscription_end), "MMMM d, yyyy")}.
-              </p>
+              <div className="bg-orange-50 border-2 border-orange-400 rounded-lg p-3">
+                <p className="text-sm font-semibold text-orange-900 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Subscription Cancelled
+                </p>
+                <p className="text-xs text-orange-800 mt-1">
+                  You'll lose premium access after {format(new Date(subscription_end), "MMMM d, yyyy")}. 
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    className="h-auto p-0 ml-1 text-orange-800 underline"
+                    onClick={() => handleAutoRenewChange(true)}
+                    disabled={isUpdatingRenewal || isRefreshing}
+                  >
+                    Undo cancellation
+                  </Button>
+                </p>
+              </div>
             )}
             
             {!autoRenewEnabled && !subscription_end && (
-              <p className="text-xs text-muted-foreground bg-orange-50 border border-orange-200 rounded p-2">
-                Your subscription will not renew at the end of the current period.
-              </p>
+              <div className="bg-orange-50 border-2 border-orange-400 rounded-lg p-3">
+                <p className="text-sm font-semibold text-orange-900 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" />
+                  Subscription Cancelled
+                </p>
+                <p className="text-xs text-orange-800 mt-1">
+                  Your subscription will not renew at the end of the current period.
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    className="h-auto p-0 ml-1 text-orange-800 underline"
+                    onClick={() => handleAutoRenewChange(true)}
+                    disabled={isUpdatingRenewal || isRefreshing}
+                  >
+                    Undo cancellation
+                  </Button>
+                </p>
+              </div>
             )}
           </div>
 
@@ -224,6 +276,17 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
               <li>• Premium reading experience</li>
             </ul>
           </div>
+
+          {showActions && hasActiveSubscription && (
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={openCustomerPortal}
+              className="w-full"
+            >
+              Manage Billing in Stripe
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

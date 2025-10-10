@@ -13,18 +13,14 @@ const SubscriptionSuccess = () => {
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check subscription status when user lands on success page
-    const timer = setTimeout(() => {
-      checkSubscription();
-    }, 2000); // Give Stripe a moment to process
+    // Check subscription status immediately - webhook has already updated database
+    checkSubscription();
 
     // Show success toast
     toast({
       title: "Payment Successful!",
       description: "Your subscription is now active. Welcome to Premium!",
     });
-
-    return () => clearTimeout(timer);
   }, [checkSubscription, toast]);
 
   return (

@@ -45,6 +45,51 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // PHASE 1: Check database cache first for fast response
+    logStep("Checking database for cached subscription");
+    const { data: dbSub, error: dbError } = await supabaseClient
+      .from('user_subscriptions')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (dbSub && !dbError && dbSub.current_period_end) {
+      // Check if subscription is still valid
+      const isValid = new Date(dbSub.current_period_end) > new Date();
+      
+      if (isValid) {
+        logStep("Using cached subscription from database", {
+          subscriptionId: dbSub.stripe_subscription_id,
+          endDate: dbSub.current_period_end
+        });
+        
+        // Determine interval from price_id
+        const interval = dbSub.stripe_price_id?.includes('annual') ? 'year' : 'month';
+        
+        return new Response(JSON.stringify({
+          subscribed: true,
+          product_id: dbSub.stripe_product_id,
+          price_id: dbSub.stripe_price_id,
+          interval: interval,
+          subscription_end: dbSub.current_period_end,
+          cancel_at_period_end: dbSub.cancel_at_period_end
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      } else {
+        logStep("Cached subscription expired, falling back to Stripe API");
+      }
+    } else {
+      logStep("No valid cached subscription, querying Stripe API", { 
+        dbError: dbError?.message 
+      });
+    }
+
+    // PHASE 2: Fallback to Stripe API if no valid cache found
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
     

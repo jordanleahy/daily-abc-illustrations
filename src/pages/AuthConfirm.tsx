@@ -16,31 +16,11 @@ export default function AuthConfirm() {
   useEffect(() => {
     const confirmEmail = async () => {
       try {
-        const planType = searchParams.get("planType") as 'monthly' | 'annual' | null;
-        const priceId = searchParams.get("priceId");
-
         // Check for existing session (Supabase auto-detects hash tokens)
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           setStatus("success");
-          
-          // Check subscription status
-          console.log("[AUTH-CONFIRM] Checking subscription status...");
-          const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
-          console.log("[AUTH-CONFIRM] Subscription status:", subscriptionData);
-
-          const hasActiveSubscription = subscriptionData?.subscribed && 
-            (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
-          
-          if (hasActiveSubscription) {
-            console.log("[AUTH-CONFIRM] User has subscription, redirecting to library");
-            setTimeout(() => navigate("/library", { replace: true }), 1500);
-            return;
-          }
-
-          // No subscription - redirect to subscription page
-          console.log("[AUTH-CONFIRM] No subscription, redirecting to subscription");
-          setTimeout(() => navigate("/subscription", { replace: true }), 1500);
+          setTimeout(() => navigate("/pricing", { replace: true }), 1500);
           return;
         }
 
@@ -62,24 +42,10 @@ export default function AuthConfirm() {
           }
 
           // Clean up URL hash
-          window.history.replaceState(null, '', window.location.pathname + window.location.search);
+          window.history.replaceState(null, '', window.location.pathname);
 
           setStatus("success");
-          
-          // Check subscription
-          console.log("[AUTH-CONFIRM] Checking subscription after hash auth...");
-          const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
-          
-          const hasActiveSubscription = subscriptionData?.subscribed && 
-            (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
-
-          if (hasActiveSubscription) {
-            console.log("[AUTH-CONFIRM] Has subscription, redirecting to library");
-            setTimeout(() => navigate("/library", { replace: true }), 1500);
-          } else {
-            console.log("[AUTH-CONFIRM] No subscription, redirecting to subscription");
-            setTimeout(() => navigate("/subscription", { replace: true }), 1500);
-          }
+          setTimeout(() => navigate("/pricing", { replace: true }), 1500);
           return;
         }
 
@@ -105,21 +71,7 @@ export default function AuthConfirm() {
         }
 
         setStatus("success");
-        
-        // Check subscription
-        console.log("[AUTH-CONFIRM] Checking subscription after OTP auth...");
-        const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
-        
-        const hasActiveSubscription = subscriptionData?.subscribed && 
-          (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
-
-        if (hasActiveSubscription) {
-          console.log("[AUTH-CONFIRM] Has subscription, redirecting to library");
-          setTimeout(() => navigate("/library", { replace: true }), 1500);
-        } else {
-          console.log("[AUTH-CONFIRM] No subscription, redirecting to subscription");
-          setTimeout(() => navigate("/subscription", { replace: true }), 1500);
-        }
+        setTimeout(() => navigate("/pricing", { replace: true }), 1500);
       } catch (error) {
         setStatus("error");
         setErrorMessage("An unexpected error occurred");
@@ -137,7 +89,7 @@ export default function AuthConfirm() {
             <CardTitle className="text-center">Email Confirmation</CardTitle>
             <CardDescription className="text-center">
               {status === "loading" && "Confirming your email..."}
-              {status === "success" && "Email confirmed! Redirecting you to checkout..."}
+              {status === "success" && "Email confirmed! Redirecting you to pricing..."}
               {status === "error" && "Confirmation failed"}
             </CardDescription>
           </CardHeader>
@@ -149,7 +101,7 @@ export default function AuthConfirm() {
               <>
                 <CheckCircle2 className="h-12 w-12 text-green-600" />
                 <p className="text-center text-muted-foreground">
-                  Checking your subscription status...
+                  Taking you to our pricing page...
                 </p>
               </>
             )}

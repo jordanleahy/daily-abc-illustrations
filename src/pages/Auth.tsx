@@ -11,7 +11,6 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { Container } from '@/components/layout/Container';
 import { AuthHeader } from '@/components/layout/AuthHeader';
 import { SITE_CONFIG } from '@/config/site';
-import { SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 
 const Auth = () => {
   const { toast } = useToast();
@@ -22,8 +21,6 @@ const Auth = () => {
   const searchParams = new URLSearchParams(location.search);
   const mode = searchParams.get('mode');
   const returnUrl = searchParams.get('returnUrl');
-  const priceId = searchParams.get('priceId');
-  const planType = searchParams.get('planType') as 'monthly' | 'annual' | null;
   
   const [isLogin, setIsLogin] = useState(mode !== 'signup');
   const [email, setEmail] = useState('');
@@ -31,13 +28,7 @@ const Auth = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
-  const [isCheckingOut, setIsCheckingOut] = useState(false);
 
-  // Validate priceId against known tiers
-  const isValidPriceId = (id: string | null): boolean => {
-    if (!id) return false;
-    return Object.values(SUBSCRIPTION_TIERS).some(tier => tier.price_id === id);
-  };
 
   // Redirect authenticated users if already logged in
   useEffect(() => {
@@ -83,20 +74,8 @@ const Auth = () => {
           }
         }
       } else {
-        // Preserve BOTH planType AND priceId in email verification redirect
-        let redirectUrl = `${window.location.origin}/auth/confirm`;
-        const params = new URLSearchParams();
-
-        if (planType) {
-          params.set('planType', planType);
-        }
-        if (priceId) {
-          params.set('priceId', priceId);
-        }
-
-        if (params.toString()) {
-          redirectUrl += `?${params.toString()}`;
-        }
+        // Redirect to pricing page after email confirmation
+        const redirectUrl = `${window.location.origin}/pricing`;
         
         const { error } = await supabase.auth.signUp({
           email,
@@ -127,10 +106,8 @@ const Auth = () => {
         } else {
           toast({
             title: "Account created!",
-            description: returnUrl ? "Please check your email to verify your account, then you'll be redirected to complete your subscription." : "Please check your email to verify your account.",
+            description: "Please check your email to verify your account. You'll be redirected to our pricing page.",
           });
-          // For email verification flow, we can't redirect immediately
-          // The user will be redirected after email verification
         }
       }
     } catch (error) {
@@ -213,10 +190,10 @@ const Auth = () => {
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading || isCheckingOut}
+            disabled={loading}
           >
-            {(loading || isCheckingOut) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {isCheckingOut ? 'Redirecting to checkout...' : isLogin ? 'Sign In' : 'Sign Up'}
+            {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+            {isLogin ? 'Sign In' : 'Sign Up'}
           </Button>
           </form>
           

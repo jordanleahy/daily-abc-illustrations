@@ -6,6 +6,16 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Crown, Calendar, Check, RefreshCw, AlertTriangle } from "lucide-react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 import { format } from "date-fns";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface SubscriptionStatusProps {
   showActions?: boolean;
@@ -27,6 +37,7 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
   } = useSubscription();
 
   const [isUpdatingRenewal, setIsUpdatingRenewal] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
   const currentTier = getSubscriptionTier();
   
   // Auto-renewal is enabled when cancel_at_period_end is false (or undefined for legacy subscriptions)
@@ -35,23 +46,20 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
   const handleAutoRenewChange = async (checked: boolean | "indeterminate") => {
     // If user is trying to disable auto-renew (cancel subscription)
     if (!checked) {
-      const confirmed = window.confirm(
-        `Cancel your subscription?\n\n` +
-        `You'll keep access until ${subscription_end ? format(new Date(subscription_end), "MMMM d, yyyy") : "the end of your billing period"}.\n\n` +
-        `After that, you'll lose access to:\n` +
-        `• Daily published ABC books\n` +
-        `• PDF downloads\n` +
-        `• Full library access\n\n` +
-        `You can re-subscribe anytime.`
-      );
-      
-      if (!confirmed) {
-        return; // User clicked "Cancel" - do nothing
-      }
+      setShowCancelDialog(true);
+      return;
     }
     
+    // Re-enabling auto-renewal (no confirmation needed)
     setIsUpdatingRenewal(true);
-    await updateAutoRenewal(checked === true);
+    await updateAutoRenewal(true);
+    setIsUpdatingRenewal(false);
+  };
+
+  const handleConfirmCancel = async () => {
+    setShowCancelDialog(false);
+    setIsUpdatingRenewal(true);
+    await updateAutoRenewal(false);
     setIsUpdatingRenewal(false);
   };
 
@@ -168,8 +176,59 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
   }
 
   return (
-    <Card className="border-green-200 bg-green-50/50">
-      <CardHeader className="flex flex-row items-center justify-between">
+    <>
+      <AlertDialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-orange-500" />
+              Cancel your subscription?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-4 pt-2">
+              <p className="text-base">
+                You'll keep access until{" "}
+                <span className="font-semibold">
+                  {subscription_end ? format(new Date(subscription_end), "MMMM d, yyyy") : "the end of your billing period"}
+                </span>.
+              </p>
+              
+              <div>
+                <p className="font-medium text-foreground mb-2">After that, you'll lose access to:</p>
+                <ul className="space-y-1.5 text-sm">
+                  <li className="flex items-center gap-2">
+                    <span className="text-red-500">•</span>
+                    <span>Daily published ABC books</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-red-500">•</span>
+                    <span>PDF downloads</span>
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <span className="text-red-500">•</span>
+                    <span>Full library access</span>
+                  </li>
+                </ul>
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                You can re-subscribe anytime.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep Subscription</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmCancel}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Cancel Subscription
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <Card className="border-green-200 bg-green-50/50">
+        <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle className="text-lg flex items-center gap-2">
             <Crown className="h-5 w-5 text-yellow-500" />
@@ -290,5 +349,6 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
         </div>
       </CardContent>
     </Card>
+    </>
   );
 };

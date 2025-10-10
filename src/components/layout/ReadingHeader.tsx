@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { Circle, QrCode } from 'lucide-react';
+import { Circle, QrCode, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
@@ -63,6 +63,14 @@ interface ReadingHeaderProps {
   onBack?: () => void;
   /** Kid ID for displaying kid's name and coin balance */
   kidId?: string;
+  /** Handler for previous page navigation */
+  onPrevious?: () => void;
+  /** Handler for next page navigation */
+  onNext?: () => void;
+  /** Whether previous navigation is available */
+  hasPrevious?: boolean;
+  /** Whether next navigation is available */
+  hasNext?: boolean;
 }
 
 /**
@@ -76,7 +84,11 @@ export function ReadingHeader({
   bookId,
   showQRCode = true,
   onBack,
-  kidId
+  kidId,
+  onPrevious,
+  onNext,
+  hasPrevious = false,
+  hasNext = false
 }: ReadingHeaderProps) {
   const { qrCodeData } = useBookQRCode(bookId || '');
   const navigate = useNavigate();
@@ -129,6 +141,30 @@ export function ReadingHeader({
       
       {/* Right section: Content sharing controls */}
       <div className="flex items-center gap-2">
+        {/* Page navigation arrows */}
+        {(onPrevious || onNext) && (
+          <>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onPrevious}
+              disabled={!hasPrevious}
+              className="p-1 h-8 w-8 rounded border border-border hover:bg-muted disabled:opacity-30"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </Button>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onNext}
+              disabled={!hasNext}
+              className="p-1 h-8 w-8 rounded border border-border hover:bg-muted disabled:opacity-30"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </Button>
+          </>
+        )}
+        
         {/* QR Code sharing functionality */}
         {showQRCode && bookId && (
           <Sheet>

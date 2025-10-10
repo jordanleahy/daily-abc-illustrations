@@ -190,6 +190,29 @@ export default function LibraryBookView() {
     }
   };
 
+  // Header arrow navigation (no rewards)
+  const handleHeaderPrevious = () => {
+    if (currentPageIndex > 0) {
+      const newIndex = currentPageIndex - 1;
+      setCurrentPageIndex(newIndex);
+      
+      if (sessionStarted && pages[newIndex]) {
+        trackPageView(newIndex + 1, pages[newIndex].letter, 'header_previous_arrow');
+      }
+    }
+  };
+
+  const handleHeaderNext = () => {
+    if (currentPageIndex < pages.length - 1) {
+      const newIndex = currentPageIndex + 1;
+      setCurrentPageIndex(newIndex);
+      
+      if (sessionStarted && pages[newIndex]) {
+        trackPageView(newIndex + 1, pages[newIndex].letter, 'header_next_arrow');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Dynamic meta tags for social sharing */}
@@ -202,6 +225,10 @@ export default function LibraryBookView() {
           bookId={dailyContent.book_id}
           onBack={handleBack}
           kidId={selectedKidId}
+          onPrevious={handleHeaderPrevious}
+          onNext={handleHeaderNext}
+          hasPrevious={currentPageIndex > 0}
+          hasNext={currentPageIndex < pages.length - 1}
         />
         
         {/* Reward System */}

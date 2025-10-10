@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { PageLayout } from "@/components/layout/PageLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,6 +8,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 
 const SubscriptionSuccess = () => {
+  const navigate = useNavigate();
   const { checkSubscription } = useSubscription();
   const { toast } = useToast();
 
@@ -69,17 +71,13 @@ const SubscriptionSuccess = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button asChild className="flex-1">
-                  <a href="/">
-                    <Home className="h-4 w-4 mr-2" />
-                    Go to Home
-                  </a>
+                <Button onClick={() => navigate('/')} className="flex-1">
+                  <Home className="h-4 w-4 mr-2" />
+                  Go to Home
                 </Button>
-                <Button asChild variant="outline" className="flex-1">
-                  <a href="/library">
-                    <Book className="h-4 w-4 mr-2" />
-                    Browse Library
-                  </a>
+                <Button onClick={() => navigate('/library')} variant="outline" className="flex-1">
+                  <Book className="h-4 w-4 mr-2" />
+                  Browse Library
                 </Button>
               </div>
 

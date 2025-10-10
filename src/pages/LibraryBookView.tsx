@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
@@ -7,12 +7,13 @@ import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidCoins } from '@/hooks/useKidCoins';
 import { useAuth } from '@/hooks/useAuth';
-import { toast } from '@/hooks/use-toast';
+import { usePageImageUrls } from '@/hooks/usePageImageUrls';
+import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { PublicPageImage } from '@/components/daily-published';
-import { PageImageUploadModal } from '@/components/PageImageUploadModal';
 import { Card } from '@/components/ui/card';
+import { processImage } from '@/utils/imageProcessor';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { RewardContainer } from '@/components/ui/reward-container';
@@ -36,9 +37,10 @@ export default function LibraryBookView() {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [earnedRewards, setEarnedRewards] = useState(0);
   const [sessionStarted, setSessionStarted] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
   const [uploadingForPageId, setUploadingForPageId] = useState<string | null>(null);
   const [initialPageTracked, setInitialPageTracked] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Auto-select kid if only one exists
   const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
@@ -151,8 +153,7 @@ export default function LibraryBookView() {
             coinsToAdd: earnedRewards 
           });
           
-          toast({
-            title: `You earned ${earnedRewards} coins! 🎉`,
+          toast.success(`You earned ${earnedRewards} coins! 🎉`, {
             description: "Great job reading!",
           });
           
@@ -160,11 +161,7 @@ export default function LibraryBookView() {
           navigate('/rewards');
         } catch (error) {
           console.error('Failed to deposit coins:', error);
-          toast({
-            title: "Oops!",
-            description: "Couldn't save your coins. Try again.",
-            variant: "destructive",
-          });
+          toast.error("Couldn't save your coins. Try again.");
         }
       } else {
         // No kid selected or no rewards - just navigate back
@@ -218,11 +215,108 @@ export default function LibraryBookView() {
     }
   };
 
-  // Handle upload button click
+  // Get upload function for current page
+  const { uploadImage } = usePageImageUrls(uploadingForPageId || '');
+
+  // Validate image file
+  const validateImage = async (file: File): Promise<{ valid: boolean; error?: string }> => {
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      return { valid: false, error: 'Please select an image file' };
+    }
+    
+    // Check supported formats
+    const supportedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!supportedTypes.includes(file.type)) {
+      return { valid: false, error: 'Supported formats: PNG, JPG, WEBP' };
+    }
+    
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return { valid: false, error: 'Image must be smaller than 5MB' };
+    }
+    
+    // Check aspect ratio
+    const isSquare = await checkAspectRatio(file);
+    if (!isSquare) {
+      return { valid: false, error: 'Image must have a 1:1 aspect ratio (square)' };
+    }
+    
+    return { valid: true };
+  };
+
+  // Check if image has 1:1 aspect ratio
+  const checkAspectRatio = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const aspectRatio = img.width / img.height;
+        const isSquare = Math.abs(aspectRatio - 1) < 0.1;
+        URL.revokeObjectURL(img.src);
+        resolve(isSquare);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src);
+        resolve(false);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  // Handle file selection
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !uploadingForPageId || !dailyContent) return;
+    
+    // Validate
+    const validation = await validateImage(file);
+    if (!validation.valid) {
+      toast.error(validation.error || 'Invalid image');
+      setUploadingForPageId(null);
+      return;
+    }
+    
+    // Show uploading toast
+    const toastId = toast.loading('Uploading image...');
+    
+    try {
+      // Process and compress image
+      const processed = await processImage(file, {
+        maxWidth: 1024,
+        maxHeight: 1024,
+        targetSizeBytes: 500 * 1024,
+        quality: 0.85,
+      });
+
+      const compressedFile = new File(
+        [processed.blob],
+        file.name.replace(/\.[^.]+$/, '.webp'),
+        { type: processed.blob.type }
+      );
+
+      // Upload
+      await uploadImage(compressedFile, dailyContent.book_id);
+      
+      // Success
+      toast.success('Image uploaded successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload image. Please try again.', { id: toastId });
+    } finally {
+      setUploadingForPageId(null);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle upload button click - trigger file picker directly
   const handleUploadClick = () => {
     if (currentPage) {
       setUploadingForPageId(currentPage.id);
-      setShowUploadModal(true);
+      fileInputRef.current?.click();
     }
   };
 
@@ -273,15 +367,14 @@ export default function LibraryBookView() {
         </div>
       </div>
       
-      {/* Image Upload Modal */}
-      {uploadingForPageId && (
-        <PageImageUploadModal
-          open={showUploadModal}
-          onOpenChange={setShowUploadModal}
-          pageId={uploadingForPageId}
-          bookId={dailyContent.book_id}
-        />
-      )}
+      {/* Hidden file input for direct upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/jpg,image/webp"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
     </div>
   );
 }

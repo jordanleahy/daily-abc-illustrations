@@ -21,7 +21,7 @@ const Landing = () => {
   const { trackEvent } = useGA4();
   const { data: landingData } = useLandingPageData();
   const { isAuthenticated, loading: authLoading } = useAuthContext();
-  const { isSubscribed, loading: subscriptionLoading } = useSubscription();
+  const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -34,10 +34,10 @@ const Landing = () => {
 
   // Redirect authenticated users without subscription to pricing
   useEffect(() => {
-    if (!authLoading && !subscriptionLoading && isAuthenticated && !isSubscribed) {
+    if (!authLoading && !subscriptionLoading && isAuthenticated && !hasActiveSubscription) {
       navigate('/pricing', { replace: true });
     }
-  }, [authLoading, subscriptionLoading, isAuthenticated, isSubscribed, navigate]);
+  }, [authLoading, subscriptionLoading, isAuthenticated, hasActiveSubscription, navigate]);
 
   return (
     <>

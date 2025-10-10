@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 
 export const ProtectedRoute = ({ children, requireSubscription = true }: ProtectedRouteProps) => {
   const { isAuthenticated, loading: authLoading } = useAuthContext();
-  const { isSubscribed, loading: subscriptionLoading } = useSubscription();
+  const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
   const location = useLocation();
 
   useEffect(() => {
@@ -44,7 +44,7 @@ export const ProtectedRoute = ({ children, requireSubscription = true }: Protect
   }
 
   // Check subscription requirement
-  if (requireSubscription && !isSubscribed) {
+  if (requireSubscription && !hasActiveSubscription) {
     // Redirect to pricing page with return URL
     const returnUrl = encodeURIComponent(location.pathname + location.search);
     return <Navigate to={`/pricing?returnUrl=${returnUrl}`} replace />;

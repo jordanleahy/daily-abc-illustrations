@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { ActiveSubscriptionView } from "./ActiveSubscriptionView";
 
 export const WireframePricing = () => {
-  const { createCheckoutSession, isSubscribed, getSubscriptionTier, loading, openCustomerPortal, hasActiveSubscription } = useSubscription();
+  const { createCheckoutSession, hasActiveSubscription, getSubscriptionTier, loading, openCustomerPortal } = useSubscription();
   const { user } = useAuth();
   const navigate = useNavigate();
   const currentTier = getSubscriptionTier();
@@ -40,7 +40,7 @@ export const WireframePricing = () => {
       ],
       buttonText: isCurrentlyFree ? "Current Plan" : "Sign Up Free",
       buttonDisabled: isCurrentlyFree,
-      current: !isSubscribed,
+      current: !hasActiveSubscription,
       onClick: () => navigate('/auth?mode=signup')
     },
     {
@@ -54,7 +54,7 @@ export const WireframePricing = () => {
         "Premium reading experience"
       ],
       buttonText: currentTier?.interval === 'month' ? "Current Plan" : "Select Monthly",
-      buttonDisabled: loading || (isSubscribed && currentTier?.interval === 'month'),
+      buttonDisabled: loading || (hasActiveSubscription && currentTier?.interval === 'month'),
       current: currentTier?.interval === 'month',
       onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS?.standard_monthly?.price_id || '')
     },
@@ -72,7 +72,7 @@ export const WireframePricing = () => {
         "Educational activity guides"
       ],
       buttonText: currentTier?.interval === 'year' ? "Current Plan" : "Select Annual",
-      buttonDisabled: loading || (isSubscribed && currentTier?.interval === 'year'),
+      buttonDisabled: loading || (hasActiveSubscription && currentTier?.interval === 'year'),
       current: currentTier?.interval === 'year',
       onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS?.standard_annual?.price_id || '')
     }
@@ -132,7 +132,7 @@ export const WireframePricing = () => {
       </div>
 
       {/* Subscription management for authenticated users */}
-      {isSubscribed && (
+      {hasActiveSubscription && (
         <div className="text-center p-6 border rounded-lg">
           <h3 className="text-lg font-semibold mb-2">Manage Your Subscription</h3>
           <p className="text-muted-foreground mb-4">

@@ -33,6 +33,19 @@ export const SUBSCRIPTION_TIERS = {
   }
 } as const;
 
+// Helper to check if subscription is active
+const isSubscriptionActive = (status: SubscriptionStatus): boolean => {
+  if (!status.subscribed) return false;
+  
+  // If subscription_end exists, check if it's in the future
+  if (status.subscription_end) {
+    return new Date(status.subscription_end) > new Date();
+  }
+  
+  // If no subscription_end, use subscribed status
+  return status.subscribed;
+};
+
 export const useSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -153,29 +166,6 @@ export const useSubscription = () => {
     );
   }, [query.data]);
 
-
-  // Helper methods for checking specific premium features
-  const canAccessHistoricalContent = useCallback(() => {
-    const s = query.data as SubscriptionStatus | undefined;
-    return s?.subscribed && s?.subscription_end 
-      ? new Date(s.subscription_end) > new Date() 
-      : s?.subscribed || false;
-  }, [query.data]);
-
-  const canDownloadPDF = useCallback(() => {
-    const s = query.data as SubscriptionStatus | undefined;
-    return s?.subscribed && s?.subscription_end 
-      ? new Date(s.subscription_end) > new Date() 
-      : s?.subscribed || false;
-  }, [query.data]);
-
-  const canAccessFullLibrary = useCallback(() => {
-    const s = query.data as SubscriptionStatus | undefined;
-    return s?.subscribed && s?.subscription_end 
-      ? new Date(s.subscription_end) > new Date() 
-      : s?.subscribed || false;
-  }, [query.data]);
-
   const updateAutoRenewal = useCallback(async (autoRenew: boolean) => {
     if (!user) {
       toast({
@@ -218,21 +208,27 @@ export const useSubscription = () => {
   const finalData: SubscriptionStatus = (query.data as SubscriptionStatus) || { subscribed: false, loading: false };
 
   return {
-    ...finalData,
+    // Raw subscription data
+    subscribed: finalData.subscribed,
+    product_id: finalData.product_id,
+    price_id: finalData.price_id,
+    interval: finalData.interval,
+    subscription_end: finalData.subscription_end,
+    cancel_at_period_end: finalData.cancel_at_period_end,
+    error: finalData.error,
+    
+    // State
     loading: effectiveLoading,
     isRefreshing: query.isFetching,
+    
+    // Single source of truth for subscription status
+    hasActiveSubscription: isSubscriptionActive(finalData),
+    
+    // Actions
     checkSubscription,
     createCheckoutSession,
     openCustomerPortal,
     getSubscriptionTier,
     updateAutoRenewal,
-    isSubscribed: finalData.subscribed,
-    hasActiveSubscription: finalData.subscribed && finalData.subscription_end 
-      ? new Date(finalData.subscription_end) > new Date() 
-      : finalData.subscribed,
-    // Premium feature helpers
-    canAccessHistoricalContent,
-    canDownloadPDF,
-    canAccessFullLibrary,
   };
 };

@@ -6,7 +6,7 @@ import { CheckCircle, Crown, Zap, Star, Gift, Target, Trophy, Heart, Flame } fro
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 
 export const DuolingoStylePricing = () => {
-  const { createCheckoutSession, isSubscribed, getSubscriptionTier, loading } = useSubscription();
+  const { createCheckoutSession, hasActiveSubscription, getSubscriptionTier, loading } = useSubscription();
   const currentTier = getSubscriptionTier();
 
   const freeFeatures = [
@@ -70,7 +70,7 @@ export const DuolingoStylePricing = () => {
       </div>
 
       {/* Current Progress (for existing users) */}
-      {isSubscribed && (
+      {hasActiveSubscription && (
         <div className="max-w-2xl mx-auto px-4 mb-12">
           <Card className="bg-gradient-to-r from-duolingo-green/10 to-duolingo-blue/10 border-duolingo-green/20">
             <CardContent className="p-6">
@@ -181,7 +181,7 @@ export const DuolingoStylePricing = () => {
               <Button 
                 className="w-full bg-gradient-to-r from-duolingo-green to-duolingo-green-light hover:opacity-90 text-white font-bold py-3 text-lg shadow-lg"
                 onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id)}
-                disabled={loading || (isSubscribed && currentTier?.interval === 'month')}
+                disabled={loading || (hasActiveSubscription && currentTier?.interval === 'month')}
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
@@ -193,7 +193,7 @@ export const DuolingoStylePricing = () => {
                     <Crown className="w-4 h-4" />
                     Current Plan
                   </span>
-                ) : isSubscribed ? "Switch to Monthly" : (
+                ) : hasActiveSubscription ? "Switch to Monthly" : (
                   <span className="flex items-center gap-2">
                     <Star className="w-4 h-4" />
                     Start Learning
@@ -260,7 +260,7 @@ export const DuolingoStylePricing = () => {
               <Button 
                 className="w-full bg-gradient-to-r from-duolingo-purple to-purple-600 hover:opacity-90 text-white font-bold py-3 text-lg shadow-lg" 
                 onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.standard_annual.price_id)}
-                disabled={loading || (isSubscribed && currentTier?.interval === 'year')}
+                disabled={loading || (hasActiveSubscription && currentTier?.interval === 'year')}
               >
                 {loading ? (
                   <div className="flex items-center gap-2">
@@ -272,7 +272,7 @@ export const DuolingoStylePricing = () => {
                     <Crown className="w-4 h-4" />
                     Current Plan
                   </span>
-                ) : isSubscribed ? "Switch to Annual" : (
+                ) : hasActiveSubscription ? "Switch to Annual" : (
                   <span className="flex items-center gap-2">
                     <Trophy className="w-4 h-4" />
                     Become a Master
@@ -317,7 +317,7 @@ export const DuolingoStylePricing = () => {
         </div>
 
         {/* Subscription Management */}
-        {isSubscribed && (
+        {hasActiveSubscription && (
           <div className="text-center mt-16 p-8 bg-muted/50 rounded-2xl">
             <Target className="w-12 h-12 text-duolingo-green mx-auto mb-4" />
             <h3 className="text-xl font-bold mb-2">You're all set! 🎉</h3>

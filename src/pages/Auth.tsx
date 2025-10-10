@@ -102,7 +102,7 @@ const Auth = () => {
           // Check subscription status
           const { data: subStatus } = await supabase.functions.invoke('check-subscription');
           
-          if (subStatus?.subscribed) {
+          if (subStatus?.subscribed && (!subStatus.subscription_end || new Date(subStatus.subscription_end) > new Date())) {
             toast({
               title: "Welcome back!",
               description: "You have successfully logged in.",

@@ -30,7 +30,10 @@ export default function AuthConfirm() {
           console.log("Subscription status:", subscriptionData);
 
           // If user already has an active subscription, go to library
-          if (subscriptionData?.subscribed) {
+          const hasActiveSubscription = subscriptionData?.subscribed && 
+            (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
+          
+          if (hasActiveSubscription) {
             console.log("User already has subscription, redirecting to library");
             setTimeout(() => {
               navigate("/library", { replace: true });
@@ -155,7 +158,10 @@ export default function AuthConfirm() {
             const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
             console.log("Subscription status:", subscriptionData);
 
-            if (subscriptionData?.subscribed) {
+            const hasActiveSubscription = subscriptionData?.subscribed && 
+              (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
+
+            if (hasActiveSubscription) {
               console.log("User has subscription, redirecting to library");
               setTimeout(() => {
                 navigate("/library", { replace: true });
@@ -236,7 +242,10 @@ export default function AuthConfirm() {
           const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
           console.log("Subscription status:", subscriptionData);
 
-          if (subscriptionData?.subscribed) {
+          const hasActiveSubscription = subscriptionData?.subscribed && 
+            (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
+
+          if (hasActiveSubscription) {
             console.log("User has subscription, redirecting to library");
             setTimeout(() => {
               navigate("/library", { replace: true });

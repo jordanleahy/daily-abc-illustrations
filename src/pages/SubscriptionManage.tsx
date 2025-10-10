@@ -7,19 +7,19 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useToast } from "@/hooks/use-toast";
 
 const SubscriptionManage = () => {
-  const { isSubscribed, openCustomerPortal, loading } = useSubscription();
+  const { hasActiveSubscription, openCustomerPortal, loading } = useSubscription();
   const { toast } = useToast();
 
   useEffect(() => {
     // Auto-redirect to customer portal if user has active subscription
-    if (isSubscribed && !loading) {
+    if (hasActiveSubscription && !loading) {
       const timer = setTimeout(() => {
         openCustomerPortal();
       }, 3000); // Give user a moment to read the message
 
       return () => clearTimeout(timer);
     }
-  }, [isSubscribed, loading, openCustomerPortal]);
+  }, [hasActiveSubscription, loading, openCustomerPortal]);
 
   if (loading) {
     return (
@@ -36,7 +36,7 @@ const SubscriptionManage = () => {
     );
   }
 
-  if (!isSubscribed) {
+  if (!hasActiveSubscription) {
     return (
       <StandardPageLayout containerClassName="py-8">
         <div className="max-w-2xl mx-auto text-center">

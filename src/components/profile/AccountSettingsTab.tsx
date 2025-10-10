@@ -8,7 +8,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 export function AccountSettingsTab() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const { mutate: deleteAccount, isPending: isDeleting } = useDeleteAccount();
-  const { subscribed } = useSubscription();
+  const { hasActiveSubscription } = useSubscription();
   return (
     <div className="space-y-3">
       <div className="space-y-2">
@@ -81,7 +81,7 @@ export function AccountSettingsTab() {
             <p className="font-medium text-sm">Delete Account</p>
             <p className="text-xs text-muted-foreground">
               Permanently delete all data
-              {subscribed && <span className="text-destructive"> (will cancel subscription)</span>}
+              {hasActiveSubscription && <span className="text-destructive"> (will cancel subscription)</span>}
             </p>
           </div>
           <Button 
@@ -99,7 +99,7 @@ export function AccountSettingsTab() {
           onOpenChange={setShowDeleteDialog}
           onConfirm={() => deleteAccount()}
           isDeleting={isDeleting}
-          hasSubscription={subscribed}
+          hasSubscription={hasActiveSubscription}
         />
       </div>
     </div>

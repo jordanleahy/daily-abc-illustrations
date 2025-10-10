@@ -5,7 +5,7 @@ import { CheckCircle, Crown, Zap } from "lucide-react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 
 export const PricingSection = () => {
-  const { createCheckoutSession, isSubscribed, getSubscriptionTier, loading } = useSubscription();
+  const { createCheckoutSession, hasActiveSubscription, getSubscriptionTier, loading } = useSubscription();
   const currentTier = getSubscriptionTier();
 
   const features = [
@@ -58,12 +58,12 @@ export const PricingSection = () => {
               <Button 
                 className="w-full" 
                 onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id)}
-                disabled={loading || (isSubscribed && currentTier?.interval === 'month')}
+                disabled={loading || (hasActiveSubscription && currentTier?.interval === 'month')}
                 variant={currentTier?.interval === 'month' ? "outline" : "default"}
               >
                 {loading ? "Loading..." : 
                  currentTier?.interval === 'month' ? "Current Plan" : 
-                 isSubscribed ? "Switch to Monthly" : "Get Started"}
+                 hasActiveSubscription ? "Switch to Monthly" : "Get Started"}
               </Button>
             </CardFooter>
           </Card>
@@ -106,18 +106,18 @@ export const PricingSection = () => {
               <Button 
                 className="w-full" 
                 onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.standard_annual.price_id)}
-                disabled={loading || (isSubscribed && currentTier?.interval === 'year')}
+                disabled={loading || (hasActiveSubscription && currentTier?.interval === 'year')}
                 variant={currentTier?.interval === 'year' ? "outline" : "default"}
               >
                 {loading ? "Loading..." : 
                  currentTier?.interval === 'year' ? "Current Plan" : 
-                 isSubscribed ? "Switch to Annual" : "Get Started"}
+                 hasActiveSubscription ? "Switch to Annual" : "Get Started"}
               </Button>
             </CardFooter>
           </Card>
         </div>
 
-        {isSubscribed && (
+        {hasActiveSubscription && (
           <div className="text-center mt-8">
             <p className="text-sm text-muted-foreground mb-4">
               Need to update your billing information or cancel your subscription?

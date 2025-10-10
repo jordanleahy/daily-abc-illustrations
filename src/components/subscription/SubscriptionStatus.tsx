@@ -23,7 +23,7 @@ interface SubscriptionStatusProps {
 
 export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusProps) => {
   const { 
-    isSubscribed, 
+    hasActiveSubscription,
     subscription_end,
     cancel_at_period_end,
     loading, 
@@ -31,7 +31,6 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
     createCheckoutSession,
     openCustomerPortal, 
     getSubscriptionTier,
-    hasActiveSubscription,
     updateAutoRenewal,
     isRefreshing
   } = useSubscription();
@@ -74,7 +73,7 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
     );
   }
 
-  if (!isSubscribed) {
+  if (!hasActiveSubscription) {
     const handleSelectPlan = async (priceId: string) => {
       await createCheckoutSession(priceId);
     };

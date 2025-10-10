@@ -61,7 +61,7 @@ export default function Schedule() {
     isLoading,
     error
   } = useDailyPublishedSchedule();
-  const { canAccessHistoricalContent } = useSubscription();
+  const { hasActiveSubscription } = useSubscription();
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -147,7 +147,7 @@ export default function Schedule() {
           {/* Expired Items (Premium gated) */}
           {expiredItems.length > 0 && (
             <div className="mt-8">
-              {canAccessHistoricalContent() ? (
+              {hasActiveSubscription ? (
                 <details className="group" open>
                   <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
                     <Clock className="h-4 w-4" />

@@ -45,11 +45,11 @@ export const ProtectedRoute = ({ children, requireSubscription = true }: Protect
 
   // Check subscription requirement
   if (requireSubscription && !hasActiveSubscription) {
-    // Prevent redirect loop - don't redirect if already on subscription page
-    if (location.pathname === '/subscription') {
+    // Prevent redirect loop - don't redirect if already on pricing page
+    if (location.pathname === '/pricing') {
       return <>{children}</>;
     }
-    return <Navigate to="/subscription" replace />;
+    return <Navigate to="/pricing" replace />;
   }
 
   return <>{children}</>;

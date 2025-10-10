@@ -64,12 +64,12 @@ const Auth = () => {
             });
             navigate('/library');
           } else {
-            // Redirect to subscription page
+            // Redirect to pricing page
             toast({
               title: "Welcome back!",
               description: "Please select a subscription plan to continue.",
             });
-            navigate('/subscription');
+            navigate('/pricing');
           }
         }
       } else {

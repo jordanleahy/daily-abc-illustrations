@@ -335,17 +335,6 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
               <li>• Premium reading experience</li>
             </ul>
           </div>
-
-          {showActions && hasActiveSubscription && (
-            <Button 
-              variant="outline" 
-              size="sm" 
-              onClick={openCustomerPortal}
-              className="w-full"
-            >
-              Manage Billing in Stripe
-            </Button>
-          )}
         </div>
       </CardContent>
     </Card>

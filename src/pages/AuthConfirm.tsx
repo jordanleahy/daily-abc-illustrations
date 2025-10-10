@@ -24,81 +24,23 @@ export default function AuthConfirm() {
         if (session) {
           setStatus("success");
           
-          // First, check subscription status
-          console.log("Checking subscription status...");
+          // Check subscription status
+          console.log("[AUTH-CONFIRM] Checking subscription status...");
           const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
-          console.log("Subscription status:", subscriptionData);
+          console.log("[AUTH-CONFIRM] Subscription status:", subscriptionData);
 
-          // If user already has an active subscription, go to library
           const hasActiveSubscription = subscriptionData?.subscribed && 
             (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
           
           if (hasActiveSubscription) {
-            console.log("User already has subscription, redirecting to library");
-            setTimeout(() => {
-              navigate("/library", { replace: true });
-            }, 2000);
+            console.log("[AUTH-CONFIRM] User has subscription, redirecting to library");
+            setTimeout(() => navigate("/library", { replace: true }), 1500);
             return;
           }
 
-          // User doesn't have subscription
-          // If planType or priceId exists, redirect to Stripe checkout
-          if (priceId || planType) {
-              console.log("No subscription found, creating checkout with params:", { priceId, planType });
-              
-              const { data, error } = await supabase.functions.invoke('create-checkout', {
-                body: priceId 
-                  ? { price_id: priceId }
-                  : { plan_type: planType }
-              });
-
-              console.log("Checkout response:", { data, error });
-
-            if (error) {
-              console.error("Checkout error details:", error);
-              setStatus("error");
-              setErrorMessage(`Failed to create checkout session: ${error.message}`);
-              return;
-            }
-
-            if (!data?.url) {
-              console.error("No checkout URL returned");
-              setStatus("error");
-              setErrorMessage("Checkout session created but no URL was returned");
-              return;
-            }
-
-            console.log("Redirecting to Stripe checkout:", data.url);
-            window.location.href = data.url;
-            return;
-          } else {
-            // No payment parameters and no subscription - create monthly checkout
-            console.log("No subscription and no payment params, creating monthly checkout");
-            
-            const { data, error } = await supabase.functions.invoke('create-checkout', {
-              body: { price_id: 'price_1SFFx1C8085n0xWFN1fQ6B4N' } // Monthly plan
-            });
-
-            console.log("Monthly checkout response:", { data, error });
-
-            if (error) {
-              console.error("Monthly checkout error:", error);
-              setStatus("error");
-              setErrorMessage(`Failed to create checkout session: ${error.message}`);
-              return;
-            }
-
-            if (!data?.url) {
-              console.error("No checkout URL returned");
-              setStatus("error");
-              setErrorMessage("Checkout session created but no URL was returned");
-              return;
-            }
-
-            console.log("Redirecting to Stripe monthly checkout:", data.url);
-            window.location.href = data.url;
-            return;
-          }
+          // No subscription - redirect to pricing page
+          console.log("[AUTH-CONFIRM] No subscription, redirecting to pricing");
+          setTimeout(() => navigate("/pricing", { replace: true }), 1500);
           return;
         }
 
@@ -124,63 +66,19 @@ export default function AuthConfirm() {
 
           setStatus("success");
           
-          // If planType exists, redirect to Stripe checkout
-          if (planType === 'monthly' || planType === 'annual') {
-            console.log("Checkout params:", { priceId, planType });
-            
-            const { data, error } = await supabase.functions.invoke('create-checkout', {
-              body: priceId 
-                ? { price_id: priceId }
-                : { plan_type: planType }
-            });
+          // Check subscription
+          console.log("[AUTH-CONFIRM] Checking subscription after hash auth...");
+          const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
+          
+          const hasActiveSubscription = subscriptionData?.subscribed && 
+            (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
 
-            console.log("Checkout response:", { data, error });
-
-            if (error) {
-              console.error("Checkout error details:", error);
-              setStatus("error");
-              setErrorMessage(`Failed to create checkout session: ${error.message}`);
-              return;
-            }
-
-            if (!data?.url) {
-              console.error("No checkout URL returned");
-              setStatus("error");
-              setErrorMessage("Checkout session created but no URL was returned");
-              return;
-            }
-
-            window.location.href = data.url;
-            return;
+          if (hasActiveSubscription) {
+            console.log("[AUTH-CONFIRM] Has subscription, redirecting to library");
+            setTimeout(() => navigate("/library", { replace: true }), 1500);
           } else {
-            // No plan selected - check subscription first
-            console.log("Checking subscription status after hash token auth...");
-            const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
-            console.log("Subscription status:", subscriptionData);
-
-            const hasActiveSubscription = subscriptionData?.subscribed && 
-              (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
-
-            if (hasActiveSubscription) {
-              console.log("User has subscription, redirecting to library");
-              setTimeout(() => {
-                navigate("/library", { replace: true });
-              }, 2000);
-            } else {
-              console.log("No subscription, creating monthly checkout");
-              const { data, error } = await supabase.functions.invoke('create-checkout', {
-                body: { price_id: 'price_1SFFx1C8085n0xWFN1fQ6B4N' }
-              });
-
-              if (error || !data?.url) {
-                console.error("Checkout error:", error);
-                setStatus("error");
-                setErrorMessage(`Failed to create checkout session: ${error?.message || 'No URL returned'}`);
-                return;
-              }
-
-              window.location.href = data.url;
-            }
+            console.log("[AUTH-CONFIRM] No subscription, redirecting to pricing");
+            setTimeout(() => navigate("/pricing", { replace: true }), 1500);
           }
           return;
         }
@@ -208,63 +106,19 @@ export default function AuthConfirm() {
 
         setStatus("success");
         
-        // If planType exists, redirect to Stripe checkout
-        if (planType === 'monthly' || planType === 'annual') {
-          console.log("Checkout params:", { priceId, planType });
-          
-          const { data, error } = await supabase.functions.invoke('create-checkout', {
-            body: priceId 
-              ? { price_id: priceId }
-              : { plan_type: planType }
-          });
+        // Check subscription
+        console.log("[AUTH-CONFIRM] Checking subscription after OTP auth...");
+        const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
+        
+        const hasActiveSubscription = subscriptionData?.subscribed && 
+          (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
 
-          console.log("Checkout response:", { data, error });
-
-          if (error) {
-            console.error("Checkout error details:", error);
-            setStatus("error");
-            setErrorMessage(`Failed to create checkout session: ${error.message}`);
-            return;
-          }
-
-          if (!data?.url) {
-            console.error("No checkout URL returned");
-            setStatus("error");
-            setErrorMessage("Checkout session created but no URL was returned");
-            return;
-          }
-
-          window.location.href = data.url;
-          return;
+        if (hasActiveSubscription) {
+          console.log("[AUTH-CONFIRM] Has subscription, redirecting to library");
+          setTimeout(() => navigate("/library", { replace: true }), 1500);
         } else {
-          // No plan selected - check subscription first
-          console.log("Checking subscription status after OTP auth...");
-          const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
-          console.log("Subscription status:", subscriptionData);
-
-          const hasActiveSubscription = subscriptionData?.subscribed && 
-            (!subscriptionData.subscription_end || new Date(subscriptionData.subscription_end) > new Date());
-
-          if (hasActiveSubscription) {
-            console.log("User has subscription, redirecting to library");
-            setTimeout(() => {
-              navigate("/library", { replace: true });
-            }, 2000);
-          } else {
-            console.log("No subscription, creating monthly checkout");
-            const { data, error } = await supabase.functions.invoke('create-checkout', {
-              body: { price_id: 'price_1SFFx1C8085n0xWFN1fQ6B4N' }
-            });
-
-            if (error || !data?.url) {
-              console.error("Checkout error:", error);
-              setStatus("error");
-              setErrorMessage(`Failed to create checkout session: ${error?.message || 'No URL returned'}`);
-              return;
-            }
-
-            window.location.href = data.url;
-          }
+          console.log("[AUTH-CONFIRM] No subscription, redirecting to pricing");
+          setTimeout(() => navigate("/pricing", { replace: true }), 1500);
         }
       } catch (error) {
         setStatus("error");
@@ -295,7 +149,7 @@ export default function AuthConfirm() {
               <>
                 <CheckCircle2 className="h-12 w-12 text-green-600" />
                 <p className="text-center text-muted-foreground">
-                  Taking you to secure checkout...
+                  Checking your subscription status...
                 </p>
               </>
             )}

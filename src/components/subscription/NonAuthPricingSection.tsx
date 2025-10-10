@@ -6,12 +6,7 @@ import { useNavigate } from 'react-router-dom';
 export const NonAuthPricingSection = () => {
   const navigate = useNavigate();
 
-  const handleUpgrade = (planType: 'monthly' | 'annual') => {
-    // Navigate to auth page for checkout with planType parameter
-    navigate(`/auth?mode=signup&planType=${planType}`);
-  };
-
-  const handleSignup = () => {
+  const handleSelectPlan = () => {
     navigate('/auth?mode=signup');
   };
 
@@ -92,7 +87,7 @@ export const NonAuthPricingSection = () => {
             </ul>
             <Button 
               className="w-full bg-slate-900 hover:bg-slate-800 text-white"
-              onClick={() => handleUpgrade('monthly')}
+              onClick={handleSelectPlan}
             >
               Select Monthly
             </Button>
@@ -122,7 +117,7 @@ export const NonAuthPricingSection = () => {
             </ul>
             <Button 
               className="w-full bg-slate-900 hover:bg-slate-800 text-white"
-              onClick={() => handleUpgrade('annual')}
+              onClick={handleSelectPlan}
             >
               Select Annual
             </Button>

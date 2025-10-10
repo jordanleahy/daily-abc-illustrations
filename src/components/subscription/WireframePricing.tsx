@@ -22,7 +22,7 @@ export const WireframePricing = () => {
 
   const handlePlanSelection = (priceId: string) => {
     if (!user) {
-      navigate(`/auth?mode=signup&returnUrl=/subscription&plan=${priceId}`);
+      navigate('/auth?mode=signup');
       return;
     }
     createCheckoutSession(priceId);

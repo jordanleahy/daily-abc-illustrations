@@ -20,7 +20,6 @@ const Auth = () => {
   
   const searchParams = new URLSearchParams(location.search);
   const mode = searchParams.get('mode');
-  const returnUrl = searchParams.get('returnUrl');
   
   const [isLogin, setIsLogin] = useState(mode !== 'signup');
   const [email, setEmail] = useState('');
@@ -33,9 +32,9 @@ const Auth = () => {
   // Redirect authenticated users if already logged in
   useEffect(() => {
     if (isAuthenticated) {
-      navigate(returnUrl || '/');
+      navigate('/');
     }
-  }, [isAuthenticated, navigate, returnUrl]);
+  }, [isAuthenticated, navigate]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();

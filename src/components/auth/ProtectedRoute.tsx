@@ -49,7 +49,6 @@ export const ProtectedRoute = ({ children, requireSubscription = true }: Protect
     if (location.pathname === '/subscription') {
       return <>{children}</>;
     }
-    // Redirect to subscription page without returnUrl to avoid encoding loops
     return <Navigate to="/subscription" replace />;
   }
 

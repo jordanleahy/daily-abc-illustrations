@@ -291,7 +291,15 @@ export function usePageImageUrls(pageId: string) {
       .single();
 
     if (updateError) throw updateError;
-    return updatedRecord as PageImageUrl;
+    
+    // Immediately update the cache so UI reflects the change
+    const finalRecord = updatedRecord as PageImageUrl;
+    queryClient.setQueryData(['page-image-latest', pageId], finalRecord);
+    queryClient.setQueryData(['page-image-versions', pageId], (old: PageImageUrlVersion[] = []) =>
+      old.map(img => img.id === finalRecord.id ? finalRecord as PageImageUrlVersion : img)
+    );
+    
+    return finalRecord;
   };
 
   return {

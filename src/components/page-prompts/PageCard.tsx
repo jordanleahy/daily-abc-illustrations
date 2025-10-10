@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -8,12 +8,13 @@ import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageSystemPromptEditor } from './PageSystemPromptEditor';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeletePage } from '@/hooks/useDeletePage';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { useOptimisticInlineEdit } from '@/hooks/useOptimisticInlineEdit';
 import { UniversalInlineEdit } from '@/components/ui/universal-inline-edit';
+import { processImage } from '@/utils/imageProcessor';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -43,14 +44,13 @@ export function PageCard({ page, bookId }: PageCardProps) {
     updateEditedContent
   } = usePageSystemPrompt(page.id);
   const { user } = useAuth();
-  const { toast } = useToast();
   const deletePage = useDeletePage();
-  const { currentImage } = usePageImageUrls(page.id);
+  const { currentImage, uploadImage } = usePageImageUrls(page.id);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showPrompt, setShowPrompt] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
 
   // Optimistic inline editing for title
   const titleEdit = useOptimisticInlineEdit({
@@ -190,13 +190,86 @@ export function PageCard({ page, bookId }: PageCardProps) {
     }
   };
 
+  const validateImage = async (file: File): Promise<{ valid: boolean; error?: string }> => {
+    if (!file.type.startsWith('image/')) {
+      return { valid: false, error: 'Please select an image file' };
+    }
+    
+    const supportedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!supportedTypes.includes(file.type)) {
+      return { valid: false, error: 'Supported formats: PNG, JPG, WEBP' };
+    }
+    
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return { valid: false, error: 'Image must be smaller than 5MB' };
+    }
+    
+    const isSquare = await checkAspectRatio(file);
+    if (!isSquare) {
+      return { valid: false, error: 'Image must have a 1:1 aspect ratio (square)' };
+    }
+    
+    return { valid: true };
+  };
+
+  const checkAspectRatio = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const aspectRatio = img.width / img.height;
+        const isSquare = Math.abs(aspectRatio - 1) < 0.1;
+        URL.revokeObjectURL(img.src);
+        resolve(isSquare);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src);
+        resolve(false);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    
+    const validation = await validateImage(file);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      e.target.value = '';
+      return;
+    }
+    
+    const toastId = toast.loading('Uploading image...');
+    
+    try {
+      const processed = await processImage(file, {
+        maxWidth: 1024,
+        maxHeight: 1024,
+        targetSizeBytes: 500 * 1024,
+        quality: 0.85,
+      });
+
+      const compressedFile = new File(
+        [processed.blob],
+        file.name.replace(/\.[^.]+$/, '.webp'),
+        { type: processed.blob.type }
+      );
+
+      await uploadImage(compressedFile, bookId);
+      toast.success('Image uploaded successfully!', { id: toastId });
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast.error(error.message || 'Failed to upload image', { id: toastId });
+    } finally {
+      e.target.value = '';
+    }
+  };
+
   const handleDeletePage = async () => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to delete pages",
-        variant: "destructive",
-      });
+      toast.error('Please log in to delete pages');
       return;
     }
 
@@ -213,27 +286,16 @@ export function PageCard({ page, bookId }: PageCardProps) {
 
     try {
       await navigator.clipboard.writeText(currentPrompt.content);
-      toast({
-        title: "Copied!",
-        description: "System prompt copied to clipboard",
-      });
+      toast.success('System prompt copied to clipboard');
     } catch (error) {
       console.error('Error copying to clipboard:', error);
-      toast({
-        title: "Error", 
-        description: "Failed to copy to clipboard",
-        variant: "destructive",
-      });
+      toast.error('Failed to copy to clipboard');
     }
   };
 
   const handleDownloadImage = async () => {
     if (!currentImage?.image_url) {
-      toast({
-        title: "No Image",
-        description: "No image available to download",
-        variant: "destructive",
-      });
+      toast.error('No image available to download');
       return;
     }
 
@@ -249,17 +311,10 @@ export function PageCard({ page, bookId }: PageCardProps) {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      toast({
-        title: "Downloaded",
-        description: "Image downloaded successfully",
-      });
+      toast.success('Image downloaded successfully');
     } catch (error) {
       console.error('Error downloading image:', error);
-      toast({
-        title: "Download Failed",
-        description: "Failed to download image",
-        variant: "destructive",
-      });
+      toast.error('Failed to download image');
     }
   };
   
@@ -297,7 +352,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
               variant="ghost"
               size="icon"
               className="w-6 h-6"
-              onClick={() => setShowUpload(true)}
+              onClick={() => fileInputRef.current?.click()}
               title="Upload image for this page"
               aria-label="Upload image for this page"
             >
@@ -446,11 +501,18 @@ export function PageCard({ page, bookId }: PageCardProps) {
           <PageImageSection 
             pageId={page.id}
             bookId={bookId}
-            showUpload={showUpload}
-            onCloseUpload={() => setShowUpload(false)}
           />
         )}
       </CardContent>
+
+      {/* Hidden file input for direct upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/jpg,image/webp"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>

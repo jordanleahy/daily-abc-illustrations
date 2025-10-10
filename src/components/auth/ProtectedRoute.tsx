@@ -45,9 +45,12 @@ export const ProtectedRoute = ({ children, requireSubscription = true }: Protect
 
   // Check subscription requirement
   if (requireSubscription && !hasActiveSubscription) {
-    // Redirect to subscription page with return URL
-    const returnUrl = encodeURIComponent(location.pathname + location.search);
-    return <Navigate to={`/subscription?returnUrl=${returnUrl}`} replace />;
+    // Prevent redirect loop - don't redirect if already on subscription page
+    if (location.pathname === '/subscription') {
+      return <>{children}</>;
+    }
+    // Redirect to subscription page without returnUrl to avoid encoding loops
+    return <Navigate to="/subscription" replace />;
   }
 
   return <>{children}</>;

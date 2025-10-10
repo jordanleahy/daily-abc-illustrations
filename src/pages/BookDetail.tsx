@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
+import { trackBookView } from '@/utils/bookViewTracking';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -89,7 +90,14 @@ export default function BookDetail() {
       navigate('/auth');
       return;
     }
-  }, [user, id, navigate, authLoading, location.pathname]);
+    
+    // Track book view when component loads
+    if (user && id && book) {
+      trackBookView(id);
+      // Invalidate books query to update sort order
+      queryClient.invalidateQueries({ queryKey: ['books', user.id] });
+    }
+  }, [user, id, navigate, authLoading, location.pathname, book, queryClient]);
 
   // Handle book not found only after auth and query have both completed
   useEffect(() => {

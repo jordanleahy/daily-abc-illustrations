@@ -33,38 +33,11 @@ export const SUBSCRIPTION_TIERS = {
   }
 } as const;
 
-const SUBSCRIPTION_CACHE_KEY = 'subscription-status-v1';
-
 export const useSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Read cached subscription from localStorage for instant, no-jump UI
-  let initialData: SubscriptionStatus | undefined = undefined;
-  let initialUpdatedAt: number | undefined = undefined;
-  try {
-    const raw = localStorage.getItem(SUBSCRIPTION_CACHE_KEY);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (parsed && typeof parsed === 'object') {
-        const { subscribed, product_id, price_id, interval, subscription_end, cancel_at_period_end, updatedAt } = parsed as any;
-        initialData = {
-          subscribed: !!subscribed,
-          product_id,
-          price_id,
-          interval,
-          subscription_end,
-          cancel_at_period_end,
-          loading: false,
-        };
-        initialUpdatedAt = typeof updatedAt === 'number' ? updatedAt : Date.now();
-      }
-    }
-  } catch (_) {
-    // ignore cache errors
-  }
-
-  // Use React Query for caching subscription status
+  // Use React Query for caching subscription status - always query fresh from Stripe API
   const query = useQuery<SubscriptionStatus>({
     queryKey: ['subscription', user?.id],
     queryFn: async (): Promise<SubscriptionStatus> => {
@@ -99,29 +72,13 @@ export const useSubscription = () => {
       }
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes (formerly cacheTime)
-    refetchOnMount: false, // Don't refetch on mount if data is fresh
-    refetchOnWindowFocus: false, // Don't refetch on window focus
-    placeholderData: initialData, // Show cached data instantly while refetching
-    initialData,
-    initialDataUpdatedAt: initialUpdatedAt,
+    staleTime: 30 * 1000, // Consider data fresh for 30 seconds (much shorter)
+    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
+    refetchOnWindowFocus: true, // Refetch when user returns to tab
+    refetchOnMount: true, // Always check on mount
   });
 
-  // Cache subscription data to localStorage whenever it updates
-  const subscriptionData = query.data;
-  if (subscriptionData && !query.isLoading) {
-    try {
-      localStorage.setItem(
-        SUBSCRIPTION_CACHE_KEY,
-        JSON.stringify({ ...subscriptionData, updatedAt: Date.now() })
-      );
-    } catch (_) {
-      // ignore cache errors
-    }
-  }
-
-  const effectiveLoading = query.isLoading && !initialData;
+  const effectiveLoading = query.isLoading;
 
   const checkSubscription = useCallback(async () => {
     await query.refetch();

@@ -24,9 +24,24 @@ export default function AuthConfirm() {
         if (session) {
           setStatus("success");
           
+          // First, check subscription status
+          console.log("Checking subscription status...");
+          const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
+          console.log("Subscription status:", subscriptionData);
+
+          // If user already has an active subscription, go to library
+          if (subscriptionData?.subscribed) {
+            console.log("User already has subscription, redirecting to library");
+            setTimeout(() => {
+              navigate("/library", { replace: true });
+            }, 2000);
+            return;
+          }
+
+          // User doesn't have subscription
           // If planType or priceId exists, redirect to Stripe checkout
           if (priceId || planType) {
-              console.log("Checkout params:", { priceId, planType });
+              console.log("No subscription found, creating checkout with params:", { priceId, planType });
               
               const { data, error } = await supabase.functions.invoke('create-checkout', {
                 body: priceId 
@@ -50,23 +65,15 @@ export default function AuthConfirm() {
               return;
             }
 
+            console.log("Redirecting to Stripe checkout:", data.url);
             window.location.href = data.url;
             return;
           } else {
-            // No payment parameters - check subscription status
-            const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
-            
-            if (subscriptionData?.subscribed) {
-              // Has subscription - go to library
-              setTimeout(() => {
-                navigate("/library", { replace: true });
-              }, 2000);
-            } else {
-              // No subscription - redirect to pricing
-              setTimeout(() => {
-                navigate("/pricing", { replace: true });
-              }, 2000);
-            }
+            // No payment parameters and no subscription - redirect to pricing
+            console.log("No subscription and no payment params, redirecting to pricing");
+            setTimeout(() => {
+              navigate("/pricing", { replace: true });
+            }, 2000);
           }
           return;
         }

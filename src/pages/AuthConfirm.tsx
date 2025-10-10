@@ -69,11 +69,32 @@ export default function AuthConfirm() {
             window.location.href = data.url;
             return;
           } else {
-            // No payment parameters and no subscription - redirect to pricing
-            console.log("No subscription and no payment params, redirecting to pricing");
-            setTimeout(() => {
-              navigate("/pricing", { replace: true });
-            }, 2000);
+            // No payment parameters and no subscription - create monthly checkout
+            console.log("No subscription and no payment params, creating monthly checkout");
+            
+            const { data, error } = await supabase.functions.invoke('create-checkout', {
+              body: { price_id: 'price_1SFFx1C8085n0xWFN1fQ6B4N' } // Monthly plan
+            });
+
+            console.log("Monthly checkout response:", { data, error });
+
+            if (error) {
+              console.error("Monthly checkout error:", error);
+              setStatus("error");
+              setErrorMessage(`Failed to create checkout session: ${error.message}`);
+              return;
+            }
+
+            if (!data?.url) {
+              console.error("No checkout URL returned");
+              setStatus("error");
+              setErrorMessage("Checkout session created but no URL was returned");
+              return;
+            }
+
+            console.log("Redirecting to Stripe monthly checkout:", data.url);
+            window.location.href = data.url;
+            return;
           }
           return;
         }
@@ -129,10 +150,31 @@ export default function AuthConfirm() {
             window.location.href = data.url;
             return;
           } else {
-            // No plan selected, go to library
-            setTimeout(() => {
-              navigate("/library", { replace: true });
-            }, 2000);
+            // No plan selected - check subscription first
+            console.log("Checking subscription status after hash token auth...");
+            const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
+            console.log("Subscription status:", subscriptionData);
+
+            if (subscriptionData?.subscribed) {
+              console.log("User has subscription, redirecting to library");
+              setTimeout(() => {
+                navigate("/library", { replace: true });
+              }, 2000);
+            } else {
+              console.log("No subscription, creating monthly checkout");
+              const { data, error } = await supabase.functions.invoke('create-checkout', {
+                body: { price_id: 'price_1SFFx1C8085n0xWFN1fQ6B4N' }
+              });
+
+              if (error || !data?.url) {
+                console.error("Checkout error:", error);
+                setStatus("error");
+                setErrorMessage(`Failed to create checkout session: ${error?.message || 'No URL returned'}`);
+                return;
+              }
+
+              window.location.href = data.url;
+            }
           }
           return;
         }
@@ -189,10 +231,31 @@ export default function AuthConfirm() {
           window.location.href = data.url;
           return;
         } else {
-          // No plan selected, go to library
-          setTimeout(() => {
-            navigate("/library", { replace: true });
-          }, 2000);
+          // No plan selected - check subscription first
+          console.log("Checking subscription status after OTP auth...");
+          const { data: subscriptionData } = await supabase.functions.invoke('check-subscription');
+          console.log("Subscription status:", subscriptionData);
+
+          if (subscriptionData?.subscribed) {
+            console.log("User has subscription, redirecting to library");
+            setTimeout(() => {
+              navigate("/library", { replace: true });
+            }, 2000);
+          } else {
+            console.log("No subscription, creating monthly checkout");
+            const { data, error } = await supabase.functions.invoke('create-checkout', {
+              body: { price_id: 'price_1SFFx1C8085n0xWFN1fQ6B4N' }
+            });
+
+            if (error || !data?.url) {
+              console.error("Checkout error:", error);
+              setStatus("error");
+              setErrorMessage(`Failed to create checkout session: ${error?.message || 'No URL returned'}`);
+              return;
+            }
+
+            window.location.href = data.url;
+          }
         }
       } catch (error) {
         setStatus("error");
@@ -211,9 +274,7 @@ export default function AuthConfirm() {
             <CardTitle className="text-center">Email Confirmation</CardTitle>
             <CardDescription className="text-center">
               {status === "loading" && "Confirming your email..."}
-              {status === "success" && searchParams.get("planType") 
-                ? "Email confirmed! Redirecting you to checkout..."
-                : "Email confirmed successfully!"}
+              {status === "success" && "Email confirmed! Redirecting you to checkout..."}
               {status === "error" && "Confirmation failed"}
             </CardDescription>
           </CardHeader>
@@ -225,7 +286,7 @@ export default function AuthConfirm() {
               <>
                 <CheckCircle2 className="h-12 w-12 text-green-600" />
                 <p className="text-center text-muted-foreground">
-                  Redirecting you to the home page...
+                  Taking you to secure checkout...
                 </p>
               </>
             )}

@@ -99,11 +99,34 @@ const Auth = () => {
             variant: "destructive",
           });
         } else {
-          toast({
-            title: "Welcome back!",
-            description: "You have successfully logged in.",
-          });
-          // Let useEffect handle navigation and checkout
+          // Check subscription status
+          const { data: subStatus } = await supabase.functions.invoke('check-subscription');
+          
+          if (subStatus?.subscribed) {
+            toast({
+              title: "Welcome back!",
+              description: "You have successfully logged in.",
+            });
+            navigate('/library');
+          } else {
+            // Redirect to monthly checkout
+            setIsCheckingOut(true);
+            const { data, error: checkoutError } = await supabase.functions.invoke('create-checkout', {
+              body: { plan_type: 'monthly' }
+            });
+            
+            if (checkoutError || !data?.url) {
+              console.error('Checkout creation error:', checkoutError);
+              toast({
+                title: "Checkout Error",
+                description: "Failed to create checkout session. Redirecting to pricing page.",
+                variant: "destructive",
+              });
+              navigate('/pricing');
+            } else {
+              window.location.href = data.url;
+            }
+          }
         }
       } else {
         // Preserve planType in email verification redirect

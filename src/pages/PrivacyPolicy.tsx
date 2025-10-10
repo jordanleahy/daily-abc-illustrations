@@ -191,11 +191,11 @@ const PrivacyPolicy = () => {
                   <li><strong>No Direct Accounts for Children Under 13:</strong> Only a parent/guardian may create an account and set up child profiles</li>
                   <li><strong>Verifiable Parental Consent:</strong> We use email verification to obtain verifiable parental consent before enabling child features</li>
                   <li><strong>Data Minimization:</strong> Kid profiles store first name and reward coins solely for personalization and progress. No public sharing or direct messaging features are provided to children</li>
-                  <li><strong>Parental Rights:</strong> Parents can review, correct, or delete child data via Settings → Kid Profiles or by contacting privacy@dailyabcillustrations.com</li>
+                  <li><strong>Parental Rights:</strong> Parents can review, correct, or delete child data via Settings → Kid Profiles or by contacting dailyabcillustrations@gmail.com</li>
                   <li><strong>Schools/Teachers (if applicable):</strong> If used in a classroom, we rely on school authorization as permitted by COPPA. Schools must provide required notices/consents to parents</li>
                 </ul>
                 <p>
-                  If you believe we collected data from a child under 13 without parental consent, contact us immediately at privacy@dailyabcillustrations.com.
+                  If you believe we collected data from a child under 13 without parental consent, contact us immediately at dailyabcillustrations@gmail.com.
                 </p>
               </section>
 
@@ -227,13 +227,13 @@ const PrivacyPolicy = () => {
                   <li><strong>Deletion:</strong> Request deletion of your account and associated data (subject to legal retention)</li>
                   <li><strong>Opt-Out:</strong> Opt out of marketing communications and, where applicable, analytics/targeting cookies</li>
                   <li><strong>Object/Restrict (EEA/UK):</strong> Object to or request restriction of processing, and withdraw consent where processing is based on consent</li>
-                  <li><strong>Appeal (certain US states):</strong> If we deny your request, you may appeal by emailing privacy@dailyabcillustrations.com; we will respond within 45 days</li>
+                  <li><strong>Appeal (certain US states):</strong> If we deny your request, you may appeal by emailing dailyabcillustrations@gmail.com; we will respond within 45 days</li>
                 </ul>
                 <p className="mt-4">
                   <strong>Verification:</strong> We may verify your identity (e.g., email confirmation, request metadata) before fulfilling rights requests.
                 </p>
                 <p>
-                  To exercise rights, contact privacy@dailyabcillustrations.com. We generally respond within 30 days (extendable where permitted by law).
+                  To exercise rights, contact dailyabcillustrations@gmail.com. We generally respond within 30 days (extendable where permitted by law).
                 </p>
               </section>
 
@@ -289,7 +289,7 @@ const PrivacyPolicy = () => {
                 <h2 className="text-2xl font-semibold mb-4">12. Contact Us</h2>
                 <div className="bg-muted p-6 rounded-lg">
                   <p className="font-semibold">Van7, LLC (DBA Daily ABC Illustrations)</p>
-                  <p>Email: privacy@dailyabcillustrations.com</p>
+                  <p>Email: dailyabcillustrations@gmail.com</p>
                   <p>Website: https://dailyabcillustrations.com</p>
                 </div>
               </section>
@@ -307,18 +307,18 @@ const PrivacyPolicy = () => {
                   <li>We <strong>do not share</strong> Personal Data for <strong>cross-context behavioral advertising</strong></li>
                   <li>If this changes, we will provide a "Do Not Sell or Share My Personal Information" link and honor Global Privacy Control (GPC) signals</li>
                 </ul>
-                <p>Submit requests via privacy@dailyabcillustrations.com.</p>
+                <p>Submit requests via dailyabcillustrations@gmail.com.</p>
 
                 <h3 className="text-xl font-semibold mb-3 mt-6">Colorado / Connecticut / Virginia / Other US State Laws</h3>
                 <p>
-                  Residents may have similar rights (access, correction, deletion, portability, and appeal). Submit requests via privacy@dailyabcillustrations.com. 
+                  Residents may have similar rights (access, correction, deletion, portability, and appeal). Submit requests via dailyabcillustrations@gmail.com. 
                   We will respond within the required timeframe.
                 </p>
 
                 <h3 className="text-xl font-semibold mb-3 mt-6">EEA/UK (GDPR/UK GDPR)</h3>
                 <p>
                   EEA/UK residents have rights to access, rectification, erasure, restriction, portability, and objection; and to withdraw consent where processing 
-                  is based on consent. You may lodge a complaint with your local supervisory authority. Contact privacy@dailyabcillustrations.com to exercise rights.
+                  is based on consent. You may lodge a complaint with your local supervisory authority. Contact dailyabcillustrations@gmail.com to exercise rights.
                 </p>
               </section>
 

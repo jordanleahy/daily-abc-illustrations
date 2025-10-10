@@ -369,7 +369,6 @@ const TermsOfService = () => {
                 <h2 className="text-2xl font-semibold mb-4">20) Contact</h2>
                 <div className="bg-muted p-6 rounded-lg">
                   <p className="font-semibold">Van7, LLC (DBA Daily ABC Illustrations)</p>
-                  <p><strong>Address:</strong> [Registered Address]</p>
                   <p><strong>Email:</strong> dailyabcillustrations@gmail.com</p>
                   <p><strong>Website:</strong> https://dailyabcillustrations.com</p>
                 </div>

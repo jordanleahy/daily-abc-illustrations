@@ -18,7 +18,7 @@ interface SubscriptionStatus {
 // Define our subscription tiers with their corresponding Stripe IDs
 export const SUBSCRIPTION_TIERS = {
   standard_monthly: {
-    price_id: "price_1SFFx1C8085n0xWFN1fQ6B4N",
+    price_id: "price_1SFFx1C8Q85n0xWFNIFQGB4N",
     product_id: "prod_T7a3qkxm69uttK",
     name: "Standard Monthly",
     price: 499, // Price in cents ($4.99)

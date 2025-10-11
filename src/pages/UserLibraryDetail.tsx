@@ -6,7 +6,8 @@ import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { MetaHead } from '@/components/common';
 import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { PublicPageImage } from '@/components/daily-published';
 import { ArrowLeft, Calendar, BookOpen } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
@@ -151,27 +152,31 @@ export default function UserLibraryDetail() {
                 className="group cursor-pointer overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] border-2 border-transparent hover:border-primary/20"
                 onClick={() => handlePageClick(index)}
               >
-                <div className="relative aspect-square">
-                  {/* Letter Badge */}
-                  <div className="absolute top-3 left-3 z-10 bg-primary text-primary-foreground rounded-full w-14 h-14 flex items-center justify-center font-bold text-xl shadow-md">
-                    {page.letter}
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="text-2xl font-bold">
+                      {page.letter}
+                    </CardTitle>
+                    <Badge variant="secondary" className="text-xs">
+                      Page {index + 1}
+                    </Badge>
                   </div>
-
-                  {/* Page Image */}
-                  <PublicPageImage
-                    pageId={page.id}
-                    bookId={dailyContent.book_id}
-                    className="w-full h-full object-cover"
-                    showUploadButton={false}
-                  />
-
-                  {/* Title Overlay */}
-                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 via-black/50 to-transparent p-4 pt-8 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <p className="text-white font-medium text-sm line-clamp-2">
-                      {page.title}
-                    </p>
+                </CardHeader>
+                
+                <CardContent className="space-y-3">
+                  <div className="text-sm text-muted-foreground line-clamp-2">
+                    {page.title}
                   </div>
-                </div>
+                  
+                  <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
+                    <PublicPageImage
+                      pageId={page.id}
+                      bookId={dailyContent.book_id}
+                      className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                      showUploadButton={false}
+                    />
+                  </div>
+                </CardContent>
               </Card>
             ))}
           </div>

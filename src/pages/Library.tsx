@@ -179,7 +179,7 @@ const LibraryBookCard = memo(function LibraryBookCard({ item, index, isNewlyPubl
           </CardTitle>
           {isNewlyPublished && (
             <Badge variant="default" className="shrink-0">
-              Newly Published
+              Published Today
             </Badge>
           )}
         </div>

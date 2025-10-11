@@ -137,9 +137,9 @@ export default function Rewards() {
               <CardContent>
                 <div className="text-center py-8">
                   <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Store Coming Soon!</h3>
+                  <h3 className="text-lg font-semibold mb-2">Build Your Rewards Store</h3>
                   <p className="text-muted-foreground mb-4">
-                    Your parents will add rewards you can purchase with your coins.
+                    Add rewards that your kids can purchase with their earned coins.
                   </p>
                 </div>
               </CardContent>
@@ -315,10 +315,16 @@ export default function Rewards() {
                 {activeProducts.length === 0 ? (
                   <div className="text-center py-8">
                     <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Store Coming Soon!</h3>
+                    <h3 className="text-lg font-semibold mb-2">No Rewards Yet!</h3>
                     <p className="text-muted-foreground mb-4">
-                      Your parents will add rewards you can purchase with your coins.
+                      Add rewards to your store that your kids can purchase with their earned coins.
                     </p>
+                    <Button variant="outline" asChild>
+                      <Link to="/rewards/manage">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Your First Reward
+                      </Link>
+                    </Button>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

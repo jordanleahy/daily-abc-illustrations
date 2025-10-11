@@ -98,6 +98,13 @@ const navigate = useNavigate();
     }
   }, [loading, isAuthenticated, isTeacher, navigate]);
 
+  // Redirect regular users to library
+  useEffect(() => {
+    if (!loading && isAuthenticated && !isAdmin && !isTeacher) {
+      navigate('/library', { replace: true });
+    }
+  }, [loading, isAuthenticated, isAdmin, isTeacher, navigate]);
+
   // Redirect non-authenticated users to active daily published content
   useEffect(() => {
     if (!loading && !isDailyLoading && !isAuthenticated && activeDaily?.id) {

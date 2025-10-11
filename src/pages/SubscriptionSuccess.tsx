@@ -71,13 +71,9 @@ const SubscriptionSuccess = () => {
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                <Button onClick={() => navigate('/')} className="flex-1">
-                  <Home className="h-4 w-4 mr-2" />
-                  Go to Home
-                </Button>
-                <Button onClick={() => navigate('/library')} variant="outline" className="flex-1">
+                <Button onClick={() => navigate('/library')} className="flex-1">
                   <Book className="h-4 w-4 mr-2" />
-                  Browse Library
+                  Go to Library
                 </Button>
               </div>
 

@@ -79,10 +79,10 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
     setIsProcessing(true);
     try {
       const processed = await processImage(file, {
-        maxWidth: 1024,
-        maxHeight: 1024,
-        targetSizeBytes: 500 * 1024, // 500KB target
-        quality: 0.85,
+        maxWidth: 400,
+        maxHeight: 400,
+        targetSizeBytes: 80 * 1024, // 80KB target
+        quality: 0.90,
       });
 
       // Show compression results

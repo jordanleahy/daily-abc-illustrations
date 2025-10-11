@@ -164,10 +164,6 @@ export default function UserLibraryDetail() {
                 </CardHeader>
                 
                 <CardContent className="space-y-3">
-                  <div className="text-sm text-muted-foreground line-clamp-2">
-                    {page.title}
-                  </div>
-                  
                   <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
                     <PublicPageImage
                       pageId={page.id}

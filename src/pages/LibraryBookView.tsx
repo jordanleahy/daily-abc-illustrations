@@ -46,6 +46,9 @@ export default function LibraryBookView() {
   const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
   const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
   
+  // Get upload function for current page (must be called before any early returns)
+  const { uploadImage } = usePageImageUrls(uploadingForPageId || '');
+  
   const isLastPage = currentPageIndex === pages.length - 1;
   
   // Generate OpenGraph metadata for the current page
@@ -214,9 +217,6 @@ export default function LibraryBookView() {
       }
     }
   };
-
-  // Get upload function for current page
-  const { uploadImage } = usePageImageUrls(uploadingForPageId || '');
 
   // Validate image file
   const validateImage = async (file: File): Promise<{ valid: boolean; error?: string }> => {

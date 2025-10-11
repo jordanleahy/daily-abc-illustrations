@@ -27,6 +27,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { SITE_CONFIG } from '@/config/site';
+import { DailyPublishedStatus } from '@/types/dailyPublished';
 
 /**
  * Props for the ExportsSection component
@@ -176,6 +177,73 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       setIsProductDescriptionSaved(true);
     }
   }, [contentType, bookData?.product_description]);
+
+  /**
+   * Formats a date string to a readable format with full details
+   * @param dateString - ISO date string to format
+   * @returns Formatted date string (e.g., "Monday, January 15, 2025")
+   */
+  const formatPublishDate = (dateString: string): string => {
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      weekday: 'long', 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    });
+  };
+
+  /**
+   * Generates appropriate status message for daily queue based on publication state
+   * Uses early returns for clarity instead of nested ternaries
+   * Includes type-safe handling of all DailyPublishedStatus values
+   * @returns User-friendly status message string
+   */
+  const getDailyQueueStatusMessage = (): string => {
+    // Case 1: No publication exists yet (never been queued)
+    if (!existingPublication) {
+      if (dateLoading) {
+        return 'Calculating publication date...';
+      }
+      
+      if (expectedDate) {
+        return `This would be published on ${formatPublishDate(expectedDate.toISOString())}`;
+      }
+      
+      return 'Add your book to the daily publication queue';
+    }
+
+    // Case 2: Draft status (edge case - shouldn't normally appear in queue)
+    if (existingPublication.status === 'draft') {
+      return 'Currently in draft status';
+    }
+
+    // Get formatted date once for reuse
+    const formattedDate = formatPublishDate(existingPublication.publish_date);
+
+    // Case 3: Handle each publication status explicitly
+    // TypeScript will ensure all DailyPublishedStatus values are handled
+    const status: DailyPublishedStatus = existingPublication.status;
+    
+    switch (status) {
+      case 'expired':
+        return `Previously published on ${formattedDate} - Now expired`;
+      
+      case 'queued':
+        return `Scheduled to publish on ${formattedDate} at 7:01 AM ET`;
+      
+      case 'active':
+        return `Currently active, published on ${formattedDate} at 7:01 AM ET`;
+      
+      case 'draft':
+        // Already handled above, but include for exhaustiveness
+        return 'Currently in draft status';
+      
+      default:
+        // TypeScript will error if we add a new status and forget to handle it
+        const exhaustiveCheck: never = status;
+        return `Currently ${exhaustiveCheck} in the publication queue`;
+    }
+  };
 
   /**
    * Determines the button text, action, and state based on PDF generation status
@@ -727,40 +795,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
               )}
             </h4>
             <p className="text-sm text-muted-foreground">
-              {existingPublication && existingPublication.status === 'expired' 
-                ? `Previously published on ${new Date(existingPublication.publish_date).toLocaleDateString('en-US', { 
-                    weekday: 'long', 
-                    year: 'numeric', 
-                    month: 'long', 
-                    day: 'numeric' 
-                  })} - Now expired`
-                : existingPublication && existingPublication.status === 'queued'
-                  ? `Scheduled to publish on ${new Date(existingPublication.publish_date).toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })} at 7:01 AM ET`
-                : existingPublication && existingPublication.status === 'active'
-                  ? `Currently active, published on ${new Date(existingPublication.publish_date).toLocaleDateString('en-US', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })} at 7:01 AM ET`
-                : existingPublication && existingPublication.status !== 'draft' 
-                  ? `Currently ${existingPublication.status} in the publication queue`
-                  : dateLoading 
-                    ? 'Calculating publication date...'
-                    : expectedDate 
-                      ? `This would be published on ${expectedDate.toLocaleDateString('en-US', { 
-                          weekday: 'long', 
-                          year: 'numeric', 
-                          month: 'long', 
-                          day: 'numeric' 
-                        })}`
-                      : 'Add your book to the daily publication queue'
-              }
+              {getDailyQueueStatusMessage()}
             </p>
             {publicationHistory.length > 1 && (
               <p className="text-xs text-muted-foreground">

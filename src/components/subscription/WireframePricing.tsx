@@ -30,21 +30,7 @@ export const WireframePricing = () => {
 
   const plans = [
     {
-      name: "Free Plan",
-      price: "$0",
-      period: "forever",
-      features: [
-        "View today's ABC book",
-        "Limited daily access", 
-        "Basic reading experience"
-      ],
-      buttonText: isCurrentlyFree ? "Current Plan" : "Sign Up Free",
-      buttonDisabled: isCurrentlyFree,
-      current: !hasActiveSubscription,
-      onClick: () => navigate('/auth?mode=signup')
-    },
-    {
-      name: "Monthly Plan", 
+      name: "Monthly Plan",
       price: "$4.99",
       period: "month",
       features: [
@@ -86,8 +72,8 @@ export const WireframePricing = () => {
         <p className="text-muted-foreground">Select the plan that works best for you</p>
       </div>
 
-      {/* Simple 3-column layout */}
-      <div className="grid md:grid-cols-3 gap-8 mb-12">
+      {/* Simple 2-column layout */}
+      <div className="grid md:grid-cols-2 gap-8 mb-12 max-w-4xl mx-auto">
         {plans.map((plan, index) => (
           <Card key={index} className={`${plan.current ? 'border-primary border-2' : ''}`}>
             <CardHeader className="text-center">

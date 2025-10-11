@@ -227,17 +227,6 @@ const Auth = () => {
                   disabled={loading}
                   minLength={6}
                 />
-                {isLogin && (
-                  <Button
-                    variant="link"
-                    type="button"
-                    onClick={() => setIsForgotPassword(true)}
-                    disabled={loading}
-                    className="text-sm w-full text-right px-0"
-                  >
-                    Forgot Password?
-                  </Button>
-                )}
               </div>
             )}
           <Button 
@@ -250,7 +239,18 @@ const Auth = () => {
           </Button>
           </form>
           
-          <div className="mt-4 text-center">
+          <div className="mt-4 flex items-center justify-center gap-4 flex-wrap text-sm">
+            {isLogin && !isForgotPassword && (
+              <Button
+                variant="link"
+                type="button"
+                onClick={() => setIsForgotPassword(true)}
+                disabled={loading}
+                className="text-sm h-auto p-0"
+              >
+                Forgot Password?
+              </Button>
+            )}
             <Button
               variant="link"
               onClick={() => {
@@ -262,7 +262,7 @@ const Auth = () => {
                 }
               }}
               disabled={loading}
-              className="text-sm"
+              className="text-sm h-auto p-0"
             >
               {isForgotPassword
                 ? "Back to Sign In"

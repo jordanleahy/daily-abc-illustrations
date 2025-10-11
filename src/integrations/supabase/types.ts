@@ -844,6 +844,45 @@ export type Database = {
         }
         Relationships: []
       }
+      user_favorites: {
+        Row: {
+          created_at: string
+          daily_published_id: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_published_id: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_published_id?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_favorites_daily_published_id_fkey"
+            columns: ["daily_published_id"]
+            isOneToOne: false
+            referencedRelation: "active_daily_published"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_favorites_daily_published_id_fkey"
+            columns: ["daily_published_id"]
+            isOneToOne: false
+            referencedRelation: "daily_published"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string

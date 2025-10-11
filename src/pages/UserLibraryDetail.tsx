@@ -6,8 +6,7 @@ import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { MetaHead } from '@/components/common';
 import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
 import { PublicPageImage } from '@/components/daily-published';
 import { ArrowLeft, Calendar, BookOpen } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
@@ -152,17 +151,6 @@ export default function UserLibraryDetail() {
                 className="group cursor-pointer overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] hover:border-primary/20"
                 onClick={() => handlePageClick(index)}
               >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between gap-2">
-                    <CardTitle className="text-2xl font-bold">
-                      {page.letter}
-                    </CardTitle>
-                    <Badge variant="secondary" className="text-xs">
-                      Page {index + 1}
-                    </Badge>
-                  </div>
-                </CardHeader>
-                
                 <CardContent className="space-y-3">
                   <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
                     <PublicPageImage

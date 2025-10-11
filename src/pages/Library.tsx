@@ -136,12 +136,6 @@ const LibraryBookCard = memo(function LibraryBookCard({ item, index }: LibraryBo
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        {item.description && (
-          <CardDescription className="line-clamp-3">
-            {item.description}
-          </CardDescription>
-        )}
-        
         <div className="flex items-center gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <Users className="w-4 h-4" />

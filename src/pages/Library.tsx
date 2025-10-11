@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useLibraryImagePreloader } from '@/hooks/useLibraryImagePreloader';
+import { useDailyPublished } from '@/hooks/useDailyPublished';
 import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -21,6 +22,9 @@ export default memo(function Library() {
     isLoading,
     error
   } = useLibraryBooks();
+  
+  // Get the current active daily published book
+  const { data: activeDailyPublished } = useDailyPublished();
   
   // Preload book images for instant display
   useLibraryImagePreloader(libraryItems);
@@ -44,24 +48,37 @@ export default memo(function Library() {
     );
   }
 
-  // Sort books by most recently visited, then by publish_date
+  // Three-tier sorting: Active daily book -> Visited books -> Unvisited books
   const viewTimestamps = getBookViewTimestamps();
-  const allBooks = libraryItems?.sort((a, b) => {
+  
+  // Find the active daily published book from library items
+  const activeDailyBook = libraryItems?.find(item => item.id === activeDailyPublished?.id);
+  
+  // Filter out the active daily book from the rest
+  const otherBooks = libraryItems?.filter(item => item.id !== activeDailyPublished?.id) || [];
+  
+  // Split into visited and unvisited books
+  const visitedBooks = otherBooks.filter(item => viewTimestamps[item.id]);
+  const unvisitedBooks = otherBooks.filter(item => !viewTimestamps[item.id]);
+  
+  // Sort visited by most recent view time
+  visitedBooks.sort((a, b) => {
     const aViewTime = viewTimestamps[a.id] || 0;
     const bViewTime = viewTimestamps[b.id] || 0;
-    
-    // If both have view times, sort by most recent
-    if (aViewTime && bViewTime) {
-      return bViewTime - aViewTime;
-    }
-    
-    // Books with views come before books without views
-    if (aViewTime && !bViewTime) return -1;
-    if (!aViewTime && bViewTime) return 1;
-    
-    // For books without views, sort by publish_date (newest first)
-    return new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime();
-  }) || [];
+    return bViewTime - aViewTime;
+  });
+  
+  // Sort unvisited by publish_date (newest first)
+  unvisitedBooks.sort((a, b) => 
+    new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime()
+  );
+  
+  // Combine in order: active daily book first, then visited, then unvisited
+  const allBooks = [
+    ...(activeDailyBook ? [activeDailyBook] : []),
+    ...visitedBooks,
+    ...unvisitedBooks
+  ];
 
   return (
     <>

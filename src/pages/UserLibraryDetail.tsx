@@ -148,12 +148,12 @@ export default function UserLibraryDetail() {
             {pages.map((page, index) => (
               <Card
                 key={page.id}
-                className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+                className="group cursor-pointer overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] border-2 border-transparent hover:border-primary/20"
                 onClick={() => handlePageClick(index)}
               >
-                <div className="relative aspect-[3/4]">
+                <div className="relative aspect-square">
                   {/* Letter Badge */}
-                  <div className="absolute top-3 left-3 z-10 bg-primary text-primary-foreground rounded-full w-12 h-12 flex items-center justify-center font-bold text-lg shadow-md">
+                  <div className="absolute top-3 left-3 z-10 bg-primary text-primary-foreground rounded-full w-14 h-14 flex items-center justify-center font-bold text-xl shadow-md">
                     {page.letter}
                   </div>
 

@@ -149,7 +149,7 @@ export default function UserLibraryDetail() {
             {pages.map((page, index) => (
               <Card
                 key={page.id}
-                className="group cursor-pointer overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] border-2 border-transparent hover:border-primary/20"
+                className="group cursor-pointer overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] hover:border-primary/20"
                 onClick={() => handlePageClick(index)}
               >
                 <CardHeader className="pb-3">

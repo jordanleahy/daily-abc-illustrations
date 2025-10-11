@@ -22,6 +22,7 @@ const Auth = () => {
   const mode = searchParams.get('mode');
   
   const [isLogin, setIsLogin] = useState(mode !== 'signup');
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -35,6 +36,40 @@ const Auth = () => {
       navigate('/');
     }
   }, [isAuthenticated, navigate]);
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const redirectUrl = `${window.location.origin}/auth/reset-password`;
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectUrl,
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Password reset email sent!",
+          description: "Check your inbox for the reset link.",
+        });
+        setEmail('');
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "An unexpected error occurred. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -128,20 +163,26 @@ const Auth = () => {
         <Card className="w-full">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl font-bold">
-              {isLogin ? SITE_CONFIG.name : 'Create Account to Subscribe'}
+              {isForgotPassword ? 'Reset Password' : isLogin ? SITE_CONFIG.name : 'Create Account to Subscribe'}
             </CardTitle>
             <CardDescription className="space-y-1">
               <div>
-                {isLogin ? 'Sign in to manage your subscription' : 'Create your account to start your subscription'}
+                {isForgotPassword 
+                  ? 'Enter your email to receive a password reset link' 
+                  : isLogin 
+                    ? 'Sign in to manage your subscription' 
+                    : 'Create your account to start your subscription'}
               </div>
-              <div className="text-xs text-muted-foreground">
-                Daily ABC books delivered at 7:01 AM ET
-              </div>
+              {!isForgotPassword && (
+                <div className="text-xs text-muted-foreground">
+                  Daily ABC books delivered at 7:01 AM ET
+                </div>
+              )}
             </CardDescription>
           </CardHeader>
         <CardContent>
-          <form onSubmit={handleAuth} className="space-y-4">
-            {!isLogin && (
+          <form onSubmit={isForgotPassword ? handleForgotPassword : handleAuth} className="space-y-4">
+            {!isLogin && !isForgotPassword && (
               <>
                 <div className="space-y-2">
                   <Input
@@ -175,37 +216,59 @@ const Auth = () => {
                 disabled={loading}
               />
             </div>
-            <div className="space-y-2">
-              <Input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={loading}
-                minLength={6}
-              />
-            </div>
+            {!isForgotPassword && (
+              <div className="space-y-2">
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={loading}
+                  minLength={6}
+                />
+                {isLogin && (
+                  <Button
+                    variant="link"
+                    type="button"
+                    onClick={() => setIsForgotPassword(true)}
+                    disabled={loading}
+                    className="text-sm w-full text-right px-0"
+                  >
+                    Forgot Password?
+                  </Button>
+                )}
+              </div>
+            )}
           <Button 
             type="submit" 
             className="w-full" 
             disabled={loading}
           >
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            {isLogin ? 'Sign In' : 'Sign Up'}
+            {isForgotPassword ? 'Send Reset Link' : isLogin ? 'Sign In' : 'Sign Up'}
           </Button>
           </form>
           
           <div className="mt-4 text-center">
             <Button
               variant="link"
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                if (isForgotPassword) {
+                  setIsForgotPassword(false);
+                  setIsLogin(true);
+                } else {
+                  setIsLogin(!isLogin);
+                }
+              }}
               disabled={loading}
               className="text-sm"
             >
-              {isLogin 
-                ? "Need an account? Sign up to subscribe" 
-                : "Already have an account? Sign in"
+              {isForgotPassword
+                ? "Back to Sign In"
+                : isLogin 
+                  ? "Need an account? Sign up to subscribe" 
+                  : "Already have an account? Sign in"
               }
             </Button>
           </div>

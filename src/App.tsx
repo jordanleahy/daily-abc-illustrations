@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import AdminChat from "./pages/AdminChat";
 import Auth from "./pages/Auth";
 import AuthConfirm from "./pages/AuthConfirm";
+import ResetPassword from "./pages/ResetPassword";
 import Agents from "./pages/Agents";
 import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
@@ -63,8 +64,9 @@ const App = () => (
               <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/admin/chat" element={<AdminOnly><AdminChat /></AdminOnly>} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/auth/confirm" element={<AuthConfirm />} />
+          <Route path="/auth" element={<Auth />} />
+          <Route path="/auth/confirm" element={<AuthConfirm />} />
+          <Route path="/auth/reset-password" element={<ResetPassword />} />
               <Route path="/agents" element={<Agents />} />
               <Route path="/editor" element={<AdminOnly><Books /></AdminOnly>} />
               <Route path="/editor/:id" element={<AdminOnly><BookDetail /></AdminOnly>} />

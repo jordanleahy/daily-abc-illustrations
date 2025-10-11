@@ -3,6 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
+import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImagePreloader';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidCoins } from '@/hooks/useKidCoins';
@@ -48,6 +49,9 @@ export default function LibraryBookView() {
   
   // Get upload function for current page (must be called before any early returns)
   const { uploadImage } = usePageImageUrls(uploadingForPageId || '');
+  
+  // Prefetch all page images in the background for instant navigation
+  useDailyPublishedImagePreloader(pages, dailyContent?.book_id);
   
   const isLastPage = currentPageIndex === pages.length - 1;
   

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { reorderPagesFromStartingLetter } from '@/utils/pageNavigation';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
@@ -35,6 +36,16 @@ export default function LibraryBookView() {
   const { data: kidProfiles } = useKidProfiles();
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
+  
+  // Get starting page index from location state (from UserLibraryDetail)
+  const startingPageIndex = location.state?.startingPageIndex ?? 0;
+  
+  // Reorder pages to create circular reading experience starting from chosen page
+  const reorderedPages = useMemo(() => {
+    if (!pages.length || startingPageIndex === 0) return pages;
+    return reorderPagesFromStartingLetter(pages, startingPageIndex);
+  }, [pages, startingPageIndex]);
+  
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [earnedRewards, setEarnedRewards] = useState(0);
   const [sessionStarted, setSessionStarted] = useState(false);
@@ -51,9 +62,9 @@ export default function LibraryBookView() {
   const { uploadImage } = usePageImageUrls(uploadingForPageId || '');
   
   // Prefetch all page images in the background for instant navigation
-  useDailyPublishedImagePreloader(pages, dailyContent?.book_id);
+  useDailyPublishedImagePreloader(reorderedPages, dailyContent?.book_id);
   
-  const isLastPage = currentPageIndex === pages.length - 1;
+  const isLastPage = currentPageIndex === reorderedPages.length - 1;
   
   // Generate OpenGraph metadata for the current page
   const { openGraphMetadata } = useDailyPublishedOpenGraph(safeId, currentPageIndex);
@@ -62,32 +73,32 @@ export default function LibraryBookView() {
 
   // Start analytics session when content loads
   useEffect(() => {
-    if (dailyContent && pages.length > 0 && !sessionStarted) {
-      const entryPoint = location.state?.from === 'library-detail' ? 'reading_view_button' : 'library_card';
+    if (dailyContent && reorderedPages.length > 0 && !sessionStarted) {
+      const entryPoint = location.state?.from === 'user-library-detail' ? 'reading_view_button' : 'library_card';
       
       startSession({
         contentType: 'library_book',
         contentId: dailyContent.id,
         bookId: dailyContent.book_id,
-        totalPages: pages.length,
+        totalPages: reorderedPages.length,
         entryPoint,
-        startingPage: 1,
+        startingPage: startingPageIndex + 1,
       });
       
       setSessionStarted(true);
     }
-  }, [dailyContent, pages, sessionStarted, startSession, location.state]);
+  }, [dailyContent, reorderedPages, sessionStarted, startSession, location.state, startingPageIndex]);
 
   // Track initial page view once session starts
   useEffect(() => {
-    if (sessionStarted && pages.length > 0 && !initialPageTracked) {
-      const currentPage = pages[currentPageIndex];
+    if (sessionStarted && reorderedPages.length > 0 && !initialPageTracked) {
+      const currentPage = reorderedPages[currentPageIndex];
       if (currentPage) {
         trackPageView(currentPageIndex + 1, currentPage.letter, 'session_start');
         setInitialPageTracked(true);
       }
     }
-  }, [sessionStarted, pages, currentPageIndex, trackPageView, initialPageTracked]);
+  }, [sessionStarted, reorderedPages, currentPageIndex, trackPageView, initialPageTracked]);
 
   const handleBack = () => {
     endSession('back_button');
@@ -132,7 +143,7 @@ export default function LibraryBookView() {
     );
   }
 
-  if (!pages || pages.length === 0) {
+  if (!reorderedPages || reorderedPages.length === 0) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <ReadingHeader title="Library" onBack={handleBack} showQRCode={false} />
@@ -148,7 +159,7 @@ export default function LibraryBookView() {
     );
   }
 
-  const currentPage = pages[currentPageIndex];
+  const currentPage = reorderedPages[currentPageIndex];
 
   const handleNext = async () => {
     if (isLastPage) {
@@ -181,8 +192,8 @@ export default function LibraryBookView() {
       setCurrentPageIndex(newIndex);
       setEarnedRewards(prev => prev + 1);
       
-      if (sessionStarted && pages[newIndex]) {
-        trackPageView(newIndex + 1, pages[newIndex].letter, 'next_swipe');
+      if (sessionStarted && reorderedPages[newIndex]) {
+        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'next_swipe');
       }
     }
   };
@@ -193,8 +204,8 @@ export default function LibraryBookView() {
       setCurrentPageIndex(newIndex);
       
       // Track page view
-      if (sessionStarted && pages[newIndex]) {
-        trackPageView(newIndex + 1, pages[newIndex].letter, 'previous_swipe');
+      if (sessionStarted && reorderedPages[newIndex]) {
+        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'previous_swipe');
       }
     }
   };
@@ -205,19 +216,19 @@ export default function LibraryBookView() {
       const newIndex = currentPageIndex - 1;
       setCurrentPageIndex(newIndex);
       
-      if (sessionStarted && pages[newIndex]) {
-        trackPageView(newIndex + 1, pages[newIndex].letter, 'header_previous_arrow');
+      if (sessionStarted && reorderedPages[newIndex]) {
+        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'header_previous_arrow');
       }
     }
   };
 
   const handleHeaderNext = () => {
-    if (currentPageIndex < pages.length - 1) {
+    if (currentPageIndex < reorderedPages.length - 1) {
       const newIndex = currentPageIndex + 1;
       setCurrentPageIndex(newIndex);
       
-      if (sessionStarted && pages[newIndex]) {
-        trackPageView(newIndex + 1, pages[newIndex].letter, 'header_next_arrow');
+      if (sessionStarted && reorderedPages[newIndex]) {
+        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'header_next_arrow');
       }
     }
   };
@@ -332,14 +343,14 @@ export default function LibraryBookView() {
       <div className="flex flex-col h-screen" style={{ touchAction: 'none' }}>
         <ReadingHeader 
           title={dailyContent.title}
-          subtitle={`${currentPageIndex + 1} of ${pages.length}`}
+          subtitle={`${currentPageIndex + 1} of ${reorderedPages.length}`}
           bookId={dailyContent.book_id}
           onBack={handleBack}
           kidId={selectedKidId}
           onPrevious={handleHeaderPrevious}
           onNext={handleHeaderNext}
           hasPrevious={currentPageIndex > 0}
-          hasNext={currentPageIndex < pages.length - 1}
+          hasNext={currentPageIndex < reorderedPages.length - 1}
         />
         
         {/* Reward System */}

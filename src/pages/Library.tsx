@@ -187,12 +187,8 @@ const LibraryBookCard = memo(function LibraryBookCard({
       return;
     }
     
-    // Otherwise, proceed with normal navigation
-    if (isTeacher) {
-      navigate(`/library/${item.id}/detail`);
-    } else {
-      navigate(`/library/${item.id}`);
-    }
+    // All users go to detail page first to choose starting page
+    navigate(`/library/${item.id}/detail`);
   };
 
   const handleFavoriteClick = (e: React.MouseEvent) => {

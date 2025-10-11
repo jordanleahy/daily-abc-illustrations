@@ -18,6 +18,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Library from "./pages/Library";
 import LibraryBookView from "./pages/LibraryBookView";
 import LibraryDetail from "./pages/LibraryDetail";
+import UserLibraryDetail from "./pages/UserLibraryDetail";
 import Rewards from "./pages/Rewards";
 import RewardsManage from "./pages/RewardsManage";
 import DailyPublished from "./pages/DailyPublished";
@@ -69,7 +70,8 @@ const App = () => (
               <Route path="/editor/:id" element={<AdminOnly><BookDetail /></AdminOnly>} />
                 <Route path="/library" element={<ProtectedRoute requireSubscription={false}><Library key="library" /></ProtectedRoute>} />
                 <Route path="/library/:id" element={<ProtectedRoute requireSubscription={false}><LibraryBookView /></ProtectedRoute>} />
-                <Route path="/library/:id/detail" element={<ProtectedRoute requireSubscription={false}><LibraryDetail /></ProtectedRoute>} />
+                <Route path="/library/:id/detail" element={<ProtectedRoute requireSubscription={false}><UserLibraryDetail /></ProtectedRoute>} />
+                <Route path="/admin/library/:id" element={<AdminOnly><LibraryDetail /></AdminOnly>} />
                 <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
                 <Route path="/rewards/manage" element={<ProtectedRoute><RewardsManage /></ProtectedRoute>} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />

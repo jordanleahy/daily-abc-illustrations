@@ -239,7 +239,7 @@ const Auth = () => {
           </Button>
           </form>
           
-          <div className="mt-4 flex items-center justify-center gap-4 flex-wrap text-sm">
+          <div className="mt-4 flex items-center justify-between gap-4 flex-wrap text-sm">
             {isLogin && !isForgotPassword && (
               <Button
                 variant="link"

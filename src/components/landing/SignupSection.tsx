@@ -24,7 +24,7 @@ export const SignupSection = () => {
         </Button>
 
         <p className="text-sm mt-6 opacity-75">
-          No credit card required • Cancel anytime • New book every day
+          Cancel anytime • New book every day
         </p>
       </div>
     </section>

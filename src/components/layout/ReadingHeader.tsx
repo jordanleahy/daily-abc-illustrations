@@ -120,7 +120,7 @@ export function ReadingHeader({
       <div className="flex items-center gap-3">
         {onBack && (
           <Button variant="ghost" size="sm" onClick={onBack} className="p-2 h-8 rounded border border-border hover:bg-muted">
-            <span className="text-xs">← Back</span>
+            <span className="text-xs">← Library</span>
           </Button>
         )}
       </div>

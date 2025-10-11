@@ -29,7 +29,7 @@ export default memo(function Library() {
   const { data: activeDailyPublished } = useDailyPublished();
   
   // Get user favorites
-  const { favoriteIds, toggleFavorite } = useFavorites();
+  const { favoriteIds, toggleFavorite, favorites } = useFavorites();
   
   // Preload book images for instant display
   useLibraryImagePreloader(libraryItems);
@@ -53,7 +53,7 @@ export default memo(function Library() {
     );
   }
 
-  // Three-tier sorting: Active daily book -> Visited books -> Unvisited books
+  // Four-tier sorting: Active daily -> Favorites -> Recently Visited -> Unvisited
   const viewTimestamps = getBookViewTimestamps();
   
   // Find the active daily published book from library items
@@ -62,9 +62,22 @@ export default memo(function Library() {
   // Filter out the active daily book from the rest
   const otherBooks = libraryItems?.filter(item => item.id !== activeDailyPublished?.id) || [];
   
-  // Split into visited and unvisited books
-  const visitedBooks = otherBooks.filter(item => viewTimestamps[item.id]);
-  const unvisitedBooks = otherBooks.filter(item => !viewTimestamps[item.id]);
+  // Separate favorites from other books
+  const favoriteBooks = otherBooks.filter(item => favoriteIds.has(item.id));
+  const nonFavoriteBooks = otherBooks.filter(item => !favoriteIds.has(item.id));
+  
+  // Sort favorites by when they were favorited (most recent first)
+  const sortedFavorites = [...favoriteBooks].sort((a, b) => {
+    const aFavorite = favorites.find(f => f.daily_published_id === a.id);
+    const bFavorite = favorites.find(f => f.daily_published_id === b.id);
+    const aTime = aFavorite ? new Date(aFavorite.created_at).getTime() : 0;
+    const bTime = bFavorite ? new Date(bFavorite.created_at).getTime() : 0;
+    return bTime - aTime; // Most recent first
+  });
+  
+  // Split non-favorites into visited and unvisited books
+  const visitedBooks = nonFavoriteBooks.filter(item => viewTimestamps[item.id]);
+  const unvisitedBooks = nonFavoriteBooks.filter(item => !viewTimestamps[item.id]);
   
   // Sort visited by most recent view time
   visitedBooks.sort((a, b) => {
@@ -78,9 +91,10 @@ export default memo(function Library() {
     new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime()
   );
   
-  // Combine in order: active daily book first, then visited, then unvisited
+  // Combine in order: active daily -> favorites -> visited -> unvisited
   const allBooks = [
     ...(activeDailyBook ? [activeDailyBook] : []),
+    ...sortedFavorites,
     ...visitedBooks,
     ...unvisitedBooks
   ];

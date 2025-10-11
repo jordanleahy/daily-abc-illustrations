@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Coins, BookOpen, Star, ShoppingBag, Package, Plus } from 'lucide-react';
+import { Coins, BookOpen, Star, ShoppingBag, Package, Plus, UserPlus } from 'lucide-react';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { CoinCounter } from '@/components/ui/coin-counter';
 import { ProductCard } from '@/components/rewards/ProductCard';
@@ -65,16 +65,93 @@ export default function Rewards() {
   if (!kidProfiles || kidProfiles.length === 0) {
     return (
       <StandardPageLayout>
-        <div className="text-center py-8 space-y-4">
-          <Coins className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-          <h2 className="text-lg font-semibold mb-2">No Kids Added Yet</h2>
-          <p className="text-muted-foreground mb-4">
-            Add your kids to start tracking their reading rewards!
-          </p>
-          <Button onClick={() => setShowAddKidModal(true)} size="lg">
-            <Plus className="mr-2 h-5 w-5" />
-            Add Kids
-          </Button>
+        <div className="container max-w-4xl mx-auto p-6 space-y-6">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold mb-2">Reading Rewards</h1>
+            <p className="text-muted-foreground">
+              Track your reading progress and collect coins!
+            </p>
+          </div>
+
+          {/* Hero CTA Card */}
+          <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-2">
+            <CardContent className="pt-6 pb-6">
+              <div className="text-center space-y-4">
+                <UserPlus className="mx-auto h-16 w-16 text-primary" />
+                <div>
+                  <h2 className="text-2xl font-bold mb-2">Add Your Kid to Get Started</h2>
+                  <p className="text-muted-foreground">
+                    Create a profile to track reading progress and earn rewards
+                  </p>
+                </div>
+                <Button onClick={() => setShowAddKidModal(true)} size="lg" className="mt-4">
+                  <Plus className="mr-2 h-5 w-5" />
+                  Add Your First Kid
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Benefits Preview */}
+          <div className="space-y-6">
+            {/* Earned Rewards Preview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Coins className="h-5 w-5 text-yellow-500" />
+                  Earned Rewards
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Start Reading to Earn Coins!</h3>
+                  <p className="text-muted-foreground">
+                    Read ABC books to start collecting your first coins.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Progress Encouragement */}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold mb-2">Keep Reading!</h3>
+                  <p className="text-muted-foreground">
+                    Every page you read earns you more coins. 
+                    Visit the daily books to continue your reading adventure!
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Rewards Store Preview */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShoppingBag className="h-5 w-5 text-primary" />
+                  Rewards Store
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center py-8">
+                  <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Store Coming Soon!</h3>
+                  <p className="text-muted-foreground mb-4">
+                    Your parents will add rewards you can purchase with your coins.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Final CTA */}
+          <div className="text-center pt-4">
+            <Button onClick={() => setShowAddKidModal(true)} size="lg" variant="outline">
+              Set Up Kid Profile Now
+            </Button>
+          </div>
         </div>
         <AddKidModal open={showAddKidModal} onOpenChange={setShowAddKidModal} />
       </StandardPageLayout>

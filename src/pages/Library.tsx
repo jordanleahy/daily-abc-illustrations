@@ -13,6 +13,7 @@ import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useIsTeacher } from '@/contexts/RoleContext';
 import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { getBookViewTimestamps, trackBookView } from '@/utils/bookViewTracking';
 
 export default memo(function Library() {
   const {
@@ -43,10 +44,24 @@ export default memo(function Library() {
     );
   }
 
-  // Sort all books by publish_date (newest first)
-  const allBooks = libraryItems?.sort((a, b) => 
-    new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime()
-  ) || [];
+  // Sort books by most recently visited, then by publish_date
+  const viewTimestamps = getBookViewTimestamps();
+  const allBooks = libraryItems?.sort((a, b) => {
+    const aViewTime = viewTimestamps[a.id] || 0;
+    const bViewTime = viewTimestamps[b.id] || 0;
+    
+    // If both have view times, sort by most recent
+    if (aViewTime && bViewTime) {
+      return bViewTime - aViewTime;
+    }
+    
+    // Books with views come before books without views
+    if (aViewTime && !bViewTime) return -1;
+    if (!aViewTime && bViewTime) return 1;
+    
+    // For books without views, sort by publish_date (newest first)
+    return new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime();
+  }) || [];
 
   return (
     <>
@@ -105,6 +120,9 @@ const LibraryBookCard = memo(function LibraryBookCard({ item, index }: LibraryBo
   const { hasActiveSubscription, createCheckoutSession } = useSubscription();
   
   const handleCardClick = async () => {
+    // Track the book view for sorting
+    trackBookView(item.id);
+    
     // If user is not authenticated, redirect to pricing page
     if (!isAuthenticated) {
       navigate('/pricing');

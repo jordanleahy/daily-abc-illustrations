@@ -18,16 +18,19 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FileText, Globe, Eye, Copy, History, RefreshCw, ShoppingCart, Save, Check } from 'lucide-react';
 import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useBook } from '@/hooks/useBook';
+import { useUpdateBookStatus } from '@/hooks/useUpdateBookStatus';
 import { formatScheduleTimestamp } from '@/utils/timezone';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from '@/hooks/use-toast';
 import { SITE_CONFIG } from '@/config/site';
 import { DailyPublishedStatus } from '@/types/dailyPublished';
+import { PublicationStatus } from '@/types/status';
 
 /**
  * Props for the ExportsSection component
@@ -68,6 +71,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const { data: expectedDate, isLoading: dateLoading } = useExpectedPublicationDate(contentId);
   const { generateQRCode } = useBookQRCode(contentType === 'book' ? contentId : undefined);
   const { data: bookData } = useBook(contentType === 'book' ? contentId : undefined);
+  const updateBookStatusMutation = useUpdateBookStatus();
   const [existingPublication, setExistingPublication] = useState<any>(null);
   const [publicationHistory, setPublicationHistory] = useState<any[]>([]);
   const [isCheckingPublication, setIsCheckingPublication] = useState(false);
@@ -782,6 +786,65 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
               <div className="whitespace-pre-line text-muted-foreground">
                 {getLinkedInPostText()}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Book Publication Status Control */}
+        {contentType === 'book' && bookData && (
+          <div className="flex flex-col gap-3 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h4 className="text-sm font-medium">Book Status</h4>
+                <p className="text-xs text-muted-foreground">
+                  {bookData.status === PublicationStatus.DRAFT && 'Being created/edited, not visible to public'}
+                  {bookData.status === PublicationStatus.PUBLISHED && 'Live and available to users'}
+                  {bookData.status === PublicationStatus.ARCHIVED && 'Hidden from view but retained'}
+                </p>
+              </div>
+              <Select
+                value={bookData.status}
+                onValueChange={(newStatus) => {
+                  if (!bookData?.id) {
+                    toast({
+                      variant: 'destructive',
+                      title: 'Error',
+                      description: 'Book data not available',
+                    });
+                    return;
+                  }
+                  
+                  updateBookStatusMutation.mutate({
+                    bookId: bookData.id,
+                    status: newStatus as 'draft' | 'published' | 'archived',
+                  });
+                }}
+                disabled={updateBookStatusMutation.isPending}
+              >
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={PublicationStatus.DRAFT}>
+                    <div className="flex flex-col">
+                      <span>Draft</span>
+                      <span className="text-xs text-muted-foreground">Not visible to public</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value={PublicationStatus.PUBLISHED}>
+                    <div className="flex flex-col">
+                      <span>Published</span>
+                      <span className="text-xs text-muted-foreground">Live and available</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value={PublicationStatus.ARCHIVED}>
+                    <div className="flex flex-col">
+                      <span>Archived</span>
+                      <span className="text-xs text-muted-foreground">Hidden but retained</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         )}

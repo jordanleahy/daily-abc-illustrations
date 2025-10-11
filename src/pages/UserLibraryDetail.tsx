@@ -127,13 +127,7 @@ export default function UserLibraryDetail() {
         </div>
 
         {/* Page Gallery Grid */}
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Choose Your Starting Page</h2>
-          <p className="text-sm text-muted-foreground">
-            Click any letter to start reading from that page
-          </p>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {pages.map((page, index) => (
               <Card
                 key={page.id}
@@ -152,7 +146,6 @@ export default function UserLibraryDetail() {
                 </CardContent>
               </Card>
             ))}
-          </div>
         </div>
       </StandardPageLayout>
     </>

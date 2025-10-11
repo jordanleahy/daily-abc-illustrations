@@ -8,7 +8,7 @@ import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PublicPageImage } from '@/components/daily-published';
-import { ArrowLeft, Calendar, BookOpen } from 'lucide-react';
+import { Calendar, BookOpen } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
 import { formatDistanceToNow } from 'date-fns';
 
@@ -35,10 +35,6 @@ export default function UserLibraryDetail() {
     });
   };
 
-  const handleBack = () => {
-    navigate('/library');
-  };
-
   if (isLoading) {
     return (
       <StandardPageLayout title="Loading...">
@@ -63,8 +59,7 @@ export default function UserLibraryDetail() {
               This book could not be found in your library.
             </p>
           </div>
-          <Button onClick={handleBack} variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+          <Button onClick={() => navigate('/library')} variant="outline">
             Back to Library
           </Button>
         </div>
@@ -83,8 +78,7 @@ export default function UserLibraryDetail() {
               This book doesn't have any pages to display yet.
             </p>
           </div>
-          <Button onClick={handleBack} variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
+          <Button onClick={() => navigate('/library')} variant="outline">
             Back to Library
           </Button>
         </div>
@@ -103,11 +97,6 @@ export default function UserLibraryDetail() {
       <StandardPageLayout>
         {/* Header Section */}
         <div className="space-y-6 mb-8">
-          <Button onClick={handleBack} variant="ghost" size="sm" className="gap-2">
-            <ArrowLeft className="h-4 w-4" />
-            Back to Library
-          </Button>
-
           <div className="space-y-4">
             <div>
               <h1 className="text-3xl font-bold tracking-tight mb-2">{dailyContent.title}</h1>

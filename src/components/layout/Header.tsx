@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, User, LogOut, QrCode, Settings, Users, Activity } from 'lucide-react';
+import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -191,8 +191,19 @@ export function Header({
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container>
         <div className="flex h-14 items-center justify-between">
-          {/* Left section: Subtitle */}
-          <div className="flex flex-col">
+          {/* Left section: Back button (detail pages only) + Subtitle */}
+          <div className="flex items-center gap-4">
+            {location.pathname.includes('/library/') && location.pathname.includes('/detail') && (
+              <Button
+                onClick={() => navigate('/library')}
+                variant="ghost"
+                size="sm"
+                className="hidden md:flex gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to Library
+              </Button>
+            )}
             {subtitle && (
               <div className="text-xs text-muted-foreground">
                 {subtitle}

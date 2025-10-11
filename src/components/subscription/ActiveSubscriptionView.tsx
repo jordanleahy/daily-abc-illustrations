@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Check } from "lucide-react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 import { format } from "date-fns";
+import { formatCoinsAsCurrency } from "@/utils/currency";
 
 export const ActiveSubscriptionView = () => {
   const { getSubscriptionTier, openCustomerPortal, createCheckoutSession, loading, subscription_end } = useSubscription();
@@ -17,7 +18,7 @@ export const ActiveSubscriptionView = () => {
 
   const currentPlan = {
     name: currentTier.name,
-    price: currentTier.price,
+    price: formatCoinsAsCurrency(currentTier.price),
     period: currentTier.interval,
     features: currentTier.interval === 'month' 
       ? [

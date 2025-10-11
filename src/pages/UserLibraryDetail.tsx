@@ -110,7 +110,7 @@ export default function UserLibraryDetail() {
                 className="group cursor-pointer overflow-hidden transition-all duration-200 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] hover:border-primary/20"
                 onClick={() => handlePageClick(index)}
               >
-                <CardContent className="space-y-3">
+                <CardContent className="p-4">
                   <div className="relative aspect-square rounded-lg overflow-hidden bg-muted">
                     <PublicPageImage
                       pageId={page.id}

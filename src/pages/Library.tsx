@@ -10,12 +10,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 
-import { BookOpen, Calendar, Users } from 'lucide-react';
+import { BookOpen, Calendar, Users, Heart } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useIsTeacher } from '@/contexts/RoleContext';
 import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { getBookViewTimestamps, trackBookView } from '@/utils/bookViewTracking';
+import { useFavorites } from '@/hooks/useFavorites';
 
 export default memo(function Library() {
   const {
@@ -26,6 +27,9 @@ export default memo(function Library() {
   
   // Get the current active daily published book
   const { data: activeDailyPublished } = useDailyPublished();
+  
+  // Get user favorites
+  const { favoriteIds, toggleFavorite } = useFavorites();
   
   // Preload book images for instant display
   useLibraryImagePreloader(libraryItems);
@@ -109,6 +113,8 @@ export default memo(function Library() {
                   item={item} 
                   index={index}
                   isNewlyPublished={item.id === activeDailyPublished?.id}
+                  isFavorited={favoriteIds.has(item.id)}
+                  onToggleFavorite={toggleFavorite}
                 />
               ))}
             </div>
@@ -135,9 +141,17 @@ interface LibraryBookCardProps {
   item: DailyPublishedWithBook;
   index: number;
   isNewlyPublished?: boolean;
+  isFavorited?: boolean;
+  onToggleFavorite: (dailyPublishedId: string) => void;
 }
 
-const LibraryBookCard = memo(function LibraryBookCard({ item, index, isNewlyPublished }: LibraryBookCardProps) {
+const LibraryBookCard = memo(function LibraryBookCard({ 
+  item, 
+  index, 
+  isNewlyPublished, 
+  isFavorited = false,
+  onToggleFavorite 
+}: LibraryBookCardProps) {
   const navigate = useNavigate();
   const isTeacher = useIsTeacher();
   const { isAuthenticated } = useAuthContext();
@@ -167,13 +181,33 @@ const LibraryBookCard = memo(function LibraryBookCard({ item, index, isNewlyPubl
     }
   };
 
+  const handleFavoriteClick = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    onToggleFavorite(item.id);
+  };
+
   return (
     <Card 
-      className="hover:shadow-md transition-shadow cursor-pointer hover:shadow-lg" 
+      className="hover:shadow-md transition-shadow cursor-pointer hover:shadow-lg relative" 
       onClick={handleCardClick}
     >
+      {/* Favorite Heart Button */}
+      <button
+        onClick={handleFavoriteClick}
+        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"
+        aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+      >
+        <Heart 
+          className={`w-5 h-5 transition-colors ${
+            isFavorited 
+              ? 'fill-red-500 text-red-500' 
+              : 'text-muted-foreground hover:text-red-500'
+          }`}
+        />
+      </button>
+
       <CardHeader>
-        <div className="flex items-start justify-between gap-2">
+        <div className="flex items-start justify-between gap-2 pr-12">
           <CardTitle className="text-xl line-clamp-2 flex-1">
             {item.title}
           </CardTitle>

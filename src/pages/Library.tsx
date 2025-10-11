@@ -7,6 +7,7 @@ import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 
 import { BookOpen, Calendar, Users } from 'lucide-react';
@@ -103,7 +104,12 @@ export default memo(function Library() {
           {allBooks.length > 0 && (
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
               {allBooks.map((item, index) => (
-                <LibraryBookCard key={item.id} item={item} index={index} />
+                <LibraryBookCard 
+                  key={item.id} 
+                  item={item} 
+                  index={index}
+                  isNewlyPublished={item.id === activeDailyPublished?.id}
+                />
               ))}
             </div>
           )}
@@ -128,9 +134,10 @@ export default memo(function Library() {
 interface LibraryBookCardProps {
   item: DailyPublishedWithBook;
   index: number;
+  isNewlyPublished?: boolean;
 }
 
-const LibraryBookCard = memo(function LibraryBookCard({ item, index }: LibraryBookCardProps) {
+const LibraryBookCard = memo(function LibraryBookCard({ item, index, isNewlyPublished }: LibraryBookCardProps) {
   const navigate = useNavigate();
   const isTeacher = useIsTeacher();
   const { isAuthenticated } = useAuthContext();
@@ -166,9 +173,16 @@ const LibraryBookCard = memo(function LibraryBookCard({ item, index }: LibraryBo
       onClick={handleCardClick}
     >
       <CardHeader>
-        <CardTitle className="text-xl line-clamp-2">
-          {item.title}
-        </CardTitle>
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-xl line-clamp-2 flex-1">
+            {item.title}
+          </CardTitle>
+          {isNewlyPublished && (
+            <Badge variant="default" className="shrink-0">
+              Newly Published
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="flex items-center gap-4 text-sm text-muted-foreground">

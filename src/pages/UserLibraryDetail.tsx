@@ -145,7 +145,7 @@ export default function UserLibraryDetail() {
             Click any letter to start reading from that page
           </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
             {pages.map((page, index) => (
               <Card
                 key={page.id}

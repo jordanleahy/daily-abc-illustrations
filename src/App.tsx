@@ -7,7 +7,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
-import Landing from "./pages/Landing";
+import AdminChat from "./pages/AdminChat";
 import Auth from "./pages/Auth";
 import AuthConfirm from "./pages/AuthConfirm";
 import Agents from "./pages/Agents";
@@ -61,7 +61,7 @@ const App = () => (
               <GA4Tracker />
               <Routes>
               <Route path="/" element={<Index />} />
-              <Route path="/landing" element={<Landing />} />
+              <Route path="/admin/chat" element={<AdminOnly><AdminChat /></AdminOnly>} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/auth/confirm" element={<AuthConfirm />} />
               <Route path="/agents" element={<Agents />} />

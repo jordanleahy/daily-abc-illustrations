@@ -118,7 +118,7 @@ export function Header({
 
   /** Extended navigation menu for admin users with full system access */
   const adminNavigation = [
-    { name: 'Chat', href: '/' },
+    { name: 'Chat', href: '/admin/chat' },
     { name: 'Library', href: '/library' },
     { name: 'Rewards', href: '/rewards' },
     { name: 'Editor', href: '/editor' },
@@ -135,7 +135,7 @@ export function Header({
         <Container>
           <div className="flex h-14 items-center justify-between">
             {/* Logo */}
-            <Link to="/landing" className="flex items-center space-x-2">
+            <Link to="/" className="flex items-center space-x-2">
               <span className="text-xl font-bold text-foreground">{title}</span>
             </Link>
 

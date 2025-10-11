@@ -10,7 +10,6 @@ import { Card, CardContent } from '@/components/ui/card';
 import { PublicPageImage } from '@/components/daily-published';
 import { Calendar, BookOpen } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
-import { formatDistanceToNow } from 'date-fns';
 
 export default function UserLibraryDetail() {
   const { id } = useParams<{ id: string }>();
@@ -86,10 +85,6 @@ export default function UserLibraryDetail() {
     );
   }
 
-  const publishedDate = dailyContent.publish_date 
-    ? new Date(dailyContent.publish_date)
-    : new Date(dailyContent.published_at);
-
   return (
     <>
       {openGraphMetadata && <MetaHead metadata={openGraphMetadata} />}
@@ -104,25 +99,6 @@ export default function UserLibraryDetail() {
                 <p className="text-muted-foreground">{dailyContent.description}</p>
               )}
             </div>
-
-            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1.5">
-                <Calendar className="h-4 w-4" />
-                <span>Published {formatDistanceToNow(publishedDate, { addSuffix: true })}</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <BookOpen className="h-4 w-4" />
-                <span>{pages.length} pages</span>
-              </div>
-            </div>
-
-            <Button 
-              onClick={() => handlePageClick(0)} 
-              size="lg"
-              className="w-full sm:w-auto"
-            >
-              Start from Beginning (A)
-            </Button>
           </div>
         </div>
 

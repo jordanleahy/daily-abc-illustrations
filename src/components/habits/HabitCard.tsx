@@ -23,13 +23,20 @@ export function HabitCard({ habit, onDelete }: HabitCardProps) {
     <Card>
       <CardHeader>
         <div className="flex justify-between items-start">
-          <CardTitle className="text-lg">{habit.title}</CardTitle>
-          {habit.deadline_time && (
-            <Badge variant="default" className="ml-2">
-              <Clock className="h-3 w-3 mr-1" />
-              Due: {formatDeadlineTime(habit.deadline_time)}
-            </Badge>
-          )}
+          <div className="flex-1">
+            <CardTitle className="text-lg">{habit.title}</CardTitle>
+            <div className="flex gap-2 mt-2">
+              <Badge variant="outline" className="capitalize">
+                {habit.frequency}
+              </Badge>
+              {habit.deadline_time && (
+                <Badge variant="default">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Due: {formatDeadlineTime(habit.deadline_time)}
+                </Badge>
+              )}
+            </div>
+          </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

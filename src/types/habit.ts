@@ -2,6 +2,8 @@
  * Habit type definitions for the Daily Habits feature
  */
 
+export type HabitFrequency = 'daily' | 'weekly' | 'monthly';
+
 export interface Habit {
   id: string;
   parent_user_id: string;
@@ -9,6 +11,7 @@ export interface Habit {
   description: string | null;
   photo_url: string | null;
   coin_amount: number;
+  frequency: HabitFrequency;
   deadline_time: string | null; // '21:00:00' format
   is_active: boolean;
   display_order: number;
@@ -69,6 +72,7 @@ export interface NewHabit {
   description?: string;
   photo_url?: string;
   coin_amount: number;
+  frequency: HabitFrequency;
   deadline_time?: string;
   assignedKidIds: string[];
 }

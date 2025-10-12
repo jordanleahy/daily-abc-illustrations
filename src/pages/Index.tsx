@@ -6,8 +6,17 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { format } from 'date-fns';
 import { CoinCounter } from '@/components/ui/coin-counter';
 import { getTimeBasedGreeting } from '@/utils/timeUtils';
+import { Button } from '@/components/ui/button';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 
 const Index = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isSeeding, setIsSeeding] = useState(false);
+  
   // Get the first kid profile
   const { data: kidProfiles = [], isLoading: isLoadingKids } = useKidProfiles();
   const firstKid = kidProfiles[0];
@@ -17,6 +26,43 @@ const Index = () => {
   
   const isLoading = isLoadingKids || isLoadingHabits;
   const timeOfDay = getTimeBasedGreeting();
+
+  const handleSeedHabits = async () => {
+    setIsSeeding(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      const { data, error } = await supabase.rpc('seed_user_habits', {
+        p_parent_user_id: user?.id
+      });
+
+      if (error) throw error;
+
+      const result = data as { success: boolean; message: string; habits_created?: number };
+      
+      if (result?.success) {
+        toast({
+          title: 'Success!',
+          description: `${result.habits_created} habits created for your family`,
+        });
+        queryClient.invalidateQueries({ queryKey: ['habits'] });
+        queryClient.invalidateQueries({ queryKey: ['todayHabits'] });
+      } else {
+        toast({
+          title: 'Info',
+          description: result?.message || 'Habits already configured',
+        });
+      }
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to set up habits',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -63,10 +109,13 @@ const Index = () => {
 
         {/* Habits list */}
         {completions.length === 0 ? (
-          <div className="text-center py-12 bg-muted/50 rounded-lg">
+          <div className="text-center py-12 bg-muted/50 rounded-lg space-y-4">
             <p className="text-lg text-muted-foreground">
-              No habits for today! Enjoy your free time! 🎉
+              No habits for today. Let's set up your daily habits!
             </p>
+            <Button onClick={handleSeedHabits} disabled={isSeeding} size="lg">
+              {isSeeding ? 'Setting up...' : 'Set Up My Daily Habits'}
+            </Button>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

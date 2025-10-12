@@ -63,6 +63,7 @@ const AdminChat = () => {
   const { session, isAuthenticated, loading } = useAuthContext();
   const { data: activeDaily, isLoading: isDailyLoading } = useDailyPublished();
 const userRole = useUserRole();
+const isRoleLoading = userRole.isLoading;
 const isAdmin = userRole.data?.isAdmin ?? false;
 const isTeacher = useIsTeacher();
 const navigate = useNavigate();
@@ -93,17 +94,17 @@ const navigate = useNavigate();
 
   // Redirect teachers to library
   useEffect(() => {
-    if (!loading && isAuthenticated && isTeacher) {
+    if (!loading && !isRoleLoading && isAuthenticated && isTeacher) {
       navigate('/library', { replace: true });
     }
-  }, [loading, isAuthenticated, isTeacher, navigate]);
+  }, [loading, isRoleLoading, isAuthenticated, isTeacher, navigate]);
 
   // Redirect regular users to library
   useEffect(() => {
-    if (!loading && isAuthenticated && !isAdmin && !isTeacher) {
+    if (!loading && !isRoleLoading && isAuthenticated && !isAdmin && !isTeacher) {
       navigate('/library', { replace: true });
     }
-  }, [loading, isAuthenticated, isAdmin, isTeacher, navigate]);
+  }, [loading, isRoleLoading, isAuthenticated, isAdmin, isTeacher, navigate]);
 
   // Redirect non-authenticated users to active daily published content
   useEffect(() => {

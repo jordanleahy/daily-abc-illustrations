@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useReorderQueue } from '@/hooks/useReorderQueue';
 import { useRequeueExpiredItem } from '@/hooks/useRequeueExpiredItem';
@@ -68,7 +68,7 @@ const formatScheduleDate = (dateString: string, options?: { includeTime?: boolea
 };
 
 export default function DailyPublishedScheduleSimple() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { data: scheduleItems, isLoading, error } = useDailyPublishedSchedule();
   const reorderQueue = useReorderQueue();
   const requeueItem = useRequeueExpiredItem();

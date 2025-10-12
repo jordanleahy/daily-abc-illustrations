@@ -9,7 +9,7 @@ import { useEffect } from 'react';
  * TanStack Query hook for fetching agent configuration
  */
 export const useAgent = (agentType: AgentConfig['type']) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   return useQuery({
     queryKey: ['agent', user?.id, agentType],
@@ -65,7 +65,7 @@ export const useAgent = (agentType: AgentConfig['type']) => {
  * TanStack Query mutations for agent operations
  */
 export const useAgentMutations = (agentType: AgentConfig['type']) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -231,7 +231,7 @@ export const useAgentMutations = (agentType: AgentConfig['type']) => {
  * Real-time subscription hook for agent updates
  */
 export const useAgentRealtime = (agentType: AgentConfig['type']) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const queryClient = useQueryClient();
 
   useEffect(() => {

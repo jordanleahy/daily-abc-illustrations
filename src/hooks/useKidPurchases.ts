@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import type { KidPurchaseWithDetails } from '@/types/kidPurchase';
 
 export const useKidPurchases = (kidId?: string) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   return useQuery({
     queryKey: ['kid-purchases', user?.id, kidId],

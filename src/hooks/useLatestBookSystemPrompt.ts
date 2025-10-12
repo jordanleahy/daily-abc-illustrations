@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 
 export interface LatestBookSystemPrompt {
@@ -15,7 +15,7 @@ export interface LatestBookSystemPrompt {
 }
 
 export const useLatestBookSystemPrompt = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { toast } = useToast();
 
   const { data: promptData = null, isLoading, error, refetch } = useQuery({

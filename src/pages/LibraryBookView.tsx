@@ -8,7 +8,7 @@ import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImageP
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidCoins } from '@/hooks/useKidCoins';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
@@ -29,7 +29,7 @@ export default function LibraryBookView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const safeId = id && isValidUUID(id) ? id : undefined;
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();

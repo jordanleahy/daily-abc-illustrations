@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 export interface KidProfile {
   id: string;
@@ -15,7 +15,7 @@ export interface KidProfile {
 }
 
 export const useKidProfiles = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   return useQuery({
     queryKey: ['kid-profiles', user?.id],

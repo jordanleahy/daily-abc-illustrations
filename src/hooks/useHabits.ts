@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { Habit } from '@/types/habit';
 
 /**
  * Hook to fetch all active habits for the current parent user
  */
 export function useHabits() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   return useQuery({
     queryKey: ['habits', user?.id],

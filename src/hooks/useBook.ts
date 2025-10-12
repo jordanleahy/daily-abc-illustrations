@@ -5,7 +5,7 @@ import { Book } from '@/types/book';
 import { toast } from 'sonner';
 
 export const useBook = (bookId: string | undefined) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   return useQuery({
     queryKey: ['book', bookId],

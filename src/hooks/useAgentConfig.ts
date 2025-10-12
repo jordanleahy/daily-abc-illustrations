@@ -8,7 +8,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
  * Combines data fetching, mutations, and local editing state
  */
 export const useAgentConfig = (agentType: AgentConfig['type']) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { data: config, isLoading: isInitialLoading, error } = useAgent(agentType);
   const { saveMutation } = useAgentMutations(agentType);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);

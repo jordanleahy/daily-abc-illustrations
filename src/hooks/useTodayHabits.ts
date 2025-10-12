@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { HabitCompletionWithDetails } from '@/types/habit';
 
@@ -9,7 +9,7 @@ import { HabitCompletionWithDetails } from '@/types/habit';
  * @param kidProfileId - Optional kid profile ID to filter habits
  */
 export function useTodayHabits(kidProfileId?: string) {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const todayDate = format(new Date(), 'yyyy-MM-dd');
 
   return useQuery({

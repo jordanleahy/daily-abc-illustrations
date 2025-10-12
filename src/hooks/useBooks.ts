@@ -56,7 +56,7 @@ import { usePageImageSubscription } from './usePageImageSubscription';
  * ```
  */
 export const useBooks = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const queryClient = useQueryClient();
   
   // Enable real-time subscriptions for page images

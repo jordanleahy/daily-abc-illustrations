@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import type { RewardsProduct } from '@/types/rewardsProduct';
 
 export const useRewardsProducts = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   return useQuery({
     queryKey: ['rewards-products', user?.id],

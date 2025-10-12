@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,7 +23,7 @@ import type { RewardsProduct } from '@/types/rewardsProduct';
 import { AddKidModal } from '@/components/profile/AddKidModal';
 
 export default function Rewards() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuthContext();
   const { data: kidProfiles, isLoading } = useKidProfiles();
   const [selectedKidId, setSelectedKidId] = useState<string>('');
   const [purchaseProduct, setPurchaseProduct] = useState<RewardsProduct | null>(null);

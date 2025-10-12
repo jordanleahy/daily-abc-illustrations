@@ -8,7 +8,7 @@ import { useToast } from './use-toast';
  * Hook to create a new habit and assign it to selected kids
  */
 export function useCreateHabit() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const queryClient = useQueryClient();
   const { toast } = useToast();
 

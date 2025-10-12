@@ -16,7 +16,7 @@ interface CreateBlankBookResponse {
 }
 
 export const useCreateBlankBook = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const queryClient = useQueryClient();
 
   return useMutation({

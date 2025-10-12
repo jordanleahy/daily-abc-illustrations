@@ -5,7 +5,7 @@ import { toast } from '@/hooks/use-toast';
 import type { CreateRewardsProductInput } from '@/types/rewardsProduct';
 
 export const useCreateRewardsProduct = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const queryClient = useQueryClient();
 
   return useMutation({

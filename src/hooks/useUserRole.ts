@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 type AppRole = 'user' | 'teacher' | 'moderator' | 'admin';
 
 export const useUserRole = () => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const [roles, setRoles] = useState<AppRole[]>([]);
   const [roleData, setRoleData] = useState<{
     roles: AppRole[];

@@ -5,7 +5,7 @@ import { QRCodeData, QRCodeDisplayStatus, QRCodeConfig } from '@/types/bookQRCod
 import { toast } from 'sonner';
 
 export const useBookQRCode = (bookId: string | undefined) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const queryClient = useQueryClient();
 
   // Get daily published data including QR code information

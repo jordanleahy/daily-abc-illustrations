@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from 'react';
 import { useGA4 } from './useGA4';
 import { useRole } from '@/contexts/RoleContext';
-import { useAuth } from './useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface ReadingSessionConfig {
   contentType: 'daily_published' | 'library_book';
@@ -21,7 +21,7 @@ interface ReadingSessionAnalytics {
 export const useReadingSessionAnalytics = (): ReadingSessionAnalytics => {
   const { trackEvent } = useGA4();
   const { primaryRole } = useRole();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   const sessionRef = useRef<{
     sessionId: string;

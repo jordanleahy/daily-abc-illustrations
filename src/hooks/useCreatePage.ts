@@ -14,7 +14,7 @@ const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
 
 export const useCreatePage = () => {
   const queryClient = useQueryClient();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   return useMutation({
     mutationFn: async ({ bookId, title, description, existingPages }: CreatePageParams) => {

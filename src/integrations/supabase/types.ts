@@ -316,6 +316,153 @@ export type Database = {
         }
         Relationships: []
       }
+      habit_assignments: {
+        Row: {
+          assigned_at: string
+          habit_id: string
+          id: string
+          is_active: boolean
+          kid_profile_id: string
+          parent_user_id: string
+        }
+        Insert: {
+          assigned_at?: string
+          habit_id: string
+          id?: string
+          is_active?: boolean
+          kid_profile_id: string
+          parent_user_id: string
+        }
+        Update: {
+          assigned_at?: string
+          habit_id?: string
+          id?: string
+          is_active?: boolean
+          kid_profile_id?: string
+          parent_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_assignments_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "habit_assignments_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habit_completions: {
+        Row: {
+          coins_deposited: number
+          coins_retained: number
+          completion_date: string
+          created_at: string
+          deadline_at: string | null
+          habit_assignment_id: string
+          id: string
+          kid_profile_id: string
+          marked_at: string | null
+          parent_user_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          coins_deposited?: number
+          coins_retained?: number
+          completion_date: string
+          created_at?: string
+          deadline_at?: string | null
+          habit_assignment_id: string
+          id?: string
+          kid_profile_id: string
+          marked_at?: string | null
+          parent_user_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          coins_deposited?: number
+          coins_retained?: number
+          completion_date?: string
+          created_at?: string
+          deadline_at?: string | null
+          habit_assignment_id?: string
+          id?: string
+          kid_profile_id?: string
+          marked_at?: string | null
+          parent_user_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_completions_habit_assignment_id_fkey"
+            columns: ["habit_assignment_id"]
+            isOneToOne: false
+            referencedRelation: "habit_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "habit_completions_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      habits: {
+        Row: {
+          coin_amount: number
+          created_at: string
+          deadline_time: string | null
+          description: string | null
+          display_order: number
+          frequency: string
+          id: string
+          is_active: boolean
+          parent_user_id: string
+          photo_url: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          coin_amount?: number
+          created_at?: string
+          deadline_time?: string | null
+          description?: string | null
+          display_order?: number
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          parent_user_id: string
+          photo_url?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          coin_amount?: number
+          created_at?: string
+          deadline_time?: string | null
+          description?: string | null
+          display_order?: number
+          frequency?: string
+          id?: string
+          is_active?: boolean
+          parent_user_id?: string
+          photo_url?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       instagram_shared: {
         Row: {
           book_id: string
@@ -1007,6 +1154,10 @@ export type Database = {
         Args: { p_daily_published_id: string; p_new_expires_at: string }
         Returns: Json
       }
+      decrement_kid_coins: {
+        Args: { p_amount: number; p_kid_id: string }
+        Returns: undefined
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]
@@ -1085,6 +1236,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_kid_coins: {
+        Args: { p_amount: number; p_kid_id: string }
+        Returns: undefined
       }
       process_enhanced_daily_publishing: {
         Args: Record<PropertyKey, never>

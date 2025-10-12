@@ -31,7 +31,7 @@ export interface HabitAssignment {
     id: string;
     first_name: string;
     last_name: string;
-    avatar_url?: string;
+    profile_image_url?: string;
     earned_coins: number;
   };
 }
@@ -61,7 +61,7 @@ export interface HabitCompletionWithDetails extends Omit<HabitCompletion, 'habit
       id: string;
       first_name: string;
       last_name: string;
-      avatar_url?: string;
+      profile_image_url?: string;
       earned_coins: number;
     };
   };

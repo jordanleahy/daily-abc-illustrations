@@ -1,73 +1,80 @@
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { HabitTrackingCard } from '@/components/habits';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { LoadingState } from '@/components/ui/loading-state';
 import { format } from 'date-fns';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
+import { CoinCounter } from '@/components/ui/coin-counter';
+import { getTimeBasedGreeting } from '@/utils/timeUtils';
 
 export default function HabitsTrack() {
-  const { data: completions = [], isLoading } = useTodayHabits();
+  // Get the first kid profile
+  const { data: kidProfiles = [], isLoading: isLoadingKids } = useKidProfiles();
+  const firstKid = kidProfiles[0];
+  
+  // Fetch today's habits for the first kid
+  const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
+  
+  const isLoading = isLoadingKids || isLoadingHabits;
+  const timeOfDay = getTimeBasedGreeting();
 
-  // Group completions by kid
-  const completionsByKid = completions.reduce((acc, completion) => {
-    const kid = completion.habit_assignments.kid_profiles;
-    const kidKey = `${kid.first_name} ${kid.last_name}`;
-    if (!acc[kidKey]) {
-      acc[kidKey] = {
-        kid,
-        completions: [],
-      };
-    }
-    acc[kidKey].completions.push(completion);
-    return acc;
-  }, {} as Record<string, { kid: any; completions: typeof completions }>);
+  if (isLoading) {
+    return (
+      <StandardPageLayout>
+        <div className="container mx-auto py-8">
+          <LoadingState text="Loading your habits..." />
+        </div>
+      </StandardPageLayout>
+    );
+  }
+
+  if (!firstKid) {
+    return (
+      <StandardPageLayout>
+        <div className="container mx-auto py-8">
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">
+              No kid profiles found. Please create a kid profile first.
+            </p>
+          </div>
+        </div>
+      </StandardPageLayout>
+    );
+  }
 
   return (
     <StandardPageLayout>
-      <div className="container mx-auto py-8 space-y-6">
-        <div className="flex justify-between items-center flex-wrap gap-4">
-          <div>
-            <h1 className="text-3xl font-bold">Track Today's Habits</h1>
-            <p className="text-muted-foreground">
-              {format(new Date(), 'EEEE, MMMM d, yyyy')}
-            </p>
+      <div className="container mx-auto py-8 space-y-8">
+        {/* Child-focused header */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <h1 className="text-4xl font-bold">
+              Good {timeOfDay}, {firstKid.first_name}!
+            </h1>
+            <CoinCounter coins={firstKid.earned_coins} size="md" />
           </div>
-          
-          <Button asChild variant="outline">
-            <Link to="/habits/manage">Manage Habits</Link>
-          </Button>
+          <p className="text-xl text-muted-foreground">
+            Today is {format(new Date(), 'EEEE, MMMM do')}
+          </p>
+          <p className="text-lg text-muted-foreground">
+            Here is your {timeOfDay} to-do list
+          </p>
         </div>
 
-        {isLoading ? (
-          <LoadingState text="Loading today's habits..." />
-        ) : completions.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              No habits scheduled for today. Create habits in the Manage Habits page to get started.
+        {/* Habits list */}
+        {completions.length === 0 ? (
+          <div className="text-center py-12 bg-muted/50 rounded-lg">
+            <p className="text-lg text-muted-foreground">
+              No habits for today! Enjoy your free time! 🎉
             </p>
           </div>
         ) : (
-          <div className="space-y-8">
-            {Object.entries(completionsByKid).map(([kidName, { kid, completions }]) => (
-              <div key={kidName} className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <h2 className="text-2xl font-semibold">{kidName}</h2>
-                  <Badge variant="secondary">
-                    {kid.earned_coins} coins
-                  </Badge>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {completions.map((completion) => (
-                    <HabitTrackingCard
-                      key={completion.id}
-                      completion={completion}
-                    />
-                  ))}
-                </div>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {completions.map((completion) => (
+              <HabitTrackingCard
+                key={completion.id}
+                completion={completion}
+              />
             ))}
           </div>
         )}

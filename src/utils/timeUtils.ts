@@ -72,3 +72,15 @@ export const formatFixedScheduleTime = (timeString: string): string => {
   
   return `${localTime} (${utcTime})`;
 };
+
+/**
+ * Get time-based greeting based on current hour
+ * @returns 'morning', 'afternoon', or 'evening'
+ */
+export const getTimeBasedGreeting = (): string => {
+  const hour = new Date().getHours();
+  
+  if (hour >= 5 && hour < 12) return 'morning';
+  if (hour >= 12 && hour < 17) return 'afternoon';
+  return 'evening';
+};

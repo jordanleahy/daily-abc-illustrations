@@ -6,6 +6,10 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { format } from 'date-fns';
 import { CoinCounter } from '@/components/ui/coin-counter';
 import { getTimeBasedGreeting } from '@/utils/timeUtils';
+import { useTestHabitCreation } from '@/hooks/useTestHabitCreation';
+import { Button } from '@/components/ui/button';
+import { RefreshCw } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const Index = () => {
   // Get the first kid profile
@@ -14,6 +18,9 @@ const Index = () => {
   
   // Fetch today's habits for the first kid
   const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
+  
+  // Test habit creation hook
+  const { testCreateHabits, isPending: isCreatingHabits } = useTestHabitCreation();
   
   const isLoading = isLoadingKids || isLoadingHabits;
   const timeOfDay = getTimeBasedGreeting();
@@ -51,7 +58,18 @@ const Index = () => {
             <h1 className="text-4xl font-bold">
               Good {timeOfDay}, {firstKid.first_name}!
             </h1>
-            <CoinCounter coins={firstKid.earned_coins} size="md" />
+            <div className="flex items-center gap-3">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => testCreateHabits()}
+                disabled={isCreatingHabits}
+              >
+                <RefreshCw className={cn("mr-2 h-4 w-4", isCreatingHabits && "animate-spin")} />
+                {isCreatingHabits ? "Creating..." : "Test: Create Today's Habits"}
+              </Button>
+              <CoinCounter coins={firstKid.earned_coins} size="md" />
+            </div>
           </div>
           <p className="text-xl text-muted-foreground">
             Today is {format(new Date(), 'EEEE, MMMM do')}

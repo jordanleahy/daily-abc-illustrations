@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,13 @@ export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) 
 
   const { data: kids = [] } = useKidProfiles();
   const createHabit = useCreateHabit();
+
+  // Auto-select first kid when kids load
+  useEffect(() => {
+    if (kids.length > 0 && selectedKids.length === 0) {
+      setSelectedKids([kids[0].id]);
+    }
+  }, [kids, selectedKids.length]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -66,7 +66,8 @@ const App = () => (
             <BrowserRouter>
               <GA4Tracker />
               <Routes>
-              <Route path="/" element={<Index />} />
+              <Route path="/" element={<ProtectedRoute><HabitsTrack /></ProtectedRoute>} />
+              <Route path="/home" element={<Index />} />
               <Route path="/admin/chat" element={<AdminOnly><AdminChat /></AdminOnly>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/confirm" element={<AuthConfirm />} />

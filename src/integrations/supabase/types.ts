@@ -1154,6 +1154,10 @@ export type Database = {
         Args: { p_daily_published_id: string; p_new_expires_at: string }
         Returns: Json
       }
+      create_daily_habit_completions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       decrement_kid_coins: {
         Args: { p_amount: number; p_kid_id: string }
         Returns: undefined

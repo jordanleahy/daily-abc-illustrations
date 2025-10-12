@@ -18,29 +18,29 @@ export function useMarkHabitComplete() {
 
   return useMutation({
     mutationFn: async ({ completionId, isComplete, coinsAmount, kidId }: MarkHabitCompleteParams) => {
-      // TODO: Uncomment when database tables are created
-      // const { error: updateError } = await supabase
-      //   .from('habit_completions')
-      //   .update({
-      //     status: isComplete ? 'completed' : 'declined',
-      //     coins_retained: isComplete ? coinsAmount : 0,
-      //     marked_at: new Date().toISOString(),
-      //   })
-      //   .eq('id', completionId);
+      // Update completion status and coins_retained
+      const { error: updateError } = await supabase
+        .from('habit_completions')
+        .update({
+          status: isComplete ? 'completed' : 'declined',
+          coins_retained: isComplete ? coinsAmount : 0,
+          marked_at: new Date().toISOString(),
+        })
+        .eq('id', completionId);
 
-      // if (updateError) throw updateError;
+      if (updateError) throw updateError;
 
-      // if (!isComplete) {
-      //   const { error: coinError } = await supabase.rpc('decrement_kid_coins', {
-      //     kid_id: kidId,
-      //     amount: coinsAmount,
-      //   });
+      // If declined, remove the optimistically deposited coins
+      if (!isComplete) {
+        const { error: coinError } = await supabase.rpc('decrement_kid_coins', {
+          p_kid_id: kidId,
+          p_amount: coinsAmount,
+        });
 
-      //   if (coinError) throw coinError;
-      // }
+        if (coinError) throw coinError;
+      }
       
-      // Mock success for now
-      console.log('Habit completion would be updated:', { completionId, isComplete, coinsAmount, kidId });
+      // If completed, coins stay (they were already deposited at 3 AM)
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['today-habits'] });

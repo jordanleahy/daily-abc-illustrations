@@ -17,6 +17,7 @@
 import { useState, useEffect } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { SafeLocalStorage, SUBSCRIPTION_CACHE_KEY } from '@/utils/storage';
 
 /**
  * Authentication state management hook
@@ -64,6 +65,7 @@ export const useAuth = () => {
   }, []);
 
   const signOut = async () => {
+    SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
     await supabase.auth.signOut();
   };
 

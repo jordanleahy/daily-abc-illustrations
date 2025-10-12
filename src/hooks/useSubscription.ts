@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { SafeLocalStorage, SUBSCRIPTION_CACHE_KEY, SUBSCRIPTION_CACHE_DAYS } from '@/utils/storage';
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -50,23 +51,29 @@ export const useSubscription = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Use React Query for caching subscription status - always query fresh from Stripe API
+  // Use React Query with 30-day localStorage caching
   const query = useQuery<SubscriptionStatus>({
     queryKey: ['subscription', user?.id],
     queryFn: async (): Promise<SubscriptionStatus> => {
       if (!user) {
-        return {
-          subscribed: false,
-          loading: false,
-        };
+        SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+        return { subscribed: false, loading: false };
       }
 
-      try {
-        const { data, error } = await supabase.functions.invoke('check-subscription');
+      // Check 30-day cache first
+      const cached = SafeLocalStorage.get<SubscriptionStatus>(SUBSCRIPTION_CACHE_KEY);
+      if (cached) {
+        console.log('[SUBSCRIPTION] Using 30-day cached data');
+        return { ...cached, loading: false };
+      }
 
+      // Cache miss - fetch from API
+      try {
+        console.log('[SUBSCRIPTION] Fetching fresh subscription from API');
+        const { data, error } = await supabase.functions.invoke('check-subscription');
         if (error) throw error;
 
-        return {
+        const subscriptionData: SubscriptionStatus = {
           subscribed: data.subscribed || false,
           product_id: data.product_id,
           price_id: data.price_id,
@@ -75,8 +82,18 @@ export const useSubscription = () => {
           cancel_at_period_end: data.cancel_at_period_end,
           loading: false,
         };
+
+        // Cache for 30 days (720 hours)
+        SafeLocalStorage.set(
+          SUBSCRIPTION_CACHE_KEY,
+          subscriptionData,
+          SUBSCRIPTION_CACHE_DAYS * 24
+        );
+
+        return subscriptionData;
       } catch (error) {
         console.error('Error checking subscription:', error);
+        SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
         return {
           subscribed: false,
           loading: false,
@@ -85,15 +102,17 @@ export const useSubscription = () => {
       }
     },
     enabled: !!user,
-    staleTime: 30 * 1000, // Consider data fresh for 30 seconds (much shorter)
-    gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
-    refetchOnWindowFocus: true, // Refetch when user returns to tab
-    refetchOnMount: true, // Always check on mount
+    staleTime: SUBSCRIPTION_CACHE_DAYS * 24 * 60 * 60 * 1000, // 30 days in ms
+    gcTime: SUBSCRIPTION_CACHE_DAYS * 24 * 60 * 60 * 1000, // 30 days in ms
+    refetchOnWindowFocus: false, // Don't refetch on focus
+    refetchOnMount: false, // Don't refetch on mount - use cache
   });
 
   const effectiveLoading = query.isLoading;
 
   const checkSubscription = useCallback(async () => {
+    // Clear cache to force fresh API call
+    SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
     await query.refetch();
   }, [query]);
 
@@ -183,7 +202,8 @@ export const useSubscription = () => {
 
       if (error) throw error;
 
-      // Refresh subscription status after update
+      // Clear cache and refresh subscription status after update
+      SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
       await query.refetch();
 
       toast({

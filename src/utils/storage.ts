@@ -74,3 +74,7 @@ export class SafeLocalStorage {
     }
   }
 }
+
+// Subscription caching constants
+export const SUBSCRIPTION_CACHE_KEY = 'subscription_status';
+export const SUBSCRIPTION_CACHE_DAYS = 30;

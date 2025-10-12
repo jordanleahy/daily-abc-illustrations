@@ -23,7 +23,6 @@ import { useAuth } from './useAuth';
 import { Book } from '@/types/book';
 import { toast } from 'sonner';
 import { usePageImageSubscription } from './usePageImageSubscription';
-import { getBookViewTimestamps } from '@/utils/bookViewTracking';
 
 /**
  * Books data management hook
@@ -96,24 +95,14 @@ export const useBooks = () => {
         dailyPublishedStatus: book.daily_published?.[0]?.status || undefined
       }));
       
-      // Get view timestamps and sort by most recently viewed
-      const viewTimestamps = getBookViewTimestamps();
-      
+      // Sort by most recently updated (active) first
       return processedBooks.sort((a, b) => {
-        const aTimestamp = viewTimestamps[a.id] || 0;
-        const bTimestamp = viewTimestamps[b.id] || 0;
-        
-        // Sort by most recent first, with unviewed books at the end
-        if (aTimestamp === 0 && bTimestamp === 0) {
-          // If neither has been viewed, maintain database order (highlighted, then created_at)
-          if (a.is_highlighted !== b.is_highlighted) {
-            return b.is_highlighted ? 1 : -1;
-          }
-          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        // Highlighted books always come first
+        if (a.is_highlighted !== b.is_highlighted) {
+          return b.is_highlighted ? 1 : -1;
         }
-        if (aTimestamp === 0) return 1; // Unviewed books go to end
-        if (bTimestamp === 0) return -1; // Unviewed books go to end
-        return bTimestamp - aTimestamp; // Most recent first
+        // Then sort by most recently updated
+        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       });
     },
     enabled: !!user?.id,

@@ -1257,6 +1257,10 @@ export type Database = {
         Args: { p_parent_user_id: string }
         Returns: Json
       }
+      test_create_daily_habit_completions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "user" | "moderator" | "admin" | "teacher"

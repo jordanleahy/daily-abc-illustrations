@@ -34,10 +34,10 @@ Deno.serve(async (req) => {
 
     const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey);
 
-    // Call the database function to create daily habit completions
+    // Call the TEST database function (allows duplicates for testing)
     console.log('📅 Creating daily habit completions for date:', new Date().toISOString().split('T')[0]);
     
-    const { data: result, error: processError } = await supabase.rpc('create_daily_habit_completions') as { 
+    const { data: result, error: processError } = await supabase.rpc('test_create_daily_habit_completions') as { 
       data: any; 
       error: any; 
     };

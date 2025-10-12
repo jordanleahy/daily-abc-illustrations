@@ -119,7 +119,10 @@ export function Header({
   /** Navigation configuration for regular authenticated users */
   const regularNavigation = [
     { name: 'Library', href: '/library' },
-    ...(hasActiveSubscription ? [{ name: 'Rewards', href: '/rewards' }] : []),
+    ...(hasActiveSubscription ? [
+      { name: 'Rewards', href: '/rewards' },
+      { name: 'Habits', href: '/habits/manage' }
+    ] : []),
   ];
 
   /** Extended navigation menu for admin users with full system access */
@@ -127,6 +130,7 @@ export function Header({
     { name: 'Chat', href: '/admin/chat' },
     { name: 'Library', href: '/library' },
     { name: 'Rewards', href: '/rewards' },
+    { name: 'Habits', href: '/habits/manage' },
     { name: 'Editor', href: '/editor' },
     { name: 'Agents', href: '/agents' },
     { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },

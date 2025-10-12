@@ -36,6 +36,10 @@ import { QuickTestInlineEdit } from '@/components/demo/QuickTestInlineEdit';
 import PerformanceComparison from '@/components/demo/PerformanceComparison';
 import NotFound from "./pages/NotFound";
 import { GA4Tracker } from "./components/GA4Tracker";
+import HabitsManage from "./pages/HabitsManage";
+import HabitsTrack from "./pages/HabitsTrack";
+import MyHabits from "./pages/MyHabits";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -76,6 +80,10 @@ const App = () => (
                 <Route path="/admin/library/:id" element={<AdminOnly><LibraryDetail /></AdminOnly>} />
                 <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
                 <Route path="/rewards/manage" element={<ProtectedRoute><RewardsManage /></ProtectedRoute>} />
+                <Route path="/habits/manage" element={<ProtectedRoute><HabitsManage /></ProtectedRoute>} />
+                <Route path="/habits/track" element={<ProtectedRoute><HabitsTrack /></ProtectedRoute>} />
+                <Route path="/my-habits" element={<ProtectedRoute><MyHabits /></ProtectedRoute>} />
+                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />
                <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
                <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />

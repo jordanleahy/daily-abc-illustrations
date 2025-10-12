@@ -34,10 +34,10 @@ const Landing = () => {
     });
   }, [trackEvent]);
 
-  // Redirect authenticated users without subscription to subscription page
+  // Redirect authenticated users WITH active subscription to library
   useEffect(() => {
-    if (!authLoading && !subscriptionLoading && isAuthenticated && !hasActiveSubscription) {
-      navigate('/pricing', { replace: true });
+    if (!authLoading && !subscriptionLoading && isAuthenticated && hasActiveSubscription) {
+      navigate('/library', { replace: true });
     }
   }, [authLoading, subscriptionLoading, isAuthenticated, hasActiveSubscription, navigate]);
 

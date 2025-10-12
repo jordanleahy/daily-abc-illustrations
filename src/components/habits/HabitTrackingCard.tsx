@@ -99,7 +99,7 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
               variant="default"
             >
               <Check className="mr-2 h-4 w-4" />
-              Complete (+{habit.coin_amount})
+              Complete
             </Button>
             
             <Button

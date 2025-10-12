@@ -8,8 +8,11 @@ import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PublicPageImage } from '@/components/daily-published';
-import { Calendar, BookOpen } from 'lucide-react';
+import { Calendar, BookOpen, Download } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
+import { generatePDF } from '@/services/pdfGenerator';
+import { toast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 export default function UserLibraryDetail() {
   const { id } = useParams<{ id: string }>();
@@ -19,6 +22,8 @@ export default function UserLibraryDetail() {
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const { openGraphMetadata } = useDailyPublishedOpenGraph(safeId, 0);
+  
+  const [isDownloading, setIsDownloading] = useState(false);
   
   // Preload all page images for instant display
   useDailyPublishedImagePreloader(pages, dailyContent?.book_id);
@@ -32,6 +37,55 @@ export default function UserLibraryDetail() {
         from: 'user-library-detail' 
       } 
     });
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!dailyContent || !pages.length) return;
+    
+    setIsDownloading(true);
+    try {
+      const pageImages = pages.map(page => ({
+        id: page.id,
+        page_number: page.page_number || 0,
+        letter: page.letter || '',
+        image_url: null // Will be fetched by the PDF generator
+      }));
+
+      const pdfBytes = await generatePDF(pageImages, {
+        onProgress: (current, total) => {
+          console.log(`Processing page ${current} of ${total}`);
+        },
+        onError: (error, pageId) => {
+          console.error(`Error processing page ${pageId}:`, error);
+        }
+      });
+
+      // Create download
+      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${dailyContent.title.replace(/[^a-zA-Z0-9\s-]/g, '')}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      toast({
+        title: "Success",
+        description: "PDF downloaded successfully!",
+      });
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      toast({
+        title: "Error",
+        description: "Failed to generate PDF. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   if (isLoading) {
@@ -93,11 +147,23 @@ export default function UserLibraryDetail() {
         {/* Header Section */}
         <div className="space-y-6 mb-8">
           <div className="space-y-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight mb-2">{dailyContent.title}</h1>
-              {dailyContent.description && (
-                <p className="text-muted-foreground">{dailyContent.description}</p>
-              )}
+            <div className="flex items-start justify-between gap-4">
+              <div className="flex-1">
+                <h1 className="text-3xl font-bold tracking-tight mb-2">{dailyContent.title}</h1>
+                {dailyContent.description && (
+                  <p className="text-muted-foreground">{dailyContent.description}</p>
+                )}
+              </div>
+              <Button
+                onClick={handleDownloadPDF}
+                disabled={isDownloading}
+                variant="outline"
+                size="icon"
+                className="shrink-0"
+              >
+                <Download className={`h-5 w-5 ${isDownloading ? 'animate-pulse' : ''}`} />
+                <span className="sr-only">Download as PDF</span>
+              </Button>
             </div>
           </div>
         </div>

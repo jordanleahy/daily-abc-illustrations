@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { AgentConfig } from '@/types/agent';
 import { useAgent, useAgentMutations, useAgentRealtime } from '@/hooks/useAgent';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 /**
  * Optimized agent configuration hook using TanStack Query

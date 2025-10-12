@@ -3,14 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useProfile } from '@/hooks/useProfile';
 import { useUpdateProfile } from '@/hooks/useUpdateProfile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 
 export function ProfileInfoTab() {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { data: profile, isLoading } = useProfile();
   const updateProfile = useUpdateProfile();
   const [isEditing, setIsEditing] = useState(false);

@@ -13,7 +13,7 @@ import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { useBookPages } from '@/hooks/useBookPages';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { getBookCoverUploadInfo } from '@/utils/storagePaths';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface OpenGraphEditorProps {
   bookId: string;
@@ -27,7 +27,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const firstPage = pages?.[0];
   const { currentImage: firstPageImage } = usePageImageUrls(firstPage?.id || '');
   
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   
   // Debug logging for OpenGraph editor
   console.log('🎨 [OpenGraphEditor] Rendering with:', {

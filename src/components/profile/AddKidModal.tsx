@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Upload, X } from 'lucide-react';
 import { useCreateKidProfile } from '@/hooks/useKidProfileMutations';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface AddKidModalProps {
   open: boolean;
@@ -15,7 +15,7 @@ interface AddKidModalProps {
 }
 
 export const AddKidModal: React.FC<AddKidModalProps> = ({ open, onOpenChange }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const createKidProfile = useCreateKidProfile();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');

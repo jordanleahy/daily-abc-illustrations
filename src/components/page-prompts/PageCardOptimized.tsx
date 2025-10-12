@@ -6,7 +6,7 @@ import { useOptimisticInlineEdit } from '@/hooks/useOptimisticInlineEdit';
 import { PageImageSection } from '@/components/PageImageSection';
 import { Download, RefreshCw, Copy, Trash2, Upload } from 'lucide-react';
 import { Page } from '@/types/book';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface PageCardOptimizedProps {
   page: Page;
@@ -31,7 +31,7 @@ export const PageCardOptimized: React.FC<PageCardOptimizedProps> = ({
   onUploadImage,
   isRegenerating = false,
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
 
   const titleEdit = useOptimisticInlineEdit({
     initialValue: page.title || '',

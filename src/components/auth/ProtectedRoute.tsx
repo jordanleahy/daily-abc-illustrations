@@ -1,55 +1,58 @@
-import { useEffect } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { supabase } from '@/integrations/supabase/client';
+import { useRole } from '@/contexts/RoleContext';
+import { LoadingState } from '@/components/ui/loading-state';
+
+type AppRole = 'user' | 'teacher' | 'moderator' | 'admin';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  requireAuth?: boolean;
   requireSubscription?: boolean;
+  requireRole?: AppRole;
+  redirectTo?: string;
 }
 
-export const ProtectedRoute = ({ children, requireSubscription = true }: ProtectedRouteProps) => {
+export const ProtectedRoute = ({ 
+  children, 
+  requireAuth = true,
+  requireSubscription = true,
+  requireRole,
+  redirectTo
+}: ProtectedRouteProps) => {
   const { isAuthenticated, loading: authLoading } = useAuthContext();
   const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
+  const { hasRole, isLoading: roleLoading } = useRole();
   const location = useLocation();
 
-  useEffect(() => {
-    // Periodically validate session is still valid
-    const validateSession = async () => {
-      const { data: { session }, error } = await supabase.auth.getSession();
-      
-      if (error || !session) {
-        // Session invalid - clear and redirect
-        await supabase.auth.signOut({ scope: 'local' });
-        window.location.replace('/');
-      }
-    };
-
-    if (isAuthenticated) {
-      validateSession();
-    }
-  }, [isAuthenticated]);
-
-  const loading = authLoading || subscriptionLoading;
+  const loading = authLoading || (requireSubscription ? subscriptionLoading : false) || (requireRole ? roleLoading : false);
 
   if (loading) {
-    return <div className="flex items-center justify-center min-h-screen">
-      <div className="text-muted-foreground">Loading...</div>
-    </div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingState text="Verifying access..." />
+      </div>
+    );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/" replace />;
+  // Check authentication requirement
+  if (requireAuth && !isAuthenticated) {
+    return <Navigate to={redirectTo || '/auth'} replace />;
+  }
+
+  // Check role requirement
+  if (requireRole && !hasRole(requireRole)) {
+    return <Navigate to={redirectTo || '/'} replace />;
   }
 
   // Check subscription requirement
   if (requireSubscription && !hasActiveSubscription) {
-    // Prevent redirect loop - don't redirect if already on pricing page
+    // Prevent redirect loop
     if (location.pathname === '/pricing') {
       return <>{children}</>;
     }
-    return <Navigate to="/pricing" replace />;
+    return <Navigate to={redirectTo || '/pricing'} replace />;
   }
 
   return <>{children}</>;

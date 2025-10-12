@@ -171,23 +171,11 @@ const LibraryBookCard = memo(function LibraryBookCard({
   const { isAuthenticated } = useAuthContext();
   const { hasActiveSubscription, createCheckoutSession } = useSubscription();
   
-  const handleCardClick = async () => {
+  const handleCardClick = () => {
     // Track the book view for sorting
     trackBookView(item.id);
     
-    // If user is not authenticated, redirect to pricing page
-    if (!isAuthenticated) {
-      navigate('/pricing');
-      return;
-    }
-    
-    // If user is authenticated but doesn't have an active subscription, redirect to Stripe
-    if (isAuthenticated && !hasActiveSubscription) {
-      await createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id);
-      return;
-    }
-    
-    // All users go to detail page first to choose starting page
+    // Navigate to detail page to choose starting page
     navigate(`/library/${item.id}/detail`);
   };
 

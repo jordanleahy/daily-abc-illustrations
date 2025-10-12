@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, User, Calendar } from 'lucide-react';
 import { useUpdateProfile } from '@/hooks/useUpdateProfile';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface ProfileFormProps {
   profile: {
@@ -19,7 +19,7 @@ interface ProfileFormProps {
 export const ProfileForm = ({ profile, onCancel }: ProfileFormProps) => {
   const [firstName, setFirstName] = useState(profile.first_name);
   const [lastName, setLastName] = useState(profile.last_name);
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const updateProfile = useUpdateProfile();
 
   const handleSubmit = (e: React.FormEvent) => {

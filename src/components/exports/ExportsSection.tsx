@@ -26,7 +26,7 @@ import { useBook } from '@/hooks/useBook';
 import { useUpdateBookStatus } from '@/hooks/useUpdateBookStatus';
 import { formatScheduleTimestamp } from '@/utils/timezone';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { SITE_CONFIG } from '@/config/site';
 import { DailyPublishedStatus } from '@/types/dailyPublished';
@@ -67,7 +67,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   contentId,
   contentName
 }) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { data: expectedDate, isLoading: dateLoading } = useExpectedPublicationDate(contentId);
   const { generateQRCode } = useBookQRCode(contentType === 'book' ? contentId : undefined);
   const { data: bookData } = useBook(contentType === 'book' ? contentId : undefined);

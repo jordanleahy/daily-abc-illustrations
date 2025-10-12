@@ -7,7 +7,7 @@ import { RefreshCw, FileText, Copy, Trash2, Image, Upload, Download } from 'luci
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageSystemPromptEditor } from './PageSystemPromptEditor';
 import { PageImageSection } from '@/components/PageImageSection';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeletePage } from '@/hooks/useDeletePage';
@@ -43,7 +43,7 @@ export function PageCard({ page, bookId }: PageCardProps) {
     saveEdit: saveEditPrompt,
     updateEditedContent
   } = usePageSystemPrompt(page.id);
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const deletePage = useDeletePage();
   const { currentImage, uploadImage } = usePageImageUrls(page.id);
   const fileInputRef = useRef<HTMLInputElement>(null);

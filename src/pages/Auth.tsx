@@ -30,10 +30,10 @@ const Auth = () => {
   const [loading, setLoading] = useState(false);
 
 
-  // Redirect authenticated users if already logged in
+  // Redirect authenticated users to home
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/home');
     }
   }, [isAuthenticated, navigate]);
 
@@ -89,23 +89,11 @@ const Auth = () => {
             variant: "destructive",
           });
         } else {
-          // Check subscription status
-          const { data: subStatus } = await supabase.functions.invoke('check-subscription');
-          
-          if (subStatus?.subscribed && (!subStatus.subscription_end || new Date(subStatus.subscription_end) > new Date())) {
-            toast({
-              title: "Welcome back!",
-              description: "You have successfully logged in.",
-            });
-            navigate('/library');
-          } else {
-            // Redirect to pricing page
-            toast({
-              title: "Welcome back!",
-              description: "Please select a subscription plan to continue.",
-            });
-            navigate('/pricing');
-          }
+          toast({
+            title: "Welcome back!",
+            description: "You have successfully logged in.",
+          });
+          navigate('/home');
         }
       } else {
         // Redirect to pricing page after email confirmation

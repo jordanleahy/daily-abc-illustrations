@@ -2,13 +2,13 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/componen
 import { Button } from "@/components/ui/button";
 import { Check } from "lucide-react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { ActiveSubscriptionView } from "./ActiveSubscriptionView";
 
 export const WireframePricing = () => {
   const { createCheckoutSession, hasActiveSubscription, getSubscriptionTier, loading, openCustomerPortal } = useSubscription();
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const navigate = useNavigate();
   const currentTier = getSubscriptionTier();
   

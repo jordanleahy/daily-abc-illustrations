@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from './useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { QRCodeData, QRCodeDisplayStatus, QRCodeConfig } from '@/types/bookQRCode';
 import { toast } from 'sonner';
 

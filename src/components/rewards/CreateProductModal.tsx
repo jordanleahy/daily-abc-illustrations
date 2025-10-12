@@ -8,7 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ImageUpload } from '@/components/ImageUpload';
 import { VideoUpload } from '@/components/VideoUpload';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { useCreateRewardsProduct } from '@/hooks/useCreateRewardsProduct';
 import { useUpdateRewardsProduct } from '@/hooks/useUpdateRewardsProduct';
 import { formatCoinsAsCurrency } from '@/utils/currency';
@@ -21,7 +21,7 @@ interface CreateProductModalProps {
 }
 
 export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreateProductModalProps) => {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const createProduct = useCreateRewardsProduct();
   const updateProduct = useUpdateRewardsProduct();
   

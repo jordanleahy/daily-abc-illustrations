@@ -4,7 +4,7 @@ import { Shimmer } from "@/components/ui/shimmer";
 import { usePageImageUrls } from "@/hooks/usePageImageUrls";
 import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/process";
 import { useState, useEffect } from "react";
@@ -19,7 +19,7 @@ interface PageImageSectionProps {
 }
 
 export function PageImageSection({ pageId, bookId, showUpload: externalShowUpload, onCloseUpload }: PageImageSectionProps) {
-  const { user } = useAuth();
+  const { user } = useAuthContext();
   const { currentImage, versions, isLoading, createImageRecord, uploadImage, refreshData } = usePageImageUrls(pageId);
   const { currentPrompt } = usePageSystemPrompt(pageId);
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);

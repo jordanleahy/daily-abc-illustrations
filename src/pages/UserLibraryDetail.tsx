@@ -10,7 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { PublicPageImage } from '@/components/daily-published';
 import { Calendar, BookOpen, Download } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
-import { generatePDF } from '@/services/pdfGenerator';
+import { generateBookPDF } from '@/services/pdfGenerator';
 import { toast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
@@ -40,37 +40,19 @@ export default function UserLibraryDetail() {
   };
 
   const handleDownloadPDF = async () => {
-    if (!dailyContent || !pages.length) return;
+    if (!dailyContent?.book_id || !pages.length) return;
     
     setIsDownloading(true);
     try {
-      const pageImages = pages.map(page => ({
-        id: page.id,
-        page_number: page.page_number || 0,
-        letter: page.letter || '',
-        image_url: null // Will be fetched by the PDF generator
-      }));
-
-      const pdfBytes = await generatePDF(pageImages, {
-        onProgress: (current, total) => {
-          console.log(`Processing page ${current} of ${total}`);
+      // Use the generateBookPDF function which properly fetches images
+      await generateBookPDF(dailyContent.book_id, dailyContent.title, {
+        onProgress: (current, total, currentPage) => {
+          console.log(`Processing page ${currentPage}: ${current} of ${total}`);
         },
         onError: (error, pageId) => {
           console.error(`Error processing page ${pageId}:`, error);
         }
       });
-
-      // Create download
-      const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${dailyContent.title.replace(/[^a-zA-Z0-9\s-]/g, '')}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
 
       toast({
         title: "Success",
@@ -80,7 +62,7 @@ export default function UserLibraryDetail() {
       console.error('Error generating PDF:', error);
       toast({
         title: "Error",
-        description: "Failed to generate PDF. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to generate PDF. Please try again.",
         variant: "destructive",
       });
     } finally {

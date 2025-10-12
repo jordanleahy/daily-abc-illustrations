@@ -48,7 +48,7 @@ export function useTestHabitCreation() {
 
         // Invalidate queries to refresh the UI
         queryClient.invalidateQueries({ queryKey: ['today-habits', user?.id] });
-        queryClient.invalidateQueries({ queryKey: ['kid_profiles'] });
+        queryClient.invalidateQueries({ queryKey: ['kid-profiles', user?.id] });
       } else {
         toast({
           title: "❌ Error",

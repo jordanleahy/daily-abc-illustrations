@@ -121,7 +121,7 @@ export function Header({
     { name: 'Library', href: '/library' },
     ...(hasActiveSubscription ? [
       { name: 'Rewards', href: '/rewards' },
-      { name: 'Habits', href: '/habits/manage' }
+      { name: 'Habits', href: '/habits/track' }
     ] : []),
   ];
 
@@ -130,7 +130,7 @@ export function Header({
     { name: 'Chat', href: '/admin/chat' },
     { name: 'Library', href: '/library' },
     { name: 'Rewards', href: '/rewards' },
-    { name: 'Habits', href: '/habits/manage' },
+    { name: 'Habits', href: '/habits/track' },
     { name: 'Editor', href: '/editor' },
     { name: 'Agents', href: '/agents' },
     { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },

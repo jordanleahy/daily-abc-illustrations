@@ -89,6 +89,7 @@ export function Header({
   const navigate = useNavigate();
   const location = useLocation();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   /** Sign out handler with automatic redirect to authentication page */
   const handleSignOut = async () => {
@@ -252,7 +253,7 @@ export function Header({
           <div className="flex items-center gap-2">
 
             {/* Mobile Menu for authenticated users */}
-            <Sheet>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="sm" className="md:hidden">
                   <Menu className="h-5 w-5" />
@@ -269,6 +270,7 @@ export function Header({
                     <Link
                       key={item.name}
                       to={item.href}
+                      onClick={() => setIsSheetOpen(false)}
                       className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                     >
                       {item.name}
@@ -277,14 +279,20 @@ export function Header({
                   
                   {/* User Section */}
                   <button
-                    onClick={() => setIsProfileModalOpen(true)}
+                    onClick={() => {
+                      setIsSheetOpen(false);
+                      setIsProfileModalOpen(true);
+                    }}
                     className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </button>
                   <button
-                    onClick={handleSignOut}
+                    onClick={() => {
+                      setIsSheetOpen(false);
+                      handleSignOut();
+                    }}
                     className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                   >
                     <LogOut className="mr-2 h-4 w-4" />

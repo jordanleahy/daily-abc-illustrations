@@ -1,85 +1,86 @@
-import { useEffect } from 'react';
-import { Helmet } from 'react-helmet-async';
-import { useNavigate } from 'react-router-dom';
-import { useGA4 } from '@/hooks/useGA4';
-import { MetaHead } from '@/components/common';
-import { SITE_CONFIG, getSiteTitle } from '@/config/site';
-import { 
-  LandingHero, 
-  PopularBooks, 
-  PricingSection,
-  LibrarySection,
-  SignupSection,
-  Footer
-} from '@/components/landing';
-import { Header } from '@/components/layout';
-import { useLandingPageData } from '@/hooks/useLandingPageData';
-import { useLandingPageImagePreloader } from '@/hooks/useLandingPageImagePreloader';
-import { useAuthContext } from '@/contexts/AuthContext';
-import { useSubscription } from '@/hooks/useSubscription';
+import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
+import { HabitTrackingCard } from '@/components/habits';
+import { useTodayHabits } from '@/hooks/useTodayHabits';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { LoadingState } from '@/components/ui/loading-state';
+import { format } from 'date-fns';
+import { CoinCounter } from '@/components/ui/coin-counter';
+import { getTimeBasedGreeting } from '@/utils/timeUtils';
 
-const Landing = () => {
-  const { trackEvent } = useGA4();
-  const { data: landingData } = useLandingPageData();
-  useLandingPageImagePreloader(landingData);
-  const { isAuthenticated, loading: authLoading } = useAuthContext();
-  const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
-  const navigate = useNavigate();
+const Index = () => {
+  // Get the first kid profile
+  const { data: kidProfiles = [], isLoading: isLoadingKids } = useKidProfiles();
+  const firstKid = kidProfiles[0];
+  
+  // Fetch today's habits for the first kid
+  const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
+  
+  const isLoading = isLoadingKids || isLoadingHabits;
+  const timeOfDay = getTimeBasedGreeting();
 
-  useEffect(() => {
-    trackEvent('page_view', {
-      page_title: 'Landing Page',
-      page_location: window.location.href,
-      page_path: '/landing'
-    });
-  }, [trackEvent]);
+  if (isLoading) {
+    return (
+      <StandardPageLayout>
+        <div className="container mx-auto py-8">
+          <LoadingState text="Loading your habits..." />
+        </div>
+      </StandardPageLayout>
+    );
+  }
 
-  // Redirect authenticated users WITH active subscription to library
-  useEffect(() => {
-    if (!authLoading && !subscriptionLoading && isAuthenticated && hasActiveSubscription) {
-      navigate('/library', { replace: true });
-    }
-  }, [authLoading, subscriptionLoading, isAuthenticated, hasActiveSubscription, navigate]);
+  if (!firstKid) {
+    return (
+      <StandardPageLayout>
+        <div className="container mx-auto py-8">
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">
+              No kid profiles found. Please create a kid profile first.
+            </p>
+          </div>
+        </div>
+      </StandardPageLayout>
+    );
+  }
 
   return (
-    <>
-      <Helmet>
-        {/* Preconnect to Supabase storage for faster image loading */}
-        <link rel="preconnect" href="https://foxdnspwzhjxjxuicute.supabase.co" />
-        <link rel="dns-prefetch" href="https://foxdnspwzhjxjxuicute.supabase.co" />
-      </Helmet>
-      
-      <MetaHead
-        metadata={{
-          title: getSiteTitle(),
-          description: SITE_CONFIG.description,
-          siteName: SITE_CONFIG.name,
-          type: 'website',
-          url: window.location.href,
-          locale: SITE_CONFIG.locale,
-          image: SITE_CONFIG.defaultImage,
-          author: SITE_CONFIG.author
-        }}
-      />
-      
-      <div className="min-h-screen bg-background">
-        <Header />
-        
-        <LandingHero 
-          dailyPublished={landingData?.dailyPublished} 
-        />
-        <PopularBooks 
-          books={landingData?.popularBooks} 
-        />
-        <PricingSection />
-        <LibrarySection 
-          books={landingData?.libraryBooks} 
-        />
-        <SignupSection />
-        <Footer />
+    <StandardPageLayout>
+      <div className="container mx-auto py-8 space-y-8">
+        {/* Child-focused header */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <h1 className="text-4xl font-bold">
+              Good {timeOfDay}, {firstKid.first_name}!
+            </h1>
+            <CoinCounter coins={firstKid.earned_coins} size="md" />
+          </div>
+          <p className="text-xl text-muted-foreground">
+            Today is {format(new Date(), 'EEEE, MMMM do')}
+          </p>
+          <p className="text-lg text-muted-foreground">
+            Here is your {timeOfDay} to-do list
+          </p>
+        </div>
+
+        {/* Habits list */}
+        {completions.length === 0 ? (
+          <div className="text-center py-12 bg-muted/50 rounded-lg">
+            <p className="text-lg text-muted-foreground">
+              No habits for today! Enjoy your free time! 🎉
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {completions.map((completion) => (
+              <HabitTrackingCard
+                key={completion.id}
+                completion={completion}
+              />
+            ))}
+          </div>
+        )}
       </div>
-    </>
+    </StandardPageLayout>
   );
 };
 
-export default Landing;
+export default Index;

@@ -37,7 +37,6 @@ import PerformanceComparison from '@/components/demo/PerformanceComparison';
 import NotFound from "./pages/NotFound";
 import { GA4Tracker } from "./components/GA4Tracker";
 import HabitsManage from "./pages/HabitsManage";
-import HabitsTrack from "./pages/HabitsTrack";
 import MyHabits from "./pages/MyHabits";
 import Profile from "./pages/Profile";
 
@@ -66,14 +65,14 @@ const App = () => (
             <BrowserRouter>
               <GA4Tracker />
               <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/admin/chat" element={<AdminOnly><AdminChat /></AdminOnly>} />
+               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+               <Route path="/admin/chat" element={<AdminOnly><AdminChat /></AdminOnly>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/confirm" element={<AuthConfirm />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
-              <Route path="/agents" element={<Agents />} />
-              <Route path="/editor" element={<AdminOnly><Books /></AdminOnly>} />
-              <Route path="/editor/:id" element={<AdminOnly><BookDetail /></AdminOnly>} />
+               <Route path="/agents" element={<Agents />} />
+               <Route path="/editor" element={<AdminOnly><Books /></AdminOnly>} />
+               <Route path="/editor/:id" element={<AdminOnly><BookDetail /></AdminOnly>} />
                 <Route path="/library" element={<ProtectedRoute requireSubscription={false}><Library key="library" /></ProtectedRoute>} />
                 <Route path="/library/:id" element={<ProtectedRoute requireSubscription={false}><LibraryBookView /></ProtectedRoute>} />
                 <Route path="/library/:id/detail" element={<ProtectedRoute requireSubscription={false}><UserLibraryDetail /></ProtectedRoute>} />
@@ -81,7 +80,6 @@ const App = () => (
                 <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
                 <Route path="/rewards/manage" element={<ProtectedRoute><RewardsManage /></ProtectedRoute>} />
                 <Route path="/habits/manage" element={<ProtectedRoute><HabitsManage /></ProtectedRoute>} />
-                <Route path="/habits/track" element={<ProtectedRoute><HabitsTrack /></ProtectedRoute>} />
                 <Route path="/my-habits" element={<ProtectedRoute><MyHabits /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />

@@ -15,7 +15,6 @@ import ResetPassword from "./pages/ResetPassword";
 import Agents from "./pages/Agents";
 import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
-import { AdminOnly } from "@/components/AdminOnly";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Library from "./pages/Library";
 import LibraryBookView from "./pages/LibraryBookView";

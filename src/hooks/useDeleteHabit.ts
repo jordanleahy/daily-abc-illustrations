@@ -11,16 +11,12 @@ export function useDeleteHabit() {
 
   return useMutation({
     mutationFn: async (habitId: string) => {
-      // TODO: Uncomment when database tables are created
-      // const { error } = await supabase
-      //   .from('habits')
-      //   .update({ is_active: false })
-      //   .eq('id', habitId);
+      const { error } = await supabase
+        .from('habits')
+        .update({ is_active: false })
+        .eq('id', habitId);
 
-      // if (error) throw error;
-      
-      // Mock success for now
-      console.log('Habit would be deleted:', habitId);
+      if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] });

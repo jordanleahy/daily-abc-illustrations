@@ -1249,6 +1249,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      seed_user_habits: {
+        Args: { p_parent_user_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "user" | "moderator" | "admin" | "teacher"

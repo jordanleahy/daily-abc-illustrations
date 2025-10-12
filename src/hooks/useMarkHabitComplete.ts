@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
+import { useAuth } from './useAuth';
 
 interface MarkHabitCompleteParams {
   completionId: string;
@@ -15,6 +16,7 @@ interface MarkHabitCompleteParams {
 export function useMarkHabitComplete() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ completionId, isComplete, coinsAmount, kidId }: MarkHabitCompleteParams) => {
@@ -44,7 +46,7 @@ export function useMarkHabitComplete() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['today-habits'] });
-      queryClient.invalidateQueries({ queryKey: ['kid-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['kid-profiles', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['my-habits'] });
       
       toast({

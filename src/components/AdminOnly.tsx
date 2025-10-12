@@ -1,5 +1,5 @@
 import { ReactNode } from 'react';
-import { useIsAdmin } from '@/contexts/RoleContext';
+import { useIsAdmin, useRole } from '@/contexts/RoleContext';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ShieldX } from 'lucide-react';
 
@@ -15,8 +15,10 @@ export const AdminOnly = ({
   showMessage = false 
 }: AdminOnlyProps) => {
   const isAdmin = useIsAdmin();
+  const { isLoading } = useRole();
   
-  if (isAdmin) {
+  // Show children while loading to prevent flash
+  if (isLoading || isAdmin) {
     return <>{children}</>;
   }
   

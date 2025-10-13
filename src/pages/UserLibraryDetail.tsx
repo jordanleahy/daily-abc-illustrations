@@ -3,12 +3,14 @@ import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImagePreloader';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { useAddBookAsHabit } from '@/hooks/useAddBookAsHabit';
 import { MetaHead } from '@/components/common';
 import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PublicPageImage } from '@/components/daily-published';
-import { Calendar, BookOpen, Download } from 'lucide-react';
+import { Calendar, BookOpen, Download, Plus } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
 import { generateBookPDF } from '@/services/pdfGenerator';
 import { toast } from '@/hooks/use-toast';
@@ -22,6 +24,8 @@ export default function UserLibraryDetail() {
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   const { openGraphMetadata } = useDailyPublishedOpenGraph(safeId, 0);
+  const { data: kidProfiles = [] } = useKidProfiles();
+  const addBookAsHabit = useAddBookAsHabit();
   
   const [isDownloading, setIsDownloading] = useState(false);
   
@@ -36,6 +40,27 @@ export default function UserLibraryDetail() {
         startingPageIndex: pageIndex,
         from: 'user-library-detail' 
       } 
+    });
+  };
+
+  const handleAddAsHabit = () => {
+    if (!dailyContent || kidProfiles.length === 0) {
+      toast({
+        title: 'No Kids Found',
+        description: 'Please create a kid profile first to add habits.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Auto-select all kids
+    const kidIds = kidProfiles.map(k => k.id);
+    
+    addBookAsHabit.mutate({
+      bookTitle: dailyContent.title,
+      bookId: dailyContent.book_id,
+      kidIds,
+      coinAmount: 10,
     });
   };
 
@@ -136,16 +161,30 @@ export default function UserLibraryDetail() {
                   <p className="text-muted-foreground">{dailyContent.description}</p>
                 )}
               </div>
-              <Button
-                onClick={handleDownloadPDF}
-                disabled={isDownloading}
-                variant="outline"
-                size="icon"
-                className="shrink-0"
-              >
-                <Download className={`h-5 w-5 ${isDownloading ? 'animate-pulse' : ''}`} />
-                <span className="sr-only">Download as PDF</span>
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleAddAsHabit}
+                  disabled={addBookAsHabit.isPending || kidProfiles.length === 0}
+                  variant="default"
+                  size="icon"
+                  className="shrink-0"
+                  title="Add as reading habit"
+                >
+                  <Plus className={`h-5 w-5 ${addBookAsHabit.isPending ? 'animate-pulse' : ''}`} />
+                  <span className="sr-only">Add as habit</span>
+                </Button>
+                
+                <Button
+                  onClick={handleDownloadPDF}
+                  disabled={isDownloading}
+                  variant="outline"
+                  size="icon"
+                  className="shrink-0"
+                >
+                  <Download className={`h-5 w-5 ${isDownloading ? 'animate-pulse' : ''}`} />
+                  <span className="sr-only">Download as PDF</span>
+                </Button>
+              </div>
             </div>
           </div>
         </div>

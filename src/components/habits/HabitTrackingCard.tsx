@@ -7,6 +7,9 @@ import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useMarkHabitComplete } from '@/hooks/useMarkHabitComplete';
 import { useSkipHabit } from '@/hooks/useSkipHabit';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 interface HabitTrackingCardProps {
   completion: HabitCompletionWithDetails;
@@ -16,6 +19,8 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
   const navigate = useNavigate();
   const markComplete = useMarkHabitComplete();
   const skipHabit = useSkipHabit();
+  const { toast } = useToast();
+  const [isResolving, setIsResolving] = useState(false);
   const habit = completion.habit_assignments.habits;
   const kid = completion.habit_assignments.kid_profiles;
 
@@ -52,6 +57,67 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
       coinsAmount: completion.coins_deposited,
       habitTitle: habit.title,
     });
+  };
+
+  const handleStartReading = async () => {
+    setIsResolving(true);
+    try {
+      let dailyPublishedId: string | null = null;
+
+      // Try using book_id first if it exists
+      if (habit.book_id) {
+        const { data } = await supabase
+          .from('daily_published')
+          .select('id')
+          .eq('book_id', habit.book_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (data) {
+          dailyPublishedId = data.id;
+        }
+      }
+
+      // If no book_id or not found, try to infer from title
+      if (!dailyPublishedId) {
+        const bookTitle = habit.title.replace(/^Read:\s*/i, '').trim();
+        
+        if (bookTitle) {
+          const { data } = await supabase
+            .from('daily_published')
+            .select('id, title')
+            .ilike('title', `%${bookTitle}%`)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+          
+          if (data) {
+            dailyPublishedId = data.id;
+          }
+        }
+      }
+
+      if (dailyPublishedId) {
+        navigate(`/library/${dailyPublishedId}`);
+      } else {
+        toast({
+          title: 'Book not found',
+          description: "Couldn't find this book in your library",
+          variant: 'destructive',
+        });
+        navigate('/library');
+      }
+    } catch (error) {
+      console.error('Error resolving book:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to open the book',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsResolving(false);
+    }
   };
 
   const isPending = completion.status === 'pending';
@@ -118,15 +184,16 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
         )}
 
         {isPending ? (
-          habit.book_id ? (
+          (habit.book_id || habit.title.toLowerCase().includes('read')) ? (
             <div className="flex gap-2">
               <Button
-                onClick={() => navigate(`/library/${habit.book_id}/view`)}
+                onClick={handleStartReading}
+                disabled={isResolving}
                 className="flex-1"
                 variant="default"
               >
                 <BookOpen className="mr-2 h-4 w-4" />
-                Start Reading
+                {isResolving ? 'Loading...' : 'Start Reading'}
               </Button>
               
               <Button

@@ -24,7 +24,21 @@ export function useTodayHabits(kidProfileId?: string) {
           habit_assignments!inner(
             habit_id,
             kid_profile_id,
-            habits!inner(*),
+            habits!inner(
+              id,
+              parent_user_id,
+              title,
+              description,
+              photo_url,
+              coin_amount,
+              frequency,
+              deadline_time,
+              book_id,
+              is_active,
+              display_order,
+              created_at,
+              updated_at
+            ),
             kid_profiles!inner(
               id,
               first_name,

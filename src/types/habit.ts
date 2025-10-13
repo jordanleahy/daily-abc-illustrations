@@ -42,7 +42,7 @@ export interface HabitCompletion {
   kid_profile_id: string;
   parent_user_id: string;
   completion_date: string; // 'YYYY-MM-DD' format
-  status: 'pending' | 'completed' | 'declined';
+  status: 'pending' | 'completed' | 'declined' | 'skipped';
   coins_deposited: number;
   coins_retained: number;
   marked_at: string | null;

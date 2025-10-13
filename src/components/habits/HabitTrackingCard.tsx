@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Check, X, Coins, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useMarkHabitComplete } from '@/hooks/useMarkHabitComplete';
+import { useSkipHabit } from '@/hooks/useSkipHabit';
 
 interface HabitTrackingCardProps {
   completion: HabitCompletionWithDetails;
@@ -12,6 +13,7 @@ interface HabitTrackingCardProps {
 
 export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
   const markComplete = useMarkHabitComplete();
+  const skipHabit = useSkipHabit();
   const habit = completion.habit_assignments.habits;
   const kid = completion.habit_assignments.kid_profiles;
 
@@ -42,6 +44,14 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
     });
   };
 
+  const handleSkip = () => {
+    skipHabit.mutate({
+      completionId: completion.id,
+      coinsAmount: completion.coins_deposited,
+      habitTitle: habit.title,
+    });
+  };
+
   const isPending = completion.status === 'pending';
   const isCompleted = completion.status === 'completed';
   const isDeclined = completion.status === 'declined';
@@ -62,9 +72,24 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
           </div>
           
           <div className="flex flex-col gap-2 items-end">
-            <div className="flex items-center gap-1">
-              <Coins className="h-4 w-4 text-amber-500" />
-              <span className="font-semibold">{habit.coin_amount} coins</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <Coins className="h-4 w-4 text-amber-500" />
+                <span className="font-semibold">{habit.coin_amount} coins</span>
+              </div>
+              
+              {isPending && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                  onClick={handleSkip}
+                  disabled={skipHabit.isPending}
+                  title="Skip this habit for today"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
             </div>
             
             {habit.deadline_time && (

@@ -19,6 +19,9 @@ const Index = () => {
   // Fetch today's habits for the first kid
   const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
   
+  // Filter out skipped habits
+  const activeCompletions = completions.filter(c => c.status !== 'skipped');
+  
   // Test habit creation hook
   const { testCreateHabits, isPending: isCreatingHabits } = useTestHabitCreation();
   
@@ -80,7 +83,7 @@ const Index = () => {
         </div>
 
         {/* Habits list */}
-        {completions.length === 0 ? (
+        {activeCompletions.length === 0 ? (
           <div className="text-center py-12 bg-muted/50 rounded-lg">
             <p className="text-lg text-muted-foreground">
               No habits for today! Enjoy your free time! 🎉
@@ -88,7 +91,7 @@ const Index = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {completions.map((completion) => (
+            {activeCompletions.map((completion) => (
               <HabitTrackingCard
                 key={completion.id}
                 completion={completion}

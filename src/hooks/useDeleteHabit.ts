@@ -11,10 +11,22 @@ export function useDeleteHabit() {
 
   return useMutation({
     mutationFn: async (habitId: string) => {
+      // Fetch the habit to get its title and parent_user_id
+      const { data: habitRow, error: fetchError } = await supabase
+        .from('habits')
+        .select('title, parent_user_id')
+        .eq('id', habitId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Soft delete ALL habits with the same title for this parent (handles duplicates)
       const { error } = await supabase
         .from('habits')
         .update({ is_active: false })
-        .eq('id', habitId);
+        .eq('parent_user_id', habitRow.parent_user_id)
+        .eq('title', habitRow.title)
+        .eq('is_active', true);
 
       if (error) throw error;
     },

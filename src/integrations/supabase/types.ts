@@ -316,6 +316,215 @@ export type Database = {
         }
         Relationships: []
       }
+      gemini_books: {
+        Row: {
+          book_description: string | null
+          book_name: string
+          category: string | null
+          created_at: string
+          current_system_prompt_id: string | null
+          id: string
+          is_highlighted: boolean | null
+          pdf_url: string | null
+          product_description: string | null
+          status: Database["public"]["Enums"]["publication_status"] | null
+          total_pages: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          book_description?: string | null
+          book_name: string
+          category?: string | null
+          created_at?: string
+          current_system_prompt_id?: string | null
+          id?: string
+          is_highlighted?: boolean | null
+          pdf_url?: string | null
+          product_description?: string | null
+          status?: Database["public"]["Enums"]["publication_status"] | null
+          total_pages?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          book_description?: string | null
+          book_name?: string
+          category?: string | null
+          created_at?: string
+          current_system_prompt_id?: string | null
+          id?: string
+          is_highlighted?: boolean | null
+          pdf_url?: string | null
+          product_description?: string | null
+          status?: Database["public"]["Enums"]["publication_status"] | null
+          total_pages?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gemini_chat_sessions: {
+        Row: {
+          agent_id: string | null
+          created_at: string
+          id: string
+          is_active: boolean | null
+          last_message_at: string | null
+          messages: Json
+          model_used: string | null
+          session_name: string | null
+          total_tokens_used: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_message_at?: string | null
+          messages?: Json
+          model_used?: string | null
+          session_name?: string | null
+          total_tokens_used?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          last_message_at?: string | null
+          messages?: Json
+          model_used?: string | null
+          session_name?: string | null
+          total_tokens_used?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      gemini_page_images: {
+        Row: {
+          book_id: string
+          created_at: string
+          error_message: string | null
+          generation_completed_at: string | null
+          generation_duration_ms: number | null
+          generation_started_at: string | null
+          generation_status: string
+          id: string
+          image_url: string | null
+          is_latest: boolean
+          page_id: string
+          prompt_used: string | null
+          source_type: string
+          updated_at: string
+          user_id: string
+          version_number: number
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          error_message?: string | null
+          generation_completed_at?: string | null
+          generation_duration_ms?: number | null
+          generation_started_at?: string | null
+          generation_status?: string
+          id?: string
+          image_url?: string | null
+          is_latest?: boolean
+          page_id: string
+          prompt_used?: string | null
+          source_type?: string
+          updated_at?: string
+          user_id: string
+          version_number?: number
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          error_message?: string | null
+          generation_completed_at?: string | null
+          generation_duration_ms?: number | null
+          generation_started_at?: string | null
+          generation_status?: string
+          id?: string
+          image_url?: string | null
+          is_latest?: boolean
+          page_id?: string
+          prompt_used?: string | null
+          source_type?: string
+          updated_at?: string
+          user_id?: string
+          version_number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gemini_page_images_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "gemini_books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gemini_page_images_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "gemini_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gemini_pages: {
+        Row: {
+          book_id: string
+          content: Json | null
+          created_at: string
+          current_system_prompt_id: string | null
+          description: string | null
+          id: string
+          letter: string
+          page_number: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          book_id: string
+          content?: Json | null
+          created_at?: string
+          current_system_prompt_id?: string | null
+          description?: string | null
+          id?: string
+          letter: string
+          page_number: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          book_id?: string
+          content?: Json | null
+          created_at?: string
+          current_system_prompt_id?: string | null
+          description?: string | null
+          id?: string
+          letter?: string
+          page_number?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gemini_pages_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "gemini_books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       habit_assignments: {
         Row: {
           assigned_at: string
@@ -1199,6 +1408,10 @@ export type Database = {
       get_next_available_publish_date: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_next_gemini_image_version_number: {
+        Args: { p_page_id: string }
+        Returns: number
       }
       get_next_page_image_version_number: {
         Args: { p_page_id: string }

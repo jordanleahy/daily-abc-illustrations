@@ -15,8 +15,28 @@ const Index = () => {
   // Fetch today's habits for the first kid
   const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
   
-  // Filter out skipped habits
-  const activeCompletions = completions.filter(c => c.status !== 'skipped');
+  // Filter out skipped habits and sort by status (pending first, completed/failed last)
+  const activeCompletions = completions
+    .filter(c => c.status !== 'skipped')
+    .sort((a, b) => {
+      // Define status priority (lower number = higher priority)
+      const statusPriority = {
+        pending: 1,
+        completed: 2,
+        declined: 2
+      };
+      
+      const priorityA = statusPriority[a.status as keyof typeof statusPriority] || 3;
+      const priorityB = statusPriority[b.status as keyof typeof statusPriority] || 3;
+      
+      // Sort by status priority first
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // If same status, maintain creation order
+      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+    });
   
   const isLoading = isLoadingKids || isLoadingHabits;
   const timeOfDay = getTimeBasedGreeting();

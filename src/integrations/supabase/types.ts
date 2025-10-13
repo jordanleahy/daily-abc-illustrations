@@ -1359,6 +1359,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_manually_activate_item: {
+        Args: { p_item_id: string }
+        Returns: Json
+      }
       admin_update_daily_published_expiration: {
         Args: { p_daily_published_id: string; p_new_expires_at: string }
         Returns: Json

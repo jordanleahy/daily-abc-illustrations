@@ -8,12 +8,19 @@ import { useExpireContent } from '@/hooks/useExpireContent';
 import { useHasRole } from '@/hooks/useUserRole';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { useScheduleImagePreloader } from '@/hooks/useScheduleImagePreloader';
+import { useManuallyActivateItem } from '@/hooks/useManuallyActivateItem';
 import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Clock, BookOpen, RefreshCw, GripVertical, Image, ArrowUp, ArrowDown } from 'lucide-react';
+import { Clock, BookOpen, RefreshCw, GripVertical, Image, ArrowUp, ArrowDown, MoreVertical, Zap } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { toast } from 'sonner';
@@ -420,6 +427,8 @@ function ScheduleCard({
   const navigate = useNavigate();
   const { data: seoMetadata } = useSeoMetadata(item.id);
   const isMobile = useIsMobile();
+  const isAdmin = useHasRole('admin');
+  const manuallyActivate = useManuallyActivateItem();
 
   // Always call useSortable, but only apply effects when draggable
   const {
@@ -442,6 +451,11 @@ function ScheduleCard({
 
   const handleCardClick = () => {
     navigate(`/editor/${item.book_id}`);
+  };
+
+  const handleManualActivate = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click navigation
+    await manuallyActivate.mutateAsync(item.id);
   };
 
   const isActive = item.status === 'active';
@@ -497,6 +511,34 @@ function ScheduleCard({
                     {item.description && ` • ${item.description}`}
                   </CardDescription>
                 </div>
+                
+                {/* Dropdown Menu - Mobile (Right side) */}
+                {isQueued && isAdmin && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                      <Button 
+                        variant="ghost" 
+                        size="icon"
+                        className="h-8 w-8 ml-2"
+                      >
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                      align="end"
+                      className="w-48 bg-card z-50"
+                    >
+                      <DropdownMenuItem
+                        onClick={handleManualActivate}
+                        disabled={manuallyActivate.isPending}
+                        className="cursor-pointer"
+                      >
+                        <Zap className="mr-2 h-4 w-4" />
+                        Make Live Now
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
                 
                 {/* Drag Handle - Mobile (right side) */}
                 {isDraggable && (
@@ -570,6 +612,34 @@ function ScheduleCard({
                   )}
                 </div>
               </div>
+
+              {/* Dropdown Menu - Desktop (Right side) */}
+              {isQueued && isAdmin && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-8 w-8"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent 
+                    align="end"
+                    className="w-48 bg-card z-50"
+                  >
+                    <DropdownMenuItem
+                      onClick={handleManualActivate}
+                      disabled={manuallyActivate.isPending}
+                      className="cursor-pointer"
+                    >
+                      <Zap className="mr-2 h-4 w-4" />
+                      Make Live Now
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
             </div>
           </div>
         )}

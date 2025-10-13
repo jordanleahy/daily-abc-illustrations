@@ -306,6 +306,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           title: contentName,
           description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
           status: 'queued' as const,
+          is_active: false,
           publish_date: nextDate
         })
         .select()
@@ -607,6 +608,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
               title: contentName,
               description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
               status: 'queued' as const,
+              is_active: false,
               publish_date: nextDate
             })
             .select()

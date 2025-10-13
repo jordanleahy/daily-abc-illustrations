@@ -119,14 +119,26 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
 
         {isPending ? (
           habit.book_id ? (
-            <Button
-              onClick={() => navigate(`/library/${habit.book_id}/view`)}
-              className="w-full"
-              variant="default"
-            >
-              <BookOpen className="mr-2 h-4 w-4" />
-              Start Reading
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => navigate(`/library/${habit.book_id}/view`)}
+                className="flex-1"
+                variant="default"
+              >
+                <BookOpen className="mr-2 h-4 w-4" />
+                Start Reading
+              </Button>
+              
+              <Button
+                onClick={() => handleMarkComplete(false)}
+                disabled={markComplete.isPending}
+                className="flex-1"
+                variant="destructive"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Not Done (-{habit.coin_amount})
+              </Button>
+            </div>
           ) : (
             <div className="flex gap-2">
               <Button

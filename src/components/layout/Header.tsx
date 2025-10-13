@@ -118,7 +118,7 @@ export function Header({
 
   /** Navigation configuration for regular authenticated users */
   const regularNavigation = [
-    { name: 'Home', href: '/' },
+    { name: 'Home', href: '/home' },
     { name: 'Library', href: '/library' },
     ...(hasActiveSubscription ? [
       { name: 'Rewards', href: '/rewards' },
@@ -128,7 +128,7 @@ export function Header({
 
   /** Extended navigation menu for admin users with full system access */
   const adminNavigation = [
-    { name: 'Home', href: '/' },
+    { name: 'Home', href: '/home' },
     { name: 'Chat', href: '/admin/chat' },
     { name: 'Library', href: '/library' },
     { name: 'Rewards', href: '/rewards' },

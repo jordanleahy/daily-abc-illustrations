@@ -162,14 +162,14 @@ export default function UserLibraryDetail() {
                 )}
               </div>
               <div className="flex gap-2">
-                <Button
-                  onClick={handleAddAsHabit}
-                  disabled={addBookAsHabit.isPending || kidProfiles.length === 0}
-                  variant="default"
-                  size="icon"
-                  className="shrink-0"
-                  title="Add as reading habit"
-                >
+              <Button
+                onClick={handleAddAsHabit}
+                disabled={addBookAsHabit.isPending || kidProfiles.length === 0}
+                variant="secondary"
+                size="icon"
+                className="shrink-0"
+                title="Add as reading habit"
+              >
                   <Plus className={`h-5 w-5 ${addBookAsHabit.isPending ? 'animate-pulse' : ''}`} />
                   <span className="sr-only">Add as habit</span>
                 </Button>

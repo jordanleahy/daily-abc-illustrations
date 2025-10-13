@@ -1,19 +1,28 @@
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { CoinCounter } from '@/components/ui/coin-counter';
 import { useMyHabits } from '@/hooks/useMyHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { useDeleteHabit } from '@/hooks/useDeleteHabit';
 import { LoadingState } from '@/components/ui/loading-state';
-import { Coins } from 'lucide-react';
+import { Coins, Trash2 } from 'lucide-react';
 
 export default function MyHabits() {
   const { data: kids = [] } = useKidProfiles();
+  const deleteHabit = useDeleteHabit();
   
   // For now, show habits for the first kid
   // In a real app, you'd have kid selection or authentication
   const selectedKid = kids[0];
   const { data: completions = [], isLoading } = useMyHabits(selectedKid?.id || '');
+
+  const handleDelete = (habitId: string, habitTitle: string) => {
+    if (window.confirm(`Delete "${habitTitle}"? It will be removed from all days.`)) {
+      deleteHabit.mutate(habitId);
+    }
+  };
 
   if (!selectedKid) {
     return (
@@ -59,14 +68,24 @@ export default function MyHabits() {
               return (
                 <Card 
                   key={completion.id}
-                  className={
+                  className={`relative ${
                     isCompleted ? 'border-green-500 bg-green-50/50' :
                     isDeclined ? 'border-red-500 bg-red-50/50 opacity-75' :
                     ''
-                  }
+                  }`}
                 >
                   <CardHeader>
-                    <CardTitle className="text-lg">{habit.title}</CardTitle>
+                    <div className="flex items-start justify-between gap-2">
+                      <CardTitle className="text-lg flex-1">{habit.title}</CardTitle>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(habit.id, habit.title)}
+                        className="h-8 w-8 shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent className="space-y-3">
                     {habit.photo_url && (

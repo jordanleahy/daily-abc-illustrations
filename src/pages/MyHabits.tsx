@@ -7,9 +7,11 @@ import { useMyHabits } from '@/hooks/useMyHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useDeleteHabit } from '@/hooks/useDeleteHabit';
 import { LoadingState } from '@/components/ui/loading-state';
-import { Coins, Trash2 } from 'lucide-react';
+import { Coins, Trash2, BookOpen } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 export default function MyHabits() {
+  const navigate = useNavigate();
   const { data: kids = [] } = useKidProfiles();
   const deleteHabit = useDeleteHabit();
   
@@ -100,21 +102,31 @@ export default function MyHabits() {
                       <p className="text-sm text-muted-foreground">{habit.description}</p>
                     )}
 
-                    <div className="flex items-center gap-2">
-                      <Coins className={`h-6 w-6 ${
-                        isCompleted ? 'text-green-600' :
-                        isDeclined ? 'text-red-600' :
-                        'text-amber-500'
-                      }`} />
-                      <span className={`text-2xl font-bold ${
-                        isCompleted ? 'text-green-600' :
-                        isDeclined ? 'text-red-600 line-through' :
-                        ''
-                      }`}>
-                        {habit.coin_amount} coins
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <Coins className={`h-6 w-6 ${
+                      isCompleted ? 'text-green-600' :
+                      isDeclined ? 'text-red-600' :
+                      'text-amber-500'
+                    }`} />
+                    <span className={`text-2xl font-bold ${
+                      isCompleted ? 'text-green-600' :
+                      isDeclined ? 'text-red-600 line-through' :
+                      ''
+                    }`}>
+                      {habit.coin_amount} coins
+                    </span>
+                  </div>
 
+                  {/* Show "Start Reading" button for book habits, status badge otherwise */}
+                  {habit.book_id && isPending ? (
+                    <Button
+                      onClick={() => navigate(`/library/${habit.book_id}/view`)}
+                      className="w-full"
+                    >
+                      <BookOpen className="mr-2 h-4 w-4" />
+                      Start Reading
+                    </Button>
+                  ) : (
                     <Badge 
                       variant={
                         isCompleted ? 'default' :
@@ -127,6 +139,7 @@ export default function MyHabits() {
                       {isDeclined && '✗ Not done'}
                       {isPending && '⏳ Waiting'}
                     </Badge>
+                  )}
                   </CardContent>
                 </Card>
               );

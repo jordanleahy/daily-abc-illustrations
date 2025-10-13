@@ -34,10 +34,13 @@ export function useAddBookAsHabit() {
       const activeHabit = existingHabits?.find((h: any) => h.is_active);
       let habit: any;
       if (activeHabit) {
-        // Idempotent path: treat as add by ensuring assignments/completions and syncing coin amount
+        // Idempotent path: treat as add by ensuring assignments/completions and syncing coin amount and book_id
         const { data: updatedHabit, error: updateErr } = await supabase
           .from('habits')
-          .update({ coin_amount: coinAmount })
+          .update({ 
+            coin_amount: coinAmount,
+            book_id: bookId,
+          })
           .eq('id', activeHabit.id)
           .select()
           .single();
@@ -47,10 +50,14 @@ export function useAddBookAsHabit() {
 
       const inactiveHabit = existingHabits?.find((h: any) => !h.is_active);
       if (inactiveHabit) {
-        // Step 2a: Reactivate the existing habit
+        // Step 2a: Reactivate the existing habit and update book_id
         const { data: reactivatedHabit, error: reactivateError } = await supabase
           .from('habits')
-          .update({ is_active: true, coin_amount: coinAmount })
+          .update({ 
+            is_active: true, 
+            coin_amount: coinAmount,
+            book_id: bookId,
+          })
           .eq('id', inactiveHabit.id)
           .select()
           .single();
@@ -59,20 +66,21 @@ export function useAddBookAsHabit() {
         habit = reactivatedHabit;
       } else {
         // Step 2b: Create a new habit
-        const { data: createdHabit, error: habitError } = await supabase
-          .from('habits')
-          .insert({
-            parent_user_id: user.id,
-            title: habitTitle,
-            description: `Complete reading "${bookTitle}" from the library`,
-            coin_amount: coinAmount,
-            frequency: 'daily',
-            deadline_time: null,
-            is_active: true,
-            display_order: 0,
-          })
-          .select()
-          .single();
+      const { data: createdHabit, error: habitError } = await supabase
+        .from('habits')
+        .insert({
+          parent_user_id: user.id,
+          title: habitTitle,
+          description: `Complete reading "${bookTitle}" from the library`,
+          book_id: bookId,
+          coin_amount: coinAmount,
+          frequency: 'daily',
+          deadline_time: null,
+          is_active: true,
+          display_order: 0,
+        })
+        .select()
+        .single();
 
         if (habitError) throw habitError;
         habit = createdHabit;

@@ -13,6 +13,7 @@ export interface Habit {
   coin_amount: number;
   frequency: HabitFrequency;
   deadline_time: string | null; // '21:00:00' format
+  book_id: string | null; // Reference to book for reading habits
   is_active: boolean;
   display_order: number;
   created_at: string;

@@ -629,6 +629,7 @@ export type Database = {
       }
       habits: {
         Row: {
+          book_id: string | null
           coin_amount: number
           created_at: string
           deadline_time: string | null
@@ -643,6 +644,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          book_id?: string | null
           coin_amount?: number
           created_at?: string
           deadline_time?: string | null
@@ -657,6 +659,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          book_id?: string | null
           coin_amount?: number
           created_at?: string
           deadline_time?: string | null
@@ -670,7 +673,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "habits_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       instagram_shared: {
         Row: {

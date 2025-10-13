@@ -10,6 +10,7 @@ import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidCoins } from '@/hooks/useKidCoins';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
+import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
@@ -34,6 +35,7 @@ export default function LibraryBookView() {
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
   const { data: kidProfiles } = useKidProfiles();
+  const { completeBookHabit } = useCompleteBookHabit();
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   
@@ -163,6 +165,14 @@ export default function LibraryBookView() {
 
   const handleNext = async () => {
     if (isLastPage) {
+      // Auto-complete reading habit if exists
+      if (selectedKidId && dailyContent?.book_id) {
+        await completeBookHabit({
+          bookId: dailyContent.book_id,
+          kidProfileId: selectedKidId,
+        });
+      }
+
       // User finished the book - deposit coins and navigate to rewards
       if (selectedKidId && earnedRewards > 0) {
         try {

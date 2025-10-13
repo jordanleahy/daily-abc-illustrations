@@ -2,7 +2,7 @@ import { HabitCompletionWithDetails } from '@/types/habit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, X, Coins, Clock, BookOpen } from 'lucide-react';
+import { X, Coins, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useMarkHabitComplete } from '@/hooks/useMarkHabitComplete';
@@ -192,7 +192,6 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                 className="flex-1"
                 variant="default"
               >
-                <BookOpen className="mr-2 h-4 w-4" />
                 {isResolving ? 'Loading...' : 'Start Reading'}
               </Button>
               
@@ -202,7 +201,6 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                 className="flex-1"
                 variant="destructive"
               >
-                <X className="mr-2 h-4 w-4" />
                 Not Done (-{habit.coin_amount})
               </Button>
             </div>
@@ -214,7 +212,6 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                 className="flex-1"
                 variant="default"
               >
-                <Check className="mr-2 h-4 w-4" />
                 Complete
               </Button>
               
@@ -224,7 +221,6 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                 className="flex-1"
                 variant="destructive"
               >
-                <X className="mr-2 h-4 w-4" />
                 Not Done (-{habit.coin_amount})
               </Button>
             </div>

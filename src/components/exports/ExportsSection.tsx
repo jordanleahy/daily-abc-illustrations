@@ -24,6 +24,7 @@ import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useBook } from '@/hooks/useBook';
 import { useUpdateBookStatus } from '@/hooks/useUpdateBookStatus';
+import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { formatScheduleTimestamp } from '@/utils/timezone';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -71,6 +72,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const { data: expectedDate, isLoading: dateLoading } = useExpectedPublicationDate(contentId);
   const { generateQRCode } = useBookQRCode(contentType === 'book' ? contentId : undefined);
   const { data: bookData } = useBook(contentType === 'book' ? contentId : undefined);
+  const { data: existingSeoMetadata } = useBookSeoMetadata(contentType === 'book' ? contentId : undefined);
   const updateBookStatusMutation = useUpdateBookStatus();
   const [existingPublication, setExistingPublication] = useState<any>(null);
   const [publicationHistory, setPublicationHistory] = useState<any[]>([]);
@@ -317,6 +319,36 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         throw insertError;
       }
 
+      // Get OG image URL from existing SEO metadata (from previous publication)
+      let ogImageUrl: string | null = null;
+      if (existingPublication?.id) {
+        const { data: oldSeoData } = await supabase
+          .from('seo_metadata')
+          .select('og_image_url')
+          .eq('daily_published_id', existingPublication.id)
+          .eq('is_latest', true)
+          .maybeSingle();
+        
+        ogImageUrl = oldSeoData?.og_image_url || null;
+      }
+
+      // Generate SEO metadata for the new publication
+      const { error: seoError } = await supabase.functions.invoke('generate-seo-metadata', {
+        body: {
+          bookId: contentId,
+          dailyPublishedId: newPublication.id,
+          contentTitle: contentName,
+          bookDescription: bookData?.book_description,
+          ogImageUrl,
+          userId: user.id
+        }
+      });
+
+      if (seoError) {
+        console.warn('Failed to generate SEO metadata:', seoError);
+        // Don't fail the republish if SEO generation fails
+      }
+
       const formattedDate = new Date(nextDate).toLocaleDateString('en-US', {
         weekday: 'long',
         year: 'numeric', 
@@ -557,6 +589,33 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
        }
      };
 
+     // Helper function to generate SEO metadata
+     const generateSeoMetadata = async (dailyPublishedId: string) => {
+       try {
+         const { error: seoError } = await supabase.functions.invoke('generate-seo-metadata', {
+           body: {
+             bookId: contentId,
+             dailyPublishedId,
+             contentTitle: contentName,
+             bookDescription: bookData?.book_description,
+             ogImageUrl: existingSeoMetadata?.og_image_url || null,
+             userId: user.id
+           }
+         });
+
+         if (seoError) {
+           console.warn('Failed to generate SEO metadata:', seoError);
+           toast({
+             title: "SEO Generation Warning",
+             description: "Book added to queue but SEO metadata generation failed. Thumbnail may not appear.",
+             variant: "destructive"
+           });
+         }
+       } catch (error) {
+         console.error('Error generating SEO metadata:', error);
+       }
+     };
+
       try {
         // Check if there's already a draft entry for this book
         if (existingPublication && existingPublication.status === 'draft') {
@@ -578,6 +637,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             console.error('Error converting draft to queue:', updateError);
             throw updateError;
           }
+
+          // Generate SEO metadata for the converted draft
+          await generateSeoMetadata(updatedPublication.id);
 
           const formattedDate = new Date(nextDate).toLocaleDateString('en-US', {
             weekday: 'long',
@@ -618,6 +680,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
            console.error('Error adding to queue:', insertError);
            throw insertError;
          }
+
+          // Generate SEO metadata for the new publication
+          await generateSeoMetadata(newPublication.id);
 
           const formattedDate = new Date(nextDate).toLocaleDateString('en-US', {
             weekday: 'long',

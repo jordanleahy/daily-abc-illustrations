@@ -108,7 +108,7 @@ export function useAddBookAsHabit() {
 
       toast({
         title: 'Reading Habit Added! 📚',
-        description: `"${variables.bookTitle}" added to today's to-do list. ${variables.coinAmount} coins deposited!`,
+        description: `"${variables.bookTitle}" added to today's to-do list. ${variables.coinAmount} coin${variables.coinAmount === 1 ? '' : 's'} deposited!`,
       });
     },
     onError: (error) => {

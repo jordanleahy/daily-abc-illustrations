@@ -30,6 +30,12 @@ export interface DailyPublishedWithBook extends DailyPublished {
   og_image_url?: string | null;
 }
 
+export interface DailyPublishedWithTotalPages extends DailyPublished {
+  book?: {
+    total_pages: number;
+  };
+}
+
 export interface CreateDailyPublishedRequest {
   book_id: string;
   title: string;

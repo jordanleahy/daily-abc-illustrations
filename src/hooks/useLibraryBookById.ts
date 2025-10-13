@@ -20,7 +20,12 @@ export const useLibraryBookById = (id: string | undefined) => {
       // RLS policies will ensure users can only see their own content
       const { data, error } = await supabase
         .from('daily_published')
-        .select('*')
+        .select(`
+          *,
+          book:books(
+            total_pages
+          )
+        `)
         .eq('id', id)
         .maybeSingle();
 

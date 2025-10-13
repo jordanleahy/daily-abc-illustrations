@@ -53,6 +53,17 @@ export default function UserLibraryDetail() {
       return;
     }
 
+    // Edge case: Prevent adding books with 0 pages
+    const totalPages = (dailyContent as any).book?.total_pages || 0;
+    if (totalPages === 0) {
+      toast({
+        title: 'Cannot Add Book',
+        description: 'This book has no pages and cannot be added as a habit.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     // Auto-select all kids
     const kidIds = kidProfiles.map(k => k.id);
     
@@ -60,7 +71,7 @@ export default function UserLibraryDetail() {
       bookTitle: dailyContent.title,
       bookId: dailyContent.book_id,
       kidIds,
-      coinAmount: 10,
+      coinAmount: totalPages, // Dynamic: 1 page = 1 coin
     });
   };
 

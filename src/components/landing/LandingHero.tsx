@@ -83,7 +83,7 @@ export const LandingHero = ({
                   </Button>
 
                   <Button 
-                    variant="outline" 
+                    variant="default" 
                     className="flex-1 h-16" 
                     onClick={handleNextPage} 
                     disabled={currentPageIndex === pages.length - 1}

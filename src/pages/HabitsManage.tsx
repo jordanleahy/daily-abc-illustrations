@@ -8,6 +8,7 @@ import { useDeleteHabit } from '@/hooks/useDeleteHabit';
 import { useHabitSchedule } from '@/hooks/useHabitSchedule';
 import { useToggleHabitSchedule } from '@/hooks/useToggleHabitSchedule';
 import { useAddHabitToday } from '@/hooks/useAddHabitToday';
+import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Link } from 'react-router-dom';
 import { addDays } from 'date-fns';
@@ -33,11 +34,17 @@ export default function HabitsManage() {
   const deleteHabit = useDeleteHabit();
   
   const tomorrow = addDays(new Date(), 1);
-  const today = new Date();
   const { data: scheduledHabits = new Set() } = useHabitSchedule(tomorrow);
-  const { data: todayHabits = new Set() } = useHabitSchedule(today);
+  const { data: todayCompletions = [] } = useTodayHabits();
   const toggleSchedule = useToggleHabitSchedule();
   const addToday = useAddHabitToday();
+
+  // Extract habit IDs from today's completions for button state
+  const todayHabits = new Set(
+    todayCompletions
+      .map(completion => completion.habit_assignments?.habits?.id)
+      .filter((id): id is string => id !== undefined)
+  );
 
   const handleEditClick = (habitId: string) => {
     const habit = habits.find(h => h.id === habitId);

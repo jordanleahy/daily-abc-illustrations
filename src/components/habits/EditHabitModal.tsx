@@ -6,7 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useUpdateHabit } from '@/hooks/useUpdateHabit';
 import { Habit } from '@/types/habit';
-import { Loader2 } from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 
 interface EditHabitModalProps {
   open: boolean;
@@ -109,12 +109,24 @@ export function EditHabitModal({ open, onOpenChange, habit }: EditHabitModalProp
 
           <div className="space-y-2">
             <Label htmlFor="deadlineTime">Deadline Time (Optional)</Label>
-            <Input
-              id="deadlineTime"
-              type="time"
-              value={deadlineTime}
-              onChange={(e) => setDeadlineTime(e.target.value)}
-            />
+            <div className="relative">
+              <Input
+                id="deadlineTime"
+                type="time"
+                value={deadlineTime}
+                onChange={(e) => setDeadlineTime(e.target.value)}
+                className="pr-10"
+              />
+              {deadlineTime && (
+                <button
+                  type="button"
+                  onClick={() => setDeadlineTime('')}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">
               If set, habit will automatically decline after this time
             </p>

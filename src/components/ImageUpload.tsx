@@ -140,6 +140,27 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
     }
   };
 
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    if (disabled || isProcessing) return;
+
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    // Find the first image in clipboard
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          await handleFile(file);
+          return;
+        }
+      }
+    }
+
+    toast.error('No image found in clipboard');
+  };
+
   const openFileSelector = () => {
     if (!disabled && !isProcessing && fileInputRef.current) {
       fileInputRef.current.click();
@@ -147,7 +168,11 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
   };
 
   return (
-    <div className={`w-full h-full ${className}`}>
+    <div 
+      className={`w-full h-full ${className}`}
+      onPaste={handlePaste}
+      tabIndex={0}
+    >
       <input
         ref={fileInputRef}
         type="file"
@@ -197,7 +222,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
             <div>
               <p className="text-sm font-medium">Upload 1:1 Image</p>
               <p className="text-xs text-muted-foreground">
-                Drop image here or click to browse
+                Drop, paste, or click to browse
               </p>
             </div>
             <div className="flex items-center gap-1 text-xs text-muted-foreground">

@@ -2,7 +2,7 @@
  * Habit type definitions for the Daily Habits feature
  */
 
-export type HabitFrequency = 'daily' | 'weekly' | 'monthly';
+export type HabitFrequency = 'daily' | 'weekly' | 'monthly' | 'manual';
 
 export interface Habit {
   id: string;

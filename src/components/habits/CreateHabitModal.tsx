@@ -132,6 +132,7 @@ export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) 
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="manual">Manual</SelectItem>
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">

@@ -37,27 +37,22 @@ export function FocusedPageView({
           <span className="sr-only">Exit</span>
         </Button>
         
-        {/* Center section with previous page thumbnail and page indicator */}
-        <div className="flex items-center gap-2">
-          {previousPage && onPrevious && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onPrevious}
-              className="p-1 h-8 w-8 rounded border border-border hover:bg-muted"
-            >
-              <div className="w-6 h-6 bg-muted rounded-sm overflow-hidden">
-                <PageImageSection 
-                  pageId={previousPage.id}
-                  bookId={bookId}
-                />
-              </div>
-            </Button>
-          )}
-          <div className="text-xs text-muted-foreground font-medium">
-            Page {pageNumber} of {totalPages}
-          </div>
-        </div>
+        {/* Previous page thumbnail for navigation */}
+        {previousPage && onPrevious && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onPrevious}
+            className="p-1 h-8 w-8 rounded border border-border hover:bg-muted"
+          >
+            <div className="w-6 h-6 bg-muted rounded-sm overflow-hidden">
+              <PageImageSection 
+                pageId={previousPage.id}
+                bookId={bookId}
+              />
+            </div>
+          </Button>
+        )}
       </div>
 
       {/* Focused page card - Fixed height to prevent scrolling */}

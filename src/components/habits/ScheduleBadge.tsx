@@ -22,7 +22,7 @@ export function ScheduleBadge({ isScheduled, onClick, date = addDays(new Date(),
       onClick={onClick}
     >
       <Calendar className="h-3 w-3 mr-1" />
-      For {formattedDate}
+      {isScheduled ? `Scheduled ${formattedDate}` : 'Schedule for Tomorrow'}
     </Badge>
   );
 }

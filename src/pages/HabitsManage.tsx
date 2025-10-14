@@ -62,6 +62,9 @@ export default function HabitsManage() {
             <p className="text-muted-foreground">
               Create and manage daily habits for your kids
             </p>
+            <p className="text-sm text-primary mt-1 font-medium">
+              💡 Click "Schedule for Tomorrow" on each habit to add it to tomorrow's checklist
+            </p>
           </div>
           
           <div className="flex gap-2">

@@ -86,9 +86,12 @@ const Index = () => {
 
         {/* Habits list */}
         {activeCompletions.length === 0 ? (
-          <div className="text-center py-12 bg-muted/50 rounded-lg">
+          <div className="text-center py-12 bg-muted/50 rounded-lg space-y-2">
             <p className="text-lg text-muted-foreground">
-              No habits for today! Enjoy your free time! 🎉
+              No habits scheduled for today! 
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Ask your parent to schedule habits from the Manage Habits page.
             </p>
           </div>
         ) : (

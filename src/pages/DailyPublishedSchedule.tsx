@@ -9,11 +9,13 @@ import { useHasRole } from '@/hooks/useUserRole';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { useScheduleImagePreloader } from '@/hooks/useScheduleImagePreloader';
 import { useManuallyActivateItem } from '@/hooks/useManuallyActivateItem';
+import { useUpdateDailyPublishedStatus } from '@/hooks/useUpdateDailyPublishedStatus';
 import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Badge } from '@/components/ui/badge';
 import { Clock, BookOpen, RefreshCw, GripVertical, Image, ArrowUp, ArrowDown, MoreVertical, Zap } from 'lucide-react';
 import {
   DropdownMenu,
@@ -429,6 +431,7 @@ function ScheduleCard({
   const isMobile = useIsMobile();
   const isAdmin = useHasRole('admin');
   const manuallyActivate = useManuallyActivateItem();
+  const updateStatus = useUpdateDailyPublishedStatus();
 
   // Always call useSortable, but only apply effects when draggable
   const {
@@ -456,6 +459,11 @@ function ScheduleCard({
   const handleManualActivate = async (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click navigation
     await manuallyActivate.mutateAsync(item.id);
+  };
+
+  const handleStatusChange = async (newStatus: 'active' | 'queued' | 'expired', e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click navigation
+    await updateStatus.mutateAsync({ id: item.id, status: newStatus });
   };
 
   const isActive = item.status === 'active';
@@ -510,10 +518,16 @@ function ScheduleCard({
                     {item.book.book_name}
                     {item.description && ` • ${item.description}`}
                   </CardDescription>
+                  {/* Status Badge */}
+                  {isAdmin && (
+                    <Badge className={`mt-2 ${getStatusColor(item.status)}`}>
+                      {item.status}
+                    </Badge>
+                  )}
                 </div>
                 
                 {/* Dropdown Menu - Mobile (Right side) */}
-                {isQueued && isAdmin && (
+                {isAdmin && (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                       <Button 
@@ -528,14 +542,36 @@ function ScheduleCard({
                       align="end"
                       className="w-48 bg-card z-50"
                     >
-                      <DropdownMenuItem
-                        onClick={handleManualActivate}
-                        disabled={manuallyActivate.isPending}
-                        className="cursor-pointer"
-                      >
-                        <Zap className="mr-2 h-4 w-4" />
-                        Make Live Now
-                      </DropdownMenuItem>
+                      {!isActive && (
+                        <DropdownMenuItem
+                          onClick={(e) => handleStatusChange('active', e)}
+                          disabled={updateStatus.isPending}
+                          className="cursor-pointer"
+                        >
+                          <Zap className="mr-2 h-4 w-4" />
+                          Set as Active
+                        </DropdownMenuItem>
+                      )}
+                      {!isQueued && (
+                        <DropdownMenuItem
+                          onClick={(e) => handleStatusChange('queued', e)}
+                          disabled={updateStatus.isPending}
+                          className="cursor-pointer"
+                        >
+                          <Clock className="mr-2 h-4 w-4" />
+                          Set as Queued
+                        </DropdownMenuItem>
+                      )}
+                      {!isExpired && (
+                        <DropdownMenuItem
+                          onClick={(e) => handleStatusChange('expired', e)}
+                          disabled={updateStatus.isPending}
+                          className="cursor-pointer"
+                        >
+                          <Clock className="mr-2 h-4 w-4" />
+                          Set as Expired
+                        </DropdownMenuItem>
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
@@ -579,7 +615,15 @@ function ScheduleCard({
               {/* Content */}
               <div className="flex-1 min-w-0">
                 <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg truncate">{item.title}</CardTitle>
+                  <div className="flex items-center gap-2">
+                    <CardTitle className="text-lg truncate">{item.title}</CardTitle>
+                    {/* Status Badge */}
+                    {isAdmin && (
+                      <Badge className={`${getStatusColor(item.status)}`}>
+                        {item.status}
+                      </Badge>
+                    )}
+                  </div>
                   <CardDescription className="mt-1">
                     {item.book.book_name}
                     {item.description && ` • ${item.description}`}
@@ -614,7 +658,7 @@ function ScheduleCard({
               </div>
 
               {/* Dropdown Menu - Desktop (Right side) */}
-              {isQueued && isAdmin && (
+              {isAdmin && (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
                     <Button 
@@ -629,14 +673,36 @@ function ScheduleCard({
                     align="end"
                     className="w-48 bg-card z-50"
                   >
-                    <DropdownMenuItem
-                      onClick={handleManualActivate}
-                      disabled={manuallyActivate.isPending}
-                      className="cursor-pointer"
-                    >
-                      <Zap className="mr-2 h-4 w-4" />
-                      Make Live Now
-                    </DropdownMenuItem>
+                    {!isActive && (
+                      <DropdownMenuItem
+                        onClick={(e) => handleStatusChange('active', e)}
+                        disabled={updateStatus.isPending}
+                        className="cursor-pointer"
+                      >
+                        <Zap className="mr-2 h-4 w-4" />
+                        Set as Active
+                      </DropdownMenuItem>
+                    )}
+                    {!isQueued && (
+                      <DropdownMenuItem
+                        onClick={(e) => handleStatusChange('queued', e)}
+                        disabled={updateStatus.isPending}
+                        className="cursor-pointer"
+                      >
+                        <Clock className="mr-2 h-4 w-4" />
+                        Set as Queued
+                      </DropdownMenuItem>
+                    )}
+                    {!isExpired && (
+                      <DropdownMenuItem
+                        onClick={(e) => handleStatusChange('expired', e)}
+                        disabled={updateStatus.isPending}
+                        className="cursor-pointer"
+                      >
+                        <Clock className="mr-2 h-4 w-4" />
+                        Set as Expired
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               )}

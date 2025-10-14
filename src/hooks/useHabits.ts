@@ -19,6 +19,7 @@ export function useHabits() {
         .select('*')
         .eq('parent_user_id', user.id)
         .eq('is_active', true)
+        .is('book_id', null)
         .order('display_order', { ascending: true });
 
       if (error) throw error;

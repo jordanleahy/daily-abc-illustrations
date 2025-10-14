@@ -20,6 +20,16 @@ export function useAddBookAsHabit() {
     mutationFn: async ({ bookTitle, bookId, kidIds, coinAmount = 10 }: AddBookAsHabitParams) => {
       if (!user?.id) throw new Error('User not authenticated');
 
+      // Fetch the book to get total_pages
+      const { data: book, error: bookError } = await supabase
+        .from('books')
+        .select('total_pages')
+        .eq('id', bookId)
+        .single();
+
+      if (bookError) throw bookError;
+      const totalPages = book?.total_pages || 26;
+
       const habitTitle = `Read: ${bookTitle}`;
 
       // Step 1: Look for an existing habit (active or inactive)
@@ -38,7 +48,7 @@ export function useAddBookAsHabit() {
         const { data: updatedHabit, error: updateErr } = await supabase
           .from('habits')
           .update({ 
-            coin_amount: coinAmount,
+            coin_amount: totalPages,
             book_id: bookId,
           })
           .eq('id', activeHabit.id)
@@ -55,7 +65,7 @@ export function useAddBookAsHabit() {
           .from('habits')
           .update({ 
             is_active: true, 
-            coin_amount: coinAmount,
+            coin_amount: totalPages,
             book_id: bookId,
           })
           .eq('id', inactiveHabit.id)
@@ -73,7 +83,7 @@ export function useAddBookAsHabit() {
           title: habitTitle,
           description: `Complete reading "${bookTitle}" from the library`,
           book_id: bookId,
-          coin_amount: coinAmount,
+          coin_amount: totalPages,
           frequency: 'daily',
           deadline_time: null,
           is_active: true,
@@ -163,7 +173,7 @@ export function useAddBookAsHabit() {
           parent_user_id: user.id,
           completion_date: today,
           status: 'pending',
-          coins_deposited: coinAmount,
+          coins_deposited: 0,
           coins_retained: 0,
           deadline_at: null,
         }));
@@ -176,22 +186,7 @@ export function useAddBookAsHabit() {
         if (completionError) throw completionError;
       }
 
-      // Step 5: Deposit coins only for kids where a new completion was created
-      const kidIdsToDeposit = Array.from(
-        new Set(completionsToInsert.map((c) => c.kid_profile_id))
-      );
-
-      for (const kidId of kidIdsToDeposit) {
-        const { error: coinError } = await supabase.rpc('increment_kid_coins', {
-          p_kid_id: kidId,
-          p_amount: coinAmount,
-        });
-
-        if (coinError) {
-          console.error(`Failed to deposit coins for kid ${kidId}:`, coinError);
-        }
-      }
-
+      // No coin deposit for book habits - coins awarded upon completion in reading view
       return { habit, assignments: allAssignments, completions: completionsToInsert };
     },
     onSuccess: (data, variables) => {
@@ -203,7 +198,7 @@ export function useAddBookAsHabit() {
 
       toast({
         title: 'Reading Habit Added! 📚',
-        description: `"${variables.bookTitle}" added to today's to-do list. ${variables.coinAmount} coin${variables.coinAmount === 1 ? '' : 's'} deposited!`,
+        description: `"${variables.bookTitle}" added to today's reading list!`,
       });
     },
     onError: (error) => {

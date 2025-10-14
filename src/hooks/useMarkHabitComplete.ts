@@ -20,6 +20,30 @@ export function useMarkHabitComplete() {
 
   return useMutation({
     mutationFn: async ({ completionId, isComplete, coinsAmount, kidId }: MarkHabitCompleteParams) => {
+      // Determine the actual amount to deduct for book habits
+      let amountToDeduct = coinsAmount;
+      
+      if (!isComplete) {
+        // Fetch the completion with habit details to check if it's a book habit
+        const { data: completion, error: fetchError } = await supabase
+          .from('habit_completions')
+          .select(`
+            *,
+            habit_assignments!inner(
+              habits!inner(book_id, coin_amount)
+            )
+          `)
+          .eq('id', completionId)
+          .single();
+        
+        if (fetchError) throw fetchError;
+        
+        // If this is a book habit (has book_id), use the habit's coin_amount
+        if (completion.habit_assignments.habits.book_id) {
+          amountToDeduct = completion.habit_assignments.habits.coin_amount;
+        }
+      }
+      
       // Update completion status and coins_retained
       const { error: updateError } = await supabase
         .from('habit_completions')
@@ -32,17 +56,18 @@ export function useMarkHabitComplete() {
 
       if (updateError) throw updateError;
 
-      // If declined, remove the optimistically deposited coins
+      // If declined, remove coins (use amountToDeduct for book habits)
       if (!isComplete) {
         const { error: coinError } = await supabase.rpc('decrement_kid_coins', {
           p_kid_id: kidId,
-          p_amount: coinsAmount,
+          p_amount: amountToDeduct,
         });
 
         if (coinError) throw coinError;
       }
       
-      // If completed, coins stay (they were already deposited at 3 AM)
+      // If completed, coins stay (they were already deposited at 3 AM for regular habits,
+      // or will be deposited in reading view for book habits)
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['today-habits'] });

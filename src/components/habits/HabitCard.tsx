@@ -25,8 +25,15 @@ export function HabitCard({ habit, onDelete, isScheduled, onScheduleToggle }: Ha
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start gap-2">
-          <div className="flex-1">
+        <div className="space-y-3">
+          {onScheduleToggle && (
+            <ScheduleBadge
+              isScheduled={isScheduled || false}
+              onClick={() => onScheduleToggle(habit.id)}
+            />
+          )}
+          
+          <div>
             <CardTitle className="text-lg">{habit.title}</CardTitle>
             <div className="flex gap-2 mt-2">
               <Badge variant="outline" className="capitalize">
@@ -40,13 +47,6 @@ export function HabitCard({ habit, onDelete, isScheduled, onScheduleToggle }: Ha
               )}
             </div>
           </div>
-          
-          {onScheduleToggle && (
-            <ScheduleBadge
-              isScheduled={isScheduled || false}
-              onClick={() => onScheduleToggle(habit.id)}
-            />
-          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

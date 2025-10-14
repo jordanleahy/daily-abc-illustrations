@@ -195,6 +195,7 @@ export function useAddBookAsHabit() {
       queryClient.invalidateQueries({ queryKey: ['today-habits'] });
       queryClient.invalidateQueries({ queryKey: ['my-habits'] });
       queryClient.invalidateQueries({ queryKey: ['kid-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['is-book-habit'] });
 
       toast({
         title: 'Reading Habit Added! 📚',

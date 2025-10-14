@@ -5,12 +5,13 @@ import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImageP
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useAddBookAsHabit } from '@/hooks/useAddBookAsHabit';
+import { useIsBookAddedAsHabit } from '@/hooks/useIsBookAddedAsHabit';
 import { MetaHead } from '@/components/common';
 import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PublicPageImage } from '@/components/daily-published';
-import { Calendar, BookOpen, Download, Plus } from 'lucide-react';
+import { Calendar, BookOpen, Download, Plus, CheckCircle } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
 import { generateBookPDF } from '@/services/pdfGenerator';
 import { toast } from '@/hooks/use-toast';
@@ -26,6 +27,7 @@ export default function UserLibraryDetail() {
   const { openGraphMetadata } = useDailyPublishedOpenGraph(safeId, 0);
   const { data: kidProfiles = [] } = useKidProfiles();
   const addBookAsHabit = useAddBookAsHabit();
+  const { data: isBookAdded = false } = useIsBookAddedAsHabit(dailyContent?.book_id);
   
   const [isDownloading, setIsDownloading] = useState(false);
   
@@ -175,14 +177,18 @@ export default function UserLibraryDetail() {
               <div className="flex gap-2">
               <Button
                 onClick={handleAddAsHabit}
-                disabled={addBookAsHabit.isPending || kidProfiles.length === 0}
-                variant="secondary"
+                disabled={isBookAdded || addBookAsHabit.isPending || kidProfiles.length === 0}
+                variant={isBookAdded ? "default" : "secondary"}
                 size="icon"
                 className="shrink-0"
-                title="Add as reading habit"
+                title={isBookAdded ? "Already added to today's reading list" : "Add as reading habit"}
               >
-                  <Plus className={`h-5 w-5 ${addBookAsHabit.isPending ? 'animate-pulse' : ''}`} />
-                  <span className="sr-only">Add as habit</span>
+                  {isBookAdded ? (
+                    <CheckCircle className="h-5 w-5 text-green-500" />
+                  ) : (
+                    <Plus className={`h-5 w-5 ${addBookAsHabit.isPending ? 'animate-pulse' : ''}`} />
+                  )}
+                  <span className="sr-only">{isBookAdded ? 'Added to habits' : 'Add as habit'}</span>
                 </Button>
                 
                 <Button

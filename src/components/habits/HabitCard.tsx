@@ -30,7 +30,7 @@ export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleTogg
   };
 
   return (
-    <Card>
+    <Card className="flex flex-col h-full">
       <CardHeader>
         <div className="flex items-start justify-between gap-2">
           <div>
@@ -73,7 +73,7 @@ export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleTogg
           )}
         </div>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-3 flex-1">
         {habit.photo_url && (
           <img 
             src={habit.photo_url} 

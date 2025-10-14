@@ -77,13 +77,6 @@ export const LandingHero = ({
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
 
-                  <div className="text-center">
-                    <p className="font-semibold text-lg">{currentPage.letter}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {currentPageIndex + 1} / {pages.length}
-                    </p>
-                  </div>
-
                   <Button variant="outline" size="icon" onClick={handleNextPage} disabled={currentPageIndex === pages.length - 1}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>

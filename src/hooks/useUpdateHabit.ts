@@ -2,16 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from './use-toast';
-
-interface UpdateHabitData {
-  habitId: string;
-  title: string;
-  description?: string;
-  photo_url?: string;
-  coin_amount: number;
-  frequency: string;
-  deadline_time?: string;
-}
+import { UpdateHabitData } from '@/types/habit';
 
 /**
  * Hook to update an existing habit

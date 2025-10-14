@@ -77,3 +77,27 @@ export interface NewHabit {
   deadline_time?: string;
   assignedKidIds: string[];
 }
+
+// Mutation parameter types
+export interface UpdateHabitData {
+  habitId: string;
+  title: string;
+  description?: string;
+  photo_url?: string;
+  coin_amount: number;
+  frequency: string;
+  deadline_time?: string;
+}
+
+export interface MarkHabitCompleteParams {
+  completionId: string;
+  isComplete: boolean;
+  coinsAmount: number;
+  kidId: string;
+}
+
+export interface SkipHabitParams {
+  completionId: string;
+  coinsAmount: number;
+  habitTitle: string;
+}

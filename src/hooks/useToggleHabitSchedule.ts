@@ -5,7 +5,18 @@ import { useToast } from './use-toast';
 import { addDays, format } from 'date-fns';
 
 /**
- * Hook to toggle habit scheduling for a specific date (default: tomorrow)
+ * Hook to toggle habit scheduling for FUTURE dates (default: tomorrow).
+ * Manages the habit_schedule table which queues habits for specific dates.
+ * 
+ * Different from "Add Today": This plans ahead by adding habits to the schedule
+ * table. A cron job later creates actual completions from these schedules.
+ * 
+ * Use cases:
+ * - Parent wants to plan tomorrow's habits in advance
+ * - Scheduling recurring habits for specific dates
+ * - Managing future habit queue
+ * 
+ * @returns Mutation to toggle habit schedule for a date
  */
 export function useToggleHabitSchedule() {
   const { user } = useAuthContext();

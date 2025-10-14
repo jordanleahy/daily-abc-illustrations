@@ -4,7 +4,13 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { addDays, format } from 'date-fns';
 
 /**
- * Hook to fetch scheduled habit IDs for a specific date (default: tomorrow)
+ * Hook to fetch scheduled habit IDs for FUTURE dates (planning/queueing).
+ * Uses the habit_schedule table which tracks what habits will be added to specific dates.
+ * 
+ * NOTE: For checking TODAY'S checklist, use useTodayHabits() instead.
+ * 
+ * @param date - Date to check schedule for (default: tomorrow)
+ * @returns Set of habit IDs scheduled for that date
  */
 export function useHabitSchedule(date: Date = addDays(new Date(), 1)) {
   const { user } = useAuthContext();

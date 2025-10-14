@@ -2,12 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 import { useAuthContext } from '@/contexts/AuthContext';
-
-interface SkipHabitParams {
-  completionId: string;
-  coinsAmount: number;
-  habitTitle: string;
-}
+import { SkipHabitParams } from '@/types/habit';
 
 export function useSkipHabit() {
   const queryClient = useQueryClient();

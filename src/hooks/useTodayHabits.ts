@@ -5,8 +5,14 @@ import { format } from 'date-fns';
 import { HabitCompletionWithDetails } from '@/types/habit';
 
 /**
- * Hook to fetch today's habit completions for a specific kid or all kids
- * @param kidProfileId - Optional kid profile ID to filter habits
+ * Hook to fetch TODAY'S habit completions (the actual checklist).
+ * Uses the habit_completions table which tracks all habits added to today's checklist.
+ * 
+ * This is the SOURCE OF TRUTH for what habits are on today's list and their status.
+ * Use this hook to display current checklist items and check if habits are already added.
+ * 
+ * @param kidProfileId - Optional kid profile ID to filter habits to a specific child
+ * @returns Array of habit completions with full details (habit info, kid info, status)
  */
 export function useTodayHabits(kidProfileId?: string) {
   const { user } = useAuthContext();

@@ -5,7 +5,18 @@ import { useToast } from './use-toast';
 import { format } from 'date-fns';
 
 /**
- * Hook to add a habit to today's checklist immediately
+ * Hook to immediately add a habit to TODAY'S checklist.
+ * Creates a new habit_completion record for today with optimistic coin deposit.
+ * 
+ * Different from scheduling: This bypasses the schedule table and directly creates
+ * a completion record, making the habit appear on today's checklist immediately.
+ * 
+ * Use cases:
+ * - Parent wants to add an extra habit to today
+ * - One-off tasks that shouldn't be scheduled for future
+ * - Immediate additions without planning ahead
+ * 
+ * @returns Mutation to add a habit to today's checklist
  */
 export function useAddHabitToday() {
   const { user } = useAuthContext();

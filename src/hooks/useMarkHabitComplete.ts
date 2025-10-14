@@ -2,13 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 import { useAuthContext } from '@/contexts/AuthContext';
-
-interface MarkHabitCompleteParams {
-  completionId: string;
-  isComplete: boolean;
-  coinsAmount: number;
-  kidId: string;
-}
+import { MarkHabitCompleteParams } from '@/types/habit';
 
 /**
  * Hook to mark a habit as complete or incomplete

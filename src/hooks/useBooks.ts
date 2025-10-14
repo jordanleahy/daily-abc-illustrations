@@ -77,7 +77,7 @@ export const useBooks = () => {
         .eq('user_id', user.id)
         .neq('status', 'archived')
         .order('is_highlighted', { ascending: false })
-        .order('created_at', { ascending: false });
+        .order('updated_at', { ascending: false });
 
       if (booksError) {
         console.error('Error fetching books:', booksError);

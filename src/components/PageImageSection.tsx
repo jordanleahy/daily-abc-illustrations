@@ -8,7 +8,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/process";
 import { useState, useEffect } from "react";
-import { Loader2, Upload, Sparkles } from "lucide-react";
+import { Loader2, Upload, Sparkles, Clipboard } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
 
 interface PageImageSectionProps {
@@ -192,6 +192,43 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     toast.error('No image found in clipboard');
   };
 
+  // Handle paste from clipboard button (mobile-friendly)
+  const handlePasteFromClipboard = async () => {
+    if (!user || isUploading || isGenerating) return;
+
+    try {
+      // Check if Clipboard API is supported
+      if (!navigator.clipboard || !navigator.clipboard.read) {
+        toast.error('Clipboard access not supported on this browser');
+        return;
+      }
+
+      // Request clipboard permission and read contents
+      const clipboardItems = await navigator.clipboard.read();
+      
+      for (const clipboardItem of clipboardItems) {
+        // Find image types
+        const imageType = clipboardItem.types.find(type => type.startsWith('image/'));
+        
+        if (imageType) {
+          const blob = await clipboardItem.getType(imageType);
+          const file = new File([blob], 'pasted-image.png', { type: imageType });
+          await handleImageUpload(file);
+          return;
+        }
+      }
+
+      toast.error('No image found in clipboard');
+    } catch (error: any) {
+      console.error('Error reading clipboard:', error);
+      if (error.name === 'NotAllowedError') {
+        toast.error('Clipboard access denied. Please grant permission to paste images.');
+      } else {
+        toast.error('Failed to paste from clipboard');
+      }
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
@@ -299,18 +336,30 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
         <div 
           className="flex flex-col items-center justify-center h-full space-y-4 p-4 text-center border-2 border-dashed border-muted-foreground/20 rounded-lg focus:border-primary focus:outline-none transition-colors"
         >
-          <div className="flex flex-col items-center space-y-2">
+          <div className="flex flex-col items-center space-y-3">
             <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
-              <Upload className="w-8 h-8 text-muted-foreground/60" />
+              <Clipboard className="w-8 h-8 text-muted-foreground/60" />
             </div>
             <div>
               <p className="text-sm font-medium text-foreground mb-1">
-                Tap here to paste image
+                Paste image from clipboard
               </p>
               <p className="text-xs text-muted-foreground">
-                Use the Upload button above to select files
+                Or use the Upload button above to select files
               </p>
             </div>
+            
+            {/* Paste button for mobile */}
+            <Button 
+              onClick={handlePasteFromClipboard}
+              size="sm"
+              variant="default"
+              className="w-full max-w-xs"
+              disabled={isUploading || isGenerating}
+            >
+              <Clipboard className="w-4 h-4 mr-2" />
+              Paste from Clipboard
+            </Button>
           </div>
           
           {hasDeployedPrompt && (

@@ -35,17 +35,14 @@ export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleTogg
         <div className="flex items-start justify-between gap-2">
           <div>
             <CardTitle className="text-lg">{habit.title}</CardTitle>
-            <div className="flex gap-2 mt-2">
-              <Badge variant="outline" className="capitalize">
-                {habit.frequency}
-              </Badge>
-              {habit.deadline_time && (
+            {habit.deadline_time && (
+              <div className="flex gap-2 mt-2">
                 <Badge variant="default">
                   <Clock className="h-3 w-3 mr-1" />
                   Due: {formatDeadlineTime(habit.deadline_time)}
                 </Badge>
-              )}
-            </div>
+              </div>
+            )}
           </div>
           
           {(onEdit || onDelete) && (

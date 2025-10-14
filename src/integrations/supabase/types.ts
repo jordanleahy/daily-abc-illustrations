@@ -627,6 +627,51 @@ export type Database = {
           },
         ]
       }
+      habit_schedule: {
+        Row: {
+          created_at: string
+          habit_id: string
+          id: string
+          kid_profile_id: string
+          parent_user_id: string
+          scheduled_date: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          habit_id: string
+          id?: string
+          kid_profile_id: string
+          parent_user_id: string
+          scheduled_date: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          habit_id?: string
+          id?: string
+          kid_profile_id?: string
+          parent_user_id?: string
+          scheduled_date?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "habit_schedule_habit_id_fkey"
+            columns: ["habit_id"]
+            isOneToOne: false
+            referencedRelation: "habits"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "habit_schedule_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       habits: {
         Row: {
           book_id: string | null
@@ -1379,6 +1424,10 @@ export type Database = {
         Returns: Json
       }
       create_daily_habit_completions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      create_scheduled_habit_completions: {
         Args: Record<PropertyKey, never>
         Returns: Json
       }

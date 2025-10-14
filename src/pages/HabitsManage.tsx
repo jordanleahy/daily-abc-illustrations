@@ -5,8 +5,11 @@ import { Plus } from 'lucide-react';
 import { HabitCard, CreateHabitModal } from '@/components/habits';
 import { useHabits } from '@/hooks/useHabits';
 import { useDeleteHabit } from '@/hooks/useDeleteHabit';
+import { useHabitSchedule } from '@/hooks/useHabitSchedule';
+import { useToggleHabitSchedule } from '@/hooks/useToggleHabitSchedule';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Link } from 'react-router-dom';
+import { addDays } from 'date-fns';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +27,10 @@ export default function HabitsManage() {
   const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
   const { data: habits = [], isLoading } = useHabits();
   const deleteHabit = useDeleteHabit();
+  
+  const tomorrow = addDays(new Date(), 1);
+  const { data: scheduledHabits = new Set() } = useHabitSchedule(tomorrow);
+  const toggleSchedule = useToggleHabitSchedule();
 
   const handleDeleteClick = (habitId: string) => {
     setHabitToDelete(habitId);
@@ -36,6 +43,14 @@ export default function HabitsManage() {
       setDeleteDialogOpen(false);
       setHabitToDelete(null);
     }
+  };
+
+  const handleScheduleToggle = (habitId: string) => {
+    toggleSchedule.mutate({
+      habitId,
+      isCurrentlyScheduled: scheduledHabits.has(habitId),
+      date: tomorrow,
+    });
   };
 
   return (
@@ -79,6 +94,8 @@ export default function HabitsManage() {
                 key={habit.id}
                 habit={habit}
                 onDelete={handleDeleteClick}
+                isScheduled={scheduledHabits.has(habit.id)}
+                onScheduleToggle={handleScheduleToggle}
               />
             ))}
           </div>

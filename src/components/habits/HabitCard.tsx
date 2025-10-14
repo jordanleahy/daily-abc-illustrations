@@ -4,13 +4,16 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Coins, Clock, Trash2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
+import { ScheduleBadge } from './ScheduleBadge';
 
 interface HabitCardProps {
   habit: Habit;
   onDelete?: (habitId: string) => void;
+  isScheduled?: boolean;
+  onScheduleToggle?: (habitId: string) => void;
 }
 
-export function HabitCard({ habit, onDelete }: HabitCardProps) {
+export function HabitCard({ habit, onDelete, isScheduled, onScheduleToggle }: HabitCardProps) {
   const formatDeadlineTime = (time: string) => {
     try {
       return format(parseISO(`2000-01-01T${time}`), 'h:mm a');
@@ -22,7 +25,7 @@ export function HabitCard({ habit, onDelete }: HabitCardProps) {
   return (
     <Card>
       <CardHeader>
-        <div className="flex justify-between items-start">
+        <div className="flex justify-between items-start gap-2">
           <div className="flex-1">
             <CardTitle className="text-lg">{habit.title}</CardTitle>
             <div className="flex gap-2 mt-2">
@@ -37,6 +40,13 @@ export function HabitCard({ habit, onDelete }: HabitCardProps) {
               )}
             </div>
           </div>
+          
+          {onScheduleToggle && (
+            <ScheduleBadge
+              isScheduled={isScheduled || false}
+              onClick={() => onScheduleToggle(habit.id)}
+            />
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">

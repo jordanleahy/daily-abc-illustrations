@@ -31,7 +31,10 @@ export function useDeleteHabit() {
       if (error) throw error;
     },
     onSuccess: () => {
+      // Invalidate all habit-related queries to sync state across pages
       queryClient.invalidateQueries({ queryKey: ['habits'] });
+      queryClient.invalidateQueries({ queryKey: ['today-habits'] });
+      queryClient.invalidateQueries({ queryKey: ['habit-schedule'] });
       queryClient.invalidateQueries({ queryKey: ['is-book-habit'] });
       toast({
         title: 'Success',

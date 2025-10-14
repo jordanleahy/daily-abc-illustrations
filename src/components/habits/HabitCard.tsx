@@ -1,5 +1,5 @@
 import { Habit } from '@/types/habit';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Coins, Clock, Trash2, MoreVertical, Pencil } from 'lucide-react';
@@ -90,14 +90,16 @@ export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleTogg
           <Coins className="h-5 w-5 text-amber-500" />
           <span className="font-semibold">{habit.coin_amount} coins</span>
         </div>
-        
-        {onScheduleToggle && (
+      </CardContent>
+      
+      {onScheduleToggle && (
+        <CardFooter className="pt-0">
           <ScheduleBadge
             isScheduled={isScheduled || false}
             onClick={() => onScheduleToggle(habit.id)}
           />
-        )}
-      </CardContent>
+        </CardFooter>
+      )}
     </Card>
   );
 }

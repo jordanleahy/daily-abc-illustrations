@@ -16,7 +16,7 @@ export function ScheduleBadge({ isScheduled, onClick, date = addDays(new Date(),
     <Button
       variant={isScheduled ? "default" : "outline"}
       className={cn(
-        "w-full mt-3",
+        "w-full",
         isScheduled && "bg-green-500 hover:bg-green-600 border-green-500"
       )}
       onClick={onClick}

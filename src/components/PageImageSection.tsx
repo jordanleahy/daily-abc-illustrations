@@ -22,8 +22,6 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
   const { user } = useAuthContext();
   const { currentImage, versions, isLoading, createImageRecord, uploadImage, refreshData } = usePageImageUrls(pageId);
   const { currentPrompt } = usePageSystemPrompt(pageId);
-  const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
-  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
   const [isLocalGenerating, setIsLocalGenerating] = useState(false);
   
   const [internalShowUpload, setInternalShowUpload] = useState(false);
@@ -74,83 +72,6 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
       }
     }
   }, [currentImage?.id, currentImage?.generation_status, currentImage?.image_url, isLocalGenerating]);
-
-  const handleGeneratePrompt = async () => {
-    if (!user) return;
-
-    setIsGeneratingPrompt(true);
-    try {
-      // Generate the image prompt using the page system prompt
-      const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-image-prompt', {
-        body: {
-          pageId,
-          userId: user.id
-        }
-      });
-
-      if (promptError) throw promptError;
-      if (!promptData?.success) throw new Error(promptData?.error || 'Failed to generate image prompt');
-      
-      const prompt = promptData.imagePrompt;
-      if (!prompt || prompt.trim().length === 0) {
-        throw new Error('No image prompt could be generated. Please ensure a page system prompt is deployed.');
-      }
-
-      setGeneratedPrompt(prompt);
-      toast.success('Prompt generated successfully!');
-    } catch (error: any) {
-      console.error('Error generating prompt:', error);
-      
-      // Don't show error messages for navigation cancellations
-      if (!isNavigationError(error)) {
-        toast.error(error.message || 'Failed to generate prompt');
-      } else {
-        console.log('🚫 Prompt generation cancelled due to navigation');
-      }
-    } finally {
-      setIsGeneratingPrompt(false);
-    }
-  };
-
-  const handleGenerateImage = async () => {
-    if (!user || !generatedPrompt) return;
-
-    setIsLocalGenerating(true); // Start shimmer immediately
-    try {
-      // Create image record with the generated prompt
-      const record = await createImageRecord(bookId, generatedPrompt);
-      if (!record) {
-        throw new Error('Failed to create image record');
-      }
-
-      // Start image generation
-      const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: { 
-          recordId: record.id,
-          userId: user.id
-        }
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
-
-      toast.success('Image generation started!');
-      setGeneratedPrompt(null); // Clear the prompt state
-      refreshData();
-    } catch (error: any) {
-      console.error('Error generating image:', error);
-      
-      // Only clear local generating state and show error for real errors, not navigation cancellations
-      if (!isNavigationError(error)) {
-        toast.error(error.message || 'Failed to generate image');
-        setIsLocalGenerating(false);
-      } else {
-        console.log('🚫 Image generation request cancelled due to navigation');
-        // Don't clear isLocalGenerating for navigation cancellations
-        // The backend process continues and we'll recover state on return
-      }
-    }
-  };
 
   const handleGenerateImageDirectly = async () => {
     if (!user || !hasDeployedPrompt) return;
@@ -250,6 +171,27 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     }
   };
 
+  const handlePaste = async (e: React.ClipboardEvent) => {
+    e.preventDefault();
+    if (!user || isUploading || isGenerating) return;
+
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    // Find the first image in clipboard
+    for (let i = 0; i < items.length; i++) {
+      if (items[i].type.startsWith('image/')) {
+        const file = items[i].getAsFile();
+        if (file) {
+          await handleImageUpload(file);
+          return;
+        }
+      }
+    }
+
+    toast.error('No image found in clipboard');
+  };
+
   if (isLoading) {
     return (
       <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
@@ -274,7 +216,11 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
   });
 
   return (
-    <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden relative">
+    <div 
+      className="w-full aspect-square bg-muted rounded-lg overflow-hidden relative"
+      onPaste={showUpload ? undefined : handlePaste}
+      tabIndex={showUpload ? undefined : 0}
+    >
       {showUpload ? (
         // Show upload interface
         <div className="relative w-full h-full">
@@ -348,45 +294,44 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             {currentImage?.error_message || 'Unknown error occurred'}
           </p>
         </div>
-      ) : generatedPrompt ? (
-        // Show prompt preview with generate image button
-        <div className="flex flex-col h-full p-4 space-y-3">
-          <div className="flex-1 overflow-auto">
-            <p className="text-xs text-muted-foreground mb-2">Generated Prompt:</p>
-            <p className="text-sm leading-relaxed">{generatedPrompt}</p>
-          </div>
-          <Button 
-            onClick={handleGenerateImage}
-            size="sm"
-            className="w-full"
-            disabled={isGenerating || !generatedPrompt}
-          >
-            Generate Image
-          </Button>
-        </div>
-      ) : isGeneratingPrompt ? (
-        // Show prompt generation state
-        <div className="flex flex-col items-center justify-center h-full space-y-3">
-          <Shimmer className="w-16 h-16" />
-          <p className="text-sm text-muted-foreground">Generating prompt...</p>
-        </div>
       ) : (
-        // Show initial state with both AI and upload options
-        <div className="flex flex-col items-center justify-center h-full space-y-4 p-4 text-center">
-          <p className="text-sm text-muted-foreground">
-            Add an image to this page
-          </p>
-          <div className="flex flex-col gap-2 w-full">
-            <Button 
-              onClick={hasDeployedPrompt ? handleGenerateImageDirectly : handleGeneratePrompt}
-              size="sm"
-              className="w-full"
-              disabled={isGeneratingPrompt || isGenerating}
-            >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {hasDeployedPrompt ? 'Generate with AI' : 'Generate Prompt'}
-            </Button>
+        // Show initial state with paste-first design
+        <div 
+          className="flex flex-col items-center justify-center h-full space-y-4 p-4 text-center cursor-pointer border-2 border-dashed border-muted-foreground/20 rounded-lg"
+          onClick={() => {
+            if (onCloseUpload) {
+              return;
+            }
+            setInternalShowUpload(true);
+          }}
+        >
+          <Upload className="w-12 h-12 text-muted-foreground/40" />
+          <div>
+            <p className="text-sm font-medium text-foreground mb-1">
+              Tap to paste image
+            </p>
+            <p className="text-xs text-muted-foreground">
+              or click to upload from device
+            </p>
           </div>
+          
+          {hasDeployedPrompt && (
+            <div className="w-full pt-2 border-t border-border">
+              <Button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleGenerateImageDirectly();
+                }}
+                size="sm"
+                variant="outline"
+                className="w-full"
+                disabled={isGenerating}
+              >
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generate with AI
+              </Button>
+            </div>
+          )}
         </div>
       )}
 

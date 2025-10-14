@@ -32,6 +32,7 @@ export function useDeleteHabit() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] });
+      queryClient.invalidateQueries({ queryKey: ['is-book-habit'] });
       toast({
         title: 'Success',
         description: 'Habit deleted successfully',

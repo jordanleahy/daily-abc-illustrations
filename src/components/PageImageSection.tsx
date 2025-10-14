@@ -295,33 +295,28 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
           </p>
         </div>
       ) : (
-        // Show initial state with paste-first design
+        // Show initial state - paste only (Upload button handles file selection)
         <div 
-          className="flex flex-col items-center justify-center h-full space-y-4 p-4 text-center cursor-pointer border-2 border-dashed border-muted-foreground/20 rounded-lg"
-          onClick={() => {
-            if (onCloseUpload) {
-              return;
-            }
-            setInternalShowUpload(true);
-          }}
+          className="flex flex-col items-center justify-center h-full space-y-4 p-4 text-center border-2 border-dashed border-muted-foreground/20 rounded-lg focus:border-primary focus:outline-none transition-colors"
         >
-          <Upload className="w-12 h-12 text-muted-foreground/40" />
-          <div>
-            <p className="text-sm font-medium text-foreground mb-1">
-              Tap to paste image
-            </p>
-            <p className="text-xs text-muted-foreground">
-              or click to upload from device
-            </p>
+          <div className="flex flex-col items-center space-y-2">
+            <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
+              <Upload className="w-8 h-8 text-muted-foreground/60" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground mb-1">
+                Tap here to paste image
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Use the Upload button above to select files
+              </p>
+            </div>
           </div>
           
           {hasDeployedPrompt && (
             <div className="w-full pt-2 border-t border-border">
               <Button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleGenerateImageDirectly();
-                }}
+                onClick={handleGenerateImageDirectly}
                 size="sm"
                 variant="outline"
                 className="w-full"

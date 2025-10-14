@@ -7,15 +7,34 @@ import { useHabits } from '@/hooks/useHabits';
 import { useDeleteHabit } from '@/hooks/useDeleteHabit';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Link } from 'react-router-dom';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 export default function HabitsManage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
   const { data: habits = [], isLoading } = useHabits();
   const deleteHabit = useDeleteHabit();
 
-  const handleDelete = (habitId: string) => {
-    if (window.confirm('Are you sure you want to delete this habit?')) {
-      deleteHabit.mutate(habitId);
+  const handleDeleteClick = (habitId: string) => {
+    setHabitToDelete(habitId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (habitToDelete) {
+      deleteHabit.mutate(habitToDelete);
+      setDeleteDialogOpen(false);
+      setHabitToDelete(null);
     }
   };
 
@@ -59,7 +78,7 @@ export default function HabitsManage() {
               <HabitCard
                 key={habit.id}
                 habit={habit}
-                onDelete={handleDelete}
+                onDelete={handleDeleteClick}
               />
             ))}
           </div>
@@ -69,6 +88,23 @@ export default function HabitsManage() {
           open={showCreateModal}
           onOpenChange={setShowCreateModal}
         />
+
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete Habit</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to delete this habit? This action cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={handleConfirmDelete}>
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </StandardPageLayout>
   );

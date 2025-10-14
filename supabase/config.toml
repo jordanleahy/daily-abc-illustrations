@@ -146,3 +146,6 @@ verify_jwt = true
 
 [functions.create-scheduled-habits]
 verify_jwt = false
+
+[functions.expire-pending-habits]
+verify_jwt = false

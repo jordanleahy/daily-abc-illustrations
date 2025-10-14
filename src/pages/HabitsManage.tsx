@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { HabitCard, CreateHabitModal } from '@/components/habits';
+import { HabitCard, CreateHabitModal, EditHabitModal } from '@/components/habits';
 import { useHabits } from '@/hooks/useHabits';
 import { useDeleteHabit } from '@/hooks/useDeleteHabit';
 import { useHabitSchedule } from '@/hooks/useHabitSchedule';
@@ -10,6 +10,7 @@ import { useToggleHabitSchedule } from '@/hooks/useToggleHabitSchedule';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Link } from 'react-router-dom';
 import { addDays } from 'date-fns';
+import { Habit } from '@/types/habit';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,6 +24,8 @@ import {
 
 export default function HabitsManage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingHabit, setEditingHabit] = useState<Habit | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [habitToDelete, setHabitToDelete] = useState<string | null>(null);
   const { data: habits = [], isLoading } = useHabits();
@@ -31,6 +34,14 @@ export default function HabitsManage() {
   const tomorrow = addDays(new Date(), 1);
   const { data: scheduledHabits = new Set() } = useHabitSchedule(tomorrow);
   const toggleSchedule = useToggleHabitSchedule();
+
+  const handleEditClick = (habitId: string) => {
+    const habit = habits.find(h => h.id === habitId);
+    if (habit) {
+      setEditingHabit(habit);
+      setShowEditModal(true);
+    }
+  };
 
   const handleDeleteClick = (habitId: string) => {
     setHabitToDelete(habitId);
@@ -96,6 +107,7 @@ export default function HabitsManage() {
               <HabitCard
                 key={habit.id}
                 habit={habit}
+                onEdit={handleEditClick}
                 onDelete={handleDeleteClick}
                 isScheduled={scheduledHabits.has(habit.id)}
                 onScheduleToggle={handleScheduleToggle}
@@ -107,6 +119,12 @@ export default function HabitsManage() {
         <CreateHabitModal
           open={showCreateModal}
           onOpenChange={setShowCreateModal}
+        />
+
+        <EditHabitModal
+          open={showEditModal}
+          onOpenChange={setShowEditModal}
+          habit={editingHabit}
         />
 
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>

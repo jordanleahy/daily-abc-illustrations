@@ -6,7 +6,7 @@ import { X, Coins, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useMarkHabitComplete } from '@/hooks/useMarkHabitComplete';
-import { useSkipHabit } from '@/hooks/useSkipHabit';
+import { useDeleteHabit } from '@/hooks/useDeleteHabit';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -18,7 +18,7 @@ interface HabitTrackingCardProps {
 export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
   const navigate = useNavigate();
   const markComplete = useMarkHabitComplete();
-  const skipHabit = useSkipHabit();
+  const deleteHabit = useDeleteHabit();
   const { toast } = useToast();
   const [isResolving, setIsResolving] = useState(false);
   const habit = completion.habit_assignments.habits;
@@ -51,12 +51,10 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
     });
   };
 
-  const handleSkip = () => {
-    skipHabit.mutate({
-      completionId: completion.id,
-      coinsAmount: completion.coins_deposited,
-      habitTitle: habit.title,
-    });
+  const handleDelete = () => {
+    if (window.confirm(`Remove "${habit.title}" from your habits?`)) {
+      deleteHabit.mutate(habit.id);
+    }
   };
 
   const handleStartReading = async () => {
@@ -151,9 +149,9 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={handleSkip}
-                  disabled={skipHabit.isPending}
-                  title="Skip this habit for today"
+                  onClick={handleDelete}
+                  disabled={deleteHabit.isPending}
+                  title="Remove this habit"
                 >
                   <X className="h-4 w-4" />
                 </Button>

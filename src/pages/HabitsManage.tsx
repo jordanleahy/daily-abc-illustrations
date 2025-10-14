@@ -7,6 +7,7 @@ import { useHabits } from '@/hooks/useHabits';
 import { useDeleteHabit } from '@/hooks/useDeleteHabit';
 import { useHabitSchedule } from '@/hooks/useHabitSchedule';
 import { useToggleHabitSchedule } from '@/hooks/useToggleHabitSchedule';
+import { useAddHabitToday } from '@/hooks/useAddHabitToday';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Link } from 'react-router-dom';
 import { addDays } from 'date-fns';
@@ -32,8 +33,11 @@ export default function HabitsManage() {
   const deleteHabit = useDeleteHabit();
   
   const tomorrow = addDays(new Date(), 1);
+  const today = new Date();
   const { data: scheduledHabits = new Set() } = useHabitSchedule(tomorrow);
+  const { data: todayHabits = new Set() } = useHabitSchedule(today);
   const toggleSchedule = useToggleHabitSchedule();
+  const addToday = useAddHabitToday();
 
   const handleEditClick = (habitId: string) => {
     const habit = habits.find(h => h.id === habitId);
@@ -64,6 +68,10 @@ export default function HabitsManage() {
     });
   };
 
+  const handleAddToday = (habitId: string) => {
+    addToday.mutate(habitId);
+  };
+
   return (
     <StandardPageLayout>
       <div className="container mx-auto py-8 space-y-6">
@@ -74,7 +82,7 @@ export default function HabitsManage() {
               Create and manage daily habits for your kids
             </p>
             <p className="text-sm text-primary mt-1 font-medium">
-              💡 Click "Schedule for Tomorrow" on each habit to add it to tomorrow's checklist
+              💡 Use "Add Today" to add habits to today's checklist, or "Schedule for Tomorrow" to queue them for tomorrow
             </p>
           </div>
           
@@ -111,6 +119,8 @@ export default function HabitsManage() {
                 onDelete={handleDeleteClick}
                 isScheduled={scheduledHabits.has(habit.id)}
                 onScheduleToggle={handleScheduleToggle}
+                onAddToday={handleAddToday}
+                isAddedToday={todayHabits.has(habit.id)}
               />
             ))}
           </div>

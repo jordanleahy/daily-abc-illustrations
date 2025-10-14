@@ -5,10 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCreateHabit } from '@/hooks/useCreateHabit';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { HabitFrequency } from '@/types/habit';
 import { Loader2 } from 'lucide-react';
 
 interface CreateHabitModalProps {
@@ -21,7 +19,6 @@ export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) 
   const [description, setDescription] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [coinAmount, setCoinAmount] = useState('10');
-  const [frequency, setFrequency] = useState<HabitFrequency>('daily');
   const [deadlineTime, setDeadlineTime] = useState('');
   const [selectedKids, setSelectedKids] = useState<string[]>([]);
 
@@ -47,7 +44,7 @@ export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) 
       description: description || undefined,
       photo_url: photoUrl || undefined,
       coin_amount: parseInt(coinAmount),
-      frequency,
+      frequency: 'manual',
       deadline_time: deadlineTime || undefined,
       assignedKidIds: selectedKids,
     });
@@ -57,7 +54,6 @@ export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) 
     setDescription('');
     setPhotoUrl('');
     setCoinAmount('10');
-    setFrequency('daily');
     setDeadlineTime('');
     setSelectedKids([]);
     onOpenChange(false);
@@ -122,22 +118,6 @@ export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) 
               onChange={(e) => setCoinAmount(e.target.value)}
               required
             />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="frequency">Frequency *</Label>
-            <Select value={frequency} onValueChange={(value) => setFrequency(value as HabitFrequency)}>
-              <SelectTrigger id="frequency">
-                <SelectValue placeholder="Select frequency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="manual">Manual</SelectItem>
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              How often should this habit be completed?
-            </p>
           </div>
 
           <div className="space-y-2">

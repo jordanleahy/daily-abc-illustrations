@@ -32,43 +32,7 @@ export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleTogg
   return (
     <Card>
       <CardHeader>
-        <div className="space-y-3">
-          <div className="flex items-start justify-between gap-2">
-            {onScheduleToggle && (
-              <ScheduleBadge
-                isScheduled={isScheduled || false}
-                onClick={() => onScheduleToggle(habit.id)}
-              />
-            )}
-            
-            {(onEdit || onDelete) && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-40">
-                  {onEdit && (
-                    <DropdownMenuItem onClick={() => onEdit(habit.id)}>
-                      <Pencil className="h-4 w-4 mr-2" />
-                      Edit
-                    </DropdownMenuItem>
-                  )}
-                  {onDelete && (
-                    <DropdownMenuItem 
-                      onClick={() => onDelete(habit.id)}
-                      className="text-destructive focus:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4 mr-2" />
-                      Delete
-                    </DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
-          </div>
-          
+        <div className="flex items-start justify-between gap-2">
           <div>
             <CardTitle className="text-lg">{habit.title}</CardTitle>
             <div className="flex gap-2 mt-2">
@@ -83,6 +47,33 @@ export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleTogg
               )}
             </div>
           </div>
+          
+          {(onEdit || onDelete) && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                {onEdit && (
+                  <DropdownMenuItem onClick={() => onEdit(habit.id)}>
+                    <Pencil className="h-4 w-4 mr-2" />
+                    Edit
+                  </DropdownMenuItem>
+                )}
+                {onDelete && (
+                  <DropdownMenuItem 
+                    onClick={() => onDelete(habit.id)}
+                    className="text-destructive focus:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -102,6 +93,13 @@ export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleTogg
           <Coins className="h-5 w-5 text-amber-500" />
           <span className="font-semibold">{habit.coin_amount} coins</span>
         </div>
+        
+        {onScheduleToggle && (
+          <ScheduleBadge
+            isScheduled={isScheduled || false}
+            onClick={() => onScheduleToggle(habit.id)}
+          />
+        )}
       </CardContent>
     </Card>
   );

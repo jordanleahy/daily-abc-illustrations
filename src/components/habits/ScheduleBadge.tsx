@@ -1,4 +1,4 @@
-import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Calendar } from 'lucide-react';
 import { format, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -13,16 +13,16 @@ export function ScheduleBadge({ isScheduled, onClick, date = addDays(new Date(),
   const formattedDate = format(date, 'M/d');
   
   return (
-    <Badge
+    <Button
       variant={isScheduled ? "default" : "outline"}
       className={cn(
-        "cursor-pointer transition-all hover:scale-105",
+        "w-full mt-3",
         isScheduled && "bg-green-500 hover:bg-green-600 border-green-500"
       )}
       onClick={onClick}
     >
-      <Calendar className="h-3 w-3 mr-1" />
+      <Calendar className="h-4 w-4 mr-2" />
       {isScheduled ? `Scheduled ${formattedDate}` : 'Schedule for Tomorrow'}
-    </Badge>
+    </Button>
   );
 }

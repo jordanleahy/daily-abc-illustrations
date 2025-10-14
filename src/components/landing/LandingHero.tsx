@@ -72,13 +72,23 @@ export const LandingHero = ({
                       </div>} />
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <Button variant="outline" size="icon" onClick={handlePrevPage} disabled={currentPageIndex === 0}>
-                    <ChevronLeft className="h-4 w-4" />
+                <div className="flex items-center gap-2">
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 h-16" 
+                    onClick={handlePrevPage} 
+                    disabled={currentPageIndex === 0}
+                  >
+                    <ChevronLeft className="h-8 w-8" />
                   </Button>
 
-                  <Button variant="outline" size="icon" onClick={handleNextPage} disabled={currentPageIndex === pages.length - 1}>
-                    <ChevronRight className="h-4 w-4" />
+                  <Button 
+                    variant="outline" 
+                    className="flex-1 h-16" 
+                    onClick={handleNextPage} 
+                    disabled={currentPageIndex === pages.length - 1}
+                  >
+                    <ChevronRight className="h-8 w-8" />
                   </Button>
                 </div>
               </div> : <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">

@@ -34,13 +34,9 @@ export const LandingHero = ({
             <h1 className="text-4xl md:text-6xl font-bold text-foreground leading-tight">
               {SITE_CONFIG.tagline}
             </h1>
-            <p className="text-xl md:text-2xl text-muted-foreground">
-              {SITE_CONFIG.subheading}
-            </p>
-            
-            <Button size="lg" className="text-lg px-8 py-6 w-full md:w-auto" onClick={() => navigate('/pricing')}>
-              Subscribe
-            </Button>
+          <p className="text-xl md:text-2xl text-muted-foreground">
+            {SITE_CONFIG.subheading}
+          </p>
           </div>
 
           {/* Right Column - Daily Swiper */}

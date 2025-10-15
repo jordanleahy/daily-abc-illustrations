@@ -1,3 +1,9 @@
+# Landing page optimization - preload critical resources
+/
+  Link: </src/main.tsx>; rel=modulepreload; as=script
+  Link: </src/index.css>; rel=preload; as=style
+  Cache-Control: public, max-age=0, must-revalidate
+  
 # Cache transformed images aggressively for optimal mobile performance
 /storage/v1/object/public/book-covers/*
   Cache-Control: public, max-age=31536000, immutable

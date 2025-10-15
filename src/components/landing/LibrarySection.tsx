@@ -6,17 +6,21 @@ import { LandingLibraryBook } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { LibraryBookSkeleton } from '@/components/ui/book-card-skeleton';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 
 interface LibrarySectionProps {
   books: LandingLibraryBook[] | undefined;
 }
 
-export const LibrarySection = ({ books }: LibrarySectionProps) => {
+function LibraryBookCard({ item }: { item: LandingLibraryBook }) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthContext();
-  const showSkeleton = !books || books.length === 0;
+  const { ref, inView } = useIntersectionObserver({
+    rootMargin: '100px', // Start loading 100px before entering viewport
+    triggerOnce: true,
+  });
 
-  const handleCardClick = (item: LandingLibraryBook) => {
+  const handleCardClick = () => {
     const isActiveNow = item.status === 'active' && item.is_active;
     
     if (!isAuthenticated && !isActiveNow) {
@@ -25,6 +29,67 @@ export const LibrarySection = ({ books }: LibrarySectionProps) => {
       navigate(`/daily-published/${item.id}`);
     }
   };
+
+  return (
+    <Card 
+      ref={ref}
+      onClick={handleCardClick}
+      className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2"
+    >
+      <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
+        {inView ? (
+          <OptimizedImage
+            src={item.og_image_url}
+            alt={item.title}
+            width={600}
+            quality={80}
+            srcSetSizes={[400, 600, 800, 1200]}
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 400px"
+            className="absolute inset-0"
+            fallback={
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="text-6xl font-bold text-primary/20">
+                  {item.title.charAt(0)}
+                </div>
+              </div>
+            }
+          />
+        ) : (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted">
+            <div className="text-6xl font-bold text-primary/20">
+              {item.title.charAt(0)}
+            </div>
+          </div>
+        )}
+        {item.status === 'active' && item.is_active && (
+          <Badge className="absolute top-3 left-3 bg-green-600 text-white z-10">
+            Active Now
+          </Badge>
+        )}
+      </div>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-xl line-clamp-2">
+          {item.title}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {item.description && (
+          <CardDescription className="line-clamp-2 text-base mb-4">
+            {item.description}
+          </CardDescription>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+interface LibrarySectionProps {
+  books: LandingLibraryBook[] | undefined;
+}
+
+export const LibrarySection = ({ books }: LibrarySectionProps) => {
+  const showSkeleton = !books || books.length === 0;
+
   return (
     <section className="py-16 px-4 bg-gradient-to-b from-background to-secondary/5">
       <div className="container mx-auto max-w-7xl">
@@ -52,46 +117,7 @@ export const LibrarySection = ({ books }: LibrarySectionProps) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {books.map((item) => (
-              <Card 
-                key={item.id}
-                onClick={() => handleCardClick(item)}
-                className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2"
-              >
-                  <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
-                    <OptimizedImage
-                      src={item.og_image_url}
-                      alt={item.title}
-                      width={600}
-                      srcSetSizes={[600, 1200]}
-                      sizes="(max-width: 768px) 100vw, 600px"
-                      className="absolute inset-0"
-                      fallback={
-                        <div className="absolute inset-0 flex items-center justify-center">
-                          <div className="text-6xl font-bold text-primary/20">
-                            {item.title.charAt(0)}
-                          </div>
-                        </div>
-                      }
-                    />
-                    {item.status === 'active' && item.is_active && (
-                      <Badge className="absolute top-3 left-3 bg-green-600 text-white z-10">
-                        Active Now
-                      </Badge>
-                    )}
-                  </div>
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-xl line-clamp-2">
-                      {item.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {item.description && (
-                      <CardDescription className="line-clamp-2 text-base mb-4">
-                        {item.description}
-                      </CardDescription>
-                    )}
-                  </CardContent>
-                </Card>
+              <LibraryBookCard key={item.id} item={item} />
             ))}
           </div>
         )}

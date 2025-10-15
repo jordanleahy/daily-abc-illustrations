@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { optimizeImageUrl, generateSrcSet, generateBlurPlaceholder } from '@/utils/imageOptimization';
 import { Shimmer } from './shimmer';
@@ -37,6 +37,33 @@ export const OptimizedImage = ({
 
   const blurPlaceholder = generateBlurPlaceholder(src);
   const fullImageUrl = optimizeImageUrl(src, { width, quality });
+
+  // Preload critical images using native browser API
+  useEffect(() => {
+    if (priority && fullImageUrl) {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.as = 'image';
+      link.href = fullImageUrl;
+      link.fetchPriority = 'high';
+      
+      // Add image format hints for better optimization
+      if (fullImageUrl.includes('format=webp')) {
+        link.type = 'image/webp';
+      } else if (fullImageUrl.includes('format=avif')) {
+        link.type = 'image/avif';
+      }
+      
+      document.head.appendChild(link);
+      
+      return () => {
+        // Cleanup preload link
+        if (link.parentNode) {
+          link.parentNode.removeChild(link);
+        }
+      };
+    }
+  }, [priority, fullImageUrl]);
 
   return (
     <div className={cn("relative w-full h-full overflow-hidden", containerClassName)}>

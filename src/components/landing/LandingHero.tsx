@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { SITE_CONFIG } from '@/config/site';
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Book } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Book, Maximize2 } from 'lucide-react';
 import { LandingDailyPublished } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { Shimmer } from '@/components/ui/shimmer';
@@ -91,6 +91,16 @@ export const LandingHero = ({
                     <ChevronRight className="h-8 w-8" />
                   </Button>
                 </div>
+
+                <Button 
+                  onClick={() => navigate('/daily-published')}
+                  variant="outline"
+                  className="w-full h-12"
+                  size="lg"
+                >
+                  <Maximize2 className="mr-2 h-4 w-4" />
+                  Focused Mode
+                </Button>
               </div> : <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
                 <p className="text-muted-foreground">Loading today's book...</p>
               </div>}

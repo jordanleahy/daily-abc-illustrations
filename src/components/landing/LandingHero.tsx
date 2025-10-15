@@ -94,7 +94,7 @@ export const LandingHero = ({
 
                 <Button 
                   type="button"
-                  onClick={() => navigate('/daily-published')}
+                  onClick={() => navigate(`/daily-published/${dailyPublished.id}`)}
                   variant="outline"
                   className="w-full h-12"
                   size="lg"

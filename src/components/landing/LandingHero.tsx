@@ -93,6 +93,7 @@ export const LandingHero = ({
                 </div>
 
                 <Button 
+                  type="button"
                   onClick={() => navigate('/daily-published')}
                   variant="outline"
                   className="w-full h-12"

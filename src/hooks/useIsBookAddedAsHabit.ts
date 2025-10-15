@@ -31,5 +31,7 @@ export function useIsBookAddedAsHabit(bookId: string | undefined) {
       return !!habits;
     },
     enabled: !!user?.id && !!bookId,
+    refetchOnMount: 'always', // Always refetch to ensure fresh data after habit changes
+    staleTime: 0, // Consider data stale immediately
   });
 }

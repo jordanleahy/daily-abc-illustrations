@@ -7,17 +7,26 @@ import { LandingPopularBook } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { PopularBookSkeleton } from '@/components/ui/book-card-skeleton';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 
-function PopularBookCard({ book }: { book: LandingPopularBook }) {
+function PopularBookCard({ book, priority = false }: { book: LandingPopularBook; priority?: boolean }) {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuthContext();
+  const { ref, inView } = useIntersectionObserver({
+    rootMargin: '50px', // Start loading 50px before entering viewport
+    triggerOnce: true,
+  });
 
   const handleCardClick = () => {
     navigate(isAuthenticated ? `/library/${book.id}` : '/pricing');
   };
 
+  // Priority images (first 3) should load immediately without intersection observer
+  const shouldLoad = priority || inView;
+
   return (
     <Card 
+      ref={ref}
       className="cursor-pointer hover:shadow-lg transition-all relative ring-2 ring-primary shadow-md"
       onClick={handleCardClick}
     >
@@ -28,18 +37,26 @@ function PopularBookCard({ book }: { book: LandingPopularBook }) {
         </Badge>
         
         <AspectRatio ratio={1200/630} className="bg-muted rounded-lg overflow-hidden mb-4">
-          <OptimizedImage
-            src={book.image_url}
-            alt={book.book_name}
-            width={600}
-            srcSetSizes={[600, 1200]}
-            sizes="(max-width: 768px) 100vw, 600px"
-            fallback={
-              <div className="w-full h-full flex items-center justify-center">
-                <Book className="h-12 w-12 text-muted-foreground" />
-              </div>
-            }
-          />
+          {shouldLoad ? (
+            <OptimizedImage
+              src={book.image_url}
+              alt={book.book_name}
+              width={600}
+              quality={85}
+              priority={priority}
+              srcSetSizes={[400, 600, 800, 1200]}
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 400px"
+              fallback={
+                <div className="w-full h-full flex items-center justify-center">
+                  <Book className="h-12 w-12 text-muted-foreground" />
+                </div>
+              }
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              <Book className="h-12 w-12 text-muted-foreground/50" />
+            </div>
+          )}
         </AspectRatio>
 
         <h3 className="font-semibold text-lg mb-2 line-clamp-2">
@@ -74,8 +91,8 @@ export const PopularBooks = ({ books }: PopularBooksProps) => {
               <PopularBookSkeleton key={i} />
             ))
           ) : (
-            books.map((book) => (
-              <PopularBookCard key={book.id} book={book} />
+            books.map((book, index) => (
+              <PopularBookCard key={book.id} book={book} priority={index < 3} />
             ))
           )}
         </div>

@@ -67,7 +67,7 @@ export const LandingHero = ({
                 </div>
 
                 <div className="relative aspect-square bg-background rounded-lg overflow-hidden">
-                  <OptimizedImage src={currentPage.image_url} alt={`${currentPage.letter} - ${currentPage.title}`} priority={true} width={800} srcSetSizes={[600, 800, 1200]} sizes="(max-width: 768px) 100vw, 600px" fallback={<div className="w-full h-full flex items-center justify-center">
+                  <OptimizedImage src={currentPage.image_url} alt={`${currentPage.letter} - ${currentPage.title}`} priority={true} width={800} srcSetSizes={[400, 600, 800, 1200]} sizes="(max-width: 640px) 90vw, (max-width: 768px) 50vw, (max-width: 1024px) 40vw, 600px" fallback={<div className="w-full h-full flex items-center justify-center">
                         <Book className="h-12 w-12 text-muted-foreground" />
                       </div>} />
                 </div>

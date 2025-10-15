@@ -97,7 +97,7 @@ export function DailyPublishedPageView({
       )}
 
       {/* Focused page card - Fixed height to prevent scrolling */}
-      <div className="h-[calc(100vh-12rem)] mt-4 px-4 flex items-center justify-center">
+      <div className="h-[calc(100vh-16rem)] mt-4 px-4 flex items-center justify-center">
         <div className="max-w-md w-full">
           <Card className="overflow-hidden shadow-lg">
             <CardContent className="p-0">
@@ -117,8 +117,8 @@ export function DailyPublishedPageView({
         show={true}
       />
 
-      {/* Focused Mode Button */}
-      <div className="pb-safe px-4 pb-4">
+      {/* Focused Mode Button - Fixed above navigation */}
+      <div className="fixed bottom-20 left-0 right-0 px-4 pb-2 z-30">
         <Button 
           onClick={() => navigate('/daily-published')}
           variant="outline"

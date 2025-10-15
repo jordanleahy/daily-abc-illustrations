@@ -9,6 +9,8 @@ import type { SEOMetadata } from '@/types/openGraph';
 import { useState, useEffect } from 'react';
 import { MetaHead } from '@/components/common';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Maximize2 } from 'lucide-react';
 interface DailyPublishedPageViewProps {
   page: Page;
   bookId: string;
@@ -95,7 +97,7 @@ export function DailyPublishedPageView({
       )}
 
       {/* Focused page card - Fixed height to prevent scrolling */}
-      <div className="h-[calc(100vh-8rem)] mt-4 px-4 flex items-center justify-center">
+      <div className="h-[calc(100vh-12rem)] mt-4 px-4 flex items-center justify-center">
         <div className="max-w-md w-full">
           <Card className="overflow-hidden shadow-lg">
             <CardContent className="p-0">
@@ -114,5 +116,18 @@ export function DailyPublishedPageView({
         variant="compact"
         show={true}
       />
+
+      {/* Focused Mode Button */}
+      <div className="pb-safe px-4 pb-4">
+        <Button 
+          onClick={() => navigate('/daily-published')}
+          variant="outline"
+          className="w-full"
+          size="lg"
+        >
+          <Maximize2 className="mr-2 h-4 w-4" />
+          Focused Mode
+        </Button>
+      </div>
     </div>;
 }

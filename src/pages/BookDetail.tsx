@@ -28,9 +28,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
 import { PublicationStatus } from '@/types/status';
-import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText, Star } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText, Star, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { useToggleBookHighlight } from '@/hooks/useToggleBookHighlight';
+import { useDuplicateBook } from '@/hooks/useDuplicateBook';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -80,6 +81,7 @@ export default function BookDetail() {
   const [isCreatePageModalOpen, setIsCreatePageModalOpen] = useState(false);
   
   const { mutate: toggleHighlight, isPending: isHighlightLoading } = useToggleBookHighlight();
+  const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
   
 
   useEffect(() => {
@@ -557,6 +559,33 @@ export default function BookDetail() {
                       aria-label="Add new page"
                     >
                       <Plus className="w-4 h-4" />
+                    </Button>
+
+                    {/* Duplicate book button */}
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => {
+                        if (user && book) {
+                          duplicateBook(
+                            { bookId: book.id, userId: user.id },
+                            {
+                              onSuccess: (newBook) => {
+                                navigate(`/editor/${newBook.id}`);
+                              },
+                            }
+                          );
+                        }
+                      }}
+                      disabled={isDuplicating}
+                      title="Duplicate book"
+                      aria-label="Duplicate book"
+                    >
+                      {isDuplicating ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Copy className="w-4 h-4" />
+                      )}
                     </Button>
                     
                     {/* Archive button on mobile only */}

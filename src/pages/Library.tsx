@@ -17,6 +17,7 @@ import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { getBookViewTimestamps, trackBookView } from '@/utils/bookViewTracking';
 import { useFavorites } from '@/hooks/useFavorites';
+import { PremiumContentWrapper } from '@/components/subscription/PremiumContentWrapper';
 
 export default memo(function Library() {
   const {
@@ -169,9 +170,14 @@ const LibraryBookCard = memo(function LibraryBookCard({
   const navigate = useNavigate();
   const isTeacher = useIsTeacher();
   const { isAuthenticated } = useAuthContext();
-  const { hasActiveSubscription, createCheckoutSession } = useSubscription();
+  const { hasActiveSubscription } = useSubscription();
   
   const handleCardClick = () => {
+    // Only allow navigation if user has subscription or is a teacher
+    if (!hasActiveSubscription && !isTeacher) {
+      return; // Blocked - overlay will show upgrade option
+    }
+    
     // Track the book view for sorting
     trackBookView(item.id);
     
@@ -184,67 +190,74 @@ const LibraryBookCard = memo(function LibraryBookCard({
     onToggleFavorite(item.id);
   };
 
-  return (
-    <Card 
-      className="hover:shadow-md transition-shadow cursor-pointer hover:shadow-lg relative" 
-      onClick={handleCardClick}
-    >
-      {/* Favorite Heart Button */}
-      <button
-        onClick={handleFavoriteClick}
-        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"
-        aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-      >
-        <Heart 
-          className={`w-5 h-5 transition-colors ${
-            isFavorited 
-              ? 'fill-red-500 text-red-500' 
-              : 'text-muted-foreground hover:text-red-500'
-          }`}
-        />
-      </button>
+  // Check if content should be locked
+  const shouldShowPremiumOverlay = isAuthenticated && !hasActiveSubscription && !isTeacher;
 
-      <CardHeader>
-        <div className="flex items-start justify-between gap-2 pr-12">
-          <CardTitle className="text-xl line-clamp-2 flex-1">
-            {item.title}
-          </CardTitle>
-          {isNewlyPublished && (
-            <Badge variant="default" className="shrink-0">
-              Published Today
-            </Badge>
-          )}
-        </div>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1">
-            <Users className="w-4 h-4" />
-            26 pages
-          </div>
-          <div className="flex items-center gap-1">
-            <Calendar className="w-4 h-4" />
-            {new Date(item.publish_date).toLocaleDateString()}
-          </div>
-        </div>
-        
-        <div className="aspect-[1200/630] bg-muted rounded-lg flex items-center justify-center overflow-hidden">
-          {item.og_image_url ? (
-            <img 
-              src={optimizeImageUrl(item.og_image_url, { width: 800, quality: 85 }) || item.og_image_url}
-              srcSet={generateSrcSet(item.og_image_url, [600, 800, 1200])}
-              sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              alt={`Preview of ${item.title}`}
-              className="w-full h-full object-cover object-center"
-              loading={index < 6 ? "eager" : "lazy"}
-              fetchPriority={index < 3 ? "high" : "auto"}
-              decoding="async"
+  return (
+    <PremiumContentWrapper showOverlay={shouldShowPremiumOverlay}>
+      <Card 
+        className={`hover:shadow-md transition-shadow ${shouldShowPremiumOverlay ? '' : 'cursor-pointer hover:shadow-lg'} relative`}
+        onClick={handleCardClick}
+      >
+        {/* Favorite Heart Button - only functional if not locked */}
+        {!shouldShowPremiumOverlay && (
+          <button
+            onClick={handleFavoriteClick}
+            className="absolute top-4 right-4 z-10 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"
+            aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
+          >
+            <Heart 
+              className={`w-5 h-5 transition-colors ${
+                isFavorited 
+                  ? 'fill-red-500 text-red-500' 
+                  : 'text-muted-foreground hover:text-red-500'
+              }`}
             />
-          ) : (
-            <BookOpen className="w-8 h-8 text-muted-foreground" />
-          )}
-        </div>
-      </CardContent>
-    </Card>
+          </button>
+        )}
+
+        <CardHeader>
+          <div className="flex items-start justify-between gap-2 pr-12">
+            <CardTitle className="text-xl line-clamp-2 flex-1">
+              {item.title}
+            </CardTitle>
+            {isNewlyPublished && (
+              <Badge variant="default" className="shrink-0">
+                Published Today
+              </Badge>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="flex items-center gap-1">
+              <Users className="w-4 h-4" />
+              26 pages
+            </div>
+            <div className="flex items-center gap-1">
+              <Calendar className="w-4 h-4" />
+              {new Date(item.publish_date).toLocaleDateString()}
+            </div>
+          </div>
+          
+          <div className="aspect-[1200/630] bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+            {item.og_image_url ? (
+              <img 
+                src={optimizeImageUrl(item.og_image_url, { width: 800, quality: 85 }) || item.og_image_url}
+                srcSet={generateSrcSet(item.og_image_url, [600, 800, 1200])}
+                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                alt={`Preview of ${item.title}`}
+                className="w-full h-full object-cover object-center"
+                loading={index < 6 ? "eager" : "lazy"}
+                fetchPriority={index < 3 ? "high" : "auto"}
+                decoding="async"
+              />
+            ) : (
+              <BookOpen className="w-8 h-8 text-muted-foreground" />
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    </PremiumContentWrapper>
   );
 });

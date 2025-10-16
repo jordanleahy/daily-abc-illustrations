@@ -18,6 +18,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { getBookViewTimestamps, trackBookView } from '@/utils/bookViewTracking';
 import { useFavorites } from '@/hooks/useFavorites';
 import { PremiumContentWrapper } from '@/components/subscription/PremiumContentWrapper';
+import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 
 export default memo(function Library() {
   const {
@@ -168,14 +169,12 @@ const LibraryBookCard = memo(function LibraryBookCard({
   onToggleFavorite 
 }: LibraryBookCardProps) {
   const navigate = useNavigate();
-  const isTeacher = useIsTeacher();
-  const { isAuthenticated } = useAuthContext();
-  const { hasActiveSubscription } = useSubscription();
+  const { hasLibraryAccess } = useFeatureAccess();
   
   const handleCardClick = () => {
-    // Only allow navigation if user has subscription or is a teacher
-    if (!hasActiveSubscription && !isTeacher) {
-      return; // Blocked - overlay will show upgrade option
+    // Free users have library access - allow navigation
+    if (!hasLibraryAccess) {
+      return; // Blocked - shouldn't happen since library requires auth
     }
     
     // Track the book view for sorting
@@ -190,8 +189,8 @@ const LibraryBookCard = memo(function LibraryBookCard({
     onToggleFavorite(item.id);
   };
 
-  // Check if content should be locked
-  const shouldShowPremiumOverlay = isAuthenticated && !hasActiveSubscription && !isTeacher;
+  // Library is available to all authenticated users (free tier)
+  const shouldShowPremiumOverlay = false;
 
   return (
     <PremiumContentWrapper showOverlay={shouldShowPremiumOverlay}>

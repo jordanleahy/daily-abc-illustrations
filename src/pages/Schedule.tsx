@@ -13,6 +13,7 @@ import { toEasternTime } from '@/utils/timezone';
 import { format } from 'date-fns-tz';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 
 // Utility functions (reused from DailyPublishedSchedule)
 const getStatusColor = (status: string) => {
@@ -62,6 +63,7 @@ export default function Schedule() {
     error
   } = useDailyPublishedSchedule();
   const { hasActiveSubscription } = useSubscription();
+  const { hasLibraryAccess } = useFeatureAccess();
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -134,7 +136,7 @@ export default function Schedule() {
               </div>
             </div>}
 
-          {/* Empty State */}
+          {/* Empty State - accessible to all users (free tier includes library access) */}
           {(!scheduleItems || scheduleItems.length === 0) && <Card>
               <CardContent className="text-center py-12">
                 <h3 className="text-lg font-semibold mb-2">No books scheduled</h3>
@@ -144,7 +146,7 @@ export default function Schedule() {
               </CardContent>
             </Card>}
 
-          {/* Expired Items (Premium gated) */}
+          {/* Expired Items (Plus-tier only - past books archive) */}
           {expiredItems.length > 0 && (
             <div className="mt-8">
               {hasActiveSubscription ? (
@@ -165,14 +167,14 @@ export default function Schedule() {
                 </details>
               ) : (
                 <PremiumGate 
-                  feature="historical content access"
-                  description="Access all past daily published ABC books and view the complete archive."
+                  feature="past books archive"
+                  description="Upgrade to Plus to access all past daily published ABC books and view the complete archive."
                   showUpgrade={true}
                 >
                   <details className="group">
                     <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
                       <Clock className="h-4 w-4" />
-                      Show {expiredItems.length} past books
+                      Show {expiredItems.length} past books (Plus only)
                     </summary>
                   </details>
                 </PremiumGate>

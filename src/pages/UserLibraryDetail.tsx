@@ -7,6 +7,7 @@ import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useAddBookAsHabit } from '@/hooks/useAddBookAsHabit';
 import { useIsBookAddedAsHabit } from '@/hooks/useIsBookAddedAsHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { useSubscription } from '@/hooks/useSubscription';
 import { MetaHead } from '@/components/common';
 import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ export default function UserLibraryDetail() {
   const addBookAsHabit = useAddBookAsHabit();
   const { data: isBookAdded = false } = useIsBookAddedAsHabit(dailyContent?.book_id);
   const { hasHabitsRewards } = useFeatureAccess();
+  const { hasActiveSubscription } = useSubscription();
   
   const [isDownloading, setIsDownloading] = useState(false);
   
@@ -80,6 +82,15 @@ export default function UserLibraryDetail() {
   };
 
   const handleDownloadPDF = async () => {
+    if (!hasActiveSubscription) {
+      toast({
+        title: "Plus Feature",
+        description: "Upgrade to Plus to download PDF versions of books.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     if (!dailyContent?.book_id || !pages.length) return;
     
     setIsDownloading(true);
@@ -207,16 +218,30 @@ export default function UserLibraryDetail() {
                   </Button>
                 )}
                 
-                <Button
-                  onClick={handleDownloadPDF}
-                  disabled={isDownloading}
-                  variant="outline"
-                  size="icon"
-                  className="shrink-0"
-                >
-                  <Download className={`h-5 w-5 ${isDownloading ? 'animate-pulse' : ''}`} />
-                  <span className="sr-only">Download as PDF</span>
-                </Button>
+                {hasActiveSubscription ? (
+                  <Button
+                    onClick={handleDownloadPDF}
+                    disabled={isDownloading}
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    title="Download as PDF"
+                  >
+                    <Download className={`h-5 w-5 ${isDownloading ? 'animate-pulse' : ''}`} />
+                    <span className="sr-only">Download as PDF</span>
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => navigate('/pricing', { state: { upgrade: 'pdf_download' } })}
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    title="Upgrade to Plus to download PDFs"
+                  >
+                    <Lock className="h-4 w-4" />
+                    <span className="sr-only">Upgrade for PDF Downloads</span>
+                  </Button>
+                )}
               </div>
             </div>
           </div>

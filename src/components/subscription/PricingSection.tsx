@@ -8,11 +8,18 @@ export const PricingSection = () => {
   const { createCheckoutSession, hasActiveSubscription, getSubscriptionTier, loading } = useSubscription();
   const currentTier = getSubscriptionTier();
 
-  const features = [
-    "Access to all daily published ABC books",
-    "Download PDF version",
-    "Full library access",
-    "Premium reading experience"
+  const freeFeatures = [
+    "Browse full library",
+    "Daily published ABC books",
+    "View all content"
+  ];
+
+  const plusFeatures = [
+    "Everything in Free, plus:",
+    "Download PDF versions",
+    "Habits & Rewards system",
+    "Track reading progress",
+    "Premium experience"
   ];
 
   return (
@@ -21,12 +28,45 @@ export const PricingSection = () => {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold mb-4">Choose Your Plan</h2>
           <p className="text-muted-foreground text-lg">
-            Unlock the full potential of Daily ABC Illustrations
+            Start free, upgrade for Habits & Rewards
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-          {/* Monthly Plan */}
+        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {/* Free Plan */}
+          <Card className="relative">
+            <CardHeader className="text-center">
+              <div className="mx-auto mb-4">
+                <CheckCircle className="h-12 w-12 text-green-500" />
+              </div>
+              <CardTitle className="text-2xl">Free</CardTitle>
+              <CardDescription>Perfect for getting started</CardDescription>
+              <div className="text-4xl font-bold mt-4">
+                $0
+                <span className="text-lg font-normal text-muted-foreground">/forever</span>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-3">
+                {freeFeatures.map((feature, index) => (
+                  <li key={index} className="flex items-center gap-3">
+                    <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                    <span className="text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                className="w-full" 
+                variant="outline"
+                asChild
+              >
+                <a href="/auth?mode=signup">Sign Up Free</a>
+              </Button>
+            </CardFooter>
+          </Card>
+          {/* Plus Monthly Plan */}
           <Card className={`relative ${currentTier?.interval === 'month' ? 'ring-2 ring-primary' : ''}`}>
             {currentTier?.interval === 'month' && (
               <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-primary">
@@ -37,8 +77,8 @@ export const PricingSection = () => {
               <div className="mx-auto mb-4">
                 <Zap className="h-12 w-12 text-primary" />
               </div>
-              <CardTitle className="text-2xl">Standard Monthly</CardTitle>
-              <CardDescription>Perfect for getting started</CardDescription>
+              <CardTitle className="text-2xl">Plus Monthly</CardTitle>
+              <CardDescription>Full features for your family</CardDescription>
               <div className="text-4xl font-bold mt-4">
                 $4.99
                 <span className="text-lg font-normal text-muted-foreground">/month</span>
@@ -46,7 +86,7 @@ export const PricingSection = () => {
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
-                {features.map((feature, index) => (
+                {plusFeatures.map((feature, index) => (
                   <li key={index} className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
                     <span className="text-sm">{feature}</span>
@@ -68,7 +108,7 @@ export const PricingSection = () => {
             </CardFooter>
           </Card>
 
-          {/* Annual Plan */}
+          {/* Plus Annual Plan */}
           <Card className={`relative ${currentTier?.interval === 'year' ? 'ring-2 ring-primary' : ''}`}>
             <Badge className="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-green-600">
               Save 50%
@@ -82,8 +122,8 @@ export const PricingSection = () => {
               <div className="mx-auto mb-4">
                 <Crown className="h-12 w-12 text-yellow-500" />
               </div>
-              <CardTitle className="text-2xl">Standard Annual</CardTitle>
-              <CardDescription>Best value for committed learners</CardDescription>
+              <CardTitle className="text-2xl">Plus Annual</CardTitle>
+              <CardDescription>Best value for committed families</CardDescription>
               <div className="text-4xl font-bold mt-4">
                 $29.99
                 <span className="text-lg font-normal text-muted-foreground">/year</span>
@@ -94,12 +134,16 @@ export const PricingSection = () => {
             </CardHeader>
             <CardContent>
               <ul className="space-y-3">
-                {features.map((feature, index) => (
+                {plusFeatures.map((feature, index) => (
                   <li key={index} className="flex items-center gap-3">
                     <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
                     <span className="text-sm">{feature}</span>
                   </li>
                 ))}
+                <li className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                  <span className="text-sm">Early access to new books</span>
+                </li>
               </ul>
             </CardContent>
             <CardFooter>
@@ -111,7 +155,7 @@ export const PricingSection = () => {
               >
                 {loading ? "Loading..." : 
                  currentTier?.interval === 'year' ? "Current Plan" : 
-                 hasActiveSubscription ? "Switch to Annual" : "Get Started"}
+                 hasActiveSubscription ? "Switch to Annual" : "Upgrade to Plus"}
               </Button>
             </CardFooter>
           </Card>

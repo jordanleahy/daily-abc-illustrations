@@ -27,11 +27,19 @@ export const PricingSection = () => {
     }
   };
 
-  const features = [
-    'Access to all daily published ABC books',
-    'Download PDF version',
-    'Full library access',
-    'Premium reading experience'
+  const freeFeatures = [
+    'Browse full library',
+    'Daily published ABC books',
+    'View all content',
+    'Basic reading experience'
+  ];
+
+  const plusFeatures = [
+    'Everything in Free, plus:',
+    'Download PDF versions',
+    'Habits & Rewards system',
+    'Track reading progress',
+    'Premium experience'
   ];
 
   return (
@@ -42,16 +50,56 @@ export const PricingSection = () => {
             Simple, Transparent Pricing
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Choose the plan that works best for your family
+            Start free with library access, upgrade for Habits & Rewards
           </p>
         </div>
 
-        {/* Two Pricing Cards */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
-          {/* Monthly Card */}
+        {/* Three Pricing Cards */}
+        <div className="grid md:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {/* Free Card */}
           <Card className="border-2 shadow-lg hover:shadow-xl transition-shadow">
             <CardHeader className="text-center pb-8">
-              <CardTitle className="text-2xl mb-2">Monthly Plan</CardTitle>
+              <CardTitle className="text-2xl mb-2">Free</CardTitle>
+              <div className="mt-4">
+                <div className="flex items-baseline justify-center gap-2">
+                  <span className="text-5xl font-bold">$0</span>
+                  <span className="text-muted-foreground text-lg">/forever</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  No credit card required
+                </p>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <ul className="space-y-3">
+                {freeFeatures.map((feature, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="w-3 h-3 text-primary-foreground" />
+                    </div>
+                    <span className="text-sm">{feature}</span>
+                  </li>
+                ))}
+              </ul>
+              
+              <Button 
+                className="w-full text-lg py-6"
+                size="lg"
+                variant="outline"
+                onClick={() => navigate('/auth?mode=signup')}
+              >
+                Sign Up Free
+              </Button>
+              
+              <p className="text-xs text-center text-muted-foreground">
+                No credit card required
+              </p>
+            </CardContent>
+          </Card>
+          {/* Plus Monthly Card */}
+          <Card className="border-2 shadow-lg hover:shadow-xl transition-shadow">
+            <CardHeader className="text-center pb-8">
+              <CardTitle className="text-2xl mb-2">Plus Monthly</CardTitle>
               <div className="mt-4">
                 <div className="flex items-baseline justify-center gap-2">
                   <span className="text-5xl font-bold">$4.99</span>
@@ -64,7 +112,7 @@ export const PricingSection = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <ul className="space-y-3">
-                {features.map((feature, index) => (
+                {plusFeatures.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Check className="w-3 h-3 text-primary-foreground" />
@@ -91,13 +139,13 @@ export const PricingSection = () => {
             </CardContent>
           </Card>
 
-          {/* Yearly Card - Highlighted */}
+          {/* Plus Annual Card - Highlighted */}
           <Card className="border-2 border-primary shadow-xl relative">
             <div className="absolute -top-4 left-1/2 -translate-x-1/2">
               <Badge className="px-4 py-1 text-sm">Save 50%</Badge>
             </div>
             <CardHeader className="text-center pb-8">
-              <CardTitle className="text-2xl mb-2">Yearly Plan</CardTitle>
+              <CardTitle className="text-2xl mb-2">Plus Annual</CardTitle>
               <div className="mt-4">
                 <div className="flex items-baseline justify-center gap-2">
                   <span className="text-5xl font-bold">$2.50</span>
@@ -110,7 +158,7 @@ export const PricingSection = () => {
             </CardHeader>
             <CardContent className="space-y-6">
               <ul className="space-y-3">
-                {features.map((feature, index) => (
+                {plusFeatures.map((feature, index) => (
                   <li key={index} className="flex items-start gap-3">
                     <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Check className="w-3 h-3 text-primary-foreground" />
@@ -118,6 +166,12 @@ export const PricingSection = () => {
                     <span className="text-sm">{feature}</span>
                   </li>
                 ))}
+                <li className="flex items-start gap-3">
+                  <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Check className="w-3 h-3 text-primary-foreground" />
+                  </div>
+                  <span className="text-sm">Early access to new books</span>
+                </li>
               </ul>
               
               <Button 

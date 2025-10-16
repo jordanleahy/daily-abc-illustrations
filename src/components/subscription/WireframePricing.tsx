@@ -30,13 +30,30 @@ export const WireframePricing = () => {
 
   const plans = [
     {
-      name: "Monthly Plan",
+      name: "Free",
+      price: "$0",
+      period: "forever",
+      isFree: true,
+      features: [
+        "Browse full library",
+        "Daily published ABC books",
+        "View all content",
+        "Basic reading experience"
+      ],
+      buttonText: user && !hasActiveSubscription ? "Current Plan" : "Sign Up Free",
+      buttonDisabled: Boolean(user && !hasActiveSubscription),
+      current: Boolean(user && !hasActiveSubscription),
+      onClick: () => user ? null : navigate('/auth?mode=signup')
+    },
+    {
+      name: "Plus Monthly",
       price: "$4.99",
       period: "month",
       features: [
-        "Access to all daily published ABC books",
-        "Download PDF version",
-        "Full library access",
+        "Everything in Free, plus:",
+        "Download PDF versions",
+        "Habits & Rewards system",
+        "Track reading progress",
         "Premium reading experience"
       ],
       buttonText: currentTier?.interval === 'month' ? "Current Plan" : "Select Monthly",
@@ -45,17 +62,16 @@ export const WireframePricing = () => {
       onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS?.plus_monthly?.price_id || '')
     },
     {
-      name: "Annual Plan",
+      name: "Plus Annual",
       price: "$29.99", 
       period: "year",
       savings: "Save $29.89 (50% off)",
       features: [
-        "Access to all daily published ABC books",
-        "Download PDF version", 
-        "Full library access",
-        "Premium reading experience",
+        "Everything in Plus Monthly, plus:",
         "Early access to new books",
-        "Educational activity guides"
+        "Educational activity guides",
+        "Priority support",
+        "Best value - save 50%"
       ],
       buttonText: currentTier?.interval === 'year' ? "Current Plan" : "Select Annual",
       buttonDisabled: loading || (hasActiveSubscription && currentTier?.interval === 'year'),
@@ -69,11 +85,11 @@ export const WireframePricing = () => {
       {/* Simple header */}
       <div className="text-center mb-12">
         <h1 className="text-3xl font-bold mb-4">Choose Your Plan</h1>
-        <p className="text-muted-foreground">Select the plan that works best for you</p>
+        <p className="text-muted-foreground">Start free with library access, upgrade anytime for Habits & Rewards</p>
       </div>
 
-      {/* Simple 2-column layout */}
-      <div className="grid md:grid-cols-2 gap-8 mb-12 max-w-4xl mx-auto">
+      {/* 3-column layout */}
+      <div className="grid md:grid-cols-3 gap-6 mb-12 max-w-6xl mx-auto">
         {plans.map((plan, index) => (
           <Card key={index} className={`${plan.current ? 'border-primary border-2' : ''}`}>
             <CardHeader className="text-center">

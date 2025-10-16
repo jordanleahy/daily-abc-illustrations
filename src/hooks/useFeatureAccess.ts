@@ -23,13 +23,29 @@ export const useFeatureAccess = () => {
   // Admin/Teacher bypass all subscription checks
   const isPrivilegedUser = hasRole('admin') || hasRole('teacher');
   
+  // Debug logging
+  console.log('[FEATURE ACCESS] Debug:', {
+    user_id: user?.id,
+    product_id,
+    hasActiveSubscription,
+    isAdmin: hasRole('admin'),
+    isTeacher: hasRole('teacher'),
+    isPrivilegedUser,
+  });
+  
   /**
    * Check if user has access to Habits & Rewards features
    * Plus tier required (or privileged role)
    */
   const hasHabitsRewards = useMemo(() => {
-    if (isPrivilegedUser) return true;
-    if (!hasActiveSubscription) return false;
+    if (isPrivilegedUser) {
+      console.log('[FEATURE ACCESS] User is privileged (admin/teacher) - granting habits_rewards access');
+      return true;
+    }
+    if (!hasActiveSubscription) {
+      console.log('[FEATURE ACCESS] No active subscription - denying habits_rewards access');
+      return false;
+    }
     
     // Check if product_id matches Plus tier
     const plusProductIds: string[] = [
@@ -37,7 +53,14 @@ export const useFeatureAccess = () => {
       SUBSCRIPTION_TIERS.plus_annual.product_id,
     ];
     
-    return product_id ? plusProductIds.includes(product_id) : false;
+    const hasAccess = product_id ? plusProductIds.includes(product_id) : false;
+    console.log('[FEATURE ACCESS] Checking product_id:', {
+      product_id,
+      plusProductIds,
+      hasAccess,
+    });
+    
+    return hasAccess;
   }, [product_id, hasActiveSubscription, isPrivilegedUser]);
   
   /**

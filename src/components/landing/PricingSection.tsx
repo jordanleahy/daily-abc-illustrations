@@ -78,7 +78,7 @@ export const PricingSection = () => {
                 className="w-full text-lg py-6"
                 size="lg"
                 variant="outline"
-                onClick={() => handleCheckout(SUBSCRIPTION_TIERS.standard_monthly.price_id, 'monthly')}
+                onClick={() => handleCheckout(SUBSCRIPTION_TIERS.plus_monthly.price_id, 'monthly')}
                 disabled={loadingPlan !== null}
               >
                 {loadingPlan === 'monthly' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
@@ -123,7 +123,7 @@ export const PricingSection = () => {
               <Button 
                 className="w-full text-lg py-6"
                 size="lg"
-                onClick={() => handleCheckout(SUBSCRIPTION_TIERS.standard_annual.price_id, 'annual')}
+                onClick={() => handleCheckout(SUBSCRIPTION_TIERS.plus_annual.price_id, 'annual')}
                 disabled={loadingPlan !== null}
               >
                 {loadingPlan === 'annual' && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}

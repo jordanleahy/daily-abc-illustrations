@@ -180,7 +180,7 @@ export const DuolingoStylePricing = () => {
             <CardFooter>
               <Button 
                 className="w-full bg-gradient-to-r from-duolingo-green to-duolingo-green-light hover:opacity-90 text-white font-bold py-3 text-lg shadow-lg"
-                onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id)}
+                onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.plus_monthly.price_id)}
                 disabled={loading || (hasActiveSubscription && currentTier?.interval === 'month')}
               >
                 {loading ? (
@@ -259,7 +259,7 @@ export const DuolingoStylePricing = () => {
             <CardFooter>
               <Button 
                 className="w-full bg-gradient-to-r from-duolingo-purple to-purple-600 hover:opacity-90 text-white font-bold py-3 text-lg shadow-lg" 
-                onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.standard_annual.price_id)}
+                onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.plus_annual.price_id)}
                 disabled={loading || (hasActiveSubscription && currentTier?.interval === 'year')}
               >
                 {loading ? (

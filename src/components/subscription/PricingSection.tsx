@@ -57,7 +57,7 @@ export const PricingSection = () => {
             <CardFooter>
               <Button 
                 className="w-full" 
-                onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id)}
+                onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.plus_monthly.price_id)}
                 disabled={loading || (hasActiveSubscription && currentTier?.interval === 'month')}
                 variant={currentTier?.interval === 'month' ? "outline" : "default"}
               >
@@ -105,7 +105,7 @@ export const PricingSection = () => {
             <CardFooter>
               <Button 
                 className="w-full" 
-                onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.standard_annual.price_id)}
+                onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.plus_annual.price_id)}
                 disabled={loading || (hasActiveSubscription && currentTier?.interval === 'year')}
                 variant={currentTier?.interval === 'year' ? "outline" : "default"}
               >

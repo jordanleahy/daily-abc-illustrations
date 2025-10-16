@@ -2,15 +2,18 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useRole } from '@/contexts/RoleContext';
+import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { LoadingState } from '@/components/ui/loading-state';
 
 type AppRole = 'user' | 'teacher' | 'moderator' | 'admin';
+type Feature = 'habits_rewards' | 'library';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
   requireAuth?: boolean;
   requireSubscription?: boolean;
   requireRole?: AppRole;
+  requireFeature?: Feature;
   redirectTo?: string;
 }
 
@@ -19,14 +22,19 @@ export const ProtectedRoute = ({
   requireAuth = true,
   requireSubscription = true,
   requireRole,
+  requireFeature,
   redirectTo
 }: ProtectedRouteProps) => {
   const { isAuthenticated, loading: authLoading } = useAuthContext();
   const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
   const { hasRole, isLoading: roleLoading } = useRole();
+  const { hasHabitsRewards, hasLibraryAccess, loading: featureLoading } = useFeatureAccess();
   const location = useLocation();
 
-  const loading = authLoading || (requireSubscription ? subscriptionLoading : false) || (requireRole ? roleLoading : false);
+  const loading = authLoading || 
+    (requireSubscription ? subscriptionLoading : false) || 
+    (requireRole ? roleLoading : false) ||
+    (requireFeature ? featureLoading : false);
 
   if (loading) {
     return (
@@ -46,7 +54,17 @@ export const ProtectedRoute = ({
     return <Navigate to={redirectTo || '/'} replace />;
   }
 
-  // Check subscription requirement
+  // Check feature requirement (more granular than subscription)
+  if (requireFeature) {
+    if (requireFeature === 'habits_rewards' && !hasHabitsRewards) {
+      return <Navigate to={redirectTo || '/pricing'} state={{ upgrade: 'habits_rewards' }} replace />;
+    }
+    if (requireFeature === 'library' && !hasLibraryAccess) {
+      return <Navigate to={redirectTo || '/pricing'} state={{ upgrade: 'library' }} replace />;
+    }
+  }
+
+  // Check subscription requirement (legacy support)
   if (requireSubscription && !hasActiveSubscription) {
     // Prevent redirect loop
     if (location.pathname === '/pricing') {

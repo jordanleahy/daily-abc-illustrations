@@ -18,20 +18,42 @@ interface SubscriptionStatus {
 
 // Define our subscription tiers with their corresponding Stripe IDs
 export const SUBSCRIPTION_TIERS = {
-  standard_monthly: {
+  // Plus tier - Full features (habits + rewards + library)
+  // These are the existing products, now labeled as "Plus"
+  plus_monthly: {
     price_id: "price_1SFFx1C8Q85n0xWFNIFQGB4N",
     product_id: "prod_T7a3qkxm69uttK",
-    name: "Standard Monthly",
+    name: "Plus Monthly",
     price: 499, // Price in cents ($4.99)
-    interval: "month"
+    interval: "month",
+    features: {
+      library_access: true,
+      habits_rewards: true,
+    }
   },
-  standard_annual: {
+  plus_annual: {
     price_id: "price_1SBKvfC8Q85n0xWF1nxvGfau",
     product_id: "prod_T7a5vTweAt6UZm",
-    name: "Standard Annual",
+    name: "Plus Annual",
     price: 2999, // Price in cents ($29.99)
-    interval: "year"
+    interval: "year",
+    features: {
+      library_access: true,
+      habits_rewards: true,
+    }
   }
+  // Note: Basic tier to be added when Stripe products are created
+  // basic_monthly: {
+  //   price_id: "price_xxx",
+  //   product_id: "prod_xxx",
+  //   name: "Basic Monthly",
+  //   price: 299, // $2.99
+  //   interval: "month",
+  //   features: {
+  //     library_access: true,
+  //     habits_rewards: false,
+  //   }
+  // }
 } as const;
 
 // Helper to check if subscription is active

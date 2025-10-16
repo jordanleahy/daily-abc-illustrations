@@ -117,7 +117,7 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
               {showActions && (
                 <Button 
                   className="w-full" 
-                  onClick={() => handleSelectPlan(SUBSCRIPTION_TIERS.standard_monthly.price_id)}
+                  onClick={() => handleSelectPlan(SUBSCRIPTION_TIERS.plus_monthly.price_id)}
                 >
                   Select Monthly
                 </Button>
@@ -155,7 +155,7 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
               {showActions && (
                 <Button 
                   className="w-full" 
-                  onClick={() => handleSelectPlan(SUBSCRIPTION_TIERS.standard_annual.price_id)}
+                  onClick={() => handleSelectPlan(SUBSCRIPTION_TIERS.plus_annual.price_id)}
                 >
                   Select Annual
                 </Button>

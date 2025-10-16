@@ -6,12 +6,13 @@ import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useAddBookAsHabit } from '@/hooks/useAddBookAsHabit';
 import { useIsBookAddedAsHabit } from '@/hooks/useIsBookAddedAsHabit';
+import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { MetaHead } from '@/components/common';
 import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PublicPageImage } from '@/components/daily-published';
-import { Calendar, BookOpen, Download, Plus, CheckCircle } from 'lucide-react';
+import { Calendar, BookOpen, Download, Plus, CheckCircle, Lock } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
 import { generateBookPDF } from '@/services/pdfGenerator';
 import { toast } from '@/hooks/use-toast';
@@ -28,6 +29,7 @@ export default function UserLibraryDetail() {
   const { data: kidProfiles = [] } = useKidProfiles();
   const addBookAsHabit = useAddBookAsHabit();
   const { data: isBookAdded = false } = useIsBookAddedAsHabit(dailyContent?.book_id);
+  const { hasHabitsRewards } = useFeatureAccess();
   
   const [isDownloading, setIsDownloading] = useState(false);
   
@@ -175,21 +177,35 @@ export default function UserLibraryDetail() {
                 )}
               </div>
               <div className="flex gap-2">
-              <Button
-                onClick={handleAddAsHabit}
-                disabled={isBookAdded || addBookAsHabit.isPending || kidProfiles.length === 0}
-                variant={isBookAdded ? "default" : "secondary"}
-                size="icon"
-                className="shrink-0"
-                title={isBookAdded ? "Already added to today's reading list" : "Add as reading habit"}
-              >
-                  {isBookAdded ? (
-                    <CheckCircle className="h-5 w-5 text-green-500" />
-                  ) : (
-                    <Plus className={`h-5 w-5 ${addBookAsHabit.isPending ? 'animate-pulse' : ''}`} />
-                  )}
-                  <span className="sr-only">{isBookAdded ? 'Added to habits' : 'Add as habit'}</span>
-                </Button>
+                {/* Conditional Habit Button - Only show for Plus tier users */}
+                {hasHabitsRewards ? (
+                  <Button
+                    onClick={handleAddAsHabit}
+                    disabled={isBookAdded || addBookAsHabit.isPending || kidProfiles.length === 0}
+                    variant={isBookAdded ? "default" : "secondary"}
+                    size="icon"
+                    className="shrink-0"
+                    title={isBookAdded ? "Already added to today's reading list" : "Add as reading habit"}
+                  >
+                    {isBookAdded ? (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    ) : (
+                      <Plus className={`h-5 w-5 ${addBookAsHabit.isPending ? 'animate-pulse' : ''}`} />
+                    )}
+                    <span className="sr-only">{isBookAdded ? 'Added to habits' : 'Add as habit'}</span>
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => navigate('/pricing', { state: { upgrade: 'habits_rewards' } })}
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    title="Upgrade to Plus to add as habit"
+                  >
+                    <Lock className="h-4 w-4" />
+                    <span className="sr-only">Upgrade for Habits</span>
+                  </Button>
+                )}
                 
                 <Button
                   onClick={handleDownloadPDF}

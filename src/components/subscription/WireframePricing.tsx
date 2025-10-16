@@ -42,7 +42,7 @@ export const WireframePricing = () => {
       buttonText: currentTier?.interval === 'month' ? "Current Plan" : "Select Monthly",
       buttonDisabled: loading || (hasActiveSubscription && currentTier?.interval === 'month'),
       current: currentTier?.interval === 'month',
-      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS?.standard_monthly?.price_id || '')
+      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS?.plus_monthly?.price_id || '')
     },
     {
       name: "Annual Plan",
@@ -60,7 +60,7 @@ export const WireframePricing = () => {
       buttonText: currentTier?.interval === 'year' ? "Current Plan" : "Select Annual",
       buttonDisabled: loading || (hasActiveSubscription && currentTier?.interval === 'year'),
       current: currentTier?.interval === 'year',
-      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS?.standard_annual?.price_id || '')
+      onClick: () => handlePlanSelection(SUBSCRIPTION_TIERS?.plus_annual?.price_id || '')
     }
   ];
 

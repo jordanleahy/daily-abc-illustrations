@@ -74,14 +74,17 @@ const App = () => (
                <Route path="/agents" element={<Agents />} />
                <Route path="/editor" element={<ProtectedRoute requireRole="admin"><Books /></ProtectedRoute>} />
                <Route path="/editor/:id" element={<ProtectedRoute requireRole="admin"><BookDetail /></ProtectedRoute>} />
+                {/* Library routes - All subscription tiers */}
                 <Route path="/library" element={<ProtectedRoute requireSubscription={false}><Library key="library" /></ProtectedRoute>} />
                 <Route path="/library/:id" element={<ProtectedRoute requireSubscription={false}><LibraryBookView /></ProtectedRoute>} />
                 <Route path="/library/:id/detail" element={<ProtectedRoute requireSubscription={false}><UserLibraryDetail /></ProtectedRoute>} />
                 <Route path="/admin/library/:id" element={<ProtectedRoute requireRole="admin"><LibraryDetail /></ProtectedRoute>} />
-                <Route path="/rewards" element={<ProtectedRoute><Rewards /></ProtectedRoute>} />
-                <Route path="/rewards/manage" element={<ProtectedRoute><RewardsManage /></ProtectedRoute>} />
-                <Route path="/habits/manage" element={<ProtectedRoute><HabitsManage /></ProtectedRoute>} />
-                <Route path="/my-habits" element={<ProtectedRoute><MyHabits /></ProtectedRoute>} />
+                
+                {/* Habits & Rewards routes - Plus tier only */}
+                <Route path="/rewards" element={<ProtectedRoute requireFeature="habits_rewards"><Rewards /></ProtectedRoute>} />
+                <Route path="/rewards/manage" element={<ProtectedRoute requireFeature="habits_rewards"><RewardsManage /></ProtectedRoute>} />
+                <Route path="/habits/manage" element={<ProtectedRoute requireFeature="habits_rewards"><HabitsManage /></ProtectedRoute>} />
+                <Route path="/my-habits" element={<ProtectedRoute requireFeature="habits_rewards"><MyHabits /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />
                <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />

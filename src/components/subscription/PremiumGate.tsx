@@ -44,7 +44,7 @@ export const PremiumGate = ({
             Unlock this {feature} with a premium subscription.
           </p>
           {showUpgrade && user && (
-            <Button onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id)}>
+            <Button onClick={() => createCheckoutSession(SUBSCRIPTION_TIERS.plus_monthly.price_id)}>
               <Crown className="h-4 w-4 mr-2" />
               Upgrade to Premium
             </Button>

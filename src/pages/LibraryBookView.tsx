@@ -11,6 +11,7 @@ import { useKidCoins } from '@/hooks/useKidCoins';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
+import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
@@ -36,6 +37,7 @@ export default function LibraryBookView() {
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
   const { data: kidProfiles } = useKidProfiles();
   const { completeBookHabit } = useCompleteBookHabit();
+  const { hasHabitsRewards } = useFeatureAccess();
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   
@@ -165,16 +167,16 @@ export default function LibraryBookView() {
 
   const handleNext = async () => {
     if (isLastPage) {
-      // Auto-complete reading habit if exists
-      if (selectedKidId && dailyContent?.book_id) {
+      // Auto-complete reading habit if exists (only for Plus tier users)
+      if (hasHabitsRewards && selectedKidId && dailyContent?.book_id) {
         await completeBookHabit({
           bookId: dailyContent.book_id,
           kidProfileId: selectedKidId,
         });
       }
 
-      // User finished the book - deposit coins and navigate to rewards
-      if (selectedKidId && earnedRewards > 0) {
+      // User finished the book - ONLY deposit coins for Plus tier users
+      if (hasHabitsRewards && selectedKidId && earnedRewards > 0) {
         try {
           await addCoins({ 
             kidId: selectedKidId, 
@@ -192,12 +194,12 @@ export default function LibraryBookView() {
           toast.error("Couldn't save your coins. Try again.");
         }
       } else {
-        // No kid selected or no rewards - just navigate back
+        // No kid selected or no rewards access - just navigate back
         endSession('book_completed');
         navigate('/library');
       }
     } else {
-      // Normal page navigation
+      // Normal page navigation - ALWAYS show visual reward animation
       const newIndex = currentPageIndex + 1;
       setCurrentPageIndex(newIndex);
       setEarnedRewards(prev => prev + 1);

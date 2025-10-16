@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidCoins } from '@/hooks/useKidCoins';
+import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { formatCoinsAsCurrency } from '@/utils/currency';
 
 /**
@@ -94,6 +95,7 @@ export function ReadingHeader({
   const navigate = useNavigate();
   const { data: kidProfiles } = useKidProfiles();
   const { kidCoins } = useKidCoins(kidId || '');
+  const { hasHabitsRewards } = useFeatureAccess();
   
   // Find the kid to display
   const displayKid = kidId 
@@ -125,9 +127,9 @@ export function ReadingHeader({
         )}
       </div>
       
-      {/* Center section: Kid info */}
+      {/* Center section: Kid info - Only show coins for Plus tier users */}
       <div className="flex items-center gap-2 text-sm">
-        {displayKid && (
+        {displayKid && hasHabitsRewards && (
           <>
             <span className="font-medium text-foreground">{displayKid.first_name}</span>
             <span className="text-muted-foreground">•</span>

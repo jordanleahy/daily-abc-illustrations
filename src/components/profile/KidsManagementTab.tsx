@@ -18,7 +18,7 @@ export const KidsManagementTab = () => {
   const { hasActiveSubscription, createCheckoutSession, loading: subscriptionLoading } = useSubscription();
 
   const handleUpgradeClick = async () => {
-    await createCheckoutSession(SUBSCRIPTION_TIERS.standard_monthly.price_id);
+    await createCheckoutSession(SUBSCRIPTION_TIERS.plus_monthly.price_id);
   };
 
   if (isLoading || subscriptionLoading) {

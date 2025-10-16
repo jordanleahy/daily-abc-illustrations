@@ -19,7 +19,7 @@ import {
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsAdmin, useIsTeacher } from '@/contexts/RoleContext';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
 import { UserProfileModal } from '@/components/profile/UserProfileModal';
@@ -85,7 +85,7 @@ export function Header({
   const isAdmin = useIsAdmin();
   const isTeacher = useIsTeacher();
   const { qrCodeData } = useBookQRCode(bookId || '');
-  const { hasActiveSubscription } = useSubscription();
+  const { hasHabitsRewards } = useFeatureAccess();
   const navigate = useNavigate();
   const location = useLocation();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
@@ -120,7 +120,7 @@ export function Header({
   const regularNavigation = [
     { name: 'Home', href: '/home' },
     { name: 'Library', href: '/library' },
-    ...(hasActiveSubscription ? [
+    ...(hasHabitsRewards ? [
       { name: 'Rewards', href: '/rewards' },
       { name: 'Manage Habits', href: '/habits/manage' }
     ] : []),

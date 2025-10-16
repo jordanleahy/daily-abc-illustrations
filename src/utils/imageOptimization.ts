@@ -3,10 +3,13 @@
  * Applies transformations for performance and responsive images
  */
 
+import { getOptimalImageQuality, getOptimalImageFormat, getConnectionQuality } from './connectionAware';
+
 export interface ImageOptimizationOptions {
   width?: number;
   quality?: number;
   format?: 'webp' | 'avif' | 'origin';
+  useConnectionAware?: boolean; // Auto-adjust based on connection
 }
 
 /**
@@ -33,6 +36,7 @@ const supportsAVIF = (() => {
 /**
  * Optimize a Supabase storage image URL with transformations
  * Automatically uses the best format supported by the browser
+ * Can auto-adjust quality based on connection speed
  */
 export function optimizeImageUrl(
   url: string | null | undefined,
@@ -40,10 +44,30 @@ export function optimizeImageUrl(
 ): string | undefined {
   if (!url || !url.includes('supabase.co/storage')) return url || undefined;
   
-  const { width, quality = 80, format } = options;
+  const { 
+    width, 
+    quality: requestedQuality, 
+    format,
+    useConnectionAware = false 
+  } = options;
+  
+  // Determine optimal quality
+  let quality = requestedQuality;
+  if (useConnectionAware && !requestedQuality) {
+    quality = getOptimalImageQuality();
+  } else if (!quality) {
+    quality = 80;
+  }
   
   // Auto-select best format if not specified
-  const selectedFormat = format || (supportsAVIF ? 'avif' : supportsWebP ? 'webp' : 'origin');
+  let selectedFormat = format;
+  if (!selectedFormat) {
+    if (useConnectionAware) {
+      selectedFormat = getOptimalImageFormat();
+    } else {
+      selectedFormat = supportsAVIF ? 'avif' : supportsWebP ? 'webp' : 'origin';
+    }
+  }
   
   const params = new URLSearchParams();
   if (width) params.set('width', width.toString());

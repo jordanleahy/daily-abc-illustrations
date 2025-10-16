@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useLibraryImagePreloader } from '@/hooks/useLibraryImagePreloader';
@@ -9,6 +9,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { optimizeImageUrl, generateSrcSet, generateBlurPlaceholder } from '@/utils/imageOptimization';
+import { getConnectionQuality, type ConnectionQuality } from '@/utils/connectionAware';
 
 import { BookOpen, Calendar, Users, Heart } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
@@ -171,6 +172,10 @@ const LibraryBookCard = memo(function LibraryBookCard({
   const navigate = useNavigate();
   const { hasLibraryAccess } = useFeatureAccess();
   const [imageLoaded, setImageLoaded] = React.useState(false);
+  const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>(() => getConnectionQuality());
+
+  // Adjust image quality based on connection
+  const imageQuality = connectionQuality === 'high' ? 85 : connectionQuality === 'medium' ? 75 : 60;
   
   const handleCardClick = () => {
     // Free users have library access - allow navigation
@@ -253,9 +258,13 @@ const LibraryBookCard = memo(function LibraryBookCard({
                   />
                 )}
                 
-                {/* Main image */}
+                {/* Main image - adaptive quality based on connection */}
                 <img 
-                  src={optimizeImageUrl(item.og_image_url, { width: 800, quality: 85 }) || item.og_image_url}
+                  src={optimizeImageUrl(item.og_image_url, { 
+                    width: 800, 
+                    quality: imageQuality,
+                    useConnectionAware: true 
+                  }) || item.og_image_url}
                   srcSet={generateSrcSet(item.og_image_url, [600, 800, 1200])}
                   sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                   alt={`Preview of ${item.title}`}

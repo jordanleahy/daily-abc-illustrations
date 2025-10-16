@@ -16,7 +16,7 @@ export function useIsBookAddedAsHabit(bookId: string | undefined) {
       if (!user?.id || !bookId) return false;
 
       // Check if there's an active habit with this book_id
-      const { data: habits, error: habitsError } = await supabase
+      const habitsQuery = await supabase
         .from('habits')
         .select('id')
         .eq('parent_user_id', user.id)
@@ -25,10 +25,23 @@ export function useIsBookAddedAsHabit(bookId: string | undefined) {
         .limit(1)
         .maybeSingle();
 
-      if (habitsError) throw habitsError;
+      if (habitsQuery.error) throw habitsQuery.error;
+      if (!habitsQuery.data) return false;
 
-      // If an active habit exists with this book_id, the book is added as a habit
-      return !!habits;
+      // Check if this habit is actually scheduled for TODAY
+      const habitId = habitsQuery.data.id;
+      // @ts-ignore - Supabase type depth issue
+      const completionQuery = await supabase
+        .from('habit_completions')
+        .select('id')
+        .eq('habit_id', habitId)
+        .eq('completion_date', today)
+        .limit(1);
+
+      if (completionQuery.error) throw completionQuery.error;
+
+      // Only return true if there's a completion record for today
+      return completionQuery.data && completionQuery.data.length > 0;
     },
     enabled: !!user?.id && !!bookId,
     refetchOnMount: 'always', // Always refetch to ensure fresh data after habit changes

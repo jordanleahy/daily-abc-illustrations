@@ -91,39 +91,51 @@ self.addEventListener('message', (event) => {
     );
   }
   
-  // Prefetch library images
+  // Prefetch library images with better error handling and parallelism
   if (event.data && event.data.type === 'PREFETCH_IMAGES') {
     const urls = event.data.urls || [];
-    console.log('[Service Worker] Prefetching', urls.length, 'images');
+    console.log('[Service Worker] Prefetching', urls.length, 'image variants');
     
     event.waitUntil(
       caches.open(CACHE_NAME).then((cache) => {
-        return Promise.allSettled(
-          urls.map((url) => {
-            return fetch(url)
-              .then((response) => {
-                if (response && response.status === 200) {
-                  const headers = new Headers(response.headers);
-                  headers.append('sw-cache-date', new Date().toISOString());
-                  
-                  const modifiedResponse = new Response(response.clone().body, {
-                    status: response.status,
-                    statusText: response.statusText,
-                    headers: headers
-                  });
-                  
-                  cache.put(url, modifiedResponse);
-                  console.log('[Service Worker] Prefetched:', url);
-                }
-                return response;
-              })
-              .catch((error) => {
-                console.error('[Service Worker] Prefetch failed for:', url, error);
-              });
+        // Use Promise.allSettled for better parallelism and error handling
+        const fetchPromises = urls.map((url) => {
+          return fetch(url, { 
+            priority: 'low', // Don't block other critical requests
+            mode: 'cors',
+            credentials: 'same-origin'
           })
-        ).then(() => {
+            .then((response) => {
+              if (response && response.status === 200) {
+                const headers = new Headers(response.headers);
+                headers.append('sw-cache-date', new Date().toISOString());
+                
+                const modifiedResponse = new Response(response.clone().body, {
+                  status: response.status,
+                  statusText: response.statusText,
+                  headers: headers
+                });
+                
+                return cache.put(url, modifiedResponse);
+              }
+              return null;
+            })
+            .catch((error) => {
+              console.warn('[Service Worker] Prefetch skipped for:', url.substring(0, 80), error.message);
+              return null;
+            });
+        });
+        
+        return Promise.allSettled(fetchPromises).then((results) => {
+          const successCount = results.filter(r => r.status === 'fulfilled' && r.value !== null).length;
+          console.log(`[Service Worker] Successfully prefetched ${successCount}/${urls.length} images`);
+          
           if (event.ports[0]) {
-            event.ports[0].postMessage({ success: true, count: urls.length });
+            event.ports[0].postMessage({ 
+              success: true, 
+              count: successCount,
+              total: urls.length 
+            });
           }
         });
       })

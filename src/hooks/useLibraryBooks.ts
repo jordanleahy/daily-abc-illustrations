@@ -10,11 +10,15 @@ export const useLibraryBooks = () => {
   return useQuery({
     queryKey: ['library-books'],
     queryFn: async () => {
-      // Fetch daily_published with books
+      // Fetch daily_published with books - optimized query
       const { data: dailyPublishedData, error: dpError } = await supabase
         .from('daily_published')
         .select(`
-          *,
+          id,
+          title,
+          publish_date,
+          status,
+          created_at,
           book:books(
             book_name,
             book_description,
@@ -30,7 +34,7 @@ export const useLibraryBooks = () => {
         throw dpError;
       }
 
-      // Fetch latest SEO metadata for all daily_published items
+      // Fetch latest SEO metadata for all daily_published items - optimized
       const { data: seoData, error: seoError } = await supabase
         .from('seo_metadata')
         .select('daily_published_id, og_image_url')
@@ -42,7 +46,7 @@ export const useLibraryBooks = () => {
         console.error('Error fetching SEO metadata:', seoError);
       }
 
-      // Map SEO data to daily_published items
+      // Use Map for O(1) lookup performance
       const seoMap = new Map(
         seoData?.map(seo => [seo.daily_published_id, seo.og_image_url]) || []
       );
@@ -55,7 +59,7 @@ export const useLibraryBooks = () => {
       return enrichedData as DailyPublishedWithBook[];
 
     },
-    staleTime: 30 * 1000, // 30 seconds - more frequent updates for library
-    gcTime: 60 * 1000, // 1 minute
+    staleTime: 60 * 1000, // 1 minute - balance between freshness and performance
+    gcTime: 5 * 60 * 1000, // 5 minutes
   });
 };

@@ -62,11 +62,6 @@ function PopularBookCard({ book, priority = false }: { book: LandingPopularBook;
         <h3 className="font-semibold text-lg mb-2 line-clamp-2">
           {book.book_name}
         </h3>
-        {book.book_description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {book.book_description}
-          </p>
-        )}
       </CardContent>
     </Card>
   );

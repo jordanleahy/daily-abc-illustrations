@@ -13,7 +13,7 @@ import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { PublicPageImage } from '@/components/daily-published';
-import { Calendar, BookOpen, Download, Plus, CheckCircle, Lock } from 'lucide-react';
+import { Calendar, BookOpen, Download, Plus, CheckCircle, Lock, Loader2 } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
 import { generateBookPDF } from '@/services/pdfGenerator';
 import { toast } from '@/hooks/use-toast';
@@ -224,11 +224,17 @@ export default function UserLibraryDetail() {
                     disabled={isDownloading}
                     variant="outline"
                     size="icon"
-                    className="shrink-0"
-                    title="Download as PDF"
+                    className={`shrink-0 ${isDownloading ? 'opacity-75 cursor-wait' : ''}`}
+                    title={isDownloading ? "Generating PDF..." : "Download as PDF"}
                   >
-                    <Download className={`h-5 w-5 ${isDownloading ? 'animate-pulse' : ''}`} />
-                    <span className="sr-only">Download as PDF</span>
+                    {isDownloading ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Download className="h-5 w-5" />
+                    )}
+                    <span className="sr-only">
+                      {isDownloading ? 'Generating PDF...' : 'Download as PDF'}
+                    </span>
                   </Button>
                 ) : (
                   <Button

@@ -1,4 +1,4 @@
-import React, { memo } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useLibraryImagePreloader } from '@/hooks/useLibraryImagePreloader';
@@ -8,7 +8,8 @@ import { StandardPageLayout } from '@/components/layout';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
+import { optimizeImageUrl, generateSrcSet, generateBlurPlaceholder } from '@/utils/imageOptimization';
+import { getConnectionQuality, type ConnectionQuality } from '@/utils/connectionAware';
 
 import { BookOpen, Calendar, Users, Heart } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
@@ -170,6 +171,11 @@ const LibraryBookCard = memo(function LibraryBookCard({
 }: LibraryBookCardProps) {
   const navigate = useNavigate();
   const { hasLibraryAccess } = useFeatureAccess();
+  const [imageLoaded, setImageLoaded] = React.useState(false);
+  const [connectionQuality, setConnectionQuality] = useState<ConnectionQuality>(() => getConnectionQuality());
+
+  // Adjust image quality based on connection
+  const imageQuality = connectionQuality === 'high' ? 85 : connectionQuality === 'medium' ? 75 : 60;
   
   const handleCardClick = () => {
     // Free users have library access - allow navigation
@@ -239,18 +245,43 @@ const LibraryBookCard = memo(function LibraryBookCard({
             </div>
           </div>
           
-          <div className="aspect-[1200/630] bg-muted rounded-lg flex items-center justify-center overflow-hidden">
+          <div className="aspect-[1200/630] bg-muted rounded-lg flex items-center justify-center overflow-hidden relative">
             {item.og_image_url ? (
-              <img 
-                src={optimizeImageUrl(item.og_image_url, { width: 800, quality: 85 }) || item.og_image_url}
-                srcSet={generateSrcSet(item.og_image_url, [600, 800, 1200])}
-                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                alt={`Preview of ${item.title}`}
-                className="w-full h-full object-cover object-center"
-                loading={index < 6 ? "eager" : "lazy"}
-                fetchPriority={index < 3 ? "high" : "auto"}
-                decoding="async"
-              />
+              <>
+                {/* Blur placeholder - shows immediately */}
+                {!imageLoaded && generateBlurPlaceholder(item.og_image_url) && (
+                  <img 
+                    src={generateBlurPlaceholder(item.og_image_url)}
+                    alt=""
+                    className="w-full h-full object-cover object-center absolute inset-0 blur-xl scale-110"
+                    aria-hidden="true"
+                  />
+                )}
+                
+                {/* Loading shimmer overlay */}
+                {!imageLoaded && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+                )}
+                
+                {/* Main image - adaptive quality based on connection */}
+                <img 
+                  src={optimizeImageUrl(item.og_image_url, { 
+                    width: 800, 
+                    quality: imageQuality,
+                    useConnectionAware: true 
+                  }) || item.og_image_url}
+                  srcSet={generateSrcSet(item.og_image_url, [600, 800, 1200])}
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                  alt={`Preview of ${item.title}`}
+                  className={`w-full h-full object-cover object-center transition-opacity duration-300 ${
+                    imageLoaded ? 'opacity-100' : 'opacity-0'
+                  }`}
+                  loading={index < 6 ? "eager" : "lazy"}
+                  fetchPriority={index < 3 ? "high" : "auto"}
+                  decoding="async"
+                  onLoad={() => setImageLoaded(true)}
+                />
+              </>
             ) : (
               <BookOpen className="w-8 h-8 text-muted-foreground" />
             )}

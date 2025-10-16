@@ -61,7 +61,7 @@ export const KidProfileCard: React.FC<KidProfileCardProps> = ({ kid, onEdit }) =
               disabled={deleteKidProfile.isPending}
               className="flex-1 text-destructive hover:text-destructive"
             >
-              <Trash2 className="w-3 h-3 mr-1" />
+              <Trash2 className="w-3 h-3 mr-2" />
               Remove
             </Button>
           </div>

@@ -4,8 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Mail } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Container } from '@/components/layout/Container';
@@ -28,6 +31,7 @@ const Auth = () => {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(true);
 
 
   // Redirect authenticated users to home
@@ -299,10 +303,31 @@ const Auth = () => {
                 />
               </div>
             )}
+            
+            {!isLogin && !isForgotPassword && (
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="terms" 
+                  checked={acceptTerms}
+                  onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                  disabled={loading}
+                />
+                <Label 
+                  htmlFor="terms" 
+                  className="text-sm font-normal cursor-pointer"
+                >
+                  I accept the{' '}
+                  <Link to="/terms-of-service" className="text-primary underline hover:text-primary/80">
+                    Terms and Conditions
+                  </Link>
+                </Label>
+              </div>
+            )}
+            
           <Button 
             type="submit" 
             className="w-full" 
-            disabled={loading}
+            disabled={loading || (!isLogin && !isForgotPassword && !acceptTerms)}
           >
             {loading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             {isForgotPassword ? 'Send Reset Link' : isLogin ? 'Sign In' : 'Sign Up'}

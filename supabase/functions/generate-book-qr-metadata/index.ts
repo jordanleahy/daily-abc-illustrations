@@ -52,11 +52,13 @@ serve(async (req) => {
       throw new Error('Book not found or access denied');
     }
 
-    // Get or create daily published entry
+    // Get or create daily published entry - get the most recent one
     let { data: dailyPublished, error: dpError } = await supabase
       .from('daily_published')
       .select('*')
       .eq('book_id', bookId)
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (dpError) {

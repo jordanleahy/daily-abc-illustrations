@@ -25,23 +25,22 @@ export function useLandingPageImagePreloader(landingData: LandingPageData | unde
     const popularImages = landingData.popularBooks?.map(b => b.image_url).filter(Boolean) || [];
     const libraryImages = landingData.libraryBooks?.map(b => b.og_image_url).filter(Boolean) || [];
 
-    // Priority 1: First 3 hero carousel images (immediate - critical viewport content)
-    const criticalHeroImages = heroImages.slice(0, 3);
-    criticalHeroImages.forEach(url => {
-      if (url) {
-        const optimizedUrl = optimizeImageUrl(url, { width: 800, quality: 85 });
-        if (optimizedUrl) {
-          const link = document.createElement('link');
-          link.rel = 'preload';
-          link.as = 'image';
-          link.href = optimizedUrl;
-          link.fetchPriority = 'high';
-          link.type = 'image/webp';
-          document.head.appendChild(link);
-          preloadLinks.push(link);
-        }
+    // Priority 1: ONLY first hero carousel image (critical viewport content)
+    // Remaining hero images load lazily via useLazyCarouselImages
+    const firstHeroImage = heroImages[0];
+    if (firstHeroImage) {
+      const optimizedUrl = optimizeImageUrl(firstHeroImage, { width: 800, quality: 85 });
+      if (optimizedUrl) {
+        const link = document.createElement('link');
+        link.rel = 'preload';
+        link.as = 'image';
+        link.href = optimizedUrl;
+        link.fetchPriority = 'high';
+        link.type = 'image/webp';
+        document.head.appendChild(link);
+        preloadLinks.push(link);
       }
-    });
+    }
 
     // Priority 2: First 3 popular books (50ms - near viewport)
     if (popularImages.length > 0) {
@@ -56,18 +55,8 @@ export function useLandingPageImagePreloader(landingData: LandingPageData | unde
       }, 50));
     }
 
-    // Priority 3: Remaining hero images (100ms)
-    if (heroImages.length > 3) {
-      timeouts.push(setTimeout(() => {
-        const remainingHero = heroImages.slice(3);
-        remainingHero.forEach(url => {
-          if (url) {
-            const img = new Image();
-            img.src = optimizeImageUrl(url, { width: 800, quality: 85 }) || url;
-          }
-        });
-      }, 100));
-    }
+    // Priority 3: Remaining hero images are NOT preloaded
+    // They load on-demand via useLazyCarouselImages when user navigates
 
     // Priority 4: Remaining popular books (200ms)
     if (popularImages.length > 3) {

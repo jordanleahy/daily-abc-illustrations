@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Book, Maximize2 } from 'lucide-react';
 import { LandingDailyPublished } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { Shimmer } from '@/components/ui/shimmer';
+import { useLazyCarouselImages } from '@/hooks/useLazyCarouselImages';
 interface LandingHeroProps {
   dailyPublished: LandingDailyPublished | null | undefined;
 }
@@ -15,6 +16,9 @@ export const LandingHero = ({
   const navigate = useNavigate();
   const pages = dailyPublished?.pages || [];
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  
+  // Lazy load carousel images on-demand
+  useLazyCarouselImages(pages, currentPageIndex);
   const handleNextPage = () => {
     if (currentPageIndex < pages.length - 1) {
       setCurrentPageIndex(currentPageIndex + 1);
@@ -63,9 +67,18 @@ export const LandingHero = ({
                 </div>
 
                 <div className="relative aspect-square bg-background rounded-lg overflow-hidden">
-                  <OptimizedImage src={currentPage.image_url} alt={`${currentPage.letter} - ${currentPage.title}`} priority={true} width={800} srcSetSizes={[400, 600, 800, 1200]} sizes="(max-width: 640px) 90vw, (max-width: 768px) 50vw, (max-width: 1024px) 40vw, 600px" fallback={<div className="w-full h-full flex items-center justify-center">
+                  <OptimizedImage 
+                    src={currentPage.image_url} 
+                    alt={`${currentPage.letter} - ${currentPage.title}`} 
+                    priority={currentPageIndex === 0} 
+                    width={800} 
+                    height={800}
+                    srcSetSizes={[400, 600, 800, 1200]} 
+                    sizes="(max-width: 640px) 90vw, (max-width: 768px) 50vw, (max-width: 1024px) 40vw, 600px" 
+                    fallback={<div className="w-full h-full flex items-center justify-center">
                         <Book className="h-12 w-12 text-muted-foreground" />
-                      </div>} />
+                      </div>} 
+                  />
                 </div>
 
                 <div className="flex items-center gap-2">

@@ -108,12 +108,13 @@ Deno.serve(async (req) => {
       ? (async () => {
           console.log('  📄 Fetching pages for daily published book:', dailyPublished.book_id);
           
-          // First get pages
+          // First get only 3 pages (performance optimization - lazy load remaining)
           const pagesResult = await supabase
             .from('pages')
             .select('id, letter, page_number, title, description')
             .eq('book_id', dailyPublished.book_id)
-            .order('page_number', { ascending: true });
+            .order('page_number', { ascending: true })
+            .limit(3);
 
           if (pagesResult.error) {
             console.error('  ❌ Error fetching pages:', pagesResult.error);

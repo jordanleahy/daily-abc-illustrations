@@ -203,19 +203,8 @@ export function Header({
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container>
         <div className="flex h-14 items-center justify-between">
-          {/* Left section: Mobile back button + Desktop back button + Subtitle */}
+          {/* Left section: Desktop back button + Subtitle */}
           <div className="flex items-center gap-2">
-            {/* Mobile Back Button - Always visible on mobile */}
-            <Button
-              onClick={handleBackNavigation}
-              variant="ghost"
-              size="sm"
-              className="md:hidden p-2"
-            >
-              <ArrowLeft className="h-5 w-5" />
-              <span className="sr-only">Go back</span>
-            </Button>
-
             {/* Desktop Back Button - Only on library detail pages */}
             {location.pathname.includes('/library/') && location.pathname.includes('/detail') && (
               <Button

@@ -32,9 +32,7 @@ export function ScheduleBadge({
           onClick={onAddToday}
         >
           <Plus className="h-4 w-4 mr-2" />
-          {timesAddedToday && timesAddedToday > 0 
-            ? `Added ${timesAddedToday}${timesAddedToday > 1 ? 'x' : ''} Today ✓` 
-            : 'Add Today'}
+          Add Today
         </Button>
       )}
       

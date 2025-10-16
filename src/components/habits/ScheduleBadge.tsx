@@ -25,10 +25,7 @@ export function ScheduleBadge({
       {onAddToday && (
         <Button
           variant="default"
-          className={cn(
-            "w-full",
-            timesAddedToday && timesAddedToday > 0 && "bg-green-500 hover:bg-green-600"
-          )}
+          className="w-full"
           onClick={onAddToday}
         >
           <Plus className="h-4 w-4 mr-2" />

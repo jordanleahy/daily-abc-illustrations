@@ -6,8 +6,23 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { format } from 'date-fns';
 import { CoinCounter } from '@/components/ui/coin-counter';
 import { getTimeBasedGreeting } from '@/utils/timeUtils';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
+import { useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
 
 const Index = () => {
+  const { isAuthenticated } = useAuthContext();
+  const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
+  const navigate = useNavigate();
+  
+  // Redirect free users to library
+  useEffect(() => {
+    if (isAuthenticated && !subscriptionLoading && !hasActiveSubscription) {
+      navigate('/library', { replace: true });
+    }
+  }, [isAuthenticated, hasActiveSubscription, subscriptionLoading, navigate]);
+  
   // Get the first kid profile
   const { data: kidProfiles = [], isLoading: isLoadingKids } = useKidProfiles();
   const firstKid = kidProfiles[0];

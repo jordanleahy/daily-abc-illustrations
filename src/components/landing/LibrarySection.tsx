@@ -72,13 +72,6 @@ function LibraryBookCard({ item }: { item: LandingLibraryBook }) {
           {item.title}
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        {item.description && (
-          <CardDescription className="line-clamp-2 text-base mb-4">
-            {item.description}
-          </CardDescription>
-        )}
-      </CardContent>
     </Card>
   );
 }

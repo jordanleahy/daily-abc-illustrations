@@ -258,6 +258,11 @@ const LibraryBookCard = memo(function LibraryBookCard({
                   />
                 )}
                 
+                {/* Loading shimmer overlay */}
+                {!imageLoaded && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+                )}
+                
                 {/* Main image - adaptive quality based on connection */}
                 <img 
                   src={optimizeImageUrl(item.og_image_url, { 

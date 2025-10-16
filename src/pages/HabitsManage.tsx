@@ -96,9 +96,6 @@ export default function HabitsManage() {
           </div>
           
           <div className="flex gap-2">
-            <Button asChild variant="outline">
-              <Link to="/">Track Today's Habits</Link>
-            </Button>
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Create New Habit

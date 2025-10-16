@@ -65,12 +65,12 @@ export const useFeatureAccess = () => {
   
   /**
    * Check if user has access to Library features
-   * All subscription tiers get library access
+   * FREE TIER: All authenticated users get library access
    */
   const hasLibraryAccess = useMemo(() => {
-    if (isPrivilegedUser) return true;
-    return hasActiveSubscription; // All tiers get library
-  }, [hasActiveSubscription, isPrivilegedUser]);
+    // All authenticated users get library access (free tier)
+    return !!user;
+  }, [user]);
   
   /**
    * Get current subscription tier info

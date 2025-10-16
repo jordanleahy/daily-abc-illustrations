@@ -52,19 +52,6 @@ export function useAddHabitToday() {
       if (assignmentError) throw assignmentError;
       if (!assignmentData) throw new Error('No habit assignment found');
 
-      // Check if completion already exists for today
-      const { data: existingCompletion, error: checkError } = await supabase
-        .from('habit_completions')
-        .select('id, status')
-        .eq('habit_assignment_id', assignmentData.id)
-        .eq('completion_date', today)
-        .maybeSingle();
-
-      if (checkError) throw checkError;
-      if (existingCompletion) {
-        throw new Error('This habit is already on today\'s checklist');
-      }
-
       // Get habit details for coin amount and deadline
       const { data: habitData, error: habitError } = await supabase
         .from('habits')

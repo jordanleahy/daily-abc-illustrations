@@ -8,7 +8,7 @@ interface ScheduleBadgeProps {
   onClick: () => void;
   date?: Date;
   onAddToday?: () => void;
-  isAddedToday?: boolean;
+  timesAddedToday?: number;
 }
 
 export function ScheduleBadge({ 
@@ -16,7 +16,7 @@ export function ScheduleBadge({
   onClick, 
   date = addDays(new Date(), 1),
   onAddToday,
-  isAddedToday 
+  timesAddedToday 
 }: ScheduleBadgeProps) {
   const formattedDate = format(date, 'M/d');
   
@@ -24,16 +24,17 @@ export function ScheduleBadge({
     <div className="w-full space-y-2">
       {onAddToday && (
         <Button
-          variant={isAddedToday ? "default" : "default"}
+          variant="default"
           className={cn(
             "w-full",
-            isAddedToday && "bg-green-500 hover:bg-green-600"
+            timesAddedToday && timesAddedToday > 0 && "bg-green-500 hover:bg-green-600"
           )}
           onClick={onAddToday}
-          disabled={isAddedToday}
         >
           <Plus className="h-4 w-4 mr-2" />
-          {isAddedToday ? 'Added to Today ✓' : 'Add Today'}
+          {timesAddedToday && timesAddedToday > 0 
+            ? `Added ${timesAddedToday}${timesAddedToday > 1 ? 'x' : ''} Today ✓` 
+            : 'Add Today'}
         </Button>
       )}
       

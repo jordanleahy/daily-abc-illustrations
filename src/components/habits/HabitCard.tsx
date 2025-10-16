@@ -19,10 +19,10 @@ interface HabitCardProps {
   isScheduled?: boolean;
   onScheduleToggle?: (habitId: string) => void;
   onAddToday?: (habitId: string) => void;
-  isAddedToday?: boolean;
+  timesAddedToday?: number;
 }
 
-export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleToggle, onAddToday, isAddedToday }: HabitCardProps) {
+export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleToggle, onAddToday, timesAddedToday }: HabitCardProps) {
   const formatDeadlineTime = (time: string) => {
     try {
       return format(parseISO(`2000-01-01T${time}`), 'h:mm a');
@@ -100,7 +100,7 @@ export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleTogg
             isScheduled={isScheduled || false}
             onClick={() => onScheduleToggle(habit.id)}
             onAddToday={onAddToday ? () => onAddToday(habit.id) : undefined}
-            isAddedToday={isAddedToday}
+            timesAddedToday={timesAddedToday}
           />
         </CardFooter>
       )}

@@ -39,12 +39,14 @@ export default function HabitsManage() {
   const toggleSchedule = useToggleHabitSchedule();
   const addToday = useAddHabitToday();
 
-  // Extract habit IDs from today's completions for button state
-  const todayHabits = new Set(
-    todayCompletions
-      .map(completion => completion.habit_assignments?.habits?.id)
-      .filter((id): id is string => id !== undefined)
-  );
+  // Count how many times each habit has been added today
+  const todayHabitsCount = todayCompletions.reduce((acc, completion) => {
+    const habitId = completion.habit_assignments?.habits?.id;
+    if (habitId) {
+      acc.set(habitId, (acc.get(habitId) || 0) + 1);
+    }
+    return acc;
+  }, new Map<string, number>());
 
   const handleEditClick = (habitId: string) => {
     const habit = habits.find(h => h.id === habitId);
@@ -127,7 +129,7 @@ export default function HabitsManage() {
                 isScheduled={scheduledHabits.has(habit.id)}
                 onScheduleToggle={handleScheduleToggle}
                 onAddToday={handleAddToday}
-                isAddedToday={todayHabits.has(habit.id)}
+                timesAddedToday={todayHabitsCount.get(habit.id) || 0}
               />
             ))}
           </div>

@@ -90,6 +90,7 @@ export function useCreateHabit() {
       queryClient.invalidateQueries({ queryKey: ['habits'] });
       queryClient.invalidateQueries({ queryKey: ['today-habits'] });
       queryClient.invalidateQueries({ queryKey: ['kid-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['kid-coins'] });
       toast({
         title: 'Success',
         description: 'Habit created and added to today\'s checklist with coins deposited!',

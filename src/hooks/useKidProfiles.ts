@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 
@@ -16,8 +17,10 @@ export interface KidProfile {
 
 export const useKidProfiles = () => {
   const { user } = useAuthContext();
+  const queryClient = useQueryClient();
   
-  return useQuery({
+  // Base query to fetch kid profiles (includes earned_coins)
+  const query = useQuery({
     queryKey: ['kid-profiles', user?.id],
     queryFn: async () => {
       if (!user?.id) throw new Error('No authenticated user');
@@ -34,4 +37,32 @@ export const useKidProfiles = () => {
     },
     enabled: !!user?.id,
   });
+
+  // Realtime subscription to keep coin totals fresh across devices
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('kid-profiles-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'kid_profiles',
+          filter: `parent_user_id=eq.${user.id}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['kid-profiles', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['kid-coins'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
+
+  return query;
 };

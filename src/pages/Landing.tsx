@@ -5,6 +5,7 @@ import { LibrarySection } from '@/components/landing/LibrarySection';
 import { SignupSection } from '@/components/landing/SignupSection';
 import { useLandingPageData } from '@/hooks/useLandingPageData';
 import { useLandingPageImagePreloader } from '@/hooks/useLandingPageImagePreloader';
+import { useDailyPublishedSubscription } from '@/hooks/useDailyPublishedSubscription';
 import { useGA4 } from '@/hooks/useGA4';
 import { useEffect } from 'react';
 import { MetaHead } from '@/components/common/MetaHead';
@@ -13,6 +14,9 @@ import { SITE_CONFIG, getSiteTitle } from '@/config/site';
 const Landing = () => {
   const { trackEvent } = useGA4();
   const { data: landingData } = useLandingPageData();
+  
+  // Enable real-time updates for daily published content
+  useDailyPublishedSubscription();
   
   // Preload images progressively
   useLandingPageImagePreloader(landingData);

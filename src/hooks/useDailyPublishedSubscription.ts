@@ -30,6 +30,7 @@ export const useDailyPublishedSubscription = () => {
             queryClient.invalidateQueries({ queryKey: ['daily-published'] });
             queryClient.invalidateQueries({ queryKey: ['daily-published-queue'] });
             queryClient.invalidateQueries({ queryKey: ['active-daily-published'] });
+            queryClient.invalidateQueries({ queryKey: ['landing-page-data'] });
             
             // If we have specific record changes, invalidate those too
             if (payload.new && typeof payload.new === 'object' && 'id' in payload.new) {

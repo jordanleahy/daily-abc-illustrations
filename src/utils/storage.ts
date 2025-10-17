@@ -78,3 +78,148 @@ export class SafeLocalStorage {
 // Subscription caching constants
 export const SUBSCRIPTION_CACHE_KEY = 'subscription_status';
 export const SUBSCRIPTION_CACHE_DAYS = 30;
+
+// Visitor tracking for non-authenticated users
+const VISITOR_ID_KEY = 'visitor_id';
+const VISITOR_STATS_KEY = 'visitor_stats';
+const VISITOR_BOOKS_KEY = 'visitor_books';
+
+interface VisitorStats {
+  firstVisit: number;
+  lastVisit: number;
+  visitCount: number;
+  totalBooksRead: number;
+}
+
+interface BookReadingStats {
+  [bookId: string]: {
+    readCount: number;
+    lastRead: number;
+    completionCount: number;
+    highestPageReached: number;
+  };
+}
+
+/**
+ * Get or create a persistent visitor ID for anonymous users
+ */
+export const getOrCreateVisitorId = (): string => {
+  try {
+    let visitorId = localStorage.getItem(VISITOR_ID_KEY);
+    if (!visitorId) {
+      visitorId = `visitor_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem(VISITOR_ID_KEY, visitorId);
+    }
+    return visitorId;
+  } catch (error) {
+    console.warn('Failed to get/create visitor ID:', error);
+    return `temp_${Math.random().toString(36).substr(2, 9)}`;
+  }
+};
+
+/**
+ * Track a visit for anonymous users
+ */
+export const trackVisit = (): VisitorStats => {
+  try {
+    const stored = localStorage.getItem(VISITOR_STATS_KEY);
+    const stats: VisitorStats = stored ? JSON.parse(stored) : {
+      firstVisit: Date.now(),
+      lastVisit: Date.now(),
+      visitCount: 0,
+      totalBooksRead: 0,
+    };
+
+    stats.lastVisit = Date.now();
+    stats.visitCount += 1;
+
+    localStorage.setItem(VISITOR_STATS_KEY, JSON.stringify(stats));
+    return stats;
+  } catch (error) {
+    console.warn('Failed to track visit:', error);
+    return {
+      firstVisit: Date.now(),
+      lastVisit: Date.now(),
+      visitCount: 1,
+      totalBooksRead: 0,
+    };
+  }
+};
+
+/**
+ * Get visitor statistics
+ */
+export const getVisitorStats = (): VisitorStats | null => {
+  try {
+    const stored = localStorage.getItem(VISITOR_STATS_KEY);
+    return stored ? JSON.parse(stored) : null;
+  } catch (error) {
+    console.warn('Failed to get visitor stats:', error);
+    return null;
+  }
+};
+
+/**
+ * Track book reading for anonymous users
+ */
+export const trackBookReading = (bookId: string, highestPageReached: number, isCompleted: boolean = false): void => {
+  try {
+    const stored = localStorage.getItem(VISITOR_BOOKS_KEY);
+    const books: BookReadingStats = stored ? JSON.parse(stored) : {};
+
+    if (!books[bookId]) {
+      books[bookId] = {
+        readCount: 0,
+        lastRead: Date.now(),
+        completionCount: 0,
+        highestPageReached: 0,
+      };
+    }
+
+    books[bookId].readCount += 1;
+    books[bookId].lastRead = Date.now();
+    books[bookId].highestPageReached = Math.max(books[bookId].highestPageReached, highestPageReached);
+    
+    if (isCompleted) {
+      books[bookId].completionCount += 1;
+    }
+
+    localStorage.setItem(VISITOR_BOOKS_KEY, JSON.stringify(books));
+
+    // Update total books read count
+    const stats = getVisitorStats();
+    if (stats) {
+      stats.totalBooksRead = Object.keys(books).length;
+      localStorage.setItem(VISITOR_STATS_KEY, JSON.stringify(stats));
+    }
+  } catch (error) {
+    console.warn('Failed to track book reading:', error);
+  }
+};
+
+/**
+ * Get reading stats for a specific book
+ */
+export const getBookReadingStats = (bookId: string) => {
+  try {
+    const stored = localStorage.getItem(VISITOR_BOOKS_KEY);
+    const books: BookReadingStats = stored ? JSON.parse(stored) : {};
+    return books[bookId] || null;
+  } catch (error) {
+    console.warn('Failed to get book reading stats:', error);
+    return null;
+  }
+};
+
+/**
+ * Get all book reading stats
+ */
+export const getAllBookReadingStats = (): BookReadingStats => {
+  try {
+    const stored = localStorage.getItem(VISITOR_BOOKS_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch (error) {
+    console.warn('Failed to get all book reading stats:', error);
+    return {};
+  }
+};

@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useGA4 } from './useGA4';
 import { useRole } from '@/contexts/RoleContext';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { trackBookReading, getBookReadingStats } from '@/utils/storage';
 
 interface ReadingSessionConfig {
   contentType: 'daily_published' | 'library_book';
@@ -59,6 +60,9 @@ export const useReadingSessionAnalytics = (): ReadingSessionAnalytics => {
       highestPageReached: config.startingPage || 1,
     };
 
+    // Get previous reading stats for this book (anonymous users only)
+    const bookStats = !user ? getBookReadingStats(config.bookId) : null;
+
     trackEvent('reading_session_start', {
       session_id: sessionId,
       content_type: config.contentType,
@@ -70,6 +74,13 @@ export const useReadingSessionAnalytics = (): ReadingSessionAnalytics => {
       starting_page: config.startingPage || 1,
       total_pages: config.totalPages,
       timestamp: now,
+      // Anonymous user book history
+      ...(bookStats && {
+        times_read_before: bookStats.readCount,
+        times_completed_before: bookStats.completionCount,
+        previous_highest_page: bookStats.highestPageReached,
+        days_since_last_read: Math.floor((now - bookStats.lastRead) / (1000 * 60 * 60 * 24)),
+      }),
     });
   }, [trackEvent, user, primaryRole, generateSessionId]);
 
@@ -110,6 +121,19 @@ export const useReadingSessionAnalytics = (): ReadingSessionAnalytics => {
     const totalDuration = now - session.startTime;
     const lastPageDuration = now - session.currentPageStartTime;
     const completionPercentage = (session.highestPageReached / session.config.totalPages) * 100;
+    const isCompleted = completionPercentage >= 100;
+
+    // Track reading for anonymous users
+    if (!user) {
+      trackBookReading(
+        session.config.bookId,
+        session.highestPageReached,
+        isCompleted
+      );
+    }
+
+    // Get updated stats after tracking
+    const bookStats = !user ? getBookReadingStats(session.config.bookId) : null;
 
     trackEvent('reading_session_end', {
       session_id: session.sessionId,
@@ -121,10 +145,16 @@ export const useReadingSessionAnalytics = (): ReadingSessionAnalytics => {
       unique_pages_viewed: Array.from(session.pagesViewed),
       highest_page_reached: session.highestPageReached,
       completion_percentage: Math.round(completionPercentage),
+      is_completed: isCompleted,
       exit_method: exitMethod,
       last_page_duration: lastPageDuration,
       total_page_views: session.pageSequence.length,
       timestamp: now,
+      // Updated anonymous user stats
+      ...(bookStats && {
+        total_times_read: bookStats.readCount,
+        total_times_completed: bookStats.completionCount,
+      }),
     });
 
     // Reset session
@@ -137,7 +167,7 @@ export const useReadingSessionAnalytics = (): ReadingSessionAnalytics => {
       pageSequence: [],
       highestPageReached: 0,
     };
-  }, [trackEvent]);
+  }, [trackEvent, user]);
 
   // Clean up session on unmount
   useEffect(() => {

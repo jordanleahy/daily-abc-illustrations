@@ -69,7 +69,6 @@ export const WireframePricing = () => {
       {/* Simple header */}
       <div className="text-center mb-12">
         <h1 className="text-3xl font-bold mb-4">Choose Your Plan</h1>
-        <p className="text-muted-foreground">Upgrade to Plus for Habits & Rewards</p>
       </div>
 
       {/* 2-column layout */}

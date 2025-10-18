@@ -30,27 +30,11 @@ export const WireframePricing = () => {
 
   const plans = [
     {
-      name: "Free",
-      price: "$0",
-      period: "forever",
-      isFree: true,
-      features: [
-        "Browse full library",
-        "Daily published ABC books",
-        "View all content",
-        "Basic reading experience"
-      ],
-      buttonText: user && !hasActiveSubscription ? "Current Plan" : "Sign Up Free",
-      buttonDisabled: Boolean(user && !hasActiveSubscription),
-      current: Boolean(user && !hasActiveSubscription),
-      onClick: () => user ? null : navigate('/auth?mode=signup')
-    },
-    {
       name: "Plus Monthly",
       price: "$4.99",
       period: "month",
       features: [
-        "Everything in Free, plus:",
+        "Full library access",
         "Download PDF versions",
         "Habits & Rewards system",
         "Track reading progress",
@@ -85,11 +69,11 @@ export const WireframePricing = () => {
       {/* Simple header */}
       <div className="text-center mb-12">
         <h1 className="text-3xl font-bold mb-4">Choose Your Plan</h1>
-        <p className="text-muted-foreground">Start free with library access, upgrade anytime for Habits & Rewards</p>
+        <p className="text-muted-foreground">Upgrade to Plus for Habits & Rewards</p>
       </div>
 
-      {/* 3-column layout */}
-      <div className="grid md:grid-cols-3 gap-6 mb-12 max-w-6xl mx-auto">
+      {/* 2-column layout */}
+      <div className="grid md:grid-cols-2 gap-8 mb-12 max-w-4xl mx-auto">
         {plans.map((plan, index) => (
           <Card key={index} className={`${plan.current ? 'border-primary border-2' : ''}`}>
             <CardHeader className="text-center">

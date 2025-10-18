@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import { LandingLibraryBook } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { LibraryBookSkeleton } from '@/components/ui/book-card-skeleton';
-import { useAuthContext } from '@/contexts/AuthContext';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 
 interface LibrarySectionProps {
@@ -14,20 +13,13 @@ interface LibrarySectionProps {
 
 function LibraryBookCard({ item }: { item: LandingLibraryBook }) {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthContext();
   const { ref, inView } = useIntersectionObserver({
     rootMargin: '100px', // Start loading 100px before entering viewport
     triggerOnce: true,
   });
 
   const handleCardClick = () => {
-    const isActiveNow = item.status === 'active' && item.is_active;
-    
-    if (!isAuthenticated && !isActiveNow) {
-      navigate('/pricing');
-    } else {
-      navigate(`/daily-published/${item.id}`);
-    }
+    navigate('/pricing');
   };
 
   return (

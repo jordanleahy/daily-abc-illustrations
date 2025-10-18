@@ -6,19 +6,17 @@ import { Book, Star } from 'lucide-react';
 import { LandingPopularBook } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { PopularBookSkeleton } from '@/components/ui/book-card-skeleton';
-import { useAuthContext } from '@/contexts/AuthContext';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 
 function PopularBookCard({ book, priority = false }: { book: LandingPopularBook; priority?: boolean }) {
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthContext();
   const { ref, inView } = useIntersectionObserver({
     rootMargin: '50px', // Start loading 50px before entering viewport
     triggerOnce: true,
   });
 
   const handleCardClick = () => {
-    navigate(isAuthenticated ? `/library/${book.id}` : '/pricing');
+    navigate('/pricing');
   };
 
   // Priority images (first 3) should load immediately without intersection observer

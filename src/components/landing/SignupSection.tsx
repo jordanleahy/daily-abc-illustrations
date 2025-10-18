@@ -11,30 +11,30 @@ export const SignupSection = () => {
           Start Your Daily Story Tradition
         </h2>
         <p className="text-xl mb-8 opacity-90">
-          Sign up free to access the full library, or upgrade to Plus for Habits & Rewards
+          Subscribe to Plus for full library access, Habits & Rewards
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button 
-            onClick={() => navigate('/auth?mode=signup')}
+            onClick={() => navigate('/pricing')}
             size="lg"
             variant="secondary"
             className="text-lg px-8"
           >
-            Sign Up Free
+            View Plans
           </Button>
           <Button 
-            onClick={() => navigate('/pricing')}
+            onClick={() => navigate('/auth?mode=signup')}
             size="lg"
             variant="outline"
             className="text-lg px-8 bg-white/10 hover:bg-white/20"
           >
-            View Plans
+            Sign Up
           </Button>
         </div>
 
         <p className="text-sm mt-6 opacity-75">
-          Free library access • No credit card required
+          30-day money-back guarantee • Cancel anytime
         </p>
       </div>
     </section>

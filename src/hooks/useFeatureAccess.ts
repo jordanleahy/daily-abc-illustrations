@@ -65,12 +65,21 @@ export const useFeatureAccess = () => {
   
   /**
    * Check if user has access to Library features
-   * FREE TIER: All authenticated users get library access
+   * Requires active subscription (any tier) or privileged role
    */
   const hasLibraryAccess = useMemo(() => {
-    // All authenticated users get library access (free tier)
-    return !!user;
-  }, [user]);
+    if (isPrivilegedUser) {
+      console.log('[FEATURE ACCESS] User is privileged (admin/teacher) - granting library access');
+      return true;
+    }
+    if (!hasActiveSubscription) {
+      console.log('[FEATURE ACCESS] No active subscription - denying library access');
+      return false;
+    }
+    
+    console.log('[FEATURE ACCESS] Active subscription found - granting library access');
+    return true;
+  }, [hasActiveSubscription, isPrivilegedUser]);
   
   /**
    * Get current subscription tier info

@@ -172,9 +172,9 @@ const LibraryBookCard = memo(function LibraryBookCard({
   const { hasLibraryAccess } = useFeatureAccess();
   
   const handleCardClick = () => {
-    // Free users have library access - allow navigation
+    // Only allow navigation if user has library access (active subscription)
     if (!hasLibraryAccess) {
-      return; // Blocked - shouldn't happen since library requires auth
+      return; // Blocked by premium overlay
     }
     
     // Track the book view for sorting
@@ -189,8 +189,8 @@ const LibraryBookCard = memo(function LibraryBookCard({
     onToggleFavorite(item.id);
   };
 
-  // Library is available to all authenticated users (free tier)
-  const shouldShowPremiumOverlay = false;
+  // Show premium overlay if user doesn't have library access
+  const shouldShowPremiumOverlay = !hasLibraryAccess;
 
   return (
     <PremiumContentWrapper showOverlay={shouldShowPremiumOverlay}>

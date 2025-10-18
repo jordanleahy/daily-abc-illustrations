@@ -36,7 +36,6 @@ Deno.serve(async (req) => {
         `)
         .eq('is_active', true)
         .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
         .order('publish_date', { ascending: true })
         .limit(1)
         .maybeSingle(),

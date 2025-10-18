@@ -1526,6 +1526,10 @@ export type Database = {
         Args: { p_amount: number; p_kid_id: string }
         Returns: undefined
       }
+      is_book_published: {
+        Args: { book_id: string }
+        Returns: boolean
+      }
       process_enhanced_daily_publishing: {
         Args: Record<PropertyKey, never>
         Returns: Json

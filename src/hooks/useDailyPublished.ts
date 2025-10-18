@@ -16,7 +16,7 @@ export const useDailyPublished = () => {
         .from('daily_published')
         .select('*')
         .eq('is_active', true)
-        .gt('expires_at', new Date().toISOString())
+        .eq('status', 'active')
         .order('publish_date', { ascending: true }) // Order by publish date chronologically
         .limit(1)
         .maybeSingle();

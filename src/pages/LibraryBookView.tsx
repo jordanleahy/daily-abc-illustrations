@@ -378,7 +378,7 @@ export default function LibraryBookView() {
                 pageId={currentPage.id}
                 bookId={dailyContent.book_id}
                 className="rounded-lg"
-                showUploadButton={!!user}
+                showUploadButton={false}
                 onUploadClick={handleUploadClick}
               />
             </Card>

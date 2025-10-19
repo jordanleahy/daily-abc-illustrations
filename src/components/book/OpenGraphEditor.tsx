@@ -14,6 +14,7 @@ import { useBookPages } from '@/hooks/useBookPages';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { getBookCoverUploadInfo } from '@/utils/storagePaths';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface OpenGraphEditorProps {
   bookId: string;
@@ -28,6 +29,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const { currentImage: firstPageImage } = usePageImageUrls(firstPage?.id || '');
   
   const { user } = useAuthContext();
+  const queryClient = useQueryClient();
   
   // Debug logging for OpenGraph editor
   console.log('🎨 [OpenGraphEditor] Rendering with:', {
@@ -400,7 +402,10 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         }
       }
 
-      refetch();
+      // Invalidate library books cache to refresh thumbnails
+      await refetch();
+      await queryClient.invalidateQueries({ queryKey: ['library-books'] });
+      
       toast.success('Image uploaded and SEO metadata updated successfully');
     } catch (error) {
       console.error('Upload error:', error);

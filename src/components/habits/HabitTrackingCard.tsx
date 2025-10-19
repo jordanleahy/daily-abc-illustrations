@@ -6,7 +6,7 @@ import { X, Coins, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 import { useMarkHabitComplete } from '@/hooks/useMarkHabitComplete';
-import { useDeleteHabit } from '@/hooks/useDeleteHabit';
+import { useDeleteHabitCompletion } from '@/hooks/useDeleteHabitCompletion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -18,7 +18,7 @@ interface HabitTrackingCardProps {
 export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
   const navigate = useNavigate();
   const markComplete = useMarkHabitComplete();
-  const deleteHabit = useDeleteHabit();
+  const deleteHabitCompletion = useDeleteHabitCompletion();
   const { toast } = useToast();
   const [isResolving, setIsResolving] = useState(false);
   const habit = completion.habit_assignments.habits;
@@ -52,8 +52,11 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Remove "${habit.title}" from your habits?`)) {
-      deleteHabit.mutate(habit.id);
+    if (window.confirm(
+      `Remove this "${habit.title}" task from today's list?\n\n` +
+      `(The habit will remain active for future days)`
+    )) {
+      deleteHabitCompletion.mutate(completion.id);
     }
   };
 
@@ -150,8 +153,8 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                   size="icon"
                   className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
                   onClick={handleDelete}
-                  disabled={deleteHabit.isPending}
-                  title="Remove this habit"
+                  disabled={deleteHabitCompletion.isPending}
+                  title="Remove from today's list"
                 >
                   <X className="h-4 w-4" />
                 </Button>

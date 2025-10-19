@@ -285,8 +285,8 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         throw new Error('Book not found or access denied');
       }
 
-      // Find the appropriate daily_published entry for this book
-      const { data: dailyPublishedEntries, error: dailyError } = await supabase
+      // Find or create daily_published entry for this book
+      let { data: dailyPublishedEntries, error: dailyError } = await supabase
         .from('daily_published')
         .select('id, status, created_at, book_id')
         .eq('book_id', bookId)
@@ -296,24 +296,45 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         throw new Error(`Failed to find daily published entry: ${dailyError.message}`);
       }
 
-      if (!dailyPublishedEntries || dailyPublishedEntries.length === 0) {
-        throw new Error('No daily published entry found for this book. Please queue the book for publishing first.');
-      }
-
-      // Prioritize active/queued over expired/draft
-      const priorityOrder = ['active', 'queued', 'expired', 'draft'];
       let targetDailyPublished = null;
 
-      for (const priority of priorityOrder) {
-        const entry = dailyPublishedEntries.find(entry => entry.status === priority);
-        if (entry) {
-          targetDailyPublished = entry;
-          break;
-        }
-      }
+      // If no entries exist, create a draft entry for thumbnail storage
+      if (!dailyPublishedEntries || dailyPublishedEntries.length === 0) {
+        console.log('📝 Creating draft daily_published entry for thumbnail upload');
+        
+        const { data: newDailyPublished, error: createError } = await supabase
+          .from('daily_published')
+          .insert({
+            book_id: bookId,
+            title: bookTitle,
+            description: bookDescription || `Thumbnail for ${bookTitle}`,
+            status: 'draft',
+            is_active: false,
+            publish_date: new Date().toISOString().split('T')[0]
+          })
+          .select()
+          .single();
 
-      if (!targetDailyPublished) {
-        targetDailyPublished = dailyPublishedEntries[0]; // Fallback to most recent
+        if (createError) {
+          throw new Error(`Failed to create draft entry: ${createError.message}`);
+        }
+
+        targetDailyPublished = newDailyPublished;
+      } else {
+        // Prioritize active/queued over expired/draft
+        const priorityOrder = ['active', 'queued', 'expired', 'draft'];
+
+        for (const priority of priorityOrder) {
+          const entry = dailyPublishedEntries.find(entry => entry.status === priority);
+          if (entry) {
+            targetDailyPublished = entry;
+            break;
+          }
+        }
+
+        if (!targetDailyPublished) {
+          targetDailyPublished = dailyPublishedEntries[0];
+        }
       }
 
       console.log('🔧 [Upload Debug] Target daily published:', {

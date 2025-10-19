@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -40,8 +41,18 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Get checkout params
-    const { price_id, product_id, plan_type } = await req.json();
+    // Get and validate checkout params
+    const CheckoutRequestSchema = z.object({
+      price_id: z.string().optional(),
+      product_id: z.string().optional(),
+      plan_type: z.enum(['monthly', 'annual']).optional()
+    }).refine(
+      (data) => data.price_id || data.product_id || data.plan_type,
+      { message: "At least one of price_id, product_id, or plan_type must be provided" }
+    );
+    
+    const body = await req.json();
+    const { price_id, product_id, plan_type } = CheckoutRequestSchema.parse(body);
     logStep("Request data received", { price_id, product_id, plan_type });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
@@ -126,6 +137,18 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in create-checkout", { message: errorMessage });
+    
+    // Handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid input',
+        details: error.errors 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+    
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

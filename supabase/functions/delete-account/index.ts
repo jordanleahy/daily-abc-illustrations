@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,11 +28,15 @@ serve(async (req) => {
       { auth: { persistSession: false } }
     );
 
-    // Authenticate user
+    // Authenticate user with validation
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) throw new Error("No authorization header provided");
+    
+    // Validate Authorization header format
+    const AuthHeaderSchema = z.string().regex(/^Bearer .+$/, "Invalid authorization header format");
+    const validatedHeader = AuthHeaderSchema.parse(authHeader);
 
-    const token = authHeader.replace("Bearer ", "");
+    const token = validatedHeader.replace("Bearer ", "");
     const { data: userData, error: userError } = await supabaseAdmin.auth.getUser(token);
     if (userError) throw new Error(`Authentication error: ${userError.message}`);
     
@@ -147,6 +152,18 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in delete-account", { message: errorMessage });
+    
+    // Handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return new Response(JSON.stringify({ 
+        success: false, 
+        error: 'Invalid input',
+        details: error.errors 
+      }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
     
     return new Response(
       JSON.stringify({ 

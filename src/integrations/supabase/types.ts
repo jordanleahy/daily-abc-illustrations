@@ -1435,6 +1435,10 @@ export type Database = {
         Args: { p_amount: number; p_kid_id: string }
         Returns: undefined
       }
+      delete_habit_completion_safe: {
+        Args: { p_completion_id: string }
+        Returns: Json
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: Database["public"]["Enums"]["app_role"]

@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,11 +44,16 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
-    // Parse request body
-    const { auto_renew } = await req.json();
-    if (typeof auto_renew !== 'boolean') {
-      throw new Error("auto_renew must be a boolean value");
-    }
+    // Parse and validate request body
+    const UpdateRenewalSchema = z.object({
+      auto_renew: z.boolean({ 
+        required_error: "auto_renew is required",
+        invalid_type_error: "auto_renew must be a boolean value" 
+      })
+    });
+    
+    const body = await req.json();
+    const { auto_renew } = UpdateRenewalSchema.parse(body);
     logStep("Request parsed", { auto_renew });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
@@ -100,6 +106,18 @@ serve(async (req) => {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR in update-subscription-renewal", { message: errorMessage });
+    
+    // Handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return new Response(JSON.stringify({ 
+        error: 'Invalid input',
+        details: error.errors 
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400,
+      });
+    }
+    
     return new Response(JSON.stringify({ error: errorMessage }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 500,

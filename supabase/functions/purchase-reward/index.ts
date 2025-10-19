@@ -1,4 +1,5 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { corsHeaders } from '../_shared/cors.ts';
 
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -25,7 +26,14 @@ Deno.serve(async (req) => {
       throw new Error('Unauthorized');
     }
 
-    const { kidProfileId, productId } = await req.json();
+    // Parse and validate request body
+    const PurchaseRequestSchema = z.object({
+      kidProfileId: z.string().uuid({ message: 'Invalid kid profile ID' }),
+      productId: z.string().uuid({ message: 'Invalid product ID' })
+    });
+    
+    const body = await req.json();
+    const { kidProfileId, productId } = PurchaseRequestSchema.parse(body);
 
     console.log('[PURCHASE-REWARD] Starting purchase', { userId: user.id, kidProfileId, productId });
 
@@ -175,6 +183,22 @@ Deno.serve(async (req) => {
 
   } catch (error) {
     console.error('[PURCHASE-REWARD] Error:', error);
+    
+    // Handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'Invalid input',
+          details: error.errors 
+        }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
     return new Response(
       JSON.stringify({ 
         success: false, 

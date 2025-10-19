@@ -33,6 +33,7 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
+import { z } from "https://deno.land/x/zod@v3.22.4/mod.ts";
 import { corsHeaders } from '../_shared/types.ts';
 import type { AgentConfig } from '../_shared/types.ts';
 import { callAIProvider } from '../_shared/aiProviders.ts';
@@ -44,7 +45,17 @@ serve(async (req) => {
   }
 
   try {
-    const { conversationHistory, userId } = await req.json();
+    // Parse and validate request body
+    const CreateBookRequestSchema = z.object({
+      conversationHistory: z.array(z.object({
+        role: z.enum(['user', 'assistant', 'system']),
+        content: z.string()
+      })).min(1, "Conversation history cannot be empty"),
+      userId: z.string().uuid({ message: 'Invalid user ID' })
+    });
+    
+    const body = await req.json();
+    const { conversationHistory, userId } = CreateBookRequestSchema.parse(body);
     
     console.log('Creating book for user:', userId);
     console.log('Conversation history length:', conversationHistory?.length || 0);
@@ -277,6 +288,22 @@ ${conversationContext}`;
 
   } catch (error) {
     console.error('Error in create-book function:', error);
+    
+    // Handle Zod validation errors
+    if (error instanceof z.ZodError) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: 'Invalid input',
+          details: error.errors
+        }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
+    }
+    
     return new Response(
       JSON.stringify({
         success: false,

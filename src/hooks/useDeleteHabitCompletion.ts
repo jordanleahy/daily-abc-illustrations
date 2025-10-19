@@ -12,57 +12,19 @@ export function useDeleteHabitCompletion() {
 
   return useMutation({
     mutationFn: async (completionId: string) => {
-      // Fetch the completion to get status and coins info
-      const { data: completion, error: fetchError } = await supabase
-        .from('habit_completions')
-        .select('status, coins_deposited, coins_retained, kid_profile_id')
-        .eq('id', completionId)
-        .single();
+      // Use atomic database function to prevent race conditions
+      const { data, error } = await supabase.rpc('delete_habit_completion_safe', {
+        p_completion_id: completionId
+      });
 
-      if (fetchError) throw fetchError;
+      if (error) throw error;
+      
+      // Type guard for the response
+      const result = data as { success: boolean; error?: string; coins_deducted?: number; kid_id?: string } | null;
+      
+      if (!result?.success) throw new Error(result?.error || 'Failed to delete completion');
 
-      // Delete the completion record
-      const { error: deleteError } = await supabase
-        .from('habit_completions')
-        .delete()
-        .eq('id', completionId);
-
-      if (deleteError) throw deleteError;
-
-      // Deduct coins based on status
-      // - pending: deduct coins_deposited (optimistic amount)
-      // - completed: deduct coins_retained (actual retained amount)
-      // - declined/skipped: no adjustment (already handled)
-      const coinsToDeduct = completion.status === 'pending' 
-        ? completion.coins_deposited 
-        : completion.status === 'completed' 
-          ? completion.coins_retained 
-          : 0;
-
-      if (coinsToDeduct > 0) {
-        // Fetch current coins
-        const { data: kidProfile, error: fetchKidError } = await supabase
-          .from('kid_profiles')
-          .select('earned_coins')
-          .eq('id', completion.kid_profile_id)
-          .single();
-
-        if (!fetchKidError && kidProfile) {
-          const newCoins = Math.max(0, kidProfile.earned_coins - coinsToDeduct);
-          
-          const { error: coinError } = await supabase
-            .from('kid_profiles')
-            .update({ earned_coins: newCoins })
-            .eq('id', completion.kid_profile_id);
-
-          if (coinError) {
-            console.error('Failed to deduct coins:', coinError);
-            // Don't throw - the completion is already deleted
-          }
-        }
-      }
-
-      return completion;
+      return result;
     },
     onSuccess: () => {
       // Invalidate all habit-related queries to sync state

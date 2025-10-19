@@ -15,7 +15,7 @@ export function useDeleteHabitCompletion() {
       // Fetch the completion to get status and coins info
       const { data: completion, error: fetchError } = await supabase
         .from('habit_completions')
-        .select('status, coins_retained, kid_profile_id')
+        .select('status, coins_deposited, coins_retained, kid_profile_id')
         .eq('id', completionId)
         .single();
 
@@ -29,8 +29,17 @@ export function useDeleteHabitCompletion() {
 
       if (deleteError) throw deleteError;
 
-      // If the habit was completed, deduct the coins from the kid's profile
-      if (completion.status === 'completed' && completion.coins_retained > 0) {
+      // Deduct coins based on status
+      // - pending: deduct coins_deposited (optimistic amount)
+      // - completed: deduct coins_retained (actual retained amount)
+      // - declined/skipped: no adjustment (already handled)
+      const coinsToDeduct = completion.status === 'pending' 
+        ? completion.coins_deposited 
+        : completion.status === 'completed' 
+          ? completion.coins_retained 
+          : 0;
+
+      if (coinsToDeduct > 0) {
         // Fetch current coins
         const { data: kidProfile, error: fetchKidError } = await supabase
           .from('kid_profiles')
@@ -39,7 +48,7 @@ export function useDeleteHabitCompletion() {
           .single();
 
         if (!fetchKidError && kidProfile) {
-          const newCoins = Math.max(0, kidProfile.earned_coins - completion.coins_retained);
+          const newCoins = Math.max(0, kidProfile.earned_coins - coinsToDeduct);
           
           const { error: coinError } = await supabase
             .from('kid_profiles')

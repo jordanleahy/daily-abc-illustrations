@@ -18,6 +18,9 @@ export const useBookQRCode = (bookId: string | undefined) => {
         .from('daily_published')
         .select('*')
         .eq('book_id', bookId)
+        .neq('status', 'draft')  // Exclude orphaned drafts
+        .order('created_at', { ascending: false })  // Get most recent
+        .limit(1)
         .maybeSingle();
 
       if (error && error.code !== 'PGRST116') {

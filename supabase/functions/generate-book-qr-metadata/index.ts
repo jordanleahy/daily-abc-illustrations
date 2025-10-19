@@ -52,11 +52,12 @@ serve(async (req) => {
       throw new Error('Book not found or access denied');
     }
 
-    // Get or create daily published entry - get the most recent one
-    let { data: dailyPublished, error: dpError } = await supabase
+    // Get daily published entry (only non-draft entries)
+    const { data: dailyPublished, error: dpError } = await supabase
       .from('daily_published')
       .select('*')
       .eq('book_id', bookId)
+      .neq('status', 'draft')  // Only valid publishing queue entries
       .order('created_at', { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -66,31 +67,13 @@ serve(async (req) => {
       throw new Error('Failed to fetch daily published entry');
     }
 
-    // If no daily published entry exists, create one
+    // Validate that book is in publishing queue
     if (!dailyPublished) {
-      console.log('No daily published entry found, creating one for book:', bookId);
-      
-      const { data: newDailyPublished, error: createError } = await supabase
-        .from('daily_published')
-        .insert({
-          book_id: bookId,
-          title: book.book_name,
-          description: `QR code generated for ${book.book_name}`,
-          status: 'draft', // Set as draft initially
-          is_active: false,
-          publish_date: new Date().toISOString().split('T')[0] // Today's date
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error('Error creating daily published entry:', createError);
-        throw new Error('Failed to create daily published entry for QR code generation');
-      }
-
-      dailyPublished = newDailyPublished;
-      console.log('Created daily published entry:', dailyPublished.id);
+      console.log('Book not in publishing queue:', bookId);
+      throw new Error('This book must be added to the publishing schedule before generating a QR code. Please add it to the queue first.');
     }
+
+    console.log('Found daily published entry:', dailyPublished.id, 'status:', dailyPublished.status);
 
     // Generate public URL for the daily published content
     const publicUrl = `https://dailyabcillustrations.com/daily-published/${dailyPublished.id}`;

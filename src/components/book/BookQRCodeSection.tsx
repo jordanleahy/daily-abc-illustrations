@@ -1,6 +1,8 @@
-import { QrCode, Copy } from 'lucide-react';
+import { QrCode, Copy, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
+import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface BookQRCodeSectionProps {
@@ -8,6 +10,7 @@ interface BookQRCodeSectionProps {
 }
 
 export const BookQRCodeSection = ({ bookId }: BookQRCodeSectionProps) => {
+  const navigate = useNavigate();
   const {
     qrCodeData,
     generateQRCode,
@@ -16,7 +19,7 @@ export const BookQRCodeSection = ({ bookId }: BookQRCodeSectionProps) => {
     isGenerating
   } = useBookQRCode(bookId);
 
-  const { qrCodeImage, isLoading, error } = qrCodeData;
+  const { qrCodeImage, isLoading, error, status } = qrCodeData;
 
   const handleCopyUrl = async () => {
     try {
@@ -35,6 +38,26 @@ export const BookQRCodeSection = ({ bookId }: BookQRCodeSectionProps) => {
           <div className="w-24 h-10 bg-muted animate-pulse rounded" />
           <div className="w-20 h-10 bg-muted animate-pulse rounded" />
         </div>
+      </div>
+    );
+  }
+
+  if (status === 'not_published') {
+    return (
+      <div className="flex flex-col items-center gap-4 p-6">
+        <Alert>
+          <Calendar className="h-4 w-4" />
+          <AlertDescription>
+            <p className="font-medium mb-1">QR Code Not Available</p>
+            <p className="text-sm mb-2">This book must be added to the publishing schedule before generating a QR code.</p>
+            <Button 
+              variant="outline" 
+              onClick={() => navigate('/schedule')}
+            >
+              Go to Schedule
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

@@ -28,6 +28,8 @@ export interface DailyPublishedWithBook extends DailyPublished {
     user_id: string;
   };
   og_image_url?: string | null;
+  seo_title?: string | null;
+  seo_description?: string | null;
 }
 
 export interface DailyPublishedWithTotalPages extends DailyPublished {

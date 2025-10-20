@@ -218,7 +218,7 @@ const LibraryBookCard = memo(function LibraryBookCard({
         <CardHeader>
           <div className="flex items-start justify-between gap-2 pr-12">
             <CardTitle className="text-xl line-clamp-2 flex-1">
-              {item.title}
+              {item.seo_title || item.title}
             </CardTitle>
             {isNewlyPublished && (
               <Badge variant="default" className="shrink-0">
@@ -245,7 +245,7 @@ const LibraryBookCard = memo(function LibraryBookCard({
                 src={optimizeImageUrl(item.og_image_url, { width: 800, quality: 85 }) || item.og_image_url}
                 srcSet={generateSrcSet(item.og_image_url, [600, 800, 1200])}
                 sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                alt={`Preview of ${item.title}`}
+                alt={`Preview of ${item.seo_title || item.title}`}
                 className="w-full h-full object-cover object-center"
                 loading={index < 6 ? "eager" : "lazy"}
                 fetchPriority={index < 3 ? "high" : "auto"}

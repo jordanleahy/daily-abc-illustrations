@@ -33,7 +33,7 @@ export const useLibraryBooks = () => {
       // Fetch latest SEO metadata for all daily_published items
       const { data: seoData, error: seoError } = await supabase
         .from('seo_metadata')
-        .select('daily_published_id, og_image_url')
+        .select('daily_published_id, seo_title, seo_description, og_image_url')
         .eq('is_latest', true)
         .eq('is_active', true)
         .eq('optimization_status', 'complete');
@@ -44,13 +44,22 @@ export const useLibraryBooks = () => {
 
       // Map SEO data to daily_published items
       const seoMap = new Map(
-        seoData?.map(seo => [seo.daily_published_id, seo.og_image_url]) || []
+        seoData?.map(seo => [seo.daily_published_id, { 
+          seo_title: seo.seo_title, 
+          seo_description: seo.seo_description, 
+          og_image_url: seo.og_image_url 
+        }]) || []
       );
 
-      const enrichedData = dailyPublishedData?.map(item => ({
-        ...item,
-        og_image_url: seoMap.get(item.id) || null
-      })) || [];
+      const enrichedData = dailyPublishedData?.map(item => {
+        const seoData = seoMap.get(item.id);
+        return {
+          ...item,
+          og_image_url: seoData?.og_image_url || null,
+          seo_title: seoData?.seo_title || null,
+          seo_description: seoData?.seo_description || null
+        };
+      }) || [];
 
       return enrichedData as DailyPublishedWithBook[];
 

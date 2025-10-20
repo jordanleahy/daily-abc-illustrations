@@ -42,11 +42,6 @@ const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: numbe
         </div>
         <div className="p-4">
           <h3 className="font-semibold text-lg mb-1">{page.title}</h3>
-          {page.content?.mainConcept && (
-            <p className="text-sm text-muted-foreground line-clamp-2">
-              {page.content.mainConcept}
-            </p>
-          )}
         </div>
       </CardContent>
     </Card>

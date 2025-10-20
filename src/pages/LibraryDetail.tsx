@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, BookOpen, Calendar, Users } from 'lucide-react';
 import { MetaHead } from '@/components/common/MetaHead';
-import { useSeoMetadata } from '@/hooks/useSeoMetadata';
+import { useSeoMetadata, useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
 import { LibraryCard } from '@/components/page-prompts/LibraryCard';
 
 export default function LibraryDetail() {
@@ -21,6 +21,7 @@ export default function LibraryDetail() {
   const { data: book, isLoading: bookLoading, error: bookError } = useLibraryBookById(id);
   const { data: pages = [], isLoading: pagesLoading } = useDailyPublishedPages(id);
   const { data: seoMetadata } = useSeoMetadata(id);
+  const { data: bookSeoMetadata } = useSeoMetadataByBook(book?.book_id || undefined);
 
   useEffect(() => {
     if (!user) {
@@ -33,6 +34,15 @@ export default function LibraryDetail() {
   };
 
   const isLoading = bookLoading || pagesLoading;
+
+  const pageTitle = seoMetadata?.seo_title || bookSeoMetadata?.seo_title || book?.title || 'ABC Cards Library';
+  const pageDescription =
+    seoMetadata?.seo_description ||
+    bookSeoMetadata?.seo_description ||
+    book?.description ||
+    (book?.title ? `Explore the ABC book "${book.title}" in our educational library.` : undefined);
+  const ogImageUrl = seoMetadata?.og_image_url || bookSeoMetadata?.og_image_url;
+
 
   if (!user) {
     return (
@@ -82,10 +92,10 @@ export default function LibraryDetail() {
   return (
     <>
       <MetaHead metadata={{
-        title: seoMetadata?.seo_title || `${book.title} - ABC Cards Library`,
-        description: seoMetadata?.seo_description || book.description || `Explore the ABC book "${book.title}" in our educational library.`,
+        title: pageTitle,
+        description: pageDescription,
         type: "article",
-        image: seoMetadata?.og_image_url ? { url: seoMetadata.og_image_url } : undefined
+        image: ogImageUrl ? { url: ogImageUrl } : undefined
       }} />
       
       <StandardPageLayout>
@@ -108,11 +118,11 @@ export default function LibraryDetail() {
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="space-y-2">
                   <CardTitle className="text-2xl md:text-3xl">
-                    {seoMetadata?.seo_title || book.title}
+                    {pageTitle}
                   </CardTitle>
-                  {book.description && (
+                  {pageDescription && (
                     <p className="text-muted-foreground text-lg">
-                      {seoMetadata?.seo_description || book.description}
+                      {pageDescription}
                     </p>
                   )}
                 </div>

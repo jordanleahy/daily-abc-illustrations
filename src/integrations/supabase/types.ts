@@ -220,6 +220,7 @@ export type Database = {
           expires_at: string | null
           id: string
           is_active: boolean
+          is_publicly_visible: boolean
           pdf_url: string | null
           publish_date: string
           published_at: string
@@ -229,6 +230,7 @@ export type Database = {
           qr_code_public_url: string | null
           queue_order: number | null
           queue_position: number | null
+          slug: string | null
           status: string
           title: string
           updated_at: string
@@ -240,6 +242,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          is_publicly_visible?: boolean
           pdf_url?: string | null
           publish_date?: string
           published_at?: string
@@ -249,6 +252,7 @@ export type Database = {
           qr_code_public_url?: string | null
           queue_order?: number | null
           queue_position?: number | null
+          slug?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -260,6 +264,7 @@ export type Database = {
           expires_at?: string | null
           id?: string
           is_active?: boolean
+          is_publicly_visible?: boolean
           pdf_url?: string | null
           publish_date?: string
           published_at?: string
@@ -269,6 +274,7 @@ export type Database = {
           qr_code_public_url?: string | null
           queue_order?: number | null
           queue_position?: number | null
+          slug?: string | null
           status?: string
           title?: string
           updated_at?: string
@@ -1438,6 +1444,10 @@ export type Database = {
       delete_habit_completion_safe: {
         Args: { p_completion_id: string }
         Returns: Json
+      }
+      generate_slug: {
+        Args: { input_text: string }
+        Returns: string
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>

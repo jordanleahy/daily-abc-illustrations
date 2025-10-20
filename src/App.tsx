@@ -20,6 +20,7 @@ import Library from "./pages/Library";
 import LibraryBookView from "./pages/LibraryBookView";
 import LibraryDetail from "./pages/LibraryDetail";
 import UserLibraryDetail from "./pages/UserLibraryDetail";
+import PublicBook from "./pages/PublicBook";
 import Rewards from "./pages/Rewards";
 import RewardsManage from "./pages/RewardsManage";
 import DailyPublished from "./pages/DailyPublished";
@@ -79,6 +80,9 @@ const App = () => (
                 <Route path="/library/:id" element={<ProtectedRoute requireSubscription={false}><LibraryBookView /></ProtectedRoute>} />
                 <Route path="/library/:id/detail" element={<ProtectedRoute requireSubscription={false}><UserLibraryDetail /></ProtectedRoute>} />
                 <Route path="/admin/library/:id" element={<ProtectedRoute requireRole="admin"><LibraryDetail /></ProtectedRoute>} />
+                
+                {/* Public book landing page (no auth required) */}
+                <Route path="/book/:slug" element={<PublicBook />} />
                 
                 {/* Habits & Rewards routes - Plus tier only */}
                 <Route path="/rewards" element={<ProtectedRoute requireFeature="habits_rewards"><Rewards /></ProtectedRoute>} />

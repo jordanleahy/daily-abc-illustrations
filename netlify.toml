@@ -14,6 +14,10 @@
   function = "library-detail-meta"
   path = "/library/*/detail"
 
+[[edge_functions]]
+  function = "public-book-meta"
+  path = "/book/*"
+
 # Headers for security and performance
 [[headers]]
   for = "/*"

@@ -265,7 +265,7 @@ export default async function handler(request: Request, context: Context) {
     ]);
     
     if (!dailyData) {
-      console.log(`Daily published content not found or expired: ${dailyId}`);
+      console.log(`Daily published content not found or is in draft status: ${dailyId}`);
       return context.next();
     }
     

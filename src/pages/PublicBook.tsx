@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Download, Plus, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-const PublicBookPageCard = ({ page }: { page: any }) => {
+const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: number; isLocked: boolean }) => {
   const { data: imageData } = usePublicPageImage(page.id);
   
   return (
@@ -22,12 +22,22 @@ const PublicBookPageCard = ({ page }: { page: any }) => {
             <img
               src={imageData.image_url}
               alt={`Letter ${page.letter} - ${page.title}`}
-              className="w-full h-full object-cover"
+              className={`w-full h-full object-cover transition-all ${isLocked ? 'blur-md' : ''}`}
               loading="lazy"
             />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
               <Skeleton className="w-full h-full" />
+            </div>
+          )}
+          
+          {isLocked && (
+            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
+              <Plus className="h-12 w-12 mb-3 text-primary" />
+              <h4 className="font-semibold text-lg mb-2">Sign up to unlock</h4>
+              <p className="text-sm text-muted-foreground">
+                Create a free account to view all 26 letters
+              </p>
             </div>
           )}
         </div>
@@ -133,10 +143,12 @@ export default function PublicBook() {
           {/* Letter Cards Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {pages && pages.length > 0 ? (
-              pages.map((page) => (
+              pages.map((page, index) => (
                 <PublicBookPageCard 
                   key={page.id} 
-                  page={page} 
+                  page={page}
+                  index={index}
+                  isLocked={index >= 3}
                 />
               ))
             ) : (

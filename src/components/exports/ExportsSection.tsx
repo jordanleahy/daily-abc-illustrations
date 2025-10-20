@@ -857,6 +857,62 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           </div>
         )}
 
+        {/* Public Book Link Section */}
+        {existingPublication && existingPublication.slug && existingPublication.status !== 'draft' && (
+          <div className="flex flex-col gap-3 pt-4 border-t">
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <Globe className="h-4 w-4" />
+                  Public Book Link
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  SEO-optimized public landing page
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={async () => {
+                    const publicBookUrl = `${window.location.origin}/book/${existingPublication.slug}`;
+                    try {
+                      await navigator.clipboard.writeText(publicBookUrl);
+                      toast({
+                        title: "Link copied!",
+                        description: "The public book link has been copied to your clipboard."
+                      });
+                    } catch (error) {
+                      console.error('Failed to copy link:', error);
+                      toast({
+                        title: "Copy failed",
+                        description: "Unable to copy link to clipboard.",
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy Link
+                </Button>
+                <Button 
+                  onClick={() => window.open(`/book/${existingPublication.slug}`, '_blank')}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Eye className="h-4 w-4" />
+                  View
+                </Button>
+              </div>
+            </div>
+            <div className="bg-muted/50 rounded-md p-3 text-sm">
+              <code className="text-muted-foreground break-all">
+                {`${window.location.origin}/book/${existingPublication.slug}`}
+              </code>
+            </div>
+          </div>
+        )}
+
         {/* Book Publication Status Control */}
         {contentType === 'book' && bookData && (
           <div className="flex flex-col gap-3 pt-4 border-t">

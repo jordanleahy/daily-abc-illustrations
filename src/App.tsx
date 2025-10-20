@@ -88,7 +88,7 @@ const App = () => (
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />
                <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
-               <Route path="/schedule" element={<ProtectedRoute><Schedule /></ProtectedRoute>} />
+               <Route path="/schedule" element={<Schedule />} />
                <Route path="/reddit" element={<Reddit />} />
                <Route path="/pricing" element={<Pricing />} />
                <Route path="/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />

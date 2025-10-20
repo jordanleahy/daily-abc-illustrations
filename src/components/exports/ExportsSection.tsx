@@ -873,7 +873,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
               <div className="flex items-center gap-2">
                 <Button 
                   onClick={async () => {
-                    const publicBookUrl = `${window.location.origin}/book/${existingPublication.slug}`;
+                    const publicBookUrl = `${SITE_CONFIG.productionUrl}/book/${existingPublication.slug}`;
                     try {
                       await navigator.clipboard.writeText(publicBookUrl);
                       toast({
@@ -907,7 +907,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             </div>
             <div className="bg-muted/50 rounded-md p-3 text-sm">
               <code className="text-muted-foreground break-all">
-                {`${window.location.origin}/book/${existingPublication.slug}`}
+                {`${SITE_CONFIG.productionUrl}/book/${existingPublication.slug}`}
               </code>
             </div>
           </div>

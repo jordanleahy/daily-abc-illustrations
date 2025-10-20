@@ -30,9 +30,6 @@ const PublicBookPageCard = ({ page }: { page: any }) => {
               <Skeleton className="w-full h-full" />
             </div>
           )}
-          <div className="absolute top-2 left-2 bg-background/90 backdrop-blur-sm rounded-full w-10 h-10 flex items-center justify-center font-bold text-lg">
-            {page.letter}
-          </div>
         </div>
         <div className="p-4">
           <h3 className="font-semibold text-lg mb-1">{page.title}</h3>

@@ -35,7 +35,7 @@ const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: numbe
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
               <Plus className="h-12 w-12 mb-3 text-primary" />
               <p className="text-sm text-muted-foreground">
-                Create a free account to view all 26 letters
+                Subscribe to View
               </p>
             </div>
           )}

@@ -82,8 +82,8 @@ export default function LibraryDetail() {
   return (
     <>
       <MetaHead metadata={{
-        title: `${book.title} - ABC Cards Library`,
-        description: book.description || `Explore the ABC book "${book.title}" in our educational library.`,
+        title: seoMetadata?.seo_title || `${book.title} - ABC Cards Library`,
+        description: seoMetadata?.seo_description || book.description || `Explore the ABC book "${book.title}" in our educational library.`,
         type: "article",
         image: seoMetadata?.og_image_url ? { url: seoMetadata.og_image_url } : undefined
       }} />
@@ -108,11 +108,11 @@ export default function LibraryDetail() {
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                 <div className="space-y-2">
                   <CardTitle className="text-2xl md:text-3xl">
-                    {book.title}
+                    {seoMetadata?.seo_title || book.title}
                   </CardTitle>
                   {book.description && (
                     <p className="text-muted-foreground text-lg">
-                      {book.description}
+                      {seoMetadata?.seo_description || book.description}
                     </p>
                   )}
                 </div>

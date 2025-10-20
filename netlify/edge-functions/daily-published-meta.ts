@@ -50,7 +50,7 @@ function isSocialCrawler(userAgent: string): boolean {
 async function fetchDailyPublishedData(dailyId: string) {
   try {
     const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/daily_published?select=*&id=eq.${dailyId}&is_active=eq.true&expires_at=gt.${new Date().toISOString()}`,
+      `${SUPABASE_URL}/rest/v1/daily_published?select=*&id=eq.${dailyId}&status=in.(active,queued,expired)`,
       {
         headers: {
           'apikey': SUPABASE_ANON_KEY,

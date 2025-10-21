@@ -10,14 +10,19 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Calendar, Clock } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
 import { reorderPagesFromStartingLetter } from '@/utils/pageNavigation';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 export default function DailyPublished() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuthContext();
   const { data: result, isLoading: isLoadingDaily, error: dailyError } = useDailyPublishedById(id);
   const dailyContent = result?.data;
   const isExpired = result?.isExpired;
+  
+  // Freemium: non-authenticated users can only view first 3 pages
+  const FREE_PAGE_LIMIT = 3;
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   
@@ -172,6 +177,13 @@ export default function DailyPublished() {
   const isLastPage = currentPageIndex >= reorderedPages.length - 1;
 
   const handleNext = () => {
+    // Check freemium limit for non-authenticated users
+    if (!isAuthenticated && currentPageIndex >= FREE_PAGE_LIMIT - 1) {
+      // Redirect to pricing/signup after viewing free pages
+      navigate('/pricing');
+      return;
+    }
+    
     // Award a coin for completing this page
     setSessionCoins(prev => prev + 1);
     

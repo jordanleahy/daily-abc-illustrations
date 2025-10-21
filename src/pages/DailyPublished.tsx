@@ -179,8 +179,8 @@ export default function DailyPublished() {
   const handleNext = () => {
     // Check freemium limit for non-authenticated users
     if (!isAuthenticated && currentPageIndex >= FREE_PAGE_LIMIT - 1) {
-      // Redirect to pricing/signup after viewing free pages
-      navigate('/pricing');
+      // Redirect to daily-published page after viewing free pages
+      navigate(`/daily-published/${dailyContent.id}`);
       return;
     }
     

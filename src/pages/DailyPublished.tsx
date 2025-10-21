@@ -21,8 +21,8 @@ export default function DailyPublished() {
   const dailyContent = result?.data;
   const isExpired = result?.isExpired;
   
-  // Freemium: non-authenticated users can only view first 3 pages
-  const FREE_PAGE_LIMIT = 3;
+  // Freemium: non-authenticated users can only view first 2 pages
+  const FREE_PAGE_LIMIT = 2;
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   

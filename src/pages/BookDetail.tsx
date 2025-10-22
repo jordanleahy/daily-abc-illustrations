@@ -441,7 +441,7 @@ export default function BookDetail() {
                         className="text-base cursor-pointer hover:text-primary transition-colors" 
                         onClick={() => setIsEditingDescription(true)}
                       >
-                        {value}
+                        {value || 'Click to add description...'}
                       </CardDescription>
                     )}
                   />
@@ -688,7 +688,7 @@ export default function BookDetail() {
                             className="text-base cursor-pointer hover:text-primary transition-colors" 
                             onClick={() => setIsEditingDescription(true)}
                           >
-                            {value}
+                            {value || 'Click to add description...'}
                           </CardDescription>
                         )}
                       />

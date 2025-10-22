@@ -17,6 +17,7 @@ export interface DailyPublished {
   qr_code_public_url?: string;
   qr_code_config?: any;
   qr_code_generated_at?: string;
+  slug?: string;
   // Simple queue ordering
   queue_order?: number;
 }

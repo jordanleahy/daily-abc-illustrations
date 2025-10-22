@@ -379,16 +379,29 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   };
 
   /**
-   * Generates LinkedIn post text based on book title and expiration date
+   * Generates LinkedIn post text based on SEO title, public URL, and publication date
    */
   const getLinkedInPostText = () => {
     if (!existingPublication) return '';
     
-    const expirationText = existingPublication.expires_at 
-      ? `Expires ${formatScheduleTimestamp(existingPublication.expires_at)}`
-      : 'Limited time available';
-
-    return `${existingPublication.title}\n${expirationText}\nComment for Link`;
+    // Use SEO title if available, fallback to regular title
+    const title = existingSeoMetadata?.seo_title || existingPublication.title;
+    
+    // Generate public book URL using slug
+    const publicUrl = existingPublication.slug 
+      ? `${SITE_CONFIG.productionUrl}/book/${existingPublication.slug}`
+      : `${SITE_CONFIG.productionUrl}/daily-published/${existingPublication.id}`;
+    
+    // Format the publish date as "Saturday, November 15"
+    const publishDate = existingPublication.publish_date
+      ? new Date(existingPublication.publish_date).toLocaleDateString('en-US', {
+          weekday: 'long',
+          month: 'long', 
+          day: 'numeric'
+        })
+      : 'TBD';
+    
+    return `${title}\n${publicUrl}\nAvailable for monthly users | Runs for Free On ${publishDate}`;
   };
 
   /**

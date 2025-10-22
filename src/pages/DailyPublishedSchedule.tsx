@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
@@ -16,6 +16,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Clock, BookOpen, RefreshCw, GripVertical, Image, ArrowUp, ArrowDown, MoreVertical, Zap } from 'lucide-react';
 import {
   DropdownMenu,
@@ -83,6 +84,7 @@ export default function DailyPublishedScheduleSimple() {
   const requeueItem = useRequeueExpiredItem();
   const expireContent = useExpireContent();
   const isAdmin = useHasRole('admin');
+  const [sortOrder, setSortOrder] = useState<'old-to-new' | 'new-to-old'>('old-to-new');
 
   // Preload schedule images for instant display
   useScheduleImagePreloader(scheduleItems);
@@ -233,9 +235,18 @@ export default function DailyPublishedScheduleSimple() {
   }
 
   const activeItems = scheduleItems?.filter(item => item.status === 'active') || [];
+  
+  // Apply sorting based on selected order
+  const sortByDate = (a: DailyPublishedWithBook, b: DailyPublishedWithBook) => {
+    const dateA = new Date(a.publish_date).getTime();
+    const dateB = new Date(b.publish_date).getTime();
+    return sortOrder === 'old-to-new' ? dateA - dateB : dateB - dateA;
+  };
+  
   const queuedItems = scheduleItems?.filter(item => item.status === 'queued')
-    .sort((a, b) => new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime()) || [];
-  const expiredItems = scheduleItems?.filter(item => item.status === 'expired') || [];
+    .sort(sortByDate) || [];
+  const expiredItems = scheduleItems?.filter(item => item.status === 'expired')
+    .sort(sortByDate) || [];
 
   return (
     <>
@@ -267,6 +278,16 @@ export default function DailyPublishedScheduleSimple() {
               Refresh
             </Button>
           </div>
+        </div>
+
+        {/* Sort Tabs */}
+        <div className="mb-6">
+          <Tabs value={sortOrder} onValueChange={(value) => setSortOrder(value as 'old-to-new' | 'new-to-old')}>
+            <TabsList>
+              <TabsTrigger value="old-to-new">Old to New</TabsTrigger>
+              <TabsTrigger value="new-to-old">New to Old</TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
 
         {/* Active Item */}

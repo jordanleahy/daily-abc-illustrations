@@ -1380,8 +1380,17 @@ export type Database = {
           expires_at: string | null
           id: string | null
           is_active: boolean | null
+          is_publicly_visible: boolean | null
+          pdf_url: string | null
+          publish_date: string | null
           published_at: string | null
+          qr_code_config: Json | null
+          qr_code_generated_at: string | null
+          qr_code_image: string | null
+          qr_code_public_url: string | null
+          queue_order: number | null
           queue_position: number | null
+          slug: string | null
           status: string | null
           title: string | null
           updated_at: string | null
@@ -1393,8 +1402,17 @@ export type Database = {
           expires_at?: string | null
           id?: string | null
           is_active?: boolean | null
+          is_publicly_visible?: boolean | null
+          pdf_url?: string | null
+          publish_date?: string | null
           published_at?: string | null
+          qr_code_config?: Json | null
+          qr_code_generated_at?: string | null
+          qr_code_image?: string | null
+          qr_code_public_url?: string | null
+          queue_order?: number | null
           queue_position?: number | null
+          slug?: string | null
           status?: string | null
           title?: string | null
           updated_at?: string | null
@@ -1406,8 +1424,17 @@ export type Database = {
           expires_at?: string | null
           id?: string | null
           is_active?: boolean | null
+          is_publicly_visible?: boolean | null
+          pdf_url?: string | null
+          publish_date?: string | null
           published_at?: string | null
+          qr_code_config?: Json | null
+          qr_code_generated_at?: string | null
+          qr_code_image?: string | null
+          qr_code_public_url?: string | null
+          queue_order?: number | null
           queue_position?: number | null
+          slug?: string | null
           status?: string | null
           title?: string | null
           updated_at?: string | null

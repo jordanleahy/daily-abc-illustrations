@@ -16,6 +16,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -69,6 +70,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   contentName
 }) => {
   const { user } = useAuthContext();
+  const queryClient = useQueryClient();
   const { data: expectedDate, isLoading: dateLoading } = useExpectedPublicationDate(contentId);
   const { generateQRCode } = useBookQRCode(contentType === 'book' ? contentId : undefined);
   const { data: bookData } = useBook(contentType === 'book' ? contentId : undefined);
@@ -81,6 +83,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const [productDescription, setProductDescription] = useState<string>('');
   const [isProductDescriptionSaved, setIsProductDescriptionSaved] = useState(true);
   const [isSavingProductDescription, setIsSavingProductDescription] = useState(false);
+  const [isRefreshingLinkedInPost, setIsRefreshingLinkedInPost] = useState(false);
 
   /**
    * Handles client-side PDF generation for the content
@@ -402,6 +405,43 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       : 'TBD';
     
     return `${title}\n${publicUrl}\nAvailable for monthly users | Runs for Free On ${publishDate}`;
+  };
+
+  /**
+   * Manually refreshes LinkedIn post data by invalidating SEO metadata cache
+   * Useful when user has just updated SEO title and wants immediate update
+   */
+  const handleRefreshLinkedInPost = async () => {
+    setIsRefreshingLinkedInPost(true);
+    
+    try {
+      // Invalidate the book SEO metadata query to force a fresh fetch
+      await queryClient.invalidateQueries({
+        queryKey: ['book-seo-metadata', contentId]
+      });
+      
+      // Also invalidate daily published data to ensure everything is in sync
+      await queryClient.invalidateQueries({
+        queryKey: ['daily-published-by-id']
+      });
+      
+      // Wait a brief moment for the queries to refetch
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      toast({
+        title: "LinkedIn Post Updated",
+        description: "Post content has been refreshed with the latest SEO data."
+      });
+    } catch (error) {
+      console.error('Error refreshing LinkedIn post:', error);
+      toast({
+        title: "Refresh Failed",
+        description: "Unable to refresh post content. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsRefreshingLinkedInPost(false);
+    }
   };
 
   /**
@@ -853,14 +893,26 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                   Ready-to-share LinkedIn post text
                 </p>
               </div>
-              <Button 
-                onClick={handleCopyLinkedInPost}
-                variant="outline"
-                className="flex items-center gap-2"
-              >
-                <Copy className="h-4 w-4" />
-                Copy Post
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button 
+                  onClick={handleRefreshLinkedInPost}
+                  disabled={isRefreshingLinkedInPost}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  title="Refresh with latest SEO data"
+                >
+                  <RefreshCw className={`h-4 w-4 ${isRefreshingLinkedInPost ? 'animate-spin' : ''}`} />
+                  {isRefreshingLinkedInPost ? 'Refreshing...' : 'Refresh'}
+                </Button>
+                <Button 
+                  onClick={handleCopyLinkedInPost}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <Copy className="h-4 w-4" />
+                  Copy Post
+                </Button>
+              </div>
             </div>
             <div className="bg-muted/50 rounded-md p-3 text-sm">
               <div className="whitespace-pre-line text-muted-foreground">

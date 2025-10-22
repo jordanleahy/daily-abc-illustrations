@@ -27,6 +27,8 @@ export interface Book {
   firstPageImageUrl?: string;
   /** Whether the book is highlighted/featured on the landing page */
   is_highlighted?: boolean;
+  /** Manual tags for organization and categorization */
+  tags?: string[];
   /** ISO timestamp when the book was created */
   created_at: string;
   /** ISO timestamp when the book was last modified */

@@ -28,7 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
 import { PublicationStatus } from '@/types/status';
-import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText, Star, Copy } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText, Star, Copy, Tag, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useToggleBookHighlight } from '@/hooks/useToggleBookHighlight';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
@@ -73,6 +73,8 @@ export default function BookDetail() {
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const [isEditingTags, setIsEditingTags] = useState(false);
+  const [newTag, setNewTag] = useState('');
   
   const [progressMessages, setProgressMessages] = useState<ProgressMessage[]>([]);
   const [isProgressExpanded, setIsProgressExpanded] = useState(true);
@@ -335,6 +337,55 @@ export default function BookDetail() {
       toast.error('Failed to update book status');
     } finally {
       setIsEditingStatus(false);
+    }
+  };
+
+  const handleAddTag = async () => {
+    if (!book?.id || !newTag.trim()) return;
+    
+    const currentTags = book.tags || [];
+    if (currentTags.includes(newTag.trim())) {
+      toast.error('Tag already exists');
+      return;
+    }
+    
+    const updatedTags = [...currentTags, newTag.trim()];
+    
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({ tags: updatedTags })
+        .eq('id', book.id);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['book', book.id] });
+      setNewTag('');
+      toast.success('Tag added');
+    } catch (error) {
+      console.error('Error adding tag:', error);
+      toast.error('Failed to add tag');
+    }
+  };
+
+  const handleRemoveTag = async (tagToRemove: string) => {
+    if (!book?.id) return;
+    
+    const updatedTags = (book.tags || []).filter(tag => tag !== tagToRemove);
+    
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({ tags: updatedTags })
+        .eq('id', book.id);
+
+      if (error) throw error;
+
+      queryClient.invalidateQueries({ queryKey: ['book', book.id] });
+      toast.success('Tag removed');
+    } catch (error) {
+      console.error('Error removing tag:', error);
+      toast.error('Failed to remove tag');
     }
   };
 
@@ -820,6 +871,82 @@ export default function BookDetail() {
                             {book?.status}
                           </Badge>
                         )}
+                      </div>
+
+                      {/* Tags Section */}
+                      <div className="mt-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Tag className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm font-medium text-muted-foreground">Tags</span>
+                        </div>
+                        <div className="flex flex-wrap gap-2 items-center">
+                          {book.tags && book.tags.length > 0 ? (
+                            book.tags.map((tag) => (
+                              <Badge 
+                                key={tag} 
+                                variant="secondary"
+                                className="group relative pr-6"
+                              >
+                                {tag}
+                                <button
+                                  onClick={() => handleRemoveTag(tag)}
+                                  className="absolute right-1 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Remove tag"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </Badge>
+                            ))
+                          ) : (
+                            <span className="text-sm text-muted-foreground italic">No tags</span>
+                          )}
+                          {isEditingTags ? (
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={newTag}
+                                onChange={(e) => setNewTag(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleAddTag();
+                                  } else if (e.key === 'Escape') {
+                                    setIsEditingTags(false);
+                                    setNewTag('');
+                                  }
+                                }}
+                                placeholder="Enter tag name"
+                                className="px-2 py-1 text-sm border rounded"
+                                autoFocus
+                              />
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={handleAddTag}
+                              >
+                                Add
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setIsEditingTags(false);
+                                  setNewTag('');
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setIsEditingTags(true)}
+                            >
+                              <Tag className="w-3 h-3 mr-1" />
+                              Add Tag
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                     

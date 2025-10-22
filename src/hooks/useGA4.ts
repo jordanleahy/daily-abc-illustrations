@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useIsAdmin } from '@/contexts/RoleContext';
+import { useRole } from '@/contexts/RoleContext';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { getOrCreateVisitorId, trackVisit, getVisitorStats } from '@/utils/storage';
 
@@ -12,12 +12,13 @@ declare global {
 
 export const useGA4 = () => {
   const location = useLocation();
-  const isAdmin = useIsAdmin();
+  const { isAdmin, isLoading: roleLoading } = useRole();
   const { user } = useAuthContext();
 
   // Set up visitor tracking for non-authenticated users
   useEffect(() => {
-    if (typeof window.gtag === 'function' && !isAdmin) {
+    // Wait for role to load before tracking
+    if (typeof window.gtag === 'function' && !roleLoading && !isAdmin) {
       const userType = user ? 'authenticated' : 'anonymous';
       
       // For anonymous users, set visitor ID and stats
@@ -43,10 +44,11 @@ export const useGA4 = () => {
         page_path: location.pathname,
       });
     }
-  }, [location, isAdmin, user]);
+  }, [location, isAdmin, roleLoading, user]);
 
   const trackEvent = (eventName: string, parameters?: Record<string, any>) => {
-    if (typeof window.gtag === 'function' && !isAdmin) {
+    // Wait for role to load before tracking
+    if (typeof window.gtag === 'function' && !roleLoading && !isAdmin) {
       // Enrich events with visitor data for anonymous users
       const enrichedParams = { ...parameters };
       

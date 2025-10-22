@@ -168,6 +168,7 @@ export type Database = {
           pdf_url: string | null
           product_description: string | null
           status: Database["public"]["Enums"]["publication_status"]
+          tags: string[] | null
           total_pages: number | null
           updated_at: string
           user_id: string
@@ -183,6 +184,7 @@ export type Database = {
           pdf_url?: string | null
           product_description?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
+          tags?: string[] | null
           total_pages?: number | null
           updated_at?: string
           user_id: string
@@ -198,6 +200,7 @@ export type Database = {
           pdf_url?: string | null
           product_description?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
+          tags?: string[] | null
           total_pages?: number | null
           updated_at?: string
           user_id?: string

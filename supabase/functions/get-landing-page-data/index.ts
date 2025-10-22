@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
           console.log('  🎨 Fetching SEO metadata for', libraryDpIds.length, 'items...');
           const result = await supabase
             .from('seo_metadata')
-            .select('daily_published_id, og_image_url, is_latest, optimization_status')
+            .select('daily_published_id, og_image_url, seo_title, is_latest, optimization_status')
             .eq('is_latest', true)
             .eq('optimization_status', 'complete')
             .in('daily_published_id', libraryDpIds);
@@ -210,7 +210,7 @@ Deno.serve(async (req) => {
 
     // Build SEO map once and reuse for both popular and library
     const seoMap = !seoError && seoMetadata
-      ? new Map(seoMetadata.map((s: any) => [s.daily_published_id, s.og_image_url]))
+      ? new Map(seoMetadata.map((s: any) => [s.daily_published_id, { og_image_url: s.og_image_url, seo_title: s.seo_title }]))
       : new Map();
 
     // Map images for popular books using library linkage to daily_published
@@ -218,9 +218,10 @@ Deno.serve(async (req) => {
     if (popularBookIds.length > 0 && libraryBooks.length > 0) {
       popularBooksWithImages = popularBooks.map(book => {
         const dpEntry = libraryBooks.find(lb => lb.book_id === book.id);
+        const seoData = dpEntry ? seoMap.get(dpEntry.id) : null;
         return {
           ...book,
-          image_url: dpEntry ? (seoMap.get(dpEntry.id) || null) : null
+          image_url: seoData?.og_image_url || null
         };
       });
     }
@@ -228,10 +229,14 @@ Deno.serve(async (req) => {
     // Map images for library books directly
     let libraryBooksWithImages = libraryBooks;
     if (libraryDpIds.length > 0) {
-      libraryBooksWithImages = libraryBooks.map(lb => ({
-        ...lb,
-        og_image_url: seoMap.get(lb.id) || null
-      }));
+      libraryBooksWithImages = libraryBooks.map(lb => {
+        const seoData = seoMap.get(lb.id);
+        return {
+          ...lb,
+          og_image_url: seoData?.og_image_url || null,
+          seo_title: seoData?.seo_title || null
+        };
+      });
     }
 
     const endTime = Date.now();

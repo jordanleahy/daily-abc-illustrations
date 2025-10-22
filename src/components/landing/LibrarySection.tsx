@@ -61,7 +61,7 @@ function LibraryBookCard({ item }: { item: LandingLibraryBook }) {
       </div>
       <CardHeader className="pb-3">
         <CardTitle className="text-xl line-clamp-2">
-          {item.title}
+          {item.seo_title || item.title}
         </CardTitle>
       </CardHeader>
     </Card>

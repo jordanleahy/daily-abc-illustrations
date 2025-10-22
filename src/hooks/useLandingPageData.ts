@@ -39,6 +39,7 @@ export interface LandingLibraryBook {
   is_active: boolean;
   published_at: string;
   og_image_url: string | null;
+  seo_title?: string | null;
 }
 
 export interface LandingPageData {

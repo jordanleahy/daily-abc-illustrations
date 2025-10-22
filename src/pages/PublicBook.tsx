@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePublicBookBySlug } from '@/hooks/usePublicBookBySlug';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { usePublicPageImage } from '@/hooks/usePublicPageImage';
 import { useSeoMetadata, useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
+import { useGA4 } from '@/hooks/useGA4';
 import { MetaHead } from '@/components/common';
 import { generateDailyPublishedOpenGraph } from '@/utils/openGraph';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
@@ -50,6 +52,7 @@ const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: numbe
 
 export default function PublicBook() {
   const { slug } = useParams<{ slug: string }>();
+  const { trackEvent } = useGA4();
   const { data: bookData, isLoading: bookLoading } = usePublicBookBySlug(slug);
   const { data: pages, isLoading: pagesLoading } = useDailyPublishedPages(bookData?.book_id);
   
@@ -70,6 +73,21 @@ export default function PublicBook() {
     seoMetadata?.seo_title,
     seoMetadata?.seo_description
   ) : null;
+
+  // Track public book page view
+  useEffect(() => {
+    if (bookData && !bookLoading) {
+      trackEvent('public_book_view', {
+        book_slug: slug,
+        book_id: bookData.book_id,
+        book_title: seoMetadata?.seo_title || bookData.title,
+        daily_published_id: bookData.id,
+        status: bookData.status,
+        page_count: pages?.length || 0,
+        has_seo: !!seoMetadata,
+      });
+    }
+  }, [bookData, bookLoading, slug, seoMetadata, pages, trackEvent]);
 
   if (bookLoading || pagesLoading) {
     return (

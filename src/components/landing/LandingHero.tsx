@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { SITE_CONFIG } from '@/config/site';
 import { useState } from 'react';
-import { ChevronLeft, ChevronRight, Book, Maximize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Book } from 'lucide-react';
 import { LandingDailyPublished } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { Shimmer } from '@/components/ui/shimmer';
@@ -16,15 +16,29 @@ export const LandingHero = ({
   const navigate = useNavigate();
   const pages = dailyPublished?.pages || [];
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
   
   // Lazy load carousel images on-demand
   useLazyCarouselImages(pages, currentPageIndex);
   const handleNextPage = () => {
+    // Check if this is a second click on the same position
+    if (lastClickedIndex === currentPageIndex && dailyPublished) {
+      // Second click - open in new tab
+      window.open(`/daily-published/${dailyPublished.id}`, '_blank');
+      return;
+    }
+    
+    // First click - advance carousel
     if (currentPageIndex < pages.length - 1) {
+      setLastClickedIndex(currentPageIndex);
       setCurrentPageIndex(currentPageIndex + 1);
+    } else if (currentPageIndex === pages.length - 1) {
+      // At last page, track as potential second click
+      setLastClickedIndex(currentPageIndex);
     }
   };
   const handlePrevPage = () => {
+    setLastClickedIndex(null); // Reset on direction change
     if (currentPageIndex > 0) {
       setCurrentPageIndex(currentPageIndex - 1);
     }
@@ -94,23 +108,17 @@ export const LandingHero = ({
                   <Button 
                     variant="default" 
                     className="flex-1 h-16" 
-                    onClick={handleNextPage} 
-                    disabled={currentPageIndex === pages.length - 1}
+                    onClick={handleNextPage}
+                    title={lastClickedIndex === currentPageIndex 
+                      ? "Click again to open book" 
+                      : currentPageIndex === pages.length - 1 
+                        ? "Open full book" 
+                        : "Next page"}
                   >
                     <ChevronRight className="h-8 w-8" />
                   </Button>
                 </div>
 
-                <Button 
-                  type="button"
-                  onClick={() => navigate(`/daily-published/${dailyPublished.id}`)}
-                  variant="outline"
-                  className="w-full h-12"
-                  size="lg"
-                >
-                  <Maximize2 className="mr-2 h-4 w-4" />
-                  Focused Mode
-                </Button>
               </div> : <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
                 <p className="text-muted-foreground">Loading today's book...</p>
               </div>}

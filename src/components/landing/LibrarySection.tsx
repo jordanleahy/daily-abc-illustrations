@@ -19,7 +19,11 @@ function LibraryBookCard({ item }: { item: LandingLibraryBook }) {
   });
 
   const handleCardClick = () => {
-    navigate('/pricing');
+    if (item.slug) {
+      navigate(`/book/${item.slug}`);
+    } else {
+      navigate('/pricing');
+    }
   };
 
   return (

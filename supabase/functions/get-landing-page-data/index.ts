@@ -66,6 +66,7 @@ Deno.serve(async (req) => {
           status,
           is_active,
           published_at,
+          slug,
           books!inner(id, book_name, book_description)
         `)
         .in('status', ['active', 'queued', 'expired'])

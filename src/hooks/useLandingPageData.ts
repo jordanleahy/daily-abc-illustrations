@@ -38,6 +38,7 @@ export interface LandingLibraryBook {
   status: string;
   is_active: boolean;
   published_at: string;
+  slug?: string | null;
   og_image_url: string | null;
   seo_title?: string | null;
 }

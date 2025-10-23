@@ -16,6 +16,7 @@ export function useCreateHabit() {
     mutationFn: async (habit: NewHabit) => {
       if (!user?.id) throw new Error('User not authenticated');
 
+      // 1. Create habit
       const { data: habitData, error: habitError } = await supabase
         .from('habits')
         .insert({
@@ -34,53 +35,29 @@ export function useCreateHabit() {
 
       if (habitError) throw habitError;
 
+      // 2. Create completions for each kid using unified function (fixes double deposit bug)
       if (habit.assignedKidIds?.length > 0) {
-        // Create assignments
-        const { data: assignments, error: assignmentError } = await supabase
-          .from('habit_assignments')
-          .insert(
-            habit.assignedKidIds.map(kidId => ({
-              habit_id: habitData.id,
-              kid_profile_id: kidId,
-              parent_user_id: user.id,
-              is_active: true,
-            }))
-          )
-          .select();
-
-        if (assignmentError) throw assignmentError;
-
-        // Create today's completions and deposit coins optimistically
         const today = new Date().toISOString().split('T')[0];
-        const deadline = habit.deadline_time 
-          ? new Date(`${today}T${habit.deadline_time}`).toISOString()
-          : new Date(`${today}T23:59:59`).toISOString();
+        
+        const results = await Promise.all(
+          habit.assignedKidIds.map(kidId =>
+            supabase.rpc('create_habit_completion_unified', {
+              p_habit_id: habitData.id,
+              p_kid_profile_id: kidId,
+              p_parent_user_id: user.id,
+              p_completion_date: today,
+              p_deposit_coins: true
+            })
+          )
+        );
 
-        const completions = assignments.map(assignment => ({
-          habit_assignment_id: assignment.id,
-          kid_profile_id: assignment.kid_profile_id,
-          parent_user_id: user.id,
-          completion_date: today,
-          status: 'pending',
-          coins_deposited: habit.coin_amount,
-          coins_retained: 0,
-          deadline_at: deadline,
-        }));
-
-        const { error: completionError } = await supabase
-          .from('habit_completions')
-          .insert(completions);
-
-        if (completionError) throw completionError;
-
-        // Optimistically deposit coins to each kid
-        for (const kidId of habit.assignedKidIds) {
-          const { error: coinError } = await supabase.rpc('increment_kid_coins', {
-            p_kid_id: kidId,
-            p_amount: habit.coin_amount,
-          });
-
-          if (coinError) throw coinError;
+        const failed = results.filter(r => {
+          const result = r.data as { success: boolean; error?: string } | null;
+          return !result?.success;
+        });
+        
+        if (failed.length > 0) {
+          throw new Error(`Failed to create ${failed.length} completions`);
         }
       }
 

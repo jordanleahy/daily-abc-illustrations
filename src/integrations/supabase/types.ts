@@ -1459,14 +1459,18 @@ export type Database = {
         Args: { p_daily_published_id: string; p_new_expires_at: string }
         Returns: Json
       }
-      create_daily_habit_completions: {
-        Args: Record<PropertyKey, never>
+      create_daily_habit_completions: { Args: never; Returns: Json }
+      create_habit_completion_unified: {
+        Args: {
+          p_completion_date?: string
+          p_deposit_coins?: boolean
+          p_habit_id: string
+          p_kid_profile_id: string
+          p_parent_user_id: string
+        }
         Returns: Json
       }
-      create_scheduled_habit_completions: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
+      create_scheduled_habit_completions: { Args: never; Returns: Json }
       decrement_kid_coins: {
         Args: { p_amount: number; p_kid_id: string }
         Returns: undefined
@@ -1475,12 +1479,9 @@ export type Database = {
         Args: { p_completion_id: string }
         Returns: Json
       }
-      generate_slug: {
-        Args: { input_text: string }
-        Returns: string
-      }
+      generate_slug: { Args: { input_text: string }; Returns: string }
       get_current_user_role: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_daily_published_pages: {
@@ -1513,10 +1514,7 @@ export type Database = {
           updated_at: string
         }[]
       }
-      get_next_available_publish_date: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
+      get_next_available_publish_date: { Args: never; Returns: string }
       get_next_gemini_image_version_number: {
         Args: { p_page_id: string }
         Returns: number
@@ -1537,12 +1535,9 @@ export type Database = {
         Args: { p_page_id: string }
         Returns: number
       }
-      get_next_version_number: {
-        Args: { p_book_id: string }
-        Returns: number
-      }
+      get_next_version_number: { Args: { p_book_id: string }; Returns: number }
       get_user_kids: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           created_at: string
           earned_coins: number
@@ -1554,11 +1549,14 @@ export type Database = {
           profile_image_url: string | null
           updated_at: string
         }[]
+        SetofOptions: {
+          from: "*"
+          to: "kid_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
       }
-      has_active_subscription: {
-        Args: { _user_id: string }
-        Returns: boolean
-      }
+      has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1570,22 +1568,10 @@ export type Database = {
         Args: { p_amount: number; p_kid_id: string }
         Returns: undefined
       }
-      is_book_published: {
-        Args: { book_id: string }
-        Returns: boolean
-      }
-      process_enhanced_daily_publishing: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      process_simple_daily_publishing: {
-        Args: Record<PropertyKey, never>
-        Returns: Json
-      }
-      seed_user_habits: {
-        Args: { p_parent_user_id: string }
-        Returns: Json
-      }
+      is_book_published: { Args: { book_id: string }; Returns: boolean }
+      process_enhanced_daily_publishing: { Args: never; Returns: Json }
+      process_simple_daily_publishing: { Args: never; Returns: Json }
+      seed_user_habits: { Args: { p_parent_user_id: string }; Returns: Json }
       skip_habit_completion: {
         Args: { p_completion_id: string }
         Returns: Json

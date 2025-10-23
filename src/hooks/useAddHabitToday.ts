@@ -29,10 +29,10 @@ export function useAddHabitToday() {
 
       const today = format(new Date(), 'yyyy-MM-dd');
 
-      // Get kid profile (assuming single kid for now)
+      // Get active kid profile
       const { data: kidData, error: kidError } = await supabase
         .from('kid_profiles')
-        .select('id, earned_coins')
+        .select('id')
         .eq('parent_user_id', user.id)
         .eq('is_active', true)
         .single();
@@ -40,56 +40,21 @@ export function useAddHabitToday() {
       if (kidError) throw kidError;
       if (!kidData) throw new Error('No kid profile found');
 
-      // Get habit assignment
-      const { data: assignmentData, error: assignmentError } = await supabase
-        .from('habit_assignments')
-        .select('id')
-        .eq('habit_id', habitId)
-        .eq('kid_profile_id', kidData.id)
-        .eq('is_active', true)
-        .single();
+      // Use unified function to create completion (handles assignment, coins, deadline atomically)
+      const { data, error } = await supabase.rpc('create_habit_completion_unified', {
+        p_habit_id: habitId,
+        p_kid_profile_id: kidData.id,
+        p_parent_user_id: user.id,
+        p_completion_date: today,
+        p_deposit_coins: true
+      });
 
-      if (assignmentError) throw assignmentError;
-      if (!assignmentData) throw new Error('No habit assignment found');
-
-      // Get habit details for coin amount and deadline
-      const { data: habitData, error: habitError } = await supabase
-        .from('habits')
-        .select('coin_amount, deadline_time')
-        .eq('id', habitId)
-        .single();
-
-      if (habitError) throw habitError;
-
-      // Calculate deadline
-      let deadlineAt = null;
-      if (habitData.deadline_time) {
-        deadlineAt = `${today}T${habitData.deadline_time}`;
+      if (error) throw error;
+      
+      const result = data as { success: boolean; error?: string } | null;
+      if (!result?.success) {
+        throw new Error(result?.error || 'Failed to add habit');
       }
-
-      // Create habit completion with optimistic coin deposit
-      const { error: insertError } = await supabase
-        .from('habit_completions')
-        .insert({
-          habit_assignment_id: assignmentData.id,
-          kid_profile_id: kidData.id,
-          parent_user_id: user.id,
-          completion_date: today,
-          status: 'pending',
-          coins_deposited: habitData.coin_amount,
-          coins_retained: 0,
-          deadline_at: deadlineAt,
-        });
-
-      if (insertError) throw insertError;
-
-      // Optimistically deposit coins
-      const { error: coinError } = await supabase
-        .from('kid_profiles')
-        .update({ earned_coins: kidData.earned_coins + habitData.coin_amount })
-        .eq('id', kidData.id);
-
-      if (coinError) throw coinError;
 
       return { habitId, kidId: kidData.id };
     },

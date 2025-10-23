@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CoinCounter } from '@/components/ui/coin-counter';
-import { useMyHabits } from '@/hooks/useMyHabits';
+import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useDeleteHabit } from '@/hooks/useDeleteHabit';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -18,7 +18,7 @@ export default function MyHabits() {
   // For now, show habits for the first kid
   // In a real app, you'd have kid selection or authentication
   const selectedKid = kids[0];
-  const { data: completions = [], isLoading } = useMyHabits(selectedKid?.id || '');
+  const { data: completions = [], isLoading } = useTodayHabits(selectedKid?.id);
 
   const handleDelete = (habitId: string, habitTitle: string) => {
     if (window.confirm(`Delete "${habitTitle}"? It will be removed from all days.`)) {

@@ -15,10 +15,15 @@ export const useGA4 = () => {
   const { isAdmin, isLoading: roleLoading } = useRole();
   const { user } = useAuthContext();
 
+  // Check if tracking is disabled on this device
+  const isTrackingDisabled = () => {
+    return localStorage.getItem('ga4_disable') === 'true';
+  };
+
   // Set up visitor tracking for non-authenticated users
   useEffect(() => {
     // Wait for role to load before tracking
-    if (typeof window.gtag === 'function' && !roleLoading && !isAdmin) {
+    if (typeof window.gtag === 'function' && !roleLoading && !isAdmin && !isTrackingDisabled()) {
       const userType = user ? 'authenticated' : 'anonymous';
       
       // For anonymous users, set visitor ID and stats
@@ -48,7 +53,7 @@ export const useGA4 = () => {
 
   const trackEvent = (eventName: string, parameters?: Record<string, any>) => {
     // Wait for role to load before tracking
-    if (typeof window.gtag === 'function' && !roleLoading && !isAdmin) {
+    if (typeof window.gtag === 'function' && !roleLoading && !isAdmin && !isTrackingDisabled()) {
       // Enrich events with visitor data for anonymous users
       const enrichedParams = { ...parameters };
       

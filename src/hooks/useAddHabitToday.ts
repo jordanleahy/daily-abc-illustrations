@@ -62,6 +62,7 @@ export function useAddHabitToday() {
       const today = format(new Date(), 'yyyy-MM-dd');
       queryClient.invalidateQueries({ queryKey: ['today-habits', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['habit-schedule', user?.id, today] });
+      queryClient.invalidateQueries({ queryKey: ['kid-profiles', user?.id] });
       
       toast({
         title: 'Added to Today',

@@ -134,7 +134,14 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-base">{habit.title}</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-base">{habit.title}</CardTitle>
+              {completion.instance_number > 1 && (
+                <Badge variant="outline" className="text-xs">
+                  #{completion.instance_number}
+                </Badge>
+              )}
+            </div>
             <p className="text-sm text-muted-foreground">
               {kid.first_name} {kid.last_name}
             </p>

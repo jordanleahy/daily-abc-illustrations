@@ -585,6 +585,7 @@ export type Database = {
           deadline_at: string | null
           habit_assignment_id: string
           id: string
+          instance_number: number | null
           kid_profile_id: string
           marked_at: string | null
           parent_user_id: string
@@ -599,6 +600,7 @@ export type Database = {
           deadline_at?: string | null
           habit_assignment_id: string
           id?: string
+          instance_number?: number | null
           kid_profile_id: string
           marked_at?: string | null
           parent_user_id: string
@@ -613,6 +615,7 @@ export type Database = {
           deadline_at?: string | null
           habit_assignment_id?: string
           id?: string
+          instance_number?: number | null
           kid_profile_id?: string
           marked_at?: string | null
           parent_user_id?: string

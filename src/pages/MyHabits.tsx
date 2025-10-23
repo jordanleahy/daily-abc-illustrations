@@ -26,6 +26,16 @@ export default function MyHabits() {
     }
   };
 
+  // Group completions by habit to show instance counts
+  const groupedByHabit = completions.reduce((acc, completion) => {
+    const habitId = completion.habit_assignments.habits.id;
+    if (!acc[habitId]) {
+      acc[habitId] = [];
+    }
+    acc[habitId].push(completion);
+    return acc;
+  }, {} as Record<string, typeof completions>);
+
   if (!selectedKid) {
     return (
       <StandardPageLayout>
@@ -61,24 +71,36 @@ export default function MyHabits() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {completions.map((completion) => {
-              const habit = completion.habit_assignments.habits;
-              const isPending = completion.status === 'pending';
-              const isCompleted = completion.status === 'completed';
-              const isDeclined = completion.status === 'declined';
+            {Object.entries(groupedByHabit).map(([habitId, instances]) => {
+              const firstInstance = instances[0];
+              const habit = firstInstance.habit_assignments.habits;
+              const completedCount = instances.filter(i => i.status === 'completed').length;
+              const declinedCount = instances.filter(i => i.status === 'declined').length;
+              const pendingCount = instances.filter(i => i.status === 'pending').length;
+              const totalCount = instances.length;
+              const hasMultipleInstances = totalCount > 1;
 
               return (
                 <Card 
-                  key={completion.id}
+                  key={habitId}
                   className={`relative ${
-                    isCompleted ? 'border-green-500 bg-green-50/50' :
-                    isDeclined ? 'border-red-500 bg-red-50/50 opacity-75' :
+                    completedCount === totalCount ? 'border-green-500 bg-green-50/50' :
+                    declinedCount > 0 ? 'border-red-500 bg-red-50/50' :
                     ''
                   }`}
                 >
                   <CardHeader>
                     <div className="flex items-start justify-between gap-2">
-                      <CardTitle className="text-lg flex-1">{habit.title}</CardTitle>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <CardTitle className="text-lg">{habit.title}</CardTitle>
+                          {hasMultipleInstances && (
+                            <Badge variant="secondary" className="text-xs">
+                              {completedCount}/{totalCount}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
                       <Button
                         variant="ghost"
                         size="icon"
@@ -94,7 +116,7 @@ export default function MyHabits() {
                       <img 
                         src={habit.photo_url} 
                         alt={habit.title}
-                        className={`w-full h-48 object-cover rounded ${isDeclined ? 'grayscale' : ''}`}
+                        className={`w-full h-48 object-cover rounded ${declinedCount > 0 ? 'grayscale' : ''}`}
                       />
                     )}
 
@@ -102,23 +124,25 @@ export default function MyHabits() {
                       <p className="text-sm text-muted-foreground">{habit.description}</p>
                     )}
 
-                  <div className="flex items-center gap-2">
+                   <div className="flex items-center gap-2">
                     <Coins className={`h-6 w-6 ${
-                      isCompleted ? 'text-green-600' :
-                      isDeclined ? 'text-red-600' :
+                      completedCount === totalCount ? 'text-green-600' :
+                      declinedCount > 0 ? 'text-red-600' :
                       'text-amber-500'
                     }`} />
                     <span className={`text-2xl font-bold ${
-                      isCompleted ? 'text-green-600' :
-                      isDeclined ? 'text-red-600 line-through' :
+                      completedCount === totalCount ? 'text-green-600' :
+                      declinedCount > 0 ? 'text-red-600' :
                       ''
                     }`}>
-                      {habit.coin_amount} coins
+                      {hasMultipleInstances 
+                        ? `${habit.coin_amount} × ${totalCount} = ${habit.coin_amount * totalCount}` 
+                        : `${habit.coin_amount}`} coins
                     </span>
-                  </div>
+                   </div>
 
-                  {/* Show "Start Reading" button for book habits, status badge otherwise */}
-                  {habit.book_id && isPending ? (
+                   {/* Show status summary */}
+                   {habit.book_id && pendingCount > 0 ? (
                     <Button
                       onClick={() => navigate(`/library/${habit.book_id}/view`)}
                       className="w-full"
@@ -126,20 +150,21 @@ export default function MyHabits() {
                       <BookOpen className="mr-2 h-4 w-4" />
                       Start Reading
                     </Button>
-                  ) : (
+                   ) : (
                     <Badge 
                       variant={
-                        isCompleted ? 'default' :
-                        isDeclined ? 'destructive' :
+                        completedCount === totalCount ? 'default' :
+                        declinedCount > 0 ? 'destructive' :
                         'secondary'
                       }
                       className="w-full justify-center py-2"
                     >
-                      {isCompleted && '✓ Done!'}
-                      {isDeclined && '✗ Not done'}
-                      {isPending && '⏳ Waiting'}
+                      {completedCount === totalCount && '✓ All Done!'}
+                      {declinedCount > 0 && `✗ ${declinedCount} not done`}
+                      {pendingCount > 0 && completedCount === 0 && declinedCount === 0 && `⏳ ${pendingCount} waiting`}
+                      {completedCount > 0 && completedCount < totalCount && declinedCount === 0 && `${completedCount}/${totalCount} done`}
                     </Badge>
-                  )}
+                   )}
                   </CardContent>
                 </Card>
               );

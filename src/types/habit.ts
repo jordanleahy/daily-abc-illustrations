@@ -48,6 +48,7 @@ export interface HabitCompletion {
   coins_retained: number;
   marked_at: string | null;
   deadline_at: string | null;
+  instance_number: number; // Track which instance this is (e.g., glass of water #3)
   created_at: string;
   updated_at: string;
   habit_assignments?: HabitAssignment;

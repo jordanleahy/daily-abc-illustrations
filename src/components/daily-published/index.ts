@@ -1,4 +1,5 @@
 export { DailyPublishedPageView } from './DailyPublishedPageView';
+export { DailyPublishedQueueCard } from './DailyPublishedQueueCard';
 export { FreemiumHeader } from './FreemiumHeader';
 export { PublicPageImage } from './PublicPageImage';
 export { UpcomingBooksPreview } from './UpcomingBooksPreview';

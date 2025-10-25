@@ -1,6 +1,7 @@
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
+import { SafeLocalStorage, SUBSCRIPTION_CACHE_KEY } from '@/utils/storage';
 
 interface AuthContextValue {
   user: User | null;
@@ -33,8 +34,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // Clear subscription cache on auth change to force refresh
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           console.log('[AuthContext] Clearing subscription cache after', event);
-          localStorage.removeItem('subscription_status');
-          localStorage.removeItem('subscription_status_timestamp');
+          SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
           
           // Trigger a subscription check after a brief delay
           setTimeout(() => {

@@ -1571,6 +1571,32 @@ export type Database = {
         Args: { p_amount: number; p_kid_id: string }
         Returns: undefined
       }
+      insert_page_at_position: {
+        Args: {
+          p_book_id: string
+          p_description: string
+          p_insert_after_page_number: number
+          p_title: string
+        }
+        Returns: {
+          book_id: string
+          content: Json | null
+          created_at: string
+          current_system_prompt_id: string | null
+          description: string | null
+          id: string
+          letter: string
+          page_number: number
+          title: string
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "pages"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       is_book_published: { Args: { book_id: string }; Returns: boolean }
       process_enhanced_daily_publishing: { Args: never; Returns: Json }
       process_simple_daily_publishing: { Args: never; Returns: Json }

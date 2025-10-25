@@ -21,9 +21,6 @@ export default function DailyPublished() {
   const dailyContent = result?.data;
   const isExpired = result?.isExpired;
   
-  // Freemium: non-authenticated users can only view first 2 pages
-  const FREE_PAGE_LIMIT = 2;
-  
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   
   // Prefetch and preload all page images
@@ -177,13 +174,6 @@ export default function DailyPublished() {
   const isLastPage = currentPageIndex >= reorderedPages.length - 1;
 
   const handleNext = () => {
-    // Check freemium limit for non-authenticated users
-    if (!isAuthenticated && currentPageIndex >= FREE_PAGE_LIMIT - 1) {
-      // Redirect to daily-published page after viewing free pages
-      navigate(`/daily-published/${dailyContent.id}`);
-      return;
-    }
-    
     // Award a coin for completing this page
     setSessionCoins(prev => prev + 1);
     

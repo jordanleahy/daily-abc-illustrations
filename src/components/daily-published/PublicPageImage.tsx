@@ -58,9 +58,11 @@ export function PublicPageImage({
         alt="Page illustration"
         loading="eager"
         fetchPriority="high"
+        crossOrigin="anonymous"
         className={`w-full h-full object-cover object-top transition-opacity duration-200 ${className} ${
           imageLoaded ? 'opacity-100' : 'opacity-0'
         }`}
+        style={{ pointerEvents: 'auto', position: 'relative', zIndex: 1 }}
         onLoad={() => setImageLoaded(true)}
       />
       

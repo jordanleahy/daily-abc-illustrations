@@ -99,21 +99,32 @@ export function DailyPublishedPageView({
         <div className="max-w-md w-full">
           <Card className="overflow-hidden shadow-lg">
             <CardContent className="p-0">
-              {/* Large illustration area - tap/click to go to next page */}
-              <div 
-                className="aspect-square bg-gradient-to-br from-background to-muted/50"
-                role="button"
-                tabIndex={0}
-                aria-label="Next page"
-                onClick={onNext}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    onNext();
-                  }
-                }}
-              >
+              {/* Large illustration area with tap-to-advance overlay */}
+              <div className="aspect-square bg-gradient-to-br from-background to-muted/50 relative">
                 <PublicPageImage pageId={page.id} bookId={bookId} />
+                {/* Transparent overlay for tap-to-advance that doesn't block image context menu */}
+                <div 
+                  className="absolute inset-0 cursor-pointer"
+                  style={{ pointerEvents: 'auto' }}
+                  role="button"
+                  tabIndex={0}
+                  aria-label="Tap to go to next page"
+                  onClick={onNext}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onNext();
+                    }
+                  }}
+                  onContextMenu={(e) => {
+                    // Allow context menu to pass through to image below
+                    e.stopPropagation();
+                    e.currentTarget.style.pointerEvents = 'none';
+                    setTimeout(() => {
+                      e.currentTarget.style.pointerEvents = 'auto';
+                    }, 100);
+                  }}
+                />
               </div>
             </CardContent>
           </Card>

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -134,8 +134,21 @@ export const useSubscription = () => {
 
   const checkSubscription = useCallback(async () => {
     // Clear cache to force fresh API call
+    console.log('[SUBSCRIPTION] Manual check triggered - clearing cache');
     SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
     await query.refetch();
+  }, [query]);
+
+  // Listen for auth-driven subscription checks
+  useEffect(() => {
+    const handleAuthCheck = () => {
+      console.log('[SUBSCRIPTION] Auth-triggered check - clearing cache and refetching');
+      SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+      query.refetch();
+    };
+
+    window.addEventListener('auth-subscription-check', handleAuthCheck);
+    return () => window.removeEventListener('auth-subscription-check', handleAuthCheck);
   }, [query]);
 
   const createCheckoutSession = useCallback(async (price_id: string, coupon_code?: string) => {

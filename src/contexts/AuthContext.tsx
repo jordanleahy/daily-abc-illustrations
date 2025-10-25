@@ -25,9 +25,23 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        console.log('[AuthContext] Auth state changed:', event, session?.user?.email);
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
+        
+        // Clear subscription cache on auth change to force refresh
+        if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+          console.log('[AuthContext] Clearing subscription cache after', event);
+          localStorage.removeItem('subscription_status');
+          localStorage.removeItem('subscription_status_timestamp');
+          
+          // Trigger a subscription check after a brief delay
+          setTimeout(() => {
+            console.log('[AuthContext] Triggering subscription check');
+            window.dispatchEvent(new CustomEvent('auth-subscription-check'));
+          }, 100);
+        }
       }
     );
 

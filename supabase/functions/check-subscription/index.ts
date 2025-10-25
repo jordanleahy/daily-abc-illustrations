@@ -81,8 +81,8 @@ serve(async (req) => {
         itemsCount: subscription.items?.data?.length 
       });
       
-      // Get current_period_end
-      let periodEnd = subscription.current_period_end;
+      // Get current_period_end - check both root and item level
+      let periodEnd = subscription.current_period_end || subscription.items?.data?.[0]?.current_period_end;
       
       // Handle null/undefined current_period_end
       try {

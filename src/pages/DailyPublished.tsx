@@ -43,6 +43,8 @@ export default function DailyPublished() {
       setOriginalStartingIndex(randomIndex);
       setCurrentPageIndex(0); // Start at index 0 in the reordered array
       
+      console.log('[DailyPublished] pages loaded:', pages.length, 'startIndex:', randomIndex);
+      
       // Start analytics session
       if (dailyContent) {
         const entryPoint = location.state?.from === 'homepage' ? 'homepage_redirect' : 'direct_link';
@@ -178,10 +180,12 @@ export default function DailyPublished() {
     setSessionCoins(prev => prev + 1);
     
     if (isLastPage) {
+      console.log('[DailyPublished] reached last page, navigating to /schedule');
       // On last page, navigate to schedule
       navigate('/schedule');
     } else {
       const newIndex = currentPageIndex + 1;
+      console.log('[DailyPublished] next page', { newIndex, total: reorderedPages.length });
       setCurrentPageIndex(newIndex);
       
       // Track page view

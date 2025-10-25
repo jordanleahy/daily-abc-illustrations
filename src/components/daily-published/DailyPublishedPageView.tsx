@@ -99,8 +99,20 @@ export function DailyPublishedPageView({
         <div className="max-w-md w-full">
           <Card className="overflow-hidden shadow-lg">
             <CardContent className="p-0">
-              {/* Large illustration area */}
-              <div className="aspect-square bg-gradient-to-br from-background to-muted/50">
+              {/* Large illustration area - tap/click to go to next page */}
+              <div 
+                className="aspect-square bg-gradient-to-br from-background to-muted/50"
+                role="button"
+                tabIndex={0}
+                aria-label="Next page"
+                onClick={onNext}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onNext();
+                  }
+                }}
+              >
                 <PublicPageImage pageId={page.id} bookId={bookId} />
               </div>
             </CardContent>

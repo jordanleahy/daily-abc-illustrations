@@ -22,7 +22,7 @@ export const useInsertPage = () => {
       }
 
       // Call the database function
-      const { data, error } = await supabase.rpc('insert_page_at_position', {
+      const { data, error } = await supabase.rpc('insert_page_at_position' as any, {
         p_book_id: bookId,
         p_insert_after_page_number: insertAfterPageNumber,
         p_title: title,
@@ -34,7 +34,7 @@ export const useInsertPage = () => {
         throw error;
       }
 
-      return { success: true, page: data as Page };
+      return { success: true, page: data as unknown as Page };
     },
     onSuccess: (data, variables) => {
       // Invalidate and refetch pages for this book

@@ -21,8 +21,7 @@ export const useDailyPublishedSchedule = () => {
           )
         `)
         .neq('status', 'draft') // Filter out draft entries
-        .order('publish_date', { ascending: true }) // Order by publish date chronologically
-        .order('created_at', { ascending: true }); // Secondary sort by creation time
+        .order('created_at', { ascending: false }); // Most recently created first
 
       if (error) {
         console.error('Error fetching daily published schedule:', error);

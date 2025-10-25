@@ -21,8 +21,7 @@ export const useDailyPublishedQueue = () => {
           )
         `)
         .neq('status', 'draft') // Filter out draft entries from public queue view
-        .order('publish_date', { ascending: true }) // Order by publish date instead of queue position
-        .order('created_at', { ascending: true }); // Secondary sort by creation time
+        .order('created_at', { ascending: false }); // Most recently created first
 
       if (error) {
         console.error('Error fetching daily published queue:', error);

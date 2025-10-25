@@ -188,7 +188,7 @@ export default function LibraryBookView() {
           });
           
           endSession('book_completed');
-          navigate('/rewards');
+          navigate('/library');
         } catch (error) {
           console.error('Failed to deposit coins:', error);
           toast.error("Couldn't save your coins. Try again.");

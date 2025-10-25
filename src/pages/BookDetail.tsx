@@ -51,6 +51,9 @@ import { ExportsSection } from '@/components/exports/ExportsSection';
 import { PageImageSection } from "@/components/PageImageSection";
 import { PageCard, UserPageCard, FocusedPageView } from '@/components/page-prompts';
 import { CreatePageModal } from '@/components/page-prompts/CreatePageModal';
+import { FloatingInsertZone } from '@/components/page-prompts/FloatingInsertZone';
+import { InsertPageDialog } from '@/components/page-prompts/InsertPageDialog';
+import { useInsertPage } from '@/hooks/useInsertPage';
 import { Plus } from 'lucide-react';
 
 export default function BookDetail() {
@@ -81,6 +84,12 @@ export default function BookDetail() {
   const [isClassView, setIsClassView] = useState(false);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [isCreatePageModalOpen, setIsCreatePageModalOpen] = useState(false);
+  
+  // Insert page state
+  const [isInsertDialogOpen, setIsInsertDialogOpen] = useState(false);
+  const [insertAfterPageNumber, setInsertAfterPageNumber] = useState(0);
+  const [insertReferenceTitle, setInsertReferenceTitle] = useState('');
+  const insertPage = useInsertPage();
   
   const { mutate: toggleHighlight, isPending: isHighlightLoading } = useToggleBookHighlight();
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
@@ -975,15 +984,57 @@ export default function BookDetail() {
                 contentName={book.book_name}
               />
 
-              {/* Pages Grid (Admin View) */}
+              {/* Pages Grid (Admin View) with Floating Insert Zones */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pages && pages.length > 0 && pages.map((page) => (
-                  <PageCard
-                    key={page.id}
-                    page={page}
-                    bookId={book.id}
-                  />
-                ))}
+                {pages && pages.length > 0 && (
+                  <>
+                    {/* Insert at beginning */}
+                    <FloatingInsertZone
+                      onInsert={() => {
+                        setInsertAfterPageNumber(0);
+                        setInsertReferenceTitle('Beginning');
+                        setIsInsertDialogOpen(true);
+                      }}
+                      position="before"
+                      isFirst
+                    />
+                    
+                    {pages.map((page, index) => (
+                      <div key={page.id} className="contents">
+                        <PageCard
+                          page={page}
+                          bookId={book.id}
+                        />
+                        
+                        {/* Insert zone after this page */}
+                        {index < pages.length - 1 && (
+                          <FloatingInsertZone
+                            onInsert={() => {
+                              setInsertAfterPageNumber(page.page_number);
+                              setInsertReferenceTitle(page.title);
+                              setIsInsertDialogOpen(true);
+                            }}
+                            position="after"
+                          />
+                        )}
+                      </div>
+                    ))}
+                    
+                    {/* Insert at end */}
+                    {pages.length > 0 && (
+                      <FloatingInsertZone
+                        onInsert={() => {
+                          const lastPage = pages[pages.length - 1];
+                          setInsertAfterPageNumber(lastPage.page_number);
+                          setInsertReferenceTitle(lastPage.title);
+                          setIsInsertDialogOpen(true);
+                        }}
+                        position="after"
+                        isLast
+                      />
+                    )}
+                  </>
+                )}
               </div>
 
               {/* Create Page Modal */}
@@ -992,6 +1043,24 @@ export default function BookDetail() {
                 onOpenChange={setIsCreatePageModalOpen}
                 bookId={book.id}
                 existingPages={pages?.length || 0}
+              />
+
+              {/* Insert Page Dialog */}
+              <InsertPageDialog
+                open={isInsertDialogOpen}
+                onOpenChange={setIsInsertDialogOpen}
+                onInsert={async (title, description) => {
+                  await insertPage.mutateAsync({
+                    bookId: book.id,
+                    insertAfterPageNumber,
+                    title,
+                    description,
+                  });
+                  setIsInsertDialogOpen(false);
+                }}
+                position={insertAfterPageNumber === 0 ? 'before' : 'after'}
+                referencePage={insertReferenceTitle}
+                isPending={insertPage.isPending}
               />
             </>
           )}

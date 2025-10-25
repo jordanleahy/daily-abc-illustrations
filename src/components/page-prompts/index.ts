@@ -6,3 +6,5 @@ export { UserPageCard } from './UserPageCard';
 export { FocusedPageView } from './FocusedPageView';
 export { LibraryCard } from './LibraryCard';
 export { CreatePageModal } from './CreatePageModal';
+export { FloatingInsertZone } from './FloatingInsertZone';
+export { InsertPageDialog } from './InsertPageDialog';

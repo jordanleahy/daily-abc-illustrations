@@ -211,8 +211,15 @@ export function Header({
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container>
         <div className="flex h-14 items-center justify-between">
-          {/* Left section: Desktop back button + Subtitle */}
+          {/* Left section: Mobile user info + Desktop back button + Subtitle */}
           <div className="flex items-center gap-2">
+            {/* Mobile User Info - Always visible on mobile */}
+            <div className="flex md:hidden items-center gap-2">
+              <span className="text-sm font-medium">{displayName}</span>
+              <span className="text-muted-foreground text-xs">·</span>
+              <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
+            </div>
+            
             {/* Desktop Back Button - Only on library detail pages */}
             {location.pathname.includes('/library/') && location.pathname.includes('/detail') && (
               <Button

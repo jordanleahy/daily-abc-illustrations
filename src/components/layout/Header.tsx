@@ -22,6 +22,7 @@ import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { useProfile } from '@/hooks/useProfile';
 import { useParentTotalCoins } from '@/hooks/useParentTotalCoins';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
 import { UserProfileModal } from '@/components/profile/UserProfileModal';
@@ -91,13 +92,17 @@ export function Header({
   const { hasHabitsRewards } = useFeatureAccess();
   const { data: profile } = useProfile();
   const { totalCoins } = useParentTotalCoins();
+  const { data: kidProfiles } = useKidProfiles();
   const navigate = useNavigate();
   const location = useLocation();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  // Display name fallback strategy: first_name > email username > "User"
-  const displayName = profile?.first_name || user?.email?.split('@')[0] || 'User';
+  // Display name strategy: Use kid's name if only one kid exists, otherwise use parent's name
+  // This matches the pattern used in ReadingHeader, Index, LibraryBookView, and Rewards pages
+  const displayName = kidProfiles?.length === 1 
+    ? kidProfiles[0].first_name
+    : profile?.first_name || user?.email?.split('@')[0] || 'User';
 
   /** Sign out handler with automatic redirect to authentication page */
   const handleSignOut = async () => {

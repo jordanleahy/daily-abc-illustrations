@@ -20,9 +20,12 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useIsAdmin, useIsTeacher } from '@/contexts/RoleContext';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { useProfile } from '@/hooks/useProfile';
+import { useParentTotalCoins } from '@/hooks/useParentTotalCoins';
 import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
 import { UserProfileModal } from '@/components/profile/UserProfileModal';
+import { CoinCounter } from '@/components/ui/coin-counter';
 
 /**
  * Header Component
@@ -86,10 +89,15 @@ export function Header({
   const isTeacher = useIsTeacher();
   const { qrCodeData } = useBookQRCode(bookId || '');
   const { hasHabitsRewards } = useFeatureAccess();
+  const { data: profile } = useProfile();
+  const { totalCoins } = useParentTotalCoins();
   const navigate = useNavigate();
   const location = useLocation();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  // Display name fallback strategy: first_name > email username > "User"
+  const displayName = profile?.first_name || user?.email?.split('@')[0] || 'User';
 
   /** Sign out handler with automatic redirect to authentication page */
   const handleSignOut = async () => {
@@ -278,6 +286,10 @@ export function Header({
                 <SheetHeader>
                   <SheetTitle>{title}</SheetTitle>
                 </SheetHeader>
+                <div className="flex items-center justify-between px-6 py-3 border-b">
+                  <span className="text-base font-semibold">{displayName}</span>
+                  <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
+                </div>
                 <div className="mt-6 space-y-2">
                   {/* Navigation Links - show admin nav for admins, regular nav for others */}
                   {(isAdmin ? adminNavigation : regularNavigation).map((item) => (
@@ -319,16 +331,20 @@ export function Header({
             {/* Desktop User Menu */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="relative hidden md:flex">
-                  <User className="h-4 w-4" />
+                <Button variant="ghost" size="sm" className="relative hidden md:flex items-center gap-2 px-3">
+                  <span className="text-sm font-medium">{displayName}</span>
+                  <span className="text-muted-foreground text-sm">·</span>
+                  <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
                   <span className="sr-only">User menu</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <div className="flex items-center justify-start gap-2 p-2">
+                <div className="flex items-center justify-between gap-2 p-2">
                   <div className="flex flex-col space-y-1 leading-none">
-                    <p className="font-medium text-sm">{user?.email}</p>
+                    <p className="font-medium text-sm">{displayName}</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
+                  <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setIsProfileModalOpen(true)}>

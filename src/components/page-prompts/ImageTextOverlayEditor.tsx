@@ -6,10 +6,11 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X } from 'lucide-react';
+import { X, Download } from 'lucide-react';
 import { useTextOverlay } from '@/hooks/useTextOverlay';
 import { useBookThumbnailTextOverlay } from '@/hooks/useBookThumbnailTextOverlay';
 import { drawTextOnCanvas, loadImageFromUrl, loadGoogleFont } from '@/utils/textOverlayProcessor';
+import { toast } from 'sonner';
 import { 
   DEFAULT_TEXT_OVERLAY_CONFIG, 
   AVAILABLE_FONTS, 
@@ -140,6 +141,38 @@ export function ImageTextOverlayEditor({
   const handleRemove = () => {
     removeTextOverlay();
     onOpenChange(false);
+  };
+
+  const handleDownload = () => {
+    if (!canvasRef.current) return;
+    
+    try {
+      // Convert canvas to blob and download
+      canvasRef.current.toBlob((blob) => {
+        if (!blob) {
+          toast.error('Failed to generate preview image');
+          return;
+        }
+        
+        // Create download link
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        const filename = mode === 'thumbnail' 
+          ? 'thumbnail-preview.png' 
+          : `page-${pageId}-preview.png`;
+        link.download = filename;
+        link.href = url;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        
+        toast.success('Preview downloaded successfully');
+      }, 'image/png');
+    } catch (error) {
+      console.error('Download error:', error);
+      toast.error('Failed to download preview');
+    }
   };
 
   const updateConfig = <K extends keyof TextOverlayConfig>(
@@ -410,6 +443,15 @@ export function ImageTextOverlayEditor({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleDownload} 
+            disabled={!config.text.trim()}
+            className="gap-2"
+          >
+            <Download className="w-4 h-4" />
+            Download Preview
+          </Button>
           {existingConfig && (
             <Button 
               variant="destructive" 
@@ -420,7 +462,7 @@ export function ImageTextOverlayEditor({
             </Button>
           )}
           <Button onClick={handleSave} disabled={isProcessing || !config.text.trim()}>
-            {isProcessing ? 'Applying...' : 'Apply Text Overlay'}
+            {isProcessing ? 'Applying...' : 'Save to OpenGraph'}
           </Button>
         </DialogFooter>
       </DialogContent>

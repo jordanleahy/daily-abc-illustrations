@@ -17,6 +17,19 @@ export function DailyPublishedQueueCard({
 }: DailyPublishedQueueCardProps) {
   const navigate = useNavigate();
 
+  // Format publish date in user's local timezone
+  const formatPublishDate = (dateString: string): string => {
+    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+
   // Check if item is expired (client-side detection)
   const isExpiredClientSide = item.expires_at && new Date() > new Date(item.expires_at);
   const effectiveStatus = isExpiredClientSide && item.status !== 'expired' ? 'expired' : item.status;
@@ -126,7 +139,20 @@ export function DailyPublishedQueueCard({
       </CardHeader>
       
       <CardContent className="pt-0">
-        
+        <div className="flex items-center gap-2">
+          <Calendar className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm font-medium text-muted-foreground">
+            {effectiveStatus === 'queued' && (
+              <>Scheduled: <span className="text-foreground">{formatPublishDate(item.publish_date)}</span></>
+            )}
+            {effectiveStatus === 'active' && (
+              <>Published: <span className="text-green-600">{formatPublishDate(item.publish_date)}</span></>
+            )}
+            {effectiveStatus === 'expired' && (
+              <>Published: <span className="text-muted-foreground">{formatPublishDate(item.publish_date)}</span></>
+            )}
+          </span>
+        </div>
       </CardContent>
     </Card>;
 }

@@ -21,21 +21,28 @@ export function FloatingInsertZone({
     <div 
       className={cn(
         "relative flex items-center justify-center transition-all duration-300 group",
-        "h-2 md:h-1",
-        isHovered ? "h-12 md:h-16" : "",
-        "col-span-full"
+        // Mobile: Full width horizontal divider
+        "w-full h-2",
+        // Desktop/Tablet: Vertical divider between cards
+        "md:w-8 md:h-auto md:self-stretch",
+        isHovered ? "h-12 md:h-auto" : ""
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Divider line - always visible on mobile, subtle on desktop */}
+      {/* Divider line - horizontal on mobile, vertical on desktop */}
       <div 
         className={cn(
-          "absolute inset-0 flex items-center transition-opacity duration-300",
+          "absolute inset-0 flex transition-opacity duration-300",
+          // Mobile: horizontal center alignment
+          "items-center md:justify-center",
           isHovered ? "opacity-100" : "opacity-30 md:opacity-20"
         )}
       >
-        <div className="w-full border-t-2 border-dashed border-muted-foreground/30" />
+        {/* Horizontal line for mobile */}
+        <div className="w-full border-t-2 border-dashed border-muted-foreground/30 md:hidden" />
+        {/* Vertical line for desktop */}
+        <div className="hidden md:block h-full border-l-2 border-dashed border-muted-foreground/30" />
       </div>
 
       {/* Insert button */}

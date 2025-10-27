@@ -888,48 +888,41 @@ export default function BookDetail() {
                 contentName={book.book_name}
               />
 
-              {/* Pages Grid (Admin View) with Row-Based Insert Zones */}
-              <div className="flex flex-col gap-4">
+              {/* Pages Grid (Admin View) with Interleaved Insert Zones */}
+              <div className="flex flex-wrap gap-4">
                 {pages && pages.length > 0 && (() => {
-                  // Group pages into rows of 3
-                  const pageRows: typeof pages[] = [];
-                  for (let i = 0; i < pages.length; i += 3) {
-                    pageRows.push(pages.slice(i, i + 3));
-                  }
-
                   return (
                     <>
-                      {/* Insert at beginning */}
-                      <FloatingInsertZone
-                        onInsert={() => {
-                          setInsertAfterPageNumber(0);
-                          setInsertReferenceTitle('Beginning');
-                          setIsInsertDialogOpen(true);
-                        }}
-                        position="before"
-                        isFirst
-                      />
+                      {/* Insert at beginning - full width */}
+                      <div className="w-full">
+                        <FloatingInsertZone
+                          onInsert={() => {
+                            setInsertAfterPageNumber(0);
+                            setInsertReferenceTitle('Beginning');
+                            setIsInsertDialogOpen(true);
+                          }}
+                          position="before"
+                          isFirst
+                        />
+                      </div>
                       
-                      {pageRows.map((row, rowIndex) => (
-                        <React.Fragment key={rowIndex}>
-                          {/* Row of cards */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                            {row.map((page) => (
-                              <PageCard
-                                key={page.id}
-                                page={page}
-                                bookId={book.id}
-                              />
-                            ))}
+                      {/* Interleave cards and insert zones */}
+                      {pages.map((page, index) => (
+                        <React.Fragment key={page.id}>
+                          {/* Page card with fixed width for 3-column layout */}
+                          <div className="w-full md:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.67rem)]">
+                            <PageCard
+                              page={page}
+                              bookId={book.id}
+                            />
                           </div>
-                          
-                          {/* Insert zone after row (except after last row) */}
-                          {rowIndex < pageRows.length - 1 && (
+
+                          {/* Insert zone after each card (except last) */}
+                          {index < pages.length - 1 && (
                             <FloatingInsertZone
                               onInsert={() => {
-                                const lastPageInRow = row[row.length - 1];
-                                setInsertAfterPageNumber(lastPageInRow.page_number);
-                                setInsertReferenceTitle(lastPageInRow.title);
+                                setInsertAfterPageNumber(page.page_number);
+                                setInsertReferenceTitle(page.title);
                                 setIsInsertDialogOpen(true);
                               }}
                               position="after"
@@ -938,17 +931,19 @@ export default function BookDetail() {
                         </React.Fragment>
                       ))}
                       
-                      {/* Insert at end */}
-                      <FloatingInsertZone
-                        onInsert={() => {
-                          const lastPage = pages[pages.length - 1];
-                          setInsertAfterPageNumber(lastPage.page_number);
-                          setInsertReferenceTitle(lastPage.title);
-                          setIsInsertDialogOpen(true);
-                        }}
-                        position="after"
-                        isLast
-                      />
+                      {/* Insert at end - full width */}
+                      <div className="w-full">
+                        <FloatingInsertZone
+                          onInsert={() => {
+                            const lastPage = pages[pages.length - 1];
+                            setInsertAfterPageNumber(lastPage.page_number);
+                            setInsertReferenceTitle(lastPage.title);
+                            setIsInsertDialogOpen(true);
+                          }}
+                          position="after"
+                          isLast
+                        />
+                      </div>
                     </>
                   );
                 })()}

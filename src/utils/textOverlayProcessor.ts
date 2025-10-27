@@ -216,18 +216,22 @@ export const drawTextOnCanvas = (
     const paddingMultiplier = config.backgroundPaddingMultiplier ?? 1.0;
     const verticalPadding = Math.max(totalTextHeight * 0.2, 15) * paddingMultiplier;
     
-    // Background always connects to top of canvas
+    // Background dimensions - full width, proportional height
     const bgWidth = canvas.width;
+    const bgHeight = totalTextHeight + (verticalPadding * 2);
+    
+    // Background position - always full width from left edge
     const bgX = 0;
-    const bgY = 0; // Always start from top
+    const bgY = startY - (lineHeight / 2) - verticalPadding;
     
-    // Calculate height needed to cover text with padding
-    const textBottom = startY + (totalHeight / 2);
-    const bgHeight = textBottom + verticalPadding;
-    
-    // Draw full-width background from top
+    // Draw full-width background with boundary constraints
     ctx.fillStyle = `rgba(0, 0, 0, ${config.backgroundOpacity})`;
-    ctx.fillRect(bgX, bgY, bgWidth, Math.min(bgHeight, canvas.height));
+    ctx.fillRect(
+      bgX,
+      Math.max(0, bgY),
+      bgWidth,
+      Math.min(bgHeight, canvas.height - Math.max(0, bgY))
+    );
   }
   
   // Draw each line

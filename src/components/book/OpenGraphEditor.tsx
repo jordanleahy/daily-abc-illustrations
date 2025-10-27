@@ -585,6 +585,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <div>
@@ -825,5 +826,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         existingConfig={seoMetadata.text_overlay_config}
       />
     )}
-  </>);
+    </>
+  );
 };

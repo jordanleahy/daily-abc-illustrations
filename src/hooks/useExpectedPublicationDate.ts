@@ -2,6 +2,7 @@ import { useDailyPublishedQueue } from './useDailyPublishedQueue';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { createEasternPublishDate } from '@/utils/timezone';
+import { getAppendPublishDate } from '@/utils/publishQueue';
 
 export const useExpectedPublicationDate = (contentId: string) => {
   const { data: queueItems = [], isLoading: queueLoading } = useDailyPublishedQueue();
@@ -9,8 +10,8 @@ export const useExpectedPublicationDate = (contentId: string) => {
   return useQuery({
     queryKey: ['expected-publication-date', contentId],
     queryFn: async () => {
-      // Get next available publish date
-      const { data: nextDate } = await supabase.rpc('get_next_available_publish_date');
+      // Get next publish date (appends to end of queue - FIFO)
+      const nextDate = await getAppendPublishDate(supabase);
       
       if (!nextDate) {
         return null;

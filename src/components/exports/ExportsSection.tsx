@@ -33,6 +33,7 @@ import { toast } from '@/hooks/use-toast';
 import { SITE_CONFIG } from '@/config/site';
 import { DailyPublishedStatus } from '@/types/dailyPublished';
 import { PublicationStatus } from '@/types/status';
+import { getAppendPublishDate } from '@/utils/publishQueue';
 
 /**
  * Props for the ExportsSection component
@@ -309,8 +310,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
 
     try {
-      // Get next available publish date
-      const { data: nextDate } = await supabase.rpc('get_next_available_publish_date');
+      // Get next publish date (appends to end of queue - FIFO)
+      const nextDate = await getAppendPublishDate(supabase);
       
       // Create new daily publication scheduled for next available date
       const { data: newPublication, error: insertError } = await supabase
@@ -681,8 +682,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       try {
         // Check if there's already a draft entry for this book
         if (existingPublication && existingPublication.status === 'draft') {
-          // Convert draft to queued with next available date
-          const { data: nextDate } = await supabase.rpc('get_next_available_publish_date');
+          // Convert draft to queued with next publish date (appends to end - FIFO)
+          const nextDate = await getAppendPublishDate(supabase);
           
           const { data: updatedPublication, error: updateError } = await supabase
             .from('daily_published')
@@ -721,8 +722,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           // Generate QR code automatically
           await generateQRCodeSafely();
         } else {
-          // Get next available publish date
-          const { data: nextDate } = await supabase.rpc('get_next_available_publish_date');
+          // Get next publish date (appends to end of queue - FIFO)
+          const nextDate = await getAppendPublishDate(supabase);
           
           // Create new daily publication scheduled for next available date
           const { data: newPublication, error: insertError } = await supabase

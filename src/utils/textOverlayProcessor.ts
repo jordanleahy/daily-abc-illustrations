@@ -133,7 +133,7 @@ export const drawTextOnCanvas = (
   if (config.position === 'custom') {
     y = (canvas.height * config.yOffset) / 100;
   } else if (config.position === 'top') {
-    y = canvas.height * 0.15;
+    y = canvas.height * 0.22;
   } else if (config.position === 'center') {
     y = canvas.height * 0.5;
   } else {

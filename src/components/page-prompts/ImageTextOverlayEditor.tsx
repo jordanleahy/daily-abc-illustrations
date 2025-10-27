@@ -194,34 +194,30 @@ export function ImageTextOverlayEditor({
                 <div className="space-y-2">
                   <Label>Presets</Label>
                   <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleApplyPreset('bold-title')}
-                    >
-                      Bold Title
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleApplyPreset('subtle-caption')}
-                    >
-                      Subtle Caption
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleApplyPreset('playful')}
-                    >
-                      Playful
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleApplyPreset('minimal')}
-                    >
-                      Minimal
-                    </Button>
+                    {Object.keys(TEXT_OVERLAY_PRESETS)
+                      .filter(presetName => {
+                        // Hide thumbnail-title in page mode
+                        if (mode === 'page' && presetName === 'thumbnail-title') return false;
+                        return true;
+                      })
+                      .sort((a, b) => {
+                        // Show thumbnail-title first for thumbnail mode
+                        if (mode === 'thumbnail' && a === 'thumbnail-title') return -1;
+                        if (mode === 'thumbnail' && b === 'thumbnail-title') return 1;
+                        return 0;
+                      })
+                      .map((presetName) => (
+                        <Button
+                          key={presetName}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleApplyPreset(presetName)}
+                        >
+                          {presetName.split('-').map(word => 
+                            word.charAt(0).toUpperCase() + word.slice(1)
+                          ).join(' ')}
+                        </Button>
+                      ))}
                   </div>
                 </div>
               </TabsContent>

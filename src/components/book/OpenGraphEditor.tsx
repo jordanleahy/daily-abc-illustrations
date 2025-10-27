@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
-import { Loader2, Upload, Eye, Wand2, X, MessageSquare, ImagePlus, Copy } from 'lucide-react';
+import { Loader2, Upload, Eye, Wand2, X, MessageSquare, ImagePlus, Copy, Type } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
@@ -15,6 +15,7 @@ import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { getBookCoverUploadInfo } from '@/utils/storagePaths';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { ImageTextOverlayEditor } from '@/components/page-prompts/ImageTextOverlayEditor';
 
 interface OpenGraphEditorProps {
   bookId: string;
@@ -49,6 +50,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
+  const [showTextOverlayEditor, setShowTextOverlayEditor] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentTitle = seoMetadata?.seo_title || bookTitle;
@@ -658,6 +660,15 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowTextOverlayEditor(true)}
+                  className="mt-2"
+                >
+                  <Type className="w-4 h-4 mr-2" />
+                  Add Text Overlay
+                </Button>
               </div>
             ) : fallbackImage ? (
               <div className="space-y-2">
@@ -799,5 +810,20 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         </div>
       </CardContent>
     </Card>
-  );
+    
+    {currentImage && seoMetadata && user?.id && (
+      <ImageTextOverlayEditor
+        open={showTextOverlayEditor}
+        onOpenChange={setShowTextOverlayEditor}
+        imageUrl={currentImage}
+        defaultText={currentTitle}
+        mode="thumbnail"
+        bookId={bookId}
+        dailyPublishedId={seoMetadata.daily_published_id}
+        seoMetadataId={seoMetadata.id}
+        userId={user.id}
+        existingConfig={seoMetadata.text_overlay_config}
+      />
+    )}
+  </>);
 };

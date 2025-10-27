@@ -1244,6 +1244,7 @@ export type Database = {
           seo_description: string | null
           seo_title: string | null
           source_data: Json | null
+          text_overlay_config: Json | null
           updated_at: string
           user_id: string
           version_number: number
@@ -1262,6 +1263,7 @@ export type Database = {
           seo_description?: string | null
           seo_title?: string | null
           source_data?: Json | null
+          text_overlay_config?: Json | null
           updated_at?: string
           user_id: string
           version_number?: number
@@ -1280,6 +1282,7 @@ export type Database = {
           seo_description?: string | null
           seo_title?: string | null
           source_data?: Json | null
+          text_overlay_config?: Json | null
           updated_at?: string
           user_id?: string
           version_number?: number

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { X } from 'lucide-react';
 import { useTextOverlay } from '@/hooks/useTextOverlay';
+import { useBookThumbnailTextOverlay } from '@/hooks/useBookThumbnailTextOverlay';
 import { drawTextOnCanvas, loadImageFromUrl, loadGoogleFont } from '@/utils/textOverlayProcessor';
 import { 
   DEFAULT_TEXT_OVERLAY_CONFIG, 
@@ -16,14 +17,21 @@ import {
   type TextOverlayConfig 
 } from '@/types/textOverlay';
 
+type EditorMode = 'page' | 'thumbnail';
+
 interface ImageTextOverlayEditorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   imageUrl: string;
   defaultText: string;
-  pageId: string;
+  mode?: EditorMode;
+  // For page mode
+  pageId?: string;
   bookId: string;
   userId: string;
+  // For thumbnail mode
+  dailyPublishedId?: string;
+  seoMetadataId?: string;
   existingConfig?: TextOverlayConfig | null;
 }
 
@@ -32,9 +40,12 @@ export function ImageTextOverlayEditor({
   onOpenChange,
   imageUrl,
   defaultText,
+  mode = 'page',
   pageId,
   bookId,
   userId,
+  dailyPublishedId,
+  seoMetadataId,
   existingConfig,
 }: ImageTextOverlayEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -46,7 +57,22 @@ export function ImageTextOverlayEditor({
     text: existingConfig?.text || defaultText,
   });
 
-  const { applyTextOverlay, removeTextOverlay, isProcessing } = useTextOverlay({ pageId, bookId, userId });
+  // Use appropriate hook based on mode
+  const pageOverlay = useTextOverlay({
+    pageId: pageId || '',
+    bookId,
+    userId,
+  });
+
+  const thumbnailOverlay = useBookThumbnailTextOverlay({
+    bookId,
+    dailyPublishedId: dailyPublishedId || '',
+    seoMetadataId: seoMetadataId || '',
+    userId,
+  });
+
+  const { applyTextOverlay, removeTextOverlay, isProcessing } = 
+    mode === 'page' ? pageOverlay : thumbnailOverlay;
 
   const updatePreview = useCallback(async () => {
     if (!canvasRef.current || !imageRef.current) return;

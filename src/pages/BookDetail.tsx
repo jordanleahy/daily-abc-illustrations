@@ -441,7 +441,7 @@ export default function BookDetail() {
   }
 
   return (
-    <StandardPageLayout>
+    <StandardPageLayout containerSize="xl">
       <div className="space-y-6">
         {/* Header with back button */}
         <div className="flex items-center justify-between">

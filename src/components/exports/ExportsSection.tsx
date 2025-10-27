@@ -189,11 +189,20 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
   /**
    * Formats a date string to a readable format with full details
-   * @param dateString - ISO date string to format
-   * @returns Formatted date string (e.g., "Monday, January 15, 2025")
+   * Handles DATE-only strings (YYYY-MM-DD) without timezone conversion issues
+   * @param dateString - ISO date string to format (e.g., "2025-11-02")
+   * @returns Formatted date string (e.g., "Saturday, November 2, 2025")
    */
   const formatPublishDate = (dateString: string): string => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
+    // Parse date components directly to avoid timezone issues
+    // DATE-only strings from database (YYYY-MM-DD) should not shift days
+    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
+    
+    // Create date in local timezone (not UTC)
+    // Month is 0-indexed in JavaScript Date
+    const date = new Date(year, month - 1, day);
+    
+    return date.toLocaleDateString('en-US', { 
       weekday: 'long', 
       year: 'numeric', 
       month: 'long', 

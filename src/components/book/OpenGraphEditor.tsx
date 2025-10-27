@@ -598,90 +598,90 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
           </CardDescription>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Title Field */}
-        <div className="space-y-2">
-          <Label htmlFor="og-title">Title</Label>
-          <InlineEditInput
-            value={currentTitle}
-            onSave={handleTitleSave}
-            isEditing={isEditingTitle}
-            renderDisplay={(value) => (
-              <div
-                className="p-3 rounded-md border border-dashed border-muted-foreground/30 hover:border-muted-foreground/60 cursor-pointer transition-colors"
-                onClick={() => setIsEditingTitle(true)}
-              >
-                <p className="font-medium">{value}</p>
-                <p className="text-xs text-muted-foreground mt-1">Click to edit</p>
-              </div>
-            )}
-            placeholder="Enter social media title..."
-          />
-        </div>
+      <CardContent className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-6">
+          {/* Left column: Form fields */}
+          <div className="space-y-4">
+            {/* Title Field */}
+            <div className="space-y-2">
+              <Label htmlFor="og-title">Title</Label>
+              <InlineEditInput
+                value={currentTitle}
+                onSave={handleTitleSave}
+                isEditing={isEditingTitle}
+                renderDisplay={(value) => (
+                  <div
+                    className="p-2 rounded-md border border-dashed border-muted-foreground/30 hover:border-muted-foreground/60 cursor-pointer transition-colors"
+                    onClick={() => setIsEditingTitle(true)}
+                  >
+                    <p className="text-sm font-medium">{value}</p>
+                    <p className="text-xs text-muted-foreground">Click to edit</p>
+                  </div>
+                )}
+                placeholder="Enter social media title..."
+              />
+            </div>
 
-        {/* Description Field */}
-        <div className="space-y-2">
-          <Label htmlFor="og-description">Description</Label>
-          <InlineEditTextarea
-            value={currentDescription}
-            onSave={handleDescriptionSave}
-            isEditing={isEditingDescription}
-            renderDisplay={(value) => (
-              <div
-                className="p-3 rounded-md border border-dashed border-muted-foreground/30 hover:border-muted-foreground/60 cursor-pointer transition-colors min-h-[80px]"
-                onClick={() => setIsEditingDescription(true)}
-              >
-                <p className="text-sm">{value || 'No description set'}</p>
-                <p className="text-xs text-muted-foreground mt-1">Click to edit</p>
-              </div>
-            )}
-            placeholder="Enter social media description..."
-          />
-        </div>
+            {/* Description Field */}
+            <div className="space-y-2">
+              <Label htmlFor="og-description">Description</Label>
+              <InlineEditTextarea
+                value={currentDescription}
+                onSave={handleDescriptionSave}
+                isEditing={isEditingDescription}
+                renderDisplay={(value) => (
+                  <div
+                    className="p-2 rounded-md border border-dashed border-muted-foreground/30 hover:border-muted-foreground/60 cursor-pointer transition-colors min-h-[60px]"
+                    onClick={() => setIsEditingDescription(true)}
+                  >
+                    <p className="text-xs line-clamp-3">{value || 'Click to add description'}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Click to edit</p>
+                  </div>
+                )}
+                placeholder="Enter social media description..."
+              />
+            </div>
+          </div>
 
-        {/* Image Field */}
-        <div className="space-y-2">
-          <Label>Social Media Image <span className="text-sm text-muted-foreground font-normal">(Recommended: 1200x630px)</span></Label>
+          {/* Right column: Image preview */}
           <div className="space-y-3">
+            <Label className="text-sm">Social Media Image</Label>
             {currentImage ? (
-              <div className="relative max-w-md">
-                {/* Aspect ratio container for 1200x630 (1.9:1) social media images */}
-                <div className="relative w-full" style={{ aspectRatio: '1200/630' }}>
+              <div className="relative group">
+                <div className="relative w-full rounded-md overflow-hidden border" style={{ aspectRatio: '1200/630' }}>
                   <img
                     src={currentImage}
                     alt="OpenGraph preview"
-                    className="absolute inset-0 w-full h-full object-cover rounded-md border"
+                    className="w-full h-full object-cover"
                   />
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={handleRemoveImage}
-                    className="absolute top-2 right-2 z-10"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
+                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setShowTextOverlayEditor(true)}
+                    >
+                      <Type className="w-4 h-4 mr-2" />
+                      Text Overlay
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleRemoveImage}
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setShowTextOverlayEditor(true)}
-                  className="mt-2"
-                >
-                  <Type className="w-4 h-4 mr-2" />
-                  Add Text Overlay
-                </Button>
               </div>
             ) : fallbackImage ? (
-              <div className="space-y-2">
-                <div className="relative w-full" style={{ aspectRatio: '1200/630' }}>
-                  <img
-                    src={fallbackImage}
-                    alt="First page image (will be used when shared)"
-                    className="absolute inset-0 w-full h-full object-cover rounded-md border border-dashed border-muted-foreground/50"
-                  />
-                  <div className="absolute inset-x-0 bottom-0 bg-black/60 text-white text-xs p-2 rounded-b-md">
-                    Using first page image (no custom image set)
-                  </div>
+              <div className="relative w-full rounded-md overflow-hidden border border-dashed" style={{ aspectRatio: '1200/630' }}>
+                <img
+                  src={fallbackImage}
+                  alt="First page image (will be used when shared)"
+                  className="w-full h-full object-cover"
+                />
+                <div className="absolute inset-x-0 bottom-0 bg-black/70 text-white text-xs p-2">
+                  Using first page image
                 </div>
               </div>
             ) : (

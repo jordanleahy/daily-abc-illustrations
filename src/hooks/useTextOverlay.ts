@@ -110,8 +110,97 @@ export const useTextOverlay = ({ pageId, bookId, userId }: UseTextOverlayProps) 
     },
   });
 
+  const removeTextOverlay = useMutation({
+    mutationFn: async ({ imageUrl }: { imageUrl: string }) => {
+      setIsProcessing(true);
+
+      try {
+        // Fetch the original image
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+
+        // Process/compress the image without overlay
+        const processed = await processImage(
+          new File([blob], 'original.webp', { type: 'image/webp' }),
+          {
+            maxWidth: 1024,
+            maxHeight: 1024,
+            targetSizeBytes: 500 * 1024,
+            quality: 0.85,
+          }
+        );
+
+        // Get next version number
+        const { data: existingImages } = await supabase
+          .from('page_image_urls')
+          .select('version_number')
+          .eq('page_id', pageId)
+          .order('version_number', { ascending: false })
+          .limit(1);
+
+        const nextVersion =
+          existingImages && existingImages.length > 0
+            ? existingImages[0].version_number + 1
+            : 1;
+
+        // Upload to Supabase Storage
+        const timestamp = Date.now();
+        const fileName = `${pageId}_v${nextVersion}_${timestamp}.webp`;
+        const filePath = `${userId}/${bookId}/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('page-images')
+          .upload(filePath, processed.blob, {
+            contentType: 'image/webp',
+            upsert: false,
+          });
+
+        if (uploadError) throw uploadError;
+
+        // Get public URL
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from('page-images').getPublicUrl(filePath);
+
+        // Create new page_image_urls record without text overlay config
+        const { data: newRecord, error: insertError } = await supabase
+          .from('page_image_urls')
+          .insert([{
+            page_id: pageId,
+            book_id: bookId,
+            user_id: userId,
+            version_number: nextVersion,
+            is_latest: true,
+            image_url: publicUrl,
+            generation_status: 'complete' as const,
+            source_type: 'user_uploaded' as const,
+            text_overlay_config: null,
+            generation_completed_at: new Date().toISOString(),
+          }])
+          .select()
+          .single();
+
+        if (insertError) throw insertError;
+
+        return newRecord;
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['page-image-latest', pageId] });
+      queryClient.invalidateQueries({ queryKey: ['page-image-versions', pageId] });
+      toast.success('Text overlay removed successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Error removing text overlay:', error);
+      toast.error(error.message || 'Failed to remove text overlay');
+    },
+  });
+
   return {
     applyTextOverlay: applyTextOverlay.mutate,
+    removeTextOverlay: removeTextOverlay.mutate,
     isProcessing,
   };
 };

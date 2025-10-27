@@ -46,7 +46,7 @@ export function ImageTextOverlayEditor({
     text: existingConfig?.text || defaultText,
   });
 
-  const { applyTextOverlay, isProcessing } = useTextOverlay({ pageId, bookId, userId });
+  const { applyTextOverlay, removeTextOverlay, isProcessing } = useTextOverlay({ pageId, bookId, userId });
 
   const updatePreview = useCallback(async () => {
     if (!canvasRef.current || !imageRef.current) return;
@@ -97,6 +97,11 @@ export function ImageTextOverlayEditor({
 
   const handleSave = () => {
     applyTextOverlay({ imageUrl, config });
+    onOpenChange(false);
+  };
+
+  const handleRemove = () => {
+    removeTextOverlay({ imageUrl });
     onOpenChange(false);
   };
 
@@ -368,10 +373,19 @@ export function ImageTextOverlayEditor({
           </div>
         </div>
 
-        <DialogFooter>
+        <DialogFooter className="gap-2">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
+          {existingConfig && (
+            <Button 
+              variant="destructive" 
+              onClick={handleRemove} 
+              disabled={isProcessing}
+            >
+              {isProcessing ? 'Removing...' : 'Remove Text from Image'}
+            </Button>
+          )}
           <Button onClick={handleSave} disabled={isProcessing || !config.text.trim()}>
             {isProcessing ? 'Applying...' : 'Apply Text Overlay'}
           </Button>

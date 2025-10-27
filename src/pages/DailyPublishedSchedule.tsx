@@ -61,9 +61,15 @@ export default function DailyPublishedSchedule() {
     new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime()
   );
 
-  const activeItems = allItems.filter(item => item.status === 'active');
-  const queuedItems = allItems.filter(item => item.status === 'queued');
-  const expiredItems = allItems.filter(item => item.status === 'expired');
+  // Helper function to detect client-side expiration
+  const isExpired = (item: typeof allItems[0]) => {
+    return item.expires_at && new Date() > new Date(item.expires_at);
+  };
+
+  // Filter items with client-side expiration detection
+  const activeItems = allItems.filter(item => item.status === 'active' && !isExpired(item));
+  const queuedItems = allItems.filter(item => item.status === 'queued' && !isExpired(item));
+  const expiredItems = allItems.filter(item => item.status === 'expired' || isExpired(item));
 
   return (
     <>

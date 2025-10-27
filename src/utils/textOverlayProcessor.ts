@@ -243,8 +243,9 @@ export const drawTextOnCanvas = (
     const lineY = startY + (index * lineHeight);
     
     if (config.arcEnabled) {
-      // Use arc text drawing
-      drawArcText(ctx, line, x, lineY, config);
+      // Arc text is always centered horizontally
+      const centerX = canvas.width / 2;
+      drawArcText(ctx, line, centerX, lineY, config);
     } else {
       // Use straight text drawing
       // Draw shadow

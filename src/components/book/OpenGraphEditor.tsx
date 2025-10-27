@@ -16,6 +16,7 @@ import { getBookCoverUploadInfo } from '@/utils/storagePaths';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { ImageTextOverlayEditor } from '@/components/page-prompts/ImageTextOverlayEditor';
+import { processImageForOpenGraph, formatFileSize } from '@/utils/imageProcessor';
 
 interface OpenGraphEditorProps {
   bookId: string;
@@ -256,11 +257,27 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
 
     setIsUploading(true);
     try {
+      // Process image for OpenGraph (crop to 1200x630, optimize)
+      toast.loading('Processing image for social media preview...', { id: 'image-processing' });
+      const processed = await processImageForOpenGraph(file);
+      toast.dismiss('image-processing');
+      
+      // Show processing results
+      toast.success(
+        `Image cropped to 1200×630 (${formatFileSize(processed.originalSize)} → ${formatFileSize(processed.compressedSize)})`,
+        { duration: 3000 }
+      );
+
       // Upload to book-covers bucket (RLS requires first folder = bookId)
-      const { path: storagePath, contentType } = getBookCoverUploadInfo(bookId, file);
+      const processedFile = new File(
+        [processed.blob],
+        file.name.replace(/\.[^/.]+$/, '.webp'),
+        { type: processed.blob.type }
+      );
+      const { path: storagePath, contentType } = getBookCoverUploadInfo(bookId, processedFile);
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('book-covers')
-        .upload(storagePath, file, {
+        .upload(storagePath, processed.blob, {
           contentType,
           cacheControl: '31536000, immutable',
           upsert: true,
@@ -394,7 +411,10 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
             source_data: {
               book_id: bookId,
               upload_type: 'manual_image_upload',
-              original_filename: file.name
+              original_filename: file.name,
+              processed: true,
+              dimensions: `${processed.width}x${processed.height}`,
+              compression_ratio: processed.compressionRatio.toFixed(2)
             }
           });
 

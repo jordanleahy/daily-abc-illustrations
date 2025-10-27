@@ -61,8 +61,7 @@ export default function DailyPublishedSchedule() {
     new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime()
   );
 
-  // Helper function to detect client-side expiration
-  // Only consider items expired if they've been published (publish_date has passed) AND expired
+  // Helper function to check if an item should be considered expired
   const isExpired = (item: typeof allItems[0]) => {
     const now = new Date();
     const publishDate = new Date(item.publish_date);
@@ -77,10 +76,30 @@ export default function DailyPublishedSchedule() {
     return expiresAt && now > expiresAt;
   };
 
+  // Helper function to check if a queued item has a past publish date
+  const isPastDue = (item: typeof allItems[0]) => {
+    const now = new Date();
+    now.setHours(0, 0, 0, 0); // Reset to start of day for fair comparison
+    
+    const publishDate = new Date(item.publish_date);
+    publishDate.setHours(0, 0, 0, 0);
+    
+    // Item is past due if publish date is before today
+    return publishDate < now;
+  };
+
   // Filter items with client-side expiration detection
   const activeItems = allItems.filter(item => item.status === 'active' && !isExpired(item));
-  const queuedItems = allItems.filter(item => item.status === 'queued' && !isExpired(item));
-  const expiredItems = allItems.filter(item => item.status === 'expired' || isExpired(item));
+  
+  // Queued items: only show items with FUTURE publish dates
+  const queuedItems = allItems.filter(item => 
+    item.status === 'queued' && !isExpired(item) && !isPastDue(item)
+  );
+  
+  // Expired items: includes expired status, actually expired, AND past-due queued items
+  const expiredItems = allItems.filter(item => 
+    item.status === 'expired' || isExpired(item) || (item.status === 'queued' && isPastDue(item))
+  );
 
   return (
     <>

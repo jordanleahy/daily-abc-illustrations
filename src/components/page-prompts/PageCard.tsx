@@ -30,9 +30,11 @@ import type { Page } from '@/types/book';
 interface PageCardProps {
   page: Page;
   bookId: string;
+  onInsertBefore?: () => void;
+  onInsertAfter?: () => void;
 }
 
-export function PageCard({ page, bookId }: PageCardProps) {
+export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCardProps) {
   const { 
     currentPrompt, 
     refreshData, 
@@ -319,7 +321,36 @@ export function PageCard({ page, bookId }: PageCardProps) {
   };
   
   return (
-    <Card className="hover:shadow-md transition-shadow">
+    <Card className="hover:shadow-md transition-shadow relative group">
+      {/* Floating Insert Buttons - Desktop Only */}
+      <div className="hidden md:block">
+        {/* Insert Before Button (L+) */}
+        {onInsertBefore && (
+          <Button
+            size="icon"
+            variant="secondary"
+            className="absolute top-2 right-14 z-10 w-10 h-10 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            onClick={onInsertBefore}
+            title="Insert page before this one"
+          >
+            <span className="text-xs font-bold">L+</span>
+          </Button>
+        )}
+        
+        {/* Insert After Button (R+) */}
+        {onInsertAfter && (
+          <Button
+            size="icon"
+            variant="secondary"
+            className="absolute top-2 right-2 z-10 w-10 h-10 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+            onClick={onInsertAfter}
+            title="Insert page after this one"
+          >
+            <span className="text-xs font-bold">R+</span>
+          </Button>
+        )}
+      </div>
+      
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">

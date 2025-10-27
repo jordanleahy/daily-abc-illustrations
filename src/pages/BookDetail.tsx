@@ -914,6 +914,17 @@ export default function BookDetail() {
                             <PageCard
                               page={page}
                               bookId={book.id}
+                              onInsertBefore={() => {
+                                // Insert before = insert after the previous page
+                                setInsertAfterPageNumber(index === 0 ? 0 : pages[index - 1].page_number);
+                                setInsertReferenceTitle(page.title);
+                                setIsInsertDialogOpen(true);
+                              }}
+                              onInsertAfter={() => {
+                                setInsertAfterPageNumber(page.page_number);
+                                setInsertReferenceTitle(page.title);
+                                setIsInsertDialogOpen(true);
+                              }}
                             />
                           </div>
 

@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, lazy, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,12 @@ import { RefreshCw, FileText, Copy, Trash2, Image, Upload, Download, Type } from
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageSystemPromptEditor } from './PageSystemPromptEditor';
 import { PageImageSection } from '@/components/PageImageSection';
-import { ImageTextOverlayEditor } from './ImageTextOverlayEditor';
+
+const ImageTextOverlayEditor = lazy(() =>
+  import('./ImageTextOverlayEditor').then((module) => ({
+    default: module.ImageTextOverlayEditor,
+  }))
+);
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -580,17 +585,19 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
       </AlertDialog>
 
       {/* Text Overlay Editor */}
-      {user && currentImage?.image_url && (
-        <ImageTextOverlayEditor
-          open={showTextOverlayEditor}
-          onOpenChange={setShowTextOverlayEditor}
-          imageUrl={currentImage.image_url}
-          defaultText={page.title}
-          pageId={page.id}
-          bookId={bookId}
-          userId={user.id}
-          existingConfig={currentImage.text_overlay_config}
-        />
+      {user && currentImage?.image_url && showTextOverlayEditor && (
+        <Suspense fallback={null}>
+          <ImageTextOverlayEditor
+            open={showTextOverlayEditor}
+            onOpenChange={setShowTextOverlayEditor}
+            imageUrl={currentImage.image_url}
+            defaultText={page.title}
+            pageId={page.id}
+            bookId={bookId}
+            userId={user.id}
+            existingConfig={currentImage.text_overlay_config}
+          />
+        </Suspense>
       )}
     </Card>
   );

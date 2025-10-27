@@ -93,72 +93,66 @@ const drawArcText = (
   centerY: number,
   config: TextOverlayConfig
 ): void => {
-  // Calculate radius based on intensity
-  // Lower intensity = larger radius = gentler curve
-  // Higher intensity = smaller radius = tighter curve
-  const baseRadius = ctx.canvas.width * (2 - (config.arcIntensity / 100));
-  const radius = config.arcDirection === 'down' ? baseRadius : -baseRadius;
+  // Set text properties for arc rendering
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
   
-  // Measure total text width with character spacing
+  // Calculate radius: smaller intensity = tighter curve
+  // Range: 200-2000 pixels provides good visual range
+  const radius = 200 + (config.arcIntensity * 18);
+  const arcDirection = config.arcDirection === 'down' ? 1 : -1;
+  const finalRadius = radius * arcDirection;
+  
+  // Measure text and calculate arc span
   const chars = text.split('');
-  const spacing = config.arcCharacterSpacing;
-  let totalWidth = 0;
-  const charWidths: number[] = [];
+  const spacing = config.arcCharacterSpacing ?? 1.1;
   
-  chars.forEach(char => {
+  // Calculate total arc angle
+  let totalWidth = 0;
+  const charWidths = chars.map(char => {
     const width = ctx.measureText(char).width * spacing;
-    charWidths.push(width);
     totalWidth += width;
+    return width;
   });
   
-  // Calculate the arc angle span (in radians)
-  const arcAngle = totalWidth / Math.abs(radius);
-  const startAngle = -arcAngle / 2; // Center the text
+  const arcAngle = totalWidth / radius;
+  let currentAngle = -arcAngle / 2;
   
   // Draw each character
-  let currentAngle = startAngle;
-  
   chars.forEach((char, i) => {
-    const charWidth = charWidths[i];
-    const charAngle = currentAngle + (charWidth / Math.abs(radius) / 2);
+    // Calculate angle for this character's center
+    const charAngle = currentAngle + (charWidths[i] / radius / 2);
     
-    // Calculate character position on the arc
-    const x = centerX + Math.sin(charAngle) * radius;
-    const y = centerY + Math.cos(charAngle) * radius;
+    // Calculate position on arc
+    const x = centerX + Math.cos(charAngle - Math.PI / 2) * finalRadius;
+    const y = centerY + Math.sin(charAngle - Math.PI / 2) * finalRadius;
     
-    // Save canvas state
     ctx.save();
-    
-    // Move to character position and rotate
     ctx.translate(x, y);
     ctx.rotate(charAngle);
     
-    // Draw shadow
+    // Draw stroke first (no shadow on stroke to avoid artifacts)
+    if (config.strokeWidth > 0 && config.strokeColor !== 'transparent') {
+      ctx.strokeStyle = config.strokeColor;
+      ctx.lineWidth = config.strokeWidth;
+      ctx.lineJoin = 'round';
+      ctx.strokeText(char, 0, 0);
+    }
+    
+    // Draw fill with shadow
+    ctx.fillStyle = config.color;
     if (config.shadowBlur > 0) {
       ctx.shadowColor = config.shadowColor;
       ctx.shadowBlur = config.shadowBlur;
       ctx.shadowOffsetX = config.shadowOffsetX;
       ctx.shadowOffsetY = config.shadowOffsetY;
     }
-    
-    // Draw stroke
-    if (config.strokeWidth > 0 && config.strokeColor !== 'transparent') {
-      ctx.strokeStyle = config.strokeColor;
-      ctx.lineWidth = config.strokeWidth;
-      ctx.lineJoin = 'round';
-      ctx.miterLimit = 2;
-      ctx.strokeText(char, 0, 0);
-    }
-    
-    // Draw character
-    ctx.fillStyle = config.color;
     ctx.fillText(char, 0, 0);
     
-    // Restore canvas state
     ctx.restore();
     
-    // Move to next character position
-    currentAngle += charWidth / Math.abs(radius);
+    // Advance to next character
+    currentAngle += charWidths[i] / radius;
   });
 };
 

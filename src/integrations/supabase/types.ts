@@ -946,6 +946,7 @@ export type Database = {
           page_id: string
           prompt_used: string | null
           source_type: string
+          text_overlay_config: Json | null
           updated_at: string
           user_id: string
           version_number: number
@@ -964,6 +965,7 @@ export type Database = {
           page_id: string
           prompt_used?: string | null
           source_type?: string
+          text_overlay_config?: Json | null
           updated_at?: string
           user_id: string
           version_number?: number
@@ -982,6 +984,7 @@ export type Database = {
           page_id?: string
           prompt_used?: string | null
           source_type?: string
+          text_overlay_config?: Json | null
           updated_at?: string
           user_id?: string
           version_number?: number

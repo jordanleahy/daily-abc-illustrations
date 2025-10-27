@@ -31,6 +31,8 @@ export interface PageImageUrl {
   is_latest: boolean;
   /** Source of the image: AI generated or user uploaded */
   source_type: 'ai_generated' | 'user_uploaded';
+  /** Text overlay configuration applied to this image */
+  text_overlay_config?: any | null;
   /** ISO timestamp when the record was created */
   created_at: string;
   /** ISO timestamp when the record was last modified */

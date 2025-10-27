@@ -76,18 +76,18 @@ export const useTextOverlay = ({ pageId, bookId, userId }: UseTextOverlayProps) 
         // Create new page_image_urls record with text overlay config
         const { data: newRecord, error: insertError } = await supabase
           .from('page_image_urls')
-          .insert({
+          .insert([{
             page_id: pageId,
             book_id: bookId,
             user_id: userId,
             version_number: nextVersion,
             is_latest: true,
             image_url: publicUrl,
-            generation_status: 'complete',
-            source_type: 'user_uploaded',
-            text_overlay_config: config,
+            generation_status: 'complete' as const,
+            source_type: 'user_uploaded' as const,
+            text_overlay_config: config as any,
             generation_completed_at: new Date().toISOString(),
-          })
+          }])
           .select()
           .single();
 

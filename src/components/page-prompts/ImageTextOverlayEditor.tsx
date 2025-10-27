@@ -377,6 +377,9 @@ export function ImageTextOverlayEditor({
                     <div>
                       <Label>Arc Effect</Label>
                       <p className="text-xs text-muted-foreground">Curve text along an arc</p>
+                      <p className="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                        Arc works best with short, single-line text
+                      </p>
                     </div>
                     <Switch
                       checked={config.arcEnabled}

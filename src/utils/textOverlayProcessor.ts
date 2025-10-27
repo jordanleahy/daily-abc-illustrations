@@ -198,9 +198,11 @@ export const drawTextOnCanvas = (
     y = canvas.height * 0.85;
   }
   
-  // Wrap text if needed
+  // Wrap text if needed (but not for arc text - arcs work best with single lines)
   const maxWidth = canvas.width * 0.9;
-  const lines = wrapText(ctx, config.text, maxWidth);
+  const lines = config.arcEnabled 
+    ? [config.text] // Force single line for arc text
+    : wrapText(ctx, config.text, maxWidth); // Normal wrapping for straight text
   const lineHeight = config.fontSize * 1.3;
   const totalHeight = lines.length * lineHeight;
   const startY = y - (totalHeight / 2) + (lineHeight / 2);

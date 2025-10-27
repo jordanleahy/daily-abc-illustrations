@@ -434,6 +434,10 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
       toast.error(error instanceof Error ? error.message : 'Failed to upload image');
     } finally {
       setIsUploading(false);
+      // Clear file input to allow re-uploading the same file
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 

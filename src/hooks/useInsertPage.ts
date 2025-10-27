@@ -38,7 +38,7 @@ export const useInsertPage = () => {
     },
     onSuccess: (data, variables) => {
       // Invalidate and refetch pages for this book
-      queryClient.invalidateQueries({ queryKey: ['pages', variables.bookId] });
+      queryClient.invalidateQueries({ queryKey: ['book-pages', variables.bookId] });
       toast.success('Page inserted successfully');
     },
     onError: (error: any) => {

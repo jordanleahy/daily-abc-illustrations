@@ -33,8 +33,23 @@ export const useBookThumbnailTextOverlay = ({
       setIsProcessing(true);
 
       try {
-        // Create text overlay on the image
-        const overlayBlob = await createTextOverlay(imageUrl, config);
+        // Fetch the base image without any text overlay
+        const { data: baseMeta } = await supabase
+          .from('seo_metadata')
+          .select('og_image_url, version_number')
+          .eq('daily_published_id', dailyPublishedId)
+          .is('text_overlay_config', null)
+          .order('version_number', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        // Use base image if found, otherwise fall back to provided imageUrl
+        const baseUrl = baseMeta?.og_image_url || imageUrl;
+        
+        console.log('Applying text overlay to base image:', baseUrl === imageUrl ? 'current image (no base found)' : 'original base image');
+
+        // Create text overlay on the base image (never on already-overlaid image)
+        const overlayBlob = await createTextOverlay(baseUrl, config);
 
         // Process the image (compress to webp)
         const processed = await processImage(

@@ -6,7 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { X, Download } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { X, Download, Info } from 'lucide-react';
 import { useTextOverlay } from '@/hooks/useTextOverlay';
 import { useBookThumbnailTextOverlay } from '@/hooks/useBookThumbnailTextOverlay';
 import { drawTextOnCanvas, loadImageFromUrl, loadGoogleFont } from '@/utils/textOverlayProcessor';
@@ -186,8 +187,18 @@ export function ImageTextOverlayEditor({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Add Text Overlay</DialogTitle>
+          <DialogTitle>
+            {existingConfig ? 'Edit Text Overlay' : 'Add Text Overlay'}
+          </DialogTitle>
         </DialogHeader>
+        
+        <Alert className="mb-2">
+          <Info className="h-4 w-4" />
+          <AlertDescription>
+            <strong>How it works:</strong> Customize text and styling, then click <strong>"{existingConfig ? 'Update' : 'Apply'} Overlay"</strong> to save changes to the database. 
+            Use <strong>"Download Preview"</strong> to save the preview locally without affecting the database.
+          </AlertDescription>
+        </Alert>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Preview */}
@@ -439,31 +450,41 @@ export function ImageTextOverlayEditor({
           </div>
         </div>
 
-        <DialogFooter className="gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={handleDownload} 
-            disabled={!config.text.trim()}
-            className="gap-2"
-          >
-            <Download className="w-4 h-4" />
-            Download Preview
-          </Button>
-          {existingConfig && (
-            <Button 
-              variant="destructive" 
-              onClick={handleRemove} 
-              disabled={isProcessing}
-            >
-              {isProcessing ? 'Removing...' : 'Remove Text from Image'}
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          <div className="flex gap-2 flex-1 justify-start">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
             </Button>
-          )}
-          <Button onClick={handleSave} disabled={isProcessing || !config.text.trim()}>
-            {isProcessing ? 'Applying...' : 'Save to OpenGraph'}
-          </Button>
+            <Button 
+              variant="outline" 
+              onClick={handleDownload} 
+              disabled={!config.text.trim()}
+              className="gap-2"
+              title="Download preview as PNG (does not save to database)"
+            >
+              <Download className="w-4 h-4" />
+              Download Preview
+            </Button>
+          </div>
+          <div className="flex gap-2 justify-end">
+            {existingConfig && (
+              <Button 
+                variant="destructive" 
+                onClick={handleRemove} 
+                disabled={isProcessing}
+                title="Remove text overlay and restore the original image in the database"
+              >
+                {isProcessing ? 'Removing...' : 'Remove Overlay'}
+              </Button>
+            )}
+            <Button 
+              onClick={handleSave} 
+              disabled={isProcessing || !config.text.trim()}
+              title="Save this text overlay to the database"
+            >
+              {isProcessing ? 'Saving...' : existingConfig ? 'Update Overlay' : 'Apply Overlay'}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -62,8 +62,19 @@ export default function DailyPublishedSchedule() {
   );
 
   // Helper function to detect client-side expiration
+  // Only consider items expired if they've been published (publish_date has passed) AND expired
   const isExpired = (item: typeof allItems[0]) => {
-    return item.expires_at && new Date() > new Date(item.expires_at);
+    const now = new Date();
+    const publishDate = new Date(item.publish_date);
+    const expiresAt = item.expires_at ? new Date(item.expires_at) : null;
+    
+    // Not expired if publish date is in the future (not yet published)
+    if (publishDate > now) {
+      return false;
+    }
+    
+    // Expired if publish date has passed and expires_at has passed
+    return expiresAt && now > expiresAt;
   };
 
   // Filter items with client-side expiration detection

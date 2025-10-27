@@ -100,21 +100,6 @@ export const drawTextOnCanvas = (
   // Draw the image
   ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
   
-  // Draw background overlay if enabled
-  if (config.backgroundOverlay) {
-    const overlayHeight = canvas.height * 0.25;
-    let overlayY = 0;
-    
-    if (config.position === 'bottom') {
-      overlayY = canvas.height - overlayHeight;
-    } else if (config.position === 'center') {
-      overlayY = (canvas.height - overlayHeight) / 2;
-    }
-    
-    ctx.fillStyle = `rgba(0, 0, 0, ${config.backgroundOpacity})`;
-    ctx.fillRect(0, overlayY, canvas.width, overlayHeight);
-  }
-  
   // Configure text style
   ctx.font = `${config.fontWeight} ${config.fontSize}px ${config.fontFamily}`;
   ctx.textAlign = config.align;
@@ -146,6 +131,40 @@ export const drawTextOnCanvas = (
   const lineHeight = config.fontSize * 1.3;
   const totalHeight = lines.length * lineHeight;
   const startY = y - (totalHeight / 2) + (lineHeight / 2);
+  
+  // Draw proportional background overlay if enabled
+  if (config.backgroundOverlay) {
+    // Calculate actual text dimensions
+    const maxLineWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+    const totalTextHeight = lines.length * lineHeight;
+    
+    // Calculate padding with multiplier
+    const paddingMultiplier = config.backgroundPaddingMultiplier ?? 1.0;
+    const horizontalPadding = Math.max(canvas.width * 0.05, 20) * paddingMultiplier;
+    const verticalPadding = Math.max(totalTextHeight * 0.2, 15) * paddingMultiplier;
+    
+    // Background dimensions
+    const bgWidth = maxLineWidth + (horizontalPadding * 2);
+    const bgHeight = totalTextHeight + (verticalPadding * 2);
+    
+    // Background position (centered on text, respecting alignment)
+    let bgX = x - (bgWidth / 2);
+    if (config.align === 'left') {
+      bgX = x - horizontalPadding;
+    } else if (config.align === 'right') {
+      bgX = x - bgWidth + horizontalPadding;
+    }
+    const bgY = startY - (lineHeight / 2) - verticalPadding;
+    
+    // Draw proportional background with boundary constraints
+    ctx.fillStyle = `rgba(0, 0, 0, ${config.backgroundOpacity})`;
+    ctx.fillRect(
+      Math.max(0, bgX),
+      Math.max(0, bgY),
+      Math.min(bgWidth, canvas.width - Math.max(0, bgX)),
+      Math.min(bgHeight, canvas.height - Math.max(0, bgY))
+    );
+  }
   
   // Draw each line
   lines.forEach((line, index) => {

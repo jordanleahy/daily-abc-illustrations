@@ -34,6 +34,8 @@ export interface TextOverlayConfig {
   backgroundOverlay: boolean;
   /** Background overlay opacity (0-1) */
   backgroundOpacity: number;
+  /** Padding multiplier for background overlay (0.5 = tight, 1.0 = default, 1.5 = loose) */
+  backgroundPaddingMultiplier?: number;
 }
 
 /**
@@ -56,6 +58,7 @@ export const DEFAULT_TEXT_OVERLAY_CONFIG: TextOverlayConfig = {
   align: 'center',
   backgroundOverlay: true,
   backgroundOpacity: 0.3,
+  backgroundPaddingMultiplier: 1.0,
 };
 
 /**

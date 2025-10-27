@@ -74,6 +74,17 @@ export function ImageTextOverlayEditor({
   const { applyTextOverlay, removeTextOverlay, isProcessing } = 
     mode === 'page' ? pageOverlay : thumbnailOverlay;
 
+  // Reload existing config when dialog opens
+  useEffect(() => {
+    if (open) {
+      setConfig({
+        ...DEFAULT_TEXT_OVERLAY_CONFIG,
+        ...existingConfig,
+        text: existingConfig?.text || defaultText,
+      });
+    }
+  }, [open, existingConfig, defaultText]);
+
   const updatePreview = useCallback(async () => {
     if (!canvasRef.current || !imageRef.current) return;
 

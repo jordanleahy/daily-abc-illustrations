@@ -111,24 +111,30 @@ export const useTextOverlay = ({ pageId, bookId, userId }: UseTextOverlayProps) 
   });
 
   const removeTextOverlay = useMutation({
-    mutationFn: async ({ imageUrl }: { imageUrl: string }) => {
+    mutationFn: async () => {
       setIsProcessing(true);
 
       try {
-        // Fetch the original image
-        const response = await fetch(imageUrl);
-        const blob = await response.blob();
+        // Find the most recent version WITHOUT text overlay
+        const { data: originalVersion, error: fetchError } = await supabase
+          .from('page_image_urls')
+          .select('*')
+          .eq('page_id', pageId)
+          .is('text_overlay_config', null)
+          .order('version_number', { ascending: false })
+          .limit(1)
+          .single();
 
-        // Process/compress the image without overlay
-        const processed = await processImage(
-          new File([blob], 'original.webp', { type: 'image/webp' }),
-          {
-            maxWidth: 1024,
-            maxHeight: 1024,
-            targetSizeBytes: 500 * 1024,
-            quality: 0.85,
-          }
-        );
+        if (fetchError || !originalVersion) {
+          throw new Error('No original image found without text overlay');
+        }
+
+        // Mark current version as not latest
+        await supabase
+          .from('page_image_urls')
+          .update({ is_latest: false })
+          .eq('page_id', pageId)
+          .eq('is_latest', true);
 
         // Get next version number
         const { data: existingImages } = await supabase
@@ -142,6 +148,21 @@ export const useTextOverlay = ({ pageId, bookId, userId }: UseTextOverlayProps) 
           existingImages && existingImages.length > 0
             ? existingImages[0].version_number + 1
             : 1;
+
+        // Fetch the original image
+        const response = await fetch(originalVersion.image_url);
+        const blob = await response.blob();
+
+        // Process/compress the image
+        const processed = await processImage(
+          new File([blob], 'restored.webp', { type: 'image/webp' }),
+          {
+            maxWidth: 1024,
+            maxHeight: 1024,
+            targetSizeBytes: 500 * 1024,
+            quality: 0.85,
+          }
+        );
 
         // Upload to Supabase Storage
         const timestamp = Date.now();

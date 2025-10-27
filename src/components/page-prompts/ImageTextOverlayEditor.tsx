@@ -101,7 +101,7 @@ export function ImageTextOverlayEditor({
   };
 
   const handleRemove = () => {
-    removeTextOverlay({ imageUrl });
+    removeTextOverlay();
     onOpenChange(false);
   };
 

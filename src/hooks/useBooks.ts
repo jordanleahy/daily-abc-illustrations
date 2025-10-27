@@ -23,6 +23,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { Book } from '@/types/book';
 import { toast } from 'sonner';
 import { usePageImageSubscription } from './usePageImageSubscription';
+import { getBookViewTimestamps } from '@/utils/bookViewTracking';
 
 /**
  * Books data management hook
@@ -95,13 +96,25 @@ export const useBooks = () => {
         dailyPublishedStatus: book.daily_published?.[0]?.status || undefined
       }));
       
-      // Sort by most recently updated (active) first
+      // Get view timestamps from localStorage
+      const viewTimestamps = getBookViewTimestamps();
+      
+      // Sort by most recently viewed/edited
       return processedBooks.sort((a, b) => {
         // Highlighted books always come first
         if (a.is_highlighted !== b.is_highlighted) {
           return b.is_highlighted ? 1 : -1;
         }
-        // Then sort by most recently updated
+        
+        // Then sort by most recently viewed
+        const aViewTime = viewTimestamps[a.id] || 0;
+        const bViewTime = viewTimestamps[b.id] || 0;
+        
+        if (aViewTime !== bViewTime) {
+          return bViewTime - aViewTime; // Most recent view first
+        }
+        
+        // If never viewed, fall back to updated_at timestamp
         return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
       });
     },

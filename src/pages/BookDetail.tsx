@@ -67,7 +67,6 @@ export default function BookDetail() {
   const { data: book, isLoading: bookLoading, error: bookError, isFetched: bookFetched } = useBook(id);
   const isAdmin = useHasRole('admin');
   const isMobile = useIsMobile();
-  const [viewMode, setViewMode] = useState<'admin' | 'user'>('admin');
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [generateAllPromptsLoading, setGenerateAllPromptsLoading] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
@@ -444,7 +443,7 @@ export default function BookDetail() {
   return (
     <StandardPageLayout>
       <div className="space-y-6">
-        {/* Header with back button and view mode toggle */}
+        {/* Header with back button */}
         <div className="flex items-center justify-between">
           <Button 
             variant="ghost" 
@@ -454,24 +453,6 @@ export default function BookDetail() {
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Books
           </Button>
-          
-          <div className="flex items-center gap-2">
-            <Button
-              variant={viewMode === 'user' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('user')}
-            >
-              <Eye className="w-4 h-4 mr-2" />
-              User View
-            </Button>
-            <Button
-              variant={viewMode === 'admin' ? 'default' : 'outline'}
-              size="sm"
-              onClick={() => setViewMode('admin')}
-            >
-              Admin View
-            </Button>
-          </div>
         </div>
 
           {/* Progress Console */}
@@ -483,83 +464,6 @@ export default function BookDetail() {
               isActive={styleGuideLoading}
             />
           )}
-
-          {viewMode === 'user' ? (
-            // User view mode - simplified view
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-2xl">{book.book_name}</CardTitle>
-                  <InlineEditTextarea
-                    value={book.book_description || ''}
-                    onSave={handleUpdateDescription}
-                    isEditing={isEditingDescription}
-                    className="text-base text-muted-foreground"
-                    placeholder="Enter book description"
-                    renderDisplay={(value) => (
-                      <CardDescription 
-                        className="text-base cursor-pointer hover:text-primary transition-colors" 
-                        onClick={() => setIsEditingDescription(true)}
-                      >
-                        {value || 'Click to add description...'}
-                      </CardDescription>
-                    )}
-                  />
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
-                      Created {new Date(book.created_at).toLocaleDateString()}
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Users className="w-4 h-4" />
-                      {book.category}
-                    </div>
-                    <Badge variant={book?.status === 'published' ? 'default' : 'secondary'}>
-                      {book?.status}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Class view button */}
-              {pages.length > 0 && (
-                <div className="flex justify-center">
-                  <Button
-                    onClick={() => setIsClassView(true)}
-                    className="px-8 py-3 text-lg"
-                  >
-                    <Eye className="w-5 h-5 mr-2" />
-                    View as Class
-                  </Button>
-                </div>
-              )}
-
-              {/* Pages Grid (User View) */}
-              {pages.length > 0 ? (
-                <>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {pages.map((page) => (
-                      <UserPageCard
-                        key={page.id}
-                        page={page}
-                        bookId={book.id}
-                      />
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <Card>
-                  <CardContent className="flex items-center justify-center h-32">
-                    <p className="text-muted-foreground">No pages created yet.</p>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          ) : (
-            // Admin view mode - show full content
-            <>
               {/* Book Info */}
               <Card>
                 <CardHeader>
@@ -1062,8 +966,6 @@ export default function BookDetail() {
                 referencePage={insertReferenceTitle}
                 isPending={insertPage.isPending}
               />
-            </>
-          )}
       </div>
     </StandardPageLayout>
   );

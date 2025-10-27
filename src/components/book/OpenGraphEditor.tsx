@@ -685,7 +685,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                       onClick={() => setShowTextOverlayEditor(true)}
                     >
                       <Type className="w-4 h-4 mr-2" />
-                      Text Overlay
+                      {seoMetadata?.text_overlay_config ? 'Edit Text Overlay' : 'Add Text Overlay'}
                     </Button>
                     <Button
                       variant="destructive"

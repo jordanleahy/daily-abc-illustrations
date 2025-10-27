@@ -5,40 +5,38 @@ import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { Clock, Calendar, Hash, Image } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
 interface DailyPublishedQueueCardProps {
   item: DailyPublishedWithBook;
   position: number | "active" | "expired";
   expectedActivationTime?: string;
 }
-
-export function DailyPublishedQueueCard({ 
-  item, 
+export function DailyPublishedQueueCard({
+  item,
   position,
   expectedActivationTime
 }: DailyPublishedQueueCardProps) {
   const navigate = useNavigate();
-  
+
   // Check if item is expired (client-side detection)
   const isExpiredClientSide = item.expires_at && new Date() > new Date(item.expires_at);
   const effectiveStatus = isExpiredClientSide && item.status !== 'expired' ? 'expired' : item.status;
-  
-  // Fetch SEO metadata for this specific daily published item
-  const { data: seoMetadata } = useSeoMetadata(item.id);
 
+  // Fetch SEO metadata for this specific daily published item
+  const {
+    data: seoMetadata
+  } = useSeoMetadata(item.id);
   const handleCardClick = () => {
     // Premium gate: Redirect to pricing for expired or scheduled items
     if (effectiveStatus === 'expired' || effectiveStatus === 'queued') {
       navigate('/pricing');
       return;
     }
-    
+
     // Only allow viewing active content
     if (effectiveStatus === 'active') {
       navigate(`/editor/${item.book_id}`);
     }
   };
-  
   const getStatusVariant = (status: string) => {
     switch (status) {
       case 'active':
@@ -51,7 +49,6 @@ export function DailyPublishedQueueCard({
         return 'secondary';
     }
   };
-
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
@@ -64,7 +61,6 @@ export function DailyPublishedQueueCard({
         return 'text-gray-600';
     }
   };
-
   const getTimingDisplay = () => {
     if (effectiveStatus === 'active') {
       return {
@@ -74,7 +70,6 @@ export function DailyPublishedQueueCard({
         color: 'text-red-600'
       };
     }
-    
     if (effectiveStatus === 'queued' && expectedActivationTime) {
       return {
         icon: Calendar,
@@ -83,7 +78,6 @@ export function DailyPublishedQueueCard({
         color: 'text-blue-600'
       };
     }
-    
     if (effectiveStatus === 'expired') {
       return {
         icon: Calendar,
@@ -92,107 +86,47 @@ export function DailyPublishedQueueCard({
         color: 'text-gray-500'
       };
     }
-
     return null;
   };
-
   const timingInfo = getTimingDisplay();
-  
+
   // Show lock icon for premium-gated content
   const isPremiumGated = effectiveStatus === 'expired' || effectiveStatus === 'queued';
-
-  return (
-    <Card 
-      className={`overflow-hidden border-l-4 transition-all cursor-pointer hover:shadow-lg ${
-        effectiveStatus === 'active' 
-          ? 'border-l-green-500 hover:border-l-green-600' 
-          : 'border-l-primary/20 hover:border-l-primary/50'
-      } ${isPremiumGated ? 'opacity-75 hover:opacity-100' : ''}`}
-      onClick={handleCardClick}
-    >
+  return <Card className={`overflow-hidden border-l-4 transition-all cursor-pointer hover:shadow-lg ${effectiveStatus === 'active' ? 'border-l-green-500 hover:border-l-green-600' : 'border-l-primary/20 hover:border-l-primary/50'} ${isPremiumGated ? 'opacity-75 hover:opacity-100' : ''}`} onClick={handleCardClick}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
           {/* SEO Thumbnail Image */}
           <div className="flex-shrink-0 w-32 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
-            {seoMetadata?.og_image_url ? (
-              <img 
-                src={seoMetadata.og_image_url} 
-                alt={`${item.title} preview`}
-                className="w-full h-full object-cover"
-                loading="lazy"
-              />
-            ) : (
-              <Image className="h-6 w-6 text-muted-foreground" />
-            )}
+            {seoMetadata?.og_image_url ? <img src={seoMetadata.og_image_url} alt={`${item.title} preview`} className="w-full h-full object-cover" loading="lazy" /> : <Image className="h-6 w-6 text-muted-foreground" />}
           </div>
           
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-2">
-              {typeof position === 'number' && (
-                <>
+              {typeof position === 'number' && <>
                   <Hash className="h-4 w-4 text-muted-foreground flex-shrink-0" />
                   <span className="text-sm font-medium text-muted-foreground">
                     Position {position}
                   </span>
-                </>
-              )}
-              <Badge variant={getStatusVariant(effectiveStatus)} className="flex-shrink-0">
-                {effectiveStatus.charAt(0).toUpperCase() + effectiveStatus.slice(1)}
-                {isExpiredClientSide && item.status !== 'expired' && (
-                  <span className="ml-1 text-xs">(pending update)</span>
-                )}
-              </Badge>
-              {isPremiumGated && (
-                <Badge variant="outline" className="flex-shrink-0">
+                </>}
+              
+              {isPremiumGated && <Badge variant="outline" className="flex-shrink-0">
                   🔒 Premium
-                </Badge>
-              )}
+                </Badge>}
             </div>
             
             <h3 className="text-xl font-bold text-foreground leading-tight mb-1">
               {seoMetadata?.seo_title || item.title || "Unknown Title"}
             </h3>
             
-            {seoMetadata?.seo_description && (
-              <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 mb-2">
+            {seoMetadata?.seo_description && <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3 mb-2">
                 {seoMetadata.seo_description}
-              </p>
-            )}
+              </p>}
           </div>
         </div>
       </CardHeader>
       
       <CardContent className="pt-0">
-        <div className="flex items-center justify-between">
-          {timingInfo && (
-            <div className="flex items-center gap-2">
-              <timingInfo.icon className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm text-muted-foreground">
-                {timingInfo.label}:
-              </span>
-              <span className={`text-sm font-medium ${timingInfo.color}`}>
-                {timingInfo.value}
-              </span>
-            </div>
-          )}
-          
-          {effectiveStatus === 'active' && (
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Published</div>
-              <div className="text-sm font-medium">
-                {new Date(item.published_at).toLocaleDateString()}
-              </div>
-            </div>
-          )}
-          
-          {isPremiumGated && (
-            <div className="text-right">
-              <div className="text-xs text-muted-foreground">Click to upgrade</div>
-              <div className="text-sm font-medium text-primary">View Pricing →</div>
-            </div>
-          )}
-        </div>
+        
       </CardContent>
-    </Card>
-  );
+    </Card>;
 }

@@ -962,13 +962,18 @@ export default function BookDetail() {
                 open={isInsertDialogOpen}
                 onOpenChange={setIsInsertDialogOpen}
                 onInsert={async (title, description) => {
-                  await insertPage.mutateAsync({
-                    bookId: book.id,
-                    insertAfterPageNumber,
-                    title,
-                    description,
-                  });
-                  setIsInsertDialogOpen(false);
+                  try {
+                    await insertPage.mutateAsync({
+                      bookId: book.id,
+                      insertAfterPageNumber,
+                      title,
+                      description,
+                    });
+                    setIsInsertDialogOpen(false);
+                  } catch (error) {
+                    console.error('Failed to insert page:', error);
+                    // Don't close dialog on error so user can retry
+                  }
                 }}
                 position={insertAfterPageNumber === 0 ? 'before' : 'after'}
                 referencePage={insertReferenceTitle}

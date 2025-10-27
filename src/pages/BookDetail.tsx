@@ -910,7 +910,7 @@ export default function BookDetail() {
                       {pages.map((page, index) => (
                         <React.Fragment key={page.id}>
                           {/* Page card with fixed width for 3-column layout */}
-                          <div className="w-full md:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.67rem)]">
+                          <div className="w-full md:w-[calc(50%-0.5rem)] min-[900px]:w-[calc(33.333%-0.67rem)]">
                             <PageCard
                               page={page}
                               bookId={book.id}

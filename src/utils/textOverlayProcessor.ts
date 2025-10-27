@@ -216,13 +216,25 @@ export const drawTextOnCanvas = (
     const paddingMultiplier = config.backgroundPaddingMultiplier ?? 1.0;
     const verticalPadding = Math.max(totalTextHeight * 0.2, 15) * paddingMultiplier;
     
-    // Background dimensions - full width, proportional height
+    // Background dimensions - full width
     const bgWidth = canvas.width;
-    const bgHeight = totalTextHeight + (verticalPadding * 2);
-    
-    // Background position - always full width from left edge
     const bgX = 0;
-    const bgY = startY - (lineHeight / 2) - verticalPadding;
+    
+    // Background position logic
+    let bgY: number;
+    let bgHeight: number;
+    
+    if (config.position === 'top') {
+      // For top position: overlay always starts from canvas top (0)
+      bgY = 0;
+      // Height extends from top to text bottom + padding
+      const textBottom = startY + (lineHeight / 2) + (lines.length - 1) * lineHeight;
+      bgHeight = textBottom + verticalPadding;
+    } else {
+      // For other positions: center overlay around text
+      bgY = startY - (lineHeight / 2) - verticalPadding;
+      bgHeight = totalTextHeight + (verticalPadding * 2);
+    }
     
     // Draw full-width background with boundary constraints
     ctx.fillStyle = `rgba(0, 0, 0, ${config.backgroundOpacity})`;

@@ -132,36 +132,29 @@ export const drawTextOnCanvas = (
   const totalHeight = lines.length * lineHeight;
   const startY = y - (totalHeight / 2) + (lineHeight / 2);
   
-  // Draw proportional background overlay if enabled
+  // Draw full-width background overlay if enabled
   if (config.backgroundOverlay) {
-    // Calculate actual text dimensions
-    const maxLineWidth = Math.max(...lines.map(line => ctx.measureText(line).width));
+    // Calculate actual text height
     const totalTextHeight = lines.length * lineHeight;
     
-    // Calculate padding with multiplier
+    // Calculate vertical padding with multiplier
     const paddingMultiplier = config.backgroundPaddingMultiplier ?? 1.0;
-    const horizontalPadding = Math.max(canvas.width * 0.05, 20) * paddingMultiplier;
     const verticalPadding = Math.max(totalTextHeight * 0.2, 15) * paddingMultiplier;
     
-    // Background dimensions
-    const bgWidth = maxLineWidth + (horizontalPadding * 2);
+    // Background dimensions - full width, proportional height
+    const bgWidth = canvas.width;
     const bgHeight = totalTextHeight + (verticalPadding * 2);
     
-    // Background position (centered on text, respecting alignment)
-    let bgX = x - (bgWidth / 2);
-    if (config.align === 'left') {
-      bgX = x - horizontalPadding;
-    } else if (config.align === 'right') {
-      bgX = x - bgWidth + horizontalPadding;
-    }
+    // Background position - always full width from left edge
+    const bgX = 0;
     const bgY = startY - (lineHeight / 2) - verticalPadding;
     
-    // Draw proportional background with boundary constraints
+    // Draw full-width background with boundary constraints
     ctx.fillStyle = `rgba(0, 0, 0, ${config.backgroundOpacity})`;
     ctx.fillRect(
-      Math.max(0, bgX),
+      bgX,
       Math.max(0, bgY),
-      Math.min(bgWidth, canvas.width - Math.max(0, bgX)),
+      bgWidth,
       Math.min(bgHeight, canvas.height - Math.max(0, bgY))
     );
   }

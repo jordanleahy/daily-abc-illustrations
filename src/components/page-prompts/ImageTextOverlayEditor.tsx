@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,25 +47,15 @@ export function ImageTextOverlayEditor({
 
   const { applyTextOverlay, isProcessing } = useTextOverlay({ pageId, bookId, userId });
 
-  // Load image when dialog opens
-  useEffect(() => {
-    if (open && imageUrl) {
-      loadImageFromUrl(imageUrl).then((img) => {
-        imageRef.current = img;
-        updatePreview();
-      });
-    }
-  }, [open, imageUrl]);
-
-  // Update preview whenever config changes
-  useEffect(() => {
-    if (open) {
-      updatePreview();
-    }
-  }, [config, open]);
-
-  const updatePreview = async () => {
+  const updatePreview = useCallback(async () => {
     if (!canvasRef.current || !imageRef.current) return;
+
+    const canvas = canvasRef.current;
+    const image = imageRef.current;
+    
+    // Set canvas dimensions to match image
+    canvas.width = image.width;
+    canvas.height = image.height;
 
     // Load Google Font if needed
     const systemFonts = ['Arial', 'Helvetica', 'Georgia', 'Times New Roman', 'Courier', 'Verdana'];
@@ -73,8 +63,29 @@ export function ImageTextOverlayEditor({
       await loadGoogleFont(config.fontFamily);
     }
 
-    drawTextOnCanvas(canvasRef.current, imageRef.current, config);
-  };
+    drawTextOnCanvas(canvas, image, config);
+  }, [config]);
+
+  // Load image when dialog opens
+  useEffect(() => {
+    if (open && imageUrl) {
+      loadImageFromUrl(imageUrl).then((img) => {
+        imageRef.current = img;
+        if (canvasRef.current) {
+          canvasRef.current.width = img.width;
+          canvasRef.current.height = img.height;
+          updatePreview();
+        }
+      });
+    }
+  }, [open, imageUrl, updatePreview]);
+
+  // Update preview whenever config changes
+  useEffect(() => {
+    if (open && imageRef.current) {
+      updatePreview();
+    }
+  }, [open, updatePreview]);
 
   const handleApplyPreset = (presetKey: string) => {
     setConfig((prev) => ({

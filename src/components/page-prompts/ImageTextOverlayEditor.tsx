@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
@@ -226,25 +227,29 @@ export function ImageTextOverlayEditor({
                 <div className="space-y-2">
                   <Label htmlFor="text">Text</Label>
                   <div className="relative">
-                    <Input
+                    <Textarea
                       id="text"
                       value={config.text}
                       onChange={(e) => updateConfig('text', e.target.value)}
-                      placeholder="Enter text..."
-                      className="pr-8"
+                      placeholder="Enter text... (Press Enter for new line)"
+                      className="min-h-[80px] pr-8 resize-y"
+                      rows={3}
                     />
                     {config.text && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
-                        className="absolute right-1 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                        className="absolute right-1 top-1 h-6 w-6 p-0"
                         onClick={() => updateConfig('text', '')}
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     )}
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    Press Enter to create line breaks
+                  </p>
                 </div>
 
                 <div className="space-y-2">

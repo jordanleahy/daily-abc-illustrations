@@ -198,11 +198,27 @@ export const drawTextOnCanvas = (
     y = canvas.height * 0.85;
   }
   
-  // Wrap text if needed (but not for arc text - arcs work best with single lines)
-  const maxWidth = canvas.width * 0.9;
-  const lines = config.arcEnabled 
-    ? [config.text] // Force single line for arc text
-    : wrapText(ctx, config.text, maxWidth); // Normal wrapping for straight text
+  // Handle manual line breaks first, then wrap long lines
+  const manualLines = config.text.split('\n');
+  const lines: string[] = [];
+
+  if (config.arcEnabled) {
+    // Arc text: keep as single line, ignore both manual and automatic wrapping
+    lines.push(config.text.replace(/\n/g, ' '));
+  } else {
+    // Normal text: respect manual breaks, then wrap each line if needed
+    const maxWidth = canvas.width * 0.9;
+    manualLines.forEach(manualLine => {
+      if (manualLine.trim()) {
+        // Wrap this line if it's too long
+        const wrappedLines = wrapText(ctx, manualLine, maxWidth);
+        lines.push(...wrappedLines);
+      } else {
+        // Empty line (user pressed Enter twice)
+        lines.push('');
+      }
+    });
+  }
   const lineHeight = config.fontSize * 1.3;
   const totalHeight = lines.length * lineHeight;
   const startY = y - (totalHeight / 2) + (lineHeight / 2);

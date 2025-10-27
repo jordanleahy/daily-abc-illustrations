@@ -16,9 +16,10 @@ interface PageImageSectionProps {
   bookId: string;
   showUpload?: boolean;
   onCloseUpload?: () => void;
+  enableMobileSave?: boolean;
 }
 
-export function PageImageSection({ pageId, bookId, showUpload: externalShowUpload, onCloseUpload }: PageImageSectionProps) {
+export function PageImageSection({ pageId, bookId, showUpload: externalShowUpload, onCloseUpload, enableMobileSave = false }: PageImageSectionProps) {
   const { user } = useAuthContext();
   const { currentImage, versions, isLoading, createImageRecord, uploadImage, refreshData } = usePageImageUrls(pageId);
   const { currentPrompt } = usePageSystemPrompt(pageId);
@@ -297,10 +298,18 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             src={currentImage.image_url} 
             alt={isUserUploaded ? "Uploaded page image" : "Generated page image"}
             className="w-full h-full object-cover"
+            style={enableMobileSave ? { 
+              touchAction: 'auto', 
+              WebkitTouchCallout: 'default' 
+            } : undefined}
             loading="lazy"
             decoding="async"
             onLoad={() => console.log('🖼️ Image loaded successfully:', currentImage.image_url)}
             onError={() => console.error('🚫 Image failed to load:', currentImage.image_url)}
+            onContextMenu={enableMobileSave ? (e) => {
+              // Allow default context menu behavior for mobile save
+              console.log('📱 Context menu triggered for mobile save');
+            } : undefined}
           />
           {/* Source indicator - only show for AI generated */}
           {!isUserUploaded && (

@@ -550,6 +550,7 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
           <PageImageSection 
             pageId={page.id}
             bookId={bookId}
+            enableMobileSave={true}
           />
         )}
       </CardContent>

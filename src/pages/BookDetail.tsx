@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
@@ -888,44 +888,57 @@ export default function BookDetail() {
                 contentName={book.book_name}
               />
 
-              {/* Pages Grid (Admin View) with Floating Insert Zones */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {pages && pages.length > 0 && (
-                  <>
-                    {/* Insert at beginning */}
-                    <FloatingInsertZone
-                      onInsert={() => {
-                        setInsertAfterPageNumber(0);
-                        setInsertReferenceTitle('Beginning');
-                        setIsInsertDialogOpen(true);
-                      }}
-                      position="before"
-                      isFirst
-                    />
-                    
-                    {pages.map((page, index) => (
-                      <div key={page.id} className="contents">
-                        <PageCard
-                          page={page}
-                          bookId={book.id}
-                        />
-                        
-                        {/* Insert zone after this page */}
-                        {index < pages.length - 1 && (
-                          <FloatingInsertZone
-                            onInsert={() => {
-                              setInsertAfterPageNumber(page.page_number);
-                              setInsertReferenceTitle(page.title);
-                              setIsInsertDialogOpen(true);
-                            }}
-                            position="after"
-                          />
-                        )}
-                      </div>
-                    ))}
-                    
-                    {/* Insert at end */}
-                    {pages.length > 0 && (
+              {/* Pages Grid (Admin View) with Row-Based Insert Zones */}
+              <div className="flex flex-col gap-4">
+                {pages && pages.length > 0 && (() => {
+                  // Group pages into rows of 3
+                  const pageRows: typeof pages[] = [];
+                  for (let i = 0; i < pages.length; i += 3) {
+                    pageRows.push(pages.slice(i, i + 3));
+                  }
+
+                  return (
+                    <>
+                      {/* Insert at beginning */}
+                      <FloatingInsertZone
+                        onInsert={() => {
+                          setInsertAfterPageNumber(0);
+                          setInsertReferenceTitle('Beginning');
+                          setIsInsertDialogOpen(true);
+                        }}
+                        position="before"
+                        isFirst
+                      />
+                      
+                      {pageRows.map((row, rowIndex) => (
+                        <React.Fragment key={rowIndex}>
+                          {/* Row of cards */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {row.map((page) => (
+                              <PageCard
+                                key={page.id}
+                                page={page}
+                                bookId={book.id}
+                              />
+                            ))}
+                          </div>
+                          
+                          {/* Insert zone after row (except after last row) */}
+                          {rowIndex < pageRows.length - 1 && (
+                            <FloatingInsertZone
+                              onInsert={() => {
+                                const lastPageInRow = row[row.length - 1];
+                                setInsertAfterPageNumber(lastPageInRow.page_number);
+                                setInsertReferenceTitle(lastPageInRow.title);
+                                setIsInsertDialogOpen(true);
+                              }}
+                              position="after"
+                            />
+                          )}
+                        </React.Fragment>
+                      ))}
+                      
+                      {/* Insert at end */}
                       <FloatingInsertZone
                         onInsert={() => {
                           const lastPage = pages[pages.length - 1];
@@ -936,9 +949,9 @@ export default function BookDetail() {
                         position="after"
                         isLast
                       />
-                    )}
-                  </>
-                )}
+                    </>
+                  );
+                })()}
               </div>
 
               {/* Create Page Modal */}

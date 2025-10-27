@@ -23,7 +23,7 @@ export function FloatingInsertZone({
         "relative flex items-center justify-center transition-all duration-300 group",
         "h-2 md:h-1",
         isHovered ? "h-12 md:h-16" : "",
-        isFirst && "col-span-full"
+        "col-span-full"
       )}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}

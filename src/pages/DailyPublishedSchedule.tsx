@@ -183,7 +183,7 @@ export default function DailyPublishedSchedule() {
         {/* Expired Items (collapsible) */}
         {expiredItems.length > 0 && (
           <div className="mt-8">
-            <details className="group">
+            <details className="group" open>
               <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground flex items-center gap-2">
                 <Clock className="h-4 w-4" />
                 Show {expiredItems.length} expired items

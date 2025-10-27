@@ -84,6 +84,85 @@ export const getTextBoundingBox = (
 };
 
 /**
+ * Draw text along an arc/curve path
+ */
+const drawArcText = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  centerX: number,
+  centerY: number,
+  config: TextOverlayConfig
+): void => {
+  // Calculate radius based on intensity
+  // Lower intensity = larger radius = gentler curve
+  // Higher intensity = smaller radius = tighter curve
+  const baseRadius = ctx.canvas.width * (2 - (config.arcIntensity / 100));
+  const radius = config.arcDirection === 'down' ? baseRadius : -baseRadius;
+  
+  // Measure total text width with character spacing
+  const chars = text.split('');
+  const spacing = config.arcCharacterSpacing;
+  let totalWidth = 0;
+  const charWidths: number[] = [];
+  
+  chars.forEach(char => {
+    const width = ctx.measureText(char).width * spacing;
+    charWidths.push(width);
+    totalWidth += width;
+  });
+  
+  // Calculate the arc angle span (in radians)
+  const arcAngle = totalWidth / Math.abs(radius);
+  const startAngle = -arcAngle / 2; // Center the text
+  
+  // Draw each character
+  let currentAngle = startAngle;
+  
+  chars.forEach((char, i) => {
+    const charWidth = charWidths[i];
+    const charAngle = currentAngle + (charWidth / Math.abs(radius) / 2);
+    
+    // Calculate character position on the arc
+    const x = centerX + Math.sin(charAngle) * radius;
+    const y = centerY + Math.cos(charAngle) * radius;
+    
+    // Save canvas state
+    ctx.save();
+    
+    // Move to character position and rotate
+    ctx.translate(x, y);
+    ctx.rotate(charAngle);
+    
+    // Draw shadow
+    if (config.shadowBlur > 0) {
+      ctx.shadowColor = config.shadowColor;
+      ctx.shadowBlur = config.shadowBlur;
+      ctx.shadowOffsetX = config.shadowOffsetX;
+      ctx.shadowOffsetY = config.shadowOffsetY;
+    }
+    
+    // Draw stroke
+    if (config.strokeWidth > 0 && config.strokeColor !== 'transparent') {
+      ctx.strokeStyle = config.strokeColor;
+      ctx.lineWidth = config.strokeWidth;
+      ctx.lineJoin = 'round';
+      ctx.miterLimit = 2;
+      ctx.strokeText(char, 0, 0);
+    }
+    
+    // Draw character
+    ctx.fillStyle = config.color;
+    ctx.fillText(char, 0, 0);
+    
+    // Restore canvas state
+    ctx.restore();
+    
+    // Move to next character position
+    currentAngle += charWidth / Math.abs(radius);
+  });
+};
+
+/**
  * Draw text on canvas with all styling applied
  */
 export const drawTextOnCanvas = (
@@ -163,30 +242,36 @@ export const drawTextOnCanvas = (
   lines.forEach((line, index) => {
     const lineY = startY + (index * lineHeight);
     
-    // Draw shadow
-    if (config.shadowBlur > 0) {
-      ctx.save();
-      ctx.shadowColor = config.shadowColor;
-      ctx.shadowBlur = config.shadowBlur;
-      ctx.shadowOffsetX = config.shadowOffsetX;
-      ctx.shadowOffsetY = config.shadowOffsetY;
+    if (config.arcEnabled) {
+      // Use arc text drawing
+      drawArcText(ctx, line, x, lineY, config);
+    } else {
+      // Use straight text drawing
+      // Draw shadow
+      if (config.shadowBlur > 0) {
+        ctx.save();
+        ctx.shadowColor = config.shadowColor;
+        ctx.shadowBlur = config.shadowBlur;
+        ctx.shadowOffsetX = config.shadowOffsetX;
+        ctx.shadowOffsetY = config.shadowOffsetY;
+        ctx.fillStyle = config.color;
+        ctx.fillText(line, x, lineY);
+        ctx.restore();
+      }
+      
+      // Draw stroke
+      if (config.strokeWidth > 0 && config.strokeColor !== 'transparent') {
+        ctx.strokeStyle = config.strokeColor;
+        ctx.lineWidth = config.strokeWidth;
+        ctx.lineJoin = 'round';
+        ctx.miterLimit = 2;
+        ctx.strokeText(line, x, lineY);
+      }
+      
+      // Draw text
       ctx.fillStyle = config.color;
       ctx.fillText(line, x, lineY);
-      ctx.restore();
     }
-    
-    // Draw stroke
-    if (config.strokeWidth > 0 && config.strokeColor !== 'transparent') {
-      ctx.strokeStyle = config.strokeColor;
-      ctx.lineWidth = config.strokeWidth;
-      ctx.lineJoin = 'round';
-      ctx.miterLimit = 2;
-      ctx.strokeText(line, x, lineY);
-    }
-    
-    // Draw text
-    ctx.fillStyle = config.color;
-    ctx.fillText(line, x, lineY);
   });
 };
 

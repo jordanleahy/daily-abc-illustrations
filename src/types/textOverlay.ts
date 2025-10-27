@@ -36,6 +36,14 @@ export interface TextOverlayConfig {
   backgroundOpacity: number;
   /** Padding multiplier for background overlay (0.5 = tight, 1.0 = default, 1.5 = loose) */
   backgroundPaddingMultiplier?: number;
+  /** Whether to apply arc/curve effect to text */
+  arcEnabled: boolean;
+  /** Arc intensity: 0-100 (controls how much the text curves) */
+  arcIntensity: number;
+  /** Arc direction: 'up' (frown) or 'down' (smile) */
+  arcDirection: 'up' | 'down';
+  /** Character spacing multiplier for arced text (1.0 = normal, 1.2 = looser) */
+  arcCharacterSpacing: number;
 }
 
 /**
@@ -59,6 +67,10 @@ export const DEFAULT_TEXT_OVERLAY_CONFIG: TextOverlayConfig = {
   backgroundOverlay: true,
   backgroundOpacity: 0.3,
   backgroundPaddingMultiplier: 1.0,
+  arcEnabled: false,
+  arcIntensity: 50,
+  arcDirection: 'down',
+  arcCharacterSpacing: 1.1,
 };
 
 /**
@@ -139,5 +151,20 @@ export const TEXT_OVERLAY_PRESETS: Record<string, Partial<TextOverlayConfig>> = 
     position: 'center',
     yOffset: 50,
     backgroundOverlay: false,
+  },
+  'anna-elsa-arc': {
+    fontFamily: 'Fredoka',
+    fontSize: 56,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    strokeColor: '#4A90E2',
+    strokeWidth: 5,
+    position: 'bottom',
+    yOffset: 75,
+    backgroundOverlay: false,
+    arcEnabled: true,
+    arcIntensity: 35,
+    arcDirection: 'down',
+    arcCharacterSpacing: 1.15,
   },
 };

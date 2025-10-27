@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -368,6 +369,68 @@ export function ImageTextOverlayEditor({
                     max={30}
                     step={1}
                   />
+                </div>
+
+                {/* Arc Effect Section */}
+                <div className="space-y-4 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label>Arc Effect</Label>
+                      <p className="text-xs text-muted-foreground">Curve text along an arc</p>
+                    </div>
+                    <Switch
+                      checked={config.arcEnabled}
+                      onCheckedChange={(checked) => updateConfig('arcEnabled', checked)}
+                    />
+                  </div>
+
+                  {config.arcEnabled && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>Arc Direction</Label>
+                        <Select
+                          value={config.arcDirection || 'down'}
+                          onValueChange={(value: 'up' | 'down') => updateConfig('arcDirection', value)}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="down">Down (Smile ⌣)</SelectItem>
+                            <SelectItem value="up">Up (Frown ⌢)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Arc Intensity: {config.arcIntensity}</Label>
+                        <Slider
+                          value={[config.arcIntensity || 50]}
+                          onValueChange={([value]) => updateConfig('arcIntensity', value)}
+                          min={0}
+                          max={100}
+                          step={5}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Lower = gentle curve, Higher = tight curve
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label>Character Spacing: {(config.arcCharacterSpacing || 1.1).toFixed(1)}x</Label>
+                        <Slider
+                          value={[config.arcCharacterSpacing || 1.1]}
+                          onValueChange={([value]) => updateConfig('arcCharacterSpacing', value)}
+                          min={0.8}
+                          max={1.5}
+                          step={0.05}
+                        />
+                        <p className="text-xs text-muted-foreground">
+                          Adjust spacing between curved characters
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </TabsContent>
 

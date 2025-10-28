@@ -195,7 +195,8 @@ export const drawTextOnCanvas = (
   } else if (config.position === 'center') {
     y = canvas.height * 0.5;
   } else {
-    y = canvas.height * 0.85;
+    // Bottom position: 92% leaves ~8% margin at bottom
+    y = canvas.height * 0.92;
   }
   
   // Handle manual line breaks first, then wrap long lines
@@ -221,7 +222,19 @@ export const drawTextOnCanvas = (
   }
   const lineHeight = config.fontSize * 1.3;
   const totalHeight = lines.length * lineHeight;
-  const startY = y - (totalHeight / 2) + (lineHeight / 2);
+  
+  // Determine if text should be bottom-aligned or center-aligned
+  const shouldBottomAlign = config.position === 'bottom' || 
+                           (config.position === 'custom' && config.yOffset > 60);
+  
+  let startY: number;
+  if (shouldBottomAlign) {
+    // Bottom-aligned: anchor at bottom and grow upward
+    startY = y - totalHeight + lineHeight;
+  } else {
+    // Center-aligned: keep existing behavior for top/center
+    startY = y - (totalHeight / 2) + (lineHeight / 2);
+  }
   
   // Draw full-width background overlay if enabled
   if (config.backgroundOverlay) {
@@ -246,8 +259,12 @@ export const drawTextOnCanvas = (
       // Height extends from top to text bottom + padding
       const textBottom = startY + (lineHeight / 2) + (lines.length - 1) * lineHeight;
       bgHeight = textBottom + verticalPadding;
+    } else if (shouldBottomAlign) {
+      // For bottom position: overlay extends from text top to canvas bottom
+      bgY = startY - (lineHeight / 2) - verticalPadding;
+      bgHeight = canvas.height - bgY;
     } else {
-      // For other positions: center overlay around text
+      // For center and other positions: center overlay around text
       bgY = startY - (lineHeight / 2) - verticalPadding;
       bgHeight = totalTextHeight + (verticalPadding * 2);
     }

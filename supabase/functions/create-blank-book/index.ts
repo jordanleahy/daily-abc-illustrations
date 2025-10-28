@@ -122,18 +122,20 @@ serve(async (req) => {
 
     console.log('Book created with ID:', book.id);
 
-    // Generate 26 pages (A-Z) with placeholder content
+    // Generate 26 pages (A-Z) with empty content for user to fill in
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     const pagesData = alphabet.map((letter, index) => {
-      const content = generatePlaceholderContent(letter);
-      
       return {
         book_id: book.id,
         letter: letter,
         page_number: index + 1,
-        title: `${letter} is for ${content.mainConcept}`,
-        description: `Learn about the letter ${letter} and discover ${content.mainConcept.toLowerCase()}.`,
-        content: content
+        title: `${letter}`,
+        description: null,
+        content: {
+          mainConcept: '',
+          funFact: '',
+          activity: ''
+        }
       };
     });
 

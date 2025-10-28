@@ -402,17 +402,27 @@ export async function downloadAllBookImages(
     for (const page of pagesWithImages) {
       try {
         console.log(`[ZIP] Processing page ${page.letter} (${processedCount + 1}/${pagesWithImages.length})...`);
+        console.log(`[ZIP] Image URL for ${page.letter}:`, page.image_url);
         onProgress?.(processedCount, pagesWithImages.length, page.letter);
 
-        if (!page.image_url) continue;
+        if (!page.image_url) {
+          console.warn(`[ZIP] Skipping page ${page.letter} - no image URL`);
+          continue;
+        }
 
         // Download image
+        console.log(`[ZIP] Fetching image for page ${page.letter}...`);
         const response = await fetch(page.image_url);
+        console.log(`[ZIP] Fetch response for ${page.letter}: ${response.status} ${response.statusText}`);
+        
         if (!response.ok) {
-          throw new Error(`Failed to fetch image: ${response.status}`);
+          const errorMsg = `Failed to fetch image: ${response.status} ${response.statusText}`;
+          console.error(`[ZIP] ${errorMsg} for page ${page.letter}`);
+          throw new Error(errorMsg);
         }
 
         const blob = await response.blob();
+        console.log(`[ZIP] Downloaded blob for ${page.letter}: ${blob.size} bytes, type: ${blob.type}`);
         
         // Detect file extension from MIME type or URL
         let extension = 'png';
@@ -430,14 +440,16 @@ export async function downloadAllBookImages(
 
         // Add to ZIP with filename format: BookName-A.png
         const filename = `${sanitizedBookName}-${page.letter}.${extension}`;
+        console.log(`[ZIP] Adding ${filename} to archive (${blob.size} bytes)...`);
         zip.file(filename, blob);
 
-        console.log(`[ZIP] Added ${filename} to archive`);
+        console.log(`[ZIP] Successfully added ${filename} to archive`);
         processedCount++;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error(`[ZIP] Error processing page ${page.letter}:`, error);
         onError?.(errorMessage, page.id);
+        // Continue processing other images even if one fails
       }
     }
 

@@ -185,6 +185,8 @@ export async function generatePDF(
   // Filter pages with images
   const pagesWithImages = pages.filter(page => page.image_url);
   
+  console.log(`[PDF generatePDF] Processing ${pagesWithImages.length} pages with images out of ${pages.length} total`);
+  
   if (pagesWithImages.length === 0) {
     throw new Error('No pages with images found');
   }
@@ -195,6 +197,7 @@ export async function generatePDF(
 
   for (const page of pagesWithImages) {
     try {
+      console.log(`[PDF] Processing page ${page.letter} (${processedCount + 1}/${pagesWithImages.length})...`);
       onProgress?.(processedCount, pagesWithImages.length, page.letter);
 
       if (!page.image_url) {
@@ -203,28 +206,37 @@ export async function generatePDF(
       }
 
       // Download image
+      console.log(`[PDF] Downloading image for page ${page.letter}...`);
       let imageBuffer = await downloadImage(page.image_url);
+      console.log(`[PDF] Downloaded ${imageBuffer.byteLength} bytes for page ${page.letter}`);
+      
       let format = detectImageFormat(imageBuffer);
+      console.log(`[PDF] Detected format: ${format} for page ${page.letter}`);
       
       if (!format) {
         failedPages.push(`Page ${page.letter}: Unsupported image format`);
         onError?.(`Unsupported image format for page ${page.letter}`, page.id);
+        console.error(`[PDF] Unsupported format for page ${page.letter}`);
         continue;
       }
 
       // Convert WebP to PNG if needed
       if (format === 'webp') {
+        console.log(`[PDF] Converting WebP to PNG for page ${page.letter}...`);
         try {
           imageBuffer = await convertWebPToPNG(imageBuffer);
           format = 'png';
+          console.log(`[PDF] Converted to PNG successfully for page ${page.letter}`);
         } catch (conversionError) {
           failedPages.push(`Page ${page.letter}: Failed to convert WebP image`);
           onError?.(`Failed to convert WebP image for page ${page.letter}`, page.id);
+          console.error(`[PDF] WebP conversion failed for page ${page.letter}:`, conversionError);
           continue;
         }
       }
 
       // Embed image in PDF
+      console.log(`[PDF] Embedding ${format} image for page ${page.letter}...`);
       let image;
       try {
         if (format === 'png') {
@@ -232,9 +244,11 @@ export async function generatePDF(
         } else {
           image = await pdfDoc.embedJpg(imageBuffer);
         }
+        console.log(`[PDF] Embedded successfully: ${image.width}x${image.height} for page ${page.letter}`);
       } catch (embedError) {
         failedPages.push(`Page ${page.letter}: Failed to embed image`);
         onError?.(`Failed to embed image for page ${page.letter}`, page.id);
+        console.error(`[PDF] Embed failed for page ${page.letter}:`, embedError);
         continue;
       }
 
@@ -246,25 +260,30 @@ export async function generatePDF(
         width: image.width,
         height: image.height,
       });
+      console.log(`[PDF] Added page ${page.letter} to PDF`);
 
       processedCount++;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
       failedPages.push(`Page ${page.letter}: ${errorMessage}`);
       onError?.(errorMessage, page.id);
+      console.error(`[PDF] Error processing page ${page.letter}:`, error);
     }
   }
 
   onProgress?.(processedCount, pagesWithImages.length);
 
+  console.log(`[PDF] Final stats: ${processedCount} succeeded, ${failedPages.length} failed`);
+  
   if (processedCount === 0) {
     throw new Error(`No pages could be processed. Errors: ${failedPages.join(', ')}`);
   }
 
   if (failedPages.length > 0) {
-    console.warn('Some pages failed to process:', failedPages);
+    console.warn('[PDF] Failed pages:', failedPages);
   }
 
+  console.log(`[PDF] Saving PDF document with ${processedCount} pages...`);
   return await pdfDoc.save();
 }
 
@@ -278,10 +297,23 @@ export async function generateBookPDF(
 ): Promise<void> {
   try {
     // Fetch page images
+    console.log(`[PDF] Fetching images for book ${bookId}...`);
     const pages = await fetchBookPageImages(bookId);
+    console.log(`[PDF] Found ${pages.length} total pages`);
+    
+    const pagesWithImages = pages.filter(p => p.image_url);
+    const pagesWithoutImages = pages.filter(p => !p.image_url);
+    
+    console.log(`[PDF] ${pagesWithImages.length} pages have images`);
+    if (pagesWithoutImages.length > 0) {
+      console.log(`[PDF] ${pagesWithoutImages.length} pages missing images:`, 
+        pagesWithoutImages.map(p => p.letter).join(', '));
+    }
     
     // Generate PDF
+    console.log(`[PDF] Starting PDF generation...`);
     const pdfBytes = await generatePDF(pages, options);
+    console.log(`[PDF] PDF generated successfully (${pdfBytes.length} bytes)`);
     
     // Create download
     const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
@@ -295,7 +327,9 @@ export async function generateBookPDF(
     document.body.removeChild(link);
     
     URL.revokeObjectURL(url);
+    console.log(`[PDF] Download initiated successfully`);
   } catch (error) {
+    console.error('[PDF] Error during PDF generation:', error);
     throw error;
   }
 }

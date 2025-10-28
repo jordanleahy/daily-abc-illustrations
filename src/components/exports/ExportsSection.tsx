@@ -20,7 +20,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FileText, Globe, Eye, Copy, History, RefreshCw, ShoppingCart, Save, Check } from 'lucide-react';
+import { FileText, Globe, Eye, Copy, History, RefreshCw, ShoppingCart, Save, Check, Download } from 'lucide-react';
 import { useExpectedPublicationDate } from '@/hooks/useExpectedPublicationDate';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useBook } from '@/hooks/useBook';
@@ -92,6 +92,12 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
    */
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0, currentPage: '' });
+  
+  /**
+   * Handles downloading all images as a ZIP file
+   */
+  const [isDownloadingImages, setIsDownloadingImages] = useState(false);
+  const [imageDownloadProgress, setImageDownloadProgress] = useState({ current: 0, total: 0, currentPage: '' });
 
   const handleCreatePdf = async () => {
     setIsGeneratingPdf(true);
@@ -137,6 +143,51 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     } finally {
       setIsGeneratingPdf(false);
       setPdfProgress({ current: 0, total: 0, currentPage: '' });
+    }
+  };
+
+  /**
+   * Handles downloading all images as individual files in a ZIP archive
+   */
+  const handleDownloadAllImages = async () => {
+    setIsDownloadingImages(true);
+    setImageDownloadProgress({ current: 0, total: 0, currentPage: '' });
+
+    try {
+      const { downloadAllBookImages } = await import('@/services/pdfGenerator');
+      
+      const options = {
+        onProgress: (current: number, total: number, currentPage?: string) => {
+          setImageDownloadProgress({ current, total, currentPage: currentPage || '' });
+        },
+        onError: (error: string, pageId?: string) => {
+          console.warn(`Image download warning: ${error}`, pageId);
+        }
+      };
+
+      toast({
+        title: "Downloading Images",
+        description: "Preparing all images for download..."
+      });
+
+      await downloadAllBookImages(contentId, contentName, options);
+
+      toast({
+        title: "Images Downloaded Successfully",
+        description: `All ${imageDownloadProgress.total} images have been downloaded as a ZIP file.`
+      });
+
+    } catch (error) {
+      console.error('Error downloading images:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast({
+        variant: "destructive",
+        title: "Download Failed",
+        description: errorMessage
+      });
+    } finally {
+      setIsDownloadingImages(false);
+      setImageDownloadProgress({ current: 0, total: 0, currentPage: '' });
     }
   };
 
@@ -804,6 +855,37 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Download All Images Section - Only for books */}
+        {contentType === 'book' && (
+          <div className="flex items-center justify-between pb-4 border-b">
+            <div className="space-y-1">
+              <h4 className="text-sm font-medium">Download All Images</h4>
+              <p className="text-sm text-muted-foreground">
+                Download all page images (A-Z) as a ZIP file
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={handleDownloadAllImages}
+                disabled={isDownloadingImages}
+                className="flex items-center gap-2"
+                variant="outline"
+              >
+                <Download className="h-4 w-4" />
+                {isDownloadingImages 
+                  ? `Downloading... (${imageDownloadProgress.current}/${imageDownloadProgress.total}${imageDownloadProgress.currentPage ? ` - ${imageDownloadProgress.currentPage}` : ''})` 
+                  : 'Download All Images'
+                }
+              </Button>
+              {isDownloadingImages && imageDownloadProgress.total > 0 && (
+                <div className="text-sm text-muted-foreground">
+                  {Math.round((imageDownloadProgress.current / imageDownloadProgress.total) * 100)}%
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div className="space-y-1">
             <h4 className="text-sm font-medium">PDF Export</h4>

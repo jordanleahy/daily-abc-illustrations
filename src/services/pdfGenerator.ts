@@ -8,6 +8,7 @@
 
 import { PDFDocument } from 'pdf-lib';
 import { supabase } from '@/integrations/supabase/client';
+import JSZip from 'jszip';
 
 export interface PDFGenerationOptions {
   onProgress?: (current: number, total: number, currentPage?: string) => void;
@@ -366,6 +367,108 @@ export async function generatePagePDF(
     
     URL.revokeObjectURL(url);
   } catch (error) {
+    throw error;
+  }
+}
+
+/**
+ * Downloads all book images as individual files and creates a ZIP archive
+ */
+export async function downloadAllBookImages(
+  bookId: string,
+  bookName: string,
+  options: PDFGenerationOptions = {}
+): Promise<void> {
+  const { onProgress, onError } = options;
+  
+  try {
+    // Fetch all page images
+    console.log(`[ZIP] Fetching images for book ${bookId}...`);
+    const pages = await fetchBookPageImages(bookId);
+    const pagesWithImages = pages.filter(page => page.image_url);
+    
+    console.log(`[ZIP] Found ${pagesWithImages.length} pages with images`);
+    
+    if (pagesWithImages.length === 0) {
+      throw new Error('No pages with images found');
+    }
+
+    // Create ZIP instance
+    const zip = new JSZip();
+    const sanitizedBookName = bookName.replace(/[^a-zA-Z0-9\s-]/g, '');
+    let processedCount = 0;
+
+    // Download and add each image to ZIP
+    for (const page of pagesWithImages) {
+      try {
+        console.log(`[ZIP] Processing page ${page.letter} (${processedCount + 1}/${pagesWithImages.length})...`);
+        onProgress?.(processedCount, pagesWithImages.length, page.letter);
+
+        if (!page.image_url) continue;
+
+        // Download image
+        const response = await fetch(page.image_url);
+        if (!response.ok) {
+          throw new Error(`Failed to fetch image: ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        
+        // Detect file extension from MIME type or URL
+        let extension = 'png';
+        if (blob.type) {
+          const typeMatch = blob.type.match(/image\/(.*)/);
+          if (typeMatch) {
+            extension = typeMatch[1] === 'jpeg' ? 'jpg' : typeMatch[1];
+          }
+        } else {
+          const urlMatch = page.image_url.match(/\.(\w+)(?:\?|$)/);
+          if (urlMatch) {
+            extension = urlMatch[1];
+          }
+        }
+
+        // Add to ZIP with filename format: BookName-A.png
+        const filename = `${sanitizedBookName}-${page.letter}.${extension}`;
+        zip.file(filename, blob);
+
+        console.log(`[ZIP] Added ${filename} to archive`);
+        processedCount++;
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        console.error(`[ZIP] Error processing page ${page.letter}:`, error);
+        onError?.(errorMessage, page.id);
+      }
+    }
+
+    onProgress?.(processedCount, pagesWithImages.length);
+
+    if (processedCount === 0) {
+      throw new Error('No images could be processed');
+    }
+
+    console.log(`[ZIP] Generating ZIP file with ${processedCount} images...`);
+    
+    // Generate ZIP file
+    const zipBlob = await zip.generateAsync({ 
+      type: 'blob',
+      compression: 'DEFLATE',
+      compressionOptions: { level: 6 }
+    });
+
+    // Create download
+    const url = URL.createObjectURL(zipBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${sanitizedBookName}-Images.zip`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    URL.revokeObjectURL(url);
+    console.log(`[ZIP] Download initiated successfully`);
+  } catch (error) {
+    console.error('[ZIP] Error during image download:', error);
     throw error;
   }
 }

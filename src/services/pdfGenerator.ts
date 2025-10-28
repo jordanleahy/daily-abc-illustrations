@@ -399,6 +399,8 @@ export async function downloadAllBookImages(
     let processedCount = 0;
 
     // Download and add each image to ZIP
+    const failedPages: Array<{ letter: string, error: string }> = [];
+    
     for (const page of pagesWithImages) {
       try {
         console.log(`[ZIP] Processing page ${page.letter} (${processedCount + 1}/${pagesWithImages.length})...`);
@@ -406,57 +408,98 @@ export async function downloadAllBookImages(
         onProgress?.(processedCount, pagesWithImages.length, page.letter);
 
         if (!page.image_url) {
-          console.warn(`[ZIP] Skipping page ${page.letter} - no image URL`);
+          const msg = `No image URL`;
+          console.warn(`[ZIP] Skipping page ${page.letter} - ${msg}`);
+          failedPages.push({ letter: page.letter, error: msg });
           continue;
         }
 
-        // Download image
+        // Download image with timeout
         console.log(`[ZIP] Fetching image for page ${page.letter}...`);
-        const response = await fetch(page.image_url);
-        console.log(`[ZIP] Fetch response for ${page.letter}: ${response.status} ${response.statusText}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
         
-        if (!response.ok) {
-          const errorMsg = `Failed to fetch image: ${response.status} ${response.statusText}`;
-          console.error(`[ZIP] ${errorMsg} for page ${page.letter}`);
-          throw new Error(errorMsg);
-        }
-
-        const blob = await response.blob();
-        console.log(`[ZIP] Downloaded blob for ${page.letter}: ${blob.size} bytes, type: ${blob.type}`);
-        
-        // Detect file extension from MIME type or URL
-        let extension = 'png';
-        if (blob.type) {
-          const typeMatch = blob.type.match(/image\/(.*)/);
-          if (typeMatch) {
-            extension = typeMatch[1] === 'jpeg' ? 'jpg' : typeMatch[1];
+        try {
+          const response = await fetch(page.image_url, { signal: controller.signal });
+          clearTimeout(timeoutId);
+          
+          console.log(`[ZIP] Fetch response for ${page.letter}: ${response.status} ${response.statusText}`);
+          
+          if (!response.ok) {
+            const errorMsg = `HTTP ${response.status}: ${response.statusText}`;
+            console.error(`[ZIP] ${errorMsg} for page ${page.letter}`);
+            failedPages.push({ letter: page.letter, error: errorMsg });
+            onError?.(errorMsg, page.id);
+            continue; // Skip this image but continue with others
           }
-        } else {
-          const urlMatch = page.image_url.match(/\.(\w+)(?:\?|$)/);
-          if (urlMatch) {
-            extension = urlMatch[1];
+
+          const blob = await response.blob();
+          console.log(`[ZIP] Downloaded blob for ${page.letter}: ${blob.size} bytes, type: ${blob.type}`);
+          
+          // Validate blob has content
+          if (blob.size === 0) {
+            const errorMsg = 'Downloaded image is empty (0 bytes)';
+            console.error(`[ZIP] ${errorMsg} for page ${page.letter}`);
+            failedPages.push({ letter: page.letter, error: errorMsg });
+            onError?.(errorMsg, page.id);
+            continue;
+          }
+          
+          // Detect file extension from MIME type or URL
+          let extension = 'png';
+          if (blob.type) {
+            const typeMatch = blob.type.match(/image\/(.*)/);
+            if (typeMatch) {
+              extension = typeMatch[1] === 'jpeg' ? 'jpg' : typeMatch[1];
+            }
+          } else {
+            const urlMatch = page.image_url.match(/\.(\w+)(?:\?|$)/);
+            if (urlMatch) {
+              extension = urlMatch[1];
+            }
+          }
+
+          // Add to ZIP with filename format: BookName-A.png
+          const filename = `${sanitizedBookName}-${page.letter}.${extension}`;
+          console.log(`[ZIP] Adding ${filename} to archive (${blob.size} bytes)...`);
+          zip.file(filename, blob);
+
+          console.log(`[ZIP] Successfully added ${filename} to archive`);
+          processedCount++;
+        } catch (fetchError) {
+          clearTimeout(timeoutId);
+          if (fetchError instanceof Error && fetchError.name === 'AbortError') {
+            const errorMsg = 'Request timeout (30s exceeded)';
+            console.error(`[ZIP] ${errorMsg} for page ${page.letter}`);
+            failedPages.push({ letter: page.letter, error: errorMsg });
+            onError?.(errorMsg, page.id);
+          } else {
+            throw fetchError; // Re-throw to outer catch
           }
         }
-
-        // Add to ZIP with filename format: BookName-A.png
-        const filename = `${sanitizedBookName}-${page.letter}.${extension}`;
-        console.log(`[ZIP] Adding ${filename} to archive (${blob.size} bytes)...`);
-        zip.file(filename, blob);
-
-        console.log(`[ZIP] Successfully added ${filename} to archive`);
-        processedCount++;
       } catch (error) {
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         console.error(`[ZIP] Error processing page ${page.letter}:`, error);
+        failedPages.push({ letter: page.letter, error: errorMessage });
         onError?.(errorMessage, page.id);
         // Continue processing other images even if one fails
       }
     }
 
+    // Log summary of failed pages
+    if (failedPages.length > 0) {
+      console.error(`[ZIP] Failed to download ${failedPages.length} pages:`, 
+        failedPages.map(f => `${f.letter} (${f.error})`).join(', '));
+    }
+
     onProgress?.(processedCount, pagesWithImages.length);
 
     if (processedCount === 0) {
-      throw new Error('No images could be processed');
+      throw new Error(`No images could be processed. All ${pagesWithImages.length} downloads failed.`);
+    }
+
+    if (failedPages.length > 0) {
+      console.warn(`[ZIP] Completed with ${processedCount} successes and ${failedPages.length} failures`);
     }
 
     console.log(`[ZIP] Generating ZIP file with ${processedCount} images...`);

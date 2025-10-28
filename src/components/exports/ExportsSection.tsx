@@ -172,10 +172,21 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
       await downloadAllBookImages(contentId, contentName, options);
 
+    const successCount = imageDownloadProgress.current;
+    const totalCount = imageDownloadProgress.total;
+    
+    if (successCount === totalCount) {
       toast({
         title: "Images Downloaded Successfully",
-        description: `All ${imageDownloadProgress.total} images have been downloaded as a ZIP file.`
+        description: `All ${totalCount} images have been downloaded as a ZIP file.`
       });
+    } else {
+      toast({
+        title: "Download Completed with Warnings",
+        description: `Downloaded ${successCount} of ${totalCount} images. Check console for details on failed images.`,
+        variant: "default"
+      });
+    }
 
     } catch (error) {
       console.error('Error downloading images:', error);

@@ -68,9 +68,11 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
       if (currentImage.generation_status === 'complete' && currentImage.image_url) {
         console.log('✅ Image generation complete, clearing local state');
         setIsLocalGenerating(false);
+        toast.success('Image generated successfully!');
       } else if (currentImage.generation_status === 'error') {
         console.log('❌ Image generation failed, clearing local state');
         setIsLocalGenerating(false);
+        toast.error('Image generation failed');
       }
     }
   }, [currentImage?.id, currentImage?.generation_status, currentImage?.image_url, isLocalGenerating]);
@@ -79,29 +81,44 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     if (!user || !hasDeployedPrompt) return;
 
     setIsLocalGenerating(true);
+    toast.info('Starting image generation...');
+    
     try {
       // Include auth token so storage insert passes RLS
       const { data: sessionRes } = await supabase.auth.getSession();
       const token = sessionRes.session?.access_token;
       if (!token) throw new Error('Not authenticated');
 
-      // Call new unified image generation function
-      const { data, error } = await supabase.functions.invoke('generate-page-image', {
+      // Call new unified image generation function (don't await, let it run in background)
+      supabase.functions.invoke('generate-page-image', {
         body: { pageId, userId: user.id },
         headers: { Authorization: `Bearer ${token}` },
+      }).then(({ data, error }) => {
+        if (error) {
+          console.error('Edge function error:', error);
+          toast.error(error.message || 'Failed to start generation');
+          setIsLocalGenerating(false);
+          return;
+        }
+        if (!data?.success) {
+          console.error('Generation failed:', data?.error);
+          toast.error(data?.error || 'Failed to start generation');
+          setIsLocalGenerating(false);
+          return;
+        }
+        // Success message will be shown when real-time update completes
+        console.log('✅ Image generation started successfully');
+      }).catch((error) => {
+        console.error('Unexpected error:', error);
+        toast.error('Failed to start generation');
+        setIsLocalGenerating(false);
       });
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
-
-      toast.success(`Image generated successfully (v${data.versionNumber})`);
-
-      // Force refresh the data to show the new image
+      // Immediately refresh to get the 'in_progress' status
       await refreshData();
-      setIsLocalGenerating(false);
     } catch (error) {
-      console.error('Error generating image:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to generate image');
+      console.error('Error starting image generation:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to start generation');
       setIsLocalGenerating(false);
     }
   };

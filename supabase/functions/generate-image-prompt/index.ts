@@ -233,44 +233,22 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
     currentStep = 'LOVABLE_AI_API';
     const aiStartTime = Date.now();
 
-    // Normalize model names stored in agents to the Lovable AI supported identifiers
-    const normalizeModel = (m: string | null | undefined): string => {
-      if (!m) return 'google/gemini-2.5-flash';
-      const s = m.toLowerCase();
-      if (s.includes('gemini')) {
-        // Ensure proper provider prefix for Gemini
-        return s.startsWith('google/') ? m : 'google/gemini-2.5-flash';
-      }
-      if (s.includes('gpt-5')) {
-        if (s.includes('nano')) return 'openai/gpt-5-nano';
-        if (s.includes('mini')) return 'openai/gpt-5-mini';
-        return 'openai/gpt-5';
-      }
-      // Default to a fast, capable model
-      return 'google/gemini-2.5-flash';
-    };
-
-    const normalizedModel = normalizeModel(agentConfig.model);
-
+    // Always use Gemini 2.5 Flash for prompt generation
+    const model = 'google/gemini-2.5-flash';
+    
     // Compute safe parameter values
     const rawMax = Number(agentConfig.max_completion_tokens);
     const usedMaxTokens = Math.min(isNaN(rawMax) ? 8192 : rawMax, 16384);
-    const rawTopP = Number(agentConfig.top_p);
-    const usedTopP = isNaN(rawTopP) ? undefined : Math.min(Math.max(rawTopP, 0), 1);
 
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling Lovable AI for image prompt generation...', { 
       requestId,
-      model: normalizedModel,
-      rawModel: agentConfig.model,
-      maxTokens: usedMaxTokens,
-      topP: usedTopP
+      model,
+      maxTokens: usedMaxTokens
     });
 
-    // Call Lovable AI Gateway using the agent's configuration and instructions from database
-    // Build request body based on model type
-    const isGeminiModel = normalizedModel.startsWith('google/');
-    const requestBody: any = {
-      model: normalizedModel,
+    // Call Lovable AI Gateway with Gemini model
+    const requestBody = {
+      model,
       messages: [
         {
           role: 'system',
@@ -281,19 +259,8 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
           content: pageContent
         }
       ],
+      max_completion_tokens: usedMaxTokens
     };
-    
-    // Add parameters based on model type
-    if (isGeminiModel) {
-      // Gemini models support max_completion_tokens; avoid top_p
-      requestBody.max_completion_tokens = usedMaxTokens;
-    } else {
-      // OpenAI/other models support both parameters
-      requestBody.max_completion_tokens = usedMaxTokens;
-      if (usedTopP !== undefined) {
-        requestBody.top_p = usedTopP;
-      }
-    }
     
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',

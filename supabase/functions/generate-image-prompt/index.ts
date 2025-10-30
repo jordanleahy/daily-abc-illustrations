@@ -254,7 +254,7 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
 
     // Compute safe parameter values
     const rawMax = Number(agentConfig.max_completion_tokens);
-    const usedMaxTokens = Math.min(isNaN(rawMax) ? 1024 : rawMax, 4096);
+    const usedMaxTokens = Math.min(isNaN(rawMax) ? 8192 : rawMax, 16384);
     const rawTopP = Number(agentConfig.top_p);
     const usedTopP = isNaN(rawTopP) ? undefined : Math.min(Math.max(rawTopP, 0), 1);
 

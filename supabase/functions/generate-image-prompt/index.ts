@@ -298,7 +298,7 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
 
     const data = await response.json();
     
-    // Robustly extract text from GPT-5 response
+    // Robustly extract text from AI response
     const choice = data?.choices?.[0] ?? {};
     const msg = choice.message ?? {};
     let rawResponse = '';

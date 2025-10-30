@@ -209,35 +209,35 @@ export default function BookDetail() {
       for (let i = 0; i < pages.length; i++) {
         const page = pages[i];
         
-        // Check if this page already has a deployed prompt
-        const { data: existingPrompts } = await supabase
-          .from('page_system_prompts')
+        // Check if this page already has an image
+        const { data: existingImages } = await supabase
+          .from('page_image_urls')
           .select('*')
           .eq('page_id', page.id)
-          .eq('is_deployed', true)
+          .eq('is_latest', true)
           .limit(1);
         
-        if (existingPrompts && existingPrompts.length > 0) {
+        if (existingImages && existingImages.length > 0) {
           skippedCount++;
           addProgressMessage({
             step: `Page ${i + 1}/${pages.length}`,
-            message: `⊘ Skipped "${page.title}" (prompt exists)`,
+            message: `⊘ Skipped "${page.title}" (image exists)`,
             status: ProcessStatus.COMPLETE,
             timestamp: new Date().toISOString()
           });
           continue;
         }
         
-        // Generate prompt for this page
+        // Generate image for this page directly
         addProgressMessage({
           step: `Page ${i + 1}/${pages.length}`,
-          message: `Generating prompt for "${page.title}"...`,
+          message: `Generating image for "${page.title}"...`,
           status: ProcessStatus.IN_PROGRESS,
           timestamp: new Date().toISOString()
         });
         
         try {
-          const { data, error } = await supabase.functions.invoke('generate-image-prompt', {
+          const { data, error } = await supabase.functions.invoke('generate-page-image', {
             body: { pageId: page.id, userId: user.id }
           });
           
@@ -252,13 +252,13 @@ export default function BookDetail() {
           }
           
           if (!data?.success) {
-            throw new Error(data?.error || 'Prompt generation failed');
+            throw new Error(data?.error || 'Image generation failed');
           }
           
           successCount++;
           addProgressMessage({
             step: `Page ${i + 1}/${pages.length}`,
-            message: `✓ Generated prompt for "${page.title}"`,
+            message: `✓ Generated image for "${page.title}"`,
             status: ProcessStatus.COMPLETE,
             timestamp: new Date().toISOString()
           });

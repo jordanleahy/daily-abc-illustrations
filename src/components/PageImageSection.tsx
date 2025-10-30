@@ -79,49 +79,21 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
 
     setIsLocalGenerating(true);
     try {
-      // Use stored prompt first, then fallback to generating new one
-      let prompt = await getStoredPrompt();
-      
-      if (!prompt) {
-        const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-image-prompt', {
-          body: { pageId, userId: user.id }
-        });
-
-        if (promptError) throw promptError;
-        if (!promptData?.success) throw new Error(promptData?.error || 'Failed to generate image prompt');
-        
-        prompt = promptData.imagePrompt;
-      }
-
-      if (!prompt || prompt.trim().length === 0) {
-        throw new Error('No image prompt available. Please ensure a page system prompt is deployed.');
-      }
-
-      const record = await createImageRecord(bookId, prompt);
-      if (!record) {
-        throw new Error('Failed to create image record');
-      }
-
-      const { data, error } = await supabase.functions.invoke('generate-image', {
-        body: { recordId: record.id, userId: user.id }
+      // Call new unified image generation function
+      const { data, error } = await supabase.functions.invoke('generate-page-image', {
+        body: { pageId, userId: user.id }
       });
 
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
 
-      toast.success('Image generation started!');
-      refreshData();
-    } catch (error: any) {
+      toast.success(`Image generated successfully (v${data.versionNumber})`);
+
+      // The component will update automatically via subscription
+    } catch (error) {
       console.error('Error generating image:', error);
-      
-      // Only clear local generating state and show error for real errors, not navigation cancellations
-      if (!isNavigationError(error)) {
-        toast.error(error.message || 'Failed to generate image');
-        setIsLocalGenerating(false);
-      } else {
-        console.log('🚫 Direct image generation request cancelled due to navigation');
-        // Don't clear isLocalGenerating for navigation cancellations
-      }
+      toast.error(error instanceof Error ? error.message : 'Failed to generate image');
+      setIsLocalGenerating(false);
     }
   };
 

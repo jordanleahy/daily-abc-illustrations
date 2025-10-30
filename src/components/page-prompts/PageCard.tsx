@@ -102,7 +102,8 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
     try {
       setIsRegenerating(true);
       
-      const { error } = await supabase.functions.invoke('generate-image-prompt', {
+      // Regenerate image directly (new unified approach)
+      const { data, error } = await supabase.functions.invoke('generate-page-image', {
         body: {
           pageId: page.id,
           userId: user.id,
@@ -110,11 +111,12 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
       });
 
       if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
 
-      // Refresh the prompt data to show the new version
+      // Refresh the data to show the new image version
       refreshData();
     } catch (error) {
-      console.error('Error regenerating prompt:', error);
+      console.error('Error regenerating image:', error);
     } finally {
       setIsRegenerating(false);
     }

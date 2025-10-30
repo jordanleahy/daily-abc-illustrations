@@ -90,7 +90,7 @@ verify_jwt = false
 [functions.generate-style-guide]
 verify_jwt = true
 
-[functions.generate-image-prompt]
+[functions.generate-page-image]
 verify_jwt = true
 
 [functions.generate-graphics-designer-prompt]

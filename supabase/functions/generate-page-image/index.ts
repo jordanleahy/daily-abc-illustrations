@@ -434,9 +434,7 @@ serve(async (req) => {
           completion_tokens: usage.completion_tokens,
           total_tokens: usage.total_tokens
         } : null,
-        prompt_used: colors 
-          ? `Page Prompt (v${pagePrompt.version_number}) + Color Locked: ${colors.primary.hex}, ${colors.secondary.hex}, ${colors.accent.hex}`
-          : `Page Prompt (v${pagePrompt.version_number})`
+        prompt_used: enhancedSystemPrompt // Store the full prompt content with color enforcement
       });
 
     if (insertError) {

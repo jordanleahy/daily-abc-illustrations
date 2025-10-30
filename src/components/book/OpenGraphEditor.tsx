@@ -553,6 +553,15 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     setGeneratedPrompt(null);
   };
 
+  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setGeneratedPrompt(e.target.value);
+  };
+
+  const handleWriteCustomPrompt = () => {
+    setGeneratedPrompt(''); // Set empty string to show editable field
+    toast.info('Write your custom thumbnail prompt below');
+  };
+
   const handleGenerateThumbImage = async () => {
     if (!user?.id) {
       toast.error('User not authenticated');
@@ -740,9 +749,18 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 {isGenerating ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <MessageSquare className="w-4 h-4" />
+                  <Wand2 className="w-4 h-4" />
                 )}
-                Generate Thumb Prompt
+                AI Prompt
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleWriteCustomPrompt}
+                disabled={isGenerating}
+                className="flex items-center gap-2"
+              >
+                <MessageSquare className="w-4 h-4" />
+                Custom Prompt
               </Button>
               <Button
                 variant="outline"
@@ -777,11 +795,11 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         </div>
 
         {/* Thumbnail Prompt */}
-        {generatedPrompt && (
+        {generatedPrompt !== null && (
           <div className="border rounded-md bg-blue-50/50 dark:bg-blue-950/20">
             <div className="flex items-center justify-between p-3 border-b bg-blue-100/30 dark:bg-blue-900/20">
               <Label className="text-sm font-medium">
-                Generated Thumbnail Prompt
+                Custom Thumbnail Prompt
               </Label>
               <div className="flex items-center gap-2">
                 <Button
@@ -789,6 +807,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                   size="sm"
                   onClick={handleCopyPrompt}
                   className="h-7 px-2"
+                  disabled={!generatedPrompt}
                 >
                   <Copy className="w-3 h-3" />
                 </Button>
@@ -805,10 +824,14 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
             <div className="p-3">
               <textarea
                 value={generatedPrompt || ''}
-                readOnly
-                className="w-full h-32 text-xs font-mono bg-transparent border-none resize-none focus:outline-none"
+                onChange={handlePromptChange}
+                placeholder="Describe your thumbnail image in detail (e.g., style, subject, colors, composition)..."
+                className="w-full h-32 text-xs font-mono bg-transparent border-none resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 rounded p-2"
                 style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}
               />
+              <p className="text-xs text-muted-foreground mt-2">
+                Edit the AI-generated prompt or write your own custom instructions
+              </p>
             </div>
           </div>
         )}

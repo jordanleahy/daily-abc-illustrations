@@ -251,9 +251,9 @@ Please generate an image following the style guide provided in the system prompt
     const mimeType = imageData.match(/data:(.*?);/)?.[1] || 'image/png';
     const imageBlob = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
 
-    // Generate unique filename
+    // Generate unique filename with user_id as first folder (for RLS policy)
     const timestamp = Date.now();
-    const filename = `${pageData.book_id}/${pageId}-v${timestamp}.png`;
+    const filename = `${userId}/${pageData.book_id}/${pageId}-v${timestamp}.png`;
 
     // Upload to storage
     const { data: uploadData, error: uploadError } = await supabaseClient.storage

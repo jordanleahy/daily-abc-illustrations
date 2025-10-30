@@ -312,7 +312,7 @@ Please generate an image following the style guide provided in the system prompt
         user_id: userId,
         image_url: urlData.publicUrl,
         version_number: versionNumber,
-        source_type: 'gemini_direct',
+        source_type: 'ai_generated',
         is_latest: true,
         generation_status: 'complete',
         generation_started_at: new Date(aiStartTime).toISOString(),

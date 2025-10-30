@@ -213,8 +213,7 @@ serve(async (req) => {
     const prepareStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Preparing content for image generation...', { requestId });
 
-    // Use page-specific prompt as the complete instruction
-    const pageContent = `Generate the image exactly as specified in the system prompt for page "${pageData.letter}: ${pageData.title}".`;
+    // Page-specific prompt will be sent as a single user message (matches AI Studio configuration)
 
     // Get Lovable AI API key
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
@@ -227,7 +226,7 @@ serve(async (req) => {
     log('INFO', ProcessStatus.COMPLETE, currentStep, 'Content prepared for image generation', { 
       requestId, 
       duration: prepareDuration,
-      contentLength: pageContent.length,
+      contentLength: enhancedSystemPrompt.length,
       hasColorEnforcement: colorEnforcement.length > 0,
       letter: pageData.letter
     });
@@ -259,14 +258,12 @@ serve(async (req) => {
         model,
         messages: [
           {
-            role: 'system',
-            content: enhancedSystemPrompt // Page prompt + color enforcement
-          },
-          {
             role: 'user',
-            content: pageContent
+            content: enhancedSystemPrompt // Single user message with full prompt + color enforcement
           }
         ],
+        temperature: 1,
+        top_p: 0.95,
         modalities: ["image", "text"]
       }),
     });

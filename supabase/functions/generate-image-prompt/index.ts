@@ -318,16 +318,23 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
       rawResponse = (msg.content as string).trim();
     }
 
-    // Validate that we got a response
+    // Validate that we got a response; if empty, build a safe fallback prompt
     if (!rawResponse) {
-      const errorMsg = 'OpenAI returned empty response';
-      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, {
+      log('WARN', ProcessStatus.WARNING, currentStep, 'Empty AI response, using fallback prompt', {
         requestId,
         duration: aiDuration,
-        rawMessage: choice,
         letter: pageData.letter
       });
-      throw new Error(errorMsg);
+
+      const fallbackCore = (
+        `Create a child-friendly, educational ABC illustration highlighting the letter "${pageData.letter}". ` +
+        `Title: ${pageData.title || 'Untitled'}. ` +
+        `Description: ${(pageData.description || 'No description').slice(0, 300)}. ` +
+        `Style: bright, warm, inviting, simple shapes, high contrast, suitable for ages 3-6.`
+      ).trim();
+
+      // Use fallback as the raw response so downstream parsing and safe rules apply consistently
+      rawResponse = fallbackCore;
     }
 
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Parsing Graphics Designer response...', {

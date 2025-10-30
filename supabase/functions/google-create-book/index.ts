@@ -44,29 +44,41 @@ serve(async (req) => {
     console.log('Creating book using Lovable AI for user:', userId);
 
     // Prepare prompt for book creation
-    const systemPrompt = `You are an expert at creating educational children's books. 
-Based on the conversation, extract the learning concepts and create a complete book structure.
-Return ONLY a JSON object with this exact structure (no markdown, no code blocks):
+    const systemPrompt = `You are an expert at creating children's books of all types.
+Based on the conversation, determine the most appropriate book format and create a complete book structure.
+
+Book Types:
+- "alphabet": ABC learning books with 26 pages (A-Z), each page teaching a letter
+- "story": Narrative story books with 8-16 pages telling a cohesive story
+- "educational": Topic-based learning books with 10-20 pages covering different aspects
+- "chapter": Longer books with 15-26 pages divided into chapters
+
+IMPORTANT: 
+- For NON-alphabet books, do NOT include "letter" fields
+- For alphabet books, include "letter" field with values A-Z
+- Adjust page count based on book type and complexity
+- Make content age-appropriate and engaging
+
+Return ONLY a JSON object with this structure (no markdown, no code blocks):
 {
   "bookName": "string",
   "category": "string",
   "bookDescription": "string",
+  "bookType": "story|alphabet|educational|chapter",
   "pages": [
     {
-      "letter": "A",
+      "letter": "optional - only for alphabet books",
       "pageNumber": 1,
       "title": "string",
       "description": "string",
       "content": {
         "mainConcept": "string",
-        "funFact": "string",
-        "activity": "string"
+        "funFact": "string (optional for non-educational)",
+        "activity": "string (optional for non-educational)"
       }
     }
   ]
-}
-
-Create 26 pages (A-Z) with educational content appropriate for children.`;
+}`;
 
     const prompt = `Based on this conversation, create a complete children's book:
 ${conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n\n')}
@@ -172,7 +184,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     // Insert pages
     const pages = bookData.pages.map((page: any) => ({
       book_id: book.id,
-      letter: page.letter,
+      letter: page.letter || `Page ${page.pageNumber}`, // Fallback for non-ABC books
       page_number: page.pageNumber,
       title: page.title,
       description: page.description || '',

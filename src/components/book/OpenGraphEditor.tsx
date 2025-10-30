@@ -587,12 +587,18 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
       if (error) throw error;
 
       if (data?.success && data?.thumbnailUrl) {
-        // Refetch SEO metadata to show the new generated image
-        refetch();
-        toast.success('Thumbnail image generated successfully!');
-        
         // Clear the prompt since it's been used
         setGeneratedPrompt(null);
+        
+        // Force refetch SEO metadata and invalidate all related queries
+        await Promise.all([
+          refetch(),
+          queryClient.invalidateQueries({ queryKey: ['book-seo-metadata', bookId] }),
+          queryClient.invalidateQueries({ queryKey: ['daily-published'] }),
+          queryClient.invalidateQueries({ queryKey: ['library-books'] })
+        ]);
+        
+        toast.success('Thumbnail image generated successfully!');
       } else {
         throw new Error('Failed to generate thumbnail image');
       }

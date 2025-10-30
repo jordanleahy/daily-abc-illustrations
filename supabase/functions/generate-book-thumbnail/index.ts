@@ -181,10 +181,10 @@ serve(async (req) => {
     }), `}`);
 
     try {
-      // Find the daily_published entry for this book (any status)
-      const { data: dailyPublishedData, error: dailyPublishedError } = await supabase
+      // Find or create the daily_published entry for this book
+      let { data: dailyPublishedData, error: dailyPublishedError } = await supabase
         .from('daily_published')
-        .select('id')
+        .select('id, title')
         .eq('book_id', bookId)
         .order('created_at', { ascending: false })
         .maybeSingle();
@@ -192,6 +192,32 @@ serve(async (req) => {
       if (dailyPublishedError) {
         console.error(`[${new Date().toISOString()}] [WARN] [SEO_UPDATE] - Error finding daily_published:`, dailyPublishedError);
         throw dailyPublishedError;
+      }
+
+      // If no daily_published entry exists, create a draft entry
+      if (!dailyPublishedData) {
+        console.log(`[${new Date().toISOString()}] [INFO] [SEO_UPDATE] - Creating draft daily_published entry for thumbnail storage`);
+        
+        const { data: newDailyPublished, error: createError } = await supabase
+          .from('daily_published')
+          .insert({
+            book_id: bookId,
+            title: bookName,
+            description: `Educational ABC book: ${bookName}`,
+            status: 'draft',
+            is_active: false,
+            publish_date: new Date().toISOString().split('T')[0]
+          })
+          .select('id, title')
+          .single();
+
+        if (createError) {
+          console.error(`[${new Date().toISOString()}] [ERROR] [SEO_UPDATE] - Error creating daily_published:`, createError);
+          throw createError;
+        }
+
+        dailyPublishedData = newDailyPublished;
+        console.log(`[${new Date().toISOString()}] [INFO] [SEO_UPDATE] - Draft daily_published entry created successfully`);
       }
 
       if (dailyPublishedData) {

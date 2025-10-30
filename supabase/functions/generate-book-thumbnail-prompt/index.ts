@@ -27,12 +27,12 @@ serve(async (req) => {
       throw new Error('Missing required parameters: bookId, userId');
     }
 
-    // Check OpenAI API key availability (without logging the actual key)
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    console.log('OpenAI API key available:', !!openAIApiKey);
-    if (!openAIApiKey) {
-      console.error('OpenAI API key not configured in environment');
-      throw new Error('OpenAI API key not configured');
+    // Check Lovable API key availability (without logging the actual key)
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    console.log('Lovable API key available:', !!lovableApiKey);
+    if (!lovableApiKey) {
+      console.error('Lovable API key not configured in environment');
+      throw new Error('Lovable API key not configured');
     }
 
     // Initialize Supabase client
@@ -84,9 +84,9 @@ Focus on visual composition and design elements that work well for social media 
 
     console.log('Generated prompt length:', prompt.length);
 
-    // Prepare OpenAI request
-    const openAIRequest = {
-      model: 'gpt-5-nano-2025-08-07',
+    // Prepare Lovable AI request
+    const lovableAIRequest = {
+      model: 'google/gemini-2.5-flash-lite',
       max_completion_tokens: 4000,
       messages: [
         { 
@@ -97,38 +97,43 @@ Focus on visual composition and design elements that work well for social media 
       ],
     };
 
-    console.log('Making OpenAI API call with:', { 
-      model: openAIRequest.model, 
-      max_completion_tokens: openAIRequest.max_completion_tokens,
-      messagesCount: openAIRequest.messages.length 
+    console.log('Making Lovable AI Gateway call with:', { 
+      model: lovableAIRequest.model, 
+      max_completion_tokens: lovableAIRequest.max_completion_tokens,
+      messagesCount: lovableAIRequest.messages.length 
     });
 
-    // Call OpenAI
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Lovable AI Gateway
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(openAIRequest),
+      body: JSON.stringify(lovableAIRequest),
     });
 
-    console.log('OpenAI response status:', response.status, response.statusText);
+    console.log('Lovable AI response status:', response.status, response.statusText);
 
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      } else if (response.status === 402) {
+        throw new Error('Payment required. Please add credits to your Lovable AI workspace.');
+      }
       let errorData;
       try {
         errorData = await response.json();
-        console.error('OpenAI API error response:', errorData);
+        console.error('Lovable AI Gateway error response:', errorData);
       } catch (parseError) {
-        console.error('Failed to parse OpenAI error response:', parseError);
+        console.error('Failed to parse Lovable AI error response:', parseError);
         errorData = { error: { message: `HTTP ${response.status}: ${response.statusText}` } };
       }
-      throw new Error(`OpenAI API error: ${errorData.error?.message || response.statusText}`);
+      throw new Error(`Lovable AI Gateway error: ${errorData.error?.message || response.statusText}`);
     }
 
     const data = await response.json();
-    console.log('OpenAI response received:', { 
+    console.log('Lovable AI response received:', { 
       hasChoices: !!data.choices, 
       choicesLength: data.choices?.length,
       hasContent: !!data.choices?.[0]?.message?.content 
@@ -137,7 +142,7 @@ Focus on visual composition and design elements that work well for social media 
     const generatedPrompt = data?.choices?.[0]?.message?.content?.trim();
 
     if (!generatedPrompt) {
-      console.error('No content generated from OpenAI response:', data);
+      console.error('No content generated from Lovable AI response:', data);
       throw new Error('Failed to generate prompt - no content in response');
     }
 

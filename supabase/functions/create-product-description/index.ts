@@ -7,9 +7,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 serve(async (req) => {
   // Handle CORS preflight requests
@@ -20,8 +20,8 @@ serve(async (req) => {
   try {
     console.log('=== Create Product Description Function Started ===');
     
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    if (!lovableApiKey) {
+      throw new Error('Lovable API key not configured');
     }
 
     const { bookId } = await req.json();
@@ -57,14 +57,14 @@ serve(async (req) => {
       hasDescription: !!bookData.book_description
     });
 
-    // Helper function to try generating with OpenAI
-    const tryOpenAI = async (model: string, systemPrompt: string, userPrompt: string, attempt: number = 1, maxTokens: number = 1500) => {
-      console.log(`Attempt ${attempt}: Making OpenAI API call with model ${model}, max_tokens: ${maxTokens}`);
+    // Helper function to try generating with Lovable AI
+    const tryLovableAI = async (model: string, systemPrompt: string, userPrompt: string, attempt: number = 1, maxTokens: number = 1500) => {
+      console.log(`Attempt ${attempt}: Making Lovable AI Gateway call with model ${model}, max_completion_tokens: ${maxTokens}`);
       
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${openAIApiKey}`,
+          'Authorization': `Bearer ${lovableApiKey}`,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
@@ -78,9 +78,14 @@ serve(async (req) => {
       });
 
       if (!response.ok) {
+        if (response.status === 429) {
+          throw new Error('Rate limit exceeded. Please try again later.');
+        } else if (response.status === 402) {
+          throw new Error('Payment required. Please add credits to your Lovable AI workspace.');
+        }
         const errorData = await response.json();
-        console.error(`OpenAI API error (attempt ${attempt}):`, errorData);
-        throw new Error(`OpenAI API error: ${response.status}`);
+        console.error(`Lovable AI Gateway error (attempt ${attempt}):`, errorData);
+        throw new Error(`Lovable AI Gateway error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -95,7 +100,7 @@ serve(async (req) => {
         });
       }
       
-      console.log(`OpenAI response (attempt ${attempt}):`, { 
+      console.log(`Lovable AI response (attempt ${attempt}):`, {
         hasChoices: !!data.choices, 
         choicesLength: data.choices?.length,
         finishReason: data.choices?.[0]?.finish_reason,
@@ -104,7 +109,7 @@ serve(async (req) => {
       });
 
       if (!data.choices || data.choices.length === 0) {
-        throw new Error(`No response generated from OpenAI (attempt ${attempt})`);
+        throw new Error(`No response generated from Lovable AI (attempt ${attempt})`);
       }
 
       const choice = data.choices[0];
@@ -176,28 +181,28 @@ Do not copy text directly—restructure and reframe it to highlight what parents
     let productDescription: string | null = null;
 
     try {
-      // First attempt with primary model and 1500 tokens
-      productDescription = await tryOpenAI('gpt-5-2025-08-07', systemPrompt, primaryPrompt, 1, 1500);
+      // First attempt with primary model (Gemini Pro) and 1500 tokens
+      productDescription = await tryLovableAI('google/gemini-2.5-pro', systemPrompt, primaryPrompt, 1, 1500);
       
       if (!productDescription) {
         console.log('Primary attempt returned empty content, trying with more tokens...');
         // Second attempt with higher token limit
-        productDescription = await tryOpenAI('gpt-5-2025-08-07', systemPrompt, primaryPrompt, 2, 2500);
+        productDescription = await tryLovableAI('google/gemini-2.5-pro', systemPrompt, primaryPrompt, 2, 2500);
       }
       
       if (!productDescription) {
-        console.log('Still empty, trying mini model with fallback prompt...');
-        // Third attempt with mini model and simpler prompt
-        productDescription = await tryOpenAI('gpt-5-mini-2025-08-07', fallbackSystemPrompt, fallbackPrompt, 3, 2000);
+        console.log('Still empty, trying flash model with fallback prompt...');
+        // Third attempt with flash model and simpler prompt
+        productDescription = await tryLovableAI('google/gemini-2.5-flash', fallbackSystemPrompt, fallbackPrompt, 3, 2000);
       }
       
     } catch (error) {
-      console.error('GPT-5 attempts failed:', error);
-      console.log('Trying final fallback with older model...');
+      console.error('Gemini Pro/Flash attempts failed:', error);
+      console.log('Trying final fallback with lite model...');
       
       try {
-        // Final fallback with older, more reliable model
-        productDescription = await tryOpenAI('gpt-4o-mini', fallbackSystemPrompt, fallbackPrompt, 4, 1000);
+        // Final fallback with lite model
+        productDescription = await tryLovableAI('google/gemini-2.5-flash-lite', fallbackSystemPrompt, fallbackPrompt, 4, 1000);
       } catch (finalError) {
         console.error('All attempts failed:', finalError);
         throw new Error('All AI generation attempts failed including final fallback');

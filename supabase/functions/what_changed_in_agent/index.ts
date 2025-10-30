@@ -55,9 +55,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders, AgentConfig, CompareRequest } from '../_shared/types.ts';
 
-const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
 const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
 
 
 // Simple, safe fallback diff in case the OpenAI response is empty or fails
@@ -105,9 +105,9 @@ serve(async (req) => {
     
     console.log('Comparing agent configurations...');
 
-    // Validate OpenAI API key
-    if (!openAIApiKey) {
-      throw new Error('OPENAI_API_KEY is not configured');
+    // Validate Lovable API key
+    if (!lovableApiKey) {
+      throw new Error('LOVABLE_API_KEY is not configured');
     }
 
     // Create detailed comparison prompt using database field names
@@ -143,16 +143,16 @@ If no meaningful changes were detected, respond with "Minor configuration update
 
 Avoid mentioning technical parameter names - use user-friendly language.`;
 
-    console.log('Calling OpenAI API with model: gpt-5-mini-2025-08-07');
+    console.log('Calling Lovable AI Gateway with model: google/gemini-2.5-flash');
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5-mini-2025-08-07',
+        model: 'google/gemini-2.5-flash',
         messages: [
           { 
             role: 'system', 
@@ -160,20 +160,25 @@ Avoid mentioning technical parameter names - use user-friendly language.`;
           },
           { role: 'user', content: prompt }
         ],
-        max_completion_tokens: 5000, // Increased to reduce truncation
+        max_completion_tokens: 5000,
       }),
     });
 
-    console.log('OpenAI response status:', response.status);
+    console.log('Lovable AI response status:', response.status);
     
     if (!response.ok) {
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      } else if (response.status === 402) {
+        throw new Error('Payment required. Please add credits to your Lovable AI workspace.');
+      }
       const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, response.statusText, errorText);
-      throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorText}`);
+      console.error('Lovable AI Gateway error:', response.status, response.statusText, errorText);
+      throw new Error(`Lovable AI Gateway error: ${response.status} ${response.statusText} - ${errorText}`);
     }
 
     const data = await response.json();
-    console.log('OpenAI response data:', JSON.stringify(data, null, 2));
+    console.log('Lovable AI response data:', JSON.stringify(data, null, 2));
     
     const aiSummary = data.choices?.[0]?.message?.content?.trim();
     const finalSummary = aiSummary && aiSummary.length > 0
@@ -181,7 +186,7 @@ Avoid mentioning technical parameter names - use user-friendly language.`;
       : computeFallbackChanges(originalConfig!, newConfig!);
 
     if (!aiSummary) {
-      console.warn('OpenAI returned empty content; using fallback diff summary.');
+      console.warn('Lovable AI returned empty content; using fallback diff summary.');
     }
 
     console.log('Change description:', finalSummary);

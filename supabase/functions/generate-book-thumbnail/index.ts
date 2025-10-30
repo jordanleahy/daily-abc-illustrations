@@ -82,46 +82,54 @@ serve(async (req) => {
       promptLength: imagePrompt?.length || 0
     }), `}`);
 
-    // Generate image using OpenAI gpt-image-1
-    console.log(`[${new Date().toISOString()}] [INFO] [in-progress] [OPENAI_IMAGE] - Generating image with gpt-image-1... {`, JSON.stringify({
+    // Generate image using Lovable AI Gateway with Gemini image model
+    console.log(`[${new Date().toISOString()}] [INFO] [in-progress] [LOVABLE_IMAGE] - Generating image with Gemini 2.5 Flash Image... {`, JSON.stringify({
       requestId,
       promptLength: imagePrompt?.length || 0
     }), `}`);
 
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      throw new Error('OpenAI API key not configured');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      throw new Error('Lovable API key not configured');
     }
 
-    const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
+    const imageResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-image-1',
-        prompt: imagePrompt,
-        size: '1536x1024', // 3:2 aspect ratio, supported by gpt-image-1
-        quality: 'high',
-        output_format: 'png',
+        model: 'google/gemini-2.5-flash-image-preview',
+        messages: [
+          {
+            role: 'user',
+            content: imagePrompt
+          }
+        ],
+        modalities: ['image', 'text']
       }),
     });
 
     if (!imageResponse.ok) {
+      if (imageResponse.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      } else if (imageResponse.status === 402) {
+        throw new Error('Payment required. Please add credits to your Lovable AI workspace.');
+      }
       const errorText = await imageResponse.text();
-      console.error(`[${new Date().toISOString()}] [ERROR] [OPENAI_IMAGE] - OpenAI API error:`, errorText);
-      throw new Error(`OpenAI API error: ${imageResponse.status} ${errorText}`);
+      console.error(`[${new Date().toISOString()}] [ERROR] [LOVABLE_IMAGE] - Lovable AI Gateway error:`, errorText);
+      throw new Error(`Lovable AI Gateway error: ${imageResponse.status} ${errorText}`);
     }
 
     const imageData = await imageResponse.json();
-    const base64Image = imageData.data[0]?.b64_json;
+    const base64Image = imageData.choices?.[0]?.message?.images?.[0]?.image_url?.url?.split(',')[1];
 
     if (!base64Image) {
-      throw new Error('No image data returned from OpenAI');
+      throw new Error('No image data returned from Lovable AI Gateway');
     }
 
-    console.log(`[${new Date().toISOString()}] [INFO] [complete] [OPENAI_IMAGE] - Image generated successfully {`, JSON.stringify({
+    console.log(`[${new Date().toISOString()}] [INFO] [complete] [LOVABLE_IMAGE] - Image generated successfully {`, JSON.stringify({
       requestId,
       duration: 5000,
       hasImageData: !!base64Image

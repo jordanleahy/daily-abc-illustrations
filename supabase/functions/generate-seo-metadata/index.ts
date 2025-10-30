@@ -63,11 +63,11 @@ serve(async (req) => {
     console.log('Generating SEO metadata for book:', bookId, 'daily published:', dailyPublishedId);
 
     // Validate required environment variables
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
-    if (!openAIApiKey || !supabaseUrl || !supabaseServiceKey) {
+    if (!lovableApiKey || !supabaseUrl || !supabaseServiceKey) {
       throw new Error('Missing required environment variables');
     }
 
@@ -116,27 +116,31 @@ Return only JSON format:
   "description": "optimized description here"
 }`;
 
-    console.log('Calling OpenAI for SEO optimization...');
+    console.log('Calling Lovable AI Gateway for SEO optimization...');
     
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
+        model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: 'You are a SEO specialist.' },
           { role: 'user', content: prompt }
         ],
-        max_tokens: 300,
-        temperature: 0.7,
+        max_completion_tokens: 300,
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again later.');
+      } else if (response.status === 402) {
+        throw new Error('Payment required. Please add credits to your Lovable AI workspace.');
+      }
+      throw new Error(`Lovable AI Gateway error: ${response.statusText}`);
     }
 
     const data = await response.json();
@@ -187,7 +191,7 @@ Return only JSON format:
           bookDescription
         },
         generation_metadata: {
-          model: 'gpt-4o-mini',
+          model: 'google/gemini-2.5-flash',
           prompt_tokens: data.usage?.prompt_tokens,
           completion_tokens: data.usage?.completion_tokens,
           total_tokens: data.usage?.total_tokens

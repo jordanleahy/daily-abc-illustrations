@@ -234,9 +234,9 @@ serve(async (req) => {
 
     currentStep = 'GENERATE_IMAGE';
     const aiStartTime = Date.now();
-    const model = 'google/gemini-2.5-flash-image-preview';
+    const model = 'google/gemini-2.5-flash-image';
 
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling Gemini to generate image with locked colors...', { 
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling Gemini Nano banana to generate image with locked colors...', { 
       requestId,
       model,
       letter: pageData.letter,

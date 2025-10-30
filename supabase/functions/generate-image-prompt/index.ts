@@ -232,18 +232,39 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
 
     currentStep = 'LOVABLE_AI_API';
     const aiStartTime = Date.now();
+
+    // Normalize model names stored in agents to the Lovable AI supported identifiers
+    const normalizeModel = (m: string | null | undefined): string => {
+      if (!m) return 'google/gemini-2.5-flash';
+      const s = m.toLowerCase();
+      if (s.includes('gemini')) {
+        // Ensure proper provider prefix for Gemini
+        return s.startsWith('google/') ? m : 'google/gemini-2.5-flash';
+      }
+      if (s.includes('gpt-5')) {
+        if (s.includes('nano')) return 'openai/gpt-5-nano';
+        if (s.includes('mini')) return 'openai/gpt-5-mini';
+        return 'openai/gpt-5';
+      }
+      // Default to a fast, capable model
+      return 'google/gemini-2.5-flash';
+    };
+
+    const normalizedModel = normalizeModel(agentConfig.model);
+
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling Lovable AI for image prompt generation...', { 
       requestId,
-      model: agentConfig.model,
+      model: normalizedModel,
+      rawModel: agentConfig.model,
       maxTokens: agentConfig.max_completion_tokens,
       topP: agentConfig.top_p
     });
 
     // Call Lovable AI Gateway using the agent's configuration and instructions from database
     // Build request body based on model type
-    const isGeminiModel = agentConfig.model?.startsWith('google/');
+    const isGeminiModel = normalizedModel.startsWith('google/');
     const requestBody: any = {
-      model: agentConfig.model,
+      model: normalizedModel,
       messages: [
         {
           role: 'system',
@@ -267,8 +288,9 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
       if (agentConfig.max_completion_tokens) {
         requestBody.max_completion_tokens = agentConfig.max_completion_tokens;
       }
-      if (agentConfig.top_p) {
-        requestBody.top_p = parseFloat(agentConfig.top_p);
+      const parsedTopP = parseFloat(agentConfig.top_p);
+      if (!Number.isNaN(parsedTopP)) {
+        requestBody.top_p = parsedTopP;
       }
     }
     

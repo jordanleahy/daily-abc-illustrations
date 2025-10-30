@@ -66,7 +66,7 @@ export default function GoogleChat() {
             </div>
             <CardDescription>
               Discuss your book ideas with Google's powerful AI assistant. 
-              Once ready, generate a complete ABC book instantly.
+              Once ready, generate a complete book instantly.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -79,7 +79,7 @@ export default function GoogleChat() {
                     Start a conversation about your book idea
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Example: "I want to create an ABC book about space exploration"
+                    Example: "I want to create a children's book about space exploration"
                   </p>
                 </div>
               ) : (
@@ -152,7 +152,7 @@ export default function GoogleChat() {
                   size="lg"
                 >
                   <Book className="mr-2 h-5 w-5" />
-                  {createBookMutation.isPending ? 'Creating Book...' : 'Generate ABC Book'}
+                  {createBookMutation.isPending ? 'Creating Book...' : 'Generate Book'}
                 </Button>
               </div>
             )}
@@ -167,7 +167,7 @@ export default function GoogleChat() {
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <p>1. 💬 Chat with Google Gemini about your book concept</p>
             <p>2. 🎨 Discuss themes, learning objectives, and style</p>
-            <p>3. 📚 Click "Generate ABC Book" to create a complete 26-page book</p>
+            <p>3. 📚 Click "Generate Book" to create your complete book</p>
             <p>4. ✏️ Review and edit your generated book in the editor</p>
           </CardContent>
         </Card>

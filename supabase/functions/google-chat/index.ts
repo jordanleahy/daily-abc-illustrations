@@ -11,9 +11,51 @@ interface MessageContent {
   };
 }
 
+interface SuggestedAction {
+  id: string;
+  label: string;
+  value: string;
+}
+
 interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string | MessageContent[];
+}
+
+// Optional parser for AI suggestions
+function parseSuggestions(aiResponse: string): { 
+  cleanContent: string; 
+  suggestedActions?: SuggestedAction[] 
+} {
+  const suggestRegex = /\[SUGGEST\]([\s\S]*?)\[\/SUGGEST\]/;
+  const match = aiResponse.match(suggestRegex);
+  
+  if (!match) {
+    return { cleanContent: aiResponse };
+  }
+  
+  const suggestionsText = match[1].trim();
+  const cleanContent = aiResponse.replace(suggestRegex, '').trim();
+  
+  const suggestedActions = suggestionsText
+    .split('\n')
+    .filter(line => line.trim())
+    .map(line => {
+      const colonIndex = line.indexOf(':');
+      if (colonIndex === -1) return null;
+      
+      const id = line.substring(0, colonIndex).trim();
+      const label = line.substring(colonIndex + 1).trim();
+      
+      return {
+        id,
+        label,
+        value: id === 'custom' ? '' : `${label}`
+      };
+    })
+    .filter((action): action is SuggestedAction => action !== null);
+  
+  return { cleanContent, suggestedActions: suggestedActions.length > 0 ? suggestedActions : undefined };
 }
 
 serve(async (req) => {
@@ -69,7 +111,26 @@ serve(async (req) => {
     // Prepare messages with system prompt
     const systemMessage: Message = {
       role: 'system',
-      content: 'You are a helpful AI assistant for creating educational children\'s books. Help users brainstorm ideas, discuss themes, learning objectives, and styles. When users share reference images, analyze them for inspiration including color schemes, art styles, and visual elements. Be creative, encouraging, and provide detailed suggestions.'
+      content: `You are a helpful AI assistant for creating educational children's books. Help users brainstorm ideas, discuss themes, learning objectives, and styles. When users share reference images, analyze them for inspiration including color schemes, art styles, and visual elements. Be creative, encouraging, and provide detailed suggestions.
+
+OPTIONAL QUICK-REPLY SUGGESTIONS:
+When asking questions that would benefit from quick options, you MAY (but are not required to) offer 3-5 specific choices using this format at the END of your response:
+
+[SUGGEST]
+choice-id-1: Choice Label 1
+choice-id-2: Choice Label 2
+choice-id-3: Choice Label 3
+custom: ✨ I have my own idea
+[/SUGGEST]
+
+IMPORTANT GUIDELINES:
+- Only use suggestions when they genuinely help (not every response needs them)
+- Always allow custom responses - never force users to pick from your list
+- If user types freely instead of clicking, respect their style and adjust
+- Keep suggestions SHORT and actionable (2-5 words max per label)
+- Natural conversation flow is more important than structured choices
+- For CVC books, helpful questions might include: theme, age range, art style, number of words
+- Adapt your approach based on how the user prefers to communicate`
     };
 
     // Format messages for Gemini (handles both text and multimodal content)
@@ -127,12 +188,18 @@ serve(async (req) => {
     }
 
     const aiResponse = await response.json();
-    const content = aiResponse.choices?.[0]?.message?.content || 'No response generated';
+    const rawContent = aiResponse.choices?.[0]?.message?.content || 'No response generated';
 
-    console.log('Lovable AI response received, length:', content.length);
+    console.log('Lovable AI response received, length:', rawContent.length);
+
+    // Parse optional suggestions
+    const { cleanContent, suggestedActions } = parseSuggestions(rawContent);
 
     return new Response(
-      JSON.stringify({ content }),
+      JSON.stringify({ 
+        content: cleanContent,
+        ...(suggestedActions && { suggestedActions })
+      }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

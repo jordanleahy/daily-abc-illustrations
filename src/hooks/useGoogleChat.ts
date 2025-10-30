@@ -11,9 +11,16 @@ interface MessageContent {
   };
 }
 
-interface Message {
+export interface SuggestedAction {
+  id: string;
+  label: string;
+  value: string;
+}
+
+export interface Message {
   role: 'user' | 'assistant' | 'system';
   content: string | MessageContent[];
+  suggestedActions?: SuggestedAction[];
 }
 
 export const useGoogleChat = () => {
@@ -26,6 +33,13 @@ export const useGoogleChat = () => {
       toast.error('Please sign in to use Google chat');
       return;
     }
+
+    // Clear suggestions from last assistant message when user sends any message
+    setMessages(prev => prev.map((msg, idx) => 
+      idx === prev.length - 1 && msg.role === 'assistant' 
+        ? { ...msg, suggestedActions: undefined } 
+        : msg
+    ));
 
     // Add user message
     const userMessage: Message = { role: 'user', content };
@@ -67,7 +81,11 @@ export const useGoogleChat = () => {
       }
 
       if (data?.content) {
-        const assistantMessage: Message = { role: 'assistant', content: data.content };
+        const assistantMessage: Message = { 
+          role: 'assistant', 
+          content: data.content,
+          suggestedActions: data.suggestedActions
+        };
         setMessages(prev => [...prev, assistantMessage]);
       } else {
         throw new Error('No response from AI assistant');

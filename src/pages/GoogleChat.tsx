@@ -5,7 +5,7 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ImageUpload } from '@/components/ImageUpload';
-import { useGoogleChat } from '@/hooks/useGoogleChat';
+import { useGoogleChat, type SuggestedAction } from '@/hooks/useGoogleChat';
 import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
 import { toast } from 'sonner';
 import { BOOK_TYPES } from '@/config/bookTypes';
@@ -59,6 +59,19 @@ export default function GoogleChat() {
 
   const handleBookTypeSelect = async (bookType: typeof BOOK_TYPES[0]) => {
     await sendMessage(bookType.prompt);
+  };
+
+  const handleQuickReply = async (action: SuggestedAction) => {
+    if (action.value) {
+      // Send the predefined response
+      await sendMessage(action.value);
+    } else {
+      // "Custom" option - just focus the input field
+      const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
+      if (inputElement) {
+        inputElement.focus();
+      }
+    }
   };
 
   const handleCreateBook = async () => {
@@ -195,16 +208,40 @@ export default function GoogleChat() {
                   key={idx}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                 >
-                  <div
-                    className={`max-w-[80%] rounded-lg px-4 py-3 ${
-                      msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
-                  >
-                    <p className="text-sm whitespace-pre-wrap">
-                      {typeof msg.content === 'string' ? msg.content : 'Image uploaded'}
-                    </p>
+                  <div className="max-w-[80%] space-y-2">
+                    <div
+                      className={`rounded-lg px-4 py-3 ${
+                        msg.role === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      <p className="text-sm whitespace-pre-wrap">
+                        {typeof msg.content === 'string' ? msg.content : 'Image uploaded'}
+                      </p>
+                    </div>
+                    
+                    {/* Quick Reply Buttons */}
+                    {msg.role === 'assistant' && msg.suggestedActions && idx === messages.length - 1 && !isLoading && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground px-1">
+                          Quick options (or type your own below):
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {msg.suggestedActions.map((action) => (
+                            <Button
+                              key={action.id}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleQuickReply(action)}
+                              className="text-xs h-8"
+                            >
+                              {action.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}

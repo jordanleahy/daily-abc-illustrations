@@ -173,13 +173,11 @@ Create a comprehensive JSON prompt that:
 2. Describes the specific scene for this page
 3. Specifies composition, layout, and visual hierarchy
 4. Ensures this page will be visually consistent with other pages in the book
-5. Emphasizes the educational focus (phonics, letter recognition)
 
 Return your response as a JSON object with this structure:
 {
   "subject": {
     "primary": "main subject/character",
-    "letter": "letter focus",
     "characterDetails": "detailed description referencing style guide"
   },
   "scene": {
@@ -197,11 +195,6 @@ Return your response as a JSON object with this structure:
     "layout": "composition structure",
     "focusPoint": "where viewer's eye should go",
     "characterPosition": "where character should be placed"
-  },
-  "educational": {
-    "letterEmphasis": "how to emphasize the letter",
-    "ageAppropriate": true,
-    "learningGoal": "what this page teaches"
   },
   "technicalSpecs": {
     "aspectRatio": "aspect ratio",

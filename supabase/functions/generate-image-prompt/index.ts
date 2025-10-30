@@ -240,27 +240,45 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
     });
 
     // Call Lovable AI Gateway using the agent's configuration and instructions from database
+    // Build request body based on model type
+    const isGeminiModel = agentConfig.model?.startsWith('google/');
+    const requestBody: any = {
+      model: agentConfig.model,
+      messages: [
+        {
+          role: 'system',
+          content: deployedPrompt.content
+        },
+        {
+          role: 'user',
+          content: pageContent
+        }
+      ],
+    };
+    
+    // Add parameters based on model type
+    if (isGeminiModel) {
+      // Gemini models support max_completion_tokens but not top_p
+      if (agentConfig.max_completion_tokens) {
+        requestBody.max_completion_tokens = agentConfig.max_completion_tokens;
+      }
+    } else {
+      // OpenAI/other models support both parameters
+      if (agentConfig.max_completion_tokens) {
+        requestBody.max_completion_tokens = agentConfig.max_completion_tokens;
+      }
+      if (agentConfig.top_p) {
+        requestBody.top_p = parseFloat(agentConfig.top_p);
+      }
+    }
+    
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: agentConfig.model,
-        max_completion_tokens: agentConfig.max_completion_tokens,
-        top_p: parseFloat(agentConfig.top_p),
-        messages: [
-          {
-            role: 'system',
-            content: deployedPrompt.content
-          },
-          {
-            role: 'user',
-            content: pageContent
-          }
-        ],
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     const aiDuration = Date.now() - aiStartTime;

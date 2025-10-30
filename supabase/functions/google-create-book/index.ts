@@ -49,13 +49,18 @@ Based on the conversation, determine the most appropriate book format and create
 
 Book Types:
 - "alphabet": ABC learning books with 26 pages (A-Z), each page teaching a letter
+  * For alphabet books, check if user specified letter case:
+    - "lowercase" or "lowercase letters": use a, b, c... format
+    - "uppercase" or "uppercase letters": use A, B, C... format
+    - "both" or "both cases": use Aa, Bb, Cc... format
+    - Default to uppercase (A, B, C...) if not specified
 - "story": Narrative story books with 8-16 pages telling a cohesive story
 - "educational": Topic-based learning books with 10-20 pages covering different aspects
 - "chapter": Longer books with 15-26 pages divided into chapters
 
 IMPORTANT: 
 - For NON-alphabet books, do NOT include "letter" fields
-- For alphabet books, include "letter" field with values A-Z
+- For alphabet books, include "letter" field with values matching the specified case format
 - Adjust page count based on book type and complexity
 - Make content age-appropriate and engaging
 
@@ -65,9 +70,10 @@ Return ONLY a JSON object with this structure (no markdown, no code blocks):
   "category": "string",
   "bookDescription": "string",
   "bookType": "story|alphabet|educational|chapter",
+  "letterCase": "lowercase|uppercase|both (only for alphabet books)",
   "pages": [
     {
-      "letter": "optional - only for alphabet books",
+      "letter": "required for alphabet books - use format matching letterCase",
       "pageNumber": 1,
       "title": "string",
       "description": "string",

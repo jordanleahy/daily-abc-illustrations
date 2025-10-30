@@ -2,10 +2,8 @@ import { useState, useRef, lazy, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Toggle } from '@/components/ui/toggle';
-import { RefreshCw, FileText, Copy, Trash2, Image, Upload, Download, Type } from 'lucide-react';
+import { RefreshCw, Copy, Trash2, Image, Upload, Download, Type } from 'lucide-react';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
-import { PageSystemPromptEditor } from './PageSystemPromptEditor';
 import { PageImageSection } from '@/components/PageImageSection';
 
 const ImageTextOverlayEditor = lazy(() =>
@@ -43,20 +41,13 @@ interface PageCardProps {
 export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCardProps) {
   const { 
     currentPrompt, 
-    refreshData, 
-    isEditing: isEditingPrompt,
-    editedContent,
-    startEdit: startEditPrompt,
-    cancelEdit: cancelEditPrompt,
-    saveEdit: saveEditPrompt,
-    updateEditedContent
+    refreshData
   } = usePageSystemPrompt(page.id);
   const { user } = useAuthContext();
   const deletePage = useDeletePage();
   const { currentImage, uploadImage } = usePageImageUrls(page.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isRegenerating, setIsRegenerating] = useState(false);
-  const [showPrompt, setShowPrompt] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
   const [showTextOverlayEditor, setShowTextOverlayEditor] = useState(false);
@@ -250,18 +241,6 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
     setShowDeleteConfirm(false);
   };
 
-  const handleCopyPrompt = async () => {
-    if (!currentPrompt?.content) return;
-
-    try {
-      await navigator.clipboard.writeText(currentPrompt.content);
-      toast.success('System prompt copied to clipboard');
-    } catch (error) {
-      console.error('Error copying to clipboard:', error);
-      toast.error('Failed to copy to clipboard');
-    }
-  };
-
   const handleCopyImagePrompt = async () => {
     if (!currentImage?.prompt_used) {
       toast.error('No image prompt available');
@@ -412,18 +391,6 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
             >
               <Trash2 className="w-3 h-3 text-destructive" />
             </Button>
-            {currentPrompt && (
-              <Toggle
-                size="sm"
-                className="w-6 h-6"
-                pressed={showPrompt}
-                onPressedChange={setShowPrompt}
-                title="Toggle between image and prompt view"
-                aria-label="Toggle between image and prompt view"
-              >
-                <FileText className="w-3 h-3" />
-              </Toggle>
-            )}
           </div>
           <div className="flex items-center gap-2">
             {currentPrompt && (
@@ -485,57 +452,11 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
         )}
       </CardHeader>
       <CardContent className="p-4 space-y-3">
-        {showPrompt && currentPrompt ? (
-          <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden flex flex-col">
-            <div className="flex items-center justify-between text-sm font-medium text-foreground p-3 pb-2 border-b border-border/50">
-              <span>System Prompt:</span>
-              <div className="flex gap-1">
-                {!isEditingPrompt && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-6 h-6"
-                    onClick={startEditPrompt}
-                    title="Edit system prompt"
-                    aria-label="Edit system prompt"
-                  >
-                    <FileText className="w-3 h-3" />
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-6 h-6"
-                  onClick={handleCopyPrompt}
-                  title="Copy system prompt to clipboard"
-                  aria-label="Copy system prompt to clipboard"
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-            <div className="flex-1 p-3 overflow-y-auto">
-              {isEditingPrompt ? (
-                <PageSystemPromptEditor
-                  content={editedContent}
-                  onContentChange={updateEditedContent}
-                  onSave={saveEditPrompt}
-                  onCancel={cancelEditPrompt}
-                />
-              ) : (
-                <div className="text-sm text-muted-foreground whitespace-pre-wrap">
-                  {currentPrompt.content}
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          <PageImageSection 
-            pageId={page.id}
-            bookId={bookId}
-            enableMobileSave={true}
-          />
-        )}
+        <PageImageSection 
+          pageId={page.id}
+          bookId={bookId}
+          enableMobileSave={true}
+        />
       </CardContent>
 
       {/* Hidden file input for direct upload */}

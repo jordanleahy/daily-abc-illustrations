@@ -236,15 +236,21 @@ export function usePageImageUrls(pageId: string) {
     };
   }, [currentImage?.id, currentImage?.generation_status, pageId, queryClient]);
 
-  const refreshData = () => {
+  const refreshData = async () => {
     console.log(`[usePageImageUrls] Manual refresh requested for page ${pageId}`);
     queryClient.invalidateQueries({ queryKey: ['page-image-latest', pageId] });
     queryClient.invalidateQueries({ queryKey: ['page-image-versions', pageId] });
-    // Also force immediate refetch
-    setTimeout(() => {
-      queryClient.refetchQueries({ queryKey: ['page-image-latest', pageId] });
-      queryClient.refetchQueries({ queryKey: ['page-image-versions', pageId] });
-    }, 100);
+    
+    // Wait a bit for database to be consistent, then refetch
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Wait for refetch to complete
+    await Promise.all([
+      queryClient.refetchQueries({ queryKey: ['page-image-latest', pageId] }),
+      queryClient.refetchQueries({ queryKey: ['page-image-versions', pageId] })
+    ]);
+    
+    console.log(`[usePageImageUrls] ✅ Refresh complete`);
   };
 
   // Upload image function

@@ -385,7 +385,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               Paste from Clipboard
             </Button>
 
-            {/* View Prompt button */}
+            {/* Copy Prompt button */}
             {hasDeployedPrompt && currentPrompt?.content && (
               <Button 
                 onClick={() => setShowPromptViewer(true)}
@@ -394,7 +394,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
                 className="w-full max-w-xs"
               >
                 <Copy className="w-4 h-4 mr-2" />
-                View Prompt
+                Copy Prompt
               </Button>
             )}
           </div>

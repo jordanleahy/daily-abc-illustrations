@@ -294,6 +294,36 @@ serve(async (req) => {
 
     const data = await response.json();
     
+    // Extract usage data from API response
+    const usage = data?.usage;
+    const promptTokens = usage?.prompt_tokens || 0;
+    const completionTokens = usage?.completion_tokens || 0;
+    const totalTokens = usage?.total_tokens || 0;
+    
+    // Calculate cost based on actual API usage
+    function calculateCostInCents(modelName: string, usageData: any): number {
+      const pricing = {
+        'google/gemini-2.5-flash-image': {
+          inputPerMillion: 15,  // $0.015 per 1M input tokens
+          outputPerMillion: 60, // $0.060 per 1M output tokens
+          imageGeneration: 10   // $0.10 per image (base cost)
+        }
+      };
+      
+      const modelPricing = pricing[modelName] || pricing['google/gemini-2.5-flash-image'];
+      
+      // Calculate token costs
+      const inputCost = (usageData.prompt_tokens / 1_000_000) * modelPricing.inputPerMillion * 100;
+      const outputCost = (usageData.completion_tokens / 1_000_000) * modelPricing.outputPerMillion * 100;
+      
+      // Add image generation base cost
+      const totalCost = inputCost + outputCost + modelPricing.imageGeneration;
+      
+      return Math.ceil(totalCost); // Round up to nearest cent
+    }
+    
+    const calculatedCost = usage ? calculateCostInCents(model, usage) : 10; // Default to 10 cents if no usage data
+    
     // Extract base64 image from response
     const imageData = data?.choices?.[0]?.message?.images?.[0]?.image_url?.url;
     
@@ -312,7 +342,13 @@ serve(async (req) => {
       requestId, 
       duration: aiDuration,
       imageDataLength: imageData.length,
-      letter: pageData.letter
+      letter: pageData.letter,
+      usage: {
+        promptTokens,
+        completionTokens,
+        totalTokens,
+        calculatedCostCents: calculatedCost
+      }
     });
 
     // Upload image to Supabase storage
@@ -392,6 +428,12 @@ serve(async (req) => {
         generation_started_at: new Date(aiStartTime).toISOString(),
         generation_completed_at: new Date().toISOString(),
         generation_duration_ms: aiDuration,
+        generation_cost_cents: calculatedCost,
+        usage_metadata: usage ? {
+          prompt_tokens: usage.prompt_tokens,
+          completion_tokens: usage.completion_tokens,
+          total_tokens: usage.total_tokens
+        } : null,
         prompt_used: colors 
           ? `Page Prompt (v${pagePrompt.version_number}) + Color Locked: ${colors.primary.hex}, ${colors.secondary.hex}, ${colors.accent.hex}`
           : `Page Prompt (v${pagePrompt.version_number})`

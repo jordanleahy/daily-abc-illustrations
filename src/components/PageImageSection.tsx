@@ -3,12 +3,13 @@ import { Card } from "@/components/ui/card";
 import { Shimmer } from "@/components/ui/shimmer";
 import { usePageImageUrls } from "@/hooks/usePageImageUrls";
 import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
+import { usePageGenerationCost } from "@/hooks/usePageGenerationCost";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/process";
 import { useState, useEffect } from "react";
-import { Loader2, Upload, Sparkles, Clipboard, Copy, ArrowLeft } from "lucide-react";
+import { Loader2, Upload, Sparkles, Clipboard, Copy, ArrowLeft, DollarSign } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
 
 interface PageImageSectionProps {
@@ -23,6 +24,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
   const { user } = useAuthContext();
   const { currentImage, versions, isLoading, createImageRecord, uploadImage, refreshData } = usePageImageUrls(pageId);
   const { currentPrompt } = usePageSystemPrompt(pageId);
+  const { data: costData } = usePageGenerationCost(pageId);
   const [isLocalGenerating, setIsLocalGenerating] = useState(false);
   
   const [internalShowUpload, setInternalShowUpload] = useState(false);
@@ -313,8 +315,22 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
           {!isUserUploaded && (
             <div className="absolute top-2 left-2">
               <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                <Sparkles className="w-3 h-3" />
-                AI Generated
+                {costData && costData.totalCostCents > 0 ? (
+                  <>
+                    <DollarSign className="w-3 h-3" />
+                    <span>{costData.totalCostFormatted}</span>
+                    {costData.versionCount > 1 && (
+                      <span className="opacity-70 ml-0.5">
+                        ({costData.versionCount})
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3 h-3" />
+                    AI Generated
+                  </>
+                )}
               </div>
             </div>
           )}

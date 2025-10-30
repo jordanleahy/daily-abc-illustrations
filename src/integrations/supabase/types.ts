@@ -1033,6 +1033,7 @@ export type Database = {
           created_at: string
           error_message: string | null
           generation_completed_at: string | null
+          generation_cost_cents: number | null
           generation_duration_ms: number | null
           generation_started_at: string | null
           generation_status: string
@@ -1044,6 +1045,7 @@ export type Database = {
           source_type: string
           text_overlay_config: Json | null
           updated_at: string
+          usage_metadata: Json | null
           user_id: string
           version_number: number
         }
@@ -1052,6 +1054,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           generation_completed_at?: string | null
+          generation_cost_cents?: number | null
           generation_duration_ms?: number | null
           generation_started_at?: string | null
           generation_status?: string
@@ -1063,6 +1066,7 @@ export type Database = {
           source_type?: string
           text_overlay_config?: Json | null
           updated_at?: string
+          usage_metadata?: Json | null
           user_id: string
           version_number?: number
         }
@@ -1071,6 +1075,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           generation_completed_at?: string | null
+          generation_cost_cents?: number | null
           generation_duration_ms?: number | null
           generation_started_at?: string | null
           generation_status?: string
@@ -1082,6 +1087,7 @@ export type Database = {
           source_type?: string
           text_overlay_config?: Json | null
           updated_at?: string
+          usage_metadata?: Json | null
           user_id?: string
           version_number?: number
         }

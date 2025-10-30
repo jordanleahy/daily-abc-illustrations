@@ -180,14 +180,119 @@ export default function BookDetail() {
     }
   };
 
+  const addProgressMessage = (message: ProgressMessage) => {
+    setProgressMessages(prev => [...prev, message]);
+  };
+
   const generateAllPagePrompts = async () => {
-    // Placeholder for generating all page prompts
+    if (!user || !book?.id || !pages || pages.length === 0) {
+      toast.error('Unable to generate prompts');
+      return;
+    }
+    
     setGenerateAllPromptsLoading(true);
+    setProgressMessages([]);
     
     try {
-      // TODO: Implement the actual logic for generating all page prompts
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulated delay
-      toast.success('All page prompts generated successfully');
+      // Check if book has a deployed style guide (book_system_prompts)
+      if (!currentPrompt?.isDeployed) {
+        toast.error('Please generate and deploy a book style guide first');
+        setGenerateAllPromptsLoading(false);
+        return;
+      }
+      
+      let successCount = 0;
+      let skippedCount = 0;
+      let failCount = 0;
+      
+      // Process pages sequentially to avoid rate limits
+      for (let i = 0; i < pages.length; i++) {
+        const page = pages[i];
+        
+        // Check if this page already has a deployed prompt
+        const { data: existingPrompts } = await supabase
+          .from('page_system_prompts')
+          .select('*')
+          .eq('page_id', page.id)
+          .eq('is_deployed', true)
+          .limit(1);
+        
+        if (existingPrompts && existingPrompts.length > 0) {
+          skippedCount++;
+          addProgressMessage({
+            step: `Page ${i + 1}/${pages.length}`,
+            message: `⊘ Skipped "${page.title}" (prompt exists)`,
+            status: ProcessStatus.COMPLETE,
+            timestamp: new Date().toISOString()
+          });
+          continue;
+        }
+        
+        // Generate prompt for this page
+        addProgressMessage({
+          step: `Page ${i + 1}/${pages.length}`,
+          message: `Generating prompt for "${page.title}"...`,
+          status: ProcessStatus.IN_PROGRESS,
+          timestamp: new Date().toISOString()
+        });
+        
+        try {
+          const { data, error } = await supabase.functions.invoke('generate-image-prompt', {
+            body: { pageId: page.id, userId: user.id }
+          });
+          
+          if (error) {
+            // Check for rate limit or payment errors
+            if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
+              throw new Error('Rate limit exceeded - please wait');
+            } else if (error.message?.includes('402') || error.message?.includes('Payment')) {
+              throw new Error('Credits required - please add funds');
+            }
+            throw error;
+          }
+          
+          if (!data?.success) {
+            throw new Error(data?.error || 'Prompt generation failed');
+          }
+          
+          successCount++;
+          addProgressMessage({
+            step: `Page ${i + 1}/${pages.length}`,
+            message: `✓ Generated prompt for "${page.title}"`,
+            status: ProcessStatus.COMPLETE,
+            timestamp: new Date().toISOString()
+          });
+          
+          // Small delay to avoid rate limits (Lovable AI Gateway has rate limiting)
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+        } catch (error: any) {
+          failCount++;
+          const errorMsg = error.message || 'Unknown error';
+          
+          addProgressMessage({
+            step: `Page ${i + 1}/${pages.length}`,
+            message: `✗ Failed for "${page.title}": ${errorMsg}`,
+            status: ProcessStatus.ERROR,
+            timestamp: new Date().toISOString()
+          });
+          
+          // If rate limited, add longer delay before continuing
+          if (errorMsg.includes('Rate limit')) {
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+        }
+      }
+      
+      // Final summary toast
+      if (failCount === 0 && skippedCount === 0) {
+        toast.success(`Successfully generated ${successCount} prompts!`);
+      } else if (failCount === 0) {
+        toast.success(`Generated ${successCount} prompts, skipped ${skippedCount} existing.`);
+      } else {
+        toast.warning(`Generated ${successCount} prompts, skipped ${skippedCount}, ${failCount} failed.`);
+      }
+      
     } catch (error) {
       console.error('Error generating page prompts:', error);
       toast.error('Failed to generate page prompts');

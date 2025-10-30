@@ -2,20 +2,22 @@
  * What Changed in Agent Edge Function
  * 
  * This function analyzes the differences between two agent configurations and provides
- * a user-friendly description of what changed using OpenAI's GPT model.
+ * a user-friendly description of what changed using AI via Lovable AI Gateway.
  * 
  * Purpose:
  * - Compares original and new agent configurations (using database field structure)
  * - Uses AI to generate human-readable summaries of changes
  * - Provides fallback logic if AI analysis fails
  * - Helps users understand what modifications were made to their agents
+ * - Supports multi-provider agents (OpenAI, Google, DeepSeek)
  * 
  * Features:
- * - AI-powered change analysis using GPT-5-mini
+ * - AI-powered change analysis using Google Gemini 2.5 Flash via Lovable AI Gateway
  * - Comprehensive fallback system for reliability
  * - CORS support for web application access
  * - Detailed logging for debugging
  * - Always returns success (200) to not interrupt save workflows
+ * - Rate limit and payment error handling
  * 
  * Usage:
  * POST request with body: {
@@ -30,13 +32,14 @@
  *   intent: string,
  *   operational_status: 'online' | 'offline' | 'processing',
  *   instructions: string,
+ *   provider: 'openai' | 'google' | 'deepseek',
  *   model: string,
  *   max_completion_tokens: number,
  *   top_p: number
  * }
  * 
  * Environment Variables Required:
- * - OPENAI_API_KEY: Your OpenAI API key for change analysis
+ * - LOVABLE_API_KEY: API key for Lovable AI Gateway (auto-configured)
  * - SUPABASE_URL: Supabase project URL (for future database integration)
  * - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key (for future use)
  * 
@@ -45,7 +48,7 @@
  * - With Error: { "whatChanged": "Fallback description", "error": "Error details" }
  * 
  * Examples of Generated Descriptions:
- * - "Instructions expanded and model changed to gpt-5-2025-08-07."
+ * - "Instructions expanded and model changed to google/gemini-2.5-pro."
  * - "Name updated to 'ABC Cards Helper' and status changed to online."
  * - "Minor configuration updates made."
  */

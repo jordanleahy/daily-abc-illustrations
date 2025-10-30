@@ -112,7 +112,7 @@ export const AgentIdentityCard = ({
           defaultMessage="Agent configuration ready"
         />
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4 border-t">
           <div>
             <label className="text-xs font-medium text-muted-foreground">Version</label>
             <p className="text-sm font-mono">{config.version || '1.0'}</p>
@@ -127,12 +127,6 @@ export const AgentIdentityCard = ({
             <label className="text-xs font-medium text-muted-foreground">Last Modified</label>
             <p className="text-sm">
               {config.lastModified ? new Date(config.lastModified).toLocaleString() : 'Unknown'}
-            </p>
-          </div>
-          <div>
-            <label className="text-xs font-medium text-muted-foreground">Assistant ID</label>
-            <p className="text-sm font-mono text-muted-foreground">
-              {config.assistantId || 'Not connected'}
             </p>
           </div>
         </div>

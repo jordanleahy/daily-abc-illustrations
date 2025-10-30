@@ -2,21 +2,23 @@
  * Chat Edge Function for ABC Cards Agent
  * 
  * This function provides an API endpoint for chat interactions using the user's configured ABC Cards agent.
- * It retrieves agent configuration from the database and uses those settings for OpenAI API calls.
+ * It retrieves agent configuration from the database and uses those settings for AI API calls via Lovable AI Gateway.
  * 
  * Features:
+ * - Multi-provider support: OpenAI (GPT-5), Google (Gemini), DeepSeek
  * - Uses agent configuration from database (instructions, model, settings)
  * - Handles CORS for web application access
  * - Includes proper error handling and logging
  * - Supports conversation history through message arrays
  * - Requires user authentication to access agent config
+ * - Vision support for image-based interactions
  * 
  * Usage:
  * POST request with body: { "messages": [{ "role": "user", "content": "Hello" }] }
  * Requires Authorization header with valid Supabase JWT token
  * 
  * Environment Variables Required:
- * - OPENAI_API_KEY: Your OpenAI API key for authentication
+ * - LOVABLE_API_KEY: API key for Lovable AI Gateway (auto-configured)
  * - SUPABASE_URL: Supabase project URL
  * - SUPABASE_SERVICE_ROLE_KEY: Supabase service role key (bypasses RLS)
  * 
@@ -149,11 +151,7 @@ serve(async (req) => {
     // Combine system message with formatted user messages
     const allMessages = [systemMessage, ...formattedMessages];
 
-    // Override model to vision-capable if images are present
-    if (hasImages && agentConfig.provider === 'openai') {
-      agentConfig.model = 'gpt-4o'; // Use vision-capable model for images
-    }
-
+    // Note: Modern models (GPT-5, Gemini 2.5, etc.) support vision natively when images are included
     console.log(`Making ${agentConfig.provider} API call with model:`, agentConfig.model);
 
     // Call AI provider using the shared utility

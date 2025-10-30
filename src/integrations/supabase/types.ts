@@ -16,7 +16,6 @@ export type Database = {
     Tables: {
       agents: {
         Row: {
-          assistant_id: string | null
           created_at: string
           id: string
           instructions: string
@@ -38,7 +37,6 @@ export type Database = {
           what_changed: string | null
         }
         Insert: {
-          assistant_id?: string | null
           created_at?: string
           id?: string
           instructions: string
@@ -60,7 +58,6 @@ export type Database = {
           what_changed?: string | null
         }
         Update: {
-          assistant_id?: string | null
           created_at?: string
           id?: string
           instructions?: string

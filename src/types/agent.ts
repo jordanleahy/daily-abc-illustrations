@@ -19,8 +19,6 @@ export interface AgentConfig {
   createdAt: Date;
   /** Timestamp of the last modification */
   lastModified: Date;
-  /** OpenAI Assistant ID for assistant-type agents */
-  assistantId?: string;
   /** System instructions that define the agent's behavior and responses */
   instructions: string;
   /** AI provider (OpenAI, DeepSeek, or Google) */

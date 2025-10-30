@@ -53,8 +53,6 @@ export interface AgentConfigFrontend extends BaseEntity, BaseAgentConfig, Versio
   createdAt: Date;
   /** Timestamp of the last modification */
   lastModified: Date;
-  /** OpenAI Assistant ID for assistant-type agents */
-  assistantId?: string;
   /** AI-generated description of what changed in the latest version */
   whatChanged?: string;
   /** Human-readable description of the last change */

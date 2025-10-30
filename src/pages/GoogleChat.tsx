@@ -1,11 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Sparkles, Book, Trash2, Image as ImageIcon } from 'lucide-react';
-import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
+import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { ImageUpload } from '@/components/ImageUpload';
 import { useGoogleChat } from '@/hooks/useGoogleChat';
 import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
@@ -74,156 +72,146 @@ export default function GoogleChat() {
   };
 
   return (
-    <StandardPageLayout 
-      title="Google Gemini Chat"
+    <PageLayout 
+      title="Chat with Google Gemini"
+      showHeader={true}
+      fullHeight={true}
+      className="flex flex-col h-screen"
     >
-      <div className="container max-w-5xl mx-auto py-8 space-y-6">
-        <Card className="border-2 border-primary/20 bg-gradient-to-br from-background to-primary/5">
-          <CardHeader>
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-6 w-6 text-primary" />
-              <CardTitle>Chat with Google Gemini</CardTitle>
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* Header */}
+        <div className="border-b bg-background px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5 text-primary" />
+            <div>
+              <h2 className="text-sm font-semibold">Google Gemini Chat</h2>
+              <p className="text-xs text-muted-foreground">
+                Discuss your book ideas with AI
+              </p>
             </div>
-            <CardDescription>
-              Discuss your book ideas with Google's powerful AI assistant. 
-              Once ready, generate a complete book instantly.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Messages Area */}
-            <ScrollArea ref={scrollRef} className="h-[400px] w-full rounded-lg border bg-background p-4">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center space-y-2">
-                  <Sparkles className="h-12 w-12 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    Start a conversation about your book idea
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Example: "I want to create a children's book about space exploration"
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {messages.map((msg, idx) => (
-                    <div
-                      key={idx}
-                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[80%] rounded-lg px-4 py-2 ${
-                          msg.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-foreground'
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap">
-                          {typeof msg.content === 'string' ? msg.content : 'Image uploaded'}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                  {isLoading && (
-                    <div className="flex justify-start">
-                      <div className="max-w-[80%] rounded-lg px-4 py-2 bg-muted">
-                        <p className="text-sm text-muted-foreground animate-pulse">
-                          Google Gemini is thinking...
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </ScrollArea>
-
-            {/* Image Upload Area */}
-            {showImageUpload && (
-              <div className="border rounded-lg p-4 bg-muted/50">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-sm font-medium">Upload inspiration image</p>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setShowImageUpload(false)}
-                  >
-                    Cancel
-                  </Button>
-                </div>
-                <ImageUpload 
-                  onImageSelect={handleImageSelect}
-                  disabled={isLoading}
-                />
-              </div>
-            )}
-
-            {/* Input Area */}
-            <div className="flex gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder={showImageUpload ? "Optional: Add a message with your image..." : "Type your message..."}
-                disabled={isLoading}
-                className="flex-1"
-              />
-              <Button 
-                onClick={() => setShowImageUpload(!showImageUpload)} 
-                variant="outline"
-                size="icon"
-                disabled={isLoading}
-                title="Upload inspiration image"
-              >
-                <ImageIcon className="h-4 w-4" />
-              </Button>
-              <Button 
-                onClick={handleSend} 
-                disabled={isLoading || !input.trim()}
-                size="icon"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
-              {messages.length > 0 && (
+          </div>
+          <div className="flex items-center gap-2">
+            {messages.length > 0 && (
+              <>
                 <Button 
                   onClick={clearMessages} 
                   variant="outline"
-                  size="icon"
+                  size="sm"
                   disabled={isLoading}
                 >
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear
                 </Button>
-              )}
-            </div>
-
-            {/* Action Buttons */}
-            {messages.length > 0 && (
-              <div className="pt-4 border-t">
                 <Button
                   onClick={handleCreateBook}
                   disabled={createBookMutation.isPending || isLoading}
-                  className="w-full"
-                  size="lg"
+                  size="sm"
                 >
-                  <Book className="mr-2 h-5 w-5" />
-                  {createBookMutation.isPending ? 'Creating Book...' : 'Generate Book'}
+                  <Book className="mr-2 h-4 w-4" />
+                  {createBookMutation.isPending ? 'Creating...' : 'Generate Book'}
+                </Button>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Messages Area */}
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center space-y-4 max-w-md mx-auto">
+              <Sparkles className="h-16 w-16 text-muted-foreground/50" />
+              <div className="space-y-2">
+                <p className="text-lg font-medium">Start a conversation</p>
+                <p className="text-sm text-muted-foreground">
+                  Example: "I want to create a children's book about space exploration"
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4 max-w-4xl mx-auto">
+              {messages.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-lg px-4 py-3 ${
+                      msg.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted'
+                    }`}
+                  >
+                    <p className="text-sm whitespace-pre-wrap">
+                      {typeof msg.content === 'string' ? msg.content : 'Image uploaded'}
+                    </p>
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="max-w-[80%] rounded-lg px-4 py-3 bg-muted">
+                    <p className="text-sm text-muted-foreground animate-pulse">
+                      Google Gemini is thinking...
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Image Upload Area */}
+        {showImageUpload && (
+          <div className="border-t px-4 py-3 bg-muted/30">
+            <div className="max-w-4xl mx-auto">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm font-medium">Upload inspiration image</p>
+                <Button 
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setShowImageUpload(false)}
+                >
+                  Cancel
                 </Button>
               </div>
-            )}
-          </CardContent>
-        </Card>
+              <ImageUpload 
+                onImageSelect={handleImageSelect}
+                disabled={isLoading}
+              />
+            </div>
+          </div>
+        )}
 
-        {/* Info Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">How it works</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>1. 💬 Chat with Google Gemini about your book concept</p>
-            <p>2. 🖼️ Upload inspiration images to define visual style</p>
-            <p>3. 🎨 Discuss themes, learning objectives, and aesthetic</p>
-            <p>4. 📚 Click "Generate Book" to create your complete book</p>
-            <p>5. ✏️ Review and edit your generated book in the editor</p>
-          </CardContent>
-        </Card>
+        {/* Input Area */}
+        <div className="border-t bg-background px-4 py-4">
+          <div className="max-w-4xl mx-auto flex gap-2">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyPress}
+              placeholder={showImageUpload ? "Optional: Add a message with your image..." : "Type your message..."}
+              disabled={isLoading}
+              className="flex-1"
+            />
+            <Button 
+              onClick={() => setShowImageUpload(!showImageUpload)} 
+              variant="outline"
+              size="icon"
+              disabled={isLoading}
+              title="Upload inspiration image"
+            >
+              <ImageIcon className="h-4 w-4" />
+            </Button>
+            <Button 
+              onClick={handleSend} 
+              disabled={isLoading || !input.trim()}
+              size="icon"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
       </div>
-    </StandardPageLayout>
+    </PageLayout>
   );
 }

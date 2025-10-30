@@ -80,7 +80,7 @@ serve(async (req) => {
       .from('pages')
       .select('*')
       .eq('id', pageId)
-      .eq('user_id', userId)
+      .eq('book_id', bookId)
       .single();
 
     if (pageError || !page) {

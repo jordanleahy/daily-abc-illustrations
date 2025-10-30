@@ -70,7 +70,6 @@ export default function BookDetail() {
   const isAdmin = useHasRole('admin');
   const isMobile = useIsMobile();
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
-  const [generateAllPromptsLoading, setGenerateAllPromptsLoading] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -184,123 +183,6 @@ export default function BookDetail() {
 
   const addProgressMessage = (message: ProgressMessage) => {
     setProgressMessages(prev => [...prev, message]);
-  };
-
-  const generateAllPagePrompts = async () => {
-    if (!user || !book?.id || !pages || pages.length === 0) {
-      toast.error('Unable to generate prompts');
-      return;
-    }
-    
-    setGenerateAllPromptsLoading(true);
-    setProgressMessages([]);
-    
-    try {
-      // Check if book has a deployed style guide (book_system_prompts)
-      if (!currentPrompt?.isDeployed) {
-        toast.error('Please generate and deploy a book style guide first');
-        setGenerateAllPromptsLoading(false);
-        return;
-      }
-      
-      let successCount = 0;
-      let skippedCount = 0;
-      let failCount = 0;
-      
-      // Process pages sequentially to avoid rate limits
-      for (let i = 0; i < pages.length; i++) {
-        const page = pages[i];
-        
-        // Check if this page already has an image
-        const { data: existingImages } = await supabase
-          .from('page_image_urls')
-          .select('*')
-          .eq('page_id', page.id)
-          .eq('is_latest', true)
-          .limit(1);
-        
-        if (existingImages && existingImages.length > 0) {
-          skippedCount++;
-          addProgressMessage({
-            step: `Page ${i + 1}/${pages.length}`,
-            message: `⊘ Skipped "${page.title}" (image exists)`,
-            status: ProcessStatus.COMPLETE,
-            timestamp: new Date().toISOString()
-          });
-          continue;
-        }
-        
-        // Generate image for this page directly
-        addProgressMessage({
-          step: `Page ${i + 1}/${pages.length}`,
-          message: `Generating image for "${page.title}"...`,
-          status: ProcessStatus.IN_PROGRESS,
-          timestamp: new Date().toISOString()
-        });
-        
-        try {
-          const { data, error } = await supabase.functions.invoke('generate-page-image', {
-            body: { pageId: page.id, userId: user.id }
-          });
-          
-          if (error) {
-            // Check for rate limit or payment errors
-            if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
-              throw new Error('Rate limit exceeded - please wait');
-            } else if (error.message?.includes('402') || error.message?.includes('Payment')) {
-              throw new Error('Credits required - please add funds');
-            }
-            throw error;
-          }
-          
-          if (!data?.success) {
-            throw new Error(data?.error || 'Image generation failed');
-          }
-          
-          successCount++;
-          addProgressMessage({
-            step: `Page ${i + 1}/${pages.length}`,
-            message: `✓ Generated image for "${page.title}"`,
-            status: ProcessStatus.COMPLETE,
-            timestamp: new Date().toISOString()
-          });
-          
-          // Small delay to avoid rate limits (Lovable AI Gateway has rate limiting)
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-        } catch (error: any) {
-          failCount++;
-          const errorMsg = error.message || 'Unknown error';
-          
-          addProgressMessage({
-            step: `Page ${i + 1}/${pages.length}`,
-            message: `✗ Failed for "${page.title}": ${errorMsg}`,
-            status: ProcessStatus.ERROR,
-            timestamp: new Date().toISOString()
-          });
-          
-          // If rate limited, add longer delay before continuing
-          if (errorMsg.includes('Rate limit')) {
-            await new Promise(resolve => setTimeout(resolve, 5000));
-          }
-        }
-      }
-      
-      // Final summary toast
-      if (failCount === 0 && skippedCount === 0) {
-        toast.success(`Successfully generated ${successCount} prompts!`);
-      } else if (failCount === 0) {
-        toast.success(`Generated ${successCount} prompts, skipped ${skippedCount} existing.`);
-      } else {
-        toast.warning(`Generated ${successCount} prompts, skipped ${skippedCount}, ${failCount} failed.`);
-      }
-      
-    } catch (error) {
-      console.error('Error generating page prompts:', error);
-      toast.error('Failed to generate page prompts');
-    } finally {
-      setGenerateAllPromptsLoading(false);
-    }
   };
 
   const handleArchiveBook = async () => {
@@ -591,20 +473,15 @@ export default function BookDetail() {
                       )}
                     </Button>
 
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={generateAllPagePrompts}
-                      disabled={generateAllPromptsLoading}
-                      title="Generate All Page Prompts"
-                      aria-label="Generate All Page Prompts"
-                    >
-                      {generateAllPromptsLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <FileText className="w-4 h-4" />
-                      )}
-                    </Button>
+                    <GeneratePagePromptsButton 
+                      bookId={book.id} 
+                      pages={pages?.map(p => ({ 
+                        id: p.id, 
+                        letter: p.letter, 
+                        title: p.title 
+                      })) || []}
+                      variant="icon"
+                    />
                     
                     <Button
                       variant={book.is_highlighted ? "default" : "outline"}

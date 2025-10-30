@@ -15,9 +15,10 @@ import { Progress } from '@/components/ui/progress';
 interface GeneratePagePromptsButtonProps {
   bookId: string;
   pages: Array<{ id: string; letter: string; title: string }>;
+  variant?: 'default' | 'icon';
 }
 
-export function GeneratePagePromptsButton({ bookId, pages }: GeneratePagePromptsButtonProps) {
+export function GeneratePagePromptsButton({ bookId, pages, variant = 'default' }: GeneratePagePromptsButtonProps) {
   const { user } = useAuthContext();
   const { generateAllPagePrompts, isGenerating, progress, reset } = useGenerateAllPagePrompts();
   const [showDialog, setShowDialog] = useState(false);
@@ -47,19 +48,21 @@ export function GeneratePagePromptsButton({ bookId, pages }: GeneratePagePrompts
       <Button
         onClick={handleGenerate}
         disabled={isGenerating || pages.length === 0}
-        variant="default"
-        className="gap-2"
+        variant={variant === 'icon' ? 'outline' : 'default'}
+        size={variant === 'icon' ? 'icon' : 'default'}
+        className={variant === 'icon' ? '' : 'gap-2'}
+        title={variant === 'icon' ? 'Generate All Page Prompts' : undefined}
+        aria-label="Generate All Page Prompts"
       >
         {isGenerating ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Generating Prompts...
-          </>
+          <Loader2 className="h-4 w-4 animate-spin" />
         ) : (
-          <>
-            <Sparkles className="h-4 w-4" />
-            Generate All Page Prompts
-          </>
+          <Sparkles className="h-4 w-4" />
+        )}
+        {variant === 'default' && (
+          <span>
+            {isGenerating ? 'Generating Prompts...' : 'Generate All Page Prompts'}
+          </span>
         )}
       </Button>
 

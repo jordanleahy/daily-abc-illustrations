@@ -82,18 +82,18 @@ serve(async (req) => {
                            book.category?.toLowerCase().includes('preschool') ? 'preschoolers' : 
                            'young learners');
 
-    // Create prompt with clear title + subtitle structure
-    const prompt = `Create a thumbnail image prompt for "${book.book_name}".
-${book.book_description ? `Book description: ${book.book_description}` : ''}
+    // Create prompt that will generate a SINGLE, DIRECT image generation prompt
+    const prompt = `Generate a SINGLE image generation prompt for the book "${book.book_name}".
+${book.book_description ? `Book context: ${book.book_description}` : ''}
+Target audience: ${targetAudience}
 
-CRITICAL REQUIREMENTS:
-1. Large, bold title text: "${book.book_name}" - prominently centered in the middle of the image
-2. Subtitle below the title: "for ${targetAudience}" - smaller text, also centered
-3. The text layout must be: 
-   [LARGE TITLE]
-   [smaller subtitle with target audience]
+Your output must be a single paragraph describing the image to generate. Do not provide multiple options or explanations.
 
-Design the background and visual elements around this centered text hierarchy. Use engaging visuals, appropriate colors, and child-friendly design that complements but doesn't overshadow the centered text.`;
+Required text elements in the image:
+- Large, bold title: "${book.book_name}" (centered in the middle)
+- Smaller subtitle below: "for ${targetAudience}" (also centered)
+
+Describe the visual style, background, colors, characters, and composition that will make an engaging children's book thumbnail. Keep the description concise and direct.`;
 
     console.log('Generated prompt length:', prompt.length);
     console.log('Target audience identified:', targetAudience);
@@ -101,11 +101,11 @@ Design the background and visual elements around this centered text hierarchy. U
     // Prepare Lovable AI request
     const lovableAIRequest = {
       model: 'google/gemini-2.5-flash-lite',
-      max_completion_tokens: 4000,
+      max_completion_tokens: 1000,
       messages: [
         { 
           role: 'system', 
-          content: 'Generate image prompts for book thumbnails with clear text hierarchy. Always include: 1) A large, centered title in the middle, 2) A smaller subtitle below showing target audience ("for [audience]"). Describe background, colors, and visual elements that frame this centered text layout. Focus on readability and visual appeal.' 
+          content: 'You generate SINGLE, DIRECT image prompts for an image generation model. Output only one paragraph describing the image - no options, no explanations, no formatting. The prompt should be ready to send directly to an image generator. Always include the exact title text and subtitle "for [audience]" centered in the composition.' 
         },
         { role: 'user', content: prompt }
       ],

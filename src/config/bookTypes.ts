@@ -8,7 +8,8 @@ import {
   Heart, 
   PawPrint, 
   MessageCircle, 
-  Moon 
+  Moon,
+  BookOpen
 } from 'lucide-react';
 
 export interface BookType {
@@ -100,5 +101,13 @@ export const BOOK_TYPES: BookType[] = [
     description: 'Daily routines and sequences',
     prompt: 'I want to create a bedtime routine book for toddlers that shows the daily sequence of bedtime activities. Make it calming and reassuring.',
     color: 'text-violet-500'
+  },
+  {
+    id: 'cvc',
+    label: 'CVC Words Book',
+    icon: BookOpen,
+    description: 'Consonant-Vowel-Consonant words (cat, dog, sun)',
+    prompt: 'I want to create a CVC (Consonant-Vowel-Consonant) words book for toddlers learning to read. Focus on simple three-letter words like cat, dog, sun, bat, pig. Include phonics and word family patterns.',
+    color: 'text-emerald-500'
   }
 ];

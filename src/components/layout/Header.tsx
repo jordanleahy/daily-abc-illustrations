@@ -143,6 +143,7 @@ export function Header({
   const adminNavigation = [
     { name: 'Home', href: '/home' },
     { name: 'Chat', href: '/admin/chat' },
+    { name: 'Google Chat', href: '/google-chat' },
     { name: 'Library', href: '/library' },
     { name: 'Rewards', href: '/rewards' },
     { name: 'Manage Habits', href: '/habits/manage' },

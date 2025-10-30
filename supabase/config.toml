@@ -78,6 +78,12 @@ verify_jwt = false
 [functions.what_changed_in_agent]
 verify_jwt = true
 
+[functions.google-chat]
+verify_jwt = true
+
+[functions.google-create-book]
+verify_jwt = false
+
 [functions.create-book]
 verify_jwt = false
 

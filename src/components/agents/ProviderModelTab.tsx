@@ -2,6 +2,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AgentConfig } from "@/types/agent";
+import type { AIProvider } from "@/types/shared/agent";
 
 interface ProviderModelTabProps {
   config?: AgentConfig;
@@ -24,13 +25,28 @@ const DEEPSEEK_MODELS = [
   { value: 'deepseek-coder', label: 'DeepSeek Coder', description: 'Specialized for code generation' },
 ];
 
+const GOOGLE_MODELS = [
+  { value: 'gemini-2.0-flash-exp', label: 'Gemini 2.0 Flash (Experimental)', description: 'Latest experimental model' },
+  { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro', description: 'Most capable for complex reasoning' },
+  { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash', description: 'Fast and versatile' },
+  { value: 'gemini-1.5-flash-8b', label: 'Gemini 1.5 Flash-8B', description: 'Smallest and fastest' },
+];
+
 export function ProviderModelTab({ config, onUpdate }: ProviderModelTabProps) {
   const provider = config?.provider || 'openai';
-  const models = provider === 'openai' ? OPENAI_MODELS : DEEPSEEK_MODELS;
+  const models = provider === 'openai' 
+    ? OPENAI_MODELS 
+    : provider === 'deepseek' 
+      ? DEEPSEEK_MODELS 
+      : GOOGLE_MODELS;
   const currentModel = config?.modelSettings.model || '';
 
-  const handleProviderChange = (newProvider: 'openai' | 'deepseek') => {
-    const defaultModel = newProvider === 'openai' ? 'gpt-5-2025-08-07' : 'deepseek-chat';
+  const handleProviderChange = (newProvider: AIProvider) => {
+    const defaultModel = newProvider === 'openai' 
+      ? 'gpt-5-2025-08-07' 
+      : newProvider === 'deepseek' 
+        ? 'deepseek-chat'
+        : 'gemini-1.5-flash';
     onUpdate({
       provider: newProvider,
       modelSettings: {
@@ -64,12 +80,15 @@ export function ProviderModelTab({ config, onUpdate }: ProviderModelTabProps) {
             <SelectContent>
               <SelectItem value="openai">OpenAI</SelectItem>
               <SelectItem value="deepseek">DeepSeek</SelectItem>
+              <SelectItem value="google">Google Gemini</SelectItem>
             </SelectContent>
           </Select>
           <p className="text-sm text-muted-foreground">
             {provider === 'openai' 
               ? 'OpenAI models offer GPT-5 and advanced reasoning capabilities'
-              : 'DeepSeek models are optimized for conversation and code generation'}
+              : provider === 'deepseek'
+                ? 'DeepSeek models are optimized for conversation and code generation'
+                : 'Google Gemini models offer multimodal capabilities and fast performance'}
           </p>
         </div>
 

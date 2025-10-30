@@ -9,7 +9,7 @@ export type AgentType = 'chat' | 'book-creation' | 'illustration-director' | 'gr
 /**
  * AI provider types
  */
-export type AIProvider = 'openai' | 'deepseek';
+export type AIProvider = 'openai' | 'deepseek' | 'google';
 
 /**
  * Base agent model settings shared between frontend and backend

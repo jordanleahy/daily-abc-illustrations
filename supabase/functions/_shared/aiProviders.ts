@@ -11,6 +11,7 @@ import type { AgentConfig } from './types.ts';
 const PROVIDER_ENDPOINTS = {
   openai: 'https://api.openai.com/v1/chat/completions',
   deepseek: 'https://api.deepseek.com/chat/completions',
+  google: 'https://generativelanguage.googleapis.com/v1beta/models',
 } as const;
 
 /**
@@ -28,6 +29,8 @@ export function getProviderApiKey(provider: AgentConfig['provider']): string | u
     return Deno.env.get('OPENAI_API_KEY');
   } else if (provider === 'deepseek') {
     return Deno.env.get('DEEPSEEK_API_KEY');
+  } else if (provider === 'google') {
+    return Deno.env.get('GOOGLE_API_KEY');
   }
   return undefined;
 }
@@ -51,6 +54,23 @@ export function buildRequestBody(
     temperature?: number;
   } = {}
 ): Record<string, any> {
+  // Google Gemini uses different format
+  if (agent.provider === 'google') {
+    return {
+      contents: messages.map(msg => ({
+        role: msg.role === 'assistant' ? 'model' : (msg.role === 'system' ? 'user' : msg.role),
+        parts: typeof msg.content === 'string' 
+          ? [{ text: msg.content }]
+          : msg.content.map(part => part.text ? { text: part.text } : { text: '' })
+      })),
+      generationConfig: {
+        maxOutputTokens: agent.max_completion_tokens,
+        topP: agent.top_p,
+        temperature: options.temperature !== undefined ? options.temperature : 1.0
+      }
+    };
+  }
+
   const body: Record<string, any> = {
     model: agent.model,
     messages,
@@ -100,11 +120,31 @@ export async function callAIProvider(
     throw new Error(`${agent.provider.toUpperCase()}_API_KEY is not configured`);
   }
 
-  const endpoint = getProviderEndpoint(agent.provider);
   const body = buildRequestBody(agent, messages, options);
-
   console.log(`Calling ${agent.provider} API with model: ${agent.model}`);
 
+  // Google uses different endpoint structure
+  if (agent.provider === 'google') {
+    const endpoint = `${getProviderEndpoint(agent.provider)}/${agent.model}:generateContent?key=${apiKey}`;
+    
+    const response = await fetch(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Google API Error:`, response.status, errorText);
+      throw new Error(`Google API error: ${response.status} - ${errorText}`);
+    }
+
+    return response;
+  }
+
+  const endpoint = getProviderEndpoint(agent.provider);
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: {
@@ -121,4 +161,14 @@ export async function callAIProvider(
   }
 
   return response;
+}
+
+/**
+ * Parse AI response content based on provider
+ */
+export function parseAIResponse(provider: AgentConfig['provider'], responseData: any): string {
+  if (provider === 'google') {
+    return responseData.candidates[0].content.parts[0].text;
+  }
+  return responseData.choices[0].message.content;
 }

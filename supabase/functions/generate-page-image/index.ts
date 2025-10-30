@@ -213,14 +213,18 @@ serve(async (req) => {
     const prepareStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Preparing content for image generation...', { requestId });
 
-    // Page-specific prompt will be sent as a single user message (matches AI Studio configuration)
-
     // Get Lovable AI API key
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
     if (!lovableApiKey) {
       log('ERROR', ProcessStatus.ERROR, currentStep, 'Lovable AI API key not configured', { requestId });
       throw new Error('Lovable AI API key not configured');
     }
+
+    // Combine page prompt with mandatory color enforcement
+    // Page-specific prompt will be sent as a single user message (matches AI Studio configuration)
+    const enhancedSystemPrompt = colorEnforcement 
+      ? `${pagePrompt.content}\n\n${colorEnforcement}`
+      : pagePrompt.content;
 
     const prepareDuration = Date.now() - prepareStartTime;
     log('INFO', ProcessStatus.COMPLETE, currentStep, 'Content prepared for image generation', { 
@@ -241,11 +245,6 @@ serve(async (req) => {
       letter: pageData.letter,
       colorsLocked: colors ? true : false
     });
-
-    // Combine page prompt with mandatory color enforcement
-    const enhancedSystemPrompt = colorEnforcement 
-      ? `${pagePrompt.content}\n\n${colorEnforcement}`
-      : pagePrompt.content;
 
     // Call Lovable AI Gateway with Gemini image generation model
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

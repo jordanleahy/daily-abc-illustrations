@@ -27,8 +27,6 @@ export default function GoogleChat() {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [showImageUpload, setShowImageUpload] = useState(false);
-  const [showCaseDialog, setShowCaseDialog] = useState(false);
-  const [selectedBookType, setSelectedBookType] = useState<typeof BOOK_TYPES[0] | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const { messages, isLoading, sendMessage, sendMessageWithImage, clearMessages } = useGoogleChat();
   const createBookMutation = useGoogleCreateBook();
@@ -66,24 +64,14 @@ export default function GoogleChat() {
     reader.readAsDataURL(file);
   };
 
-  const handleBookTypeSelect = (bookType: typeof BOOK_TYPES[0]) => {
-    if (bookType.id === 'abc') {
-      setSelectedBookType(bookType);
-      setShowCaseDialog(true);
+  const handleBookTypeSelect = async (bookType: typeof BOOK_TYPES[0]) => {
+    if (bookType.needsClarification && bookType.clarificationContext) {
+      // Send clarification request to AI
+      const clarificationPrompt = `${bookType.prompt}\n\n[CLARIFICATION_NEEDED: ${bookType.clarificationContext}]`;
+      await sendMessage(clarificationPrompt);
     } else {
-      sendMessage(bookType.prompt);
-    }
-  };
-
-  const handleCaseSelection = async (caseType: 'lowercase' | 'uppercase' | 'both') => {
-    setShowCaseDialog(false);
-    if (selectedBookType) {
-      const caseDescription = caseType === 'both' 
-        ? 'with both uppercase and lowercase letters' 
-        : caseType === 'uppercase'
-        ? 'with uppercase letters only'
-        : 'with lowercase letters only';
-      await sendMessage(`${selectedBookType.prompt} ${caseDescription}`);
+      // Send direct prompt
+      await sendMessage(bookType.prompt);
     }
   };
 
@@ -337,43 +325,6 @@ export default function GoogleChat() {
         </div>
       </div>
 
-      {/* Case Selection Dialog */}
-      <Dialog open={showCaseDialog} onOpenChange={setShowCaseDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Choose Letter Case</DialogTitle>
-            <DialogDescription>
-              Select the letter case format for your ABC book
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-3 py-4">
-            <Button
-              variant="outline"
-              className="h-auto flex flex-col items-start gap-2 p-4 hover:bg-accent"
-              onClick={() => handleCaseSelection('lowercase')}
-            >
-              <span className="font-semibold">Lowercase</span>
-              <span className="text-sm text-muted-foreground">a, b, c... (for toddlers)</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto flex flex-col items-start gap-2 p-4 hover:bg-accent"
-              onClick={() => handleCaseSelection('uppercase')}
-            >
-              <span className="font-semibold">Uppercase</span>
-              <span className="text-sm text-muted-foreground">A, B, C... (for preschoolers)</span>
-            </Button>
-            <Button
-              variant="outline"
-              className="h-auto flex flex-col items-start gap-2 p-4 hover:bg-accent"
-              onClick={() => handleCaseSelection('both')}
-            >
-              <span className="font-semibold">Both Cases</span>
-              <span className="text-sm text-muted-foreground">Aa, Bb, Cc... (for early readers)</span>
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
     </PageLayout>
   );
 }

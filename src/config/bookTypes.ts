@@ -19,6 +19,8 @@ export interface BookType {
   prompt: string;
   description: string;
   color: string; // Tailwind color class for styling
+  needsClarification?: boolean;
+  clarificationContext?: string;
 }
 
 export const BOOK_TYPES: BookType[] = [
@@ -28,23 +30,29 @@ export const BOOK_TYPES: BookType[] = [
     icon: Sparkles,
     description: 'Alphabet learning with letter recognition',
     prompt: 'I want to create an educational ABC book for toddlers. Each page should focus on one letter with engaging illustrations and simple activities for letter recognition.',
-    color: 'text-blue-500'
+    color: 'text-blue-500',
+    needsClarification: true,
+    clarificationContext: 'Ask about letter case preference: lowercase (a,b,c for toddlers), uppercase (A,B,C for preschoolers), or both cases (Aa,Bb,Cc for early readers). Provide these 3 specific options plus custom.'
   },
   {
     id: 'numbers',
     label: 'Numbers Book',
     icon: Hash,
     description: 'Counting and number recognition (1-10 or 1-20)',
-    prompt: 'I want to create a numbers book for toddlers that teaches counting and number recognition from 1 to 10. Include fun counting activities and clear number illustrations.',
-    color: 'text-green-500'
+    prompt: 'I want to create a numbers book for toddlers that teaches counting and number recognition. Include fun counting activities and clear number illustrations.',
+    color: 'text-green-500',
+    needsClarification: true,
+    clarificationContext: 'Ask about number range preference: 1-10 (for toddlers), 1-20 (for preschoolers), or custom range. Also consider counting style like simple counting, skip counting, or number families. Provide 3-4 specific suggestions with a custom option.'
   },
   {
     id: 'shapes',
     label: 'Shapes Book',
     icon: Shapes,
     description: 'Basic shapes (circle, square, triangle, etc.)',
-    prompt: 'I want to create a shapes book for toddlers that introduces basic shapes like circles, squares, triangles, rectangles, and more. Make it interactive and engaging.',
-    color: 'text-purple-500'
+    prompt: 'I want to create a shapes book for toddlers that introduces basic shapes. Make it interactive and engaging.',
+    color: 'text-purple-500',
+    needsClarification: true,
+    clarificationContext: 'Ask about shape complexity: basic shapes only (circle, square, triangle), 2D and 3D shapes together, or advanced geometric shapes. Also consider themes like shapes in nature or shapes in everyday objects. Provide 3-4 specific suggestions with a custom option.'
   },
   {
     id: 'colors',
@@ -83,8 +91,10 @@ export const BOOK_TYPES: BookType[] = [
     label: 'Animals Book',
     icon: PawPrint,
     description: 'Farm animals, zoo animals, pets',
-    prompt: 'I want to create an animals book for toddlers featuring farm animals, zoo animals, or pets. Include fun facts and sounds each animal makes.',
-    color: 'text-amber-500'
+    prompt: 'I want to create an animals book for toddlers. Include fun facts and sounds each animal makes.',
+    color: 'text-amber-500',
+    needsClarification: true,
+    clarificationContext: 'Ask about animal category: farm animals (cow, pig, chicken), zoo animals (lion, elephant, giraffe), ocean animals (fish, whale, dolphin), pets (dog, cat, rabbit), or mixed animals. Also consider educational focus like animal sounds, habitats, or characteristics. Provide 4-5 specific suggestions with a custom option.'
   },
   {
     id: 'first-words',

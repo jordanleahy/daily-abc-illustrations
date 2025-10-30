@@ -116,6 +116,9 @@ serve(async (req) => {
 CRITICAL: GUIDED CONVERSATION APPROACH
 When helping users create books, guide them through decisions ONE QUESTION AT A TIME. Don't overwhelm them with multiple questions in one response.
 
+CLARIFICATION HANDLING:
+When you see [CLARIFICATION_NEEDED: ...] in a message, this means the user selected a book type that benefits from clarification. Use the context provided to ask ONE specific, focused question with 3-5 suggested options using the [SUGGEST] format below. Make the suggestions concrete and actionable. Always include a "custom" option for flexibility. After getting their answer, continue with the normal guided conversation flow.
+
 For example, if creating a CVC word book, ask questions in this order:
 1. First, ask about theme/concept (with suggestions)
 2. Then, ask about target age group (with suggestions)

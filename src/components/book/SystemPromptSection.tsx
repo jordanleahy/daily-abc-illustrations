@@ -7,8 +7,10 @@ import { SystemPromptEditor } from './SystemPromptEditor';
 import { VersionHistoryModal } from './VersionHistoryModal';
 import { StyleGuideViewer } from './StyleGuideViewer';
 import { IllustrationConfigEditor } from './IllustrationConfigEditor';
+import { RegenerateStyleGuideButton } from './RegenerateStyleGuideButton';
 import { useSystemPrompt } from '@/hooks/useSystemPrompt';
 import { useIllustrationConfig } from '@/hooks/useIllustrationConfig';
+import { useBook } from '@/hooks/useBook';
 import { ProcessStatus } from '@/types/process';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -52,6 +54,8 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
     isConfigOutdated,
     regenerateContent
   } = useIllustrationConfig(bookId);
+
+  const { data: book } = useBook(bookId);
 
   const [showVersionHistory, setShowVersionHistory] = useState(false);
   const [activeTab, setActiveTab] = useState<'content' | 'config' | 'visual'>('content');
@@ -102,51 +106,60 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
     <>
       {/* Action buttons above the header */}
       {!isEditing && (
-        <div className="flex items-center justify-end gap-2 mb-3 px-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={refreshData}
-            title="Refresh prompt data"
-            className="h-8 w-8"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </Button>
-          {hasPrompt && (
-            <>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={() => setShowVersionHistory(true)}
-                disabled={!hasVersions}
-                title={`Version history (${versions.length})`}
-                className="h-8 w-8"
-              >
-                <History className="w-4 h-4" />
-              </Button>
-              {currentPrompt?.promptStatus !== ProcessStatus.IN_PROGRESS && (
+        <div className="flex items-center justify-between gap-2 mb-3 px-1">
+          <RegenerateStyleGuideButton
+            bookId={bookId}
+            bookName={book?.book_name || 'Untitled Book'}
+            bookDescription={book?.book_description}
+            category={book?.category}
+            onSuccess={refreshData}
+          />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={refreshData}
+              title="Refresh prompt data"
+              className="h-8 w-8"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </Button>
+            {hasPrompt && (
+              <>
                 <Button
                   variant="outline"
                   size="icon"
-                  onClick={startEdit}
-                  title="Edit prompt"
+                  onClick={() => setShowVersionHistory(true)}
+                  disabled={!hasVersions}
+                  title={`Version history (${versions.length})`}
                   className="h-8 w-8"
                 >
-                  <Edit className="w-4 h-4" />
+                  <History className="w-4 h-4" />
                 </Button>
-              )}
-              {!currentPrompt?.isDeployed && currentPrompt?.promptStatus === ProcessStatus.COMPLETE && (
-                <Button
-                  size="icon"
-                  onClick={() => deployVersion(currentPrompt!.id)}
-                  title="Deploy prompt"
-                  className="h-8 w-8"
-                >
-                  <Rocket className="w-4 h-4" />
-                </Button>
-              )}
-            </>
-          )}
+                {currentPrompt?.promptStatus !== ProcessStatus.IN_PROGRESS && (
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={startEdit}
+                    title="Edit prompt"
+                    className="h-8 w-8"
+                  >
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                )}
+                {!currentPrompt?.isDeployed && currentPrompt?.promptStatus === ProcessStatus.COMPLETE && (
+                  <Button
+                    size="icon"
+                    onClick={() => deployVersion(currentPrompt!.id)}
+                    title="Deploy prompt"
+                    className="h-8 w-8"
+                  >
+                    <Rocket className="w-4 h-4" />
+                  </Button>
+                )}
+              </>
+            )}
+          </div>
         </div>
       )}
 

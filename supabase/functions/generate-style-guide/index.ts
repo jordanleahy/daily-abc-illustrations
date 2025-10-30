@@ -268,11 +268,11 @@ Required JSON Schema:
   }
 }`;
 
-    // Get OpenAI API key
-    const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-    if (!openAIApiKey) {
-      log('ERROR', ProcessStatus.ERROR, currentStep, 'OpenAI API key not configured', { requestId });
-      throw new Error('OpenAI API key not configured');
+    // Get Lovable AI API key
+    const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+    if (!lovableApiKey) {
+      log('ERROR', ProcessStatus.ERROR, currentStep, 'Lovable AI API key not configured', { requestId });
+      throw new Error('Lovable AI API key not configured');
     }
 
     // Process agent instructions template with book-specific variables
@@ -290,29 +290,33 @@ Required JSON Schema:
       bookName: bookMetadata.book_name?.substring(0, 20) + '...'
     });
 
-    currentStep = 'OPENAI_API';
+    currentStep = 'LOVABLE_AI_API';
     const aiStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling OpenAI API for style guide generation...', { 
+    
+    // Use Gemini 2.5 Pro for best JSON generation
+    const targetModel = 'google/gemini-2.5-pro';
+    
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling Lovable AI Gateway for style guide generation...', { 
       requestId,
-      model: agentConfig.model,
-      maxTokens: agentConfig.max_completion_tokens,
+      model: targetModel,
+      maxTokens: agentConfig.max_completion_tokens || 20000,
       topP: agentConfig.top_p
     });
 
-    // Call OpenAI API using the agent's model settings
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    // Call Lovable AI Gateway using Gemini
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
+        'Authorization': `Bearer ${lovableApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: agentConfig.model,
+        model: targetModel,
         messages: [
-          { role: 'system', content: agentConfig.instructions },
+          { role: 'system', content: processedInstructions },
           { role: 'user', content: styleGuidePrompt }
         ],
-        max_completion_tokens: agentConfig.max_completion_tokens,
+        max_completion_tokens: agentConfig.max_completion_tokens || 20000,
         top_p: parseFloat(agentConfig.top_p),
       }),
     });
@@ -320,13 +324,26 @@ Required JSON Schema:
     const aiDuration = Date.now() - aiStartTime;
 
     if (!response.ok) {
-      const errorData = await response.json();
-      const errorMsg = `OpenAI API error: ${errorData.error?.message || response.statusText}`;
+      let errorMsg = `Lovable AI error: ${response.statusText}`;
+      
+      // Handle rate limiting and payment errors
+      if (response.status === 429) {
+        errorMsg = 'Rate limit exceeded. Please try again in a few moments.';
+      } else if (response.status === 402) {
+        errorMsg = 'Payment required. Please add credits to your Lovable AI workspace.';
+      } else {
+        try {
+          const errorData = await response.json();
+          errorMsg = `Lovable AI error: ${errorData.error?.message || errorData.message || response.statusText}`;
+        } catch {
+          // Use the default error message if JSON parsing fails
+        }
+      }
+      
       log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
         requestId, 
         duration: aiDuration,
-        statusCode: response.status,
-        error: errorData
+        statusCode: response.status
       });
       
       // Update record with error
@@ -480,10 +497,11 @@ Required JSON Schema:
       });
     }
 
-    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Style guide generated successfully', { 
+    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Style guide generated successfully via Lovable AI (Gemini)', { 
       requestId, 
       duration: aiDuration,
       styleGuideLength: styleGuide.length,
+      model: targetModel,
       tokensUsed: data.usage?.total_tokens,
       bookName: bookMetadata.book_name
     });
@@ -537,7 +555,9 @@ Required JSON Schema:
         is_deployed: true,
         deployed_at: new Date().toISOString(),
         generation_metadata: {
-          model: agentConfig.model,
+          model: targetModel,
+          ai_provider: 'lovable-ai',
+          original_agent_model: agentConfig.model,
           generated_at: new Date().toISOString(),
           request_id: requestId,
           agent_version: agentConfig.version,
@@ -587,7 +607,9 @@ Required JSON Schema:
       agentUsed: {
         id: agentConfig.id,
         name: agentConfig.name,
-        model: agentConfig.model,
+        model: targetModel,
+        aiProvider: 'lovable-ai',
+        originalModel: agentConfig.model,
         version: agentConfig.version
       },
       promptId,

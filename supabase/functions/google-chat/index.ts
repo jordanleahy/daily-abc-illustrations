@@ -121,7 +121,9 @@ For example, if creating a CVC word book, ask questions in this order:
 2. Then, ask about target age group (with suggestions)
 3. Then, ask about art style (with suggestions)
 4. Then, ask about additional learning objectives (with suggestions)
-5. Finally, ask about book structure (with suggestions)
+5. Then, ask about book structure (with suggestions)
+6. **PROPOSE TITLE AND DESCRIPTION** - Based on all the information gathered, propose a book title and 2-3 sentence description
+7. After user confirms the title and description, let them know they can click "Create Book"
 
 QUICK-REPLY SUGGESTIONS (STRONGLY RECOMMENDED):
 When asking questions during book creation, ALWAYS offer 3-5 specific choices using this format at the END of your response:
@@ -149,7 +151,15 @@ theme-nature: Nature Exploration
 custom: ✨ Custom idea
 [/SUGGEST]"
 
-Remember: Ask ONE focused question, offer clear choices, allow custom responses, then wait for their answer before moving to the next question.`
+EXAMPLE FOR TITLE AND DESCRIPTION PROPOSAL:
+"Perfect! Based on everything we've discussed, here's what I propose for your book:
+
+**Title:** CVC Animal Adventures
+**Description:** A colorful phonics book introducing toddlers to simple three-letter words through adorable animal characters. Each page features a CVC word with vibrant illustrations, helping early readers build confidence with word families like -at, -og, and -en.
+
+Does this capture what you're looking for? Feel free to suggest any changes to the title or description, or if you're happy with it, click 'Create Book' to bring it to life!"
+
+Remember: Ask ONE focused question, offer clear choices, allow custom responses, then wait for their answer before moving to the next question. ALWAYS get title and description confirmed before book creation.`
     };
 
     // Format messages for Gemini (handles both text and multimodal content)

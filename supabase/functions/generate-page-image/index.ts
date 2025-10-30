@@ -64,7 +64,17 @@ serve(async (req) => {
 
     currentStep = 'FETCH_PAGE_AND_PROMPT';
     const fetchStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Fetching page data and style guide from database...', { requestId });
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Fetching page data and prompts from database...', { requestId });
+
+    // **NEW: First check if page has a deployed page-specific prompt**
+    const { data: pagePrompt, error: pagePromptError } = await supabaseClient
+      .from('page_system_prompts')
+      .select('*')
+      .eq('page_id', pageId)
+      .eq('is_deployed', true)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
     // Fetch the specific page data along with book system prompt (style guide)
     const { data: pageData, error: pageError } = await supabaseClient
@@ -110,32 +120,48 @@ serve(async (req) => {
       throw new Error('Page not found or access denied');
     }
 
-    // Find the deployed book system prompt (style guide)
+    // Find the deployed book system prompt (style guide) as fallback
     const deployedPrompt = (pageData as any).books.book_system_prompts?.find((prompt: any) => prompt.is_deployed);
-    if (!deployedPrompt) {
-      log('ERROR', ProcessStatus.ERROR, currentStep, 'No deployed style guide found', { 
+    
+    // Determine which prompt to use (prefer page-specific)
+    const usePagePrompt = !!pagePrompt;
+    const systemPrompt = pagePrompt?.content || deployedPrompt?.content;
+    
+    if (!systemPrompt) {
+      log('ERROR', ProcessStatus.ERROR, currentStep, 'No page prompt or style guide found', { 
         requestId, 
         duration: fetchDuration,
         pageId: pageId?.substring(0, 8) + '...',
-        bookId: pageData.book_id?.substring(0, 8) + '...'
+        bookId: pageData.book_id?.substring(0, 8) + '...',
+        hasPagePrompt: !!pagePrompt,
+        hasBookPrompt: !!deployedPrompt
       });
-      throw new Error('No deployed style guide found. Please create and deploy a style guide for this book first.');
+      throw new Error('No page-specific prompt or book style guide found. Please generate prompts first.');
     }
 
-    log('INFO', ProcessStatus.COMPLETE, currentStep, 'Page data and style guide fetched successfully', { 
-      requestId, 
-      duration: fetchDuration,
-      letter: pageData.letter,
-      title: pageData.title?.substring(0, 30) + '...',
-      bookId: pageData.book_id?.substring(0, 8) + '...'
-    });
+    log('INFO', ProcessStatus.COMPLETE, currentStep, usePagePrompt 
+      ? '✨ Page-specific prompt found - using for consistent styling!' 
+      : '📖 Using book-level style guide', 
+      { 
+        requestId, 
+        duration: fetchDuration,
+        letter: pageData.letter,
+        title: pageData.title?.substring(0, 30) + '...',
+        bookId: pageData.book_id?.substring(0, 8) + '...',
+        promptType: usePagePrompt ? 'page-specific' : 'book-level',
+        pagePromptVersion: pagePrompt?.version_number
+      }
+    );
 
     currentStep = 'PREPARE_CONTENT';
     const prepareStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Preparing content for image generation...', { requestId });
 
-    // Prepare the content for the AI
-    const pageContent = `
+    // If using page-specific prompt, simplify user message since all details are in system prompt
+    // Otherwise, provide full page details to work with book-level style guide
+    const pageContent = usePagePrompt 
+      ? `Generate the image exactly as specified in the detailed prompt for page "${pageData.letter}: ${pageData.title}".`
+      : `
 Page Details:
 Letter: ${pageData.letter}
 Title: ${pageData.title}
@@ -143,7 +169,7 @@ Description: ${pageData.description || 'No description'}
 Content: ${JSON.stringify(pageData.content, null, 2)}
 
 Please generate an image following the style guide provided in the system prompt.
-    `.trim();
+      `.trim();
 
     // Get Lovable AI API key
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
@@ -182,7 +208,7 @@ Please generate an image following the style guide provided in the system prompt
         messages: [
           {
             role: 'system',
-            content: deployedPrompt.content
+            content: systemPrompt // Use page-specific prompt if available, otherwise book style guide
           },
           {
             role: 'user',

@@ -28,7 +28,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
 import { PublicationStatus } from '@/types/status';
-import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText, Star, Copy, Tag, X } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText, Star, Copy, Tag, X, Image } from 'lucide-react';
 import { toast } from 'sonner';
 import { useToggleBookHighlight } from '@/hooks/useToggleBookHighlight';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
@@ -47,6 +47,8 @@ import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
 import { OpenGraphEditor } from "@/components/book/OpenGraphEditor";
 import { ExportsSection } from '@/components/exports/ExportsSection';
+import { RegenerateStyleGuideButton } from '@/components/book/RegenerateStyleGuideButton';
+import { GeneratePagePromptsButton } from '@/components/book/GeneratePagePromptsButton';
 
 import { PageImageSection } from "@/components/PageImageSection";
 import { PageCard, UserPageCard, FocusedPageView } from '@/components/page-prompts';

@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Book, Trash2 } from 'lucide-react';
+import { Send, Sparkles, Book, Trash2, Image as ImageIcon } from 'lucide-react';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { ImageUpload } from '@/components/ImageUpload';
 import { useGoogleChat } from '@/hooks/useGoogleChat';
 import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
 import { toast } from 'sonner';
@@ -13,8 +14,9 @@ import { toast } from 'sonner';
 export default function GoogleChat() {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
+  const [showImageUpload, setShowImageUpload] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { messages, isLoading, sendMessage, clearMessages } = useGoogleChat();
+  const { messages, isLoading, sendMessage, sendMessageWithImage, clearMessages } = useGoogleChat();
   const createBookMutation = useGoogleCreateBook();
 
   useEffect(() => {
@@ -38,14 +40,32 @@ export default function GoogleChat() {
     }
   };
 
+  const handleImageSelect = async (file: File) => {
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+      const base64Data = reader.result as string;
+      const message = input.trim() || 'What do you think of this style for inspiration?';
+      setInput('');
+      setShowImageUpload(false);
+      await sendMessageWithImage(message, base64Data);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleCreateBook = async () => {
     if (messages.length === 0) {
       toast.error('Please have a conversation first');
       return;
     }
 
+    // Convert messages to simple text format for book creation
+    const textMessages = messages.map(msg => ({
+      role: msg.role,
+      content: typeof msg.content === 'string' ? msg.content : 'Image uploaded'
+    }));
+
     const result = await createBookMutation.mutateAsync({
-      conversationHistory: messages
+      conversationHistory: textMessages
     });
 
     if (result.success && result.bookId) {
@@ -96,7 +116,9 @@ export default function GoogleChat() {
                             : 'bg-muted text-foreground'
                         }`}
                       >
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        <p className="text-sm whitespace-pre-wrap">
+                          {typeof msg.content === 'string' ? msg.content : 'Image uploaded'}
+                        </p>
                       </div>
                     </div>
                   ))}
@@ -113,16 +135,45 @@ export default function GoogleChat() {
               )}
             </ScrollArea>
 
+            {/* Image Upload Area */}
+            {showImageUpload && (
+              <div className="border rounded-lg p-4 bg-muted/50">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium">Upload inspiration image</p>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => setShowImageUpload(false)}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+                <ImageUpload 
+                  onImageSelect={handleImageSelect}
+                  disabled={isLoading}
+                />
+              </div>
+            )}
+
             {/* Input Area */}
             <div className="flex gap-2">
               <Input
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyPress}
-                placeholder="Type your message..."
+                placeholder={showImageUpload ? "Optional: Add a message with your image..." : "Type your message..."}
                 disabled={isLoading}
                 className="flex-1"
               />
+              <Button 
+                onClick={() => setShowImageUpload(!showImageUpload)} 
+                variant="outline"
+                size="icon"
+                disabled={isLoading}
+                title="Upload inspiration image"
+              >
+                <ImageIcon className="h-4 w-4" />
+              </Button>
               <Button 
                 onClick={handleSend} 
                 disabled={isLoading || !input.trim()}
@@ -166,9 +217,10 @@ export default function GoogleChat() {
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
             <p>1. 💬 Chat with Google Gemini about your book concept</p>
-            <p>2. 🎨 Discuss themes, learning objectives, and style</p>
-            <p>3. 📚 Click "Generate Book" to create your complete book</p>
-            <p>4. ✏️ Review and edit your generated book in the editor</p>
+            <p>2. 🖼️ Upload inspiration images to define visual style</p>
+            <p>3. 🎨 Discuss themes, learning objectives, and aesthetic</p>
+            <p>4. 📚 Click "Generate Book" to create your complete book</p>
+            <p>5. ✏️ Review and edit your generated book in the editor</p>
           </CardContent>
         </Card>
       </div>

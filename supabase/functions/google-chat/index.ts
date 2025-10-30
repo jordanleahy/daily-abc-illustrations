@@ -3,9 +3,17 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 
+interface MessageContent {
+  type: 'text' | 'image_url';
+  text?: string;
+  image_url?: {
+    url: string;
+  };
+}
+
 interface Message {
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  content: string | MessageContent[];
 }
 
 serve(async (req) => {
@@ -61,10 +69,23 @@ serve(async (req) => {
     // Prepare messages with system prompt
     const systemMessage: Message = {
       role: 'system',
-      content: 'You are a helpful AI assistant for creating educational children\'s books. Help users brainstorm ideas, discuss themes, learning objectives, and styles. Be creative, encouraging, and provide detailed suggestions.'
+      content: 'You are a helpful AI assistant for creating educational children\'s books. Help users brainstorm ideas, discuss themes, learning objectives, and styles. When users share reference images, analyze them for inspiration including color schemes, art styles, and visual elements. Be creative, encouraging, and provide detailed suggestions.'
     };
 
-    const allMessages = [systemMessage, ...messages];
+    // Format messages for Gemini (handles both text and multimodal content)
+    const formattedMessages = messages.map(msg => {
+      // If content is already an array (multimodal), return as-is
+      if (Array.isArray(msg.content)) {
+        return msg;
+      }
+      // Otherwise, convert string to text content format for consistency
+      return {
+        ...msg,
+        content: msg.content
+      };
+    });
+
+    const allMessages = [systemMessage, ...formattedMessages];
 
     console.log('Calling Lovable AI with', allMessages.length, 'messages');
 

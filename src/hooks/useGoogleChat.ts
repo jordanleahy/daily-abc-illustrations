@@ -3,9 +3,17 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
+interface MessageContent {
+  type: 'text' | 'image_url';
+  text?: string;
+  image_url?: {
+    url: string;
+  };
+}
+
 interface Message {
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  content: string | MessageContent[];
 }
 
 export const useGoogleChat = () => {
@@ -13,7 +21,7 @@ export const useGoogleChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = async (content: string) => {
+  const sendMessage = async (content: string | MessageContent[], displayText?: string) => {
     if (!user?.id) {
       toast.error('Please sign in to use Google chat');
       return;
@@ -21,7 +29,12 @@ export const useGoogleChat = () => {
 
     // Add user message
     const userMessage: Message = { role: 'user', content };
-    setMessages(prev => [...prev, userMessage]);
+    // For display purposes with images, we store the text separately
+    const displayMessage: Message = { 
+      role: 'user', 
+      content: displayText || (typeof content === 'string' ? content : 'Uploaded an image')
+    };
+    setMessages(prev => [...prev, displayMessage]);
     setIsLoading(true);
 
     try {
@@ -61,11 +74,19 @@ export const useGoogleChat = () => {
       }
     } catch (error) {
       console.error('Google chat error:', error);
-      // Remove the user message on error
+      // Remove the user message on error (the display message)
       setMessages(prev => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const sendMessageWithImage = async (text: string, imageDataUrl: string) => {
+    const content: MessageContent[] = [
+      { type: 'text', text },
+      { type: 'image_url', image_url: { url: imageDataUrl } }
+    ];
+    await sendMessage(content, text);
   };
 
   const clearMessages = () => {
@@ -76,6 +97,7 @@ export const useGoogleChat = () => {
     messages,
     isLoading,
     sendMessage,
+    sendMessageWithImage,
     clearMessages
   };
 };

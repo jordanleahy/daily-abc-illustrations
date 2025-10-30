@@ -321,9 +321,6 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Badge variant="outline" className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold">
-              {page.letter}
-            </Badge>
             <Button
               variant="ghost"
               size="icon"

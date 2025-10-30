@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -77,7 +78,13 @@ export default function Books() {
   const { user, loading: authLoading } = useAuthContext();
   const { books, loading } = useBooks();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showCreateModal, setShowCreateModal] = useState(false);
+
+  // Invalidate books query when component mounts to refresh sort order
+  useEffect(() => {
+    queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
+  }, [queryClient, user?.id]);
 
   const handleViewBook = (bookId: string) => {
     // Track the book view immediately

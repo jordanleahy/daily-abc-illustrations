@@ -204,6 +204,58 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
 
     console.log(`Created ${pages.length} pages`);
 
+    // Create default style guide for the book
+    const defaultStyleGuide = `You are an AI specialized in creating vibrant, educational children's book illustrations.
+
+**Core Design Principles:**
+- **Style**: Bright, cheerful, and engaging illustrations with bold colors
+- **Composition**: Clear focal points, simple backgrounds, and age-appropriate detail
+- **Color Palette**: Primary and secondary colors with high contrast for visual appeal
+- **Safety**: All content must be child-safe, positive, and educational
+
+**Illustration Requirements:**
+1. Create a single, clear focal point that represents the main concept
+2. Use simple, recognizable shapes and forms
+3. Include educational elements that support the learning objective
+4. Maintain consistency with the book's overall theme
+5. Ensure backgrounds enhance but don't distract from the main subject
+
+**Technical Specifications:**
+- Square format (1:1 aspect ratio)
+- High contrast and clarity for young readers
+- No text in the image (text will be overlaid separately)
+- Child-friendly, positive imagery only
+
+Create an illustration that brings the page content to life while maintaining these guidelines.`;
+
+    // Get version number for the style guide
+    const { data: versionData, error: versionError } = await supabase
+      .rpc('get_next_version_number', { p_book_id: book.id });
+
+    if (versionError) {
+      console.error('Error getting version number:', versionError);
+    } else {
+      const versionNumber = versionData || 1;
+
+      // Insert the style guide and mark it as deployed
+      const { error: styleGuideError } = await supabase
+        .from('book_system_prompts')
+        .insert({
+          book_id: book.id,
+          version_number: versionNumber,
+          content: defaultStyleGuide,
+          is_latest: true,
+          is_deployed: true,
+          deployed_at: new Date().toISOString()
+        });
+
+      if (styleGuideError) {
+        console.error('Error creating style guide:', styleGuideError);
+      } else {
+        console.log('Created and deployed default style guide');
+      }
+    }
+
     // Create draft daily_published entry
     await supabase
       .from('daily_published')

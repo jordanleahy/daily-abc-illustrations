@@ -3,7 +3,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
-import { callAIProvider, parseAIResponse } from '../_shared/aiProviders.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -29,41 +28,24 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Fetch Google book-creation agent
-    const { data: agents, error: agentError } = await supabase
-      .from('agents')
-      .select('*')
-      .eq('type', 'book-creation')
-      .eq('provider', 'google')
-      .eq('user_id', userId)
-      .eq('is_latest', true)
-      .limit(1)
-      .single();
-
-    if (agentError || !agents) {
-      console.error('Error fetching Google book-creation agent:', agentError);
+    // Get Lovable AI key
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      console.error('LOVABLE_API_KEY not configured');
       return new Response(
         JSON.stringify({ 
           success: false,
-          error: 'Google book-creation agent not configured. Please set up a Google agent first.' 
+          error: 'AI service not configured' 
         }),
-        { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const agent = {
-      id: agents.id,
-      provider: agents.provider as 'google',
-      model: agents.model,
-      max_completion_tokens: agents.max_completion_tokens,
-      top_p: agents.top_p,
-    };
+    console.log('Creating book using Lovable AI for user:', userId);
 
-    console.log('Using Google book-creation agent:', agent);
-
-    // Prepare prompt
-    const systemPrompt = agents.instructions || `You are an expert at creating educational ABC books for children. 
-Based on the conversation, extract the learning concepts and create a complete ABC book structure.
+    // Prepare prompt for book creation
+    const systemPrompt = `You are an expert at creating educational children's books. 
+Based on the conversation, extract the learning concepts and create a complete book structure.
 Return ONLY a JSON object with this exact structure (no markdown, no code blocks):
 {
   "bookName": "string",
@@ -82,26 +64,74 @@ Return ONLY a JSON object with this exact structure (no markdown, no code blocks
       }
     }
   ]
-}`;
+}
 
-    const prompt = `Based on this conversation, create a complete ABC book:
+Create 26 pages (A-Z) with educational content appropriate for children.`;
+
+    const prompt = `Based on this conversation, create a complete children's book:
 ${conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n\n')}
 
-Return ONLY valid JSON, no other text.`;
+Return ONLY valid JSON, no other text, no markdown code blocks.`;
 
     const messages = [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: prompt }
     ];
 
-    // Call Google API
-    const response = await callAIProvider(agent, messages);
-    const aiResponse = await response.json();
-    
-    console.log('Google API Response:', JSON.stringify(aiResponse).substring(0, 300));
+    console.log('Calling Lovable AI to generate book structure');
 
-    // Parse response
-    let content = parseAIResponse('google', aiResponse);
+    // Call Lovable AI Gateway
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages,
+        max_tokens: 8000, // Allow for full 26-page book
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Lovable AI error:', response.status, errorText);
+      
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Rate limit exceeded. Please try again later.' 
+          }),
+          { status: 429, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      if (response.status === 402) {
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'Payment required. Please add credits to your Lovable AI workspace.' 
+          }),
+          { status: 402, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'AI service error', 
+          details: errorText 
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const aiResponse = await response.json();
+    let content = aiResponse.choices?.[0]?.message?.content || '';
+    
+    console.log('Lovable AI response received, length:', content.length);
     
     // Clean up response - remove markdown code blocks if present
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
@@ -113,7 +143,7 @@ Return ONLY valid JSON, no other text.`;
 
     // Validate book data structure
     if (!bookData.bookName || !bookData.pages || !Array.isArray(bookData.pages)) {
-      throw new Error('Invalid book data structure from Google API');
+      throw new Error('Invalid book data structure from AI response');
     }
 
     console.log(`Creating book: ${bookData.bookName} with ${bookData.pages.length} pages`);
@@ -180,7 +210,7 @@ Return ONLY valid JSON, no other text.`;
       JSON.stringify({ 
         success: true,
         bookId: book.id,
-        message: `Book "${bookData.bookName}" created successfully with ${pages.length} pages using Google Gemini!`
+        message: `Book "${bookData.bookName}" created successfully with ${pages.length} pages!`
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );

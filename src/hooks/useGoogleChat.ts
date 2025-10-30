@@ -52,64 +52,138 @@ export const useGoogleChat = () => {
     setIsLoading(true);
 
     try {
-      const { data, error } = await supabase.functions.invoke('google-chat', {
-        body: { messages: [...messages, userMessage] }
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+
+      if (!token) {
+        toast.error('Authentication required');
+        throw new Error('No auth token');
+      }
+
+      const response = await fetch(
+        `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/google-chat`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ messages: [...messages, userMessage] })
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 429 || errorData.error?.includes('Rate limit')) {
+          toast.error('Rate Limit Exceeded', {
+            description: 'Too many requests. Please wait a moment and try again.',
+            duration: 5000,
+          });
+        } else if (response.status === 402 || errorData.error?.includes('Payment required')) {
+          toast.error('Lovable AI Credits Exhausted', {
+            description: 'Please add credits to your Lovable AI workspace to continue.',
+            duration: 10000,
+          });
+        } else {
+          toast.error('Failed to send message');
+        }
+        throw new Error(errorData.error || 'Request failed');
+      }
+
+      if (!response.body) {
+        throw new Error('No response stream');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullContent = '';
+      let suggestedActions: SuggestedAction[] | undefined;
+
+      // Add empty assistant message
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (let line of lines) {
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (delta) {
+              fullContent += delta;
+              // Update the last message with accumulated content
+              setMessages(prev => {
+                const newMessages = [...prev];
+                const lastMsg = newMessages[newMessages.length - 1];
+                if (lastMsg?.role === 'assistant') {
+                  lastMsg.content = fullContent;
+                }
+                return newMessages;
+              });
+            }
+          } catch (e) {
+            console.error('Failed to parse SSE chunk:', e);
+          }
+        }
+      }
+
+      // Parse suggestions from final content
+      const parseSuggestions = (text: string) => {
+        const suggestRegex = /\[SUGGEST\]([\s\S]*?)\[\/SUGGEST\]/;
+        const match = text.match(suggestRegex);
+        
+        if (!match) return { cleanContent: text, suggestedActions: undefined };
+        
+        const suggestionsText = match[1].trim();
+        const cleanContent = text.replace(suggestRegex, '').trim();
+        
+        const actions = suggestionsText
+          .split('\n')
+          .filter(line => line.trim())
+          .map(line => {
+            const colonIndex = line.indexOf(':');
+            if (colonIndex === -1) return null;
+            
+            const id = line.substring(0, colonIndex).trim();
+            const label = line.substring(colonIndex + 1).trim();
+            
+            return { id, label, value: id === 'custom' ? '' : label };
+          })
+          .filter((action): action is SuggestedAction => action !== null);
+        
+        return { cleanContent, suggestedActions: actions.length > 0 ? actions : undefined };
+      };
+
+      const { cleanContent, suggestedActions: finalActions } = parseSuggestions(fullContent);
+
+      // Update with clean content and suggestions
+      setMessages(prev => {
+        const newMessages = [...prev];
+        const lastMsg = newMessages[newMessages.length - 1];
+        if (lastMsg?.role === 'assistant') {
+          lastMsg.content = cleanContent;
+          lastMsg.suggestedActions = finalActions;
+        }
+        return newMessages;
       });
 
-      if (error) {
-        // Check for specific error types
-        if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
-          toast.error('Rate Limit Exceeded', {
-            description: 'Too many requests. Please wait a moment and try again.',
-            duration: 5000,
-          });
-        } else if (error.message?.includes('402') || error.message?.includes('Payment required')) {
-          toast.error('Lovable AI Credits Exhausted', {
-            description: 'Please add credits to your Lovable AI workspace to continue. Go to Settings → Workspace → Usage to top up.',
-            duration: 10000,
-          });
-        } else {
-          toast.error('Failed to send message', {
-            description: error.message || 'An unexpected error occurred.',
-          });
-        }
-        throw error;
-      }
-
-      // Check for error in data response
-      if (data?.error) {
-        if (data.error.includes('Rate limit') || data.error.includes('429')) {
-          toast.error('Rate Limit Exceeded', {
-            description: 'Too many requests. Please wait a moment and try again.',
-            duration: 5000,
-          });
-        } else if (data.error.includes('Payment required') || data.error.includes('402')) {
-          toast.error('Lovable AI Credits Exhausted', {
-            description: 'Please add credits to your Lovable AI workspace to continue. Go to Settings → Workspace → Usage to top up.',
-            duration: 10000,
-          });
-        } else {
-          toast.error('Failed to get response', {
-            description: data.error,
-          });
-        }
-        throw new Error(data.error);
-      }
-
-      if (data?.content) {
-        const assistantMessage: Message = { 
-          role: 'assistant', 
-          content: data.content,
-          suggestedActions: data.suggestedActions
-        };
-        setMessages(prev => [...prev, assistantMessage]);
-      } else {
-        throw new Error('No response from AI assistant');
-      }
     } catch (error) {
       console.error('Google chat error:', error);
-      // Remove the user message on error (the display message)
-      setMessages(prev => prev.slice(0, -1));
+      // Remove the user message and empty assistant message on error
+      setMessages(prev => prev.slice(0, -2));
     } finally {
       setIsLoading(false);
     }

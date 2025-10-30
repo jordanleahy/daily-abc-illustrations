@@ -182,7 +182,7 @@ Remember: Ask ONE focused question, offer clear choices, allow custom responses,
 
     console.log('Calling Lovable AI with', allMessages.length, 'messages');
 
-    // Call Lovable AI Gateway
+    // Call Lovable AI Gateway with streaming
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -192,6 +192,7 @@ Remember: Ask ONE focused question, offer clear choices, allow custom responses,
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: allMessages,
+        stream: true,
       }),
     });
 
@@ -219,21 +220,17 @@ Remember: Ask ONE focused question, offer clear choices, allow custom responses,
       );
     }
 
-    const aiResponse = await response.json();
-    const rawContent = aiResponse.choices?.[0]?.message?.content || 'No response generated';
+    console.log('Lovable AI streaming response started');
 
-    console.log('Lovable AI response received, length:', rawContent.length);
-
-    // Parse optional suggestions
-    const { cleanContent, suggestedActions } = parseSuggestions(rawContent);
-
-    return new Response(
-      JSON.stringify({ 
-        content: cleanContent,
-        ...(suggestedActions && { suggestedActions })
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    // Return the stream directly with proper headers
+    return new Response(response.body, {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      }
+    });
 
   } catch (error) {
     console.error('Error in google-chat function:', error);

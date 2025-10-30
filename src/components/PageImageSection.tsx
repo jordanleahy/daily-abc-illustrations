@@ -79,9 +79,15 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
 
     setIsLocalGenerating(true);
     try {
+      // Include auth token so storage insert passes RLS
+      const { data: sessionRes } = await supabase.auth.getSession();
+      const token = sessionRes.session?.access_token;
+      if (!token) throw new Error('Not authenticated');
+
       // Call new unified image generation function
       const { data, error } = await supabase.functions.invoke('generate-page-image', {
-        body: { pageId, userId: user.id }
+        body: { pageId, userId: user.id },
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (error) throw error;

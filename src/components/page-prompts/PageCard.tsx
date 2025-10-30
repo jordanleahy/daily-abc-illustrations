@@ -127,12 +127,20 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
 
     try {
       setIsRegeneratingImage(true);
+
+      // Ensure we include the auth token for RLS-enabled storage policies
+      const { data: sessionRes } = await supabase.auth.getSession();
+      const token = sessionRes.session?.access_token;
+      if (!token) throw new Error('Not authenticated');
       
       // Call the new unified image generation function
       const { data, error } = await supabase.functions.invoke('generate-page-image', {
         body: {
           pageId: page.id,
           userId: user.id,
+        },
+        headers: {
+          Authorization: `Bearer ${token}`,
         },
       });
 

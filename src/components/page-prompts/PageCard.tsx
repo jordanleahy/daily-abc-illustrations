@@ -262,6 +262,21 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
     }
   };
 
+  const handleCopyImagePrompt = async () => {
+    if (!currentImage?.prompt_used) {
+      toast.error('No image prompt available');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(currentImage.prompt_used);
+      toast.success('Image prompt copied to clipboard');
+    } catch (error) {
+      console.error('Error copying image prompt to clipboard:', error);
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
   const handleDownloadImage = async () => {
     if (!currentImage?.image_url) {
       toast.error('No image available to download');
@@ -331,6 +346,17 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
               aria-label="Regenerate page prompt"
             >
               <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-6 h-6"
+              onClick={handleCopyImagePrompt}
+              disabled={!currentImage?.prompt_used}
+              title="Copy image generation prompt"
+              aria-label="Copy image generation prompt"
+            >
+              <Copy className="w-3 h-3" />
             </Button>
             <Button
               variant="ghost"

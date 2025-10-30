@@ -76,9 +76,8 @@ export default function GoogleChat() {
       title="Chat with Google Gemini"
       showHeader={true}
       fullHeight={true}
-      className="flex flex-col h-screen"
     >
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="fixed inset-0 top-[3.5rem] flex flex-col">
         {/* Header */}
         <div className="border-b bg-background px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -182,8 +181,8 @@ export default function GoogleChat() {
           </div>
         )}
 
-        {/* Input Area */}
-        <div className="border-t bg-background px-4 py-4">
+        {/* Input Area - Fixed Footer */}
+        <div className="border-t bg-background px-4 py-4 shrink-0">
           <div className="max-w-4xl mx-auto flex gap-2">
             <Input
               value={input}

@@ -231,7 +231,10 @@ export default function GoogleChat() {
                       }`}
                     >
                       <p className="text-sm whitespace-pre-wrap">
-                        {typeof msg.content === 'string' ? msg.content : 'Image uploaded'}
+                        {typeof msg.content === 'string' 
+                          ? msg.content.replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '').trim()
+                          : 'Image uploaded'
+                        }
                       </p>
                     </div>
                     

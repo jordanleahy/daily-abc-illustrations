@@ -8,7 +8,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/process";
 import { useState, useEffect } from "react";
-import { Loader2, Upload, Sparkles, Clipboard } from "lucide-react";
+import { Loader2, Upload, Sparkles, Clipboard, Copy, ArrowLeft } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
 
 interface PageImageSectionProps {
@@ -27,6 +27,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
   
   const [internalShowUpload, setInternalShowUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showPromptViewer, setShowPromptViewer] = useState(false);
 
   // Use external upload state if provided, otherwise use internal state
   const showUpload = externalShowUpload !== undefined ? externalShowUpload : internalShowUpload;
@@ -320,6 +321,40 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             {currentImage?.error_message || 'Unknown error occurred'}
           </p>
         </div>
+      ) : showPromptViewer && currentPrompt?.content ? (
+        // Show prompt viewer
+        <div className="flex flex-col h-full p-4 overflow-hidden">
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-foreground">Image Generation Prompt</h3>
+            <Button
+              onClick={() => {
+                if (currentPrompt?.content) {
+                  navigator.clipboard.writeText(currentPrompt.content);
+                  toast.success('Prompt copied to clipboard');
+                }
+              }}
+              size="sm"
+              variant="outline"
+            >
+              <Copy className="w-4 h-4 mr-2" />
+              Copy
+            </Button>
+          </div>
+          <div className="flex-1 overflow-y-auto rounded-lg border border-border bg-muted/30 p-3 mb-3">
+            <pre className="text-xs text-foreground whitespace-pre-wrap font-mono">
+              {currentPrompt.content}
+            </pre>
+          </div>
+          <Button
+            onClick={() => setShowPromptViewer(false)}
+            size="sm"
+            variant="secondary"
+            className="w-full"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Upload
+          </Button>
+        </div>
       ) : (
         // Show initial state - paste only (Upload button handles file selection)
         <div 
@@ -349,6 +384,19 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               <Clipboard className="w-4 h-4 mr-2" />
               Paste from Clipboard
             </Button>
+
+            {/* View Prompt button */}
+            {hasDeployedPrompt && currentPrompt?.content && (
+              <Button 
+                onClick={() => setShowPromptViewer(true)}
+                size="sm"
+                variant="secondary"
+                className="w-full max-w-xs"
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                View Prompt
+              </Button>
+            )}
           </div>
           
           {hasDeployedPrompt && (

@@ -154,8 +154,8 @@ skip: ✨ No theme (generic)
 IMPORTANT: 
 - Always make this step skippable with "No theme (generic)" option
 - If user selects a character, remember it and weave it into ALL subsequent questions
-- If user skips, continue with generic content
-- When asking later questions (theme, art style, etc.), reference the selected character if chosen
+- If user selects a character (not "skip"), DO NOT ask about art style - automatically use that character's visual style
+- If user skips, continue with generic content and DO ask about art style later
 - When proposing the final title and description, incorporate the character theme naturally
 
 CONVERSATION FLOW ORDER:
@@ -164,7 +164,7 @@ For all book types, follow this order:
 2. **CLARIFICATION** - If book type needs clarification, ask that specific question
 3. **THEME/CONCEPT** - Ask about the specific theme (incorporate character if selected)
 4. **AGE GROUP** - Ask about target age with suggestions
-5. **ART STYLE** - Ask about visual style (reference character style if selected)
+5. **ART STYLE** - ONLY ask if user skipped character selection. If they chose a character, skip this and use the character's style
 6. **ADDITIONAL DETAILS** - Any other relevant questions for that book type
 7. **PROPOSE TITLE & DESCRIPTION** - Based on all gathered info including character theme
 8. After user confirms, let them know they can click "Create Book"

@@ -76,13 +76,27 @@ serve(async (req) => {
       hasDescription: !!book.book_description 
     });
 
-    // Create simple prompt
-    const prompt = `Create a thumbnail image prompt for "${book.book_name}", a ${book.category || 'children\'s book'}. 
-${book.book_description ? `Description: ${book.book_description}` : ''}
+    // Determine target audience from description or category
+    const targetAudience = book.book_description?.match(/(for |aged |ages |targeting )([^.,!]+)/i)?.[2] || 
+                          (book.category?.toLowerCase().includes('toddler') ? 'toddlers' : 
+                           book.category?.toLowerCase().includes('preschool') ? 'preschoolers' : 
+                           'young learners');
 
-Focus on visual composition and design elements that work well for social media thumbnails. Ensure the main title text is prominently centered in the middle of the composition. Include clear typography, engaging visuals, and appropriate colors for the target audience. The text should be the focal point positioned in the center of the image. Avoid mentioning specific pixel dimensions.`;
+    // Create prompt with clear title + subtitle structure
+    const prompt = `Create a thumbnail image prompt for "${book.book_name}".
+${book.book_description ? `Book description: ${book.book_description}` : ''}
+
+CRITICAL REQUIREMENTS:
+1. Large, bold title text: "${book.book_name}" - prominently centered in the middle of the image
+2. Subtitle below the title: "for ${targetAudience}" - smaller text, also centered
+3. The text layout must be: 
+   [LARGE TITLE]
+   [smaller subtitle with target audience]
+
+Design the background and visual elements around this centered text hierarchy. Use engaging visuals, appropriate colors, and child-friendly design that complements but doesn't overshadow the centered text.`;
 
     console.log('Generated prompt length:', prompt.length);
+    console.log('Target audience identified:', targetAudience);
 
     // Prepare Lovable AI request
     const lovableAIRequest = {
@@ -91,7 +105,7 @@ Focus on visual composition and design elements that work well for social media 
       messages: [
         { 
           role: 'system', 
-          content: 'Generate concise image prompts for book thumbnails. Focus on visual design, composition, and readability at small sizes. Do not include technical specifications or pixel dimensions.' 
+          content: 'Generate image prompts for book thumbnails with clear text hierarchy. Always include: 1) A large, centered title in the middle, 2) A smaller subtitle below showing target audience ("for [audience]"). Describe background, colors, and visual elements that frame this centered text layout. Focus on readability and visual appeal.' 
         },
         { role: 'user', content: prompt }
       ],

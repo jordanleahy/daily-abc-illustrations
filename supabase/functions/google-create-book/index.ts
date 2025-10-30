@@ -248,6 +248,7 @@ Create an illustration that brings the page content to life while maintaining th
         .from('book_system_prompts')
         .insert({
           book_id: book.id,
+          user_id: userId,
           version_number: versionNumber,
           content: defaultStyleGuide,
           is_latest: true,

@@ -149,8 +149,8 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
 
       toast.success(`Image generated successfully (v${data.versionNumber})`);
       
-      // Refresh the data to show the new image version
-      refreshData();
+      // Force refresh the data to show the new image
+      await refreshData();
     } catch (error) {
       console.error('Error regenerating image:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to generate image');

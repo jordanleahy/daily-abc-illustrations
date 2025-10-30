@@ -95,7 +95,9 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
 
       toast.success(`Image generated successfully (v${data.versionNumber})`);
 
-      // The component will update automatically via subscription
+      // Force refresh the data to show the new image
+      await refreshData();
+      setIsLocalGenerating(false);
     } catch (error) {
       console.error('Error generating image:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to generate image');

@@ -252,12 +252,18 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
 
     const normalizedModel = normalizeModel(agentConfig.model);
 
+    // Compute safe parameter values
+    const rawMax = Number(agentConfig.max_completion_tokens);
+    const usedMaxTokens = Math.min(isNaN(rawMax) ? 1024 : rawMax, 4096);
+    const rawTopP = Number(agentConfig.top_p);
+    const usedTopP = isNaN(rawTopP) ? undefined : Math.min(Math.max(rawTopP, 0), 1);
+
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling Lovable AI for image prompt generation...', { 
       requestId,
       model: normalizedModel,
       rawModel: agentConfig.model,
-      maxTokens: agentConfig.max_completion_tokens,
-      topP: agentConfig.top_p
+      maxTokens: usedMaxTokens,
+      topP: usedTopP
     });
 
     // Call Lovable AI Gateway using the agent's configuration and instructions from database
@@ -279,18 +285,13 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
     
     // Add parameters based on model type
     if (isGeminiModel) {
-      // Gemini models support max_completion_tokens but not top_p
-      if (agentConfig.max_completion_tokens) {
-        requestBody.max_completion_tokens = agentConfig.max_completion_tokens;
-      }
+      // Gemini models support max_completion_tokens; avoid top_p
+      requestBody.max_completion_tokens = usedMaxTokens;
     } else {
       // OpenAI/other models support both parameters
-      if (agentConfig.max_completion_tokens) {
-        requestBody.max_completion_tokens = agentConfig.max_completion_tokens;
-      }
-      const parsedTopP = parseFloat(agentConfig.top_p);
-      if (!Number.isNaN(parsedTopP)) {
-        requestBody.top_p = parsedTopP;
+      requestBody.max_completion_tokens = usedMaxTokens;
+      if (usedTopP !== undefined) {
+        requestBody.top_p = usedTopP;
       }
     }
     
@@ -304,7 +305,7 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
     });
 
     const aiDuration = Date.now() - aiStartTime;
-
+    
     if (!response.ok) {
       let errorMsg = 'AI API error';
       if (response.status === 429) {
@@ -312,8 +313,13 @@ Content: ${JSON.stringify(pageData.content, null, 2)}
       } else if (response.status === 402) {
         errorMsg = 'Payment required. Please add credits to your Lovable AI workspace.';
       } else {
-        const errorData = await response.json().catch(() => ({}));
-        errorMsg = `AI API error: ${errorData.error?.message || response.statusText}`;
+        const raw = await response.text().catch(() => '');
+        try {
+          const parsed = raw ? JSON.parse(raw) : {};
+          errorMsg = `AI API error: ${parsed.error?.message || parsed.message || response.statusText}`;
+        } catch {
+          errorMsg = `AI API error: ${raw || response.statusText}`;
+        }
       }
       log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
         requestId, 

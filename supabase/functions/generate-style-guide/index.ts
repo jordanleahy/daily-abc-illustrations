@@ -590,6 +590,40 @@ Required JSON Schema:
       duration: updateDuration
     });
 
+    // **NEW: Extract and store color palette if JSON is valid**
+    if (isValidJSON && styleGuideJSON) {
+      currentStep = 'EXTRACT_COLORS';
+      const colorStartTime = Date.now();
+      log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Extracting and storing color palette...', { requestId });
+
+      try {
+        const { data: colorPaletteId, error: colorError } = await supabaseClient
+          .rpc('extract_colors_from_style_guide', {
+            p_book_id: bookId,
+            p_style_guide_id: promptId,
+            p_style_guide_content: styleGuide
+          });
+
+        if (colorError) {
+          log('WARN', ProcessStatus.WARNING, currentStep, 'Failed to extract colors - continuing anyway', {
+            requestId,
+            error: colorError.message
+          });
+        } else {
+          log('INFO', ProcessStatus.COMPLETE, currentStep, '🎨 Color palette extracted and stored', {
+            requestId,
+            duration: Date.now() - colorStartTime,
+            colorPaletteId
+          });
+        }
+      } catch (error) {
+        log('WARN', ProcessStatus.WARNING, currentStep, 'Color extraction failed - non-blocking', {
+          requestId,
+          error: error instanceof Error ? error.message : 'Unknown error'
+        });
+      }
+    }
+
     const totalDuration = Date.now() - startTime;
     log('INFO', ProcessStatus.COMPLETE, 'COMPLETE', 'Style guide generation completed successfully!', { 
       requestId, 

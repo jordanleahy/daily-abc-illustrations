@@ -215,6 +215,102 @@ export type Database = {
           },
         ]
       }
+      color_palettes: {
+        Row: {
+          accent_hex: string
+          accent_hsl: string
+          accent_usage: string | null
+          background_hex: string
+          background_hsl: string
+          background_usage: string | null
+          book_id: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          primary_hex: string
+          primary_hsl: string
+          primary_usage: string | null
+          secondary_hex: string
+          secondary_hsl: string
+          secondary_usage: string | null
+          style_guide_id: string | null
+          supporting_hex: string | null
+          supporting_hsl: string | null
+          supporting_usage: string | null
+          text_hex: string
+          text_hsl: string
+          text_usage: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          accent_hex: string
+          accent_hsl: string
+          accent_usage?: string | null
+          background_hex: string
+          background_hsl: string
+          background_usage?: string | null
+          book_id: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          primary_hex: string
+          primary_hsl: string
+          primary_usage?: string | null
+          secondary_hex: string
+          secondary_hsl: string
+          secondary_usage?: string | null
+          style_guide_id?: string | null
+          supporting_hex?: string | null
+          supporting_hsl?: string | null
+          supporting_usage?: string | null
+          text_hex: string
+          text_hsl: string
+          text_usage?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          accent_hex?: string
+          accent_hsl?: string
+          accent_usage?: string | null
+          background_hex?: string
+          background_hsl?: string
+          background_usage?: string | null
+          book_id?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          primary_hex?: string
+          primary_hsl?: string
+          primary_usage?: string | null
+          secondary_hex?: string
+          secondary_hsl?: string
+          secondary_usage?: string | null
+          style_guide_id?: string | null
+          supporting_hex?: string | null
+          supporting_hsl?: string | null
+          supporting_usage?: string | null
+          text_hex?: string
+          text_hsl?: string
+          text_usage?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "color_palettes_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "color_palettes_style_guide_id_fkey"
+            columns: ["style_guide_id"]
+            isOneToOne: false
+            referencedRelation: "book_system_prompts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       daily_published: {
         Row: {
           book_id: string
@@ -1006,6 +1102,51 @@ export type Database = {
           },
         ]
       }
+      page_reference_images: {
+        Row: {
+          book_id: string
+          created_at: string | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          page_id: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          page_id: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          page_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_reference_images_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_reference_images_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_simplified_prompts: {
         Row: {
           book_id: string
@@ -1502,6 +1643,14 @@ export type Database = {
       delete_habit_completion_safe: {
         Args: { p_completion_id: string }
         Returns: Json
+      }
+      extract_colors_from_style_guide: {
+        Args: {
+          p_book_id: string
+          p_style_guide_content: string
+          p_style_guide_id: string
+        }
+        Returns: string
       }
       generate_slug: { Args: { input_text: string }; Returns: string }
       get_current_user_role: {

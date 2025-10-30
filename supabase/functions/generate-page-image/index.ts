@@ -62,11 +62,11 @@ serve(async (req) => {
       userId: userId?.substring(0, 8) + '...'
     });
 
-    currentStep = 'FETCH_PAGE_AND_PROMPT';
-    const fetchStartTime = Date.now();
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Fetching page data and prompts from database...', { requestId });
+    currentStep = 'VALIDATE_PREREQUISITES';
+    const validateStartTime = Date.now();
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Validating prerequisites...', { requestId });
 
-    // **NEW: First check if page has a deployed page-specific prompt**
+    // **CRITICAL: Check for deployed page-specific prompt first**
     const { data: pagePrompt, error: pagePromptError } = await supabaseClient
       .from('page_system_prompts')
       .select('*')
@@ -76,7 +76,19 @@ serve(async (req) => {
       .limit(1)
       .maybeSingle();
 
-    // Fetch the specific page data along with book system prompt (style guide)
+    // **ENFORCE: Page prompt must exist for image generation**
+    if (!pagePrompt) {
+      const errorMsg = 'No deployed page-specific prompt found. You must generate page prompts before creating images.';
+      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
+        requestId, 
+        duration: Date.now() - validateStartTime,
+        pageId: pageId?.substring(0, 8) + '...',
+        hasPagePrompt: false
+      });
+      throw new Error(errorMsg);
+    }
+
+    // Fetch the specific page data along with book data and style guide
     const { data: pageData, error: pageError } = await supabaseClient
       .from('pages')
       .select(`
@@ -98,12 +110,12 @@ serve(async (req) => {
       .eq('id', pageId)
       .single();
 
-    const fetchDuration = Date.now() - fetchStartTime;
+    const validateDuration = Date.now() - validateStartTime;
 
     if (pageError) {
       log('ERROR', ProcessStatus.ERROR, currentStep, 'Failed to fetch page data', { 
         requestId, 
-        duration: fetchDuration,
+        duration: validateDuration,
         error: pageError.message,
         pageId: pageId?.substring(0, 8) + '...'
       });
@@ -113,63 +125,96 @@ serve(async (req) => {
     if (!pageData || (pageData as any).books?.user_id !== userId) {
       log('ERROR', ProcessStatus.ERROR, currentStep, 'Page not found or access denied', { 
         requestId, 
-        duration: fetchDuration,
+        duration: validateDuration,
         pageExists: !!pageData,
         userIdMatch: (pageData as any)?.books?.user_id === userId
       });
       throw new Error('Page not found or access denied');
     }
 
-    // Find the deployed book system prompt (style guide) as fallback
+    // Find the deployed book system prompt (style guide)
     const deployedPrompt = (pageData as any).books.book_system_prompts?.find((prompt: any) => prompt.is_deployed);
     
-    // Determine which prompt to use (prefer page-specific)
-    const usePagePrompt = !!pagePrompt;
-    const systemPrompt = pagePrompt?.content || deployedPrompt?.content;
-    
-    if (!systemPrompt) {
-      log('ERROR', ProcessStatus.ERROR, currentStep, 'No page prompt or style guide found', { 
+    if (!deployedPrompt) {
+      const errorMsg = 'No deployed style guide found. You must generate a style guide first.';
+      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
         requestId, 
-        duration: fetchDuration,
+        duration: validateDuration,
         pageId: pageId?.substring(0, 8) + '...',
-        bookId: pageData.book_id?.substring(0, 8) + '...',
-        hasPagePrompt: !!pagePrompt,
-        hasBookPrompt: !!deployedPrompt
+        bookId: pageData.book_id?.substring(0, 8) + '...'
       });
-      throw new Error('No page-specific prompt or book style guide found. Please generate prompts first.');
+      throw new Error(errorMsg);
     }
 
-    log('INFO', ProcessStatus.COMPLETE, currentStep, usePagePrompt 
-      ? '✨ Page-specific prompt found - using for consistent styling!' 
-      : '📖 Using book-level style guide', 
-      { 
-        requestId, 
-        duration: fetchDuration,
-        letter: pageData.letter,
-        title: pageData.title?.substring(0, 30) + '...',
-        bookId: pageData.book_id?.substring(0, 8) + '...',
-        promptType: usePagePrompt ? 'page-specific' : 'book-level',
-        pagePromptVersion: pagePrompt?.version_number
+    log('INFO', ProcessStatus.COMPLETE, currentStep, '✅ All prerequisites validated', { 
+      requestId, 
+      duration: validateDuration,
+      letter: pageData.letter,
+      title: pageData.title?.substring(0, 30) + '...',
+      bookId: pageData.book_id?.substring(0, 8) + '...',
+      hasPagePrompt: true,
+      hasStyleGuide: true,
+      pagePromptVersion: pagePrompt.version_number,
+      styleGuideVersion: deployedPrompt.version_number
+    });
+
+    currentStep = 'EXTRACT_COLORS';
+    const colorStartTime = Date.now();
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Extracting color palette from style guide...', { requestId });
+
+    // Import color extraction utilities
+    const { extractColorsFromStyleGuide, generateColorEnforcementInstructions, validateColorPalette } = await import('../_shared/colorExtractor.ts');
+    
+    // Parse style guide JSON and extract colors
+    let styleGuideJSON: any;
+    let colors: any;
+    let colorEnforcement = '';
+    
+    try {
+      styleGuideJSON = JSON.parse(deployedPrompt.content);
+      colors = extractColorsFromStyleGuide(styleGuideJSON);
+      
+      if (!colors) {
+        throw new Error('Failed to extract color palette from style guide');
       }
-    );
+      
+      // Validate color formats
+      const colorValidation = validateColorPalette(colors);
+      if (!colorValidation.valid) {
+        log('WARN', ProcessStatus.WARNING, currentStep, 'Some colors have invalid format', {
+          requestId,
+          invalidColors: colorValidation.invalidColors
+        });
+      }
+      
+      // Generate mandatory color enforcement instructions
+      colorEnforcement = generateColorEnforcementInstructions(colors);
+      
+      log('INFO', ProcessStatus.COMPLETE, currentStep, 'Colors extracted and validated', { 
+        requestId, 
+        duration: Date.now() - colorStartTime,
+        primaryColor: colors.primary.hex,
+        secondaryColor: colors.secondary.hex,
+        accentColor: colors.accent.hex,
+        backgroundColor: colors.background.hex
+      });
+      
+    } catch (error) {
+      log('ERROR', ProcessStatus.ERROR, currentStep, 'Failed to extract colors from style guide', {
+        requestId,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        styleGuideLength: deployedPrompt.content.length
+      });
+      // Continue without color enforcement if extraction fails
+      colorEnforcement = '';
+    }
 
     currentStep = 'PREPARE_CONTENT';
     const prepareStartTime = Date.now();
     log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Preparing content for image generation...', { requestId });
 
-    // If using page-specific prompt, simplify user message since all details are in system prompt
-    // Otherwise, provide full page details to work with book-level style guide
-    const pageContent = usePagePrompt 
-      ? `Generate the image exactly as specified in the detailed prompt for page "${pageData.letter}: ${pageData.title}".`
-      : `
-Page Details:
-Letter: ${pageData.letter}
-Title: ${pageData.title}
-Description: ${pageData.description || 'No description'}
-Content: ${JSON.stringify(pageData.content, null, 2)}
-
-Please generate an image following the style guide provided in the system prompt.
-      `.trim();
+    // Use page-specific prompt as the complete instruction
+    const pageContent = `Generate the image exactly as specified in the system prompt for page "${pageData.letter}: ${pageData.title}".`;
 
     // Get Lovable AI API key
     const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
@@ -183,6 +228,7 @@ Please generate an image following the style guide provided in the system prompt
       requestId, 
       duration: prepareDuration,
       contentLength: pageContent.length,
+      hasColorEnforcement: colorEnforcement.length > 0,
       letter: pageData.letter
     });
 
@@ -190,11 +236,17 @@ Please generate an image following the style guide provided in the system prompt
     const aiStartTime = Date.now();
     const model = 'google/gemini-2.5-flash-image-preview';
 
-    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling Gemini to generate image...', { 
+    log('INFO', ProcessStatus.IN_PROGRESS, currentStep, 'Calling Gemini to generate image with locked colors...', { 
       requestId,
       model,
-      letter: pageData.letter
+      letter: pageData.letter,
+      colorsLocked: colors ? true : false
     });
+
+    // Combine page prompt with mandatory color enforcement
+    const enhancedSystemPrompt = colorEnforcement 
+      ? `${pagePrompt.content}\n\n${colorEnforcement}`
+      : pagePrompt.content;
 
     // Call Lovable AI Gateway with Gemini image generation model
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -208,7 +260,7 @@ Please generate an image following the style guide provided in the system prompt
         messages: [
           {
             role: 'system',
-            content: systemPrompt // Use page-specific prompt if available, otherwise book style guide
+            content: enhancedSystemPrompt // Page prompt + color enforcement
           },
           {
             role: 'user',
@@ -344,7 +396,9 @@ Please generate an image following the style guide provided in the system prompt
         generation_started_at: new Date(aiStartTime).toISOString(),
         generation_completed_at: new Date().toISOString(),
         generation_duration_ms: aiDuration,
-        prompt_used: `Style Guide: ${deployedPrompt.content.substring(0, 200)}...`
+        prompt_used: colors 
+          ? `Page Prompt (v${pagePrompt.version_number}) + Color Locked: ${colors.primary.hex}, ${colors.secondary.hex}, ${colors.accent.hex}`
+          : `Page Prompt (v${pagePrompt.version_number})`
       });
 
     if (insertError) {

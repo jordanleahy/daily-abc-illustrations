@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -59,11 +59,19 @@ export const useGoogleChat = () => {
       if (error) {
         // Check for specific error types
         if (error.message?.includes('429') || error.message?.includes('Rate limit')) {
-          toast.error('Rate limit exceeded. Please try again in a moment.');
+          toast.error('Rate Limit Exceeded', {
+            description: 'Too many requests. Please wait a moment and try again.',
+            duration: 5000,
+          });
         } else if (error.message?.includes('402') || error.message?.includes('Payment required')) {
-          toast.error('AI credits required. Please add credits to continue.');
+          toast.error('Lovable AI Credits Exhausted', {
+            description: 'Please add credits to your Lovable AI workspace to continue. Go to Settings → Workspace → Usage to top up.',
+            duration: 10000,
+          });
         } else {
-          toast.error(error.message || 'Failed to send message');
+          toast.error('Failed to send message', {
+            description: error.message || 'An unexpected error occurred.',
+          });
         }
         throw error;
       }
@@ -71,11 +79,19 @@ export const useGoogleChat = () => {
       // Check for error in data response
       if (data?.error) {
         if (data.error.includes('Rate limit') || data.error.includes('429')) {
-          toast.error('Rate limit exceeded. Please try again in a moment.');
+          toast.error('Rate Limit Exceeded', {
+            description: 'Too many requests. Please wait a moment and try again.',
+            duration: 5000,
+          });
         } else if (data.error.includes('Payment required') || data.error.includes('402')) {
-          toast.error('AI credits required. Please add credits to continue.');
+          toast.error('Lovable AI Credits Exhausted', {
+            description: 'Please add credits to your Lovable AI workspace to continue. Go to Settings → Workspace → Usage to top up.',
+            duration: 10000,
+          });
         } else {
-          toast.error(data.error);
+          toast.error('Failed to get response', {
+            description: data.error,
+          });
         }
         throw new Error(data.error);
       }

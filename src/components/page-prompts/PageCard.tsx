@@ -128,74 +128,24 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
     try {
       setIsRegeneratingImage(true);
       
-      // First, fetch the latest deployed page system prompt
-      const { data: deployedPrompt, error: promptError } = await supabase
-        .from('page_system_prompts')
-        .select('content')
-        .eq('page_id', page.id)
-        .eq('is_deployed', true)
-        .order('deployed_at', { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      if (promptError) throw promptError;
-
-      if (!deployedPrompt) return;
-
-      // Get the next version number for this page's images
-      const { data: existingImages, error: fetchError } = await supabase
-        .from('page_image_urls')
-        .select('version_number')
-        .eq('page_id', page.id)
-        .order('version_number', { ascending: false })
-        .limit(1);
-
-      if (fetchError) throw fetchError;
-
-      const nextVersion = existingImages && existingImages.length > 0 
-        ? existingImages[0].version_number + 1 
-        : 1;
-
-      // Create a new page_image_urls record with the deployed prompt
-      const { data: newImageRecord, error: createError } = await supabase
-        .from('page_image_urls')
-        .insert({
-          page_id: page.id,
-          book_id: bookId,
-          user_id: user.id,
-          version_number: nextVersion,
-          is_latest: true,
-          generation_status: 'not_started',
-          prompt_used: deployedPrompt.content
-        })
-        .select()
-        .single();
-
-      if (createError) throw createError;
-
-      // Now call generate-image with the record ID, ensuring auth header is present
-      const { data: sessionRes } = await supabase.auth.getSession();
-      const token = sessionRes.session?.access_token;
-
-      if (!token) {
-        setIsRegeneratingImage(false);
-        return;
-      }
-
-      const { error: generateError } = await supabase.functions.invoke('generate-image', {
+      // Call the new unified image generation function
+      const { data, error } = await supabase.functions.invoke('generate-page-image', {
         body: {
-          recordId: newImageRecord.id,
+          pageId: page.id,
           userId: user.id,
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
         },
       });
 
-      if (generateError) throw generateError;
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
 
+      toast.success(`Image generated successfully (v${data.versionNumber})`);
+      
+      // Refresh the data to show the new image version
+      refreshData();
     } catch (error) {
       console.error('Error regenerating image:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to generate image');
     } finally {
       setIsRegeneratingImage(false);
     }

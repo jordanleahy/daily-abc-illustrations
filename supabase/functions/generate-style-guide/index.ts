@@ -362,7 +362,30 @@ Required JSON Schema:
       throw new Error(errorMsg);
     }
 
-    const data = await response.json();
+    // Parse response with error handling
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      const errorMsg = `Failed to parse AI response as JSON: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`;
+      log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
+        requestId, 
+        duration: aiDuration,
+        parseError: parseError instanceof Error ? parseError.message : String(parseError)
+      });
+      
+      // Update record with error
+      await supabaseClient
+        .from('book_system_prompts')
+        .update({
+          status: ProcessStatus.ERROR,
+          error_message: errorMsg,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', promptId);
+
+      throw new Error(errorMsg);
+    }
     
     // Robustly extract JSON from GPT response
     const choice = data?.choices?.[0] ?? {};
@@ -386,13 +409,24 @@ Required JSON Schema:
 
     // Validate that we got content
     if (!styleGuideText) {
-      const errorMsg = 'OpenAI returned empty response';
+      const errorMsg = 'AI returned empty response';
       log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, {
         requestId,
         duration: aiDuration,
         rawMessage: choice,
         bookName: bookMetadata.book_name
       });
+      
+      // Update record with error
+      await supabaseClient
+        .from('book_system_prompts')
+        .update({
+          status: ProcessStatus.ERROR,
+          error_message: errorMsg,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', promptId);
+        
       throw new Error(errorMsg);
     }
 

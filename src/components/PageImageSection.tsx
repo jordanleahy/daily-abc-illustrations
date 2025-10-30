@@ -303,15 +303,31 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
           )}
         </div>
       ) : isGenerating ? (
-        // Show generating state
-        <div className="flex flex-col items-center justify-center h-full space-y-3">
-          <Shimmer className="w-16 h-16" />
-          <p className="text-sm text-muted-foreground">Generating image...</p>
-          {currentImage?.generation_started_at && (
-            <p className="text-xs text-muted-foreground">
-              Started {new Date(currentImage.generation_started_at).toLocaleTimeString()}
-            </p>
-          )}
+        // Show shimmer skeleton while generating
+        <div className="relative w-full h-full bg-muted">
+          {/* Skeleton base */}
+          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted via-muted-foreground/10 to-muted" />
+          
+          {/* Animated shimmer overlay */}
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent animate-shimmer bg-[length:200%_100%]" />
+          
+          {/* Centered content */}
+          <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3">
+            <div className="relative">
+              <Sparkles className="w-12 h-12 text-primary animate-pulse" />
+              <div className="absolute inset-0 animate-ping">
+                <Sparkles className="w-12 h-12 text-primary/30" />
+              </div>
+            </div>
+            <div className="text-center space-y-1">
+              <p className="text-sm font-medium text-foreground">Generating image...</p>
+              {currentImage?.generation_started_at && (
+                <p className="text-xs text-muted-foreground">
+                  Started {new Date(currentImage.generation_started_at).toLocaleTimeString()}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       ) : hasError ? (
         // Show error state

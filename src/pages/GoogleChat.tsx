@@ -230,12 +230,57 @@ export default function GoogleChat() {
                           : 'bg-muted'
                       }`}
                     >
-                      <p className="text-sm whitespace-pre-wrap">
-                        {typeof msg.content === 'string' 
-                          ? msg.content.replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '').trim()
-                          : 'Image uploaded'
-                        }
-                      </p>
+                      {msg.role === 'assistant' && typeof msg.content === 'string' && /^\d+\./.test(msg.content) ? (
+                        // Enhanced formatting for numbered lists (page ideas)
+                        <div className="space-y-3">
+                          {msg.content
+                            .replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '')
+                            .trim()
+                            .split(/\n(?=\d+\.)/)
+                            .map((item, i) => {
+                              const match = item.match(/^(\d+)\.\s+(.+)/s);
+                              if (match) {
+                                const [, number, content] = match;
+                                // Check if content has bold markers (**text**)
+                                const parts = content.split(/(\*\*.*?\*\*)/g);
+                                return (
+                                  <div key={i} className="flex gap-3 p-3 rounded-md bg-background/50 border border-border/50 hover:border-primary/50 transition-colors">
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
+                                      {number}
+                                    </div>
+                                    <div className="flex-1 pt-0.5">
+                                      <p className="text-sm leading-relaxed">
+                                        {parts.map((part, j) => {
+                                          if (part.startsWith('**') && part.endsWith('**')) {
+                                            return (
+                                              <span key={j} className="font-semibold text-foreground">
+                                                {part.slice(2, -2)}
+                                              </span>
+                                            );
+                                          }
+                                          return <span key={j}>{part}</span>;
+                                        })}
+                                      </p>
+                                    </div>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <p key={i} className="text-sm whitespace-pre-wrap">
+                                  {item.trim()}
+                                </p>
+                              );
+                            })}
+                        </div>
+                      ) : (
+                        // Regular text content
+                        <p className="text-sm whitespace-pre-wrap">
+                          {typeof msg.content === 'string' 
+                            ? msg.content.replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '').trim()
+                            : 'Image uploaded'
+                          }
+                        </p>
+                      )}
                     </div>
                     
                     {/* Quick Reply Buttons */}

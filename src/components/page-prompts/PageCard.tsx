@@ -92,22 +92,24 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
 
     try {
       setIsRegenerating(true);
-      
-      // Regenerate image directly (new unified approach)
-      const { data, error } = await supabase.functions.invoke('generate-page-image', {
+
+      // Generate (or regenerate) the page-specific prompt and deploy it
+      const { data, error } = await supabase.functions.invoke('generate-page-prompt', {
         body: {
           pageId: page.id,
           userId: user.id,
+          bookId,
         },
       });
 
       if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
+      if (!data?.success) throw new Error(data?.error || 'Failed to generate page prompt');
 
-      // Refresh the data to show the new image version
-      refreshData();
+      toast.success('Page prompt generated and deployed');
+      await refreshData();
     } catch (error) {
-      console.error('Error regenerating image:', error);
+      console.error('Error generating page prompt:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to generate page prompt');
     } finally {
       setIsRegenerating(false);
     }
@@ -119,12 +121,33 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
     try {
       setIsRegeneratingImage(true);
 
+      // Ensure there is a deployed page-specific prompt; if not, create it first
+      const { data: existingPrompt } = await supabase
+        .from('page_system_prompts')
+        .select('id')
+        .eq('page_id', page.id)
+        .eq('is_deployed', true)
+        .maybeSingle();
+
+      if (!existingPrompt) {
+        const { data: promptRes, error: promptErr } = await supabase.functions.invoke('generate-page-prompt', {
+          body: {
+            pageId: page.id,
+            userId: user.id,
+            bookId,
+          },
+        });
+        if (promptErr || !promptRes?.success) {
+          throw new Error(promptErr?.message || promptRes?.error || 'Failed to generate page prompt');
+        }
+      }
+
       // Ensure we include the auth token for RLS-enabled storage policies
       const { data: sessionRes } = await supabase.auth.getSession();
       const token = sessionRes.session?.access_token;
       if (!token) throw new Error('Not authenticated');
-      
-      // Call the new unified image generation function
+
+      // Call the image generation function (unified)
       const { data, error } = await supabase.functions.invoke('generate-page-image', {
         body: {
           pageId: page.id,
@@ -138,9 +161,7 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
 
-      toast.success(`Image generated successfully (v${data.versionNumber})`);
-      
-      // Force refresh the data to show the new image
+      toast.success('Image generation started');
       await refreshData();
     } catch (error) {
       console.error('Error regenerating image:', error);

@@ -183,6 +183,7 @@ After the user confirms or approves the title and description, immediately ask a
 10-pages: 10 pages (standard)
 15-pages: 15 pages (detailed)
 20-pages: 20 pages (comprehensive)
+agent-decide: ✨ Let agent decide
 custom: ✨ Custom amount
 [/SUGGEST]"
 

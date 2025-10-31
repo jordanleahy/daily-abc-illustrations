@@ -154,17 +154,26 @@ ${visualMetaphors ? `🔮 Visual Metaphors: ${visualMetaphors}` : ''}
 ${colorInstructions}
 
 📐 COMPOSITION GUIDELINES:
+- Title placement: Absolute center of the image (both horizontally and vertically)
+- Character placement: Main characters/visual elements positioned to the LEFT and RIGHT of the centered title
+- The wide 16:9 format provides ample horizontal space for characters to flank the title symmetrically
 - Layout Flow: ${layoutFlow}
-- Focus Hierarchy: ${focusHierarchy}
-- Ensure text elements are readable and prominent
-- Safe space: Keep key elements away from edges
+- Focus Hierarchy: Title is the primary focal point, characters frame it symmetrically
+- Create a balanced, symmetrical composition with the title as the anchor point
+- Ensure text elements are readable and prominent with clear negative space
+- Safe space: Keep key elements away from edges (15-20% margins left/right, 10% margins top/bottom)
 
-📝 REQUIRED TEXT ELEMENTS:
-- Large, bold title: "${book.book_name}" (centered, highly visible)
-- Smaller subtitle: "for ${targetAudience}" (centered below title)
+📝 REQUIRED TEXT ELEMENTS & CHARACTER PLACEMENT:
+- Large, bold title: "${book.book_name}" (CENTERED ABSOLUTELY - both horizontal and vertical center)
+- Smaller subtitle: "for ${targetAudience}" (centered directly below title)
+- Main characters/visual elements: Position to the LEFT and RIGHT sides of the title text
+- Characters should frame the title symmetrically without overlapping or obscuring the text
+- Maintain clear negative space around the title for maximum readability
+- The 16:9 landscape format provides wide horizontal space for this left-center-right composition
 
 🎯 TECHNICAL SPECS:
-- Aspect ratio: 3:2
+- Aspect ratio: 16:9 (landscape format for social media sharing)
+- Dimensions: 1200x630 pixels (OpenGraph standard)
 - Resolution: High quality for web display
 - Text must be legible and professional
 - Thumbnail should be instantly recognizable
@@ -184,7 +193,7 @@ Your output must be a SINGLE, DIRECT image generation prompt paragraph. Do not p
       messages: [
         { 
           role: 'system', 
-          content: 'You generate SINGLE, DIRECT image prompts for an image generation model. Output only one paragraph describing the image - no options, no explanations, no formatting. The prompt should be ready to send directly to an image generator. Always include the exact title text and subtitle "for [audience]" centered in the composition.' 
+          content: 'You generate SINGLE, DIRECT image prompts for 16:9 landscape format images. Output only one paragraph describing the image - no options, no explanations, no formatting. The prompt should be ready to send directly to an image generator. CRITICAL: The image is 16:9 landscape format (1200x630px). Always place the title text in the absolute center with main characters/elements positioned to the left and right of the centered title, taking advantage of the wide horizontal space. Always include the exact title text and subtitle "for [audience]" centered in the composition.' 
         },
         { role: 'user', content: prompt }
       ],
@@ -241,8 +250,8 @@ Your output must be a SINGLE, DIRECT image generation prompt paragraph. Do not p
 
     console.log('Generated prompt length:', generatedPrompt.length);
 
-    // Apply safe space rules for 3:2 aspect ratio
-    const enhancedPrompt = appendSafeSpaceRules(generatedPrompt, '3:2');
+    // Apply safe space rules for 16:9 aspect ratio
+    const enhancedPrompt = appendSafeSpaceRules(generatedPrompt, '16:9');
     console.log('Enhanced prompt with safe space rules applied');
 
     const successResponse = {
@@ -250,7 +259,7 @@ Your output must be a SINGLE, DIRECT image generation prompt paragraph. Do not p
       thumbnailPrompt: enhancedPrompt,
       originalPrompt: generatedPrompt,
       bookId,
-      aspectRatio: '3:2'
+      aspectRatio: '16:9'
     };
 
     console.log('=== Function completed successfully ===');

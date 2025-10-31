@@ -13,7 +13,6 @@ import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
 import { toast } from 'sonner';
 import { BOOK_TYPES } from '@/config/bookTypes';
-import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 interface PageDetail {
   pageNumber: number;
@@ -368,9 +367,9 @@ export default function GoogleChat() {
       showHeader={true}
       fullHeight={true}
     >
-      <ResizablePanelGroup direction="horizontal" className="fixed inset-0 top-[3.5rem]">
+      <div className="fixed inset-0 top-[3.5rem] flex">
         {/* Chat History Sidebar */}
-        <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+        <div className="w-64 border-r bg-muted/30 flex flex-col h-full resize-x overflow-auto" style={{ minWidth: '200px', maxWidth: '600px' }}>
           <ChatSessionSidebar
             sessions={sessions}
             currentSessionId={currentSessionId}
@@ -379,13 +378,10 @@ export default function GoogleChat() {
             onDeleteSession={handleDeleteSession}
             onRenameSession={handleRenameSession}
           />
-        </ResizablePanel>
-
-        <ResizableHandle withHandle />
+        </div>
 
         {/* Main Chat Area */}
-        <ResizablePanel defaultSize={80}>
-          <div className="flex flex-col h-full">
+        <div className="flex-1 flex flex-col">
         {/* Messages Area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
           {messages.length === 0 ? (
@@ -844,9 +840,8 @@ export default function GoogleChat() {
             </Button>
           </div>
           </div>
-          </div>
-        </ResizablePanel>
-      </ResizablePanelGroup>
+        </div>
+      </div>
 
     </PageLayout>
   );

@@ -11,6 +11,41 @@ import { useGoogleChatSessions } from '@/hooks/useGoogleChatSessions';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
 import { toast } from 'sonner';
 import { BOOK_TYPES } from '@/config/bookTypes';
+
+interface PageDetail {
+  pageNumber: number;
+  title: string;
+  description: string;
+}
+
+const parsePageDetailsFromMessages = (messages: any[]): PageDetail[] | null => {
+  // Find the last assistant message containing the book outline
+  const lastAssistantMsg = [...messages].reverse().find(
+    msg => msg.role === 'assistant' && 
+    typeof msg.content === 'string' && 
+    /\*\*Page\s+\d+:/i.test(msg.content)
+  );
+  
+  if (!lastAssistantMsg || typeof lastAssistantMsg.content !== 'string') {
+    return null;
+  }
+  
+  // Regex pattern to match: **Page 16: "I"***\nDescription text
+  const pagePattern = /\*\*Page\s+(\d+):\s*["']([^"']+)["']\*+\s*\n([^\n]+(?:\n(?!\*\*Page)[^\n]+)*)/gi;
+  const pages: PageDetail[] = [];
+  let match;
+  
+  while ((match = pagePattern.exec(lastAssistantMsg.content)) !== null) {
+    const [, pageNum, title, description] = match;
+    pages.push({
+      pageNumber: parseInt(pageNum, 10),
+      title: title.trim(),
+      description: description.trim().replace(/\n/g, ' ') // Single line
+    });
+  }
+  
+  return pages.length > 0 ? pages : null;
+};
 import { 
   Tooltip,
   TooltipContent,
@@ -159,14 +194,24 @@ export default function GoogleChat() {
       return;
     }
 
+    // Parse structured page details from conversation
+    const pageDetails = parsePageDetailsFromMessages(messages);
+    
+    if (pageDetails) {
+      console.log(`Extracted ${pageDetails.length} page details from conversation`);
+    } else {
+      console.log('No structured page details found, will let AI generate structure');
+    }
+
     // Convert messages to simple text format for book creation
     const textMessages = messages.map(msg => ({
       role: msg.role,
-      content: typeof msg.content === 'string' ? msg.content : 'Image uploaded'
+      content: typeof msg.content === 'string' ? msg.content : '[Image uploaded]'
     }));
 
     const result = await createBookMutation.mutateAsync({
-      conversationHistory: textMessages
+      conversationHistory: textMessages,
+      pageDetails: pageDetails || undefined
     });
 
     if (result.success && result.bookId) {

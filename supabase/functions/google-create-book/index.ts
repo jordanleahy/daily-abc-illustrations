@@ -9,9 +9,16 @@ const conversationMessageSchema = z.object({
   content: z.string()
 });
 
+const pageDetailSchema = z.object({
+  pageNumber: z.number().int().positive().max(100),
+  title: z.string().min(1).max(100),
+  description: z.string().min(1).max(1000)
+});
+
 const requestSchema = z.object({
   conversationHistory: z.array(conversationMessageSchema),
-  userId: z.string().uuid()
+  userId: z.string().uuid(),
+  pageDetails: z.array(pageDetailSchema).optional()
 });
 
 serve(async (req) => {
@@ -21,7 +28,18 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-    const { conversationHistory, userId } = requestSchema.parse(body);
+    const validatedData = requestSchema.parse(body);
+    const { conversationHistory, userId, pageDetails } = validatedData;
+    
+    // Sanitization utility
+    const sanitizeText = (text: string, maxLength: number): string => {
+      return text
+        .replace(/<[^>]*>/g, '') // Remove HTML tags
+        .replace(/<script[^>]*>.*?<\/script>/gi, '') // Remove scripts
+        .replace(/[^\w\s.,!?'"-]/g, '') // Only safe characters
+        .substring(0, maxLength)
+        .trim();
+    };
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -44,7 +62,49 @@ serve(async (req) => {
     console.log('Creating book using Lovable AI for user:', userId);
 
     // Prepare prompt for book creation
-    const systemPrompt = `You are an expert at creating children's books of all types.
+    let systemPrompt = '';
+    
+    if (pageDetails && pageDetails.length > 0) {
+      // User provided structured page details - AI must use them
+      console.log(`Using ${pageDetails.length} pre-defined page details from chat`);
+      
+      systemPrompt = `You are creating a children's book. The user has already designed specific pages in our conversation.
+
+CRITICAL INSTRUCTION: You MUST use the exact page titles and descriptions provided below. Do NOT change them.
+
+PROVIDED PAGE STRUCTURE:
+${pageDetails.map(p => `Page ${p.pageNumber}: "${p.title}"\n${p.description}`).join('\n\n')}
+
+Your task:
+1. Create a bookName (creative title that encompasses all pages)
+2. Choose a category (alphabet, numbers, emotions, animals, etc.)
+3. Write a bookDescription (2-3 sentences about the whole book)
+4. For each page, maintain the exact title and description provided
+5. Add content fields (mainConcept, funFact, activity) for each page
+6. Assign appropriate letters for alphabet books (A-Z pattern)
+
+Return ONLY valid JSON with this structure:
+{
+  "bookName": "string",
+  "category": "string", 
+  "bookDescription": "string",
+  "pages": [
+    {
+      "pageNumber": number,
+      "letter": "string",
+      "title": "EXACT TITLE FROM PROVIDED LIST",
+      "description": "EXACT DESCRIPTION FROM PROVIDED LIST",
+      "content": {
+        "mainConcept": "string",
+        "funFact": "string",
+        "activity": "string"
+      }
+    }
+  ]
+}`;
+    } else {
+      // No structured details - use original full AI generation prompt
+      systemPrompt = `You are an expert at creating children's books of all types.
 Based on the conversation, determine the most appropriate book format and create a complete book structure.
 
 Book Types:
@@ -85,6 +145,7 @@ Return ONLY a JSON object with this structure (no markdown, no code blocks):
     }
   ]
 }`;
+    }
 
     const prompt = `Based on this conversation, create a complete children's book:
 ${conversationHistory.map(msg => `${msg.role}: ${msg.content}`).join('\n\n')}
@@ -165,16 +226,51 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     }
 
     console.log(`Creating book: ${bookData.bookName} with ${bookData.pages.length} pages`);
+    
+    // Validate against provided page details if they exist
+    if (pageDetails && pageDetails.length > 0) {
+      if (bookData.pages.length !== pageDetails.length) {
+        console.warn(`Page count mismatch: expected ${pageDetails.length}, got ${bookData.pages.length}`);
+      }
+      
+      // Verify titles match
+      for (let i = 0; i < pageDetails.length; i++) {
+        const provided = pageDetails[i];
+        const aiPage = bookData.pages.find((p: any) => p.pageNumber === provided.pageNumber);
+        
+        if (!aiPage) {
+          console.warn(`Page ${provided.pageNumber} not found in AI response`);
+          continue;
+        }
+        
+        if (aiPage.title !== provided.title) {
+          console.warn(`Title mismatch on page ${provided.pageNumber}: "${provided.title}" vs "${aiPage.title}"`);
+        }
+      }
+    }
+    
+    // Sanitize all page data before database insertion
+    const sanitizedPages = bookData.pages.map((page: any) => ({
+      ...page,
+      letter: sanitizeText(page.letter || '', 10),
+      title: sanitizeText(page.title, 100),
+      description: sanitizeText(page.description || '', 500),
+      content: {
+        mainConcept: sanitizeText(page.content?.mainConcept || '', 500),
+        funFact: sanitizeText(page.content?.funFact || '', 500),
+        activity: sanitizeText(page.content?.activity || '', 500)
+      }
+    }));
 
-    // Insert book
+    // Insert book with sanitized data
     const { data: book, error: bookError } = await supabase
       .from('books')
       .insert({
         user_id: userId,
-        book_name: bookData.bookName,
-        category: bookData.category || 'General',
-        book_description: bookData.bookDescription || '',
-        total_pages: bookData.pages.length,
+        book_name: sanitizeText(bookData.bookName, 200),
+        category: sanitizeText(bookData.category || 'General', 100),
+        book_description: sanitizeText(bookData.bookDescription || '', 1000),
+        total_pages: sanitizedPages.length,
         status: 'draft'
       })
       .select()
@@ -187,10 +283,10 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
 
     console.log('Book created with ID:', book.id);
 
-    // Insert pages
-    const pages = bookData.pages.map((page: any) => ({
+    // Insert sanitized pages
+    const pages = sanitizedPages.map((page: any) => ({
       book_id: book.id,
-      letter: page.letter || `Page ${page.pageNumber}`, // Fallback for non-ABC books
+      letter: page.letter || `Page ${page.pageNumber}`,
       page_number: page.pageNumber,
       title: page.title,
       description: page.description || '',

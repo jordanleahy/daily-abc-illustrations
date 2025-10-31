@@ -8,8 +8,15 @@ interface Message {
   content: string;
 }
 
+interface PageDetail {
+  pageNumber: number;
+  title: string;
+  description: string;
+}
+
 interface CreateBookParams {
   conversationHistory: Message[];
+  pageDetails?: PageDetail[];
 }
 
 interface CreateBookResponse {
@@ -24,7 +31,7 @@ export const useGoogleCreateBook = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ conversationHistory }: CreateBookParams): Promise<CreateBookResponse> => {
+    mutationFn: async ({ conversationHistory, pageDetails }: CreateBookParams): Promise<CreateBookResponse> => {
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
@@ -33,6 +40,7 @@ export const useGoogleCreateBook = () => {
         body: {
           conversationHistory,
           userId: user.id,
+          pageDetails: pageDetails || undefined,
         },
       });
 

@@ -175,6 +175,49 @@ async function convertWebPToPNG(buffer: ArrayBuffer): Promise<ArrayBuffer> {
 }
 
 /**
+ * Converts WebP image to JPG using canvas
+ */
+async function convertWebPToJPG(buffer: ArrayBuffer): Promise<ArrayBuffer> {
+  return new Promise((resolve, reject) => {
+    const blob = new Blob([buffer], { type: 'image/webp' });
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width;
+      canvas.height = img.height;
+      
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+      
+      ctx.drawImage(img, 0, 0);
+      
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Failed to convert WebP to JPG'));
+          return;
+        }
+        
+        blob.arrayBuffer().then(resolve).catch(reject);
+      }, 'image/jpeg', 0.95);
+      
+      URL.revokeObjectURL(url);
+    };
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Failed to load WebP image'));
+    };
+    
+    img.src = url;
+  });
+}
+
+/**
  * Generates a PDF from page image data
  */
 export async function generatePDF(
@@ -445,24 +488,46 @@ export async function downloadAllBookImages(
             continue;
           }
           
-          // Detect file extension from MIME type or URL
-          let extension = 'png';
-          if (blob.type) {
-            const typeMatch = blob.type.match(/image\/(.*)/);
-            if (typeMatch) {
-              extension = typeMatch[1] === 'jpeg' ? 'jpg' : typeMatch[1];
+          // Convert blob to array buffer for format detection and conversion
+          let imageBuffer = await blob.arrayBuffer();
+          let format = detectImageFormat(imageBuffer);
+          console.log(`[ZIP] Detected format: ${format} for page ${page.letter}`);
+          
+          // Convert WebP to JPG
+          let finalBlob = blob;
+          let extension = 'jpg';
+          
+          if (format === 'webp') {
+            console.log(`[ZIP] Converting WebP to JPG for page ${page.letter}...`);
+            try {
+              imageBuffer = await convertWebPToJPG(imageBuffer);
+              finalBlob = new Blob([imageBuffer], { type: 'image/jpeg' });
+              extension = 'jpg';
+              console.log(`[ZIP] Converted to JPG successfully for page ${page.letter}`);
+            } catch (conversionError) {
+              console.error(`[ZIP] WebP conversion failed for page ${page.letter}:`, conversionError);
+              failedPages.push({ letter: page.letter, error: 'Failed to convert WebP to JPG' });
+              onError?.('Failed to convert WebP to JPG', page.id);
+              continue;
             }
+          } else if (format === 'png') {
+            extension = 'png';
+          } else if (format === 'jpg' || format === 'jpeg') {
+            extension = 'jpg';
           } else {
-            const urlMatch = page.image_url.match(/\.(\w+)(?:\?|$)/);
-            if (urlMatch) {
-              extension = urlMatch[1];
+            // Unknown format - try to use mime type or default to jpg
+            if (blob.type) {
+              const typeMatch = blob.type.match(/image\/(.*)/);
+              if (typeMatch) {
+                extension = typeMatch[1] === 'jpeg' ? 'jpg' : typeMatch[1];
+              }
             }
           }
 
-          // Add to ZIP with filename format: BookName-A.png
+          // Add to ZIP with filename format: BookName-A.jpg
           const filename = `${sanitizedBookName}-${page.letter}.${extension}`;
-          console.log(`[ZIP] Adding ${filename} to archive (${blob.size} bytes)...`);
-          zip.file(filename, blob);
+          console.log(`[ZIP] Adding ${filename} to archive (${finalBlob.size} bytes)...`);
+          zip.file(filename, finalBlob);
 
           console.log(`[ZIP] Successfully added ${filename} to archive`);
           processedCount++;

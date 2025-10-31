@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Sparkles, Book, Trash2, Image as ImageIcon, Copy } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
@@ -90,6 +90,22 @@ export default function GoogleChat() {
   );
 
   const createBookMutation = useGoogleCreateBook();
+
+  // Detect when book outline is ready to be created
+  const isBookReadyToCreate = useMemo(() => {
+    if (isLoading || messages.length === 0) return false;
+    
+    // Check if we can parse page details from the conversation
+    const pageDetails = parsePageDetailsFromMessages(messages);
+    
+    // Consider "ready" if we found at least 10 pages (minimum for a book)
+    return pageDetails !== null && pageDetails.length >= 10;
+  }, [messages, isLoading]);
+
+  const pageCount = useMemo(() => {
+    const details = parsePageDetailsFromMessages(messages);
+    return details?.length || 0;
+  }, [messages]);
 
   // Create initial session on mount if none exists
   useEffect(() => {
@@ -419,6 +435,29 @@ export default function GoogleChat() {
             </div>
           )}
         </div>
+
+        {/* Create Book Banner - Shows when outline is ready */}
+        {isBookReadyToCreate && (
+          <div className="border-t bg-gradient-to-t from-background via-background to-transparent px-4 py-4">
+            <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center gap-3">
+              <div className="flex-1 text-center sm:text-left">
+                <p className="text-sm font-medium">Your book outline is ready! 🎉</p>
+                <p className="text-xs text-muted-foreground">
+                  {pageCount} pages detected
+                </p>
+              </div>
+              <Button 
+                onClick={handleCreateBook}
+                disabled={createBookMutation.isPending}
+                size="lg"
+                className="min-w-[200px]"
+              >
+                <Book className="h-4 w-4 mr-2" />
+                {createBookMutation.isPending ? 'Creating...' : 'Create Book'}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Image Upload Area */}
         {showImageUpload && (

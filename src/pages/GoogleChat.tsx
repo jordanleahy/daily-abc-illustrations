@@ -596,25 +596,50 @@ export default function GoogleChat() {
 
                 {/* Image Upload Area */}
                 <div className="space-y-2">
-                  <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30">
-                    <ImageUpload 
-                      onImageSelect={(file) => {
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                          handleQAImageUpload(reader.result as string);
-                        };
-                        reader.readAsDataURL(file);
-                      }}
-                      disabled={createBookMutation.isPending}
-                      className="h-full"
-                    />
+                  <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
+                    {qaPageImages[currentQAPage] ? (
+                      <div className="relative w-full h-full group">
+                        <img 
+                          src={qaPageImages[currentQAPage]} 
+                          alt={`Page ${currentQAPage} preview`}
+                          className="w-full h-full object-contain"
+                        />
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          onClick={() => {
+                            // Clear the image to allow re-upload
+                            setQAPageImages(prev => {
+                              const updated = { ...prev };
+                              delete updated[currentQAPage];
+                              return updated;
+                            });
+                          }}
+                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          Replace Image
+                        </Button>
+                        <div className="absolute bottom-2 left-2 right-2">
+                          <div className="flex items-center gap-2 text-sm bg-green-600/90 text-white px-3 py-1.5 rounded-md">
+                            <Check className="h-4 w-4" />
+                            <span>Image uploaded</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <ImageUpload 
+                        onImageSelect={(file) => {
+                          const reader = new FileReader();
+                          reader.onloadend = () => {
+                            handleQAImageUpload(reader.result as string);
+                          };
+                          reader.readAsDataURL(file);
+                        }}
+                        disabled={createBookMutation.isPending}
+                        className="h-full"
+                      />
+                    )}
                   </div>
-                  {qaPageImages[currentQAPage] && (
-                    <div className="flex items-center gap-2 text-sm text-green-600">
-                      <Check className="h-4 w-4" />
-                      <span>Image uploaded for this page</span>
-                    </div>
-                  )}
                 </div>
               </div>
 

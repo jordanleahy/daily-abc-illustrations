@@ -31,8 +31,8 @@ const parsePageDetailsFromMessages = (messages: any[]): PageDetail[] | null => {
     return null;
   }
   
-  // Regex pattern to match: **Page 16: "I"***\nDescription text
-  const pagePattern = /\*\*Page\s+(\d+):\s*["']([^"']+)["']\*+\s*\n([^\n]+(?:\n(?!\*\*Page)[^\n]+)*)/gi;
+  // Regex pattern to match: **Page 16: "I"*** OR **Page 16: my** (quotes optional)
+  const pagePattern = /\*\*Page\s+(\d+):\s*["']?([^"'\n*]+)["']?\*+\s*\n([^\n]+(?:\n(?!\*\*Page)[^\n]+)*)/gi;
   const pages: PageDetail[] = [];
   let match;
   

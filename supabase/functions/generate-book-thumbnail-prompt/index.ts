@@ -78,57 +78,55 @@ serve(async (req) => {
       hasStyleGuide: !!book.current_system_prompt_id
     });
 
-    // Validate style guide exists
-    if (!book.current_system_prompt_id) {
-      console.error('No deployed style guide found for book:', bookId);
-      throw new Error('You must generate and deploy a style guide before creating a thumbnail');
-    }
-
-    // Fetch the deployed style guide
-    console.log('Fetching deployed style guide...');
-    const { data: styleGuidePrompt, error: styleGuideError } = await supabase
-      .from('book_system_prompts')
-      .select('content, illustration_config')
-      .eq('id', book.current_system_prompt_id)
-      .single();
-
-    if (styleGuideError || !styleGuidePrompt) {
-      console.error('Failed to fetch style guide:', styleGuideError);
-      throw new Error('Failed to fetch style guide');
-    }
-
-    console.log('Style guide retrieved successfully');
-
-    // Parse style guide JSON
+    // Try to fetch style guide if available, but make it optional
     let styleGuideJSON: any = null;
-    try {
-      // illustration_config is already a JSONB object from Postgres, not a string
-      if (typeof styleGuidePrompt.illustration_config === 'string') {
-        styleGuideJSON = JSON.parse(styleGuidePrompt.illustration_config);
+    let colors: any = null;
+    let colorInstructions = '';
+    
+    if (book.current_system_prompt_id) {
+      console.log('Style guide found - fetching deployed style guide...');
+      const { data: styleGuidePrompt, error: styleGuideError } = await supabase
+        .from('book_system_prompts')
+        .select('content, illustration_config')
+        .eq('id', book.current_system_prompt_id)
+        .single();
+
+      if (styleGuidePrompt && !styleGuideError) {
+        console.log('Style guide retrieved successfully');
+
+        // Parse style guide JSON
+        try {
+          if (typeof styleGuidePrompt.illustration_config === 'string') {
+            styleGuideJSON = JSON.parse(styleGuidePrompt.illustration_config);
+          } else {
+            styleGuideJSON = styleGuidePrompt.illustration_config || {};
+          }
+
+          // Extract and validate colors
+          console.log('Extracting colors from style guide...');
+          colors = extractColorsFromStyleGuide(styleGuideJSON);
+          
+          if (colors) {
+            const colorValidation = validateColorPalette(colors);
+            if (colorValidation.valid) {
+              colorInstructions = generateColorEnforcementInstructions(colors);
+              console.log('Colors extracted and validated successfully');
+            } else {
+              console.warn('Invalid colors in palette:', colorValidation.invalidColors);
+              colors = null;
+            }
+          }
+        } catch (parseError) {
+          console.warn('Failed to parse style guide, continuing without it:', parseError);
+          styleGuideJSON = null;
+          colors = null;
+        }
       } else {
-        styleGuideJSON = styleGuidePrompt.illustration_config || {};
+        console.warn('Failed to fetch style guide, continuing without it:', styleGuideError);
       }
-    } catch (parseError) {
-      console.error('Failed to parse style guide JSON:', parseError);
-      console.error('illustration_config type:', typeof styleGuidePrompt.illustration_config);
-      console.error('illustration_config value:', styleGuidePrompt.illustration_config);
-      throw new Error('Style guide JSON is malformed');
+    } else {
+      console.log('No style guide deployed - generating generic prompt');
     }
-
-    // Extract and validate colors
-    console.log('Extracting colors from style guide...');
-    const colors = extractColorsFromStyleGuide(styleGuideJSON);
-    if (!colors) {
-      throw new Error('Style guide missing required color palette');
-    }
-
-    const colorValidation = validateColorPalette(colors);
-    if (!colorValidation.valid) {
-      console.error('Invalid colors in palette:', colorValidation.invalidColors);
-      throw new Error(`Style guide has invalid color formats: ${colorValidation.invalidColors.join(', ')}`);
-    }
-
-    console.log('Colors extracted and validated successfully');
 
     // Determine target audience from description or category
     const targetAudience = book.book_description?.match(/(for |aged |ages |targeting )([^.,!]+)/i)?.[2] || 
@@ -136,26 +134,20 @@ serve(async (req) => {
                            book.category?.toLowerCase().includes('preschool') ? 'preschoolers' : 
                            'young learners');
 
-    // Extract style guide elements
-    const artStyle = styleGuideJSON.styleRequirements?.artStyle || 'educational illustration';
-    const tone = styleGuideJSON.styleRequirements?.tone || 'playful and engaging';
-    const visualMetaphors = styleGuideJSON.visualMetaphors?.concepts?.join(', ') || '';
-    const layoutFlow = styleGuideJSON.compositionGuidelines?.layoutFlow || 'balanced composition';
-    const focusHierarchy = styleGuideJSON.compositionGuidelines?.focusHierarchy || 'centered focal point';
-
-    // Generate color enforcement instructions
-    const colorInstructions = generateColorEnforcementInstructions(colors);
+    // Extract style guide elements (with defaults)
+    const artStyle = styleGuideJSON?.styleRequirements?.artStyle || 'vibrant educational illustration';
+    const tone = styleGuideJSON?.styleRequirements?.tone || 'playful and engaging';
+    const visualMetaphors = styleGuideJSON?.visualMetaphors?.concepts?.join(', ') || '';
+    const layoutFlow = styleGuideJSON?.compositionGuidelines?.layoutFlow || 'balanced composition';
+    const focusHierarchy = styleGuideJSON?.compositionGuidelines?.focusHierarchy || 'centered focal point';
 
     // Shorten title to max 4 words for better thumbnail readability
     const shortenedTitle = book.book_name.split(' ').slice(0, 4).join(' ');
     console.log('Original title:', book.book_name);
     console.log('Shortened title (max 4 words):', shortenedTitle);
 
-    // Create comprehensive prompt that incorporates style guide
-    const prompt = `Generate a book thumbnail image for "${shortenedTitle}".
-${book.book_description ? `Book context: ${book.book_description}` : ''}
-Target audience: ${targetAudience}
-
+    // Create comprehensive prompt (with or without style guide)
+    const styleSection = colors ? `
 STYLE GUIDE REQUIREMENTS:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
@@ -164,6 +156,19 @@ STYLE GUIDE REQUIREMENTS:
 ${visualMetaphors ? `🔮 Visual Metaphors: ${visualMetaphors}` : ''}
 
 ${colorInstructions}
+` : `
+STYLE REQUIREMENTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🎨 Art Style: ${artStyle}
+🎭 Tone: ${tone}
+🎨 Colors: Use bright, vibrant, child-friendly colors that are engaging and educational
+`;
+
+    const prompt = `Generate a book thumbnail image for "${shortenedTitle}".
+${book.book_description ? `Book context: ${book.book_description}` : ''}
+Target audience: ${targetAudience}
+${styleSection}
 
 📐 COMPOSITION GUIDELINES:
 - Title placement: Absolute center of the image (both horizontally and vertically)
@@ -194,11 +199,12 @@ ${colorInstructions}
 
 Your output must be a SINGLE, DIRECT image generation prompt paragraph. Do not provide options or explanations. The prompt must be ready to send directly to an image generator and must strictly follow all color palette requirements above.`;
 
-    console.log('Generated comprehensive style-aware prompt');
+    console.log('Generated comprehensive prompt');
     console.log('Prompt length:', prompt.length);
     console.log('Target audience:', targetAudience);
     console.log('Art style:', artStyle);
-    console.log('Colors validated:', Object.keys(colors).length);
+    console.log('Using style guide:', !!styleGuideJSON);
+    console.log('Colors validated:', colors ? Object.keys(colors).length : 0);
 
     // Prepare Lovable AI request
     const lovableAIRequest = {

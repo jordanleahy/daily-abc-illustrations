@@ -544,63 +544,66 @@ export default function GoogleChat() {
                 </Badge>
               </div>
 
-              {/* Page Prompt Display */}
-              <div className="relative bg-background/80 backdrop-blur-sm border-2 border-primary/20 rounded-lg p-5">
-                <div className="absolute top-3 right-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      const prompt = getCurrentPagePrompt(messages, currentQAPage);
-                      if (prompt) {
-                        navigator.clipboard.writeText(prompt);
-                        toast.success(`Page ${currentQAPage} prompt copied!`, {
-                          description: 'Paste this in MidJourney, DALL-E, or your AI tool'
-                        });
-                      }
-                    }}
-                    className="gap-2"
-                  >
-                    <Copy className="h-4 w-4" />
-                    Copy Prompt
-                  </Button>
-                </div>
-                
-                <div className="pr-24 space-y-2">
-                  <p className="text-xs font-medium text-primary uppercase tracking-wider">
-                    Page {currentQAPage} Prompt
-                  </p>
-                  <div className="text-sm leading-relaxed whitespace-pre-wrap">
+              {/* Page Prompt Display & Image Upload - Side by Side */}
+              <div className="grid grid-cols-2 gap-4">
+                {/* Page Prompt Display */}
+                <div className="relative bg-background/80 backdrop-blur-sm border-2 border-primary/20 rounded-lg p-5 aspect-square flex flex-col">
+                  <div className="absolute top-3 right-3 z-10">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const prompt = getCurrentPagePrompt(messages, currentQAPage);
+                        if (prompt) {
+                          navigator.clipboard.writeText(prompt);
+                          toast.success(`Page ${currentQAPage} prompt copied!`, {
+                            description: 'Paste this in MidJourney, DALL-E, or your AI tool'
+                          });
+                        }
+                      }}
+                      className="gap-2"
+                    >
+                      <Copy className="h-4 w-4" />
+                      Copy Prompt
+                    </Button>
+                  </div>
+                  
+                  <div className="pr-24 space-y-2 flex-shrink-0">
+                    <p className="text-xs font-medium text-primary uppercase tracking-wider">
+                      Page {currentQAPage} Prompt
+                    </p>
+                  </div>
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap overflow-y-auto flex-1 pr-2">
                     {getCurrentPagePrompt(messages, currentQAPage)}
                   </div>
                 </div>
-              </div>
 
-              {/* Image Upload Area */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  <span>Test the prompt above, then paste your generated image here:</span>
-                </div>
-                <div className="h-48 rounded-lg overflow-hidden border-2 border-dashed border-primary/30">
-                  <ImageUpload 
-                    onImageSelect={(file) => {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        handleQAImageUpload(reader.result as string);
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                    disabled={createBookMutation.isPending}
-                    className="h-full"
-                  />
-                </div>
-                {qaPageImages[currentQAPage] && (
-                  <div className="flex items-center gap-2 text-sm text-green-600">
-                    <Copy className="h-4 w-4" />
-                    <span>Image uploaded for this page</span>
+                {/* Image Upload Area */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Sparkles className="h-4 w-4 text-primary" />
+                    <span>Paste your generated image:</span>
                   </div>
-                )}
+                  <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30">
+                    <ImageUpload 
+                      onImageSelect={(file) => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          handleQAImageUpload(reader.result as string);
+                        };
+                        reader.readAsDataURL(file);
+                      }}
+                      disabled={createBookMutation.isPending}
+                      className="h-full"
+                    />
+                  </div>
+                  {qaPageImages[currentQAPage] && (
+                    <div className="flex items-center gap-2 text-sm text-green-600">
+                      <Check className="h-4 w-4" />
+                      <span>Image uploaded for this page</span>
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Action Buttons */}

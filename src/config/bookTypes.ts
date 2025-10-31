@@ -9,7 +9,8 @@ import {
   PawPrint, 
   MessageCircle, 
   Moon,
-  BookOpen
+  BookOpen,
+  Eye
 } from 'lucide-react';
 
 export interface BookType {
@@ -119,5 +120,15 @@ export const BOOK_TYPES: BookType[] = [
     description: 'Consonant-Vowel-Consonant words (cat, dog, sun)',
     prompt: 'I want to create a CVC (Consonant-Vowel-Consonant) words book for toddlers learning to read. Focus on simple three-letter words like cat, dog, sun, bat, pig. Include phonics and word family patterns.',
     color: 'text-emerald-500'
+  },
+  {
+    id: 'sight-words',
+    label: 'Sight Words Book',
+    icon: Eye,
+    description: 'High-frequency words for reading fluency',
+    prompt: 'I want to create a Sight Words book for early readers that teaches high-frequency words essential for reading fluency. Each page should focus on one sight word shown in a simple, engaging sentence with contextual illustrations. Use established sight word lists (Dolch or Fry) and order words from most to least common.',
+    color: 'text-teal-500',
+    needsClarification: true,
+    clarificationContext: 'Ask about reading level preference: Pre-K/Kindergarten (20-25 basic words like: the, and, a, to, you), Grade 1 (50 words - expanded list), Grade 2 (100 words - advanced list), or Custom word list. Provide these 4 specific options. Explain that each page will feature one sight word in a simple sentence with an illustration.'
   }
 ];

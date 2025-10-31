@@ -193,33 +193,6 @@ export default function GoogleChat() {
 
         {/* Main Chat Area */}
         <div className="flex-1 flex flex-col">
-        {/* Header */}
-        <div className="border-b bg-background px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Sparkles className="h-5 w-5 text-primary" />
-            <div>
-              <h2 className="text-sm font-semibold">Google Gemini Chat</h2>
-              <p className="text-xs text-muted-foreground">
-                Discuss your book ideas with AI
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            {messages.length > 0 && (
-              <>
-                <Button
-                  onClick={handleCreateBook}
-                  disabled={createBookMutation.isPending || isLoading}
-                  size="sm"
-                >
-                  <Book className="mr-2 h-4 w-4" />
-                  {createBookMutation.isPending ? 'Creating...' : 'Generate Book'}
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-
         {/* Messages Area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
           {messages.length === 0 ? (

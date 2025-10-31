@@ -476,6 +476,7 @@ export type Database = {
           last_message_at: string | null
           messages: Json
           model_used: string | null
+          qa_page_images: Json | null
           session_name: string | null
           total_tokens_used: number | null
           updated_at: string
@@ -490,6 +491,7 @@ export type Database = {
           last_message_at?: string | null
           messages?: Json
           model_used?: string | null
+          qa_page_images?: Json | null
           session_name?: string | null
           total_tokens_used?: number | null
           updated_at?: string
@@ -504,6 +506,7 @@ export type Database = {
           last_message_at?: string | null
           messages?: Json
           model_used?: string | null
+          qa_page_images?: Json | null
           session_name?: string | null
           total_tokens_used?: number | null
           updated_at?: string

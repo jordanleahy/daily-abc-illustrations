@@ -76,6 +76,7 @@ export default function GoogleChat() {
     updateSessionName,
     deleteSession,
     linkBookToSession,
+    updateQAPageImages,
   } = useGoogleChatSessions();
 
   const { messages, isLoading, sendMessage, sendMessageWithImage, clearMessages } = useGoogleChat(
@@ -218,8 +219,15 @@ export default function GoogleChat() {
     if (sessionId !== currentSessionId) {
       setCurrentSessionId(sessionId);
       setCurrentQAPage(1);
-      setQAPageImages({});
       setShowQACheckpoint(false);
+      
+      // Load QA images from the selected session
+      const session = sessions.find(s => s.id === sessionId);
+      if (session?.qa_page_images) {
+        setQAPageImages(session.qa_page_images);
+      } else {
+        setQAPageImages({});
+      }
     }
   };
 
@@ -243,10 +251,20 @@ export default function GoogleChat() {
 
   const handleQAImageUpload = async (imageDataUrl: string) => {
     // Store image for the current page
-    setQAPageImages(prev => ({
-      ...prev,
+    const updatedImages = {
+      ...qaPageImages,
       [currentQAPage]: imageDataUrl
-    }));
+    };
+    setQAPageImages(updatedImages);
+    
+    // Persist to database
+    if (currentSessionId) {
+      try {
+        await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
+      } catch (error) {
+        console.error('Failed to save QA image:', error);
+      }
+    }
     
     toast.success(`Page ${currentQAPage} image uploaded!`, {
       description: `Image saved. ${currentQAPage < pageCount ? 'Moving to next page...' : 'All pages reviewed!'}`
@@ -607,13 +625,20 @@ export default function GoogleChat() {
                         <Button
                           variant="secondary"
                           size="sm"
-                          onClick={() => {
+                          onClick={async () => {
                             // Clear the image to allow re-upload
-                            setQAPageImages(prev => {
-                              const updated = { ...prev };
-                              delete updated[currentQAPage];
-                              return updated;
-                            });
+                            const updatedImages = { ...qaPageImages };
+                            delete updatedImages[currentQAPage];
+                            setQAPageImages(updatedImages);
+                            
+                            // Persist to database
+                            if (currentSessionId) {
+                              try {
+                                await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
+                              } catch (error) {
+                                console.error('Failed to remove QA image:', error);
+                              }
+                            }
                           }}
                           className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
                         >

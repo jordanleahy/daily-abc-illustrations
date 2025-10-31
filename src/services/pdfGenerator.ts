@@ -19,6 +19,7 @@ export interface PageImageData {
   id: string;
   page_number: number;
   letter: string;
+  title: string;
   image_url: string | null;
 }
 
@@ -29,7 +30,7 @@ export async function fetchBookPageImages(bookId: string): Promise<PageImageData
   // Get pages for the book
   const { data: pages, error: pagesError } = await supabase
     .from('pages')
-    .select('id, page_number, letter')
+    .select('id, page_number, letter, title')
     .eq('book_id', bookId)
     .order('page_number', { ascending: true });
 
@@ -54,6 +55,7 @@ export async function fetchBookPageImages(bookId: string): Promise<PageImageData
       id: page.id,
       page_number: page.page_number,
       letter: page.letter,
+      title: page.title,
       image_url: imageData?.image_url || null
     };
   });
@@ -68,7 +70,7 @@ export async function fetchPageImage(pageId: string): Promise<PageImageData | nu
   // Get page info
   const { data: page, error: pageError } = await supabase
     .from('pages')
-    .select('id, page_number, letter')
+    .select('id, page_number, letter, title')
     .eq('id', pageId)
     .single();
 
@@ -88,6 +90,7 @@ export async function fetchPageImage(pageId: string): Promise<PageImageData | nu
     id: page.id,
     page_number: page.page_number,
     letter: page.letter,
+    title: page.title,
     image_url: imageData?.image_url || null
   };
 }
@@ -526,7 +529,7 @@ export async function downloadAllBookImages(
           }
 
           // Add to ZIP with filename format: BookName-A.jpg
-          const filename = `${sanitizedBookName}-${page.letter}.${extension}`;
+          const filename = `${page.title} - ${sanitizedBookName}.${extension}`;
           console.log(`[ZIP] Adding ${filename} to archive (${finalBlob.size} bytes)...`);
           zip.file(filename, finalBlob);
 

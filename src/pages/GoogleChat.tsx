@@ -130,6 +130,19 @@ export default function GoogleChat() {
     }
   }, [sessionsLoading, sessions.length]);
 
+  // Auto-show QA checkpoint when page details are ready
+  useEffect(() => {
+    if (shouldShowQACheckpoint && !showQACheckpoint) {
+      setShowQACheckpoint(true);
+      setCurrentQAPage(1);
+      
+      // Scroll to bottom to show the banner
+      setTimeout(() => {
+        scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+  }, [shouldShowQACheckpoint, showQACheckpoint]);
+
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -506,7 +519,7 @@ export default function GoogleChat() {
         </div>
 
         {/* QA Checkpoint Banner - Shows page-by-page review */}
-        {shouldShowQACheckpoint && (
+        {showQACheckpoint && !createBookMutation.isSuccess && (
           <div className="border-t-2 border-primary/20 bg-gradient-to-b from-primary/5 to-background px-4 py-6">
             <div className="max-w-4xl mx-auto space-y-4">
               {/* Header with Progress */}

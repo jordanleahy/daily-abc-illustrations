@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Book, Trash2, Image as ImageIcon, Copy, ArrowLeft, ArrowRight, Check } from 'lucide-react';
+import { Send, Sparkles, Book, Trash2, Image as ImageIcon, Copy, ArrowLeft, ArrowRight, Check, BookOpen } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -247,31 +247,18 @@ export default function GoogleChat() {
     }));
     
     toast.success(`Page ${currentQAPage} image uploaded!`, {
-      description: 'Book will be created now. You can add remaining images in the editor.'
+      description: `Image saved. ${currentQAPage < pageCount ? 'Moving to next page...' : 'All pages reviewed!'}`
     });
     
-    // Trigger book creation immediately
-    const pageDetails = parsePageDetailsFromMessages(messages);
-    if (!pageDetails) return;
-    
-    const textMessages = messages.map(msg => ({
-      role: msg.role,
-      content: typeof msg.content === 'string' ? msg.content : '[Image uploaded]'
-    }));
-    
-    try {
-      const result = await createBookMutation.mutateAsync({
-        conversationHistory: textMessages,
-        pageDetails: pageDetails,
-        qaImages: { ...qaPageImages, [currentQAPage]: imageDataUrl }
+    // Auto-advance to next page if not the last page
+    if (currentQAPage < pageCount) {
+      setTimeout(() => {
+        setCurrentQAPage(currentQAPage + 1);
+      }, 500);
+    } else {
+      toast.success('All pages reviewed!', {
+        description: 'Click "Create Book" when ready to finalize.'
       });
-      
-      if (result.success && result.bookId) {
-        // Navigate to the specific page where image was uploaded
-        navigate(`/editor/${result.bookId}?page=${currentQAPage}`);
-      }
-    } catch (error) {
-      console.error('Book creation error:', error);
     }
   };
 
@@ -307,13 +294,28 @@ export default function GoogleChat() {
       content: typeof msg.content === 'string' ? msg.content : '[Image uploaded]'
     }));
 
-    const result = await createBookMutation.mutateAsync({
-      conversationHistory: textMessages,
-      pageDetails: pageDetails || undefined
+    toast.success('Creating book in background...', {
+      description: 'You can continue chatting. Check your library shortly.'
     });
 
-    if (result.success && result.bookId) {
-      navigate(`/editor/${result.bookId}`);
+    try {
+      await createBookMutation.mutateAsync({
+        conversationHistory: textMessages,
+        pageDetails: pageDetails || undefined,
+        qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined
+      });
+      
+      toast.success('Book created successfully!', {
+        description: 'Check your library to view and edit your new book.'
+      });
+      
+      // Reset QA checkpoint state
+      setShowQACheckpoint(false);
+      setCurrentQAPage(1);
+      setQAPageImages({});
+    } catch (error) {
+      console.error('Book creation error:', error);
+      // Error toast is handled by the mutation
     }
   };
 
@@ -634,15 +636,29 @@ export default function GoogleChat() {
                     disabled={currentQAPage === pageCount}
                     className="flex-1"
                   >
-                    View Page {currentQAPage + 1}
+                    {currentQAPage === pageCount ? 'Review' : `Page ${currentQAPage + 1}`}
                     <ArrowRight className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
               </div>
 
+              {/* Create Book Button */}
+              {Object.keys(qaPageImages).length > 0 && (
+                <div className="pt-2 border-t">
+                  <Button
+                    onClick={handleCreateBook}
+                    disabled={createBookMutation.isPending}
+                    className="w-full gap-2"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Create Book with {Object.keys(qaPageImages).length} Image{Object.keys(qaPageImages).length > 1 ? 's' : ''}
+                  </Button>
+                </div>
+              )}
+
               {/* Help Text */}
               <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-                💡 Tip: Upload an image on any page to create your book. You can fill in remaining pages later in the editor.
+                💡 Tip: Upload images for each page, then click "Create Book" when ready. Continue in chat - no redirect!
               </div>
             </div>
           </div>

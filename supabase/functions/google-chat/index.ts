@@ -124,7 +124,7 @@ IMPORTANT: Strip out and do not display any [CLARIFICATION_NEEDED: ...] text in 
 CHARACTER THEME RECOMMENDATION (FIRST QUESTION - CRITICAL):
 IMMEDIATELY after a book type is selected, ask if they want to use popular character themes. This should be your VERY FIRST question before anything else (even before clarification questions).
 
-Present 5-10 popular toddler show characters as suggestions. Choose from:
+Present 5-10 popular toddler show characters or visual styles as suggestions. Choose from:
 - Paw Patrol 🐾
 - Bluey 🐶
 - Frozen ❄️ (Elsa & Anna)
@@ -135,6 +135,7 @@ Present 5-10 popular toddler show characters as suggestions. Choose from:
 - Mickey Mouse 🐭
 - Sesame Street 🎪
 - Spider-Man 🕷️
+- Black & White ⚫⚪ (simple black objects with shading on white background)
 
 Format the question with suggestions:
 "Would you like to feature any popular characters in your [book type]? Kids love seeing familiar faces! Here are some popular options, or you can skip this:
@@ -150,6 +151,7 @@ peppa-pig: 🐷 Peppa Pig
 mickey: 🐭 Mickey Mouse
 sesame: 🎪 Sesame Street
 spiderman: 🕷️ Spider-Man
+black-white: ⚫⚪ Black & White
 skip: ✨ No theme (generic)
 [/SUGGEST]"
 

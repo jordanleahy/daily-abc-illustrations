@@ -102,9 +102,16 @@ serve(async (req) => {
     // Parse style guide JSON
     let styleGuideJSON: any = null;
     try {
-      styleGuideJSON = JSON.parse(styleGuidePrompt.illustration_config || '{}');
+      // illustration_config is already a JSONB object from Postgres, not a string
+      if (typeof styleGuidePrompt.illustration_config === 'string') {
+        styleGuideJSON = JSON.parse(styleGuidePrompt.illustration_config);
+      } else {
+        styleGuideJSON = styleGuidePrompt.illustration_config || {};
+      }
     } catch (parseError) {
       console.error('Failed to parse style guide JSON:', parseError);
+      console.error('illustration_config type:', typeof styleGuidePrompt.illustration_config);
+      console.error('illustration_config value:', styleGuidePrompt.illustration_config);
       throw new Error('Style guide JSON is malformed');
     }
 

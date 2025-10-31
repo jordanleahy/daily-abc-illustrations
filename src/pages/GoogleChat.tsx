@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { ImageUpload } from '@/components/ImageUpload';
 import { useGoogleChat, type SuggestedAction } from '@/hooks/useGoogleChat';
 import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
+import { useGoogleChatSessions } from '@/hooks/useGoogleChatSessions';
+import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
 import { toast } from 'sonner';
 import { BOOK_TYPES } from '@/config/bookTypes';
 import { 
@@ -27,9 +29,41 @@ export default function GoogleChat() {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [showImageUpload, setShowImageUpload] = useState(false);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const { messages, isLoading, sendMessage, sendMessageWithImage, clearMessages } = useGoogleChat();
+  
+  const {
+    sessions,
+    isLoading: sessionsLoading,
+    createSession,
+    updateSessionMessages,
+    updateSessionName,
+    deleteSession,
+  } = useGoogleChatSessions();
+
+  const { messages, isLoading, sendMessage, sendMessageWithImage, clearMessages } = useGoogleChat(
+    currentSessionId || undefined,
+    async (updatedMessages) => {
+      // Auto-save messages to database
+      if (currentSessionId) {
+        await updateSessionMessages({
+          sessionId: currentSessionId,
+          messages: updatedMessages,
+        });
+      }
+    }
+  );
+
   const createBookMutation = useGoogleCreateBook();
+
+  // Create initial session on mount if none exists
+  useEffect(() => {
+    if (!sessionsLoading && sessions.length === 0) {
+      handleCreateNewSession();
+    } else if (!sessionsLoading && sessions.length > 0 && !currentSessionId) {
+      setCurrentSessionId(sessions[0].id);
+    }
+  }, [sessionsLoading, sessions.length]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -88,6 +122,37 @@ export default function GoogleChat() {
     }
   };
 
+  const handleCreateNewSession = async () => {
+    try {
+      const newSession = await createSession(undefined);
+      setCurrentSessionId(newSession.id);
+    } catch (error) {
+      console.error('Error creating session:', error);
+    }
+  };
+
+  const handleSelectSession = (sessionId: string) => {
+    setCurrentSessionId(sessionId);
+  };
+
+  const handleDeleteSession = async (sessionId: string) => {
+    await deleteSession(sessionId);
+    
+    // If we deleted the current session, switch to another one
+    if (sessionId === currentSessionId) {
+      const remainingSessions = sessions.filter(s => s.id !== sessionId);
+      if (remainingSessions.length > 0) {
+        setCurrentSessionId(remainingSessions[0].id);
+      } else {
+        handleCreateNewSession();
+      }
+    }
+  };
+
+  const handleRenameSession = async (sessionId: string, name: string) => {
+    await updateSessionName({ sessionId, name });
+  };
+
   const handleCreateBook = async () => {
     if (messages.length === 0) {
       toast.error('Please have a conversation first');
@@ -115,7 +180,19 @@ export default function GoogleChat() {
       showHeader={true}
       fullHeight={true}
     >
-      <div className="fixed inset-0 top-[3.5rem] flex flex-col">
+      <div className="fixed inset-0 top-[3.5rem] flex">
+        {/* Chat History Sidebar */}
+        <ChatSessionSidebar
+          sessions={sessions}
+          currentSessionId={currentSessionId}
+          onSelectSession={handleSelectSession}
+          onCreateSession={handleCreateNewSession}
+          onDeleteSession={handleDeleteSession}
+          onRenameSession={handleRenameSession}
+        />
+
+        {/* Main Chat Area */}
+        <div className="flex-1 flex flex-col">
         {/* Header */}
         <div className="border-b bg-background px-4 py-3 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -130,15 +207,6 @@ export default function GoogleChat() {
           <div className="flex items-center gap-2">
             {messages.length > 0 && (
               <>
-                <Button 
-                  onClick={clearMessages} 
-                  variant="outline"
-                  size="sm"
-                  disabled={isLoading}
-                >
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Clear
-                </Button>
                 <Button
                   onClick={handleCreateBook}
                   disabled={createBookMutation.isPending || isLoading}
@@ -385,6 +453,7 @@ export default function GoogleChat() {
             </Button>
           </div>
         </div>
+      </div>
       </div>
 
     </PageLayout>

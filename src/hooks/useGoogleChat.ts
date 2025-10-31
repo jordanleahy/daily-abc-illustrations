@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -23,10 +23,43 @@ export interface Message {
   suggestedActions?: SuggestedAction[];
 }
 
-export const useGoogleChat = () => {
+export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: Message[]) => void) => {
   const { user } = useAuthContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+
+  // Load messages when session changes
+  useEffect(() => {
+    if (sessionId) {
+      loadSessionMessages(sessionId);
+    } else {
+      setMessages([]);
+    }
+  }, [sessionId]);
+
+  // Notify parent when messages change
+  useEffect(() => {
+    if (onMessagesUpdate) {
+      onMessagesUpdate(messages);
+    }
+  }, [messages]);
+
+  const loadSessionMessages = async (id: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('gemini_chat_sessions')
+        .select('messages')
+        .eq('id', id)
+        .single();
+
+      if (error) throw error;
+      if (data?.messages && Array.isArray(data.messages)) {
+        setMessages(data.messages as unknown as Message[]);
+      }
+    } catch (error) {
+      console.error('Error loading session messages:', error);
+    }
+  };
 
   const sendMessage = async (content: string | MessageContent[], displayText?: string) => {
     if (!user?.id) {

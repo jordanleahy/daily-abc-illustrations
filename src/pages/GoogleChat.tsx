@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Book, Trash2, Image as ImageIcon, Copy } from 'lucide-react';
+import { Send, Sparkles, Book, Trash2, Image as ImageIcon, Copy, ArrowLeft, ArrowRight, Check } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { ImageUpload } from '@/components/ImageUpload';
 import { useGoogleChat, type SuggestedAction } from '@/hooks/useGoogleChat';
@@ -91,21 +92,34 @@ export default function GoogleChat() {
 
   const createBookMutation = useGoogleCreateBook();
 
-  // Detect when book outline is ready to be created
-  const isBookReadyToCreate = useMemo(() => {
+  // QA Checkpoint state
+  const [currentQAPage, setCurrentQAPage] = useState(1);
+  const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
+  const [showQACheckpoint, setShowQACheckpoint] = useState(false);
+
+  // Detect when book outline is ready for QA checkpoint
+  const shouldShowQACheckpoint = useMemo(() => {
     if (isLoading || messages.length === 0) return false;
-    
-    // Check if we can parse page details from the conversation
     const pageDetails = parsePageDetailsFromMessages(messages);
-    
-    // Consider "ready" if we found at least 10 pages (minimum for a book)
-    return pageDetails !== null && pageDetails.length >= 10;
-  }, [messages, isLoading]);
+    const hasPages = pageDetails !== null && pageDetails.length >= 10;
+    return hasPages && !createBookMutation.isSuccess;
+  }, [messages, isLoading, createBookMutation.isSuccess]);
 
   const pageCount = useMemo(() => {
     const details = parsePageDetailsFromMessages(messages);
     return details?.length || 0;
   }, [messages]);
+
+  // Helper to get current page prompt
+  const getCurrentPagePrompt = (messages: any[], pageNum: number): string | null => {
+    const pageDetails = parsePageDetailsFromMessages(messages);
+    if (!pageDetails || pageDetails.length === 0) return null;
+    
+    const page = pageDetails.find((p: any) => p.pageNumber === pageNum);
+    if (!page) return null;
+    
+    return `**Page ${page.pageNumber}: "${page.title}"**\n\n${page.description}`;
+  };
 
   // Create initial session on mount if none exists
   useEffect(() => {
@@ -177,13 +191,21 @@ export default function GoogleChat() {
     try {
       const newSession = await createSession(undefined);
       setCurrentSessionId(newSession.id);
+      setCurrentQAPage(1);
+      setQAPageImages({});
+      setShowQACheckpoint(false);
     } catch (error) {
       console.error('Error creating session:', error);
     }
   };
 
   const handleSelectSession = (sessionId: string) => {
-    setCurrentSessionId(sessionId);
+    if (sessionId !== currentSessionId) {
+      setCurrentSessionId(sessionId);
+      setCurrentQAPage(1);
+      setQAPageImages({});
+      setShowQACheckpoint(false);
+    }
   };
 
   const handleDeleteSession = async (sessionId: string) => {
@@ -202,6 +224,53 @@ export default function GoogleChat() {
 
   const handleRenameSession = async (sessionId: string, name: string) => {
     await updateSessionName({ sessionId, name });
+  };
+
+  const handleQAImageUpload = async (imageDataUrl: string) => {
+    // Store image for the current page
+    setQAPageImages(prev => ({
+      ...prev,
+      [currentQAPage]: imageDataUrl
+    }));
+    
+    toast.success(`Page ${currentQAPage} image uploaded!`, {
+      description: 'Book will be created now. You can add remaining images in the editor.'
+    });
+    
+    // Trigger book creation immediately
+    const pageDetails = parsePageDetailsFromMessages(messages);
+    if (!pageDetails) return;
+    
+    const textMessages = messages.map(msg => ({
+      role: msg.role,
+      content: typeof msg.content === 'string' ? msg.content : '[Image uploaded]'
+    }));
+    
+    try {
+      const result = await createBookMutation.mutateAsync({
+        conversationHistory: textMessages,
+        pageDetails: pageDetails,
+        qaImages: { ...qaPageImages, [currentQAPage]: imageDataUrl }
+      });
+      
+      if (result.success && result.bookId) {
+        // Navigate to the specific page where image was uploaded
+        navigate(`/editor/${result.bookId}?page=${currentQAPage}`);
+      }
+    } catch (error) {
+      console.error('Book creation error:', error);
+    }
+  };
+
+  const handleQAPageNavigation = (direction: 'next' | 'prev') => {
+    const pageDetails = parsePageDetailsFromMessages(messages);
+    if (!pageDetails) return;
+    
+    if (direction === 'next' && currentQAPage < pageDetails.length) {
+      setCurrentQAPage(currentQAPage + 1);
+    } else if (direction === 'prev' && currentQAPage > 1) {
+      setCurrentQAPage(currentQAPage - 1);
+    }
   };
 
   const handleCreateBook = async () => {
@@ -436,25 +505,132 @@ export default function GoogleChat() {
           )}
         </div>
 
-        {/* Create Book Banner - Shows when outline is ready */}
-        {isBookReadyToCreate && (
-          <div className="border-t bg-gradient-to-t from-background via-background to-transparent px-4 py-4">
-            <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center gap-3">
-              <div className="flex-1 text-center sm:text-left">
-                <p className="text-sm font-medium">Your book outline is ready! 🎉</p>
-                <p className="text-xs text-muted-foreground">
-                  {pageCount} pages detected
-                </p>
+        {/* QA Checkpoint Banner - Shows page-by-page review */}
+        {shouldShowQACheckpoint && (
+          <div className="border-t-2 border-primary/20 bg-gradient-to-b from-primary/5 to-background px-4 py-6">
+            <div className="max-w-4xl mx-auto space-y-4">
+              {/* Header with Progress */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold">
+                    {currentQAPage}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-base">
+                      Review & Test Page {currentQAPage}
+                    </h3>
+                    <p className="text-xs text-muted-foreground">
+                      {pageCount} pages total • Test this prompt in your AI tool
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="outline" className="text-xs">
+                  {Object.keys(qaPageImages).length} images uploaded
+                </Badge>
               </div>
-              <Button 
-                onClick={handleCreateBook}
-                disabled={createBookMutation.isPending}
-                size="lg"
-                className="min-w-[200px]"
-              >
-                <Book className="h-4 w-4 mr-2" />
-                {createBookMutation.isPending ? 'Creating...' : 'Create Book'}
-              </Button>
+
+              {/* Page Prompt Display */}
+              <div className="relative bg-background/80 backdrop-blur-sm border-2 border-primary/20 rounded-lg p-5">
+                <div className="absolute top-3 right-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const prompt = getCurrentPagePrompt(messages, currentQAPage);
+                      if (prompt) {
+                        navigator.clipboard.writeText(prompt);
+                        toast.success(`Page ${currentQAPage} prompt copied!`, {
+                          description: 'Paste this in MidJourney, DALL-E, or your AI tool'
+                        });
+                      }
+                    }}
+                    className="gap-2"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Copy Prompt
+                  </Button>
+                </div>
+                
+                <div className="pr-24 space-y-2">
+                  <p className="text-xs font-medium text-primary uppercase tracking-wider">
+                    Page {currentQAPage} Prompt
+                  </p>
+                  <div className="text-sm leading-relaxed whitespace-pre-wrap">
+                    {getCurrentPagePrompt(messages, currentQAPage)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Image Upload Area */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Sparkles className="h-4 w-4 text-primary" />
+                  <span>Test the prompt above, then paste your generated image here:</span>
+                </div>
+                <div className="h-48 rounded-lg overflow-hidden border-2 border-dashed border-primary/30">
+                  <ImageUpload 
+                    onImageSelect={(file) => {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        handleQAImageUpload(reader.result as string);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    disabled={createBookMutation.isPending}
+                    className="h-full"
+                  />
+                </div>
+                {qaPageImages[currentQAPage] && (
+                  <div className="flex items-center gap-2 text-sm text-green-600">
+                    <Copy className="h-4 w-4" />
+                    <span>Image uploaded for this page</span>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row items-stretch gap-3 pt-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowQACheckpoint(false);
+                    toast.info('Continue chatting to refine prompts');
+                  }}
+                  className="flex-1"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Adjust Feedback
+                </Button>
+                
+                <div className="flex gap-2 flex-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleQAPageNavigation('prev')}
+                    disabled={currentQAPage === 1}
+                    className="flex-1"
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-1" />
+                    Back
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => handleQAPageNavigation('next')}
+                    disabled={currentQAPage === pageCount}
+                    className="flex-1"
+                  >
+                    View Page {currentQAPage + 1}
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
+
+              {/* Help Text */}
+              <div className="text-xs text-muted-foreground text-center pt-2 border-t">
+                💡 Tip: Upload an image on any page to create your book. You can fill in remaining pages later in the editor.
+              </div>
             </div>
           </div>
         )}

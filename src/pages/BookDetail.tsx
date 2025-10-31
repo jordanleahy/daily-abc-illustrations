@@ -112,6 +112,23 @@ export default function BookDetail() {
     }
   }, [user, id, navigate, authLoading, location.pathname, book, queryClient]);
 
+  // Handle URL parameter for page navigation from QA checkpoint
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const pageParam = params.get('page');
+    
+    if (pageParam && pages.length > 0) {
+      const pageNum = parseInt(pageParam, 10);
+      if (pageNum >= 1 && pageNum <= pages.length) {
+        setCurrentPageIndex(pageNum - 1);
+        
+        toast.info(`You're on Page ${pageNum}`, {
+          description: 'Add images to remaining pages below'
+        });
+      }
+    }
+  }, [location.search, pages.length]);
+
   // Handle book not found only after auth and query have both completed
   useEffect(() => {
     if (!authLoading && user && id && bookFetched && !book) {

@@ -18,7 +18,8 @@ const pageDetailSchema = z.object({
 const requestSchema = z.object({
   conversationHistory: z.array(conversationMessageSchema),
   userId: z.string().uuid(),
-  pageDetails: z.array(pageDetailSchema).optional()
+  pageDetails: z.array(pageDetailSchema).optional(),
+  qaImages: z.record(z.string()).optional()
 });
 
 serve(async (req) => {
@@ -29,7 +30,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages } = validatedData;
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -367,6 +368,93 @@ Create an illustration that brings the page content to life while maintaining th
         status: 'draft',
         is_active: false
       });
+
+    // Process QA images if provided
+    if (qaImages && Object.keys(qaImages).length > 0) {
+      console.log(`Processing ${Object.keys(qaImages).length} QA images`);
+      
+      // First get all created pages with their IDs
+      const { data: createdPages, error: fetchPagesError } = await supabase
+        .from('pages')
+        .select('id, page_number')
+        .eq('book_id', book.id);
+      
+      if (fetchPagesError || !createdPages) {
+        console.error('Error fetching pages for QA images:', fetchPagesError);
+      } else {
+        for (const [pageNumStr, imageDataUrl] of Object.entries(qaImages)) {
+          const pageNumber = parseInt(pageNumStr, 10);
+          const page = createdPages.find((p: any) => p.page_number === pageNumber);
+          
+          if (!page) {
+            console.warn(`Page ${pageNumber} not found for QA image upload`);
+            continue;
+          }
+          
+          try {
+            // Extract base64 data from data URL
+            const base64Match = imageDataUrl.match(/^data:image\/(\w+);base64,(.+)$/);
+            if (!base64Match) {
+              console.error(`Invalid image data URL for page ${pageNumber}`);
+              continue;
+            }
+            
+            const [, extension, base64Data] = base64Match;
+            
+            // Decode base64 to binary
+            const binaryString = atob(base64Data);
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+              bytes[i] = binaryString.charCodeAt(i);
+            }
+            
+            // Upload to Supabase Storage
+            const fileName = `${book.id}/${page.id}/qa-upload-v1.${extension}`;
+            const { data: uploadData, error: uploadError } = await supabase.storage
+              .from('page-images')
+              .upload(fileName, bytes, {
+                contentType: `image/${extension}`,
+                upsert: false
+              });
+            
+            if (uploadError) {
+              console.error(`Failed to upload QA image for page ${pageNumber}:`, uploadError);
+              continue;
+            }
+            
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('page-images')
+              .getPublicUrl(fileName);
+            
+            // Create page_image_urls record
+            const { error: imageUrlError } = await supabase
+              .from('page_image_urls')
+              .insert({
+                page_id: page.id,
+                book_id: book.id,
+                user_id: userId,
+                version_number: 1,
+                image_url: publicUrl,
+                generation_status: 'complete',
+                generation_completed_at: new Date().toISOString(),
+                prompt_used: `User uploaded from QA checkpoint for page ${pageNumber}`,
+                is_latest: true,
+                source_type: 'user_uploaded'
+              });
+            
+            if (imageUrlError) {
+              console.error(`Failed to create image URL record for page ${pageNumber}:`, imageUrlError);
+            } else {
+              console.log(`QA image uploaded for page ${pageNumber}`);
+            }
+            
+          } catch (error) {
+            console.error(`Error processing QA image for page ${pageNumber}:`, error);
+          }
+        }
+      }
+    }
 
     // Trigger SEO generation asynchronously
     supabase.functions.invoke('generate-seo-metadata', {

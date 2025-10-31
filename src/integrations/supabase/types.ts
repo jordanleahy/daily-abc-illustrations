@@ -470,6 +470,7 @@ export type Database = {
         Row: {
           agent_id: string | null
           created_at: string
+          created_book_id: string | null
           id: string
           is_active: boolean | null
           last_message_at: string | null
@@ -483,6 +484,7 @@ export type Database = {
         Insert: {
           agent_id?: string | null
           created_at?: string
+          created_book_id?: string | null
           id?: string
           is_active?: boolean | null
           last_message_at?: string | null
@@ -496,6 +498,7 @@ export type Database = {
         Update: {
           agent_id?: string | null
           created_at?: string
+          created_book_id?: string | null
           id?: string
           is_active?: boolean | null
           last_message_at?: string | null
@@ -506,7 +509,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gemini_chat_sessions_created_book_id_fkey"
+            columns: ["created_book_id"]
+            isOneToOne: false
+            referencedRelation: "gemini_books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       gemini_page_images: {
         Row: {

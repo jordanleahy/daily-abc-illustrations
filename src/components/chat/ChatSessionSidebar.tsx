@@ -1,4 +1,4 @@
-import { MessageSquare, Plus, Trash2, Edit2 } from 'lucide-react';
+import { MessageSquare, Plus, Trash2, Edit2, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
@@ -115,9 +115,14 @@ export function ChatSessionSidebar({
                     />
                   ) : (
                     <>
-                      <p className="text-sm font-medium truncate">
-                        {getSessionTitle(session)}
-                      </p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-medium truncate">
+                          {getSessionTitle(session)}
+                        </p>
+                        {session.created_book_id && (
+                          <BookOpen className="h-3 w-3 text-primary flex-shrink-0" />
+                        )}
+                      </div>
                       <p className="text-xs text-muted-foreground truncate">
                         {getLastMessageTime(session)}
                       </p>

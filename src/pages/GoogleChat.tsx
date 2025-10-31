@@ -75,6 +75,7 @@ export default function GoogleChat() {
     updateSessionMessages,
     updateSessionName,
     deleteSession,
+    linkBookToSession,
   } = useGoogleChatSessions();
 
   const { messages, isLoading, sendMessage, sendMessageWithImage, clearMessages } = useGoogleChat(
@@ -96,6 +97,7 @@ export default function GoogleChat() {
   const [currentQAPage, setCurrentQAPage] = useState(1);
   const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
   const [showQACheckpoint, setShowQACheckpoint] = useState(false);
+  const [createdBookId, setCreatedBookId] = useState<string | null>(null);
 
   // Detect when book outline is ready for QA checkpoint
   const shouldShowQACheckpoint = useMemo(() => {
@@ -274,6 +276,11 @@ export default function GoogleChat() {
   };
 
   const handleCreateBook = async () => {
+    if (!currentSessionId) {
+      toast.error('No active session');
+      return;
+    }
+
     if (messages.length === 0) {
       toast.error('Please have a conversation first');
       return;
@@ -299,14 +306,23 @@ export default function GoogleChat() {
     });
 
     try {
-      await createBookMutation.mutateAsync({
+      const result = await createBookMutation.mutateAsync({
         conversationHistory: textMessages,
         pageDetails: pageDetails || undefined,
         qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined
       });
       
+      // Link book to current session
+      await linkBookToSession({ 
+        sessionId: currentSessionId, 
+        bookId: result.bookId 
+      });
+
+      // Store bookId for navigation
+      setCreatedBookId(result.bookId);
+      
       toast.success('Book created successfully!', {
-        description: 'Check your library to view and edit your new book.'
+        description: 'Click "View Created Book" to see your new book.'
       });
       
       // Reset QA checkpoint state
@@ -655,6 +671,20 @@ export default function GoogleChat() {
                   >
                     <BookOpen className="h-4 w-4" />
                     Create Book with {Object.keys(qaPageImages).length} Image{Object.keys(qaPageImages).length > 1 ? 's' : ''}
+                  </Button>
+                </div>
+              )}
+
+              {/* View Created Book Button */}
+              {createdBookId && (
+                <div className="pt-2">
+                  <Button
+                    onClick={() => navigate(`/books/${createdBookId}`)}
+                    variant="outline"
+                    className="w-full gap-2"
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    View Created Book
                   </Button>
                 </div>
               )}

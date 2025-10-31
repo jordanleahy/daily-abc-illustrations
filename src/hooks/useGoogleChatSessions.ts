@@ -14,6 +14,7 @@ export interface ChatSession {
   total_tokens_used: number;
   model_used: string | null;
   agent_id: string | null;
+  created_book_id: string | null;
 }
 
 export function useGoogleChatSessions() {
@@ -126,6 +127,24 @@ export function useGoogleChatSessions() {
     },
   });
 
+  // Link book to session
+  const linkBookToSession = useMutation({
+    mutationFn: async ({ sessionId, bookId }: { sessionId: string; bookId: string }) => {
+      const { error } = await supabase
+        .from('gemini_chat_sessions')
+        .update({ created_book_id: bookId })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
+    },
+    onError: () => {
+      toast.error('Failed to link book to conversation');
+    },
+  });
+
   return {
     sessions,
     isLoading,
@@ -133,5 +152,6 @@ export function useGoogleChatSessions() {
     updateSessionMessages: updateSessionMessages.mutateAsync,
     updateSessionName: updateSessionName.mutateAsync,
     deleteSession: deleteSession.mutateAsync,
+    linkBookToSession: linkBookToSession.mutateAsync,
   };
 }

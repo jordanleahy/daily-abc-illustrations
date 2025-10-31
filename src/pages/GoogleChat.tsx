@@ -116,7 +116,7 @@ export default function GoogleChat() {
   const shouldShowQACheckpoint = useMemo(() => {
     if (isLoading || messages.length === 0) return false;
     const pageDetails = parsePageDetailsFromMessages(messages);
-    const hasPages = pageDetails !== null && pageDetails.length >= 10;
+    const hasPages = pageDetails !== null && pageDetails.length >= 5;
     return hasPages && !createBookMutation.isSuccess;
   }, [messages, isLoading, createBookMutation.isSuccess]);
 

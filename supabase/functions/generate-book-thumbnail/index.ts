@@ -53,13 +53,26 @@ serve(async (req) => {
     let bookName = '';
 
     if (!customPrompt) {
-      // Get the most recent generated prompt for this book
+      // Get the most recent generated prompt for this book (now includes style guide validation)
       const { data: promptData, error: promptError } = await supabase.functions.invoke('generate-book-thumbnail-prompt', {
         body: { bookId, userId }
       });
 
-      if (promptError || !promptData?.success) {
-        throw new Error('Failed to get thumbnail prompt. Please generate a prompt first.');
+      if (promptError) {
+        console.error(`[${new Date().toISOString()}] [ERROR] [FETCH_DATA] - Prompt generation failed:`, promptError);
+        throw new Error(promptError.message || 'Failed to generate thumbnail prompt');
+      }
+
+      if (!promptData?.success) {
+        const errorMsg = promptData?.error || 'Failed to get thumbnail prompt';
+        console.error(`[${new Date().toISOString()}] [ERROR] [FETCH_DATA] - Prompt generation unsuccessful:`, errorMsg);
+        
+        // Provide helpful error message if style guide is missing
+        if (errorMsg.includes('style guide')) {
+          throw new Error('You must generate and deploy a style guide before creating a thumbnail. Please create a style guide for this book first.');
+        }
+        
+        throw new Error(errorMsg);
       }
 
       imagePrompt = promptData.thumbnailPrompt;

@@ -2,6 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { appendSafeSpaceRules } from '../_shared/safeSpaceConfig.ts';
+import { extractColorsFromStyleGuide, generateColorEnforcementInstructions, validateColorPalette } from '../_shared/colorExtractor.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -52,10 +53,10 @@ serve(async (req) => {
 
     console.log('Fetching book data for bookId:', bookId);
     
-    // Fetch book data
+    // Fetch book data and deployed style guide
     const { data: book, error } = await supabase
       .from('books')
-      .select('book_name, category, book_description')
+      .select('book_name, category, book_description, current_system_prompt_id')
       .eq('id', bookId)
       .eq('user_id', userId)
       .single();
@@ -73,8 +74,54 @@ serve(async (req) => {
     console.log('Book data retrieved:', { 
       name: book.book_name, 
       category: book.category, 
-      hasDescription: !!book.book_description 
+      hasDescription: !!book.book_description,
+      hasStyleGuide: !!book.current_system_prompt_id
     });
+
+    // Validate style guide exists
+    if (!book.current_system_prompt_id) {
+      console.error('No deployed style guide found for book:', bookId);
+      throw new Error('You must generate and deploy a style guide before creating a thumbnail');
+    }
+
+    // Fetch the deployed style guide
+    console.log('Fetching deployed style guide...');
+    const { data: styleGuidePrompt, error: styleGuideError } = await supabase
+      .from('book_system_prompts')
+      .select('content, illustration_config')
+      .eq('id', book.current_system_prompt_id)
+      .single();
+
+    if (styleGuideError || !styleGuidePrompt) {
+      console.error('Failed to fetch style guide:', styleGuideError);
+      throw new Error('Failed to fetch style guide');
+    }
+
+    console.log('Style guide retrieved successfully');
+
+    // Parse style guide JSON
+    let styleGuideJSON: any = null;
+    try {
+      styleGuideJSON = JSON.parse(styleGuidePrompt.illustration_config || '{}');
+    } catch (parseError) {
+      console.error('Failed to parse style guide JSON:', parseError);
+      throw new Error('Style guide JSON is malformed');
+    }
+
+    // Extract and validate colors
+    console.log('Extracting colors from style guide...');
+    const colors = extractColorsFromStyleGuide(styleGuideJSON);
+    if (!colors) {
+      throw new Error('Style guide missing required color palette');
+    }
+
+    const colorValidation = validateColorPalette(colors);
+    if (!colorValidation.valid) {
+      console.error('Invalid colors in palette:', colorValidation.invalidColors);
+      throw new Error(`Style guide has invalid color formats: ${colorValidation.invalidColors.join(', ')}`);
+    }
+
+    console.log('Colors extracted and validated successfully');
 
     // Determine target audience from description or category
     const targetAudience = book.book_description?.match(/(for |aged |ages |targeting )([^.,!]+)/i)?.[2] || 
@@ -82,21 +129,53 @@ serve(async (req) => {
                            book.category?.toLowerCase().includes('preschool') ? 'preschoolers' : 
                            'young learners');
 
-    // Create prompt that will generate a SINGLE, DIRECT image generation prompt
-    const prompt = `Generate a SINGLE image generation prompt for the book "${book.book_name}".
+    // Extract style guide elements
+    const artStyle = styleGuideJSON.styleRequirements?.artStyle || 'educational illustration';
+    const tone = styleGuideJSON.styleRequirements?.tone || 'playful and engaging';
+    const visualMetaphors = styleGuideJSON.visualMetaphors?.concepts?.join(', ') || '';
+    const layoutFlow = styleGuideJSON.compositionGuidelines?.layoutFlow || 'balanced composition';
+    const focusHierarchy = styleGuideJSON.compositionGuidelines?.focusHierarchy || 'centered focal point';
+
+    // Generate color enforcement instructions
+    const colorInstructions = generateColorEnforcementInstructions(colors);
+
+    // Create comprehensive prompt that incorporates style guide
+    const prompt = `Generate a book thumbnail image for "${book.book_name}".
 ${book.book_description ? `Book context: ${book.book_description}` : ''}
 Target audience: ${targetAudience}
 
-Your output must be a single paragraph describing the image to generate. Do not provide multiple options or explanations.
+STYLE GUIDE REQUIREMENTS:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Required text elements in the image:
-- Large, bold title: "${book.book_name}" (centered in the middle)
-- Smaller subtitle below: "for ${targetAudience}" (also centered)
+🎨 Art Style: ${artStyle}
+🎭 Tone: ${tone}
+${visualMetaphors ? `🔮 Visual Metaphors: ${visualMetaphors}` : ''}
 
-Describe the visual style, background, colors, characters, and composition that will make an engaging children's book thumbnail. Keep the description concise and direct.`;
+${colorInstructions}
 
-    console.log('Generated prompt length:', prompt.length);
-    console.log('Target audience identified:', targetAudience);
+📐 COMPOSITION GUIDELINES:
+- Layout Flow: ${layoutFlow}
+- Focus Hierarchy: ${focusHierarchy}
+- Ensure text elements are readable and prominent
+- Safe space: Keep key elements away from edges
+
+📝 REQUIRED TEXT ELEMENTS:
+- Large, bold title: "${book.book_name}" (centered, highly visible)
+- Smaller subtitle: "for ${targetAudience}" (centered below title)
+
+🎯 TECHNICAL SPECS:
+- Aspect ratio: 3:2
+- Resolution: High quality for web display
+- Text must be legible and professional
+- Thumbnail should be instantly recognizable
+
+Your output must be a SINGLE, DIRECT image generation prompt paragraph. Do not provide options or explanations. The prompt must be ready to send directly to an image generator and must strictly follow all color palette requirements above.`;
+
+    console.log('Generated comprehensive style-aware prompt');
+    console.log('Prompt length:', prompt.length);
+    console.log('Target audience:', targetAudience);
+    console.log('Art style:', artStyle);
+    console.log('Colors validated:', Object.keys(colors).length);
 
     // Prepare Lovable AI request
     const lovableAIRequest = {

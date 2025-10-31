@@ -55,6 +55,20 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
   const deletePage = useDeletePage();
   const { currentImage, uploadImage } = usePageImageUrls(page.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // DEBUG: Log the current state to diagnose "Copy Full Prompt" button issue
+  console.log('[PageCard] Component rendered:', {
+    pageId: page.id,
+    pageTitle: page.title,
+    currentImage: currentImage ? {
+      id: currentImage.id,
+      hasPromptUsed: !!currentImage.prompt_used,
+      promptLength: currentImage.prompt_used?.length,
+      sourceType: currentImage.source_type,
+      generationStatus: currentImage.generation_status,
+      promptPreview: currentImage.prompt_used?.substring(0, 100)
+    } : 'NULL/UNDEFINED'
+  });
   const [isRegenerating, setIsRegenerating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
@@ -407,10 +421,23 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={handleCopyFullPrompt}
-                  disabled={
-                    !currentImage?.prompt_used || 
-                    currentImage?.prompt_used?.startsWith('User uploaded:')
-                  }
+                  disabled={(() => {
+                    const hasPrompt = !!currentImage?.prompt_used;
+                    const isUpload = currentImage?.prompt_used?.startsWith('User uploaded:');
+                    const shouldDisable = !hasPrompt || isUpload;
+                    
+                    console.log('[PageCard] Copy Full Prompt disabled check:', {
+                      pageId: page.id,
+                      hasCurrentImage: !!currentImage,
+                      hasPrompt,
+                      isUpload,
+                      shouldDisable,
+                      promptLength: currentImage?.prompt_used?.length,
+                      promptPreview: currentImage?.prompt_used?.substring(0, 50)
+                    });
+                    
+                    return shouldDisable;
+                  })()}
                   className="text-sm"
                 >
                   <Copy className="w-3 h-3 mr-2" />

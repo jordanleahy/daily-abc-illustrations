@@ -416,12 +416,13 @@ export async function generatePagePDF(
 
 /**
  * Downloads all book images as individual files and creates a ZIP archive
+ * @returns Object with total and successful image counts
  */
 export async function downloadAllBookImages(
   bookId: string,
   bookName: string,
   options: PDFGenerationOptions = {}
-): Promise<void> {
+): Promise<{ totalCount: number; successCount: number }> {
   const { onProgress, onError } = options;
   
   try {
@@ -587,6 +588,11 @@ export async function downloadAllBookImages(
     
     URL.revokeObjectURL(url);
     console.log(`[ZIP] Download initiated successfully`);
+    
+    return {
+      totalCount: pagesWithImages.length,
+      successCount: processedCount
+    };
   } catch (error) {
     console.error('[ZIP] Error during image download:', error);
     throw error;

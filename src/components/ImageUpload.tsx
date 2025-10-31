@@ -85,11 +85,11 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
         quality: 0.90,
       });
 
-      // Show compression results
+      // Show compression results (toast disabled)
       const savedPercentage = Math.round((1 - processed.compressionRatio) * 100);
-      toast.success(
-        `Image optimized: ${formatFileSize(processed.originalSize)} → ${formatFileSize(processed.compressedSize)} (${savedPercentage}% smaller)`
-      );
+      // toast.success(
+      //   `Image optimized: ${formatFileSize(processed.originalSize)} → ${formatFileSize(processed.compressedSize)} (${savedPercentage}% smaller)`
+      // );
 
       // Set preview from processed image
       setPreview(processed.dataUrl);

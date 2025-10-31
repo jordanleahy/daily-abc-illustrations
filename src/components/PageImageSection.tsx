@@ -11,6 +11,14 @@ import { ProcessStatus } from "@/types/process";
 import { useState, useEffect } from "react";
 import { Loader2, Upload, Sparkles, Clipboard, Copy, ArrowLeft, DollarSign } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
 
 interface PageImageSectionProps {
   pageId: string;
@@ -375,19 +383,61 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
         <div className="flex flex-col h-full p-4 overflow-hidden">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-foreground">Image Generation Prompt</h3>
-            <Button
-              onClick={() => {
-                if (currentPrompt?.content) {
-                  navigator.clipboard.writeText(currentPrompt.content);
-                  toast.success('Prompt copied to clipboard');
-                }
-              }}
-              size="sm"
-              variant="outline"
-            >
-              <Copy className="w-4 h-4 mr-2" />
-              Copy
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={!currentPrompt?.content && !currentImage?.prompt_used}
+                >
+                  <Copy className="w-4 h-4 mr-2" />
+                  Copy
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuLabel className="text-xs">Copy Prompt</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (currentPrompt?.content) {
+                      navigator.clipboard.writeText(currentPrompt.content);
+                      toast.success('JSON prompt copied to clipboard');
+                    }
+                  }}
+                  disabled={!currentPrompt?.content}
+                  className="text-sm"
+                >
+                  <Copy className="w-3 h-3 mr-2" />
+                  Copy JSON
+                  {currentPrompt?.content && (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      Structured
+                    </span>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() => {
+                    if (currentImage?.prompt_used && !currentImage.prompt_used.startsWith('User uploaded:')) {
+                      navigator.clipboard.writeText(currentImage.prompt_used);
+                      toast.success('Full prompt copied to clipboard');
+                    }
+                  }}
+                  disabled={
+                    !currentImage?.prompt_used || 
+                    currentImage?.prompt_used?.startsWith('User uploaded:')
+                  }
+                  className="text-sm"
+                >
+                  <Copy className="w-3 h-3 mr-2" />
+                  Copy Full Prompt
+                  {currentImage?.prompt_used && !currentImage.prompt_used.startsWith('User uploaded:') && (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      Enhanced
+                    </span>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
           <div className="flex-1 overflow-y-auto rounded-lg border border-border bg-muted/30 p-3 mb-3">
             <pre className="text-xs text-foreground whitespace-pre-wrap font-mono">
@@ -434,7 +484,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               Paste from Clipboard
             </Button>
 
-            {/* Copy Prompt button */}
+            {/* View Prompt button */}
             {hasDeployedPrompt && currentPrompt?.content && (
               <Button 
                 onClick={() => setShowPromptViewer(true)}
@@ -443,7 +493,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
                 className="w-full max-w-xs"
               >
                 <Copy className="w-4 h-4 mr-2" />
-                Copy Prompt
+                View Prompt
               </Button>
             )}
           </div>

@@ -3,6 +3,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { RefreshCw, Copy, Trash2, Image, Upload, Download, Type } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageImageSection } from '@/components/PageImageSection';
 
@@ -262,17 +270,38 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
     setShowDeleteConfirm(false);
   };
 
-  const handleCopyImagePrompt = async () => {
+  const handleCopyJsonPrompt = async () => {
+    if (!currentPrompt?.content) {
+      toast.error('No JSON prompt available');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(currentPrompt.content);
+      toast.success('JSON prompt copied to clipboard');
+    } catch (error) {
+      console.error('Error copying JSON prompt to clipboard:', error);
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
+  const handleCopyFullPrompt = async () => {
     if (!currentImage?.prompt_used) {
-      toast.error('No image prompt available');
+      toast.error('No full prompt available');
+      return;
+    }
+
+    // Skip if it's just an upload message
+    if (currentImage.prompt_used.startsWith('User uploaded:')) {
+      toast.error('This image was uploaded, no AI prompt available');
       return;
     }
 
     try {
       await navigator.clipboard.writeText(currentImage.prompt_used);
-      toast.success('Image prompt copied to clipboard');
+      toast.success('Full prompt copied to clipboard');
     } catch (error) {
-      console.error('Error copying image prompt to clipboard:', error);
+      console.error('Error copying full prompt to clipboard:', error);
       toast.error('Failed to copy to clipboard');
     }
   };
@@ -347,17 +376,53 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
             >
               <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-6 h-6"
-              onClick={handleCopyImagePrompt}
-              disabled={!currentImage?.prompt_used}
-              title="Copy image generation prompt"
-              aria-label="Copy image generation prompt"
-            >
-              <Copy className="w-3 h-3" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="w-6 h-6"
+                  disabled={!currentPrompt?.content && !currentImage?.prompt_used}
+                  title="Copy prompt options"
+                  aria-label="Copy prompt options"
+                >
+                  <Copy className="w-3 h-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start" className="w-48">
+                <DropdownMenuLabel className="text-xs">Copy Prompt</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={handleCopyJsonPrompt}
+                  disabled={!currentPrompt?.content}
+                  className="text-sm"
+                >
+                  <Copy className="w-3 h-3 mr-2" />
+                  Copy JSON
+                  {currentPrompt?.content && (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      Structured
+                    </span>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={handleCopyFullPrompt}
+                  disabled={
+                    !currentImage?.prompt_used || 
+                    currentImage?.prompt_used?.startsWith('User uploaded:')
+                  }
+                  className="text-sm"
+                >
+                  <Copy className="w-3 h-3 mr-2" />
+                  Copy Full Prompt
+                  {currentImage?.prompt_used && !currentImage.prompt_used.startsWith('User uploaded:') && (
+                    <span className="ml-auto text-xs text-muted-foreground">
+                      Enhanced
+                    </span>
+                  )}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               variant="ghost"
               size="icon"

@@ -4,6 +4,14 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
 import { FileText, Copy, Download } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useToast } from '@/hooks/use-toast';
@@ -21,17 +29,60 @@ export function LibraryCard({ page, bookId }: LibraryCardProps) {
   const { currentImage } = usePageImageUrls(page.id);
   const [showPrompt, setShowPrompt] = useState(false);
 
-  const handleCopyPrompt = async () => {
-    if (!currentPrompt?.content) return;
+  const handleCopyJsonPrompt = async () => {
+    if (!currentPrompt?.content) {
+      toast({
+        title: "No JSON Prompt",
+        description: "No JSON prompt available",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       await navigator.clipboard.writeText(currentPrompt.content);
       toast({
         title: "Copied!",
-        description: "System prompt copied to clipboard",
+        description: "JSON prompt copied to clipboard",
       });
     } catch (error) {
-      console.error('Error copying to clipboard:', error);
+      console.error('Error copying JSON prompt to clipboard:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleCopyFullPrompt = async () => {
+    if (!currentImage?.prompt_used) {
+      toast({
+        title: "No Full Prompt",
+        description: "No full prompt available",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Skip if it's just an upload message
+    if (currentImage.prompt_used.startsWith('User uploaded:')) {
+      toast({
+        title: "No AI Prompt",
+        description: "This image was uploaded, no AI prompt available",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(currentImage.prompt_used);
+      toast({
+        title: "Copied!",
+        description: "Full prompt copied to clipboard",
+      });
+    } catch (error) {
+      console.error('Error copying full prompt to clipboard:', error);
       toast({
         title: "Error", 
         description: "Failed to copy to clipboard",
@@ -134,16 +185,53 @@ export function LibraryCard({ page, bookId }: LibraryCardProps) {
             <div className="flex items-center justify-between text-sm font-medium text-foreground p-3 pb-2 border-b border-border/50">
               <span>System Prompt:</span>
               <div className="flex gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-6 h-6"
-                  onClick={handleCopyPrompt}
-                  title="Copy system prompt to clipboard"
-                  aria-label="Copy system prompt to clipboard"
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="w-6 h-6"
+                      disabled={!currentPrompt?.content && !currentImage?.prompt_used}
+                      title="Copy prompt options"
+                      aria-label="Copy prompt options"
+                    >
+                      <Copy className="w-3 h-3" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuLabel className="text-xs">Copy Prompt</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleCopyJsonPrompt}
+                      disabled={!currentPrompt?.content}
+                      className="text-sm"
+                    >
+                      <Copy className="w-3 h-3 mr-2" />
+                      Copy JSON
+                      {currentPrompt?.content && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          Structured
+                        </span>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={handleCopyFullPrompt}
+                      disabled={
+                        !currentImage?.prompt_used || 
+                        currentImage?.prompt_used?.startsWith('User uploaded:')
+                      }
+                      className="text-sm"
+                    >
+                      <Copy className="w-3 h-3 mr-2" />
+                      Copy Full Prompt
+                      {currentImage?.prompt_used && !currentImage.prompt_used.startsWith('User uploaded:') && (
+                        <span className="ml-auto text-xs text-muted-foreground">
+                          Enhanced
+                        </span>
+                      )}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
             <div className="flex-1 p-3 overflow-y-auto">

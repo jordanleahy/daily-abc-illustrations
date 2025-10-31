@@ -42,11 +42,12 @@ import type { Page } from '@/types/book';
 interface PageCardProps {
   page: Page;
   bookId: string;
+  preloadedImageUrl?: string;
   onInsertBefore?: () => void;
   onInsertAfter?: () => void;
 }
 
-export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCardProps) {
+export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onInsertAfter }: PageCardProps) {
   const { 
     currentPrompt, 
     refreshData
@@ -520,6 +521,7 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
           pageId={page.id}
           bookId={bookId}
           enableMobileSave={true}
+          preloadedImageUrl={preloadedImageUrl}
         />
       </CardContent>
 

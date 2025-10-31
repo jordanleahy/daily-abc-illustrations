@@ -26,9 +26,10 @@ interface PageImageSectionProps {
   showUpload?: boolean;
   onCloseUpload?: () => void;
   enableMobileSave?: boolean;
+  preloadedImageUrl?: string;
 }
 
-export function PageImageSection({ pageId, bookId, showUpload: externalShowUpload, onCloseUpload, enableMobileSave = false }: PageImageSectionProps) {
+export function PageImageSection({ pageId, bookId, showUpload: externalShowUpload, onCloseUpload, enableMobileSave = false, preloadedImageUrl }: PageImageSectionProps) {
   const { user } = useAuthContext();
   const { currentImage, versions, isLoading, createImageRecord, uploadImage, refreshData } = usePageImageUrls(pageId);
   const { currentPrompt } = usePageSystemPrompt(pageId);
@@ -246,8 +247,10 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     );
   }
 
+  // Use preloaded image if available, otherwise use fetched image
+  const displayImageUrl = preloadedImageUrl || currentImage?.image_url;
   const isGenerating = currentImage?.generation_status === 'in_progress' || isLocalGenerating;
-  const hasImage = currentImage?.generation_status === 'complete' && currentImage?.image_url;
+  const hasImage = (preloadedImageUrl || (currentImage?.generation_status === 'complete' && currentImage?.image_url));
   const hasError = currentImage?.generation_status === 'error';
   const isUserUploaded = currentImage?.source_type === 'user_uploaded';
   
@@ -299,11 +302,11 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             Cancel
           </Button>
         </div>
-      ) : hasImage && currentImage?.image_url ? (
+      ) : hasImage && displayImageUrl ? (
         // Show image with source indicator
         <div className="relative w-full h-full">
           <img 
-            src={currentImage.image_url} 
+            src={displayImageUrl}
             alt={isUserUploaded ? "Uploaded page image" : "Generated page image"}
             className="w-full h-full object-cover"
             style={enableMobileSave ? { 
@@ -312,8 +315,8 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             } : undefined}
             loading="lazy"
             decoding="async"
-            onLoad={() => console.log('🖼️ Image loaded successfully:', currentImage.image_url)}
-            onError={() => console.error('🚫 Image failed to load:', currentImage.image_url)}
+            onLoad={() => console.log('🖼️ Image loaded successfully:', displayImageUrl)}
+            onError={() => console.error('🚫 Image failed to load:', displayImageUrl)}
             onContextMenu={enableMobileSave ? (e) => {
               // Allow default context menu behavior for mobile save
               console.log('📱 Context menu triggered for mobile save');

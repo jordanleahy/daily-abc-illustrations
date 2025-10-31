@@ -6,9 +6,10 @@ import type { Page } from '@/types/book';
 interface UserPageCardProps {
   page: Page;
   bookId: string;
+  preloadedImageUrl?: string;
 }
 
-export function UserPageCard({ page, bookId }: UserPageCardProps) {
+export function UserPageCard({ page, bookId, preloadedImageUrl }: UserPageCardProps) {
   const isMobile = useIsMobile();
   
   const cardContent = (
@@ -35,6 +36,7 @@ export function UserPageCard({ page, bookId }: UserPageCardProps) {
           <PageImageSection 
             pageId={page.id}
             bookId={bookId}
+            preloadedImageUrl={preloadedImageUrl}
           />
         </div>
       </CardContent>

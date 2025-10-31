@@ -22,6 +22,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { InlineQRCode } from '@/components/book/InlineQRCode';
 import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';
+import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { useHasRole } from '@/hooks/useUserRole';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,6 +68,7 @@ export default function BookDetail() {
   const { currentPrompt, refreshData } = useSystemPrompt(id || '');
   const { pages } = useBookPages(id);
   const { data: book, isLoading: bookLoading, error: bookError, isFetched: bookFetched } = useBook(id);
+  const { data: pageImages = {}, isLoading: imagesLoading } = useBookPageImages(id);
   const isAdmin = useHasRole('admin');
   const isMobile = useIsMobile();
   const [styleGuideLoading, setStyleGuideLoading] = useState(false);
@@ -433,6 +435,8 @@ export default function BookDetail() {
         pageNumber={currentPageIndex + 1}
         totalPages={pages.length}
         previousPage={currentPageIndex > 0 ? pages[currentPageIndex - 1] : undefined}
+        preloadedImageUrl={pageImages[pages[currentPageIndex].page_number]}
+        previousPageImageUrl={currentPageIndex > 0 ? pageImages[pages[currentPageIndex - 1].page_number] : undefined}
         onNext={() => {
           if (currentPageIndex < pages.length - 1) {
             setCurrentPageIndex(currentPageIndex + 1);
@@ -911,10 +915,11 @@ export default function BookDetail() {
                       {pages.map((page, index) => (
                         <React.Fragment key={page.id}>
                           {/* Page card - grid auto-places it */}
-                          <div>
+                           <div>
                             <PageCard
                               page={page}
                               bookId={book.id}
+                              preloadedImageUrl={pageImages[page.page_number]}
                               onInsertBefore={() => {
                                 // Insert before = insert after the previous page
                                 setInsertAfterPageNumber(index === 0 ? 0 : pages[index - 1].page_number);

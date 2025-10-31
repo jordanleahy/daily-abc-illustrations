@@ -11,6 +11,8 @@ interface FocusedPageViewProps {
   pageNumber: number;
   totalPages: number;
   previousPage?: Page;
+  preloadedImageUrl?: string;
+  previousPageImageUrl?: string;
   onNext: () => void;
   onPrevious?: () => void;
   onExit: () => void;
@@ -22,6 +24,8 @@ export function FocusedPageView({
   pageNumber, 
   totalPages,
   previousPage,
+  preloadedImageUrl,
+  previousPageImageUrl,
   onNext, 
   onPrevious,
   onExit 
@@ -49,6 +53,7 @@ export function FocusedPageView({
               <PageImageSection 
                 pageId={previousPage.id}
                 bookId={bookId}
+                preloadedImageUrl={previousPageImageUrl}
               />
             </div>
           </Button>
@@ -65,6 +70,7 @@ export function FocusedPageView({
                 <PageImageSection 
                   pageId={page.id}
                   bookId={bookId}
+                  preloadedImageUrl={preloadedImageUrl}
                 />
               </div>
             </CardContent>

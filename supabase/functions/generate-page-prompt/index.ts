@@ -161,53 +161,26 @@ serve(async (req) => {
     const userPrompt = `Book Style Guide (follow this for visual consistency):
 ${styleGuide.content}
 
-Generate a detailed, structured image prompt for this specific page:
+Create a simple, natural image prompt for this specific page:
 
 Letter: ${page.letter}
 Title: ${page.title}
 Description: ${page.description || 'No description provided'}
 Content: ${JSON.stringify(page.content, null, 2)}
 
-Create a comprehensive JSON prompt that:
-1. References colors, art style, and character designs from the style guide
-2. Describes the specific scene for this page
-3. Specifies composition, layout, and visual hierarchy
-4. Ensures this page will be visually consistent with other pages in the book
-5. **CRITICAL: DO NOT include any text, letters, or typography in the image description**
+Write a clear, natural paragraph (2-3 sentences) describing the scene for this page. Include:
+- The main subject/character and their action
+- Expression or mood
+- Environment and setting details
+- Art style and atmosphere
+- Use colors from the style guide when specified
 
-🚫 MANDATORY NO TEXT RULE:
-- The generated prompt must describe ONLY visual elements
-- DO NOT include any text, letters, words, titles, or labels in the scene description
-- Focus purely on visual storytelling without textual elements
-- Text overlays will be added separately if needed
+Example format:
+"A fluffy orange cat sitting on a colorful rug, purring contentedly with eyes half-closed. Soft morning sunlight streams through a window behind her. Bright, cheerful toddler storybook illustration style, simple shapes, clean outlines, warm and cozy atmosphere."
 
-Return your response as a JSON object with this structure:
-{
-  "subject": {
-    "primary": "main subject/character",
-    "characterDetails": "detailed description referencing style guide"
-  },
-  "scene": {
-    "setting": "specific environment for this page",
-    "description": "detailed scene description WITHOUT any text elements",
-    "style": "art style from style guide"
-  },
-  "colors": {
-    "primary": "main color (from style guide palette)",
-    "secondary": "secondary color",
-    "background": "background color",
-    "accent": "accent colors"
-  },
-  "composition": {
-    "layout": "composition structure",
-    "focusPoint": "where viewer's eye should go",
-    "characterPosition": "where character should be placed"
-  },
-  "technicalSpecs": {
-    "aspectRatio": "aspect ratio",
-    "resolution": "recommended resolution"
-  }
-}`;
+🚫 CRITICAL: DO NOT include any text, letters, words, or typography in your description. Focus purely on visual elements.
+
+Respond with ONLY the paragraph - no code blocks, no JSON, just natural English.`;
 
     // Call Lovable AI Gateway with Graphics Designer Agent
     log('info', 'in-progress', 'CALL_AI', 'Calling Lovable AI Gateway', { 
@@ -290,38 +263,24 @@ Return your response as a JSON object with this structure:
       contentLength: rawContent.length 
     });
 
-    // Parse JSON from response (handle markdown code blocks)
-    log('info', 'in-progress', 'PARSE_JSON', 'Parsing JSON from AI response', { requestId });
+    // Clean the response - remove any markdown code blocks if present
+    log('info', 'in-progress', 'CLEAN_RESPONSE', 'Cleaning AI response', { requestId });
     let pagePromptContent = rawContent.trim();
     
-    // Try to extract JSON from markdown code blocks
-    const jsonBlockMatch = pagePromptContent.match(/```json\s*([\s\S]*?)\s*```/);
-    if (jsonBlockMatch) {
-      pagePromptContent = jsonBlockMatch[1].trim();
-    } else {
-      // Try to extract from any code block
-      const codeBlockMatch = pagePromptContent.match(/```\s*([\s\S]*?)\s*```/);
-      if (codeBlockMatch) {
-        pagePromptContent = codeBlockMatch[1].trim();
-      }
+    // Remove markdown code blocks if AI added them despite instructions
+    const codeBlockMatch = pagePromptContent.match(/```(?:text|markdown)?\s*([\s\S]*?)\s*```/);
+    if (codeBlockMatch) {
+      pagePromptContent = codeBlockMatch[1].trim();
     }
+    
+    // Remove any leading/trailing quotes
+    pagePromptContent = pagePromptContent.replace(/^["']|["']$/g, '').trim();
 
-    // Validate JSON
-    let parsedJson;
-    try {
-      parsedJson = JSON.parse(pagePromptContent);
-      log('info', 'complete', 'PARSE_JSON', 'JSON parsed successfully', { 
-        requestId, 
-        keys: Object.keys(parsedJson) 
-      });
-    } catch (parseError) {
-      log('error', 'complete', 'PARSE_JSON', 'Failed to parse JSON, storing raw content', { 
-        requestId, 
-        error: parseError.message 
-      });
-      // Store raw content if JSON parsing fails
-      parsedJson = null;
-    }
+    log('info', 'complete', 'CLEAN_RESPONSE', 'Response cleaned', { 
+      requestId, 
+      contentLength: pagePromptContent.length,
+      preview: pagePromptContent.substring(0, 100) + '...'
+    });
 
     // Get next version number for this page
     log('info', 'in-progress', 'GET_VERSION', 'Getting next version number', { requestId });
@@ -346,7 +305,7 @@ Return your response as a JSON object with this structure:
         page_id: pageId,
         book_id: bookId,
         user_id: userId,
-        content: pagePromptContent, // Store as string (JSON or raw text)
+        content: pagePromptContent, // Store as simple paragraph string
         version_number: nextVersion,
         is_latest: true,
         is_deployed: true,
@@ -360,9 +319,9 @@ Return your response as a JSON object with this structure:
           tokensUsed: aiData.usage?.total_tokens || 0,
           styleGuideVersion: styleGuide.version_number,
           generatedAt: new Date().toISOString(),
-          parseSuccess: !!parsedJson
+          format: 'paragraph'
         },
-        prompt_status: parsedJson ? 'complete' : 'error'
+        prompt_status: 'complete'
       })
       .select()
       .single();

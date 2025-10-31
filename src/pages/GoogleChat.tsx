@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Book, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Send, Sparkles, Book, Trash2, Image as ImageIcon, Copy } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -243,8 +243,14 @@ export default function GoogleChat() {
                                 const [, number, content] = match;
                                 // Check if content has bold markers (**text**)
                                 const parts = content.split(/(\*\*.*?\*\*)/g);
+                                
+                                const handleCopyPage = () => {
+                                  navigator.clipboard.writeText(content.trim());
+                                  toast.success(`Page ${number} description copied to clipboard`);
+                                };
+                                
                                 return (
-                                  <div key={i} className="flex gap-3 p-3 rounded-md bg-background/50 border border-border/50 hover:border-primary/50 transition-colors">
+                                  <div key={i} className="relative flex gap-3 p-3 rounded-md bg-background/50 border border-border/50 hover:border-primary/50 transition-colors group">
                                     <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
                                       {number}
                                     </div>
@@ -262,6 +268,14 @@ export default function GoogleChat() {
                                         })}
                                       </p>
                                     </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={handleCopyPage}
+                                      className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
                                   </div>
                                 );
                               }

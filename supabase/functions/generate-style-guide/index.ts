@@ -303,23 +303,66 @@ Required JSON Schema:
       topP: agentConfig.top_p
     });
 
-    // Call Lovable AI Gateway using Gemini
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${lovableApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: targetModel,
-        messages: [
-          { role: 'system', content: processedInstructions },
-          { role: 'user', content: styleGuidePrompt }
-        ],
-        max_completion_tokens: agentConfig.max_completion_tokens || 20000,
-        top_p: parseFloat(agentConfig.top_p),
-      }),
-    });
+    // Call Lovable AI Gateway using Gemini with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 50000); // 50 second timeout
+    
+    let response;
+    try {
+      response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${lovableApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: targetModel,
+          messages: [
+            { role: 'system', content: processedInstructions },
+            { role: 'user', content: styleGuidePrompt }
+          ],
+          max_completion_tokens: agentConfig.max_completion_tokens || 16000, // Reduced for faster response
+          top_p: parseFloat(agentConfig.top_p),
+        }),
+        signal: controller.signal,
+      });
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      
+      let errorMsg = 'Failed to call AI API';
+      if (fetchError.name === 'AbortError') {
+        errorMsg = 'AI API request timed out after 50 seconds. Please try again.';
+        log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
+          requestId, 
+          duration: aiDuration,
+          error: 'TIMEOUT'
+        });
+      } else {
+        errorMsg = `Network error calling AI API: ${fetchError.message}`;
+        log('ERROR', ProcessStatus.ERROR, currentStep, errorMsg, { 
+          requestId, 
+          duration: aiDuration,
+          error: fetchError.message
+        });
+      }
+      
+      // Update record with error
+      await supabaseClient
+        .from('book_system_prompts')
+        .update({
+          prompt_status: ProcessStatus.ERROR,
+          generation_metadata: {
+            error_message: errorMsg,
+            failed_at: new Date().toISOString(),
+            request_id: requestId
+          }
+        })
+        .eq('id', promptId);
+      
+      throw new Error(errorMsg);
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     const aiDuration = Date.now() - aiStartTime;
 

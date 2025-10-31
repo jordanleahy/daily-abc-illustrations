@@ -13,6 +13,7 @@ import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
 import { toast } from 'sonner';
 import { BOOK_TYPES } from '@/config/bookTypes';
+import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from '@/components/ui/resizable';
 
 interface PageDetail {
   pageNumber: number;
@@ -367,19 +368,24 @@ export default function GoogleChat() {
       showHeader={true}
       fullHeight={true}
     >
-      <div className="fixed inset-0 top-[3.5rem] flex">
+      <ResizablePanelGroup direction="horizontal" className="fixed inset-0 top-[3.5rem]">
         {/* Chat History Sidebar */}
-        <ChatSessionSidebar
-          sessions={sessions}
-          currentSessionId={currentSessionId}
-          onSelectSession={handleSelectSession}
-          onCreateSession={handleCreateNewSession}
-          onDeleteSession={handleDeleteSession}
-          onRenameSession={handleRenameSession}
-        />
+        <ResizablePanel defaultSize={20} minSize={15} maxSize={40}>
+          <ChatSessionSidebar
+            sessions={sessions}
+            currentSessionId={currentSessionId}
+            onSelectSession={handleSelectSession}
+            onCreateSession={handleCreateNewSession}
+            onDeleteSession={handleDeleteSession}
+            onRenameSession={handleRenameSession}
+          />
+        </ResizablePanel>
+
+        <ResizableHandle withHandle />
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <ResizablePanel defaultSize={80}>
+          <div className="flex flex-col h-full">
         {/* Messages Area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
           {messages.length === 0 ? (
@@ -837,9 +843,10 @@ export default function GoogleChat() {
               <Send className="h-4 w-4" />
             </Button>
           </div>
-        </div>
-      </div>
-      </div>
+          </div>
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
 
     </PageLayout>
   );

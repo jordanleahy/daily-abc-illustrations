@@ -72,7 +72,7 @@ export function ChatSessionSidebar({
   };
 
   return (
-    <div className="w-64 border-r bg-muted/30 flex flex-col h-full">
+    <div className="border-r bg-muted/30 flex flex-col h-full w-full">
       {/* Header */}
       <div className="p-4 border-b">
         <Button 

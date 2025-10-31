@@ -11,6 +11,7 @@ import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
 import { useGoogleChatSessions } from '@/hooks/useGoogleChatSessions';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
+import { QACheckpointPanel } from '@/components/chat/QACheckpointPanel';
 import { toast } from 'sonner';
 import { BOOK_TYPES } from '@/config/bookTypes';
 
@@ -304,6 +305,20 @@ export default function GoogleChat() {
     }
   };
 
+  const handleRemoveQAImage = async (pageNumber: number) => {
+    const updatedImages = { ...qaPageImages };
+    delete updatedImages[pageNumber];
+    setQAPageImages(updatedImages);
+    
+    if (currentSessionId) {
+      try {
+        await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
+      } catch (error) {
+        console.error('Failed to remove QA image:', error);
+      }
+    }
+  };
+
   const handleCreateBook = async () => {
     if (!currentSessionId) {
       toast.error('No active session');
@@ -381,7 +396,7 @@ export default function GoogleChat() {
         </div>
 
         {/* Main Chat Area */}
-        <div className="flex-1 flex flex-col">
+        <div className={`flex-1 flex flex-col transition-all duration-300 ${showQACheckpoint ? 'mr-[500px]' : ''}`}>
         {/* Messages Area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
           {messages.length === 0 ? (
@@ -564,231 +579,6 @@ export default function GoogleChat() {
           )}
         </div>
 
-        {/* QA Checkpoint Banner - Shows page-by-page review */}
-        {showQACheckpoint && !createBookMutation.isSuccess && (
-          <div className="border-t-2 border-primary/20 bg-gradient-to-b from-primary/5 to-background px-4 py-6">
-            <div className="max-w-4xl mx-auto space-y-4">
-              {/* Book Created Banner */}
-              {isBookCreated && (
-                <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-                      <div>
-                        <p className="font-medium text-green-900 dark:text-green-100">
-                          Book Created Successfully!
-                        </p>
-                        <p className="text-sm text-green-700 dark:text-green-300">
-                          Images below are from your created book
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate(`/books/${createdBookId}`)}
-                    >
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      View Book
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-              {/* Header with Progress */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold">
-                    {currentQAPage}
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-base">
-                      Review & Test Page {currentQAPage}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {pageCount} pages total • Test this prompt in your AI tool
-                    </p>
-                  </div>
-                </div>
-                <Badge variant="outline" className="text-xs">
-                  {isBookCreated 
-                    ? `${Object.keys(displayImages).length} images in book`
-                    : `${Object.keys(qaPageImages).length} images uploaded`
-                  }
-                </Badge>
-              </div>
-
-              {/* Page Prompt Display & Image Upload - Side by Side */}
-              <div className="grid grid-cols-2 gap-4">
-                {/* Page Prompt Display */}
-                <div className="relative bg-background/80 backdrop-blur-sm border-2 border-primary/20 rounded-lg p-5 aspect-square flex flex-col">
-                  <div className="absolute top-3 right-3 z-10">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const prompt = getCurrentPagePrompt(messages, currentQAPage);
-                        if (prompt) {
-                          navigator.clipboard.writeText(prompt);
-                          toast.success(`Page ${currentQAPage} prompt copied!`, {
-                            description: 'Paste this in MidJourney, DALL-E, or your AI tool'
-                          });
-                        }
-                      }}
-                      className="gap-2"
-                    >
-                      <Copy className="h-4 w-4" />
-                      Copy Prompt
-                    </Button>
-                  </div>
-                  
-                  <div className="pr-24 space-y-2 flex-shrink-0">
-                    <p className="text-xs font-medium text-primary uppercase tracking-wider">
-                      Page {currentQAPage} Prompt
-                    </p>
-                  </div>
-                  <div className="text-sm leading-relaxed whitespace-pre-wrap overflow-y-auto flex-1 pr-2">
-                    {getCurrentPagePrompt(messages, currentQAPage)}
-                  </div>
-                </div>
-
-                {/* Image Upload Area */}
-                <div className="space-y-2">
-                  <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
-                    {displayImages[currentQAPage] ? (
-                      <div className="relative w-full h-full group">
-                        <img 
-                          src={displayImages[currentQAPage]} 
-                          alt={`Page ${currentQAPage} preview`}
-                          className="w-full h-full object-contain rounded-lg"
-                        />
-                        {/* Only show replace button for pre-book-creation images */}
-                        {!isBookCreated && (
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={async () => {
-                              const updatedImages = { ...qaPageImages };
-                              delete updatedImages[currentQAPage];
-                              setQAPageImages(updatedImages);
-                              
-                              if (currentSessionId) {
-                                try {
-                                  await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
-                                } catch (error) {
-                                  console.error('Failed to remove QA image:', error);
-                                }
-                              }
-                            }}
-                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                          >
-                            Replace Image
-                          </Button>
-                        )}
-                        <div className="absolute bottom-2 left-2 right-2">
-                          <div className="flex items-center gap-2 text-sm bg-green-600/90 text-white px-3 py-1.5 rounded-md">
-                            <Check className="h-4 w-4" />
-                            <span>{isBookCreated ? 'From your book' : 'Image uploaded'}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      // Only allow upload if book not created yet
-                      !isBookCreated && (
-                        <ImageUpload 
-                          onImageSelect={(file) => {
-                            const reader = new FileReader();
-                            reader.onloadend = () => {
-                              handleQAImageUpload(reader.result as string);
-                            };
-                            reader.readAsDataURL(file);
-                          }}
-                          disabled={createBookMutation.isPending}
-                          className="h-full"
-                        />
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row items-stretch gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setShowQACheckpoint(false);
-                    toast.info('Continue chatting to refine prompts');
-                  }}
-                  className="flex-1"
-                >
-                  <Send className="h-4 w-4 mr-2" />
-                  Adjust Feedback
-                </Button>
-                
-                <div className="flex gap-2 flex-1">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleQAPageNavigation('prev')}
-                    disabled={currentQAPage === 1}
-                    className="flex-1"
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-1" />
-                    Back
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => handleQAPageNavigation('next')}
-                    disabled={currentQAPage === pageCount}
-                    className="flex-1"
-                  >
-                    {currentQAPage === pageCount ? 'Review' : `Page ${currentQAPage + 1}`}
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Create Book Button */}
-              {Object.keys(qaPageImages).length > 0 && !isBookCreated && (
-                <div className="pt-2 border-t">
-                  <Button
-                    onClick={handleCreateBook}
-                    disabled={createBookMutation.isPending || isBookCreated}
-                    className="w-full gap-2"
-                  >
-                    <BookOpen className="h-4 w-4" />
-                    {isBookCreated 
-                      ? 'Book Already Created' 
-                      : `Create Book with ${Object.keys(qaPageImages).length} Image${Object.keys(qaPageImages).length > 1 ? 's' : ''}`
-                    }
-                  </Button>
-                </div>
-              )}
-
-              {/* View Created Book Button */}
-              {isBookCreated && (
-                <div className="pt-2 border-t">
-                  <Button
-                    onClick={() => navigate(`/books/${createdBookId}`)}
-                    variant="outline"
-                    className="w-full gap-2"
-                  >
-                    <BookOpen className="h-4 w-4" />
-                    View Created Book
-                  </Button>
-                </div>
-              )}
-
-              {/* Help Text */}
-              <div className="text-xs text-muted-foreground text-center pt-2 border-t">
-                💡 Tip: Upload images for each page, then click "Create Book" when ready. Continue in chat - no redirect!
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Image Upload Area */}
         {showImageUpload && (
           <div className="border-t px-4 py-3 bg-muted/30">
@@ -841,6 +631,27 @@ export default function GoogleChat() {
           </div>
           </div>
         </div>
+
+        {/* QA Checkpoint Right Panel */}
+        <QACheckpointPanel
+          showQACheckpoint={showQACheckpoint && !createBookMutation.isSuccess}
+          isBookCreated={isBookCreated}
+          createdBookId={createdBookId}
+          currentQAPage={currentQAPage}
+          pageCount={pageCount}
+          displayImages={displayImages}
+          qaPageImages={qaPageImages}
+          getCurrentPagePrompt={(pageNum) => getCurrentPagePrompt(messages, pageNum)}
+          createBookMutation={createBookMutation}
+          onClose={() => {
+            setShowQACheckpoint(false);
+            toast.info('Continue chatting to refine prompts');
+          }}
+          onNavigate={handleQAPageNavigation}
+          onImageUpload={handleQAImageUpload}
+          onRemoveImage={handleRemoveQAImage}
+          onCreateBook={handleCreateBook}
+        />
       </div>
 
     </PageLayout>

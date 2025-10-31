@@ -146,8 +146,13 @@ serve(async (req) => {
     // Generate color enforcement instructions
     const colorInstructions = generateColorEnforcementInstructions(colors);
 
+    // Shorten title to max 4 words for better thumbnail readability
+    const shortenedTitle = book.book_name.split(' ').slice(0, 4).join(' ');
+    console.log('Original title:', book.book_name);
+    console.log('Shortened title (max 4 words):', shortenedTitle);
+
     // Create comprehensive prompt that incorporates style guide
-    const prompt = `Generate a book thumbnail image for "${book.book_name}".
+    const prompt = `Generate a book thumbnail image for "${shortenedTitle}".
 ${book.book_description ? `Book context: ${book.book_description}` : ''}
 Target audience: ${targetAudience}
 
@@ -171,12 +176,14 @@ ${colorInstructions}
 - Safe space: Keep key elements away from edges (15-20% margins left/right, 10% margins top/bottom)
 
 📝 REQUIRED TEXT ELEMENTS & CHARACTER PLACEMENT:
-- Large, bold title: "${book.book_name}" (CENTERED ABSOLUTELY - both horizontal and vertical center)
+- Large, bold title: "${shortenedTitle}" (CENTERED ABSOLUTELY - both horizontal and vertical center)
 - Smaller subtitle: "for ${targetAudience}" (centered directly below title)
 - Main characters/visual elements: Position to the LEFT and RIGHT sides of the title text
 - Characters should frame the title symmetrically without overlapping or obscuring the text
 - Maintain clear negative space around the title for maximum readability
 - The 16:9 landscape format provides wide horizontal space for this left-center-right composition
+- DO NOT include any technical color codes, hex values, or color labels as visible text in the image
+
 
 🎯 TECHNICAL SPECS:
 - Aspect ratio: 16:9 (landscape format for social media sharing)

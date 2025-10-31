@@ -70,34 +70,29 @@ export function extractColorsFromStyleGuide(styleGuideJSON: any): ExtractedColor
 
 /**
  * Generate color enforcement instructions for AI prompts
- * These are mandatory instructions that lock color palette
+ * These are mandatory instructions that lock color palette WITHOUT showing hex values as text
  */
 export function generateColorEnforcementInstructions(colors: ExtractedColors): string {
   return `
-🎨 MANDATORY COLOR PALETTE (use these exact hex values):
+🎨 MANDATORY COLOR PALETTE:
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-PRIMARY COLOR: ${colors.primary.hex}
-Usage: ${colors.primary.usage}
+Use the style guide's defined color palette with these roles:
+- PRIMARY: ${colors.primary.usage}
+- SECONDARY: ${colors.secondary.usage}
+- ACCENT: ${colors.accent.usage}
+- BACKGROUND: ${colors.background.usage}
+${colors.text ? `- TEXT: ${colors.text.usage}` : ''}
+${colors.supporting ? `- SUPPORTING: ${colors.supporting.usage}` : ''}
 
-SECONDARY COLOR: ${colors.secondary.hex}
-Usage: ${colors.secondary.usage}
-
-ACCENT COLOR: ${colors.accent.hex}
-Usage: ${colors.accent.usage}
-
-BACKGROUND COLOR: ${colors.background.hex}
-Usage: ${colors.background.usage}
-
-${colors.text ? `TEXT COLOR: ${colors.text.hex}\nUsage: ${colors.text.usage}\n\n` : ''}${colors.supporting ? `SUPPORTING COLOR: ${colors.supporting.hex}\nUsage: ${colors.supporting.usage}\n\n` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 🚨 CRITICAL COLOR REQUIREMENTS:
-1. These are NOT suggestions - use these EXACT hex color codes
-2. Do NOT interpret or substitute these colors with similar shades
-3. Do NOT use named colors like "red" or "blue" - only use the hex values above
-4. Every element in the image must use one of these specified colors
-5. Maintain visual consistency with these colors across all pages
+1. Use the book's established color palette - do NOT show hex codes or color values as text in the image
+2. Apply colors naturally to elements based on their usage roles above
+3. Maintain visual consistency with the style throughout
+4. Colors should be vibrant and appropriate for the target audience
+5. Do NOT include any technical color codes (hex, RGB, HSL) as visible text in the image
 `.trim();
 }
 

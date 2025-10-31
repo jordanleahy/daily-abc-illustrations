@@ -175,14 +175,14 @@ ${colorInstructions}
 - Ensure text elements are readable and prominent with clear negative space
 - Safe space: Keep key elements away from edges (15-20% margins left/right, 10% margins top/bottom)
 
-📝 REQUIRED TEXT ELEMENTS & CHARACTER PLACEMENT:
-- Large, bold title: "${shortenedTitle}" (CENTERED ABSOLUTELY - both horizontal and vertical center)
-- Smaller subtitle: "for ${targetAudience}" (centered directly below title)
-- Main characters/visual elements: Position to the LEFT and RIGHT sides of the title text
-- Characters should frame the title symmetrically without overlapping or obscuring the text
-- Maintain clear negative space around the title for maximum readability
-- The 16:9 landscape format provides wide horizontal space for this left-center-right composition
-- DO NOT include any technical color codes, hex values, or color labels as visible text in the image
+🚫 CRITICAL TEXT RESTRICTION:
+- DO NOT include any visible text, letters, words, titles, or labels in the generated image
+- NO book titles, subtitles, letter labels, or textual elements should be rendered
+- NO technical color codes, hex values, or color labels as visible text
+- Focus purely on visual illustration without any typography
+- Create compositions with main characters/visual elements positioned dynamically
+- The 16:9 landscape format provides wide horizontal space for character placement
+- Text overlays will be added separately in post-processing if needed
 
 
 🎯 TECHNICAL SPECS:

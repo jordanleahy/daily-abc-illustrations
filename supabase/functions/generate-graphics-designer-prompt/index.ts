@@ -142,6 +142,13 @@ Generate a simple JSON structure for each page illustration request:
 3. Use consistent colors across all pages
 4. Ensure age-appropriate content (3-5 years old)
 5. Response must be valid JSON only
+6. **CRITICAL: DO NOT include any text, letters, or typography in scene descriptions**
+
+🚫 MANDATORY NO TEXT RULE:
+- Describe ONLY visual elements - NO text, letters, words, or typography
+- DO NOT include book titles, labels, captions, or textual elements
+- Focus on pure visual storytelling through imagery alone
+- Any text will be added separately through post-processing tools
 
 Your JSON will be transformed into optimized image generation prompts automatically.`;
 }

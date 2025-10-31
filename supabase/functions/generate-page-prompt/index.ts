@@ -173,6 +173,13 @@ Create a comprehensive JSON prompt that:
 2. Describes the specific scene for this page
 3. Specifies composition, layout, and visual hierarchy
 4. Ensures this page will be visually consistent with other pages in the book
+5. **CRITICAL: DO NOT include any text, letters, or typography in the image description**
+
+🚫 MANDATORY NO TEXT RULE:
+- The generated prompt must describe ONLY visual elements
+- DO NOT include any text, letters, words, titles, or labels in the scene description
+- Focus purely on visual storytelling without textual elements
+- Text overlays will be added separately if needed
 
 Return your response as a JSON object with this structure:
 {
@@ -182,7 +189,7 @@ Return your response as a JSON object with this structure:
   },
   "scene": {
     "setting": "specific environment for this page",
-    "description": "detailed scene description",
+    "description": "detailed scene description WITHOUT any text elements",
     "style": "art style from style guide"
   },
   "colors": {

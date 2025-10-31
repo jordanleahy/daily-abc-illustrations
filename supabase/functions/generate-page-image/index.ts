@@ -220,11 +220,28 @@ serve(async (req) => {
       throw new Error('Lovable AI API key not configured');
     }
 
-    // Combine page prompt with mandatory color enforcement
+    // No-text enforcement rule
+    const noTextEnforcement = `
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚫 MANDATORY: NO TEXT IN IMAGES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+CRITICAL REQUIREMENT:
+- Generate ONLY visual illustration - NO text, letters, words, or typography
+- Do NOT include book titles, subtitles, labels, captions, or any written content
+- Do NOT render letters of the alphabet as part of the illustration
+- Focus on pure visual storytelling through imagery alone
+- Any text will be added separately through post-processing tools
+
+This is a non-negotiable requirement for all generated images.
+`;
+
+    // Combine page prompt with mandatory color enforcement and no-text rule
     // Page-specific prompt will be sent as a single user message (matches AI Studio configuration)
     const enhancedSystemPrompt = colorEnforcement 
-      ? `${pagePrompt.content}\n\n${colorEnforcement}`
-      : pagePrompt.content;
+      ? `${pagePrompt.content}\n\n${colorEnforcement}\n\n${noTextEnforcement}`
+      : `${pagePrompt.content}\n\n${noTextEnforcement}`;
 
     const prepareDuration = Date.now() - prepareStartTime;
     log('INFO', ProcessStatus.COMPLETE, currentStep, 'Content prepared for image generation', { 

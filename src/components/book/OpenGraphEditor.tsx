@@ -748,6 +748,20 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
               </Button>
               <Button
                 variant="outline"
+                onClick={() => {
+                  if (generatedPrompt) {
+                    navigator.clipboard.writeText(generatedPrompt);
+                    toast.success('Prompt copied to clipboard');
+                  }
+                }}
+                disabled={!generatedPrompt}
+                className="flex items-center gap-2"
+              >
+                <Copy className="w-4 h-4" />
+                Copy Prompt
+              </Button>
+              <Button
+                variant="outline"
                 onClick={handleGenerateThumbPrompt}
                 disabled={isGenerating}
                 className="flex items-center gap-2"
@@ -758,15 +772,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                   <Wand2 className="w-4 h-4" />
                 )}
                 AI Prompt
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleWriteCustomPrompt}
-                disabled={isGenerating}
-                className="flex items-center gap-2"
-              >
-                <MessageSquare className="w-4 h-4" />
-                Custom Prompt
               </Button>
               <Button
                 variant="outline"

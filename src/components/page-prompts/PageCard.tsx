@@ -390,66 +390,17 @@ export function PageCard({ page, bookId, onInsertBefore, onInsertAfter }: PageCa
             >
               <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="w-6 h-6"
-                  disabled={!currentPrompt?.content && !currentImage?.prompt_used}
-                  title="Copy prompt options"
-                  aria-label="Copy prompt options"
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-48">
-                <DropdownMenuLabel className="text-xs">Copy Prompt</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem
-                  onClick={handleCopyJsonPrompt}
-                  disabled={!currentPrompt?.content}
-                  className="text-sm"
-                >
-                  <Copy className="w-3 h-3 mr-2" />
-                  Copy JSON
-                  {currentPrompt?.content && (
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      Structured
-                    </span>
-                  )}
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={handleCopyFullPrompt}
-                  disabled={(() => {
-                    const hasPrompt = !!currentImage?.prompt_used;
-                    const isUpload = currentImage?.prompt_used?.startsWith('User uploaded:');
-                    const shouldDisable = !hasPrompt || isUpload;
-                    
-                    console.log('[PageCard] Copy Full Prompt disabled check:', {
-                      pageId: page.id,
-                      hasCurrentImage: !!currentImage,
-                      hasPrompt,
-                      isUpload,
-                      shouldDisable,
-                      promptLength: currentImage?.prompt_used?.length,
-                      promptPreview: currentImage?.prompt_used?.substring(0, 50)
-                    });
-                    
-                    return shouldDisable;
-                  })()}
-                  className="text-sm"
-                >
-                  <Copy className="w-3 h-3 mr-2" />
-                  Copy Full Prompt
-                  {currentImage?.prompt_used && !currentImage.prompt_used.startsWith('User uploaded:') && (
-                    <span className="ml-auto text-xs text-muted-foreground">
-                      Enhanced
-                    </span>
-                  )}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-6 h-6"
+              onClick={handleCopyJsonPrompt}
+              disabled={!currentPrompt?.content}
+              title="Copy prompt"
+              aria-label="Copy prompt"
+            >
+              <Copy className="w-3 h-3" />
+            </Button>
             <Button
               variant="ghost"
               size="icon"

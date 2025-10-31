@@ -596,10 +596,6 @@ export default function GoogleChat() {
 
                 {/* Image Upload Area */}
                 <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Sparkles className="h-4 w-4 text-primary" />
-                    <span>Paste your generated image:</span>
-                  </div>
                   <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30">
                     <ImageUpload 
                       onImageSelect={(file) => {

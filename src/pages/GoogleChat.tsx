@@ -278,9 +278,9 @@ export default function GoogleChat() {
       }
     }
     
-    toast.success(`Page ${currentQAPage} image uploaded!`, {
-      description: `Image saved. ${currentQAPage < pageCount ? 'Moving to next page...' : 'All pages reviewed!'}`
-    });
+    // toast.success(`Page ${currentQAPage} image uploaded!`, {
+    //   description: `Image saved. ${currentQAPage < pageCount ? 'Moving to next page...' : 'All pages reviewed!'}`
+    // });
     
     // Auto-advance to next page if not the last page
     if (currentQAPage < pageCount) {

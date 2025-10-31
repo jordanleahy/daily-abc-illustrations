@@ -9,6 +9,7 @@ import { ImageUpload } from '@/components/ImageUpload';
 import { useGoogleChat, type SuggestedAction } from '@/hooks/useGoogleChat';
 import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
 import { useGoogleChatSessions } from '@/hooks/useGoogleChatSessions';
+import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
 import { toast } from 'sonner';
 import { BOOK_TYPES } from '@/config/bookTypes';
@@ -94,11 +95,21 @@ export default function GoogleChat() {
 
   const createBookMutation = useGoogleCreateBook();
 
+  // Get the created book ID from current session
+  const selectedSession = sessions?.find(s => s.id === currentSessionId);
+  const createdBookId = selectedSession?.created_book_id || null;
+
+  // Fetch book images from storage if book exists
+  const { data: bookPageImages, isLoading: bookImagesLoading } = useBookPageImages(createdBookId);
+
   // QA Checkpoint state
   const [currentQAPage, setCurrentQAPage] = useState(1);
   const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
   const [showQACheckpoint, setShowQACheckpoint] = useState(false);
-  const [createdBookId, setCreatedBookId] = useState<string | null>(null);
+
+  // Priority: Show book images from storage if book exists, otherwise show QA checkpoint images
+  const displayImages = (createdBookId && bookPageImages) ? bookPageImages : qaPageImages;
+  const isBookCreated = !!createdBookId;
 
   // Detect when book outline is ready for QA checkpoint
   const shouldShowQACheckpoint = useMemo(() => {
@@ -335,9 +346,6 @@ export default function GoogleChat() {
         sessionId: currentSessionId, 
         bookId: result.bookId 
       });
-
-      // Store bookId for navigation
-      setCreatedBookId(result.bookId);
       
       toast.success('Book created successfully!', {
         description: 'Click "View Created Book" to see your new book.'
@@ -558,6 +566,32 @@ export default function GoogleChat() {
         {showQACheckpoint && !createBookMutation.isSuccess && (
           <div className="border-t-2 border-primary/20 bg-gradient-to-b from-primary/5 to-background px-4 py-6">
             <div className="max-w-4xl mx-auto space-y-4">
+              {/* Book Created Banner */}
+              {isBookCreated && (
+                <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4 mb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
+                      <div>
+                        <p className="font-medium text-green-900 dark:text-green-100">
+                          Book Created Successfully!
+                        </p>
+                        <p className="text-sm text-green-700 dark:text-green-300">
+                          Images below are from your created book
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate(`/books/${createdBookId}`)}
+                    >
+                      <BookOpen className="h-4 w-4 mr-2" />
+                      View Book
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               {/* Header with Progress */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -574,7 +608,10 @@ export default function GoogleChat() {
                   </div>
                 </div>
                 <Badge variant="outline" className="text-xs">
-                  {Object.keys(qaPageImages).length} images uploaded
+                  {isBookCreated 
+                    ? `${Object.keys(displayImages).length} images in book`
+                    : `${Object.keys(qaPageImages).length} images uploaded`
+                  }
                 </Badge>
               </div>
 
@@ -615,54 +652,58 @@ export default function GoogleChat() {
                 {/* Image Upload Area */}
                 <div className="space-y-2">
                   <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
-                    {qaPageImages[currentQAPage] ? (
+                    {displayImages[currentQAPage] ? (
                       <div className="relative w-full h-full group">
                         <img 
-                          src={qaPageImages[currentQAPage]} 
+                          src={displayImages[currentQAPage]} 
                           alt={`Page ${currentQAPage} preview`}
-                          className="w-full h-full object-contain"
+                          className="w-full h-full object-contain rounded-lg"
                         />
-                        <Button
-                          variant="secondary"
-                          size="sm"
-                          onClick={async () => {
-                            // Clear the image to allow re-upload
-                            const updatedImages = { ...qaPageImages };
-                            delete updatedImages[currentQAPage];
-                            setQAPageImages(updatedImages);
-                            
-                            // Persist to database
-                            if (currentSessionId) {
-                              try {
-                                await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
-                              } catch (error) {
-                                console.error('Failed to remove QA image:', error);
+                        {/* Only show replace button for pre-book-creation images */}
+                        {!isBookCreated && (
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            onClick={async () => {
+                              const updatedImages = { ...qaPageImages };
+                              delete updatedImages[currentQAPage];
+                              setQAPageImages(updatedImages);
+                              
+                              if (currentSessionId) {
+                                try {
+                                  await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
+                                } catch (error) {
+                                  console.error('Failed to remove QA image:', error);
+                                }
                               }
-                            }
-                          }}
-                          className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          Replace Image
-                        </Button>
+                            }}
+                            className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            Replace Image
+                          </Button>
+                        )}
                         <div className="absolute bottom-2 left-2 right-2">
                           <div className="flex items-center gap-2 text-sm bg-green-600/90 text-white px-3 py-1.5 rounded-md">
                             <Check className="h-4 w-4" />
-                            <span>Image uploaded</span>
+                            <span>{isBookCreated ? 'From your book' : 'Image uploaded'}</span>
                           </div>
                         </div>
                       </div>
                     ) : (
-                      <ImageUpload 
-                        onImageSelect={(file) => {
-                          const reader = new FileReader();
-                          reader.onloadend = () => {
-                            handleQAImageUpload(reader.result as string);
-                          };
-                          reader.readAsDataURL(file);
-                        }}
-                        disabled={createBookMutation.isPending}
-                        className="h-full"
-                      />
+                      // Only allow upload if book not created yet
+                      !isBookCreated && (
+                        <ImageUpload 
+                          onImageSelect={(file) => {
+                            const reader = new FileReader();
+                            reader.onloadend = () => {
+                              handleQAImageUpload(reader.result as string);
+                            };
+                            reader.readAsDataURL(file);
+                          }}
+                          disabled={createBookMutation.isPending}
+                          className="h-full"
+                        />
+                      )
                     )}
                   </div>
                 </div>
@@ -708,22 +749,25 @@ export default function GoogleChat() {
               </div>
 
               {/* Create Book Button */}
-              {Object.keys(qaPageImages).length > 0 && (
+              {Object.keys(qaPageImages).length > 0 && !isBookCreated && (
                 <div className="pt-2 border-t">
                   <Button
                     onClick={handleCreateBook}
-                    disabled={createBookMutation.isPending}
+                    disabled={createBookMutation.isPending || isBookCreated}
                     className="w-full gap-2"
                   >
                     <BookOpen className="h-4 w-4" />
-                    Create Book with {Object.keys(qaPageImages).length} Image{Object.keys(qaPageImages).length > 1 ? 's' : ''}
+                    {isBookCreated 
+                      ? 'Book Already Created' 
+                      : `Create Book with ${Object.keys(qaPageImages).length} Image${Object.keys(qaPageImages).length > 1 ? 's' : ''}`
+                    }
                   </Button>
                 </div>
               )}
 
               {/* View Created Book Button */}
-              {createdBookId && (
-                <div className="pt-2">
+              {isBookCreated && (
+                <div className="pt-2 border-t">
                   <Button
                     onClick={() => navigate(`/books/${createdBookId}`)}
                     variant="outline"

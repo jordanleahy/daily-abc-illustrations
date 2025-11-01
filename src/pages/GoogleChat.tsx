@@ -125,7 +125,7 @@ export default function GoogleChat() {
   const { data: bookPageImages, isLoading: bookImagesLoading } = useBookPageImages(createdBookId);
 
   // QA Checkpoint state
-  const [currentQAPage, setCurrentQAPage] = useState(1);
+  const [currentQAPage, setCurrentQAPage] = useState(0);
   const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
   const [showQACheckpoint, setShowQACheckpoint] = useState(false);
 
@@ -146,8 +146,39 @@ export default function GoogleChat() {
     return details?.length || 0;
   }, [messages]);
 
+  // Helper to extract book metadata
+  const getBookMetadata = (messages: any[]): { name: string, description: string } | null => {
+    const lastAssistantMsg = [...messages].reverse().find(
+      msg => msg.role === 'assistant' && 
+      typeof msg.content === 'string' && 
+      /\*\*Page\s+\d+:/i.test(msg.content)
+    );
+    
+    if (!lastAssistantMsg || typeof lastAssistantMsg.content !== 'string') {
+      return null;
+    }
+    
+    // Extract book name and description from the outline message
+    const nameMatch = lastAssistantMsg.content.match(/["']([^"']+)["']/);
+    const name = nameMatch ? nameMatch[1] : 'Your Book';
+    
+    // Look for description in the message
+    const descMatch = lastAssistantMsg.content.match(/(?:about|theme|story):\s*([^\n]+)/i);
+    const description = descMatch ? descMatch[1] : 'An educational children\'s book';
+    
+    return { name, description };
+  };
+
   // Helper to get current page prompt
   const getCurrentPagePrompt = (messages: any[], pageNum: number): string | null => {
+    if (pageNum === 0) {
+      // Cover page - use book metadata
+      const metadata = getBookMetadata(messages);
+      if (!metadata) return null;
+      
+      return `**Cover Page: "${metadata.name}"**\n\n${metadata.description}\n\nCreate a vibrant, engaging cover illustration that represents the theme of this book.`;
+    }
+    
     const pageDetails = parsePageDetailsFromMessages(messages);
     if (!pageDetails || pageDetails.length === 0) return null;
     
@@ -175,7 +206,7 @@ export default function GoogleChat() {
   // Auto-show QA checkpoint when page details are ready
   useEffect(() => {
     if (shouldShowQACheckpoint && !showQACheckpoint) {
-      setCurrentQAPage(1);
+      setCurrentQAPage(0); // Start at cover page
       
       if (isMobile) {
         // Don't auto-open on mobile — keep the brand chat experience visible
@@ -302,7 +333,7 @@ export default function GoogleChat() {
     try {
       const newSession = await createSession(undefined);
       setCurrentSessionId(newSession.id);
-      setCurrentQAPage(1);
+      setCurrentQAPage(0);
       setQAPageImages({});
       setShowQACheckpoint(false);
       setLocalCreatedBookId(null); // Reset local book ID
@@ -320,7 +351,7 @@ export default function GoogleChat() {
   const handleSelectSession = (sessionId: string) => {
     if (sessionId !== currentSessionId) {
       setCurrentSessionId(sessionId);
-      setCurrentQAPage(1);
+      setCurrentQAPage(0);
       setShowQACheckpoint(false);
       setLocalCreatedBookId(null); // Reset local book ID when switching sessions
       
@@ -392,9 +423,11 @@ export default function GoogleChat() {
     const pageDetails = parsePageDetailsFromMessages(messages);
     if (!pageDetails) return;
     
-    if (direction === 'next' && currentQAPage < pageDetails.length) {
+    const maxPage = pageDetails.length;
+    
+    if (direction === 'next' && currentQAPage < maxPage) {
       setCurrentQAPage(currentQAPage + 1);
-    } else if (direction === 'prev' && currentQAPage > 1) {
+    } else if (direction === 'prev' && currentQAPage > 0) {
       setCurrentQAPage(currentQAPage - 1);
     }
   };
@@ -465,7 +498,7 @@ export default function GoogleChat() {
       
       // Reset QA checkpoint state
       setShowQACheckpoint(false);
-      setCurrentQAPage(1);
+      setCurrentQAPage(0);
       setQAPageImages({});
     } catch (error) {
       console.error('Book creation error:', error);

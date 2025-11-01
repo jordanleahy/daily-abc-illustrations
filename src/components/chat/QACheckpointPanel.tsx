@@ -47,11 +47,13 @@ export function QACheckpointPanel({
       <div className="sticky top-0 bg-background border-b px-4 py-3 flex items-center justify-between shrink-0 z-10">
         <div className="flex items-center gap-2">
           <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
-            {currentQAPage}
+            {currentQAPage === 0 ? '📖' : currentQAPage}
           </div>
           <div>
-            <h3 className="font-semibold text-sm">Review Page {currentQAPage}</h3>
-            <p className="text-xs text-muted-foreground">{pageCount} pages total</p>
+            <h3 className="font-semibold text-sm">
+              {currentQAPage === 0 ? 'Cover Page' : `Review Page ${currentQAPage}`}
+            </h3>
+            <p className="text-xs text-muted-foreground">{pageCount + 1} pages total</p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -114,7 +116,7 @@ export function QACheckpointPanel({
         <div className="relative bg-muted/50 border rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-primary uppercase tracking-wider">
-              Page {currentQAPage} Prompt
+              {currentQAPage === 0 ? 'Cover Page Prompt' : `Page ${currentQAPage} Prompt`}
             </p>
             <Button
               variant="outline"
@@ -199,7 +201,7 @@ export function QACheckpointPanel({
             variant="outline"
             size="sm"
             onClick={() => onNavigate('prev')}
-            disabled={currentQAPage === 1}
+            disabled={currentQAPage === 0}
             className="flex-1"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />

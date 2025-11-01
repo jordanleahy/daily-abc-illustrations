@@ -114,9 +114,12 @@ export default function GoogleChat() {
 
   const createBookMutation = useGoogleCreateBook();
 
-  // Get the created book ID from current session
+  // Track locally created book ID (separate from session data for immediate UI updates)
+  const [localCreatedBookId, setLocalCreatedBookId] = useState<string | null>(null);
+
+  // Get the created book ID from current session or local state
   const selectedSession = sessions?.find(s => s.id === currentSessionId);
-  const createdBookId = selectedSession?.created_book_id || null;
+  const createdBookId = localCreatedBookId || selectedSession?.created_book_id || null;
 
   // Fetch book images from storage if book exists
   const { data: bookPageImages, isLoading: bookImagesLoading } = useBookPageImages(createdBookId);
@@ -302,6 +305,7 @@ export default function GoogleChat() {
       setCurrentQAPage(1);
       setQAPageImages({});
       setShowQACheckpoint(false);
+      setLocalCreatedBookId(null); // Reset local book ID
     } catch (error) {
       console.error('Error creating session:', error);
     }
@@ -318,6 +322,7 @@ export default function GoogleChat() {
       setCurrentSessionId(sessionId);
       setCurrentQAPage(1);
       setShowQACheckpoint(false);
+      setLocalCreatedBookId(null); // Reset local book ID when switching sessions
       
       // Close mobile sidebar when selecting a session
       setIsMobileSidebarOpen(false);
@@ -444,6 +449,9 @@ export default function GoogleChat() {
         pageDetails: pageDetails || undefined,
         qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined
       });
+      
+      // Set local book ID immediately for UI responsiveness
+      setLocalCreatedBookId(result.bookId);
       
       // Link book to current session
       await linkBookToSession({ 

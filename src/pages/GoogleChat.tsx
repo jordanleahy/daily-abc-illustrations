@@ -176,7 +176,7 @@ export default function GoogleChat() {
       const metadata = getBookMetadata(messages);
       if (!metadata) return null;
       
-      return `**Cover Page: "${metadata.name}"**\n\n${metadata.description}\n\nCreate a vibrant, engaging cover illustration that represents the theme of this book.`;
+      return `**Cover: "${metadata.name}"**\n\n${metadata.description}\n\nCreate a vibrant, engaging 1:1 square illustration that captures this theme. Focus on the main subject or scene without any text or borders.`;
     }
     
     const pageDetails = parsePageDetailsFromMessages(messages);

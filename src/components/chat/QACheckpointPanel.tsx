@@ -60,14 +60,15 @@ export function QACheckpointPanel({
               : `${Object.keys(qaPageImages).length} uploaded`
             }
           </Badge>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="h-8 w-8"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onClose}
+          className="h-8 w-8 relative z-50"
+          aria-label="Close review panel"
+        >
+          <X className="h-4 w-4" />
+        </Button>
         </div>
       </div>
 

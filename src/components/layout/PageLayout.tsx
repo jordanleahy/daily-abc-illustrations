@@ -15,6 +15,7 @@ interface PageLayoutProps {
   onMobileMenuToggle?: () => void;
   showReviewButton?: boolean;
   onReviewClick?: () => void;
+  reviewButtonVariant?: 'review' | 'view-book';
 }
 
 export const PageLayout = ({ 
@@ -25,7 +26,8 @@ export const PageLayout = ({
   fullHeight = true,
   onMobileMenuToggle,
   showReviewButton,
-  onReviewClick
+  onReviewClick,
+  reviewButtonVariant
 }: PageLayoutProps) => {
   const location = useLocation();
   const { isAuthenticated, loading } = useAuthContext();
@@ -40,6 +42,7 @@ export const PageLayout = ({
           onMobileMenuToggle={onMobileMenuToggle}
           showReviewButton={showReviewButton}
           onReviewClick={onReviewClick}
+          reviewButtonVariant={reviewButtonVariant}
         />
       )}
       <PageContent fullHeight={fullHeight}>

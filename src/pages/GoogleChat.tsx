@@ -307,6 +307,12 @@ export default function GoogleChat() {
     }
   };
 
+  const handleViewCreatedBook = () => {
+    if (createdBookId) {
+      navigate(`/books/${createdBookId}`);
+    }
+  };
+
   const handleSelectSession = (sessionId: string) => {
     if (sessionId !== currentSessionId) {
       setCurrentSessionId(sessionId);
@@ -465,19 +471,29 @@ export default function GoogleChat() {
       showHeader={true}
       fullHeight={true}
       onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
-      showReviewButton={shouldShowQACheckpoint && !showQACheckpoint}
-      onReviewClick={() => setShowQACheckpoint(true)}
+      showReviewButton={(shouldShowQACheckpoint && !showQACheckpoint) || !!createdBookId}
+      onReviewClick={createdBookId ? handleViewCreatedBook : () => setShowQACheckpoint(true)}
+      reviewButtonVariant={createdBookId ? 'view-book' : 'review'}
     >
       <div className="fixed inset-0 top-[3.5rem] flex">
-        {/* Review Button - Desktop only, fixed in top right when outline is ready */}
-        {shouldShowQACheckpoint && !showQACheckpoint && (
+        {/* Review/View Book Button - Desktop only, fixed in top right */}
+        {((shouldShowQACheckpoint && !showQACheckpoint) || createdBookId) && (
           <Button
-            onClick={() => setShowQACheckpoint(true)}
+            onClick={createdBookId ? handleViewCreatedBook : () => setShowQACheckpoint(true)}
             className="hidden md:flex fixed top-20 right-6 z-40 shadow-lg"
             size="sm"
           >
-            <BookOpen className="h-4 w-4 mr-1" />
-            Review Outline
+            {createdBookId ? (
+              <>
+                <Book className="h-4 w-4 mr-1" />
+                View Book
+              </>
+            ) : (
+              <>
+                <BookOpen className="h-4 w-4 mr-1" />
+                Review Outline
+              </>
+            )}
           </Button>
         )}
 

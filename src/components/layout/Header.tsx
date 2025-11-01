@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft, BookOpen } from 'lucide-react';
+import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft, BookOpen, Book } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -78,6 +78,8 @@ interface HeaderProps {
   showReviewButton?: boolean;
   /** Callback for review outline button click */
   onReviewClick?: () => void;
+  /** Variant for review button: 'review' or 'view-book' */
+  reviewButtonVariant?: 'review' | 'view-book';
 }
 
 /**
@@ -92,7 +94,8 @@ export function Header({
   showQRCode = true,
   onMobileMenuToggle,
   showReviewButton,
-  onReviewClick
+  onReviewClick,
+  reviewButtonVariant
 }: HeaderProps) {
   const { isAuthenticated, user, signOut } = useAuthContext();
   const isAdmin = useIsAdmin();
@@ -240,15 +243,24 @@ export function Header({
               </Button>
             )}
             
-            {/* Review Outline Button - Google Chat only, mobile only */}
+            {/* Review/View Book Button - Google Chat only, mobile only */}
             {showReviewButton && onReviewClick && (
               <Button
                 onClick={onReviewClick}
                 className="md:hidden h-8"
                 size="sm"
               >
-                <BookOpen className="h-4 w-4 mr-1" />
-                Review
+                {reviewButtonVariant === 'view-book' ? (
+                  <>
+                    <Book className="h-4 w-4 mr-1" />
+                    View Book
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="h-4 w-4 mr-1" />
+                    Review
+                  </>
+                )}
               </Button>
             )}
             

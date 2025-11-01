@@ -12,6 +12,7 @@ interface PageLayoutProps {
   className?: string;
   showHeader?: boolean;
   fullHeight?: boolean;
+  onMobileMenuToggle?: () => void;
 }
 
 export const PageLayout = ({ 
@@ -19,7 +20,8 @@ export const PageLayout = ({
   title,
   className,
   showHeader = true,
-  fullHeight = true
+  fullHeight = true,
+  onMobileMenuToggle
 }: PageLayoutProps) => {
   const location = useLocation();
   const { isAuthenticated, loading } = useAuthContext();
@@ -28,7 +30,7 @@ export const PageLayout = ({
   
   return (
     <div className={cn('min-h-screen bg-background flex flex-col', className)}>
-      {showHeader && <Header title={title} />}
+      {showHeader && <Header title={title} onMobileMenuToggle={onMobileMenuToggle} />}
       <PageContent fullHeight={fullHeight}>
         {children}
       </PageContent>

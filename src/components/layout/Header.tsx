@@ -72,6 +72,8 @@ interface HeaderProps {
   bookId?: string;
   /** Whether to show the QR code sharing functionality */
   showQRCode?: boolean;
+  /** Optional callback for mobile menu toggle (Google Chat sidebar) */
+  onMobileMenuToggle?: () => void;
 }
 
 /**
@@ -83,7 +85,8 @@ export function Header({
   title = "Daily ABC Illustrations",
   subtitle,
   bookId,
-  showQRCode = true
+  showQRCode = true,
+  onMobileMenuToggle
 }: HeaderProps) {
   const { isAuthenticated, user, signOut } = useAuthContext();
   const isAdmin = useIsAdmin();
@@ -217,8 +220,20 @@ export function Header({
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container>
         <div className="flex h-14 items-center justify-between">
-          {/* Left section: Mobile user info + Desktop back button + Subtitle */}
+          {/* Left section: Mobile hamburger + Mobile user info + Desktop back button + Subtitle */}
           <div className="flex items-center gap-2">
+            {/* Mobile Hamburger Menu - Google Chat only */}
+            {onMobileMenuToggle && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="md:hidden h-8 w-8"
+                onClick={onMobileMenuToggle}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
+            
             {/* Mobile User Info - Hidden on google-chat page */}
             {location.pathname !== '/google-chat' && (
               <div className="flex md:hidden items-center gap-2">

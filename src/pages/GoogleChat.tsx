@@ -414,6 +414,7 @@ export default function GoogleChat() {
       title="Chat with Google Gemini"
       showHeader={true}
       fullHeight={true}
+      onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
     >
       <div className="fixed inset-0 top-[3.5rem] flex">
         {/* Review Button - Fixed in top right when outline is ready */}
@@ -425,18 +426,6 @@ export default function GoogleChat() {
           >
             <BookOpen className="h-4 w-4 mr-1" />
             Review Outline
-          </Button>
-        )}
-
-        {/* Mobile: Hamburger Menu Button */}
-        {isMobile && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="fixed top-16 left-4 z-50 md:hidden"
-            onClick={() => setIsMobileSidebarOpen(true)}
-          >
-            <Menu className="h-5 w-5" />
           </Button>
         )}
 

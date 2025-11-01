@@ -655,13 +655,17 @@ export default function GoogleChat() {
             <QACheckpointPanel
               showQACheckpoint={true}
               isBookCreated={isBookCreated}
+              createdBookId={createdBookId}
               currentQAPage={currentQAPage}
               pageCount={pageCount}
               displayImages={displayImages}
+              qaPageImages={qaPageImages}
               getCurrentPagePrompt={getCurrentPagePrompt}
-              onQAImageUpload={handleQAImageUpload}
-              onQAPageNavigation={handleQAPageNavigation}
-              onRemoveQAImage={handleRemoveQAImage}
+              createBookMutation={createBookMutation}
+              onClose={() => setShowQACheckpoint(false)}
+              onNavigate={handleQAPageNavigation}
+              onImageUpload={handleQAImageUpload}
+              onRemoveImage={handleRemoveQAImage}
               onCreateBook={handleCreateBook}
             />
           </SheetContent>

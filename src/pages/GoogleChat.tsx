@@ -133,8 +133,6 @@ export default function GoogleChat() {
   const [currentQAPage, setCurrentQAPage] = useState(0);
   const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
   const [showQACheckpoint, setShowQACheckpoint] = useState(false);
-  const [outlineJustCompleted, setOutlineJustCompleted] = useState(false);
-  const previousShouldShow = useRef(false);
 
   // Priority: Show book images from storage if book exists, otherwise show QA checkpoint images
   const displayImages = (createdBookId && bookPageImages) ? bookPageImages : qaPageImages;
@@ -257,40 +255,6 @@ export default function GoogleChat() {
     }
   }, [currentSessionId, urlSessionId]); // navigate is stable
 
-  // Detect when outline is newly completed (transition from false → true)
-  useEffect(() => {
-    const currentShouldShow = shouldShowQACheckpoint;
-    
-    // If we just transitioned from false → true, the outline was just completed
-    if (!previousShouldShow.current && currentShouldShow) {
-      setOutlineJustCompleted(true);
-    }
-    
-    previousShouldShow.current = currentShouldShow;
-  }, [shouldShowQACheckpoint]);
-
-  // Auto-show QA checkpoint only when outline is just completed (not on page load)
-  useEffect(() => {
-    if (outlineJustCompleted && !showQACheckpoint) {
-      setCurrentQAPage(0); // Start at cover page
-      
-      if (isMobile) {
-        // Don't auto-open on mobile — keep the brand chat experience visible
-        toast.info('Outline is ready. Tap Review to open the panel.');
-      } else {
-        setShowQACheckpoint(true);
-      }
-      
-      // Scroll to bottom to show the banner
-      setTimeout(() => {
-        scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 100);
-      
-      // Reset flag after opening
-      setOutlineJustCompleted(false);
-    }
-  }, [outlineJustCompleted, showQACheckpoint, isMobile]);
-
   // Add quick reply buttons when AI indicates book is ready to create
   const messagesWithCreateOptions = useMemo(() => {
     if (messages.length === 0) return messages;
@@ -406,7 +370,6 @@ export default function GoogleChat() {
       setQAPageImages({});
       setShowQACheckpoint(false);
       setLocalCreatedBookId(null); // Reset local book ID
-      setOutlineJustCompleted(false); // Reset flag for new session
     } catch (error) {
       console.error('Error creating session:', error);
     }
@@ -424,7 +387,6 @@ export default function GoogleChat() {
       setCurrentQAPage(0);
       setShowQACheckpoint(false);
       setLocalCreatedBookId(null); // Reset local book ID when switching sessions
-      setOutlineJustCompleted(false); // Reset flag when switching sessions
       
       // Close mobile sidebar when selecting a session
       setIsMobileSidebarOpen(false);

@@ -219,12 +219,14 @@ export function Header({
         <div className="flex h-14 items-center justify-between">
           {/* Left section: Mobile user info + Desktop back button + Subtitle */}
           <div className="flex items-center gap-2">
-            {/* Mobile User Info - Always visible on mobile */}
-            <div className="flex md:hidden items-center gap-2">
-              <span className="text-sm font-medium">{displayName}</span>
-              <span className="text-muted-foreground text-xs">·</span>
-              <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
-            </div>
+            {/* Mobile User Info - Hidden on google-chat page */}
+            {location.pathname !== '/google-chat' && (
+              <div className="flex md:hidden items-center gap-2">
+                <span className="text-sm font-medium">{displayName}</span>
+                <span className="text-muted-foreground text-xs">·</span>
+                <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
+              </div>
+            )}
             
             {/* Desktop Back Button - Only on library detail pages */}
             {location.pathname.includes('/library/') && location.pathname.includes('/detail') && (

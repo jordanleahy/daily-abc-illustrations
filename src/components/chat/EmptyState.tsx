@@ -20,25 +20,28 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
       </p>
       
       <div className="grid w-full max-w-2xl gap-4 sm:grid-cols-2">
-        {BOOK_TYPES.map((bookType) => (
-          <Button
-            key={bookType.id}
-            onClick={() => onBookTypeSelect(bookType)}
-            variant="outline"
-            className={cn(
-              "h-auto flex-col items-start gap-2 p-4 text-left",
-              "hover:border-primary hover:bg-primary/5"
-            )}
-          >
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">{bookType.icon}</span>
-              <span className="font-semibold">{bookType.label}</span>
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {bookType.description}
-            </p>
-          </Button>
-        ))}
+        {BOOK_TYPES.map((bookType) => {
+          const IconComponent = bookType.icon;
+          return (
+            <Button
+              key={bookType.id}
+              onClick={() => onBookTypeSelect(bookType)}
+              variant="outline"
+              className={cn(
+                "h-auto flex-col items-start gap-2 p-4 text-left",
+                "hover:border-primary hover:bg-primary/5"
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <IconComponent className="h-5 w-5" />
+                <span className="font-semibold">{bookType.label}</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {bookType.description}
+              </p>
+            </Button>
+          );
+        })}
       </div>
     </div>
   );

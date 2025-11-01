@@ -166,15 +166,21 @@ export default function GoogleChat() {
   // Auto-show QA checkpoint when page details are ready
   useEffect(() => {
     if (shouldShowQACheckpoint && !showQACheckpoint) {
-      setShowQACheckpoint(true);
       setCurrentQAPage(1);
+      
+      if (isMobile) {
+        // Don't auto-open on mobile — keep the brand chat experience visible
+        toast.info('Outline is ready. Tap Review to open the panel.');
+      } else {
+        setShowQACheckpoint(true);
+      }
       
       // Scroll to bottom to show the banner
       setTimeout(() => {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
     }
-  }, [shouldShowQACheckpoint, showQACheckpoint]);
+  }, [shouldShowQACheckpoint, showQACheckpoint, isMobile]);
 
   useEffect(() => {
     if (scrollRef.current) {

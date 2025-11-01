@@ -4,6 +4,7 @@ import { ImageUpload } from '@/components/ImageUpload';
 import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { SheetClose } from '@/components/ui/sheet';
 
 interface QACheckpointPanelProps {
   showQACheckpoint: boolean;
@@ -60,15 +61,22 @@ export function QACheckpointPanel({
               : `${Object.keys(qaPageImages).length} uploaded`
             }
           </Badge>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClose}
-          className="h-8 w-8 relative z-50"
-          aria-label="Close review panel"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+        <SheetClose asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onClose();
+            }}
+            className="h-8 w-8 relative z-50"
+            aria-label="Close review panel"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </SheetClose>
         </div>
       </div>
 
@@ -197,15 +205,22 @@ export function QACheckpointPanel({
             <ArrowLeft className="h-4 w-4 mr-1" />
             Back
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onClose}
-            className="flex-1"
-          >
-            <Send className="h-4 w-4 mr-1" />
-            Adjust
-          </Button>
+          <SheetClose asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              className="flex-1"
+            >
+              <Send className="h-4 w-4 mr-1" />
+              Adjust
+            </Button>
+          </SheetClose>
           <Button
             variant="default"
             size="sm"

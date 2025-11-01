@@ -121,7 +121,7 @@ export function Header({
    */
   const handleTitleClick = () => {
     if (isAdmin) {
-      navigate('/google-chat'); // Admin default route
+      navigate('/agents'); // Admin default route
     } else if (isAuthenticated) {
       navigate('/library');
     } else {
@@ -147,6 +147,8 @@ export function Header({
     { name: 'Library', href: '/library' },
     { name: 'Rewards', href: '/rewards' },
     { name: 'Manage Habits', href: '/habits/manage' },
+    { name: 'Editor', href: '/editor' },
+    { name: 'Agents', href: '/agents' },
     { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },
     { name: 'Reddit', href: '/reddit' },
   ];

@@ -12,6 +12,9 @@ import GoogleChat from "./pages/GoogleChat";
 import Auth from "./pages/Auth";
 import AuthConfirm from "./pages/AuthConfirm";
 import ResetPassword from "./pages/ResetPassword";
+import Agents from "./pages/Agents";
+import Books from "./pages/Books";
+import BookDetail from "./pages/BookDetail";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Library from "./pages/Library";
 import LibraryBookView from "./pages/LibraryBookView";
@@ -69,6 +72,9 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/confirm" element={<AuthConfirm />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
+               <Route path="/agents" element={<Agents />} />
+               <Route path="/editor" element={<ProtectedRoute requireRole="admin"><Books /></ProtectedRoute>} />
+               <Route path="/editor/:id" element={<ProtectedRoute requireRole="admin"><BookDetail /></ProtectedRoute>} />
                 {/* Library routes - All subscription tiers */}
                 <Route path="/library" element={<ProtectedRoute requireSubscription={false}><Library key="library" /></ProtectedRoute>} />
                 <Route path="/library/:id" element={<ProtectedRoute requireSubscription={false}><LibraryBookView /></ProtectedRoute>} />

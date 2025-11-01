@@ -48,6 +48,8 @@ import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
 import { OpenGraphEditor } from "@/components/book/OpenGraphEditor";
 import { ExportsSection } from '@/components/exports/ExportsSection';
+import { RegenerateStyleGuideButton } from '@/components/book/RegenerateStyleGuideButton';
+import { GeneratePagePromptsButton } from '@/components/book/GeneratePagePromptsButton';
 
 import { PageImageSection } from "@/components/PageImageSection";
 import { PageCard, UserPageCard, FocusedPageView } from '@/components/page-prompts';
@@ -69,6 +71,7 @@ export default function BookDetail() {
   const { data: pageImages = {}, isLoading: imagesLoading } = useBookPageImages(id);
   const isAdmin = useHasRole('admin');
   const isMobile = useIsMobile();
+  const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -132,12 +135,69 @@ export default function BookDetail() {
   useEffect(() => {
     if (!authLoading && user && id && bookFetched && !book) {
       toast.error('Book not found');
-      navigate('/google-chat');
+      navigate('/editor');
     }
   }, [authLoading, user, id, bookFetched, book, navigate]);
 
   const handleBack = () => {
-    navigate('/google-chat');
+    navigate('/editor');
+  };
+
+  const generateStyleGuide = async () => {
+    if (!book || !user) return;
+    
+    setStyleGuideLoading(true);
+    setProgressMessages([]);
+    
+    try {
+      const response = await supabase.functions.invoke('generate-style-guide', {
+        body: {
+          bookId: book.id,
+          userId: user.id,
+          bookMetadata: {
+            book_name: book.book_name,
+            category: book.category || 'General',
+            book_description: book.book_description || ''
+          }
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Failed to generate style guide');
+      }
+
+      const result = response.data;
+      
+      if (result.success) {
+        setProgressMessages(prev => [...prev, {
+          step: 'Style Guide Generation',
+          message: result.message || 'Style guide generated successfully',
+          status: 'success' as ProcessStatus,
+          timestamp: new Date().toISOString()
+        }]);
+        
+        // Refresh the system prompt data to show the updated style guide
+        await refreshData();
+        
+        toast.success('Style guide generated successfully');
+      } else {
+        throw new Error(result.error || 'Failed to generate style guide');
+      }
+    } catch (error: any) {
+      console.error('Error generating style guide:', error);
+      const errorMessage = error.message || 'Failed to generate style guide';
+      
+      setProgressMessages(prev => [...prev, {
+        step: 'Style Guide Generation',
+        message: errorMessage,
+        status: 'error' as ProcessStatus,
+        timestamp: new Date().toISOString()
+      }]);
+      
+      toast.error(errorMessage);
+    } finally {
+      setStyleGuideLoading(false);
+    }
   };
 
   const addProgressMessage = (message: ProgressMessage) => {
@@ -157,7 +217,7 @@ export default function BookDetail() {
       if (error) throw error;
 
       toast.success('Book archived successfully');
-      navigate('/google-chat');
+      navigate('/editor');
     } catch (error) {
       console.error('Error archiving book:', error);
       toast.error('Failed to archive book');
@@ -187,7 +247,7 @@ export default function BookDetail() {
       queryClient.invalidateQueries({ queryKey: ['books', user.id] });
 
       toast.success('Book deleted successfully');
-      navigate('/google-chat');
+      navigate('/editor');
     } catch (error: any) {
       console.error('Error:', error);
       toast.error('An error occurred while deleting the book');
@@ -359,7 +419,7 @@ export default function BookDetail() {
         <div className="text-center py-12">
           <p className="text-muted-foreground">Book not found</p>
           <Button onClick={handleBack} className="mt-4">
-            Back to Google Chat
+            Back to Books
           </Button>
         </div>
       </StandardPageLayout>
@@ -401,7 +461,7 @@ export default function BookDetail() {
             className="p-2 hover:bg-accent"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Google Chat
+            Back to Books
           </Button>
         </div>
 
@@ -411,14 +471,39 @@ export default function BookDetail() {
               messages={progressMessages}
               isExpanded={isProgressExpanded}
               onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
-              isActive={false}
+              isActive={styleGuideLoading}
             />
           )}
               {/* Book Info */}
               <Card>
                 <CardHeader>
-                  {/* Action buttons - Above Title */}
+                  {/* Call Illustration Director Button, Archive Button, and Delete Button (mobile only) - Above Title */}
                   <div className="mb-4 flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={generateStyleGuide}
+                      disabled={styleGuideLoading}
+                      title="Call Illustration Director"
+                      aria-label="Call Illustration Director"
+                    >
+                      {styleGuideLoading ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Palette className="w-4 h-4" />
+                      )}
+                    </Button>
+
+                    <GeneratePagePromptsButton 
+                      bookId={book.id} 
+                      pages={pages?.map(p => ({ 
+                        id: p.id, 
+                        letter: p.letter, 
+                        title: p.title 
+                      })) || []}
+                      variant="icon"
+                    />
+                    
                     <Button
                       variant={book.is_highlighted ? "default" : "outline"}
                       size="icon"
@@ -455,7 +540,7 @@ export default function BookDetail() {
                             { bookId: book.id, userId: user.id },
                             {
                               onSuccess: (newBook) => {
-                                navigate(`/admin/library/${newBook.id}`);
+                                navigate(`/editor/${newBook.id}`);
                               },
                             }
                           );

@@ -11,6 +11,7 @@ import { useGoogleChat, type SuggestedAction } from '@/hooks/useGoogleChat';
 import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
 import { useGoogleChatSessions } from '@/hooks/useGoogleChatSessions';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
+import { useBookPages } from '@/hooks/useBookPages';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
 import { QACheckpointPanel } from '@/components/chat/QACheckpointPanel';
 import { toast } from 'sonner';
@@ -123,6 +124,9 @@ export default function GoogleChat() {
 
   // Fetch book images from storage if book exists
   const { data: bookPageImages, isLoading: bookImagesLoading } = useBookPageImages(createdBookId);
+  
+  // Fetch book pages from database if book exists
+  const { pages: dbPages } = useBookPages(createdBookId || undefined);
 
   // QA Checkpoint state
   const [currentQAPage, setCurrentQAPage] = useState(0);
@@ -142,9 +146,14 @@ export default function GoogleChat() {
   }, [messages, isLoading, createBookMutation.isSuccess]);
 
   const pageCount = useMemo(() => {
+    // If book is created, use database page count (excluding cover page 0)
+    if (isBookCreated && dbPages && dbPages.length > 0) {
+      return dbPages.length - 1;
+    }
+    // Otherwise parse from conversation messages
     const details = parsePageDetailsFromMessages(messages);
     return details?.length || 0;
-  }, [messages]);
+  }, [messages, isBookCreated, dbPages]);
 
   // Helper to extract book metadata
   const getBookMetadata = (messages: any[]): { name: string, description: string } | null => {
@@ -169,10 +178,24 @@ export default function GoogleChat() {
     return { name, description };
   };
 
-  // Helper to get current page prompt
-  const getCurrentPagePrompt = (messages: any[], pageNum: number): string | null => {
+  // Helper to get current page prompt - uses database if book is created, otherwise parses messages
+  const getCurrentPagePrompt = (pageNum: number): string | null => {
+    // If book is created, use database pages (live data)
+    if (isBookCreated && dbPages && dbPages.length > 0) {
+      const dbPage = dbPages.find(p => p.page_number === pageNum);
+      if (dbPage) {
+        if (pageNum === 0) {
+          // Cover page from database
+          return `**Cover: "${dbPage.title}"**\n\n${dbPage.description || ''}\n\nCreate a vibrant, engaging 1:1 square illustration that captures this theme. Focus on the main subject or scene. Do not include any text, titles, logos, or publisher names - only the artwork.`;
+        }
+        // Content page from database
+        return `**Page ${pageNum}: "${dbPage.title}"**\n\n${dbPage.description || ''}`;
+      }
+    }
+    
+    // Fall back to parsing conversation (pre-creation)
     if (pageNum === 0) {
-      // Cover page - use book metadata
+      // Cover page - use book metadata from messages
       const metadata = getBookMetadata(messages);
       if (!metadata) return null;
       
@@ -841,7 +864,7 @@ export default function GoogleChat() {
               pageCount={pageCount}
               displayImages={displayImages}
               qaPageImages={qaPageImages}
-              getCurrentPagePrompt={(pageNum) => getCurrentPagePrompt(messages, pageNum)}
+              getCurrentPagePrompt={(pageNum) => getCurrentPagePrompt(pageNum)}
               createBookMutation={createBookMutation}
               onClose={() => setShowQACheckpoint(false)}
               onNavigate={handleQAPageNavigation}

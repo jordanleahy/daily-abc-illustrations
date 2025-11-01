@@ -2,7 +2,7 @@ import { useState, useRef, lazy, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Copy, Trash2, Image, Upload, Download, Type } from 'lucide-react';
+import { Copy, Trash2, Upload, Download, Type } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,7 +71,6 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
     } : 'NULL/UNDEFINED'
   });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
   const [showTextOverlayEditor, setShowTextOverlayEditor] = useState(false);
 
   // Optimistic inline editing for title
@@ -110,41 +109,6 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
   });
 
 
-  const handleRegenerateImage = async () => {
-    if (!user) return;
-
-    try {
-      setIsRegeneratingImage(true);
-
-      // Image generation will proceed with existing page prompts from Google Chat flow
-      // Ensure we include the auth token for RLS-enabled storage policies
-      const { data: sessionRes } = await supabase.auth.getSession();
-      const token = sessionRes.session?.access_token;
-      if (!token) throw new Error('Not authenticated');
-
-      // Call the image generation function (unified)
-      const { data, error } = await supabase.functions.invoke('generate-page-image', {
-        body: {
-          pageId: page.id,
-          userId: user.id,
-        },
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
-
-      toast.success('Image generation started');
-      await refreshData();
-    } catch (error) {
-      console.error('Error regenerating image:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to generate image');
-    } finally {
-      setIsRegeneratingImage(false);
-    }
-  };
 
   const validateImage = async (file: File): Promise<{ valid: boolean; error?: string }> => {
     if (!file.type.startsWith('image/')) {
@@ -342,17 +306,6 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
               aria-label="Copy prompt"
             >
               <Copy className="w-3 h-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-6 h-6"
-              onClick={handleRegenerateImage}
-              disabled={isRegeneratingImage}
-              title="Regenerate page image"
-              aria-label="Regenerate page image"
-            >
-              <Image className={`w-3 h-3 ${isRegeneratingImage ? 'animate-pulse' : ''}`} />
             </Button>
             <Button
               variant="ghost"

@@ -109,7 +109,7 @@ serve(async (req) => {
         book_name: sanitizedBookName,
         category: sanitizedCategory,
         book_description: `An ABC learning book about ${sanitizedBookName.toLowerCase()}. Each page features engaging content and activities for young learners.`,
-        total_pages: 26,
+        total_pages: 27, // Cover + 26 pages
         status: 'draft'
       })
       .select()
@@ -122,22 +122,39 @@ serve(async (req) => {
 
     console.log('Book created with ID:', book.id);
 
+    // Create cover page first (page_number 0)
+    const coverPage = {
+      book_id: book.id,
+      letter: 'Cover',
+      page_number: 0,
+      title: sanitizedBookName,
+      description: `An ABC learning book about ${sanitizedBookName.toLowerCase()}. Each page features engaging content and activities for young learners.`,
+      content: {
+        mainConcept: sanitizedBookName,
+        funFact: `An ABC learning book about ${sanitizedBookName.toLowerCase()}`,
+        activity: ''
+      }
+    };
+
     // Generate 26 pages (A-Z) with empty content for user to fill in
     const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    const pagesData = alphabet.map((letter, index) => {
-      return {
-        book_id: book.id,
-        letter: letter,
-        page_number: index + 1,
-        title: `${letter}`,
-        description: null,
-        content: {
-          mainConcept: '',
-          funFact: '',
-          activity: ''
-        }
-      };
-    });
+    const pagesData = [
+      coverPage,
+      ...alphabet.map((letter, index) => {
+        return {
+          book_id: book.id,
+          letter: letter,
+          page_number: index + 1,
+          title: `${letter}`,
+          description: null,
+          content: {
+            mainConcept: '',
+            funFact: '',
+            activity: ''
+          }
+        };
+      })
+    ];
 
     // Save all pages to the database
     const { error: pagesError } = await supabase
@@ -151,7 +168,7 @@ serve(async (req) => {
       throw new Error(`Failed to create pages: ${pagesError.message}`);
     }
 
-    console.log('All 26 pages created successfully');
+    console.log('Cover page and 26 content pages created successfully');
 
     // Create a draft daily_published entry
     console.log('Creating draft daily_published entry for book:', book.id);
@@ -181,7 +198,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         bookId: book.id,
-        message: `"${book.book_name}" template has been created with 26 pages! You can now start editing your content.`,
+        message: `"${book.book_name}" template has been created with cover page and 26 content pages! You can now start editing your content.`,
       }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

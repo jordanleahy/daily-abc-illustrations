@@ -271,7 +271,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         book_name: sanitizeText(bookData.bookName, 200),
         category: sanitizeText(bookData.category || 'General', 100),
         book_description: sanitizeText(bookData.bookDescription || '', 1000),
-        total_pages: sanitizedPages.length,
+        total_pages: sanitizedPages.length + 1, // Add 1 for cover page
         status: 'draft'
       })
       .select()
@@ -284,15 +284,32 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
 
     console.log('Book created with ID:', book.id);
 
-    // Insert sanitized pages
-    const pages = sanitizedPages.map((page: any) => ({
+    // Create cover page first (page_number 0)
+    const coverPage = {
       book_id: book.id,
-      letter: page.letter || `Page ${page.pageNumber}`,
-      page_number: page.pageNumber,
-      title: page.title,
-      description: page.description || '',
-      content: page.content
-    }));
+      letter: 'Cover',
+      page_number: 0,
+      title: sanitizeText(bookData.bookName, 100),
+      description: sanitizeText(bookData.bookDescription || '', 500),
+      content: {
+        mainConcept: sanitizeText(bookData.bookName, 500),
+        funFact: sanitizeText(bookData.bookDescription || '', 500),
+        activity: ''
+      }
+    };
+
+    // Insert sanitized pages (starting from page 1)
+    const pages = [
+      coverPage,
+      ...sanitizedPages.map((page: any) => ({
+        book_id: book.id,
+        letter: page.letter || `Page ${page.pageNumber}`,
+        page_number: page.pageNumber,
+        title: page.title,
+        description: page.description || '',
+        content: page.content
+      }))
+    ];
 
     const { error: pagesError } = await supabase
       .from('pages')
@@ -305,7 +322,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       throw new Error('Failed to create pages');
     }
 
-    console.log(`Created ${pages.length} pages`);
+    console.log(`Cover page + ${pages.length - 1} content pages created`);
 
     // Create default style guide for the book
     const defaultStyleGuide = `You are an AI specialized in creating vibrant, educational children's book illustrations.

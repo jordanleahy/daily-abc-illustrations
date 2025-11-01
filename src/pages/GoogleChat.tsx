@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback, startTransition } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { Book, Trash2, BookOpen, Menu } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Book, BookOpen, Menu } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -22,7 +22,6 @@ import { parsePageDetailsFromMessages, getBookMetadata } from '@/utils/chatHelpe
 
 export default function GoogleChat() {
   const navigate = useNavigate();
-  const { sessionId: urlSessionId } = useParams<{ sessionId?: string }>();
   const [input, setInput] = useState('');
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -167,44 +166,24 @@ export default function GoogleChat() {
   useEffect(() => {
     if (sessionsLoading) return;
     
-    // Priority 1: Use URL session ID if present
-    if (urlSessionId) {
-      const sessionExists = sessions.find(s => s.id === urlSessionId);
-      if (sessionExists) {
-        setCurrentSessionId(urlSessionId);
-        return;
-      } else {
-        // Invalid session ID in URL - redirect to base route
-        navigate('/google-chat', { replace: true });
-        return;
-      }
-    }
-    
-    // Priority 2: Create new session if none exist
+    // Priority 1: Create new session if none exist
     if (sessions.length === 0) {
       handleCreateNewSession();
       return;
     }
     
-    // Priority 3: Handle no current session selected
+    // Priority 2: Handle no current session selected
     if (!currentSessionId) {
       if (isMobile) {
         handleCreateNewSession();
       } else {
         // Auto-load most recent conversation
         const mostRecent = sessions[0];
-        navigate(`/google-chat/${mostRecent.id}`, { replace: true });
+        setCurrentSessionId(mostRecent.id);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionsLoading, sessions, urlSessionId, currentSessionId, isMobile]);
-
-  // Sync URL when session changes
-  useEffect(() => {
-    if (currentSessionId && currentSessionId !== urlSessionId) {
-      navigate(`/google-chat/${currentSessionId}`, { replace: true });
-    }
-  }, [currentSessionId, urlSessionId, navigate]);
+  }, [sessionsLoading, sessions, currentSessionId, isMobile]);
 
   // Detect when outline is newly completed (transition from false → true)
   useEffect(() => {

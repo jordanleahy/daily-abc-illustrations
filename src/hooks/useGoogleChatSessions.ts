@@ -21,7 +21,7 @@ export interface ChatSession {
 export function useGoogleChatSessions() {
   const queryClient = useQueryClient();
 
-  // Fetch all sessions for the current user
+  // Fetch all sessions for the current user with optimized caching
   const { data: sessions = [], isLoading } = useQuery({
     queryKey: ['gemini-chat-sessions'],
     queryFn: async () => {
@@ -35,6 +35,8 @@ export function useGoogleChatSessions() {
       if (error) throw error;
       return data as ChatSession[];
     },
+    staleTime: 30000, // 30 seconds - reduce refetches
+    gcTime: 5 * 60 * 1000, // 5 minutes - keep in cache
   });
 
   // Create new session
@@ -66,7 +68,7 @@ export function useGoogleChatSessions() {
     },
   });
 
-  // Update session messages
+  // Update session messages with optimistic updates
   const updateSessionMessages = useMutation({
     mutationFn: async ({ sessionId, messages }: { sessionId: string; messages: any[] }) => {
       const { data, error } = await supabase
@@ -82,8 +84,14 @@ export function useGoogleChatSessions() {
       if (error) throw error;
       return data as ChatSession;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
+    onSuccess: (updatedSession) => {
+      // Optimistic update: directly update the session in cache instead of refetching all
+      queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions'], (old) => {
+        if (!old) return [updatedSession];
+        return old.map(session => 
+          session.id === updatedSession.id ? updatedSession : session
+        );
+      });
     },
   });
 

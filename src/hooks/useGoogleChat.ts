@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -23,68 +24,37 @@ export interface Message {
   suggestedActions?: SuggestedAction[];
 }
 
-export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: Message[]) => void) => {
+export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: Message[], sessionId: string) => void) => {
+  const queryClient = useQueryClient();
   const { user } = useAuthContext();
-  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingSession, setIsLoadingSession] = useState(false);
 
-  // Load messages when session changes - keep old messages during transition
-  useEffect(() => {
-    if (sessionId) {
-      setIsLoadingSession(true);
-      loadSessionMessages(sessionId).finally(() => setIsLoadingSession(false));
-    } else {
-      setMessages([]);
-      setIsLoadingSession(false);
-    }
-  }, [sessionId]);
-
-  // Notify parent when messages change
-  useEffect(() => {
-    if (onMessagesUpdate) {
-      onMessagesUpdate(messages);
-    }
-  }, [messages]);
-
-  const loadSessionMessages = async (id: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('gemini_chat_sessions')
-        .select('messages')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-      if (data?.messages && Array.isArray(data.messages)) {
-        setMessages(data.messages as unknown as Message[]);
-      }
-    } catch (error) {
-      console.error('Error loading session messages:', error);
-    }
-  };
-
-  const sendMessage = async (content: string | MessageContent[], displayText?: string) => {
+  const sendMessage = async (content: string | MessageContent[], displayText?: string, currentMessages: Message[] = []) => {
     if (!user?.id) {
       toast.error('Please sign in to use Google chat');
       return;
     }
 
-    // Clear suggestions from last assistant message when user sends any message
-    setMessages(prev => prev.map((msg, idx) => 
-      idx === prev.length - 1 && msg.role === 'assistant' 
+    // Clear suggestions from last assistant message
+    const messagesWithoutSuggestions = currentMessages.map((msg, idx) => 
+      idx === currentMessages.length - 1 && msg.role === 'assistant' 
         ? { ...msg, suggestedActions: undefined } 
         : msg
-    ));
+    );
 
-    // Add user message
-    const userMessage: Message = { role: 'user', content };
-    // For display purposes with images, we store the text separately
-    const displayMessage: Message = { 
-      role: 'user', 
-      content: displayText || (typeof content === 'string' ? content : 'Uploaded an image')
+    // Add user message optimistically
+    const userMessage: Message = {
+      role: 'user',
+      content: displayText || (typeof content === 'string' ? content : 'Uploaded an image'),
     };
-    setMessages(prev => [...prev, displayMessage]);
+    
+    const updatedMessages = [...messagesWithoutSuggestions, userMessage];
+    
+    // Optimistically update React Query cache
+    if (sessionId) {
+      queryClient.setQueryData(['session-messages', sessionId], updatedMessages);
+    }
+
     setIsLoading(true);
 
     try {
@@ -93,21 +63,23 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
       if (sessionError || !session?.access_token) {
         console.error('Session error:', sessionError);
         toast.error('Please refresh the page and try again');
-        setIsLoading(false);
         throw new Error('No auth token');
       }
       
       const token = session.access_token;
 
+      // Prepare message for API (with actual content structure)
+      const apiUserMessage: Message = { role: 'user', content };
+
       const response = await fetch(
-        `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/google-chat`,
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-chat`,
         {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ messages: [...messages, userMessage] })
+          body: JSON.stringify({ messages: [...messagesWithoutSuggestions, apiUserMessage] })
         }
       );
 
@@ -137,10 +109,12 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
       const decoder = new TextDecoder();
       let buffer = '';
       let fullContent = '';
-      let suggestedActions: SuggestedAction[] | undefined;
 
       // Add empty assistant message
-      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+      let messagesWithResponse = [...updatedMessages, { role: 'assistant' as const, content: '' }];
+      if (sessionId) {
+        queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
+      }
 
       while (true) {
         const { done, value } = await reader.read();
@@ -164,14 +138,13 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
             if (delta) {
               fullContent += delta;
               // Update the last message with accumulated content
-              setMessages(prev => {
-                const newMessages = [...prev];
-                const lastMsg = newMessages[newMessages.length - 1];
-                if (lastMsg?.role === 'assistant') {
-                  lastMsg.content = fullContent;
-                }
-                return newMessages;
-              });
+              messagesWithResponse = [
+                ...messagesWithResponse.slice(0, -1),
+                { role: 'assistant' as const, content: fullContent }
+              ];
+              if (sessionId) {
+                queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
+              }
             }
           } catch (e) {
             console.error('Failed to parse SSE chunk:', e);
@@ -208,44 +181,52 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
 
       const { cleanContent, suggestedActions: finalActions } = parseSuggestions(fullContent);
 
-      // Update with clean content and suggestions
-      setMessages(prev => {
-        const newMessages = [...prev];
-        const lastMsg = newMessages[newMessages.length - 1];
-        if (lastMsg?.role === 'assistant') {
-          lastMsg.content = cleanContent;
-          lastMsg.suggestedActions = finalActions;
+      // Final update with clean content and suggestions
+      if (cleanContent) {
+        messagesWithResponse = [
+          ...messagesWithResponse.slice(0, -1),
+          { 
+            role: 'assistant' as const, 
+            content: cleanContent,
+            suggestedActions: finalActions
+          }
+        ];
+        
+        // Update React Query cache
+        if (sessionId) {
+          queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
         }
-        return newMessages;
-      });
+        
+        // Notify parent component to persist to database
+        if (onMessagesUpdate && sessionId) {
+          onMessagesUpdate(messagesWithResponse, sessionId);
+        }
+      }
 
     } catch (error) {
       console.error('Google chat error:', error);
-      // Remove the user message and empty assistant message on error
-      setMessages(prev => prev.slice(0, -2));
+      toast.error('Failed to send message');
+      // Revert cache on error
+      if (sessionId) {
+        queryClient.setQueryData(['session-messages', sessionId], currentMessages);
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const sendMessageWithImage = async (text: string, imageDataUrl: string) => {
-    const content: MessageContent[] = [
-      { type: 'text', text },
-      { type: 'image_url', image_url: { url: imageDataUrl } }
-    ];
-    await sendMessage(content, text);
-  };
-
-  const clearMessages = () => {
-    setMessages([]);
-  };
-
   return {
-    messages,
     isLoading,
-    isLoadingSession,
     sendMessage,
-    sendMessageWithImage,
-    clearMessages
+    sendMessageWithImage: async (text: string, imageDataUrl: string, currentMessages: Message[] = []) => {
+      return sendMessage(
+        [
+          { type: 'text', text },
+          { type: 'image_url', image_url: { url: imageDataUrl } }
+        ],
+        text,
+        currentMessages
+      );
+    }
   };
 };

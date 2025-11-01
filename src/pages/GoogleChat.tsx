@@ -7,6 +7,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useGoogleChat, type SuggestedAction } from '@/hooks/useGoogleChat';
 import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
 import { useGoogleChatSessions } from '@/hooks/useGoogleChatSessions';
+import { useSessionMessages, usePrefetchSession } from '@/hooks/useSessionMessages';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { useBookPages } from '@/hooks/useBookPages';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
@@ -54,26 +55,27 @@ export default function GoogleChat() {
     updateQAPageImages,
   } = useGoogleChatSessions();
 
-  // Debounced message update callback
-  const debouncedUpdateRef = useRef<NodeJS.Timeout>();
-  const handleMessagesUpdate = useCallback(async (updatedMessages: any[]) => {
-    if (!currentSessionId) return;
-    
-    // Clear existing timeout
-    if (debouncedUpdateRef.current) {
-      clearTimeout(debouncedUpdateRef.current);
+  // Load messages for current session via React Query cache
+  const { data: messages = [], isLoading: isLoadingMessages } = useSessionMessages(currentSessionId || undefined);
+  
+  // Prefetch hook for hover optimization
+  const { prefetchSession } = usePrefetchSession();
+
+  // Debounce message updates to avoid excessive database writes
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
+  const handleMessagesUpdate = useCallback((messages: any[], sessionId: string) => {
+    // Clear any existing timeout
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
     }
     
-    // Debounce database updates
-    debouncedUpdateRef.current = setTimeout(async () => {
-      await updateSessionMessages({
-        sessionId: currentSessionId,
-        messages: updatedMessages,
-      });
-    }, 1000); // Wait 1 second after last message
-  }, [currentSessionId, updateSessionMessages]);
+    // Set new timeout to update after 1 second of inactivity
+    updateTimeoutRef.current = setTimeout(() => {
+      updateSessionMessages({ sessionId, messages });
+    }, 1000);
+  }, [updateSessionMessages]);
 
-  const { messages, isLoading, isLoadingSession, sendMessage, sendMessageWithImage, clearMessages } = useGoogleChat(
+  const { isLoading, sendMessage, sendMessageWithImage } = useGoogleChat(
     currentSessionId || undefined,
     handleMessagesUpdate
   );
@@ -273,13 +275,11 @@ export default function GoogleChat() {
     }
   }, [messages]);
 
-  const handleSend = useCallback(async () => {
-    if (!input.trim() || isLoading) return;
-    
-    const message = input.trim();
+  const handleSend = async () => {
+    if (!input.trim()) return;
+    await sendMessage(input, undefined, messages);
     setInput('');
-    await sendMessage(message);
-  }, [input, isLoading, sendMessage]);
+  };
 
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -295,10 +295,10 @@ export default function GoogleChat() {
       const message = input.trim() || 'What do you think of this style for inspiration?';
       setInput('');
       setShowImageUpload(false);
-      await sendMessageWithImage(message, base64Data);
+      await sendMessageWithImage(message, base64Data, messages);
     };
     reader.readAsDataURL(file);
-  }, [input, sendMessageWithImage]);
+  }, [input, sendMessageWithImage, messages]);
 
   const handleBookTypeSelect = useCallback(async (bookType: typeof BOOK_TYPES[0]) => {
     if (bookType.needsClarification && bookType.clarificationContext) {
@@ -395,7 +395,7 @@ export default function GoogleChat() {
     // Regular quick reply
     if (action.value) {
       // Send the predefined response
-      await sendMessage(action.value);
+      await sendMessage(action.value, undefined, messages);
     } else {
       // "Custom" option - just focus the input field
       const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
@@ -403,7 +403,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage]);
+  }, [handleCreateBook, sendMessage, messages]);
 
   const handleCreateNewSession = useCallback(async () => {
     try {
@@ -600,18 +600,8 @@ export default function GoogleChat() {
         {/* Main Chat Area - Full width, no margin adjustment */}
         <div className="flex-1 flex flex-col w-full">
           {/* Messages Area */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto relative">
-            {/* Loading overlay during session switch */}
-            {isLoadingSession && messages.length > 0 && (
-              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center">
-                <div className="text-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">Loading conversation...</p>
-                </div>
-              </div>
-            )}
-            
-            {messages.length === 0 && !isLoadingSession ? (
+          <div ref={scrollRef} className="flex-1 overflow-y-auto">
+            {messages.length === 0 ? (
               <EmptyState onBookTypeSelect={handleBookTypeSelect} />
             ) : (
               <div className="max-w-4xl mx-auto px-4 py-6">

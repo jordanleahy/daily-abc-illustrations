@@ -24,6 +24,7 @@ interface ChatSessionSidebarProps {
   onCreateSession: () => void;
   onDeleteSession: (sessionId: string) => void;
   onRenameSession: (sessionId: string, name: string) => void;
+  onPrefetchSession?: (sessionId: string) => void;
 }
 
 export function ChatSessionSidebar({
@@ -33,6 +34,7 @@ export function ChatSessionSidebar({
   onCreateSession,
   onDeleteSession,
   onRenameSession,
+  onPrefetchSession,
 }: ChatSessionSidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -96,6 +98,7 @@ export function ChatSessionSidebar({
                 currentSessionId === session.id && "bg-accent"
               )}
               onClick={() => onSelectSession(session.id)}
+              onMouseEnter={() => onPrefetchSession?.(session.id)}
             >
               <div className="flex items-start gap-2">
                 <MessageSquare className="h-4 w-4 mt-1 flex-shrink-0 text-muted-foreground" />

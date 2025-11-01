@@ -674,6 +674,24 @@ export default function GoogleChat() {
 
         {/* Input Area - Fixed Footer */}
         <div className="border-t bg-background px-4 py-4 shrink-0">
+          {/* Review Outline Banner - Shows when QA is ready but panel is closed */}
+          {shouldShowQACheckpoint && !showQACheckpoint && (
+            <div className="max-w-4xl mx-auto mb-3 p-3 bg-primary/10 border border-primary/20 rounded-lg flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium">Book outline is ready!</p>
+                <p className="text-xs text-muted-foreground">Review and upload images for each page</p>
+              </div>
+              <Button
+                size="sm"
+                onClick={() => setShowQACheckpoint(true)}
+                className="ml-2"
+              >
+                <BookOpen className="h-4 w-4 mr-1" />
+                Review
+              </Button>
+            </div>
+          )}
+          
           <div className="max-w-4xl mx-auto flex gap-2">
             <Button
               variant="outline"

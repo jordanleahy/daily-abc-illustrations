@@ -44,8 +44,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-import { useSystemPrompt } from "@/hooks/useSystemPrompt";
-import { SystemPromptSection } from "@/components/book";
 import { OpenGraphEditor } from "@/components/book/OpenGraphEditor";
 import { ExportsSection } from '@/components/exports/ExportsSection';
 
@@ -63,7 +61,6 @@ export default function BookDetail() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
-  const { currentPrompt, refreshData } = useSystemPrompt(id || '');
   const { pages } = useBookPages(id);
   const { data: book, isLoading: bookLoading, error: bookError, isFetched: bookFetched } = useBook(id);
   const { data: pageImages = {}, isLoading: imagesLoading } = useBookPageImages(id);
@@ -797,9 +794,6 @@ export default function BookDetail() {
                 bookTitle={book.book_name}
                 bookDescription={book.book_description}
               />
-
-              {/* System Prompt Section */}
-              <SystemPromptSection bookId={book.id} />
 
               {/* Exports Section */}
               <ExportsSection 

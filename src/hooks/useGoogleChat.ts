@@ -85,13 +85,16 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
     setIsLoading(true);
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const token = session?.access_token;
-
-      if (!token) {
-        toast.error('Authentication required');
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session?.access_token) {
+        console.error('Session error:', sessionError);
+        toast.error('Please refresh the page and try again');
+        setIsLoading(false);
         throw new Error('No auth token');
       }
+      
+      const token = session.access_token;
 
       const response = await fetch(
         `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/google-chat`,

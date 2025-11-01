@@ -381,6 +381,21 @@ export default function GoogleChat() {
     }
   };
 
+  // Reusable function to open QA panel with current session data
+  const handleOpenQAPanel = () => {
+    // Load QA images from current session
+    const session = sessions.find(s => s.id === currentSessionId);
+    if (session?.qa_page_images) {
+      setQAPageImages(session.qa_page_images);
+    } else {
+      setQAPageImages({});
+    }
+    
+    // Open panel and reset to first page
+    setShowQACheckpoint(true);
+    setCurrentQAPage(0);
+  };
+
   const handleSelectSession = (sessionId: string) => {
     if (sessionId !== currentSessionId) {
       setCurrentSessionId(sessionId);
@@ -553,7 +568,7 @@ export default function GoogleChat() {
         {/* Review/View Book Button - Desktop only, fixed in top right */}
         {((shouldShowQACheckpoint && !showQACheckpoint) || createdBookId) && (
           <Button
-            onClick={createdBookId ? handleViewCreatedBook : () => setShowQACheckpoint(true)}
+            onClick={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
             className="hidden md:flex fixed top-20 right-6 z-40 shadow-lg"
             size="sm"
           >
@@ -829,6 +844,20 @@ export default function GoogleChat() {
               <ImageIcon className={cn("h-4 w-4", !isMobile && "mr-2")} />
               {!isMobile && <span>Add Image</span>}
             </Button>
+            
+            {/* View Book button - Desktop only, when book exists */}
+            {!isMobile && createdBookId && (
+              <Button
+                variant="outline"
+                size="default"
+                onClick={handleOpenQAPanel}
+                disabled={isLoading}
+                title="View book outline and images"
+              >
+                <BookOpen className="h-4 w-4 mr-2" />
+                <span>View Book</span>
+              </Button>
+            )}
             
             <Input
               value={input}

@@ -110,32 +110,9 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
     }
   });
 
+  // Note: Page prompt regeneration has been removed. Use Google Chat to create new books.
   const handleRegeneratePrompt = async () => {
-    if (!user) return;
-
-    try {
-      setIsRegenerating(true);
-
-      // Generate (or regenerate) the page-specific prompt and deploy it
-      const { data, error } = await supabase.functions.invoke('generate-page-prompt', {
-        body: {
-          pageId: page.id,
-          userId: user.id,
-          bookId,
-        },
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate page prompt');
-
-      toast.success('Page prompt generated and deployed');
-      await refreshData();
-    } catch (error) {
-      console.error('Error generating page prompt:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to generate page prompt');
-    } finally {
-      setIsRegenerating(false);
-    }
+    toast.info('Page prompt regeneration is no longer available. Please use Google Chat to create new books.');
   };
 
   const handleRegenerateImage = async () => {
@@ -144,7 +121,7 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
     try {
       setIsRegeneratingImage(true);
 
-      // Ensure there is a deployed page-specific prompt; if not, create it first
+      // Check for existing deployed prompt (no longer creating new ones)
       const { data: existingPrompt } = await supabase
         .from('page_system_prompts')
         .select('id')
@@ -153,16 +130,9 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
         .maybeSingle();
 
       if (!existingPrompt) {
-        const { data: promptRes, error: promptErr } = await supabase.functions.invoke('generate-page-prompt', {
-          body: {
-            pageId: page.id,
-            userId: user.id,
-            bookId,
-          },
-        });
-        if (promptErr || !promptRes?.success) {
-          throw new Error(promptErr?.message || promptRes?.error || 'Failed to generate page prompt');
-        }
+        toast.error('No prompt found for this page. Please use Google Chat to create new books with prompts.');
+        setIsRegeneratingImage(false);
+        return;
       }
 
       // Ensure we include the auth token for RLS-enabled storage policies

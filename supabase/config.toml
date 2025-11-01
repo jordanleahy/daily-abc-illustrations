@@ -84,19 +84,7 @@ verify_jwt = true
 [functions.google-create-book]
 verify_jwt = false
 
-[functions.create-book]
-verify_jwt = false
-
-[functions.generate-style-guide]
-verify_jwt = true
-
 [functions.generate-page-image]
-verify_jwt = true
-
-[functions.generate-graphics-designer-prompt]
-verify_jwt = true
-
-[functions.generate-page-prompt]
 verify_jwt = true
 
 [functions.generate-image]
@@ -137,12 +125,6 @@ verify_jwt = false
 
 [functions.get-landing-page-data]
 verify_jwt = false
-
-[functions.create-blank-book]
-verify_jwt = true
-
-[functions.create-themed-book]
-verify_jwt = true
 
 [functions.purchase-reward]
 verify_jwt = true

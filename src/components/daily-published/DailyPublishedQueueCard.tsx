@@ -47,7 +47,7 @@ export function DailyPublishedQueueCard({
 
     // Only allow viewing active content
     if (effectiveStatus === 'active') {
-      navigate(`/editor/${item.book_id}`);
+      navigate(`/admin/library/${item.book_id}`);
     }
   };
   const getStatusVariant = (status: string) => {

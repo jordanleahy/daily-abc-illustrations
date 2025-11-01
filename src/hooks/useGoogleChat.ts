@@ -27,13 +27,16 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
   const { user } = useAuthContext();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingSession, setIsLoadingSession] = useState(false);
 
-  // Load messages when session changes
+  // Load messages when session changes - keep old messages during transition
   useEffect(() => {
     if (sessionId) {
-      loadSessionMessages(sessionId);
+      setIsLoadingSession(true);
+      loadSessionMessages(sessionId).finally(() => setIsLoadingSession(false));
     } else {
       setMessages([]);
+      setIsLoadingSession(false);
     }
   }, [sessionId]);
 
@@ -240,6 +243,7 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
   return {
     messages,
     isLoading,
+    isLoadingSession,
     sendMessage,
     sendMessageWithImage,
     clearMessages

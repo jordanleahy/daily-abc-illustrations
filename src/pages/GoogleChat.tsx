@@ -73,7 +73,7 @@ export default function GoogleChat() {
     }, 1000); // Wait 1 second after last message
   }, [currentSessionId, updateSessionMessages]);
 
-  const { messages, isLoading, sendMessage, sendMessageWithImage, clearMessages } = useGoogleChat(
+  const { messages, isLoading, isLoadingSession, sendMessage, sendMessageWithImage, clearMessages } = useGoogleChat(
     currentSessionId || undefined,
     handleMessagesUpdate
   );
@@ -600,8 +600,18 @@ export default function GoogleChat() {
         {/* Main Chat Area - Full width, no margin adjustment */}
         <div className="flex-1 flex flex-col w-full">
           {/* Messages Area */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto">
-            {messages.length === 0 ? (
+          <div ref={scrollRef} className="flex-1 overflow-y-auto relative">
+            {/* Loading overlay during session switch */}
+            {isLoadingSession && messages.length > 0 && (
+              <div className="absolute inset-0 bg-background/80 backdrop-blur-sm z-10 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2" />
+                  <p className="text-sm text-muted-foreground">Loading conversation...</p>
+                </div>
+              </div>
+            )}
+            
+            {messages.length === 0 && !isLoadingSession ? (
               <EmptyState onBookTypeSelect={handleBookTypeSelect} />
             ) : (
               <div className="max-w-4xl mx-auto px-4 py-6">

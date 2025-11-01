@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, Sparkles, Book, Trash2, Image as ImageIcon, Copy, ArrowLeft, ArrowRight, Check, BookOpen } from 'lucide-react';
+import { Send, Sparkles, Book, Trash2, Image as ImageIcon, Copy, ArrowLeft, ArrowRight, Check, BookOpen, Menu } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { ImageUpload } from '@/components/ImageUpload';
 import { useGoogleChat, type SuggestedAction } from '@/hooks/useGoogleChat';
 import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
@@ -14,6 +15,7 @@ import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
 import { QACheckpointPanel } from '@/components/chat/QACheckpointPanel';
 import { toast } from 'sonner';
 import { BOOK_TYPES } from '@/config/bookTypes';
+import { cn } from '@/lib/utils';
 
 interface PageDetail {
   pageNumber: number;
@@ -69,6 +71,22 @@ export default function GoogleChat() {
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setIsMobileSidebarOpen(false); // Auto-close on desktop
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
   
   const {
     sessions,
@@ -383,8 +401,24 @@ export default function GoogleChat() {
       fullHeight={true}
     >
       <div className="fixed inset-0 top-[3.5rem] flex">
-        {/* Chat History Sidebar */}
-        <div className="w-64 border-r bg-muted/30 flex flex-col h-full resize-x overflow-auto" style={{ minWidth: '200px', maxWidth: '600px' }}>
+        {/* Mobile: Hamburger Menu Button */}
+        {isMobile && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="fixed top-16 left-4 z-50 md:hidden"
+            onClick={() => setIsMobileSidebarOpen(true)}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
+        )}
+
+        {/* Desktop: Always-visible Sidebar */}
+        <div className={cn(
+          "border-r bg-muted/30 flex flex-col h-full transition-all duration-300",
+          "hidden md:flex md:w-64 md:resize-x md:overflow-auto",
+          "md:relative md:min-w-[200px] md:max-w-[600px]"
+        )}>
           <ChatSessionSidebar
             sessions={sessions}
             currentSessionId={currentSessionId}
@@ -395,8 +429,30 @@ export default function GoogleChat() {
           />
         </div>
 
-        {/* Main Chat Area */}
-        <div className={`flex-1 flex flex-col transition-all duration-300 ${showQACheckpoint ? 'mr-[500px]' : ''}`}>
+        {/* Mobile: Overlay Drawer for Sidebar */}
+        {isMobile && (
+          <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+            <SheetContent side="left" className="w-[280px] p-0">
+              <ChatSessionSidebar
+                sessions={sessions}
+                currentSessionId={currentSessionId}
+                onSelectSession={(id) => {
+                  handleSelectSession(id);
+                  setIsMobileSidebarOpen(false);
+                }}
+                onCreateSession={() => {
+                  handleCreateNewSession();
+                  setIsMobileSidebarOpen(false);
+                }}
+                onDeleteSession={handleDeleteSession}
+                onRenameSession={handleRenameSession}
+              />
+            </SheetContent>
+          </Sheet>
+        )}
+
+        {/* Main Chat Area - Full width, no margin adjustment */}
+        <div className="flex-1 flex flex-col w-full">
         {/* Messages Area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
           {messages.length === 0 ? (
@@ -604,54 +660,72 @@ export default function GoogleChat() {
         {/* Input Area - Fixed Footer */}
         <div className="border-t bg-background px-4 py-4 shrink-0">
           <div className="max-w-4xl mx-auto flex gap-2">
+            <Button
+              variant="outline"
+              size={isMobile ? "icon" : "default"}
+              onClick={() => setShowImageUpload(!showImageUpload)}
+              disabled={isLoading}
+              className={isMobile ? "flex-shrink-0" : ""}
+              title="Upload inspiration image"
+            >
+              <ImageIcon className={cn("h-4 w-4", !isMobile && "mr-2")} />
+              {!isMobile && <span>Add Image</span>}
+            </Button>
+            
             <Input
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder={showImageUpload ? "Optional: Add a message with your image..." : "Type your message..."}
+              placeholder={isMobile ? "Message..." : (showImageUpload ? "Optional: Add a message with your image..." : "Type your message...")}
               disabled={isLoading}
-              className="flex-1"
+              className="flex-1 min-w-0"
             />
-            <Button 
-              onClick={() => setShowImageUpload(!showImageUpload)} 
-              variant="outline"
-              size="icon"
-              disabled={isLoading}
-              title="Upload inspiration image"
-            >
-              <ImageIcon className="h-4 w-4" />
-            </Button>
+            
             <Button 
               onClick={handleSend} 
               disabled={isLoading || !input.trim()}
-              size="icon"
+              size={isMobile ? "icon" : "default"}
+              className="flex-shrink-0"
             >
-              <Send className="h-4 w-4" />
+              <Send className={cn("h-4 w-4", !isMobile && "mr-2")} />
+              {!isMobile && <span>Send</span>}
             </Button>
           </div>
           </div>
         </div>
 
-        {/* QA Checkpoint Right Panel */}
-        <QACheckpointPanel
-          showQACheckpoint={showQACheckpoint && !createBookMutation.isSuccess}
-          isBookCreated={isBookCreated}
-          createdBookId={createdBookId}
-          currentQAPage={currentQAPage}
-          pageCount={pageCount}
-          displayImages={displayImages}
-          qaPageImages={qaPageImages}
-          getCurrentPagePrompt={(pageNum) => getCurrentPagePrompt(messages, pageNum)}
-          createBookMutation={createBookMutation}
-          onClose={() => {
-            setShowQACheckpoint(false);
-            toast.info('Continue chatting to refine prompts');
+        {/* QA Checkpoint Drawer - Slides from Right */}
+        <Sheet 
+          open={showQACheckpoint && !createBookMutation.isSuccess} 
+          onOpenChange={(open) => {
+            setShowQACheckpoint(open);
+            if (!open) {
+              toast.info('Continue chatting to refine prompts');
+            }
           }}
-          onNavigate={handleQAPageNavigation}
-          onImageUpload={handleQAImageUpload}
-          onRemoveImage={handleRemoveQAImage}
-          onCreateBook={handleCreateBook}
-        />
+        >
+          <SheetContent 
+            side="right" 
+            className="w-full sm:w-[500px] p-0 flex flex-col overflow-hidden"
+          >
+            <QACheckpointPanel
+              showQACheckpoint={true}
+              isBookCreated={isBookCreated}
+              createdBookId={createdBookId}
+              currentQAPage={currentQAPage}
+              pageCount={pageCount}
+              displayImages={displayImages}
+              qaPageImages={qaPageImages}
+              getCurrentPagePrompt={(pageNum) => getCurrentPagePrompt(messages, pageNum)}
+              createBookMutation={createBookMutation}
+              onClose={() => setShowQACheckpoint(false)}
+              onNavigate={handleQAPageNavigation}
+              onImageUpload={handleQAImageUpload}
+              onRemoveImage={handleRemoveQAImage}
+              onCreateBook={handleCreateBook}
+            />
+          </SheetContent>
+        </Sheet>
       </div>
 
     </PageLayout>

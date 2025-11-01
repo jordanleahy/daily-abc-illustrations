@@ -48,6 +48,31 @@ interface ExportsSectionProps {
 }
 
 /**
+ * Generates a URL-safe slug from a title string
+ * Matches the database generate_slug function logic for consistency
+ * 
+ * @param title - The title to convert to a slug
+ * @returns URL-safe slug string (max 60 chars)
+ */
+const generateSlugFromTitle = (title: string): string => {
+  // Convert to lowercase and remove special characters
+  let slug = title.toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
+    .replace(/\s+/g, '-')         // Replace spaces with hyphens
+    .replace(/-+/g, '-')          // Replace multiple hyphens with single
+    .trim()
+    .replace(/^-+|-+$/g, '');    // Remove leading/trailing hyphens
+  
+  // Truncate to 60 characters
+  slug = slug.substring(0, 60);
+  
+  // Remove trailing hyphen if truncation created one
+  slug = slug.replace(/-+$/, '');
+  
+  return slug || 'untitled'; // Fallback if empty
+};
+
+/**
  * ExportsSection Component
  * 
  * A comprehensive component that manages both PDF exports and daily publication queue functionality.
@@ -373,6 +398,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       const nextDate = await getAppendPublishDate(supabase);
       
       // Create new daily publication scheduled for next available date
+      // Generate slug for republished books
+      const slug = generateSlugFromTitle(contentName);
+
       const { data: newPublication, error: insertError } = await supabase
         .from('daily_published')
         .insert({
@@ -381,7 +409,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
           status: 'queued' as const,
           is_active: false,
-          publish_date: nextDate
+          publish_date: nextDate,
+          slug: slug // Add slug to insert
         })
         .select()
         .single();
@@ -459,11 +488,6 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     // Use SEO title if available, fallback to regular title
     const title = existingSeoMetadata?.seo_title || existingPublication.title;
     
-    // Generate public book URL using slug
-    const publicUrl = existingPublication.slug 
-      ? `${SITE_CONFIG.productionUrl}/book/${existingPublication.slug}`
-      : `${SITE_CONFIG.productionUrl}/daily-published/${existingPublication.id}`;
-    
     // Format the publish date as "Saturday, November 15"
     const publishDate = existingPublication.publish_date
       ? new Date(existingPublication.publish_date).toLocaleDateString('en-US', {
@@ -472,6 +496,14 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           day: 'numeric'
         })
       : 'TBD';
+    
+    // Every publication MUST have a slug now - no fallback
+    if (!existingPublication.slug) {
+      console.error('Missing slug for daily_published:', existingPublication.id, existingPublication.title);
+      return `${title}\n⚠️ Missing public URL - This is a system error. Please contact support.\nScheduled for ${publishDate}`;
+    }
+
+    const publicUrl = `${SITE_CONFIG.productionUrl}/book/${existingPublication.slug}`;
     
     return `${title}\n${publicUrl}\nAvailable for monthly users | Runs for Free On ${publishDate}`;
   };
@@ -744,12 +776,16 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           // Convert draft to queued with next publish date (appends to end - FIFO)
           const nextDate = await getAppendPublishDate(supabase);
           
+          // Generate slug immediately if not already present
+          const slug = existingPublication.slug || generateSlugFromTitle(contentName);
+
           const { data: updatedPublication, error: updateError } = await supabase
             .from('daily_published')
             .update({
               status: 'queued' as const,
               publish_date: nextDate,
-              is_active: false // Still not active until processed
+              is_active: false, // Still not active until processed
+              slug: slug // Add slug to update
             })
             .eq('id', existingPublication.id)
             .select()
@@ -784,6 +820,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           // Get next publish date (appends to end of queue - FIFO)
           const nextDate = await getAppendPublishDate(supabase);
           
+          // Generate slug immediately for new publications
+          const slug = generateSlugFromTitle(contentName);
+
           // Create new daily publication scheduled for next available date
           const { data: newPublication, error: insertError } = await supabase
             .from('daily_published')
@@ -793,7 +832,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
               description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
               status: 'queued' as const,
               is_active: false,
-              publish_date: nextDate
+              publish_date: nextDate,
+              slug: slug // Add slug to insert
             })
             .select()
             .single();

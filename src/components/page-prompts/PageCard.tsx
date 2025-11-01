@@ -201,6 +201,21 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
     setShowDeleteConfirm(false);
   };
 
+  const handleCopyDescription = async () => {
+    if (!page.description) {
+      toast.error('No description available');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(page.description);
+      toast.success('Description copied to clipboard');
+    } catch (error) {
+      console.error('Error copying description to clipboard:', error);
+      toast.error('Failed to copy to clipboard');
+    }
+  };
+
   const handleCopyJsonPrompt = async () => {
     if (!currentPrompt?.content) {
       toast.error('No JSON prompt available');
@@ -300,10 +315,10 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
               variant="ghost"
               size="icon"
               className="w-6 h-6"
-              onClick={handleCopyJsonPrompt}
-              disabled={!currentPrompt?.content}
-              title="Copy prompt"
-              aria-label="Copy prompt"
+              onClick={handleCopyDescription}
+              disabled={!page.description}
+              title="Copy description"
+              aria-label="Copy description"
             >
               <Copy className="w-3 h-3" />
             </Button>

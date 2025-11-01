@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect, useMemo, useCallback } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Send, Book, Image as ImageIcon, BookOpen } from 'lucide-react';
+import { Send, Sparkles, Book, Trash2, Image as ImageIcon, Copy, ArrowLeft, ArrowRight, Check, BookOpen, Menu } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { ImageUpload } from '@/components/ImageUpload';
@@ -13,8 +14,6 @@ import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { useBookPages } from '@/hooks/useBookPages';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
 import { QACheckpointPanel } from '@/components/chat/QACheckpointPanel';
-import { MessageList } from '@/components/chat/MessageList';
-import { EmptyState } from '@/components/chat/EmptyState';
 import { toast } from 'sonner';
 import { BOOK_TYPES } from '@/config/bookTypes';
 import { cn } from '@/lib/utils';
@@ -134,6 +133,8 @@ export default function GoogleChat() {
   const [currentQAPage, setCurrentQAPage] = useState(0);
   const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
   const [showQACheckpoint, setShowQACheckpoint] = useState(false);
+  const [outlineJustCompleted, setOutlineJustCompleted] = useState(false);
+  const previousShouldShow = useRef(false);
 
   // Priority: Show book images from storage if book exists, otherwise show QA checkpoint images
   const displayImages = (createdBookId && bookPageImages) ? bookPageImages : qaPageImages;
@@ -256,6 +257,40 @@ export default function GoogleChat() {
     }
   }, [currentSessionId, urlSessionId]); // navigate is stable
 
+  // Detect when outline is newly completed (transition from false → true)
+  useEffect(() => {
+    const currentShouldShow = shouldShowQACheckpoint;
+    
+    // If we just transitioned from false → true, the outline was just completed
+    if (!previousShouldShow.current && currentShouldShow) {
+      setOutlineJustCompleted(true);
+    }
+    
+    previousShouldShow.current = currentShouldShow;
+  }, [shouldShowQACheckpoint]);
+
+  // Auto-show QA checkpoint only when outline is just completed (not on page load)
+  useEffect(() => {
+    if (outlineJustCompleted && !showQACheckpoint) {
+      setCurrentQAPage(0); // Start at cover page
+      
+      if (isMobile) {
+        // Don't auto-open on mobile — keep the brand chat experience visible
+        toast.info('Outline is ready. Tap Review to open the panel.');
+      } else {
+        setShowQACheckpoint(true);
+      }
+      
+      // Scroll to bottom to show the banner
+      setTimeout(() => {
+        scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      
+      // Reset flag after opening
+      setOutlineJustCompleted(false);
+    }
+  }, [outlineJustCompleted, showQACheckpoint, isMobile]);
+
   // Add quick reply buttons when AI indicates book is ready to create
   const messagesWithCreateOptions = useMemo(() => {
     if (messages.length === 0) return messages;
@@ -318,97 +353,30 @@ export default function GoogleChat() {
     reader.readAsDataURL(file);
   };
 
-  const handleCreateNewSession = async () => {
-    try {
-      const newSession = await createSession(undefined);
-      setCurrentSessionId(newSession.id);
-      setCurrentQAPage(0);
-      setQAPageImages({});
-      setShowQACheckpoint(false);
-      setLocalCreatedBookId(null); // Reset local book ID
-    } catch (error) {
-      console.error('Error creating session:', error);
-    }
-  };
-
-  const handleCreateBook = async () => {
-    if (!currentSessionId) {
-      toast.error('No active session');
-      return;
-    }
-
-    if (messages.length === 0) {
-      toast.error('Please have a conversation first');
-      return;
-    }
-
-    // Parse structured page details from conversation
-    const pageDetails = parsePageDetailsFromMessages(messages);
-    
-    if (pageDetails) {
-      console.log(`Extracted ${pageDetails.length} page details from conversation`);
-    } else {
-      console.log('No structured page details found, will let AI generate structure');
-    }
-
-    // Convert messages to simple text format for book creation
-    const textMessages = messages.map(msg => ({
-      role: msg.role,
-      content: typeof msg.content === 'string' ? msg.content : '[Image uploaded]'
-    }));
-
-    toast.success('Creating book in background...', {
-      description: 'You can continue chatting. Check your library shortly.'
-    });
-
-    try {
-      const result = await createBookMutation.mutateAsync({
-        conversationHistory: textMessages,
-        pageDetails: pageDetails || undefined,
-        qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined
-      });
-      
-      // Set local book ID immediately for UI responsiveness
-      setLocalCreatedBookId(result.bookId);
-      
-      // Link book to current session
-      await linkBookToSession({ 
-        sessionId: currentSessionId, 
-        bookId: result.bookId 
-      });
-      
-      toast.success('Book created successfully!', {
-        description: 'Click "View Created Book" to see your new book.'
-      });
-      
-      // Reset QA checkpoint state
-      setShowQACheckpoint(false);
-      setCurrentQAPage(0);
-      setQAPageImages({});
-    } catch (error) {
-      console.error('Book creation error:', error);
-      // Error toast is handled by the mutation
-    }
-  };
-
-  const handleBookTypeSelect = useCallback(async (bookType: typeof BOOK_TYPES[0]) => {
+  const handleBookTypeSelect = async (bookType: typeof BOOK_TYPES[0]) => {
     if (bookType.needsClarification && bookType.clarificationContext) {
+      // Send clarification request to AI
       const clarificationPrompt = `${bookType.prompt}\n\n[CLARIFICATION_NEEDED: ${bookType.clarificationContext}]`;
       await sendMessage(clarificationPrompt);
     } else {
+      // Send direct prompt
       await sendMessage(bookType.prompt);
     }
-  }, [sendMessage]);
+  };
 
-  const handleQuickReply = useCallback(async (action: SuggestedAction) => {
+  const handleQuickReply = async (action: SuggestedAction) => {
+    // Handle special create book actions
     if (action.value === 'create_book') {
       handleCreateBook();
       return;
     }
     if (action.value === 'refine_outline') {
+      // Focus the input to encourage user to continue chatting
       setTimeout(() => {
         const inputElement = document.querySelector<HTMLInputElement>('input[placeholder*="Message"]');
-        inputElement?.focus();
+        if (inputElement) {
+          inputElement.focus();
+        }
       }, 100);
       return;
     }
@@ -417,13 +385,32 @@ export default function GoogleChat() {
       return;
     }
     
+    // Regular quick reply
     if (action.value) {
+      // Send the predefined response
       await sendMessage(action.value);
     } else {
+      // "Custom" option - just focus the input field
       const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
-      inputElement?.focus();
+      if (inputElement) {
+        inputElement.focus();
+      }
     }
-  }, [sendMessage]);
+  };
+
+  const handleCreateNewSession = async () => {
+    try {
+      const newSession = await createSession(undefined);
+      setCurrentSessionId(newSession.id);
+      setCurrentQAPage(0);
+      setQAPageImages({});
+      setShowQACheckpoint(false);
+      setLocalCreatedBookId(null); // Reset local book ID
+      setOutlineJustCompleted(false); // Reset flag for new session
+    } catch (error) {
+      console.error('Error creating session:', error);
+    }
+  };
 
   const handleViewCreatedBook = () => {
     if (createdBookId) {
@@ -431,30 +418,26 @@ export default function GoogleChat() {
     }
   };
 
-  // Reusable function to open QA panel with current session data
-  const handleOpenQAPanel = useCallback(() => {
-    const session = sessions.find(s => s.id === currentSessionId);
-    const images = session?.qa_page_images || {};
-    
-    setQAPageImages(images);
-    setShowQACheckpoint(true);
-    setCurrentQAPage(0);
-  }, [currentSessionId, sessions]);
-
-  const handleSelectSession = useCallback((sessionId: string) => {
-    if (sessionId === currentSessionId) return;
-    
-    // Batch all state updates together
-    const session = sessions.find(s => s.id === sessionId);
-    const images = session?.qa_page_images || {};
-    
-    setCurrentSessionId(sessionId);
-    setCurrentQAPage(0);
-    setShowQACheckpoint(false);
-    setLocalCreatedBookId(null);
-    setQAPageImages(images);
-    setIsMobileSidebarOpen(false);
-  }, [currentSessionId, sessions]);
+  const handleSelectSession = (sessionId: string) => {
+    if (sessionId !== currentSessionId) {
+      setCurrentSessionId(sessionId);
+      setCurrentQAPage(0);
+      setShowQACheckpoint(false);
+      setLocalCreatedBookId(null); // Reset local book ID when switching sessions
+      setOutlineJustCompleted(false); // Reset flag when switching sessions
+      
+      // Close mobile sidebar when selecting a session
+      setIsMobileSidebarOpen(false);
+      
+      // Load QA images from the selected session
+      const session = sessions.find(s => s.id === sessionId);
+      if (session?.qa_page_images) {
+        setQAPageImages(session.qa_page_images);
+      } else {
+        setQAPageImages({});
+      }
+    }
+  };
 
   const handleDeleteSession = async (sessionId: string) => {
     await deleteSession(sessionId);
@@ -534,6 +517,66 @@ export default function GoogleChat() {
     }
   };
 
+  const handleCreateBook = async () => {
+    if (!currentSessionId) {
+      toast.error('No active session');
+      return;
+    }
+
+    if (messages.length === 0) {
+      toast.error('Please have a conversation first');
+      return;
+    }
+
+    // Parse structured page details from conversation
+    const pageDetails = parsePageDetailsFromMessages(messages);
+    
+    if (pageDetails) {
+      console.log(`Extracted ${pageDetails.length} page details from conversation`);
+    } else {
+      console.log('No structured page details found, will let AI generate structure');
+    }
+
+    // Convert messages to simple text format for book creation
+    const textMessages = messages.map(msg => ({
+      role: msg.role,
+      content: typeof msg.content === 'string' ? msg.content : '[Image uploaded]'
+    }));
+
+    toast.success('Creating book in background...', {
+      description: 'You can continue chatting. Check your library shortly.'
+    });
+
+    try {
+      const result = await createBookMutation.mutateAsync({
+        conversationHistory: textMessages,
+        pageDetails: pageDetails || undefined,
+        qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined
+      });
+      
+      // Set local book ID immediately for UI responsiveness
+      setLocalCreatedBookId(result.bookId);
+      
+      // Link book to current session
+      await linkBookToSession({ 
+        sessionId: currentSessionId, 
+        bookId: result.bookId 
+      });
+      
+      toast.success('Book created successfully!', {
+        description: 'Click "View Created Book" to see your new book.'
+      });
+      
+      // Reset QA checkpoint state
+      setShowQACheckpoint(false);
+      setCurrentQAPage(0);
+      setQAPageImages({});
+    } catch (error) {
+      console.error('Book creation error:', error);
+      // Error toast is handled by the mutation
+    }
+  };
+
   return (
     <PageLayout 
       title="Chat with Google Gemini"
@@ -548,7 +591,7 @@ export default function GoogleChat() {
         {/* Review/View Book Button - Desktop only, fixed in top right */}
         {((shouldShowQACheckpoint && !showQACheckpoint) || createdBookId) && (
           <Button
-            onClick={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
+            onClick={createdBookId ? handleViewCreatedBook : () => setShowQACheckpoint(true)}
             className="hidden md:flex fixed top-20 right-6 z-40 shadow-lg"
             size="sm"
           >
@@ -609,16 +652,182 @@ export default function GoogleChat() {
         {/* Messages Area */}
         <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-6">
           {messages.length === 0 ? (
-            <EmptyState 
-              onBookTypeSelect={handleBookTypeSelect}
-              isLoading={isLoading}
-            />
+            <div className="flex flex-col items-center justify-center h-full px-4 py-6">
+              <div className="max-w-4xl w-full space-y-6">
+                {/* Header */}
+                <div className="text-center space-y-2">
+                  <Sparkles className="h-12 w-12 text-primary mx-auto mb-2" />
+                  <h2 className="text-2xl font-bold">What would you like to create?</h2>
+                  <p className="text-muted-foreground">
+                    Choose a book type below or describe your own custom idea
+                  </p>
+                </div>
+
+                {/* Book Type Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                  <TooltipProvider>
+                    {BOOK_TYPES.map((bookType) => {
+                      const IconComponent = bookType.icon;
+                      return (
+                        <Tooltip key={bookType.id}>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="outline"
+                              onClick={() => handleBookTypeSelect(bookType)}
+                              disabled={isLoading}
+                              className="h-auto flex flex-col items-center gap-3 p-4 hover:bg-accent hover:scale-105 transition-all"
+                            >
+                              <IconComponent className={`h-8 w-8 ${bookType.color}`} />
+                              <span className="text-sm font-medium text-center leading-tight">
+                                {bookType.label}
+                              </span>
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="max-w-xs">
+                            <p className="text-xs">{bookType.description}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      );
+                    })}
+                  </TooltipProvider>
+                </div>
+
+                {/* Divider */}
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">
+                      Or describe your own idea
+                    </span>
+                  </div>
+                </div>
+
+                {/* Example prompt */}
+                <div className="text-center">
+                  <p className="text-sm text-muted-foreground">
+                    Example: "Create an ABC book about dinosaurs" or "Numbers book with space theme"
+                  </p>
+                </div>
+              </div>
+            </div>
           ) : (
-            <MessageList
-              messages={messagesWithCreateOptions}
-              isLoading={isLoading}
-              onQuickReply={handleQuickReply}
-            />
+            <div className="space-y-4 max-w-4xl mx-auto">
+              {messagesWithCreateOptions.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className="max-w-[80%] space-y-2">
+                    <div
+                      className={`rounded-lg px-4 py-3 ${
+                        msg.role === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      {msg.role === 'assistant' && typeof msg.content === 'string' && /^\d+\./.test(msg.content) ? (
+                        // Enhanced formatting for numbered lists (page ideas)
+                        <div className="space-y-3">
+                          {msg.content
+                            .replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '')
+                            .trim()
+                            .split(/\n(?=\d+\.)/)
+                            .map((item, i) => {
+                              const match = item.match(/^(\d+)\.\s+(.+)/s);
+                              if (match) {
+                                const [, number, content] = match;
+                                // Check if content has bold markers (**text**)
+                                const parts = content.split(/(\*\*.*?\*\*)/g);
+                                
+                                const handleCopyPage = () => {
+                                  navigator.clipboard.writeText(content.trim());
+                                  toast.success(`Page ${number} description copied to clipboard`);
+                                };
+                                
+                                return (
+                                  <div key={i} className="relative flex gap-3 p-3 rounded-md bg-background/50 border border-border/50 hover:border-primary/50 transition-colors group">
+                                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-semibold text-sm">
+                                      {number}
+                                    </div>
+                                    <div className="flex-1 pt-0.5">
+                                      <p className="text-sm leading-relaxed">
+                                        {parts.map((part, j) => {
+                                          if (part.startsWith('**') && part.endsWith('**')) {
+                                            return (
+                                              <span key={j} className="font-semibold text-foreground">
+                                                {part.slice(2, -2)}
+                                              </span>
+                                            );
+                                          }
+                                          return <span key={j}>{part}</span>;
+                                        })}
+                                      </p>
+                                    </div>
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      onClick={handleCopyPage}
+                                      className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    >
+                                      <Copy className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                );
+                              }
+                              return (
+                                <p key={i} className="text-sm whitespace-pre-wrap">
+                                  {item.trim()}
+                                </p>
+                              );
+                            })}
+                        </div>
+                      ) : (
+                        // Regular text content
+                        <p className="text-sm whitespace-pre-wrap">
+                          {typeof msg.content === 'string' 
+                            ? msg.content.replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '').trim()
+                            : 'Image uploaded'
+                          }
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Quick Reply Buttons */}
+                    {msg.role === 'assistant' && msg.suggestedActions && idx === messages.length - 1 && !isLoading && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-muted-foreground px-1">
+                          Quick options (or type your own below):
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {msg.suggestedActions.map((action) => (
+                            <Button
+                              key={action.id}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleQuickReply(action)}
+                              className="text-xs h-8"
+                            >
+                              {action.label}
+                            </Button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="max-w-[80%] rounded-lg px-4 py-3 bg-muted">
+                    <p className="text-sm text-muted-foreground animate-pulse">
+                      Google Gemini is thinking...
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
           )}
         </div>
 
@@ -658,20 +867,6 @@ export default function GoogleChat() {
               <ImageIcon className={cn("h-4 w-4", !isMobile && "mr-2")} />
               {!isMobile && <span>Add Image</span>}
             </Button>
-            
-            {/* View Book button - Desktop only, when book exists */}
-            {!isMobile && createdBookId && (
-              <Button
-                variant="outline"
-                size="default"
-                onClick={handleOpenQAPanel}
-                disabled={isLoading}
-                title="View book outline and images"
-              >
-                <BookOpen className="h-4 w-4 mr-2" />
-                <span>View Book</span>
-              </Button>
-            )}
             
             <Input
               value={input}

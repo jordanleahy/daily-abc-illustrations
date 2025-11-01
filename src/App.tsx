@@ -68,7 +68,7 @@ const App = () => (
                 <Route path="/" element={<Landing />} />
                 <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/admin/chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
-                <Route path="/google-chat" element={<ProtectedRoute requireRole="admin"><GoogleChat /></ProtectedRoute>} />
+                <Route path="/google-chat/:sessionId?" element={<ProtectedRoute requireRole="admin"><GoogleChat /></ProtectedRoute>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/confirm" element={<AuthConfirm />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />

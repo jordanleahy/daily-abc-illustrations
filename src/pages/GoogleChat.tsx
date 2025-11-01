@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { Send, Sparkles, Book, Trash2, Image as ImageIcon, Copy, ArrowLeft, ArrowRight, Check, BookOpen, Menu } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
@@ -68,6 +68,7 @@ import {
 
 export default function GoogleChat() {
   const navigate = useNavigate();
+  const { sessionId: urlSessionId } = useParams<{ sessionId?: string }>();
   const [input, setInput] = useState('');
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -132,6 +133,8 @@ export default function GoogleChat() {
   const [currentQAPage, setCurrentQAPage] = useState(0);
   const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
   const [showQACheckpoint, setShowQACheckpoint] = useState(false);
+  const [outlineJustCompleted, setOutlineJustCompleted] = useState(false);
+  const previousShouldShow = useRef(false);
 
   // Priority: Show book images from storage if book exists, otherwise show QA checkpoint images
   const displayImages = (createdBookId && bookPageImages) ? bookPageImages : qaPageImages;
@@ -213,22 +216,62 @@ export default function GoogleChat() {
 
   // Create initial session on mount if none exists
   useEffect(() => {
-    if (!sessionsLoading && sessions.length === 0) {
+    if (sessionsLoading) return;
+    
+    // Priority 1: Use URL session ID if present
+    if (urlSessionId) {
+      const sessionExists = sessions.find(s => s.id === urlSessionId);
+      if (sessionExists) {
+        setCurrentSessionId(urlSessionId);
+        return;
+      } else {
+        // Invalid session ID in URL - redirect to base route
+        navigate('/google-chat', { replace: true });
+        return;
+      }
+    }
+    
+    // Priority 2: Create new session if none exist
+    if (sessions.length === 0) {
       handleCreateNewSession();
-    } else if (!sessionsLoading && sessions.length > 0 && !currentSessionId) {
-      // Mobile: Always start fresh - don't auto-load past conversation
-      // Desktop: Auto-load most recent conversation
+      return;
+    }
+    
+    // Priority 3: Handle no current session selected
+    if (!currentSessionId) {
       if (isMobile) {
         handleCreateNewSession();
       } else {
-        setCurrentSessionId(sessions[0].id);
+        // Auto-load most recent conversation
+        const mostRecent = sessions[0];
+        navigate(`/google-chat/${mostRecent.id}`, { replace: true });
       }
     }
-  }, [sessionsLoading, sessions.length, isMobile]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionsLoading, sessions, urlSessionId, currentSessionId, isMobile]);
 
-  // Auto-show QA checkpoint when page details are ready
+  // Sync URL when session changes
   useEffect(() => {
-    if (shouldShowQACheckpoint && !showQACheckpoint) {
+    if (currentSessionId && currentSessionId !== urlSessionId) {
+      navigate(`/google-chat/${currentSessionId}`, { replace: true });
+    }
+  }, [currentSessionId, urlSessionId]); // navigate is stable
+
+  // Detect when outline is newly completed (transition from false → true)
+  useEffect(() => {
+    const currentShouldShow = shouldShowQACheckpoint;
+    
+    // If we just transitioned from false → true, the outline was just completed
+    if (!previousShouldShow.current && currentShouldShow) {
+      setOutlineJustCompleted(true);
+    }
+    
+    previousShouldShow.current = currentShouldShow;
+  }, [shouldShowQACheckpoint]);
+
+  // Auto-show QA checkpoint only when outline is just completed (not on page load)
+  useEffect(() => {
+    if (outlineJustCompleted && !showQACheckpoint) {
       setCurrentQAPage(0); // Start at cover page
       
       if (isMobile) {
@@ -242,8 +285,11 @@ export default function GoogleChat() {
       setTimeout(() => {
         scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
       }, 100);
+      
+      // Reset flag after opening
+      setOutlineJustCompleted(false);
     }
-  }, [shouldShowQACheckpoint, showQACheckpoint, isMobile]);
+  }, [outlineJustCompleted, showQACheckpoint, isMobile]);
 
   // Add quick reply buttons when AI indicates book is ready to create
   const messagesWithCreateOptions = useMemo(() => {
@@ -360,6 +406,7 @@ export default function GoogleChat() {
       setQAPageImages({});
       setShowQACheckpoint(false);
       setLocalCreatedBookId(null); // Reset local book ID
+      setOutlineJustCompleted(false); // Reset flag for new session
     } catch (error) {
       console.error('Error creating session:', error);
     }
@@ -377,6 +424,7 @@ export default function GoogleChat() {
       setCurrentQAPage(0);
       setShowQACheckpoint(false);
       setLocalCreatedBookId(null); // Reset local book ID when switching sessions
+      setOutlineJustCompleted(false); // Reset flag when switching sessions
       
       // Close mobile sidebar when selecting a session
       setIsMobileSidebarOpen(false);

@@ -403,10 +403,16 @@ export default function GoogleChat() {
   }, [createSession]);
 
   const handleViewCreatedBook = useCallback(() => {
+    // Open QA panel to view the book
     if (createdBookId) {
-      navigate(`/books/${createdBookId}`);
+      // Load QA images from current session
+      if (selectedSession?.qa_page_images) {
+        setQAPageImages(selectedSession.qa_page_images);
+      }
+      setShowQACheckpoint(true);
+      setCurrentQAPage(0);
     }
-  }, [createdBookId, navigate]);
+  }, [createdBookId, selectedSession]);
 
   const handleOpenQAPanel = useCallback(() => {
     // Load QA images from current session

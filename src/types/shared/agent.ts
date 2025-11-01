@@ -4,7 +4,7 @@ import { BaseEntity, VersionTracked, DeploymentTracked, Optional } from './base'
 /**
  * Agent type enumeration for specialized capabilities
  */
-export type AgentType = 'chat' | 'book-creation' | 'illustration-director' | 'graphic-designer';
+export type AgentType = 'chat' | 'book-creation';
 
 /**
  * AI provider types

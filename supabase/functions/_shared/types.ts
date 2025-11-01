@@ -100,7 +100,7 @@ export interface AgentConfig {
   /** Display name shown to users */
   name: string;
   /** Agent type determining its specialized capabilities */
-  type: 'chat' | 'book-creation' | 'illustration-director' | 'graphic-designer';
+  type: 'chat' | 'book-creation';
   /** Description of the agent's purpose and goals */
   intent: string;
   /** Current operational status */

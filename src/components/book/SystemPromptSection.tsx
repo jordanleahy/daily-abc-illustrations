@@ -7,7 +7,6 @@ import { SystemPromptEditor } from './SystemPromptEditor';
 import { VersionHistoryModal } from './VersionHistoryModal';
 import { StyleGuideViewer } from './StyleGuideViewer';
 import { IllustrationConfigEditor } from './IllustrationConfigEditor';
-import { RegenerateStyleGuideButton } from './RegenerateStyleGuideButton';
 import { useSystemPrompt } from '@/hooks/useSystemPrompt';
 import { useIllustrationConfig } from '@/hooks/useIllustrationConfig';
 import { useBook } from '@/hooks/useBook';
@@ -106,14 +105,7 @@ export const SystemPromptSection = ({ bookId }: SystemPromptSectionProps) => {
     <>
       {/* Action buttons above the header */}
       {!isEditing && (
-        <div className="flex items-center justify-between gap-2 mb-3 px-1">
-          <RegenerateStyleGuideButton
-            bookId={bookId}
-            bookName={book?.book_name || 'Untitled Book'}
-            bookDescription={book?.book_description}
-            category={book?.category}
-            onSuccess={refreshData}
-          />
+        <div className="flex items-center justify-end gap-2 mb-3 px-1">
           <div className="flex items-center gap-2">
             <Button
               variant="ghost"

@@ -87,16 +87,7 @@ verify_jwt = false
 [functions.create-book]
 verify_jwt = false
 
-[functions.generate-style-guide]
-verify_jwt = true
-
 [functions.generate-page-image]
-verify_jwt = true
-
-[functions.generate-graphics-designer-prompt]
-verify_jwt = true
-
-[functions.generate-page-prompt]
 verify_jwt = true
 
 [functions.generate-image]

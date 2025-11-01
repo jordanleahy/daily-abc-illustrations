@@ -29,7 +29,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
 import { ProcessStatus } from '@/types/process';
 import { PublicationStatus } from '@/types/status';
-import { ArrowLeft, Archive, Calendar, Users, Palette, Loader2, Trash2, Eye, FileText, Star, Copy, Tag, X, Image } from 'lucide-react';
+import { ArrowLeft, Archive, Calendar, Users, Loader2, Trash2, Eye, FileText, Star, Copy, Tag, X, Image } from 'lucide-react';
 import { toast } from 'sonner';
 import { useToggleBookHighlight } from '@/hooks/useToggleBookHighlight';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
@@ -48,8 +48,6 @@ import { useSystemPrompt } from "@/hooks/useSystemPrompt";
 import { SystemPromptSection } from "@/components/book";
 import { OpenGraphEditor } from "@/components/book/OpenGraphEditor";
 import { ExportsSection } from '@/components/exports/ExportsSection';
-import { RegenerateStyleGuideButton } from '@/components/book/RegenerateStyleGuideButton';
-import { GeneratePagePromptsButton } from '@/components/book/GeneratePagePromptsButton';
 
 import { PageImageSection } from "@/components/PageImageSection";
 import { PageCard, UserPageCard, FocusedPageView } from '@/components/page-prompts';
@@ -71,7 +69,6 @@ export default function BookDetail() {
   const { data: pageImages = {}, isLoading: imagesLoading } = useBookPageImages(id);
   const isAdmin = useHasRole('admin');
   const isMobile = useIsMobile();
-  const [styleGuideLoading, setStyleGuideLoading] = useState(false);
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -141,63 +138,6 @@ export default function BookDetail() {
 
   const handleBack = () => {
     navigate('/editor');
-  };
-
-  const generateStyleGuide = async () => {
-    if (!book || !user) return;
-    
-    setStyleGuideLoading(true);
-    setProgressMessages([]);
-    
-    try {
-      const response = await supabase.functions.invoke('generate-style-guide', {
-        body: {
-          bookId: book.id,
-          userId: user.id,
-          bookMetadata: {
-            book_name: book.book_name,
-            category: book.category || 'General',
-            book_description: book.book_description || ''
-          }
-        }
-      });
-
-      if (response.error) {
-        throw new Error(response.error.message || 'Failed to generate style guide');
-      }
-
-      const result = response.data;
-      
-      if (result.success) {
-        setProgressMessages(prev => [...prev, {
-          step: 'Style Guide Generation',
-          message: result.message || 'Style guide generated successfully',
-          status: 'success' as ProcessStatus,
-          timestamp: new Date().toISOString()
-        }]);
-        
-        // Refresh the system prompt data to show the updated style guide
-        await refreshData();
-        
-        toast.success('Style guide generated successfully');
-      } else {
-        throw new Error(result.error || 'Failed to generate style guide');
-      }
-    } catch (error: any) {
-      console.error('Error generating style guide:', error);
-      const errorMessage = error.message || 'Failed to generate style guide';
-      
-      setProgressMessages(prev => [...prev, {
-        step: 'Style Guide Generation',
-        message: errorMessage,
-        status: 'error' as ProcessStatus,
-        timestamp: new Date().toISOString()
-      }]);
-      
-      toast.error(errorMessage);
-    } finally {
-      setStyleGuideLoading(false);
-    }
   };
 
   const addProgressMessage = (message: ProgressMessage) => {
@@ -471,39 +411,14 @@ export default function BookDetail() {
               messages={progressMessages}
               isExpanded={isProgressExpanded}
               onToggle={() => setIsProgressExpanded(!isProgressExpanded)}
-              isActive={styleGuideLoading}
+              isActive={false}
             />
           )}
               {/* Book Info */}
               <Card>
                 <CardHeader>
-                  {/* Call Illustration Director Button, Archive Button, and Delete Button (mobile only) - Above Title */}
+                  {/* Archive Button and Delete Button (mobile only) - Above Title */}
                   <div className="mb-4 flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={generateStyleGuide}
-                      disabled={styleGuideLoading}
-                      title="Call Illustration Director"
-                      aria-label="Call Illustration Director"
-                    >
-                      {styleGuideLoading ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Palette className="w-4 h-4" />
-                      )}
-                    </Button>
-
-                    <GeneratePagePromptsButton 
-                      bookId={book.id} 
-                      pages={pages?.map(p => ({ 
-                        id: p.id, 
-                        letter: p.letter, 
-                        title: p.title 
-                      })) || []}
-                      variant="icon"
-                    />
-                    
                     <Button
                       variant={book.is_highlighted ? "default" : "outline"}
                       size="icon"

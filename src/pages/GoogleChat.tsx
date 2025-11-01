@@ -159,9 +159,15 @@ export default function GoogleChat() {
     if (!sessionsLoading && sessions.length === 0) {
       handleCreateNewSession();
     } else if (!sessionsLoading && sessions.length > 0 && !currentSessionId) {
-      setCurrentSessionId(sessions[0].id);
+      // Mobile: Always start fresh - don't auto-load past conversation
+      // Desktop: Auto-load most recent conversation
+      if (isMobile) {
+        handleCreateNewSession();
+      } else {
+        setCurrentSessionId(sessions[0].id);
+      }
     }
-  }, [sessionsLoading, sessions.length]);
+  }, [sessionsLoading, sessions.length, isMobile]);
 
   // Auto-show QA checkpoint when page details are ready
   useEffect(() => {

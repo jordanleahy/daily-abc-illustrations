@@ -24,8 +24,6 @@ interface ChatSessionSidebarProps {
   onCreateSession: () => void;
   onDeleteSession: (sessionId: string) => void;
   onRenameSession: (sessionId: string, name: string) => void;
-  onOpenReview?: (sessionId: string) => void;
-  isDesktop?: boolean;
 }
 
 export function ChatSessionSidebar({
@@ -35,8 +33,6 @@ export function ChatSessionSidebar({
   onCreateSession,
   onDeleteSession,
   onRenameSession,
-  onOpenReview,
-  isDesktop,
 }: ChatSessionSidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -136,21 +132,6 @@ export function ChatSessionSidebar({
 
                 {/* Action Buttons - Show on hover */}
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  {/* Review button - only on desktop when book exists */}
-                  {isDesktop && session.created_book_id && onOpenReview && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-7 w-7 text-primary hover:text-primary"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onOpenReview(session.id);
-                      }}
-                      title="Review Outline"
-                    >
-                      <BookOpen className="h-3 w-3" />
-                    </Button>
-                  )}
                   <Button
                     variant="ghost"
                     size="icon"

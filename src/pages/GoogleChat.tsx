@@ -419,23 +419,6 @@ export default function GoogleChat() {
     await updateSessionName({ sessionId, name });
   };
 
-  const handleOpenReviewFromSidebar = (sessionId: string) => {
-    // Switch to the session if not already selected
-    if (sessionId !== currentSessionId) {
-      handleSelectSession(sessionId);
-    }
-    
-    // Open the QA checkpoint panel
-    setShowQACheckpoint(true);
-    setCurrentQAPage(0); // Start at cover page
-    
-    // Load QA images from the session
-    const session = sessions.find(s => s.id === sessionId);
-    if (session?.qa_page_images) {
-      setQAPageImages(session.qa_page_images);
-    }
-  };
-
   const handleQAImageUpload = async (imageDataUrl: string) => {
     // Store image for the current page
     const updatedImages = {
@@ -601,33 +584,30 @@ export default function GoogleChat() {
             onCreateSession={handleCreateNewSession}
             onDeleteSession={handleDeleteSession}
             onRenameSession={handleRenameSession}
-            onOpenReview={handleOpenReviewFromSidebar}
-            isDesktop={true}
           />
         </div>
 
-      {/* Mobile: Overlay Drawer for Sidebar */}
-      {isMobile && (
-        <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-          <SheetContent side="left" className="w-[280px] p-0 h-full flex flex-col">
-            <ChatSessionSidebar
-              sessions={sessions}
-              currentSessionId={currentSessionId}
-              onSelectSession={(id) => {
-                handleSelectSession(id);
-                setIsMobileSidebarOpen(false);
-              }}
-              onCreateSession={() => {
-                handleCreateNewSession();
-                setIsMobileSidebarOpen(false);
-              }}
-              onDeleteSession={handleDeleteSession}
-              onRenameSession={handleRenameSession}
-              isDesktop={false}
-            />
-          </SheetContent>
-        </Sheet>
-      )}
+        {/* Mobile: Overlay Drawer for Sidebar */}
+        {isMobile && (
+          <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+            <SheetContent side="left" className="w-[280px] p-0 h-full flex flex-col">
+              <ChatSessionSidebar
+                sessions={sessions}
+                currentSessionId={currentSessionId}
+                onSelectSession={(id) => {
+                  handleSelectSession(id);
+                  setIsMobileSidebarOpen(false);
+                }}
+                onCreateSession={() => {
+                  handleCreateNewSession();
+                  setIsMobileSidebarOpen(false);
+                }}
+                onDeleteSession={handleDeleteSession}
+                onRenameSession={handleRenameSession}
+              />
+            </SheetContent>
+          </Sheet>
+        )}
 
         {/* Main Chat Area - Full width, no margin adjustment */}
         <div className="flex-1 flex flex-col w-full">

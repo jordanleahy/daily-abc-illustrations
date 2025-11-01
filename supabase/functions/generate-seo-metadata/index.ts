@@ -29,6 +29,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/types.ts';
+import { extractJSON } from '../_shared/jsonExtractor.ts';
 
 interface SEORequest {
   bookId: string;
@@ -148,19 +149,29 @@ Return only JSON format:
     
     console.log('AI Response:', aiResponse);
 
-    // Parse the JSON response
-    let parsed: OptimizationResponse;
-    try {
-      parsed = JSON.parse(aiResponse);
-    } catch (parseError) {
-      console.error('Failed to parse AI response:', aiResponse);
-      throw new Error('AI response was not valid JSON');
+    // Extract and parse the JSON response using the shared utility
+    const extracted = extractJSON<OptimizationResponse>(
+      aiResponse,
+      (data): data is OptimizationResponse => {
+        return typeof data === 'object' && 
+               data !== null && 
+               'title' in data && 
+               'description' in data &&
+               typeof data.title === 'string' &&
+               typeof data.description === 'string';
+      }
+    );
+
+    if (!extracted.isValid || !extracted.data) {
+      console.error('Failed to extract valid JSON:', {
+        rawText: extracted.rawText,
+        extractionMethod: extracted.extractionMethod,
+        parseError: extracted.parseError
+      });
+      throw new Error(`AI response was not valid JSON: ${extracted.parseError || 'Unknown parsing error'}`);
     }
 
-    if (!parsed.title || !parsed.description) {
-      throw new Error('AI response missing required title or description');
-    }
-
+    const parsed = extracted.data;
     console.log('Optimization result:', parsed);
 
     // Get the next version number

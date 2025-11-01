@@ -2,7 +2,7 @@ import { useState, useRef, lazy, Suspense } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Copy, Trash2, Image, Upload, Download, Type } from 'lucide-react';
+import { Copy, Trash2, Image, Upload, Download, Type } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,7 +70,6 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
       promptPreview: currentImage.prompt_used?.substring(0, 100)
     } : 'NULL/UNDEFINED'
   });
-  const [isRegenerating, setIsRegenerating] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isRegeneratingImage, setIsRegeneratingImage] = useState(false);
   const [showTextOverlayEditor, setShowTextOverlayEditor] = useState(false);
@@ -110,33 +109,6 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
     }
   });
 
-  const handleRegeneratePrompt = async () => {
-    if (!user) return;
-
-    try {
-      setIsRegenerating(true);
-
-      // Generate (or regenerate) the page-specific prompt and deploy it
-      const { data, error } = await supabase.functions.invoke('generate-page-prompt', {
-        body: {
-          pageId: page.id,
-          userId: user.id,
-          bookId,
-        },
-      });
-
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate page prompt');
-
-      toast.success('Page prompt generated and deployed');
-      await refreshData();
-    } catch (error) {
-      console.error('Error generating page prompt:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to generate page prompt');
-    } finally {
-      setIsRegenerating(false);
-    }
-  };
 
   const handleRegenerateImage = async () => {
     if (!user) return;
@@ -144,27 +116,7 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
     try {
       setIsRegeneratingImage(true);
 
-      // Ensure there is a deployed page-specific prompt; if not, create it first
-      const { data: existingPrompt } = await supabase
-        .from('page_system_prompts')
-        .select('id')
-        .eq('page_id', page.id)
-        .eq('is_deployed', true)
-        .maybeSingle();
-
-      if (!existingPrompt) {
-        const { data: promptRes, error: promptErr } = await supabase.functions.invoke('generate-page-prompt', {
-          body: {
-            pageId: page.id,
-            userId: user.id,
-            bookId,
-          },
-        });
-        if (promptErr || !promptRes?.success) {
-          throw new Error(promptErr?.message || promptRes?.error || 'Failed to generate page prompt');
-        }
-      }
-
+      // Image generation will proceed with existing page prompts from Google Chat flow
       // Ensure we include the auth token for RLS-enabled storage policies
       const { data: sessionRes } = await supabase.auth.getSession();
       const token = sessionRes.session?.access_token;
@@ -380,17 +332,6 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
       <CardHeader className="pb-3">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-6 h-6"
-              onClick={handleRegeneratePrompt}
-              disabled={isRegenerating}
-              title="Regenerate page prompt"
-              aria-label="Regenerate page prompt"
-            >
-              <RefreshCw className={`w-3 h-3 ${isRegenerating ? 'animate-spin' : ''}`} />
-            </Button>
             <Button
               variant="ghost"
               size="icon"

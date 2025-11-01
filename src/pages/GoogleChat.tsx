@@ -459,7 +459,7 @@ export default function GoogleChat() {
         {/* Mobile: Overlay Drawer for Sidebar */}
         {isMobile && (
           <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-            <SheetContent side="left" className="w-[280px] p-0">
+            <SheetContent side="left" className="w-[280px] p-0 h-full flex flex-col">
               <ChatSessionSidebar
                 sessions={sessions}
                 currentSessionId={currentSessionId}

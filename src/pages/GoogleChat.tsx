@@ -415,13 +415,15 @@ export default function GoogleChat() {
       showHeader={true}
       fullHeight={true}
       onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
+      showReviewButton={shouldShowQACheckpoint && !showQACheckpoint}
+      onReviewClick={() => setShowQACheckpoint(true)}
     >
       <div className="fixed inset-0 top-[3.5rem] flex">
-        {/* Review Button - Fixed in top right when outline is ready */}
+        {/* Review Button - Desktop only, fixed in top right when outline is ready */}
         {shouldShowQACheckpoint && !showQACheckpoint && (
           <Button
             onClick={() => setShowQACheckpoint(true)}
-            className="fixed top-16 right-4 z-40 md:top-20 md:right-6 shadow-lg"
+            className="hidden md:flex fixed top-20 right-6 z-40 shadow-lg"
             size="sm"
           >
             <BookOpen className="h-4 w-4 mr-1" />

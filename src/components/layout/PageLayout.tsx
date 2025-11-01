@@ -13,6 +13,8 @@ interface PageLayoutProps {
   showHeader?: boolean;
   fullHeight?: boolean;
   onMobileMenuToggle?: () => void;
+  showReviewButton?: boolean;
+  onReviewClick?: () => void;
 }
 
 export const PageLayout = ({ 
@@ -21,7 +23,9 @@ export const PageLayout = ({
   className,
   showHeader = true,
   fullHeight = true,
-  onMobileMenuToggle
+  onMobileMenuToggle,
+  showReviewButton,
+  onReviewClick
 }: PageLayoutProps) => {
   const location = useLocation();
   const { isAuthenticated, loading } = useAuthContext();
@@ -30,7 +34,14 @@ export const PageLayout = ({
   
   return (
     <div className={cn('min-h-screen bg-background flex flex-col', className)}>
-      {showHeader && <Header title={title} onMobileMenuToggle={onMobileMenuToggle} />}
+      {showHeader && (
+        <Header 
+          title={title} 
+          onMobileMenuToggle={onMobileMenuToggle}
+          showReviewButton={showReviewButton}
+          onReviewClick={onReviewClick}
+        />
+      )}
       <PageContent fullHeight={fullHeight}>
         {children}
       </PageContent>

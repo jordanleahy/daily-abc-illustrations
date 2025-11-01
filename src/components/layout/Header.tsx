@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft } from 'lucide-react';
+import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft, BookOpen } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -74,6 +74,10 @@ interface HeaderProps {
   showQRCode?: boolean;
   /** Optional callback for mobile menu toggle (Google Chat sidebar) */
   onMobileMenuToggle?: () => void;
+  /** Whether to show review outline button (Google Chat) */
+  showReviewButton?: boolean;
+  /** Callback for review outline button click */
+  onReviewClick?: () => void;
 }
 
 /**
@@ -86,7 +90,9 @@ export function Header({
   subtitle,
   bookId,
   showQRCode = true,
-  onMobileMenuToggle
+  onMobileMenuToggle,
+  showReviewButton,
+  onReviewClick
 }: HeaderProps) {
   const { isAuthenticated, user, signOut } = useAuthContext();
   const isAdmin = useIsAdmin();
@@ -220,7 +226,7 @@ export function Header({
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <Container>
         <div className="flex h-14 items-center justify-between">
-          {/* Left section: Mobile hamburger + Mobile user info + Desktop back button + Subtitle */}
+          {/* Left section: Mobile hamburger + Review button + Mobile user info + Desktop back button + Subtitle */}
           <div className="flex items-center gap-2">
             {/* Mobile Hamburger Menu - Google Chat only */}
             {onMobileMenuToggle && (
@@ -231,6 +237,18 @@ export function Header({
                 onClick={onMobileMenuToggle}
               >
                 <Menu className="h-5 w-5" />
+              </Button>
+            )}
+            
+            {/* Review Outline Button - Google Chat only, mobile only */}
+            {showReviewButton && onReviewClick && (
+              <Button
+                onClick={onReviewClick}
+                className="md:hidden h-8"
+                size="sm"
+              >
+                <BookOpen className="h-4 w-4 mr-1" />
+                Review
               </Button>
             )}
             

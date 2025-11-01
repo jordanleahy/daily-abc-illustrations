@@ -263,6 +263,9 @@ export default function GoogleChat() {
       setCurrentQAPage(1);
       setShowQACheckpoint(false);
       
+      // Close mobile sidebar when selecting a session
+      setIsMobileSidebarOpen(false);
+      
       // Load QA images from the selected session
       const session = sessions.find(s => s.id === sessionId);
       if (session?.qa_page_images) {

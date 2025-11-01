@@ -125,7 +125,6 @@ export default function GoogleChat() {
   const [currentQAPage, setCurrentQAPage] = useState(1);
   const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
   const [showQACheckpoint, setShowQACheckpoint] = useState(false);
-  const [showCreateOptions, setShowCreateOptions] = useState(false);
 
   // Priority: Show book images from storage if book exists, otherwise show QA checkpoint images
   const displayImages = (createdBookId && bookPageImages) ? bookPageImages : qaPageImages;
@@ -189,17 +188,33 @@ export default function GoogleChat() {
     }
   }, [shouldShowQACheckpoint, showQACheckpoint, isMobile]);
 
-  // Detect when AI indicates book is ready to create
-  useEffect(() => {
+  // Add quick reply buttons when AI indicates book is ready to create
+  const messagesWithCreateOptions = useMemo(() => {
+    if (messages.length === 0) return messages;
+    
     const lastMessage = messages[messages.length - 1];
-    if (lastMessage?.role === 'assistant') {
+    if (lastMessage?.role === 'assistant' && !lastMessage.suggestedActions) {
       const content = typeof lastMessage.content === 'string' ? lastMessage.content.toLowerCase() : '';
       const isReady = content.includes('create book') || 
                       content.includes('bring your story to life') ||
                       content.includes('ready to create') ||
                       content.includes('click \'create book\'');
-      setShowCreateOptions(isReady && pageCount >= 3);
+      
+      if (isReady && pageCount >= 3) {
+        // Return messages with suggested actions added to last message
+        const updatedMessages = [...messages];
+        updatedMessages[updatedMessages.length - 1] = {
+          ...lastMessage,
+          suggestedActions: [
+            { id: 'create_book', label: '✨ Create Book', value: 'create_book' },
+            { id: 'refine_outline', label: 'Refine Outline', value: 'refine_outline' },
+            { id: 'start_over', label: 'Start Over', value: 'start_over' }
+          ]
+        };
+        return updatedMessages;
+      }
     }
+    return messages;
   }, [messages, pageCount]);
 
   useEffect(() => {
@@ -247,6 +262,27 @@ export default function GoogleChat() {
   };
 
   const handleQuickReply = async (action: SuggestedAction) => {
+    // Handle special create book actions
+    if (action.value === 'create_book') {
+      handleCreateBook();
+      return;
+    }
+    if (action.value === 'refine_outline') {
+      // Focus the input to encourage user to continue chatting
+      setTimeout(() => {
+        const inputElement = document.querySelector<HTMLInputElement>('input[placeholder*="Message"]');
+        if (inputElement) {
+          inputElement.focus();
+        }
+      }, 100);
+      return;
+    }
+    if (action.value === 'start_over') {
+      handleCreateNewSession();
+      return;
+    }
+    
+    // Regular quick reply
     if (action.value) {
       // Send the predefined response
       await sendMessage(action.value);
@@ -417,27 +453,10 @@ export default function GoogleChat() {
       setShowQACheckpoint(false);
       setCurrentQAPage(1);
       setQAPageImages({});
-      setShowCreateOptions(false);
     } catch (error) {
       console.error('Book creation error:', error);
       // Error toast is handled by the mutation
     }
-  };
-
-  const handleRefineOutline = () => {
-    setShowCreateOptions(false);
-    // Focus the input to encourage user to continue chatting
-    setTimeout(() => {
-      const inputElement = document.querySelector<HTMLInputElement>('input[placeholder*="Message"]');
-      if (inputElement) {
-        inputElement.focus();
-      }
-    }, 100);
-  };
-
-  const handleStartOver = () => {
-    setShowCreateOptions(false);
-    handleCreateNewSession();
   };
 
   return (
@@ -567,7 +586,7 @@ export default function GoogleChat() {
             </div>
           ) : (
             <div className="space-y-4 max-w-4xl mx-auto">
-              {messages.map((msg, idx) => (
+              {messagesWithCreateOptions.map((msg, idx) => (
                 <div
                   key={idx}
                   className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -702,47 +721,6 @@ export default function GoogleChat() {
                 onImageSelect={handleImageSelect}
                 disabled={isLoading}
               />
-            </div>
-          </div>
-        )}
-
-        {/* Create Book Options */}
-        {showCreateOptions && (
-          <div className="border-t bg-muted/30 px-4 py-4 shrink-0">
-            <div className="max-w-4xl mx-auto space-y-3">
-              <p className="text-sm font-medium text-center">Your book outline is ready!</p>
-              <div className="flex flex-col sm:flex-row gap-2">
-                <Button
-                  onClick={handleCreateBook}
-                  disabled={createBookMutation.isPending}
-                  className="flex-1"
-                  size="lg"
-                >
-                  {createBookMutation.isPending ? (
-                    <>Creating Book...</>
-                  ) : (
-                    <>
-                      <BookOpen className="h-4 w-4 mr-2" />
-                      Create Book
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={handleRefineOutline}
-                  variant="secondary"
-                  size="lg"
-                  className="flex-1"
-                >
-                  Refine Outline
-                </Button>
-                <Button
-                  onClick={handleStartOver}
-                  variant="outline"
-                  size="lg"
-                >
-                  Start Over
-                </Button>
-              </div>
             </div>
           </div>
         )}

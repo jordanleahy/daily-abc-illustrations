@@ -56,12 +56,6 @@ export function QACheckpointPanel({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">
-            {isBookCreated 
-              ? `${Object.keys(displayImages).length} in book`
-              : `${Object.keys(qaPageImages).length} uploaded`
-            }
-          </Badge>
           <Button
             variant="ghost"
             size="icon"

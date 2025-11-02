@@ -29,6 +29,7 @@ export default function GoogleChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [selectedBookType, setSelectedBookType] = useState<string | null>(null);
 
   // Detect mobile screen size
   useEffect(() => {
@@ -281,6 +282,9 @@ export default function GoogleChat() {
   }, [input, sendMessageWithImage, messages]);
 
   const handleBookTypeSelect = useCallback(async (bookType: typeof BOOK_TYPES[0]) => {
+    // Store the book type ID for later use
+    setSelectedBookType(bookType.id);
+    
     // Update session name with book type label (silent to avoid toast)
     if (currentSessionId) {
       await updateSessionName({
@@ -334,7 +338,8 @@ export default function GoogleChat() {
       const result = await createBookMutation.mutateAsync({
         conversationHistory: textMessages,
         pageDetails: pageDetails || undefined,
-        qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined
+        qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined,
+        bookType: selectedBookType || undefined
       });
       
       // Set local book ID immediately for UI responsiveness
@@ -425,6 +430,7 @@ export default function GoogleChat() {
         setShowQACheckpoint(false);
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
+        setSelectedBookType(null);
       });
     } catch (error) {
       console.error('Error creating session:', error);
@@ -462,6 +468,7 @@ export default function GoogleChat() {
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
         setIsMobileSidebarOpen(false);
+        setSelectedBookType(null);
         
         // Load QA images from the selected session
         const session = sessions.find(s => s.id === sessionId);

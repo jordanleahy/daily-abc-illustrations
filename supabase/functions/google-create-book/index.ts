@@ -19,7 +19,8 @@ const requestSchema = z.object({
   conversationHistory: z.array(conversationMessageSchema),
   userId: z.string().uuid(),
   pageDetails: z.array(pageDetailSchema).optional(),
-  qaImages: z.record(z.string()).optional()
+  qaImages: z.record(z.string()).optional(),
+  bookType: z.string().optional()
 });
 
 serve(async (req) => {
@@ -30,7 +31,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages, bookType } = validatedData;
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -61,6 +62,36 @@ serve(async (req) => {
     }
 
     console.log('Creating book using Lovable AI for user:', userId);
+    if (bookType) {
+      console.log('Book type specified:', bookType);
+    }
+
+    // Color extraction utility function
+    const extractColorFromTitle = (title: string): string | null => {
+      // Match pattern like "**Red:**" or "**Blue:**"
+      const boldColorPattern = /^\*\*([A-Za-z]+):\*\*/;
+      const match = title.match(boldColorPattern);
+      
+      if (match) {
+        return match[1].toLowerCase();
+      }
+      
+      // Fallback: Check if title starts with a color word
+      const commonColors = [
+        'red', 'orange', 'yellow', 'green', 'blue', 'purple', 
+        'pink', 'brown', 'black', 'white', 'gray', 'grey', 
+        'violet', 'indigo', 'cyan', 'magenta', 'turquoise'
+      ];
+      
+      const titleLower = title.toLowerCase();
+      for (const color of commonColors) {
+        if (titleLower.startsWith(color)) {
+          return color;
+        }
+      }
+      
+      return null;
+    };
 
     // Prepare prompt for book creation
     let systemPrompt = '';
@@ -112,7 +143,7 @@ Return ONLY valid JSON with this structure:
       "content": {
         "mainConcept": "string",
         "funFact": "string",
-        "activity": "string"
+        "activity": "string"${bookType === 'colors' ? ',\n        "color": "string (extracted color name for color books)"' : ''}
       }
     }
   ]
@@ -184,11 +215,33 @@ Return ONLY a JSON object with this structure (no markdown, no code blocks):
       "content": {
         "mainConcept": "string",
         "funFact": "string (optional for non-educational)",
-        "activity": "string (optional for non-educational)"
+        "activity": "string (optional for non-educational)"${bookType === 'colors' ? ',\n        "color": "string (extracted color name for color books)"' : ''}
       }
     }
   ]
 }`;
+    }
+
+    // Add color-specific instructions if this is a color book
+    if (bookType === 'colors') {
+      systemPrompt += `
+
+IMPORTANT - COLOR BOOK INSTRUCTIONS:
+- This is a COLOR BOOK. Each page teaches ONE specific color.
+- Extract the color name from each page title and include it in the page metadata.
+- Page titles should follow the pattern: "**ColorName:** Description"
+  Example: "**Red:** Marshall with a big red fire truck"
+- In the JSON response, include the color in each page's content:
+  "content": {
+    "mainConcept": "...",
+    "funFact": "...",
+    "activity": "...",
+    "color": "red"  // ← Extract this from the title
+  }
+- Normalize color names to lowercase (Red → red, BLUE → blue)
+- Common colors: red, orange, yellow, green, blue, purple, pink, brown, black, white, gray
+- Also populate metadata.colorsList (array of unique colors) and metadata.colorsCount at the book level
+`;
     }
 
     const prompt = `Based on this conversation, create a complete children's book:
@@ -269,10 +322,36 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       throw new Error('Invalid book data structure from AI response');
     }
 
+    // If this is a color book, ensure colors are extracted
+    if (bookType === 'colors' && bookData.pages) {
+      const extractedColors: string[] = [];
+      
+      bookData.pages.forEach((page: any) => {
+        // If AI didn't include color, try to extract it
+        if (!page.content?.color) {
+          const extractedColor = extractColorFromTitle(page.title);
+          if (extractedColor) {
+            if (!page.content) page.content = {};
+            page.content.color = extractedColor;
+            extractedColors.push(extractedColor);
+          }
+        } else {
+          extractedColors.push(page.content.color);
+        }
+      });
+      
+      // Add color metadata to book-level metadata
+      if (!bookData.metadata) bookData.metadata = {};
+      bookData.metadata.colorsList = [...new Set(extractedColors)]; // Unique colors
+      bookData.metadata.colorsCount = extractedColors.length;
+      
+      console.log(`Extracted ${extractedColors.length} colors for color book:`, bookData.metadata.colorsList);
+    }
+
     // Extract and validate metadata
     const metadata = bookData.metadata || {};
     const validatedMetadata = {
-      bookType: metadata.bookType || bookData.bookType || 'custom',
+      bookType: metadata.bookType || bookData.bookType || bookType || 'custom',
       pageCount: bookData.pages.length,
       targetAge: metadata.targetAge,
       letterCase: metadata.letterCase || bookData.letterCase,
@@ -284,6 +363,8 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       animalFocus: metadata.animalFocus,
       readingLevel: metadata.readingLevel,
       characterTheme: metadata.characterTheme,
+      colorsList: metadata.colorsList,
+      colorsCount: metadata.colorsCount,
       customOptions: {}
     };
 

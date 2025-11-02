@@ -133,16 +133,6 @@ export function QACheckpointPanel({
           </div>
         )}
 
-        {/* Page Prompt Display */}
-        <div className="relative bg-muted/50 border rounded-lg p-4 space-y-3">
-          <p className="text-xs font-medium text-primary uppercase tracking-wider">
-            {currentQAPage === 0 ? 'Cover Page Prompt' : `Page ${currentQAPage} Prompt`}
-          </p>
-          <div className="text-sm leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
-            {getCurrentPagePrompt(currentQAPage)}
-          </div>
-        </div>
-
         {/* Image Upload/Display Area */}
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Page Image</p>

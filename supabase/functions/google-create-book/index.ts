@@ -71,7 +71,10 @@ serve(async (req) => {
       
       systemPrompt = `You are creating a children's book. The user has already designed specific pages in our conversation.
 
-CRITICAL INSTRUCTION: You MUST use the exact page titles and descriptions provided below. Do NOT change them.
+CRITICAL INSTRUCTIONS: 
+- You MUST use the exact page titles and descriptions provided below. Do NOT change them.
+- Do NOT include aspect ratio specifications (like "1:1", "16:9", etc.) in any titles or descriptions
+- Aspect ratios are handled separately by the image generation tool
 
 PROVIDED PAGE STRUCTURE:
 ${pageDetails.map(p => `Page ${p.pageNumber}: "${p.title}"\n${p.description}`).join('\n\n')}
@@ -120,6 +123,8 @@ Book Types:
 - "chapter": Longer books with 15-26 pages divided into chapters
 
 IMPORTANT: 
+- Do NOT include aspect ratio specifications (like "1:1", "16:9", etc.) in page titles or descriptions
+- Aspect ratios are handled separately by the image generation tool
 - For NON-alphabet books, do NOT include "letter" fields
 - For alphabet books, include "letter" field with values matching the specified case format
 - Adjust page count based on book type and complexity

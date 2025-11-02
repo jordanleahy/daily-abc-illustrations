@@ -187,10 +187,21 @@ export function QACheckpointPanel({
           </div>
         </div>
 
-        {/* Help Text */}
-        <div className="text-xs text-muted-foreground bg-muted/30 rounded p-3">
-          💡 <strong>Tip:</strong> Copy prompt, generate in your AI tool, upload image, then navigate or create book.
-        </div>
+        {/* Generate Images Button */}
+        <Button
+          variant="secondary"
+          size="lg"
+          onClick={() => {
+            window.open(
+              'https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-flash-image',
+              '_blank',
+              'noopener,noreferrer'
+            );
+          }}
+          className="w-full"
+        >
+          Generate Images in Google AI Studio
+        </Button>
       </div>
 
       {/* Sticky Footer with Actions */}

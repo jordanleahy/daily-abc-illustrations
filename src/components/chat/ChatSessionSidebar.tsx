@@ -40,6 +40,12 @@ export function ChatSessionSidebar({
   const [editName, setEditName] = useState('');
   const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null);
 
+  // Filter out empty sessions (sessions with no user messages)
+  const sessionsWithMessages = sessions.filter((session) => {
+    if (!Array.isArray(session.messages)) return false;
+    return session.messages.some((msg: any) => msg.role === 'user');
+  });
+
   const handleStartEdit = (session: ChatSession) => {
     setEditingId(session.id);
     setEditName(session.session_name || getSessionTitle(session));
@@ -90,7 +96,7 @@ export function ChatSessionSidebar({
       {/* Sessions List */}
       <ScrollArea className="flex-1">
         <div className="p-2 space-y-1">
-          {sessions.map((session) => (
+          {sessionsWithMessages.map((session) => (
             <div
               key={session.id}
               className={cn(

@@ -49,7 +49,7 @@ export function QACheckpointPanel({
             <h3 className="font-semibold text-sm">
               {currentQAPage === 0 ? 'Cover Page' : `Review Page ${currentQAPage}`}
             </h3>
-            <p className="text-xs text-muted-foreground">{pageCount + 1} pages total</p>
+            <p className="text-xs text-muted-foreground">Page Title</p>
           </div>
         </div>
         <div className="flex items-center gap-2">

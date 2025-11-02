@@ -12,7 +12,12 @@ interface MessageItemProps {
 
 export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) => {
   const isUser = message.role === 'user';
-  const content = typeof message.content === 'string' ? message.content : 'Uploaded an image';
+  
+  // Strip out [CLARIFICATION_NEEDED: ...] tags that should never be shown to users
+  let content = typeof message.content === 'string' ? message.content : 'Uploaded an image';
+  if (typeof content === 'string') {
+    content = content.replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '').trim();
+  }
 
   return (
     <div className={cn('flex gap-3 p-4', isUser ? 'bg-muted/30' : 'bg-background')}>

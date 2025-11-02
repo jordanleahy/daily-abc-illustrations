@@ -152,15 +152,18 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
         }
       }
 
-      // Parse suggestions from final content
+      // Parse suggestions from final content and strip internal tags
       const parseSuggestions = (text: string) => {
-        const suggestRegex = /\[SUGGEST\]([\s\S]*?)\[\/SUGGEST\]/;
-        const match = text.match(suggestRegex);
+        // First, strip out [CLARIFICATION_NEEDED: ...] tags that should never be shown
+        let cleanedText = text.replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '').trim();
         
-        if (!match) return { cleanContent: text, suggestedActions: undefined };
+        const suggestRegex = /\[SUGGEST\]([\s\S]*?)\[\/SUGGEST\]/;
+        const match = cleanedText.match(suggestRegex);
+        
+        if (!match) return { cleanContent: cleanedText, suggestedActions: undefined };
         
         const suggestionsText = match[1].trim();
-        const cleanContent = text.replace(suggestRegex, '').trim();
+        const cleanContent = cleanedText.replace(suggestRegex, '').trim();
         
         const actions = suggestionsText
           .split('\n')

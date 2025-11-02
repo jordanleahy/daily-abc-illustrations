@@ -88,6 +88,13 @@ export const useTextOverlay = ({ pageId, bookId, userId }: UseTextOverlayProps) 
           data: { publicUrl },
         } = supabase.storage.from('page-images').getPublicUrl(filePath);
 
+        // Mark all current versions as not latest
+        await supabase
+          .from('page_image_urls')
+          .update({ is_latest: false })
+          .eq('page_id', pageId)
+          .eq('is_latest', true);
+
         // Create new page_image_urls record with text overlay config
         const { data: newRecord, error: insertError } = await supabase
           .from('page_image_urls')

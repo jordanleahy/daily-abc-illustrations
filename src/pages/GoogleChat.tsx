@@ -282,8 +282,8 @@ export default function GoogleChat() {
 
   const handleBookTypeSelect = useCallback(async (bookType: typeof BOOK_TYPES[0]) => {
     if (bookType.needsClarification && bookType.clarificationContext) {
-      // Send clarification request to AI
-      const clarificationPrompt = `${bookType.prompt}\n\n[CLARIFICATION_NEEDED: ${bookType.clarificationContext}]`;
+      // Format as natural instruction without internal tags
+      const clarificationPrompt = `${bookType.prompt}\n\nBefore we proceed, please ask me about: ${bookType.clarificationContext}`;
       await sendMessage(clarificationPrompt);
     } else {
       // Send direct prompt

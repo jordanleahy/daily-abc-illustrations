@@ -97,7 +97,7 @@ export function useGoogleChatSessions() {
 
   // Update session name
   const updateSessionName = useMutation({
-    mutationFn: async ({ sessionId, name }: { sessionId: string; name: string }) => {
+    mutationFn: async ({ sessionId, name, silent }: { sessionId: string; name: string; silent?: boolean }) => {
       const { data, error } = await supabase
         .from('gemini_chat_sessions')
         .update({ session_name: name })
@@ -106,11 +106,24 @@ export function useGoogleChatSessions() {
         .single();
 
       if (error) throw error;
-      return data as ChatSession;
+      return { session: data as ChatSession, silent };
     },
-    onSuccess: () => {
+    onMutate: async ({ sessionId, name }) => {
+      // Optimistically update the cache
+      queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions'], (old) => {
+        if (!old) return old;
+        return old.map(session => 
+          session.id === sessionId 
+            ? { ...session, session_name: name }
+            : session
+        );
+      });
+    },
+    onSuccess: ({ silent }) => {
       queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
-      toast.success('Conversation renamed');
+      if (!silent) {
+        toast.success('Conversation renamed');
+      }
     },
     onError: () => {
       toast.error('Failed to rename conversation');

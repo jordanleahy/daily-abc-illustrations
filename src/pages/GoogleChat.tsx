@@ -281,11 +281,12 @@ export default function GoogleChat() {
   }, [input, sendMessageWithImage, messages]);
 
   const handleBookTypeSelect = useCallback(async (bookType: typeof BOOK_TYPES[0]) => {
-    // Update session name with book type label
+    // Update session name with book type label (silent to avoid toast)
     if (currentSessionId) {
       await updateSessionName({
         sessionId: currentSessionId,
-        name: bookType.label
+        name: bookType.label,
+        silent: true
       });
     }
     

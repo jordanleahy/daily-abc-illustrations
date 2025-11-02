@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft, BookOpen, Book } from 'lucide-react';
+import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft, BookOpen, Book, MessageSquare } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -231,7 +231,7 @@ export function Header({
         <div className="flex h-14 items-center justify-between">
           {/* Left section: Mobile hamburger + Review button + Mobile user info + Desktop back button + Subtitle */}
           <div className="flex items-center gap-2">
-            {/* Mobile Hamburger Menu - Google Chat only */}
+            {/* Mobile Chat Sessions Menu - Google Chat only */}
             {onMobileMenuToggle && (
               <Button
                 variant="ghost"
@@ -239,7 +239,7 @@ export function Header({
                 className="md:hidden h-8 w-8"
                 onClick={onMobileMenuToggle}
               >
-                <Menu className="h-5 w-5" />
+                <MessageSquare className="h-5 w-5" />
               </Button>
             )}
             

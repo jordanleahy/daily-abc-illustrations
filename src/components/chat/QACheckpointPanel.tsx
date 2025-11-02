@@ -70,37 +70,16 @@ export function QACheckpointPanel({
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            type="button"
-            onClick={() => {
-              const prompt = getCurrentPagePrompt(currentQAPage);
-              if (prompt) {
-                navigator.clipboard.writeText(prompt);
-                toast.success(`Page ${currentQAPage} prompt copied!`, {
-                  description: 'Paste in your AI tool'
-                });
-              }
-            }}
-            className="gap-1.5"
-            aria-label="Copy image prompt"
-          >
-            <Copy className="h-4 w-4" />
-            Copy Image Prompt
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            type="button"
-            onClick={onClose}
-            className="h-8 w-8"
-            aria-label="Close review panel"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          type="button"
+          onClick={onClose}
+          className="h-8 w-8"
+          aria-label="Close review panel"
+        >
+          <X className="h-4 w-4" />
+        </Button>
       </div>
 
       {/* Scrollable Content */}
@@ -187,7 +166,7 @@ export function QACheckpointPanel({
           </div>
         </div>
 
-        {/* Generate Images Button */}
+        {/* Generate Images Buttons */}
         <Button
           variant="secondary"
           size="lg"
@@ -200,7 +179,31 @@ export function QACheckpointPanel({
           }}
           className="w-full"
         >
-          Generate Images in Google AI Studio
+          1. Generate Images in Google AI Studio
+        </Button>
+
+        <Button
+          variant="secondary"
+          size="lg"
+          onClick={() => {
+            const prompt = getCurrentPagePrompt(currentQAPage);
+            if (prompt) {
+              navigator.clipboard.writeText(prompt);
+              window.open(
+                'https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-flash-image',
+                '_blank',
+                'noopener,noreferrer'
+              );
+              toast.success('Prompt copied & AI Studio opened!', {
+                description: 'Paste the prompt (Ctrl+V / Cmd+V) to generate',
+                duration: 5000
+              });
+            }
+          }}
+          className="w-full gap-2"
+        >
+          <Copy className="h-4 w-4" />
+          2. Copy & Paste Image Prompt
         </Button>
       </div>
 

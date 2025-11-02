@@ -19,6 +19,7 @@ import { toast } from 'sonner';
 import { BOOK_TYPES } from '@/config/bookTypes';
 import { cn } from '@/lib/utils';
 import { parsePageDetailsFromMessages, getBookMetadata } from '@/utils/chatHelpers';
+import { supabase } from '@/integrations/supabase/client';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
@@ -335,6 +336,21 @@ export default function GoogleChat() {
         sessionId: currentSessionId, 
         bookId: result.bookId 
       });
+      
+      // Fetch the book details to get the title and update session name
+      const { data: bookData, error: bookError } = await supabase
+        .from('books')
+        .select('book_name')
+        .eq('id', result.bookId)
+        .single();
+      
+      // Update session name with book title
+      if (bookData && !bookError) {
+        await updateSessionName({
+          sessionId: currentSessionId,
+          name: bookData.book_name
+        });
+      }
       
       toast.success('Book created successfully!', {
         description: 'Click "View Created Book" to see your new book.'

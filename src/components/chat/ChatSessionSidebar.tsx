@@ -180,7 +180,7 @@ export function ChatSessionSidebar({
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Conversation?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this conversation. This action cannot be undone.
+              This will permanently delete this conversation. Any books created from this conversation will remain safe and accessible. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

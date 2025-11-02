@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Upload, AlertCircle } from "lucide-react";
+import { Upload, AlertCircle, Clipboard } from "lucide-react";
 import { toast } from "sonner";
 import { processImage, formatFileSize } from "@/utils/imageProcessor";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface ImageUploadProps {
   onImageSelect: (file: File) => void;
@@ -16,6 +17,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
   const [preview, setPreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const isMobile = useIsMobile();
 
   // Auto-trigger file picker when autoTrigger is true
   useEffect(() => {
@@ -161,6 +163,41 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
     toast.error('No image found in clipboard');
   };
 
+  const handlePasteFromClipboard = async () => {
+    if (disabled || isProcessing) return;
+
+    try {
+      // Request clipboard permission and read
+      const clipboardItems = await navigator.clipboard.read();
+      
+      for (const clipboardItem of clipboardItems) {
+        for (const type of clipboardItem.types) {
+          if (type.startsWith('image/')) {
+            const blob = await clipboardItem.getType(type);
+            const file = new File([blob], `clipboard-image.${type.split('/')[1]}`, { type });
+            await handleFile(file);
+            return;
+          }
+        }
+      }
+      
+      toast.error('No image found in clipboard');
+    } catch (error) {
+      console.error('Clipboard access error:', error);
+      
+      // Handle different error scenarios
+      if (error instanceof Error) {
+        if (error.name === 'NotAllowedError') {
+          toast.error('Clipboard access denied. Please allow clipboard permissions.');
+        } else if (error.name === 'NotFoundError') {
+          toast.error('No image found in clipboard');
+        } else {
+          toast.error('Failed to access clipboard. Try taking a photo instead.');
+        }
+      }
+    }
+  };
+
   const openFileSelector = () => {
     if (!disabled && !isProcessing && fileInputRef.current) {
       fileInputRef.current.click();
@@ -218,6 +255,26 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center text-center space-y-3">
+            {isMobile && (
+              <div className="w-full mb-4 pb-4 border-b">
+                <Button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePasteFromClipboard();
+                  }}
+                  variant="outline"
+                  size="lg"
+                  className="w-full"
+                  disabled={disabled || isProcessing}
+                >
+                  <Clipboard className="h-5 w-5 mr-2" />
+                  Paste from Clipboard
+                </Button>
+                <p className="text-xs text-muted-foreground text-center mt-2">
+                  Or use the options below
+                </p>
+              </div>
+            )}
             <Upload className="w-8 h-8 text-muted-foreground" />
             <div>
               <p className="text-sm font-medium">Upload 1:1 Image</p>

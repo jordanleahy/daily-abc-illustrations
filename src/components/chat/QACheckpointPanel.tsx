@@ -200,9 +200,8 @@ export function QACheckpointPanel({
               });
             }
           }}
-          className="w-full gap-2"
+          className="w-full"
         >
-          <Copy className="h-4 w-4" />
           2. Copy & Paste Image Prompt
         </Button>
       </div>

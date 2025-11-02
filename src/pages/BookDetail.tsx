@@ -23,6 +23,7 @@ import { InlineQRCode } from '@/components/book/InlineQRCode';
 import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
+import { useBookEditorImagePreloader } from '@/hooks/useBookEditorImagePreloader';
 import { useHasRole } from '@/hooks/useUserRole';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
@@ -64,6 +65,10 @@ export default function BookDetail() {
   const { pages } = useBookPages(id);
   const { data: book, isLoading: bookLoading, error: bookError, isFetched: bookFetched } = useBook(id);
   const { data: pageImages = {}, isLoading: imagesLoading } = useBookPageImages(id);
+  
+  // Preload page images for instant display
+  useBookEditorImagePreloader(pageImages);
+  
   const isAdmin = useHasRole('admin');
   const isMobile = useIsMobile();
   const [archiveLoading, setArchiveLoading] = useState(false);

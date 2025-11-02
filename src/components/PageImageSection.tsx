@@ -247,10 +247,10 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     );
   }
 
-  // Use preloaded image if available, otherwise use fetched image
-  const displayImageUrl = preloadedImageUrl || currentImage?.image_url;
+  // Prefer latest DB image; fall back to preloaded (from editor preloader)
+  const displayImageUrl = currentImage?.image_url || preloadedImageUrl;
   const isGenerating = currentImage?.generation_status === 'in_progress' || isLocalGenerating;
-  const hasImage = (preloadedImageUrl || (currentImage?.generation_status === 'complete' && currentImage?.image_url));
+  const hasImage = Boolean((currentImage?.generation_status === 'complete' && currentImage?.image_url) || preloadedImageUrl);
   const hasError = currentImage?.generation_status === 'error';
   const isUserUploaded = currentImage?.source_type === 'user_uploaded';
   

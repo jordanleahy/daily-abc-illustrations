@@ -255,8 +255,18 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center text-center space-y-3">
+            <Upload className="w-8 h-8 text-muted-foreground" />
+            <div>
+              <p className="text-sm font-medium">Upload 1:1 Image</p>
+              <p className="text-xs text-muted-foreground">
+                Drop, paste, or click to browse
+              </p>
+            </div>
             {isMobile && (
-              <div className="w-full mb-4 pb-4 border-b">
+              <div className="w-full mt-4 pt-4 border-t">
+                <p className="text-xs text-muted-foreground text-center mb-3">
+                  Or use clipboard
+                </p>
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
@@ -270,18 +280,8 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                   <Clipboard className="h-5 w-5 mr-2" />
                   Paste from Clipboard
                 </Button>
-                <p className="text-xs text-muted-foreground text-center mt-2">
-                  Or use the options below
-                </p>
               </div>
             )}
-            <Upload className="w-8 h-8 text-muted-foreground" />
-            <div>
-              <p className="text-sm font-medium">Upload 1:1 Image</p>
-              <p className="text-xs text-muted-foreground">
-                Drop, paste, or click to browse
-              </p>
-            </div>
           </div>
         )}
       </div>

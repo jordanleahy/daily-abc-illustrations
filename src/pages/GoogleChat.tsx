@@ -20,9 +20,11 @@ import { BOOK_TYPES } from '@/config/bookTypes';
 import { cn } from '@/lib/utils';
 import { parsePageDetailsFromMessages, getBookMetadata } from '@/utils/chatHelpers';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   const [input, setInput] = useState('');
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -55,6 +57,7 @@ export default function GoogleChat() {
     deleteSession,
     linkBookToSession,
     updateQAPageImages,
+    updateQAPagePrompts,
   } = useGoogleChatSessions();
 
   // Load messages for current session via React Query cache
@@ -103,6 +106,7 @@ export default function GoogleChat() {
   // QA Checkpoint state
   const [currentQAPage, setCurrentQAPage] = useState(0);
   const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
+  const [qaPagePrompts, setQAPagePrompts] = useState<Record<number, string>>({});
   const [showQACheckpoint, setShowQACheckpoint] = useState(false);
   const [outlineJustCompleted, setOutlineJustCompleted] = useState(false);
   const previousShouldShow = useRef(false);
@@ -195,6 +199,8 @@ export default function GoogleChat() {
     // If we just transitioned from false → true, the outline was just completed
     if (!previousShouldShow.current && currentShouldShow) {
       setOutlineJustCompleted(true);
+      // Auto-generate cover prompt when outline completes
+      handleGenerateCoverPrompt();
     }
     
     previousShouldShow.current = currentShouldShow;
@@ -281,6 +287,45 @@ export default function GoogleChat() {
     };
     reader.readAsDataURL(file);
   }, [input, sendMessageWithImage, messages]);
+
+  // Auto-generate cover prompt for QA panel
+  const handleGenerateCoverPrompt = useCallback(async () => {
+    if (!currentSessionId || !user?.id) return;
+    
+    // Get book metadata from messages
+    const metadata = getBookMetadata(messages);
+    if (!metadata) return;
+
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-book-thumbnail-prompt', {
+        body: {
+          bookId: null, // No book ID yet during outline review
+          userId: user.id,
+          bookMetadata: {
+            bookName: metadata.name,
+            category: 'Educational',
+            description: metadata.description
+          }
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.enhancedPrompt) {
+        const newPrompts = { ...qaPagePrompts, 0: data.enhancedPrompt };
+        setQAPagePrompts(newPrompts);
+        
+        // Persist to database
+        await updateQAPagePrompts({ 
+          sessionId: currentSessionId, 
+          qaPagePrompts: newPrompts 
+        });
+      }
+    } catch (error) {
+      console.error('Error generating cover prompt:', error);
+      // Silently fail - not critical for UX
+    }
+  }, [currentSessionId, user, messages, qaPagePrompts, updateQAPagePrompts]);
 
   const handleBookTypeSelect = useCallback(async (bookType: typeof BOOK_TYPES[0]) => {
     // Store the book type ID for later use
@@ -376,6 +421,7 @@ export default function GoogleChat() {
       setShowQACheckpoint(false);
       setCurrentQAPage(0);
       setQAPageImages({});
+      setQAPagePrompts({});
     } catch (error) {
       console.error('Book creation error:', error);
       // Error toast is handled by the mutation
@@ -429,6 +475,7 @@ export default function GoogleChat() {
         setCurrentSessionId(newSession.id);
         setCurrentQAPage(0);
         setQAPageImages({});
+        setQAPagePrompts({});
         setShowQACheckpoint(false);
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
@@ -452,9 +499,12 @@ export default function GoogleChat() {
   }, [createdBookId, selectedSession]);
 
   const handleOpenQAPanel = useCallback(() => {
-    // Load QA images from current session
+    // Load QA images and prompts from current session
     if (selectedSession?.qa_page_images) {
       setQAPageImages(selectedSession.qa_page_images);
+    }
+    if (selectedSession?.qa_page_prompts) {
+      setQAPagePrompts(selectedSession.qa_page_prompts);
     }
     setShowQACheckpoint(true);
     setCurrentQAPage(0);
@@ -669,6 +719,7 @@ export default function GoogleChat() {
                 pageCount={pageCount}
                 displayImages={displayImages}
                 qaPageImages={qaPageImages}
+                qaPagePrompts={qaPagePrompts}
                 getCurrentPagePrompt={getCurrentPagePrompt}
                 createBookMutation={createBookMutation}
                 onClose={() => setShowQACheckpoint(false)}
@@ -691,6 +742,7 @@ export default function GoogleChat() {
                 pageCount={pageCount}
                 displayImages={displayImages}
                 qaPageImages={qaPageImages}
+                qaPagePrompts={qaPagePrompts}
                 getCurrentPagePrompt={getCurrentPagePrompt}
                 createBookMutation={createBookMutation}
                 onClose={() => {

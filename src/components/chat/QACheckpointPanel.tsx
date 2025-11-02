@@ -14,6 +14,7 @@ interface QACheckpointPanelProps {
   pageCount: number;
   displayImages: Record<number, string>;
   qaPageImages: Record<number, string>;
+  qaPagePrompts: Record<number, string>;
   getCurrentPagePrompt: (pageNum: number) => string | null;
   createBookMutation: any;
   onClose: () => void;
@@ -31,6 +32,7 @@ export function QACheckpointPanel({
   pageCount,
   displayImages,
   qaPageImages,
+  qaPagePrompts,
   getCurrentPagePrompt,
   createBookMutation,
   onClose,
@@ -40,6 +42,8 @@ export function QACheckpointPanel({
   onCreateBook,
 }: QACheckpointPanelProps) {
   const navigate = useNavigate();
+
+  const currentCoverPrompt = qaPagePrompts[0] || null;
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -166,6 +170,33 @@ export function QACheckpointPanel({
             )}
           </div>
         </div>
+
+        {/* Cover Image Prompt - Show on page 0 */}
+        {currentQAPage === 0 && currentCoverPrompt && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Cover Image Prompt</p>
+            <div className="border rounded-lg p-3 bg-muted/30 space-y-2">
+              <div className="text-xs text-muted-foreground max-h-32 overflow-y-auto">
+                {currentCoverPrompt}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  navigator.clipboard.writeText(currentCoverPrompt);
+                  toast.success('Cover prompt copied!', {
+                    description: 'Paste in Google AI Studio',
+                    duration: 3000
+                  });
+                }}
+                className="w-full"
+              >
+                <Copy className="h-4 w-4 mr-1" />
+                Copy Cover Prompt
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Generate Images Buttons */}
         <Button

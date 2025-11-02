@@ -16,6 +16,7 @@ export interface ChatSession {
   agent_id: string | null;
   created_book_id: string | null;
   qa_page_images: Record<number, string> | null;
+  qa_page_prompts: Record<number, string> | null;
 }
 
 export function useGoogleChatSessions() {
@@ -197,6 +198,24 @@ export function useGoogleChatSessions() {
     },
   });
 
+  // Update QA page prompts
+  const updateQAPagePrompts = useMutation({
+    mutationFn: async ({ sessionId, qaPagePrompts }: { sessionId: string; qaPagePrompts: Record<number, string> }) => {
+      const { error } = await supabase
+        .from('gemini_chat_sessions')
+        .update({ qa_page_prompts: qaPagePrompts })
+        .eq('id', sessionId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
+    },
+    onError: () => {
+      console.error('Failed to update QA prompts');
+    },
+  });
+
   return {
     sessions,
     isLoading,
@@ -206,5 +225,6 @@ export function useGoogleChatSessions() {
     deleteSession: deleteSession.mutateAsync,
     linkBookToSession: linkBookToSession.mutateAsync,
     updateQAPageImages: updateQAPageImages.mutateAsync,
+    updateQAPagePrompts: updateQAPagePrompts.mutateAsync,
   };
 }

@@ -19,13 +19,18 @@ serve(async (req) => {
     
     // Log incoming request details
     const requestBody = await req.json();
-    const { bookId, userId } = requestBody;
-    console.log('Request parameters:', { bookId, userId, hasAuth: !!req.headers.get('Authorization') });
+    const { bookId, userId, bookMetadata } = requestBody;
+    console.log('Request parameters:', { bookId, userId, hasBookMetadata: !!bookMetadata, hasAuth: !!req.headers.get('Authorization') });
 
-    // Validate required parameters
-    if (!bookId || !userId) {
-      console.error('Missing required parameters:', { bookId: !!bookId, userId: !!userId });
-      throw new Error('Missing required parameters: bookId, userId');
+    // Validate required parameters - either bookId or bookMetadata must be provided
+    if (!userId) {
+      console.error('Missing required parameter: userId');
+      throw new Error('Missing required parameter: userId');
+    }
+
+    if (!bookId && !bookMetadata) {
+      console.error('Either bookId or bookMetadata must be provided');
+      throw new Error('Either bookId or bookMetadata must be provided');
     }
 
     // Check Lovable API key availability (without logging the actual key)
@@ -51,24 +56,39 @@ serve(async (req) => {
       }
     );
 
-    console.log('Fetching book data for bookId:', bookId);
+    let book: any;
     
-    // Fetch book data and deployed style guide
-    const { data: book, error } = await supabase
-      .from('books')
-      .select('book_name, category, book_description, current_system_prompt_id')
-      .eq('id', bookId)
-      .eq('user_id', userId)
-      .single();
+    // Use bookMetadata if provided (pre-book creation), otherwise fetch from database
+    if (bookMetadata) {
+      console.log('Using provided bookMetadata:', bookMetadata);
+      book = {
+        book_name: bookMetadata.bookName,
+        category: bookMetadata.category || 'Educational',
+        book_description: bookMetadata.description,
+        current_system_prompt_id: null
+      };
+    } else {
+      console.log('Fetching book data for bookId:', bookId);
+      
+      // Fetch book data and deployed style guide
+      const { data: bookData, error } = await supabase
+        .from('books')
+        .select('book_name, category, book_description, current_system_prompt_id')
+        .eq('id', bookId)
+        .eq('user_id', userId)
+        .single();
 
-    if (error) {
-      console.error('Supabase query error:', error);
-      throw new Error(`Database error: ${error.message}`);
-    }
+      if (error) {
+        console.error('Supabase query error:', error);
+        throw new Error(`Database error: ${error.message}`);
+      }
 
-    if (!book) {
-      console.error('Book not found or access denied for:', { bookId, userId });
-      throw new Error('Book not found or access denied');
+      if (!bookData) {
+        console.error('Book not found or access denied for:', { bookId, userId });
+        throw new Error('Book not found or access denied');
+      }
+      
+      book = bookData;
     }
 
     console.log('Book data retrieved:', { 
@@ -280,6 +300,7 @@ Your output must be a SINGLE, DIRECT image generation prompt paragraph. Do not p
 
     const successResponse = {
       success: true, 
+      enhancedPrompt,
       thumbnailPrompt: enhancedPrompt,
       originalPrompt: generatedPrompt,
       bookId,

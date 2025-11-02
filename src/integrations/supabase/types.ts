@@ -435,6 +435,7 @@ export type Database = {
           messages: Json
           model_used: string | null
           qa_page_images: Json | null
+          qa_page_prompts: Json | null
           session_name: string | null
           total_tokens_used: number | null
           updated_at: string
@@ -450,6 +451,7 @@ export type Database = {
           messages?: Json
           model_used?: string | null
           qa_page_images?: Json | null
+          qa_page_prompts?: Json | null
           session_name?: string | null
           total_tokens_used?: number | null
           updated_at?: string
@@ -465,6 +467,7 @@ export type Database = {
           messages?: Json
           model_used?: string | null
           qa_page_images?: Json | null
+          qa_page_prompts?: Json | null
           session_name?: string | null
           total_tokens_used?: number | null
           updated_at?: string
@@ -1379,6 +1382,30 @@ export type Database = {
           stripe_product_id?: string | null
           stripe_subscription_id?: string
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_text_overlay_defaults: {
+        Row: {
+          config: Json
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          created_at?: string
+          id?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []

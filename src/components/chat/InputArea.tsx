@@ -1,11 +1,14 @@
-import { memo } from 'react';
-import { Send, Image as ImageIcon, BookOpen, ChevronLeft } from 'lucide-react';
+import { memo, useState } from 'react';
+import { Send, Image as ImageIcon, BookOpen, ChevronLeft, Copy } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { ImageUpload } from '@/components/ImageUpload';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface InputAreaProps {
   input: string;
@@ -42,6 +45,40 @@ export const InputArea = memo(({
   onOpenQAPanel,
   onGenerateCoverToggle
 }: InputAreaProps) => {
+  const { user } = useAuthContext();
+  const [isGeneratingPrompt, setIsGeneratingPrompt] = useState(false);
+
+  const handleGenerateCoverPrompt = async () => {
+    if (!createdBookId || !user?.id) {
+      toast.error('No book available to generate cover prompt');
+      return;
+    }
+
+    setIsGeneratingPrompt(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-book-thumbnail-prompt', {
+        body: {
+          bookId: createdBookId,
+          userId: user.id
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.enhancedPrompt) {
+        await navigator.clipboard.writeText(data.enhancedPrompt);
+        toast.success('Cover image prompt copied to clipboard!');
+      } else {
+        toast.error('Failed to generate prompt');
+      }
+    } catch (error) {
+      console.error('Error generating cover prompt:', error);
+      toast.error('Failed to generate cover prompt');
+    } finally {
+      setIsGeneratingPrompt(false);
+    }
+  };
+
   return (
     <div className="border-t bg-background p-4">
       <div className="mx-auto flex max-w-4xl gap-2">
@@ -107,10 +144,21 @@ export const InputArea = memo(({
         />
         <Label 
           htmlFor="generate-cover"
-          className="text-sm text-muted-foreground cursor-pointer"
+          className="text-sm text-muted-foreground cursor-pointer flex-1"
         >
           Generate cover image when creating book (uses additional AI credits)
         </Label>
+        {createdBookId && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleGenerateCoverPrompt}
+            disabled={isGeneratingPrompt}
+          >
+            <Copy className="h-4 w-4 mr-1" />
+            {isGeneratingPrompt ? 'Generating...' : 'Copy Prompt'}
+          </Button>
+        )}
       </div>
     </div>
   );

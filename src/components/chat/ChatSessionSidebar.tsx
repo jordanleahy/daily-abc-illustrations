@@ -129,7 +129,7 @@ export function ChatSessionSidebar({
                   ) : (
                     <>
                       <div className="flex items-center gap-1.5">
-                        <p className="text-sm font-medium truncate">
+                        <p className="text-sm font-medium line-clamp-2">
                           {getSessionTitle(session)}
                         </p>
                         {session.created_book_id && (

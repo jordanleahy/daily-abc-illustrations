@@ -13,6 +13,7 @@ import { BookOpen, Calendar, Users } from 'lucide-react';
 import { CreateBookModal } from '@/components/books/CreateBookModal';
 import { LoadingState } from '@/components/ui/loading-state';
 import { trackBookView } from '@/utils/bookViewTracking';
+import { supabase } from '@/integrations/supabase/client';
 
 function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
@@ -120,9 +121,16 @@ export default function Books() {
     queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
   }, [queryClient, user?.id]);
 
-  const handleViewBook = (bookId: string) => {
+  const handleViewBook = async (bookId: string) => {
     // Track the book view immediately
     trackBookView(bookId);
+    
+    // Update last_activity_at in database for accurate sorting
+    await supabase
+      .from('books')
+      .update({ last_activity_at: new Date().toISOString() })
+      .eq('id', bookId);
+    
     navigate(`/editor/${bookId}`);
   };
 

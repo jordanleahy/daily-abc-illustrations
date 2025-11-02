@@ -162,6 +162,7 @@ export type Database = {
           current_system_prompt_id: string | null
           id: string
           is_highlighted: boolean
+          last_activity_at: string | null
           metadata: Json | null
           pdf_url: string | null
           product_description: string | null
@@ -179,6 +180,7 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           is_highlighted?: boolean
+          last_activity_at?: string | null
           metadata?: Json | null
           pdf_url?: string | null
           product_description?: string | null
@@ -196,6 +198,7 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           is_highlighted?: boolean
+          last_activity_at?: string | null
           metadata?: Json | null
           pdf_url?: string | null
           product_description?: string | null

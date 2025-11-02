@@ -80,6 +80,8 @@ export interface Book {
   created_at: string;
   /** ISO timestamp when the book was last modified */
   updated_at: string;
+  /** ISO timestamp of last activity (view, edit, image generation) */
+  last_activity_at?: string;
 }
 
 /**

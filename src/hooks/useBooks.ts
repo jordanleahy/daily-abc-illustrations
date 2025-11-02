@@ -78,7 +78,7 @@ export const useBooks = () => {
         .eq('user_id', user.id)
         .neq('status', 'archived')
         .order('is_highlighted', { ascending: false })
-        .order('updated_at', { ascending: false });
+        .order('last_activity_at', { ascending: false });
 
       if (booksError) {
         console.error('Error fetching books:', booksError);
@@ -96,26 +96,18 @@ export const useBooks = () => {
         dailyPublishedStatus: book.daily_published?.[0]?.status || undefined
       }));
       
-      // Get view timestamps from localStorage
-      const viewTimestamps = getBookViewTimestamps();
-      
-      // Sort by most recently viewed/edited
+      // Sort by most recent activity
       return processedBooks.sort((a, b) => {
         // Highlighted books always come first
         if (a.is_highlighted !== b.is_highlighted) {
           return b.is_highlighted ? 1 : -1;
         }
         
-        // Then sort by most recently viewed
-        const aViewTime = viewTimestamps[a.id] || 0;
-        const bViewTime = viewTimestamps[b.id] || 0;
+        // Sort by last activity (most recent first)
+        const aActivity = new Date(a.last_activity_at || a.updated_at).getTime();
+        const bActivity = new Date(b.last_activity_at || b.updated_at).getTime();
         
-        if (aViewTime !== bViewTime) {
-          return bViewTime - aViewTime; // Most recent view first
-        }
-        
-        // If never viewed, fall back to updated_at timestamp
-        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
+        return bActivity - aActivity;
       });
     },
     enabled: !!user?.id,

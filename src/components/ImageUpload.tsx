@@ -282,10 +282,6 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                 Drop, paste, or click to browse
               </p>
             </div>
-            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-              <AlertCircle className="w-3 h-3" />
-              <span>PNG, JPG, WEBP • Max 5MB • Square aspect ratio</span>
-            </div>
           </div>
         )}
       </div>

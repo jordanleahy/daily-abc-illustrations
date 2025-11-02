@@ -281,6 +281,14 @@ export default function GoogleChat() {
   }, [input, sendMessageWithImage, messages]);
 
   const handleBookTypeSelect = useCallback(async (bookType: typeof BOOK_TYPES[0]) => {
+    // Update session name with book type label
+    if (currentSessionId) {
+      await updateSessionName({
+        sessionId: currentSessionId,
+        name: bookType.label
+      });
+    }
+    
     if (bookType.needsClarification && bookType.clarificationContext) {
       // Format as natural instruction without internal tags
       const clarificationPrompt = `${bookType.prompt}\n\nBefore we proceed, please ask me about: ${bookType.clarificationContext}`;
@@ -289,7 +297,7 @@ export default function GoogleChat() {
       // Send direct prompt
       await sendMessage(bookType.prompt);
     }
-  }, [sendMessage]);
+  }, [currentSessionId, sendMessage, updateSessionName]);
 
   const handleCreateBook = useCallback(async () => {
     if (!currentSessionId) {

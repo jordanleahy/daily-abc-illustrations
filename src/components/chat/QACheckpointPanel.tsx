@@ -75,6 +75,24 @@ export function QACheckpointPanel({
             variant="ghost"
             size="icon"
             type="button"
+            onClick={() => {
+              const prompt = getCurrentPagePrompt(currentQAPage);
+              if (prompt) {
+                navigator.clipboard.writeText(prompt);
+                toast.success(`Page ${currentQAPage} prompt copied!`, {
+                  description: 'Paste in your AI tool'
+                });
+              }
+            }}
+            className="h-8 w-8"
+            aria-label="Copy prompt"
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            type="button"
             onClick={onClose}
             className="h-8 w-8"
             aria-label="Close review panel"
@@ -116,28 +134,9 @@ export function QACheckpointPanel({
 
         {/* Page Prompt Display */}
         <div className="relative bg-muted/50 border rounded-lg p-4 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-primary uppercase tracking-wider">
-              {currentQAPage === 0 ? 'Cover Page Prompt' : `Page ${currentQAPage} Prompt`}
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                const prompt = getCurrentPagePrompt(currentQAPage);
-                if (prompt) {
-                  navigator.clipboard.writeText(prompt);
-                  toast.success(`Page ${currentQAPage} prompt copied!`, {
-                    description: 'Paste in your AI tool'
-                  });
-                }
-              }}
-              className="h-7 text-xs gap-1"
-            >
-              <Copy className="h-3 w-3" />
-              Copy
-            </Button>
-          </div>
+          <p className="text-xs font-medium text-primary uppercase tracking-wider">
+            {currentQAPage === 0 ? 'Cover Page Prompt' : `Page ${currentQAPage} Prompt`}
+          </p>
           <div className="text-sm leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto">
             {getCurrentPagePrompt(currentQAPage)}
           </div>

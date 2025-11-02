@@ -189,14 +189,9 @@ export function QACheckpointPanel({
             const prompt = getCurrentPagePrompt(currentQAPage);
             if (prompt) {
               navigator.clipboard.writeText(prompt);
-              window.open(
-                'https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-flash-image',
-                '_blank',
-                'noopener,noreferrer'
-              );
-              toast.success('Prompt copied & AI Studio opened!', {
-                description: 'Paste the prompt (Ctrl+V / Cmd+V) to generate',
-                duration: 5000
+              toast.success('Prompt copied to clipboard!', {
+                description: 'Paste in Google AI Studio to generate the image',
+                duration: 3000
               });
             }
           }}

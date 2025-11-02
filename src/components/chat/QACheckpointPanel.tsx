@@ -1,9 +1,10 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
-import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X } from 'lucide-react';
+import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, Image } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { useRef } from 'react';
 
 interface QACheckpointPanelProps {
   showQACheckpoint: boolean;
@@ -39,6 +40,11 @@ export function QACheckpointPanel({
   onCreateBook,
 }: QACheckpointPanelProps) {
   const navigate = useNavigate();
+  const imageAreaRef = useRef<HTMLDivElement>(null);
+
+  const scrollToImageArea = () => {
+    imageAreaRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
 
   return (
     <div className="flex flex-col h-full bg-background">
@@ -135,7 +141,7 @@ export function QACheckpointPanel({
         </div>
 
         {/* Image Upload/Display Area */}
-        <div className="space-y-2">
+        <div ref={imageAreaRef} className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Page Image</p>
           <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
             {displayImages[currentQAPage] ? (
@@ -195,7 +201,7 @@ export function QACheckpointPanel({
       </div>
 
       {/* Sticky Footer with Actions */}
-      <div className="sticky bottom-0 bg-background border-t px-4 py-3 space-y-3 shrink-0">
+      <div className="sticky bottom-0 bg-background border-t px-4 py-3 space-y-3 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         {/* Navigation */}
         <div className="flex gap-2">
           <Button
@@ -230,20 +236,38 @@ export function QACheckpointPanel({
           </Button>
         </div>
 
-        {/* Create Book Button */}
-        {Object.keys(qaPageImages).length > 0 && !isBookCreated && (
-          <Button
-            onClick={onCreateBook}
-            disabled={createBookMutation.isPending || isBookCreated}
-            className="w-full gap-2"
-            size="sm"
-          >
-            <BookOpen className="h-4 w-4" />
-            {isBookCreated 
-              ? 'Book Created' 
-              : `Create Book (${Object.keys(qaPageImages).length} image${Object.keys(qaPageImages).length > 1 ? 's' : ''})`
-            }
-          </Button>
+        {/* Create Book Button - Always visible when book not created */}
+        {!isBookCreated && (
+          <div className="space-y-2">
+            <div className="flex gap-2">
+              <Button
+                onClick={onCreateBook}
+                disabled={createBookMutation.isPending}
+                className="flex-1 gap-2"
+                size="sm"
+              >
+                <BookOpen className="h-4 w-4" />
+                {Object.keys(qaPageImages).length > 0
+                  ? `Create Book (${Object.keys(qaPageImages).length} photo${Object.keys(qaPageImages).length > 1 ? 's' : ''})`
+                  : 'Create Book'
+                }
+              </Button>
+              <Button
+                variant="outline"
+                onClick={scrollToImageArea}
+                className="gap-2"
+                size="sm"
+              >
+                <Image className="h-4 w-4" />
+                Add Photo
+              </Button>
+            </div>
+            {Object.keys(qaPageImages).length === 0 && (
+              <p className="text-xs text-muted-foreground text-center">
+                Photos optional • Add now or generate later
+              </p>
+            )}
+          </div>
         )}
       </div>
     </div>

@@ -238,7 +238,7 @@ export default function GoogleChat() {
         updatedMessages[updatedMessages.length - 1] = {
           ...lastMessage,
           suggestedActions: [
-            { id: 'create_book', label: '✨ Create Book', value: 'create_book' },
+            { id: 'open_qa', label: '📖 View Pages & Add Photos', value: 'open_qa' },
             { id: 'refine_outline', label: 'Refine Outline', value: 'refine_outline' },
             { id: 'start_over', label: 'Start Over', value: 'start_over' }
           ]
@@ -368,6 +368,10 @@ export default function GoogleChat() {
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
     // Handle special create book actions
+    if (action.value === 'open_qa') {
+      handleOpenQAPanel();
+      return;
+    }
     if (action.value === 'create_book') {
       handleCreateBook();
       return;
@@ -611,7 +615,7 @@ export default function GoogleChat() {
             {messages.length === 0 ? (
               <EmptyState onBookTypeSelect={handleBookTypeSelect} />
             ) : (
-              <div className="max-w-4xl mx-auto px-4 py-6">
+              <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
                 <MessageList 
                   messages={messagesWithCreateOptions}
                   onQuickReply={handleQuickReply}

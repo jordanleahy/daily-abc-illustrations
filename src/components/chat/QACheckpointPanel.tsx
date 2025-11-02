@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
 import { Shimmer } from '@/components/ui/shimmer';
-import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X } from 'lucide-react';
+import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
@@ -220,11 +220,11 @@ export function QACheckpointPanel({
             variant="outline"
             size="sm"
             type="button"
-            onClick={onClose}
+            onClick={() => window.open('https://aistudio.google.com/prompts/new_chat', '_blank')}
             className="flex-1"
           >
-            <Send className="h-4 w-4 mr-1" />
-            Adjust
+            <ExternalLink className="h-4 w-4 mr-1" />
+            Image Generator
           </Button>
           <Button
             variant="default"

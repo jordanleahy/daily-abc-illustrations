@@ -177,7 +177,99 @@ Deno.serve(async (req) => {
         })()
       : Promise.resolve({ data: [], error: null });
 
-    const [pagesResult, seoResult] = await Promise.all([pagesPromise, seoPromise]);
+    // Fetch thumbnails for popular books directly (independent of daily_published status)
+    const popularBookThumbnailsPromise = popularBookIds.length > 0
+      ? (async () => {
+          console.log('  🎨 Fetching thumbnails for', popularBookIds.length, 'popular books...');
+          
+          // Try to get SEO metadata first (from ANY daily_published status)
+          const dpResult = await supabase
+            .from('daily_published')
+            .select('id, book_id, status')
+            .in('book_id', popularBookIds)
+            .order('created_at', { ascending: false });
+          
+          const bookToDpMap = new Map();
+          if (dpResult.data) {
+            // Keep only the most recent daily_published entry per book
+            dpResult.data.forEach(dp => {
+              if (!bookToDpMap.has(dp.book_id)) {
+                bookToDpMap.set(dp.book_id, dp.id);
+              }
+            });
+          }
+          
+          const dpIds = Array.from(bookToDpMap.values());
+          
+          // Get SEO metadata for those daily_published entries
+          let seoThumbnailMap = new Map();
+          if (dpIds.length > 0) {
+            const seoResult = await supabase
+              .from('seo_metadata')
+              .select('daily_published_id, og_image_url')
+              .in('daily_published_id', dpIds)
+              .eq('is_latest', true)
+              .eq('optimization_status', 'complete')
+              .not('og_image_url', 'is', null);
+            
+            if (seoResult.data) {
+              // Map book_id -> og_image_url
+              seoResult.data.forEach(seo => {
+                const bookId = Array.from(bookToDpMap.entries())
+                  .find(([, dpId]) => dpId === seo.daily_published_id)?.[0];
+                if (bookId) {
+                  seoThumbnailMap.set(bookId, seo.og_image_url);
+                }
+              });
+            }
+          }
+          
+          // Fallback: Get first page images for books without SEO thumbnails
+          const booksNeedingFallback = popularBookIds.filter(id => !seoThumbnailMap.has(id));
+          
+          if (booksNeedingFallback.length > 0) {
+            console.log(`  🔄 Falling back to page images for ${booksNeedingFallback.length} books`);
+            // Get all pages for these books
+            const pagesResult = await supabase
+              .from('pages')
+              .select('id, book_id, page_number')
+              .in('book_id', booksNeedingFallback)
+              .eq('page_number', 1);
+            
+            if (pagesResult.data && pagesResult.data.length > 0) {
+              const pageIds = pagesResult.data.map(p => p.id);
+              
+              // Get page images
+              const imagesResult = await supabase
+                .from('page_image_urls')
+                .select('page_id, image_url')
+                .in('page_id', pageIds)
+                .eq('is_latest', true)
+                .eq('generation_status', 'complete')
+                .not('image_url', 'is', null);
+              
+              if (imagesResult.data) {
+                // Map page_id -> book_id -> image_url
+                imagesResult.data.forEach(img => {
+                  const page = pagesResult.data.find(p => p.id === img.page_id);
+                  if (page && !seoThumbnailMap.has(page.book_id)) {
+                    seoThumbnailMap.set(page.book_id, img.image_url);
+                  }
+                });
+              }
+            }
+          }
+          
+          console.log(`  ✅ Found ${seoThumbnailMap.size}/${popularBookIds.length} popular book thumbnails`);
+          return { data: seoThumbnailMap, error: null };
+        })()
+      : Promise.resolve({ data: new Map(), error: null });
+
+    const [pagesResult, seoResult, popularThumbnailsResult] = await Promise.all([
+      pagesPromise, 
+      seoPromise,
+      popularBookThumbnailsPromise
+    ]);
 
     console.log('✅ Step 2 complete');
 
@@ -215,18 +307,14 @@ Deno.serve(async (req) => {
       ? new Map(seoMetadata.map((s: any) => [s.daily_published_id, { og_image_url: s.og_image_url, seo_title: s.seo_title }]))
       : new Map();
 
-    // Map images for popular books using library linkage to daily_published
-    let popularBooksWithImages = popularBooks;
-    if (popularBookIds.length > 0 && libraryBooks.length > 0) {
-      popularBooksWithImages = popularBooks.map(book => {
-        const dpEntry = libraryBooks.find(lb => lb.book_id === book.id);
-        const seoData = dpEntry ? seoMap.get(dpEntry.id) : null;
-        return {
-          ...book,
-          image_url: seoData?.og_image_url || null
-        };
-      });
-    }
+    // Map thumbnails for popular books using dedicated query
+    const popularThumbnailMap = popularThumbnailsResult.data || new Map();
+    const popularBooksWithImages = popularBooks.map(book => ({
+      ...book,
+      image_url: popularThumbnailMap.get(book.id) || null
+    }));
+
+    console.log(`🎨 Popular books with images: ${popularBooksWithImages.filter(b => b.image_url).length}/${popularBooks.length}`);
 
     // Map images for library books directly
     let libraryBooksWithImages = libraryBooks;

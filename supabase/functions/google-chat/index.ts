@@ -209,7 +209,7 @@ agent-decide: ✨ Let agent decide
 custom: ✨ Custom amount
 [/SUGGEST]"
 
-After they select a page count, generate that exact number of page concept ideas as a numbered list. Make each idea specific to their book's theme, character (if selected), and learning objectives. CRITICALLY IMPORTANT: After listing all the page concepts, you MUST include confirmation buttons. Format like this:
+After they select a page count, generate that exact number of page concept ideas as a numbered list. Make each idea specific to their book's theme, character (if selected), and learning objectives. CRITICALLY IMPORTANT: After listing all the page concepts, you MUST include confirmation buttons asking whether they want text overlays. Format like this:
 
 "Excellent! Here are 10 page concepts for 'Bluey and Bingo's Opposites Playtime Adventure':
 
@@ -224,14 +224,18 @@ After they select a page count, generate that exact number of page concept ideas
 9. Day vs Night - Morning adventures vs bedtime stories
 10. Open vs Closed - Opening presents vs closing the toy box
 
-Does this look good?
+Does this look good? Would you like the CVC words displayed as text on the images, or clean images without text?
 
 [SUGGEST]
-looks-good: ✨ Looks good, generate descriptions
-revise: 🔄 I want to revise these
-add-more: ➕ Add more pages
-remove-some: ➖ Remove some pages
+with-text: With Text
+without-text: Without Text
+adjust: Adjust
 [/SUGGEST]"
+
+IMPORTANT: These buttons mean:
+- "With Text" = Generate images WITH the CVC words overlaid as visible text on each illustration
+- "Without Text" = Generate images WITHOUT any text overlays (clean illustrations only)
+- "Adjust" = Allow the user to modify or revise the page concepts before generating
 
 GENERATING DETAILED PAGE DESCRIPTIONS (CRITICAL):
 After the user approves the page concepts, generate detailed image prompts for each page. These should be toddler storybook illustration descriptions in paragraph format. Include:

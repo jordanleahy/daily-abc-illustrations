@@ -78,20 +78,9 @@ export function QACheckpointPanel({
             onClick={() => {
               const prompt = getCurrentPagePrompt(currentQAPage);
               if (prompt) {
-                // Copy to clipboard
                 navigator.clipboard.writeText(prompt);
-                
-                // Open AI Studio in new tab with image generation model
-                window.open(
-                  'https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-flash-image',
-                  '_blank',
-                  'noopener,noreferrer'
-                );
-                
-                // Show instructions
-                toast.success('Prompt copied & AI Studio opened!', {
-                  description: 'Paste the prompt (Ctrl+V / Cmd+V) in AI Studio to generate the image',
-                  duration: 5000
+                toast.success(`Page ${currentQAPage} prompt copied!`, {
+                  description: 'Paste in your AI tool'
                 });
               }
             }}
@@ -200,7 +189,7 @@ export function QACheckpointPanel({
 
         {/* Help Text */}
         <div className="text-xs text-muted-foreground bg-muted/30 rounded p-3">
-          💡 <strong>Tip:</strong> Click Copy to open AI Studio, paste prompt (Ctrl+V), generate image, then upload here.
+          💡 <strong>Tip:</strong> Copy prompt, generate in your AI tool, upload image, then navigate or create book.
         </div>
       </div>
 

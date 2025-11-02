@@ -1383,30 +1383,6 @@ export type Database = {
         }
         Relationships: []
       }
-      user_text_overlay_defaults: {
-        Row: {
-          config: Json
-          created_at: string
-          id: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          config: Json
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          config?: Json
-          created_at?: string
-          id?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
     }
     Views: {
       active_daily_published: {

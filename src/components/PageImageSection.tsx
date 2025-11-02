@@ -322,6 +322,29 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               console.log('📱 Context menu triggered for mobile save');
             } : undefined}
           />
+          {/* Source indicator - only show for AI generated */}
+          {!isUserUploaded && (
+            <div className="absolute top-2 left-2">
+              <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
+                {costData && costData.totalCostCents > 0 ? (
+                  <>
+                    <DollarSign className="w-3 h-3" />
+                    <span>{costData.totalCostFormatted}</span>
+                    {costData.versionCount > 1 && (
+                      <span className="opacity-70 ml-0.5">
+                        ({costData.versionCount})
+                      </span>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-3 h-3" />
+                    AI Generated
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       ) : isGenerating ? (
         // Show shimmer skeleton while generating

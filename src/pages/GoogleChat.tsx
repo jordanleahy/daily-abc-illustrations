@@ -549,30 +549,17 @@ export default function GoogleChat() {
       reviewButtonVariant={createdBookId ? 'view-book' : 'review'}
     >
       <div className="fixed inset-0 top-[3.5rem] flex">
-        {/* Open/Close QA Panel Button - Desktop only, fixed in top right */}
-        {(shouldShowQACheckpoint || createdBookId) && (
+        {/* Open/Close QA Panel Button - Desktop only */}
+        {!showQACheckpoint && (shouldShowQACheckpoint || createdBookId) && (
           <Button
             onClick={() => {
-              if (showQACheckpoint) {
-                setShowQACheckpoint(false);
-              } else {
-                createdBookId ? handleViewCreatedBook() : handleOpenQAPanel();
-              }
+              createdBookId ? handleViewCreatedBook() : handleOpenQAPanel();
             }}
             className="hidden md:flex fixed top-20 right-6 z-40 shadow-lg animate-fade-in transition-all duration-300 ease-in-out hover:scale-105"
             size="sm"
           >
-            {showQACheckpoint ? (
-              <>
-                <ChevronRight className="h-4 w-4 mr-1" />
-                Close
-              </>
-            ) : (
-              <>
-                <ChevronLeft className="h-4 w-4 mr-1" />
-                Open
-              </>
-            )}
+            <ChevronLeft className="h-4 w-4 mr-1" />
+            Open
           </Button>
         )}
 

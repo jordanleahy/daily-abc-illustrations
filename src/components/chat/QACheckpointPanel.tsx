@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
+import { Shimmer } from '@/components/ui/shimmer';
 import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -240,18 +241,22 @@ export function QACheckpointPanel({
         {/* Create Book Button - Always visible when book not created */}
         {!isBookCreated && (
           <div className="space-y-2">
-            <Button
-              onClick={onCreateBook}
-              disabled={createBookMutation.isPending}
-              className="w-full gap-2"
-              size="sm"
-            >
-              <BookOpen className="h-4 w-4" />
-              {Object.keys(qaPageImages).length > 0
-                ? `Create Book (${Object.keys(qaPageImages).length} photo${Object.keys(qaPageImages).length > 1 ? 's' : ''})`
-                : 'Create Book'
-              }
-            </Button>
+            <Shimmer isShimmering={createBookMutation.isPending} className="rounded-md">
+              <Button
+                onClick={onCreateBook}
+                disabled={createBookMutation.isPending}
+                className="w-full gap-2"
+                size="sm"
+              >
+                <BookOpen className="h-4 w-4" />
+                {createBookMutation.isPending 
+                  ? 'Creating Book...'
+                  : Object.keys(qaPageImages).length > 0
+                    ? `Create Book (${Object.keys(qaPageImages).length} photo${Object.keys(qaPageImages).length > 1 ? 's' : ''})`
+                    : 'Create Book'
+                }
+              </Button>
+            </Shimmer>
             {Object.keys(qaPageImages).length === 0 && (
               <p className="text-xs text-muted-foreground text-center">
                 Photos optional • Add now or generate later

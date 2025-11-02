@@ -85,12 +85,24 @@ export function useGoogleChatSessions() {
       return data as ChatSession;
     },
     onSuccess: (updatedSession) => {
-      // Optimistic update: directly update the session in cache instead of refetching all
+      // Optimistic update: directly update the session in cache and re-sort
       queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions'], (old) => {
         if (!old) return [updatedSession];
-        return old.map(session => 
+        
+        // Update the session and re-sort by last_message_at (newest first)
+        const updated = old.map(session => 
           session.id === updatedSession.id ? updatedSession : session
         );
+        
+        return updated.sort((a, b) => {
+          // Sort by last_message_at descending (newest first)
+          const timeA = a.last_message_at ? new Date(a.last_message_at).getTime() : 0;
+          const timeB = b.last_message_at ? new Date(b.last_message_at).getTime() : 0;
+          if (timeB !== timeA) return timeB - timeA;
+          
+          // Fallback to created_at if last_message_at is equal
+          return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+        });
       });
     },
   });

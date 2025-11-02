@@ -139,8 +139,8 @@ export default function GoogleChat() {
       const dbPage = dbPages.find(p => p.page_number === pageNum);
       if (dbPage) {
         if (pageNum === 0) {
-          // Cover page from database
-          return `**Cover: \"${dbPage.title}\"**\n\n${dbPage.description || ''}\n\nCreate a vibrant, engaging cover illustration that captures this theme. Place the title "${dbPage.title}" prominently in the center of the image with clear, readable text.`;
+          // Cover page from database - only use book name as title
+          return `${dbPage.description || ''}\n\nAn educational children's book\n\nCreate a vibrant, engaging cover illustration that captures this theme. Place the title "${dbPage.title}" prominently in the center of the image with clear, readable text.`;
         }
         // Content page from database
         return `**Page ${pageNum}: \"${dbPage.title}\"**\n\n${dbPage.description || ''}`;
@@ -153,7 +153,7 @@ export default function GoogleChat() {
       const metadata = getBookMetadata(messages);
       if (!metadata) return null;
       
-      return `**Cover: \"${metadata.name}\"**\n\n${metadata.description}\n\nCreate a vibrant, engaging cover illustration that captures this theme. Place the title "${metadata.name}" prominently in the center of the image with clear, readable text.`;
+      return `${metadata.description}\n\nAn educational children's book\n\nCreate a vibrant, engaging cover illustration that captures this theme. Place the title "${metadata.name}" prominently in the center of the image with clear, readable text.`;
     }
     
     if (!parsedPageDetails || parsedPageDetails.length === 0) return null;

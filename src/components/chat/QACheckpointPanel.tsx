@@ -73,7 +73,7 @@ export function QACheckpointPanel({
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
-            size="icon"
+            size="sm"
             type="button"
             onClick={() => {
               const prompt = getCurrentPagePrompt(currentQAPage);
@@ -84,10 +84,11 @@ export function QACheckpointPanel({
                 });
               }
             }}
-            className="h-8 w-8"
-            aria-label="Copy prompt"
+            className="gap-1.5"
+            aria-label="Copy image prompt"
           >
             <Copy className="h-4 w-4" />
+            Copy Image Prompt
           </Button>
           <Button
             variant="ghost"

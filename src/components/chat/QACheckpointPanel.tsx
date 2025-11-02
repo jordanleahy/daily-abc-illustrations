@@ -53,9 +53,19 @@ export function QACheckpointPanel({
               {(() => {
                 const prompt = getCurrentPagePrompt(currentQAPage);
                 if (!prompt) return 'No title available';
-                // Extract title - it's usually the first line or the text before the first period/newline
+                
+                // Extract and clean the title
                 const titleMatch = prompt.match(/^(.+?)(?:\n|$)/);
-                return titleMatch ? titleMatch[1].trim() : prompt.substring(0, 100);
+                let title = titleMatch ? titleMatch[1].trim() : prompt.substring(0, 100);
+                
+                // Remove markdown formatting (**), page/cover prefixes, and quotes
+                title = title
+                  .replace(/\*\*/g, '') // Remove **
+                  .replace(/^(Page \d+:|Cover:)\s*/i, '') // Remove "Page X:" or "Cover:"
+                  .replace(/^["']|["']$/g, '') // Remove surrounding quotes
+                  .trim();
+                
+                return title || 'No title available';
               })()}
             </p>
           </div>

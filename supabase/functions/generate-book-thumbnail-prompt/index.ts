@@ -180,22 +180,26 @@ ${styleSection}
 - Ensure text elements are readable and prominent with clear negative space
 - Safe space: Keep key elements away from edges (15-20% margins left/right, 10% margins top/bottom)
 
-🚫 CRITICAL TEXT RESTRICTION:
-- DO NOT include any visible text, letters, words, titles, or labels in the generated image
-- NO book titles, subtitles, letter labels, or textual elements should be rendered
-- NO technical color codes, hex values, or color labels as visible text
-- Focus purely on visual illustration without any typography
-- Create compositions with main characters/visual elements positioned dynamically
-- The 16:9 landscape format provides wide horizontal space for character placement
-- Text overlays will be added separately in post-processing if needed
+✨ TITLE & TEXT REQUIREMENTS:
+- INCLUDE the book name "${book.book_name}" as the main title, prominently centered
+- Typography: Bold, child-friendly font that's highly readable and age-appropriate
+- Title color: Use colors from the palette above for consistency with the overall design
+- Ensure high contrast between title text and background for maximum readability
+- Title size: Large enough to be the primary focal point (should dominate the composition)
+- The title anchors the center while characters/visual elements flank it symmetrically
+- Text should feel integrated into the illustration style, not overlaid as a separate layer
+- Make the title feel like part of the artistic composition, naturally woven into the scene
+- Font style should match the educational, playful nature of the book's theme
+- The book title is the hero element - everything else supports and frames it
 
 
 🎯 TECHNICAL SPECS:
 - Aspect ratio: 16:9 (landscape format for social media sharing)
 - Dimensions: 1200x630 pixels (OpenGraph standard)
 - Resolution: High quality for web display
-- Text must be legible and professional
-- Thumbnail should be instantly recognizable
+- Book title text must be crystal clear, legible, and professional with excellent contrast
+- Typography should be bold and immediately readable from thumbnail size
+- Thumbnail should be instantly recognizable with the book title as the star element
 
 Your output must be a SINGLE, DIRECT image generation prompt paragraph. Do not provide options or explanations. The prompt must be ready to send directly to an image generator and must strictly follow all color palette requirements above.`;
 

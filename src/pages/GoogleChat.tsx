@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useMemo, useCallback, startTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Book, BookOpen, Menu } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
@@ -529,22 +529,28 @@ export default function GoogleChat() {
       reviewButtonVariant={createdBookId ? 'view-book' : 'review'}
     >
       <div className="fixed inset-0 top-[3.5rem] flex">
-        {/* Review/View Book Button - Desktop only, fixed in top right */}
-        {((shouldShowQACheckpoint && !showQACheckpoint) || createdBookId) && (
+        {/* Open/Close QA Panel Button - Desktop only, fixed in top right */}
+        {(shouldShowQACheckpoint || createdBookId) && (
           <Button
-            onClick={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
-            className="hidden md:flex fixed top-20 right-6 z-40 shadow-lg"
+            onClick={() => {
+              if (showQACheckpoint) {
+                setShowQACheckpoint(false);
+              } else {
+                createdBookId ? handleViewCreatedBook() : handleOpenQAPanel();
+              }
+            }}
+            className="hidden md:flex fixed top-20 right-6 z-40 shadow-lg animate-fade-in transition-all duration-300 ease-in-out hover:scale-105"
             size="sm"
           >
-            {createdBookId ? (
+            {showQACheckpoint ? (
               <>
-                <Book className="h-4 w-4 mr-1" />
-                View Book
+                <ChevronRight className="h-4 w-4 mr-1" />
+                Close
               </>
             ) : (
               <>
-                <BookOpen className="h-4 w-4 mr-1" />
-                Review Outline
+                <ChevronLeft className="h-4 w-4 mr-1" />
+                Open
               </>
             )}
           </Button>

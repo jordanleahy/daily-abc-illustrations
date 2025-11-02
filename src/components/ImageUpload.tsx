@@ -254,16 +254,16 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
             </div>
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center text-center space-y-3">
-            <Upload className="w-8 h-8 text-muted-foreground" />
-            <div>
+          <div className="flex flex-col items-center justify-center text-center space-y-4 h-full">
+            <Upload className="w-8 h-8 text-muted-foreground mx-auto" />
+            <div className="mx-auto">
               <p className="text-sm font-medium">Upload 1:1 Image</p>
               <p className="text-xs text-muted-foreground">
                 Drop, paste, or click to browse
               </p>
             </div>
             {isMobile && (
-              <div className="w-full mt-4 pt-4 border-t">
+              <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t">
                 <p className="text-xs text-muted-foreground text-center mb-3">
                   Or use clipboard
                 </p>
@@ -274,7 +274,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                   }}
                   variant="outline"
                   size="lg"
-                  className="w-full"
+                  className="w-full mx-auto"
                   disabled={disabled || isProcessing}
                 >
                   <Clipboard className="h-5 w-5 mr-2" />

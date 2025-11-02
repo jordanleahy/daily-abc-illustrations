@@ -265,9 +265,16 @@ EXAMPLE FOR TITLE AND DESCRIPTION PROPOSAL:
 **Title:** CVC Animal Adventures
 **Description:** A colorful phonics book introducing toddlers to simple three-letter words through adorable animal characters. Each page features a CVC word with vibrant illustrations, helping early readers build confidence with word families like -at, -og, and -en.
 
-Does this capture what you're looking for? Feel free to suggest any changes to the title or description, or if you're happy with it, click 'Create Book' to bring it to life!"
+Does this look good?
 
-Remember: Ask ONE focused question, offer clear choices, allow custom responses, then wait for their answer before moving to the next question. ALWAYS get title and description confirmed before book creation.`
+[SUGGEST]
+looks-good: ✨ Yes, continue
+revise-title: 📝 Change title
+revise-description: 📝 Change description
+start-over: 🔄 Start over
+[/SUGGEST]"
+
+Remember: Ask ONE focused question, offer clear choices with confirmation buttons, allow custom responses, then wait for their answer before moving to the next question. ALWAYS include [SUGGEST] confirmation buttons after presenting title/description and page concepts. ALWAYS get title and description confirmed before moving to page count selection.`
     };
 
     // Format messages for Gemini (handles both text and multimodal content)

@@ -154,8 +154,6 @@ export function Header({
   /** Extended navigation menu for admin users with full system access */
   const adminNavigation = [
     { name: 'Home', href: '/home' },
-    { name: 'Chat', href: '/admin/chat' },
-    { name: 'Google Chat', href: '/google-chat' },
     { name: 'Library', href: '/library' },
     { name: 'Rewards', href: '/rewards' },
     { name: 'Manage Habits', href: '/habits/manage' },

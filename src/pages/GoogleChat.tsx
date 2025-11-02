@@ -140,7 +140,7 @@ export default function GoogleChat() {
       if (dbPage) {
         if (pageNum === 0) {
           // Cover page from database
-          return `**Cover: \"${dbPage.title}\"**\n\n${dbPage.description || ''}\n\nCreate a vibrant, engaging 1:1 square illustration that captures this theme. Focus on the main subject or scene. Do not include any text, titles, logos, or publisher names - only the artwork.`;
+          return `**Cover: \"${dbPage.title}\"**\n\n${dbPage.description || ''}\n\nCreate a vibrant, engaging cover illustration that captures this theme. Place the title "${dbPage.title}" prominently in the center of the image with clear, readable text.`;
         }
         // Content page from database
         return `**Page ${pageNum}: \"${dbPage.title}\"**\n\n${dbPage.description || ''}`;
@@ -153,7 +153,7 @@ export default function GoogleChat() {
       const metadata = getBookMetadata(messages);
       if (!metadata) return null;
       
-      return `**Cover: \"${metadata.name}\"**\n\n${metadata.description}\n\nCreate a vibrant, engaging 1:1 square illustration that captures this theme. Focus on the main subject or scene. Do not include any text, titles, logos, or publisher names - only the artwork.`;
+      return `**Cover: \"${metadata.name}\"**\n\n${metadata.description}\n\nCreate a vibrant, engaging cover illustration that captures this theme. Place the title "${metadata.name}" prominently in the center of the image with clear, readable text.`;
     }
     
     if (!parsedPageDetails || parsedPageDetails.length === 0) return null;

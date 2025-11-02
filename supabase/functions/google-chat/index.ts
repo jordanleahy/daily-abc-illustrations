@@ -209,7 +209,7 @@ agent-decide: ✨ Let agent decide
 custom: ✨ Custom amount
 [/SUGGEST]"
 
-After they select a page count, generate that exact number of page concept ideas as a numbered list. Make each idea specific to their book's theme, character (if selected), and learning objectives. Format like this:
+After they select a page count, generate that exact number of page concept ideas as a numbered list. Make each idea specific to their book's theme, character (if selected), and learning objectives. CRITICALLY IMPORTANT: After listing all the page concepts, you MUST include confirmation buttons. Format like this:
 
 "Excellent! Here are 10 page concepts for 'Bluey and Bingo's Opposites Playtime Adventure':
 
@@ -229,6 +229,8 @@ Does this look good?
 [SUGGEST]
 looks-good: ✨ Looks good, generate descriptions
 revise: 🔄 I want to revise these
+add-more: ➕ Add more pages
+remove-some: ➖ Remove some pages
 [/SUGGEST]"
 
 GENERATING DETAILED PAGE DESCRIPTIONS (CRITICAL):

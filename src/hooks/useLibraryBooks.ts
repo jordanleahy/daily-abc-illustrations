@@ -42,21 +42,20 @@ export const useLibraryBooks = () => {
         console.error('Error fetching SEO metadata:', seoError);
       }
 
-      // Fetch first page images as fallback
-      const dpIds = dailyPublishedData?.map(dp => dp.book_id).filter(Boolean) || [];
+      // Fetch first page images as fallback - query from pages table
+      const bookIds = dailyPublishedData?.map(dp => dp.book_id).filter(Boolean) || [];
       const { data: firstPageImages, error: imageError } = await supabase
-        .from('page_image_urls')
+        .from('pages')
         .select(`
-          image_url,
-          pages!inner(
-            page_number,
-            book_id
+          book_id,
+          page_image_urls!inner(
+            image_url
           )
         `)
-        .in('pages.book_id', dpIds)
-        .eq('pages.page_number', 1)
-        .eq('is_latest', true)
-        .eq('generation_status', 'complete');
+        .in('book_id', bookIds)
+        .eq('page_number', 1)
+        .eq('page_image_urls.is_latest', true)
+        .eq('page_image_urls.generation_status', 'complete');
 
       if (imageError) {
         console.error('Error fetching first page images:', imageError);
@@ -73,7 +72,7 @@ export const useLibraryBooks = () => {
 
       // Map first page images by book_id
       const firstPageMap = new Map(
-        firstPageImages?.map((img: any) => [img.pages?.book_id, img.image_url]) || []
+        firstPageImages?.map((page: any) => [page.book_id, page.page_image_urls?.image_url]) || []
       );
 
       const enrichedData = dailyPublishedData?.map(item => {

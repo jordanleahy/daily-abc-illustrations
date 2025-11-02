@@ -20,8 +20,7 @@ const requestSchema = z.object({
   userId: z.string().uuid(),
   pageDetails: z.array(pageDetailSchema).optional(),
   qaImages: z.record(z.string()).optional(),
-  bookType: z.string().optional(),
-  generateCoverImage: z.boolean().optional()
+  bookType: z.string().optional()
 });
 
 serve(async (req) => {
@@ -32,7 +31,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages, bookType, generateCoverImage } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages, bookType } = validatedData;
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -532,50 +531,6 @@ Create an illustration that brings the page content to life while maintaining th
         is_active: false
       });
 
-    // Generate cover image if requested (non-blocking)
-    if (generateCoverImage) {
-      console.log('Generating cover image as requested...');
-      
-      try {
-        // Call generate-book-thumbnail-prompt to create the prompt
-        const { data: promptData, error: promptError } = await supabase.functions.invoke(
-          'generate-book-thumbnail-prompt',
-          {
-            body: { 
-              bookId: book.id, 
-              userId: userId 
-            }
-          }
-        );
-        
-        if (promptError || !promptData?.success) {
-          console.error('Cover prompt generation failed (non-blocking):', promptError);
-        } else {
-          console.log('Cover prompt generated:', promptData.thumbnailPrompt?.substring(0, 100));
-          
-          // Call generate-book-thumbnail to create the actual image
-          const { data: thumbnailData, error: thumbnailError } = await supabase.functions.invoke(
-            'generate-book-thumbnail',
-            {
-              body: {
-                bookId: book.id,
-                userId: userId,
-                customPrompt: promptData.thumbnailPrompt
-              }
-            }
-          );
-          
-          if (thumbnailError || !thumbnailData?.success) {
-            console.error('Cover image generation failed (non-blocking):', thumbnailError);
-          } else {
-            console.log('Cover image generated successfully:', thumbnailData.thumbnailUrl);
-          }
-        }
-      } catch (coverError) {
-        console.error('Cover generation error (non-blocking):', coverError);
-        // Continue - cover can be generated later if needed
-      }
-    }
 
     // Process QA images if provided
     if (qaImages && Object.keys(qaImages).length > 0) {

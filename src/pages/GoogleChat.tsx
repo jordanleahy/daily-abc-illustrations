@@ -32,7 +32,6 @@ export default function GoogleChat() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedBookType, setSelectedBookType] = useState<string | null>(null);
-  const [generateCover, setGenerateCover] = useState(true);
 
   // Detect mobile screen size
   useEffect(() => {
@@ -385,8 +384,7 @@ export default function GoogleChat() {
         conversationHistory: textMessages,
         pageDetails: pageDetails || undefined,
         qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined,
-        bookType: selectedBookType || undefined,
-        generateCoverImage: generateCover
+        bookType: selectedBookType || undefined
       });
       
       // Set local book ID immediately for UI responsiveness
@@ -683,7 +681,6 @@ export default function GoogleChat() {
             createdBookId={createdBookId}
             isMobile={isMobile}
             shouldShowOpenButton={!showQACheckpoint && (shouldShowQACheckpoint || !!createdBookId)}
-            generateCover={generateCover}
             onInputChange={setInput}
             onSend={handleSend}
             onKeyPress={handleKeyPress}
@@ -691,7 +688,6 @@ export default function GoogleChat() {
             onImageSelect={handleImageSelect}
             onViewBook={handleViewCreatedBook}
             onOpenQAPanel={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
-            onGenerateCoverToggle={setGenerateCover}
           />
         </div>
 

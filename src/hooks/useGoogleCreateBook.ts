@@ -19,6 +19,7 @@ interface CreateBookParams {
   pageDetails?: PageDetail[];
   qaImages?: Record<number, string>;
   bookType?: string;
+  generateCoverImage?: boolean;
 }
 
 interface CreateBookResponse {
@@ -33,7 +34,7 @@ export const useGoogleCreateBook = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ conversationHistory, pageDetails, qaImages, bookType }: CreateBookParams): Promise<CreateBookResponse> => {
+    mutationFn: async ({ conversationHistory, pageDetails, qaImages, bookType, generateCoverImage }: CreateBookParams): Promise<CreateBookResponse> => {
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
@@ -45,6 +46,7 @@ export const useGoogleCreateBook = () => {
           pageDetails: pageDetails || undefined,
           qaImages: qaImages || undefined,
           bookType: bookType || undefined,
+          generateCoverImage: generateCoverImage || false,
         },
       });
 

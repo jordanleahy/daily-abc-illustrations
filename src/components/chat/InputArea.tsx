@@ -2,6 +2,8 @@ import { memo } from 'react';
 import { Send, Image as ImageIcon, BookOpen, ChevronLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { ImageUpload } from '@/components/ImageUpload';
 import { cn } from '@/lib/utils';
 
@@ -12,6 +14,7 @@ interface InputAreaProps {
   createdBookId: string | null;
   isMobile: boolean;
   shouldShowOpenButton: boolean;
+  generateCover: boolean;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
@@ -19,6 +22,7 @@ interface InputAreaProps {
   onImageSelect: (file: File) => void;
   onViewBook: () => void;
   onOpenQAPanel: () => void;
+  onGenerateCoverToggle: (value: boolean) => void;
 }
 
 export const InputArea = memo(({
@@ -28,13 +32,15 @@ export const InputArea = memo(({
   createdBookId,
   isMobile,
   shouldShowOpenButton,
+  generateCover,
   onInputChange,
   onSend,
   onKeyPress,
   onImageUploadToggle,
   onImageSelect,
   onViewBook,
-  onOpenQAPanel
+  onOpenQAPanel,
+  onGenerateCoverToggle
 }: InputAreaProps) => {
   return (
     <div className="border-t bg-background p-4">
@@ -92,6 +98,20 @@ export const InputArea = memo(({
           />
         </div>
       )}
+      
+      <div className="mx-auto mt-3 max-w-4xl flex items-center gap-2">
+        <Checkbox 
+          id="generate-cover"
+          checked={generateCover}
+          onCheckedChange={onGenerateCoverToggle}
+        />
+        <Label 
+          htmlFor="generate-cover"
+          className="text-sm text-muted-foreground cursor-pointer"
+        >
+          Generate cover image when creating book (uses additional AI credits)
+        </Label>
+      </div>
     </div>
   );
 });

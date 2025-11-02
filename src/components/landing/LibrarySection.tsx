@@ -67,6 +67,11 @@ function LibraryBookCard({ item }: { item: LandingLibraryBook }) {
         <CardTitle className="text-xl line-clamp-2">
           {item.seo_title || item.title}
         </CardTitle>
+        {item.metadata?.targetAge && (
+          <p className="text-sm text-muted-foreground mt-1">
+            {item.metadata.targetAge}
+          </p>
+        )}
       </CardHeader>
     </Card>
   );

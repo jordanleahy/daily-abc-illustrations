@@ -57,9 +57,16 @@ function PopularBookCard({ book, priority = false }: { book: LandingPopularBook;
           )}
         </AspectRatio>
 
-        <h3 className="font-semibold text-lg mb-2 line-clamp-2">
-          {book.book_name}
-        </h3>
+        <div className="space-y-1">
+          <h3 className="font-semibold text-lg line-clamp-2">
+            {book.metadata?.bookType || book.book_name}
+          </h3>
+          {book.metadata?.targetAge && (
+            <p className="text-sm text-muted-foreground">
+              {book.metadata.targetAge}
+            </p>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

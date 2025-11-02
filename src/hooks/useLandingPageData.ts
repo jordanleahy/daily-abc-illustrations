@@ -28,6 +28,10 @@ export interface LandingPopularBook {
   status: string;
   is_highlighted: boolean;
   image_url: string | null;
+  metadata?: {
+    bookType?: string;
+    targetAge?: string;
+  };
 }
 
 export interface LandingLibraryBook {
@@ -41,6 +45,10 @@ export interface LandingLibraryBook {
   slug?: string | null;
   og_image_url: string | null;
   seo_title?: string | null;
+  metadata?: {
+    bookType?: string;
+    targetAge?: string;
+  };
 }
 
 export interface LandingPageData {

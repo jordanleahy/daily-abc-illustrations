@@ -48,7 +48,8 @@ Deno.serve(async (req) => {
           book_name,
           book_description,
           status,
-          is_highlighted
+          is_highlighted,
+          metadata
         `)
         .eq('status', 'published')
         .eq('is_highlighted', true)
@@ -67,7 +68,7 @@ Deno.serve(async (req) => {
           is_active,
           published_at,
           slug,
-          books!inner(id, book_name, book_description)
+          books!inner(id, book_name, book_description, metadata)
         `)
         .in('status', ['active', 'queued', 'expired'])
         .order('published_at', { ascending: false })
@@ -235,7 +236,8 @@ Deno.serve(async (req) => {
         return {
           ...lb,
           og_image_url: seoData?.og_image_url || null,
-          seo_title: seoData?.seo_title || null
+          seo_title: seoData?.seo_title || null,
+          metadata: lb.books?.metadata || null
         };
       });
     }

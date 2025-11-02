@@ -549,19 +549,6 @@ export default function GoogleChat() {
       reviewButtonVariant={createdBookId ? 'view-book' : 'review'}
     >
       <div className="fixed inset-0 top-[3.5rem] flex">
-        {/* Open/Close QA Panel Button - Desktop only */}
-        {!showQACheckpoint && (shouldShowQACheckpoint || createdBookId) && (
-          <Button
-            onClick={() => {
-              createdBookId ? handleViewCreatedBook() : handleOpenQAPanel();
-            }}
-            className="hidden md:flex fixed top-20 right-6 z-40 shadow-lg animate-fade-in transition-all duration-300 ease-in-out hover:scale-105"
-            size="sm"
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Open
-          </Button>
-        )}
 
         {/* Desktop: Always-visible Sidebar */}
         <div className={cn(
@@ -627,12 +614,14 @@ export default function GoogleChat() {
             showImageUpload={showImageUpload}
             createdBookId={createdBookId}
             isMobile={isMobile}
+            shouldShowOpenButton={!showQACheckpoint && (shouldShowQACheckpoint || !!createdBookId)}
             onInputChange={setInput}
             onSend={handleSend}
             onKeyPress={handleKeyPress}
             onImageUploadToggle={setShowImageUpload}
             onImageSelect={handleImageSelect}
-            onViewBook={handleOpenQAPanel}
+            onViewBook={handleViewCreatedBook}
+            onOpenQAPanel={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
           />
         </div>
 

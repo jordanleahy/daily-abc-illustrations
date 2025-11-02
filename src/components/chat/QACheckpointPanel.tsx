@@ -49,7 +49,15 @@ export function QACheckpointPanel({
             <h3 className="font-semibold text-sm">
               {currentQAPage === 0 ? 'Cover Page' : `Review Page ${currentQAPage}`}
             </h3>
-            <p className="text-xs text-muted-foreground">Page Title</p>
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              {(() => {
+                const prompt = getCurrentPagePrompt(currentQAPage);
+                if (!prompt) return 'No title available';
+                // Extract title - it's usually the first line or the text before the first period/newline
+                const titleMatch = prompt.match(/^(.+?)(?:\n|$)/);
+                return titleMatch ? titleMatch[1].trim() : prompt.substring(0, 100);
+              })()}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">

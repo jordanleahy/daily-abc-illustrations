@@ -52,7 +52,7 @@ export interface TextOverlayConfig {
 export const DEFAULT_TEXT_OVERLAY_CONFIG: TextOverlayConfig = {
   text: '',
   fontFamily: 'Arial',
-  fontSize: 72,
+  fontSize: 32,
   fontWeight: 'bold',
   color: '#FFFFFF',
   strokeColor: '#000000',

@@ -1,4 +1,4 @@
-import { MessageSquare, Plus, Trash2, Edit2, BookOpen } from 'lucide-react';
+import { MessageSquare, Plus, Trash2, Edit2, BookOpen, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { formatDistanceToNow } from 'date-fns';
@@ -107,7 +107,11 @@ export function ChatSessionSidebar({
               onMouseEnter={() => onPrefetchSession?.(session.id)}
             >
               <div className="flex items-start gap-2">
-                <MessageSquare className="h-4 w-4 mt-1 flex-shrink-0 text-muted-foreground" />
+                {session.created_book_id ? (
+                  <Check className="h-4 w-4 mt-1 flex-shrink-0 text-green-500" />
+                ) : (
+                  <MessageSquare className="h-4 w-4 mt-1 flex-shrink-0 text-muted-foreground" />
+                )}
                 <div className="flex-1 min-w-0">
                   {editingId === session.id ? (
                     <Input

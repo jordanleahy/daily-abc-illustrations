@@ -53,8 +53,42 @@ function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
           )}
         </AspectRatio>
 
-        {/* Book Metadata */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground">
+        {/* Book Metadata Badges */}
+        <div className="flex flex-wrap gap-2">
+          {book.metadata?.bookType && (
+            <Badge variant="secondary" className="capitalize">
+              {book.metadata.bookType.replace(/-/g, ' ')}
+            </Badge>
+          )}
+          {book.metadata?.pageCount && (
+            <Badge variant="outline">
+              {book.metadata.pageCount} pages
+            </Badge>
+          )}
+          {book.metadata?.numberRange && (
+            <Badge variant="outline">
+              Numbers {book.metadata.numberRange}
+            </Badge>
+          )}
+          {book.metadata?.characterTheme && (
+            <Badge variant="default" className="capitalize">
+              {book.metadata.characterTheme.replace(/-/g, ' ')}
+            </Badge>
+          )}
+          {book.metadata?.letterCase && (
+            <Badge variant="outline" className="capitalize">
+              {book.metadata.letterCase} letters
+            </Badge>
+          )}
+          {book.metadata?.targetAge && (
+            <Badge variant="secondary" className="capitalize">
+              {book.metadata.targetAge.replace(/-/g, ' ')}
+            </Badge>
+          )}
+        </div>
+
+        {/* Book Info */}
+        <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />

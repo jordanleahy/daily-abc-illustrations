@@ -162,6 +162,7 @@ export type Database = {
           current_system_prompt_id: string | null
           id: string
           is_highlighted: boolean
+          metadata: Json | null
           pdf_url: string | null
           product_description: string | null
           status: Database["public"]["Enums"]["publication_status"]
@@ -178,6 +179,7 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           is_highlighted?: boolean
+          metadata?: Json | null
           pdf_url?: string | null
           product_description?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
@@ -194,6 +196,7 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           is_highlighted?: boolean
+          metadata?: Json | null
           pdf_url?: string | null
           product_description?: string | null
           status?: Database["public"]["Enums"]["publication_status"]

@@ -1,4 +1,49 @@
 /**
+ * Structured metadata for book filtering and sorting
+ * Captured from user choices during book creation
+ */
+export interface BookMetadata {
+  /** Type of book created (abc, numbers, shapes, animals, etc.) */
+  bookType?: string;
+  /** Number of pages in the book */
+  pageCount?: number;
+  /** Target age group (toddler, preschool, early-reader) */
+  targetAge?: string;
+  
+  // ABC Book specific
+  /** Letter case preference for alphabet books */
+  letterCase?: 'lowercase' | 'uppercase' | 'both';
+  
+  // Numbers Book specific
+  /** Number range for counting books */
+  numberRange?: string;
+  /** Counting style (simple, skip-counting, number-families) */
+  countingStyle?: string;
+  
+  // Shapes Book specific
+  /** Shape complexity level */
+  shapeComplexity?: string;
+  /** Theme for shapes (nature, everyday-objects) */
+  shapeTheme?: string;
+  
+  // Animals Book specific
+  /** Animal category (farm, zoo, ocean, pets, mixed) */
+  animalCategory?: string;
+  /** Focus area for animals (sounds, habitats, characteristics) */
+  animalFocus?: string;
+  
+  // Sight Words Book specific
+  /** Reading level for sight words */
+  readingLevel?: string;
+  
+  // Universal
+  /** Character or theme (paw-patrol, dinosaurs, space, etc.) */
+  characterTheme?: string;
+  /** Flexible storage for future expansion */
+  customOptions?: Record<string, any>;
+}
+
+/**
  * Core book entity representing an educational ABC book
  * Contains metadata and configuration for the entire book
  */
@@ -29,6 +74,8 @@ export interface Book {
   is_highlighted?: boolean;
   /** Manual tags for organization and categorization */
   tags?: string[];
+  /** Structured metadata for filtering and sorting */
+  metadata?: BookMetadata;
   /** ISO timestamp when the book was created */
   created_at: string;
   /** ISO timestamp when the book was last modified */

@@ -75,6 +75,7 @@ CRITICAL INSTRUCTIONS:
 - You MUST use the exact page titles and descriptions provided below. Do NOT change them.
 - Do NOT include aspect ratio specifications (like "1:1", "16:9", etc.) in any titles or descriptions
 - Aspect ratios are handled separately by the image generation tool
+- EXTRACT metadata from the conversation (book type, page count, character theme, etc.)
 
 PROVIDED PAGE STRUCTURE:
 ${pageDetails.map(p => `Page ${p.pageNumber}: "${p.title}"\n${p.description}`).join('\n\n')}
@@ -86,12 +87,22 @@ Your task:
 4. For each page, maintain the exact title and description provided
 5. Add content fields (mainConcept, funFact, activity) for each page
 6. Assign appropriate letters for alphabet books (A-Z pattern)
+7. Extract and return metadata from conversation
 
 Return ONLY valid JSON with this structure:
 {
   "bookName": "string",
   "category": "string", 
   "bookDescription": "string",
+  "metadata": {
+    "bookType": "abc|numbers|shapes|colors|animals|etc",
+    "pageCount": ${pageDetails.length},
+    "letterCase": "lowercase|uppercase|both (for ABC books)",
+    "numberRange": "1-10 (for Numbers books)",
+    "countingStyle": "simple|skip-counting (for Numbers books)",
+    "characterTheme": "paw-patrol|dinosaurs|space|etc (if mentioned)",
+    "targetAge": "toddler|preschool|early-reader"
+  },
   "pages": [
     {
       "pageNumber": number,
@@ -129,6 +140,19 @@ IMPORTANT:
 - For alphabet books, include "letter" field with values matching the specified case format
 - Adjust page count based on book type and complexity
 - Make content age-appropriate and engaging
+- EXTRACT and RETURN metadata from the conversation (book type, page count preferences, themes, etc.)
+
+METADATA EXTRACTION:
+Analyze the conversation for:
+1. Book type selected (ABC, Numbers, Shapes, Animals, Sight Words, etc.)
+2. Number of pages requested (5, 10, 15, 20, custom, or "let agent decide")
+3. Letter case preference (for ABC books: lowercase, uppercase, both)
+4. Number range and counting style (for Numbers books: 1-10, 1-20, simple, skip-counting)
+5. Shape complexity and theme (for Shapes books)
+6. Animal category and focus (for Animals books)
+7. Reading level (for Sight Words books)
+8. Character/theme mentions (Paw Patrol, dinosaurs, space, etc.)
+9. Target age group (toddler, preschool, early-reader)
 
 Return ONLY a JSON object with this structure (no markdown, no code blocks):
 {
@@ -137,6 +161,20 @@ Return ONLY a JSON object with this structure (no markdown, no code blocks):
   "bookDescription": "string",
   "bookType": "story|alphabet|educational|chapter",
   "letterCase": "lowercase|uppercase|both (only for alphabet books)",
+  "metadata": {
+    "bookType": "abc|numbers|shapes|colors|animals|sight-words|etc",
+    "pageCount": <number or null>,
+    "targetAge": "toddler|preschool|early-reader",
+    "letterCase": "lowercase|uppercase|both (for ABC books)",
+    "numberRange": "1-10|1-20|1-100 (for Numbers books)",
+    "countingStyle": "simple|skip-counting|number-families (for Numbers books)",
+    "shapeComplexity": "basic|2d-and-3d|advanced (for Shapes books)",
+    "shapeTheme": "nature|everyday-objects (for Shapes books)",
+    "animalCategory": "farm|zoo|ocean|pets|mixed (for Animals books)",
+    "animalFocus": "sounds|habitats|characteristics (for Animals books)",
+    "readingLevel": "pre-k|grade-1|grade-2 (for Sight Words books)",
+    "characterTheme": "paw-patrol|dinosaurs|space|etc (if mentioned)"
+  },
   "pages": [
     {
       "letter": "required for alphabet books - use format matching letterCase",
@@ -231,6 +269,26 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       throw new Error('Invalid book data structure from AI response');
     }
 
+    // Extract and validate metadata
+    const metadata = bookData.metadata || {};
+    const validatedMetadata = {
+      bookType: metadata.bookType || bookData.bookType || 'custom',
+      pageCount: bookData.pages.length,
+      targetAge: metadata.targetAge,
+      letterCase: metadata.letterCase || bookData.letterCase,
+      numberRange: metadata.numberRange,
+      countingStyle: metadata.countingStyle,
+      shapeComplexity: metadata.shapeComplexity,
+      shapeTheme: metadata.shapeTheme,
+      animalCategory: metadata.animalCategory,
+      animalFocus: metadata.animalFocus,
+      readingLevel: metadata.readingLevel,
+      characterTheme: metadata.characterTheme,
+      customOptions: {}
+    };
+
+    console.log('Extracted metadata:', validatedMetadata);
+
     console.log(`Creating book: ${bookData.bookName} with ${bookData.pages.length} pages`);
     
     // Validate against provided page details if they exist
@@ -268,7 +326,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       }
     }));
 
-    // Insert book with sanitized data
+    // Insert book with sanitized data and metadata
     const { data: book, error: bookError } = await supabase
       .from('books')
       .insert({
@@ -277,7 +335,8 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         category: sanitizeText(bookData.category || 'General', 100),
         book_description: sanitizeText(bookData.bookDescription || '', 1000),
         total_pages: sanitizedPages.length + 1, // Add 1 for cover page
-        status: 'draft'
+        status: 'draft',
+        metadata: validatedMetadata
       })
       .select()
       .single();

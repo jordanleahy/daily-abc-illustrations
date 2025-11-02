@@ -12,6 +12,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { X, Download, Info } from 'lucide-react';
 import { useTextOverlay } from '@/hooks/useTextOverlay';
 import { useBookThumbnailTextOverlay } from '@/hooks/useBookThumbnailTextOverlay';
+import { useUserTextOverlayDefaults } from '@/hooks/useUserTextOverlayDefaults';
 import { drawTextOnCanvas, loadImageFromUrl, loadGoogleFont } from '@/utils/textOverlayProcessor';
 import { toast } from 'sonner';
 import { 
@@ -55,8 +56,11 @@ export function ImageTextOverlayEditor({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   
+  // Load user's custom defaults
+  const { effectiveDefaults, hasCustomDefaults, saveDefaults, resetDefaults, isSaving } = useUserTextOverlayDefaults(userId);
+  
   const [config, setConfig] = useState<TextOverlayConfig>({
-    ...DEFAULT_TEXT_OVERLAY_CONFIG,
+    ...effectiveDefaults,
     ...existingConfig,
     text: existingConfig?.text || defaultText,
   });
@@ -82,12 +86,12 @@ export function ImageTextOverlayEditor({
   useEffect(() => {
     if (open) {
       setConfig({
-        ...DEFAULT_TEXT_OVERLAY_CONFIG,
+        ...effectiveDefaults,
         ...existingConfig,
         text: existingConfig?.text || defaultText,
       });
     }
-  }, [open, existingConfig, defaultText]);
+  }, [open, existingConfig, defaultText, effectiveDefaults]);
 
   const updatePreview = useCallback(async () => {
     if (!canvasRef.current || !imageRef.current) return;
@@ -144,6 +148,18 @@ export function ImageTextOverlayEditor({
   const handleRemove = () => {
     removeTextOverlay();
     onOpenChange(false);
+  };
+
+  const handleSetAsDefault = () => {
+    saveDefaults(config);
+  };
+
+  const handleResetToSystemDefaults = () => {
+    resetDefaults();
+    setConfig({
+      ...DEFAULT_TEXT_OVERLAY_CONFIG,
+      text: config.text, // Keep the current text
+    });
   };
 
   const handleDownload = () => {
@@ -535,6 +551,14 @@ export function ImageTextOverlayEditor({
             >
               <Download className="w-4 h-4" />
               Download Preview
+            </Button>
+            <Button 
+              variant="secondary" 
+              onClick={handleSetAsDefault}
+              disabled={isSaving}
+              title="Save these settings as your default for future text overlays"
+            >
+              {isSaving ? 'Saving...' : 'Set as Default'}
             </Button>
           </div>
           <div className="flex gap-2 justify-end">

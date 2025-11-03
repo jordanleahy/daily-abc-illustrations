@@ -27,9 +27,7 @@ serve(async (req) => {
   try {
     logStep("Function started");
 
-    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
-    if (!stripeKey) throw new Error("STRIPE_SECRET_KEY is not set");
-    logStep("Stripe key verified");
+    // Stripe key will be checked only after successful authentication
 
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
@@ -74,6 +72,16 @@ serve(async (req) => {
       });
     }
     logStep("User authenticated", { userId: user.id, email: user.email });
+
+    // Retrieve Stripe key only after authentication
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      logStep("Stripe key missing - returning unsubscribed");
+      return new Response(JSON.stringify({ subscribed: false }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
 
     // Query Stripe API directly - single source of truth
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });

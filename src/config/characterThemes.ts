@@ -26,27 +26,3 @@ export const characterThemes: Record<string, CharacterTheme> = {
   }
 };
 
-export const getThemeByLabel = (label: string): CharacterTheme | undefined => {
-  // Remove all emojis (comprehensive Unicode ranges), punctuation, and filler words
-  const cleanedLabel = label
-    .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '')
-    .replace(/[^\w\s-]/g, '') // Remove punctuation
-    .replace(/\b(themed|book|the|a|an)\b/gi, '') // Remove filler words
-    .trim()
-    .toLowerCase()
-    .replace(/\s+/g, '-');
-  
-  // Try exact match first
-  if (characterThemes[cleanedLabel]) {
-    return characterThemes[cleanedLabel];
-  }
-  
-  // Try substring matching (label contains theme key or vice versa)
-  for (const [key, theme] of Object.entries(characterThemes)) {
-    if (cleanedLabel.includes(key) || key.includes(cleanedLabel)) {
-      return theme;
-    }
-  }
-  
-  return undefined;
-};

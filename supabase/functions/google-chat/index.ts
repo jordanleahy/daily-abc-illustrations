@@ -15,6 +15,7 @@ interface SuggestedAction {
   id: string;
   label: string;
   value: string;
+  themeId?: string;
 }
 
 interface Message {
@@ -37,6 +38,13 @@ function parseSuggestions(aiResponse: string): {
   const suggestionsText = match[1].trim();
   const cleanContent = aiResponse.replace(suggestRegex, '').trim();
   
+  // Known character themes that have image thumbnails
+  const CHARACTER_THEMES = new Set([
+    'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
+    'moana', 'mickey-mouse', 'spider-man', 'toy-story', 
+    'sonic', 'pokemon', 'mario', 'daniel-tiger'
+  ]);
+
   const suggestedActions = suggestionsText
     .split('\n')
     .filter(line => line.trim())
@@ -50,7 +58,8 @@ function parseSuggestions(aiResponse: string): {
       return {
         id,
         label,
-        value: id === 'custom' ? '' : `${label}`
+        value: id === 'custom' ? '' : `${label}`,
+        themeId: CHARACTER_THEMES.has(id) ? id : undefined
       };
     })
     .filter((action): action is SuggestedAction => action !== null);

@@ -5,7 +5,7 @@ import { cn } from '@/lib/utils';
 import type { Message } from '@/hooks/useGoogleChat';
 import type { SuggestedAction } from '@/hooks/useGoogleChat';
 import { ImageButton } from './ImageButton';
-import { getThemeByLabel } from '@/config/characterThemes';
+import { characterThemes } from '@/config/characterThemes';
 
 interface MessageItemProps {
   message: Message;
@@ -40,7 +40,7 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
         {message.suggestedActions && message.suggestedActions.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2">
             {message.suggestedActions.map((action) => {
-              const theme = getThemeByLabel(action.label);
+              const theme = action.themeId ? characterThemes[action.themeId] : undefined;
               
               if (theme) {
                 return (

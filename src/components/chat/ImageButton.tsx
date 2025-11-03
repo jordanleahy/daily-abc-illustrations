@@ -24,7 +24,6 @@ export const ImageButton = memo(({
       onClick();
     }
   };
-  const resolvedSrc = imageSrc.startsWith('/') ? `${import.meta.env.BASE_URL}${imageSrc.slice(1)}` : imageSrc;
 
   return (
     <div
@@ -44,7 +43,7 @@ export const ImageButton = memo(({
     >
       <AspectRatio ratio={1}>
         <img
-          src={resolvedSrc}
+          src={imageSrc}
           alt={altText}
           className="h-full w-full object-cover"
           loading="lazy"

@@ -16,6 +16,7 @@ export interface SuggestedAction {
   id: string;
   label: string;
   value: string;
+  themeId?: string;
 }
 
 export interface Message {

@@ -13,10 +13,9 @@ import { useCreateRewardsProduct } from '@/hooks/useCreateRewardsProduct';
 import { useUpdateRewardsProduct } from '@/hooks/useUpdateRewardsProduct';
 import { formatCoinsAsCurrency } from '@/utils/currency';
 import type { RewardsProduct } from '@/types/rewardsProduct';
+import { ModalProps } from '@/types/shared';
 
-interface CreateProductModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface CreateProductModalProps extends ModalProps {
   editProduct?: RewardsProduct;
 }
 

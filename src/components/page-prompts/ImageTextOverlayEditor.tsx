@@ -20,12 +20,11 @@ import {
   TEXT_OVERLAY_PRESETS,
   type TextOverlayConfig 
 } from '@/types/textOverlay';
+import { ModalProps } from '@/types/shared';
 
 type EditorMode = 'page' | 'thumbnail';
 
-interface ImageTextOverlayEditorProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface ImageTextOverlayEditorProps extends ModalProps {
   imageUrl: string;
   defaultText: string;
   mode?: EditorMode;

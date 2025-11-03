@@ -9,11 +9,10 @@ import { useUpdateKidProfile } from '@/hooks/useKidProfileMutations';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { KidProfile } from '@/hooks/useKidProfiles';
+import { ModalProps } from '@/types/shared';
 
-interface EditKidModalProps {
+interface EditKidModalProps extends ModalProps {
   kid: KidProfile | null;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
 }
 
 export const EditKidModal: React.FC<EditKidModalProps> = ({ kid, open, onOpenChange }) => {

@@ -10,11 +10,9 @@ import { useCreateHabit } from '@/hooks/useCreateHabit';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { HabitFrequency } from '@/types/habit';
 import { Loader2, X } from 'lucide-react';
+import { ModalProps } from '@/types/shared';
 
-interface CreateHabitModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
+interface CreateHabitModalProps extends ModalProps {}
 
 export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) {
   const [title, setTitle] = useState('');

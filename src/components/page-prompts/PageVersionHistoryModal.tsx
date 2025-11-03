@@ -12,10 +12,9 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Play, RotateCcw, Clock, User } from 'lucide-react';
 import { PageSystemPromptVersion } from '@/types/pageSystemPrompt';
+import { ModalProps } from '@/types/shared';
 
-interface PageVersionHistoryModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface PageVersionHistoryModalProps extends ModalProps {
   versions: PageSystemPromptVersion[];
   currentVersionId?: string;
   onClose: () => void;

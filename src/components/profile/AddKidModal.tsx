@@ -8,11 +8,9 @@ import { Upload, X } from 'lucide-react';
 import { useCreateKidProfile } from '@/hooks/useKidProfileMutations';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { ModalProps } from '@/types/shared';
 
-interface AddKidModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
+interface AddKidModalProps extends ModalProps {}
 
 export const AddKidModal: React.FC<AddKidModalProps> = ({ open, onOpenChange }) => {
   const { user } = useAuthContext();

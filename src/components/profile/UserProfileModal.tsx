@@ -11,11 +11,9 @@ import { ProfileInfoTab } from './ProfileInfoTab';
 import { AccountSettingsTab } from './AccountSettingsTab';
 import { SubscriptionTab } from './SubscriptionTab';
 import { KidsManagementTab } from './KidsManagementTab';
+import { ModalProps } from '@/types/shared';
 
-interface UserProfileModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
+interface UserProfileModalProps extends ModalProps {}
 
 type TabType = 'profile' | 'account' | 'subscription' | 'kids';
 

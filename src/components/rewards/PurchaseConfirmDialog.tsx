@@ -11,10 +11,9 @@ import {
 import { CoinCounter } from '@/components/ui/coin-counter';
 import type { RewardsProduct } from '@/types/rewardsProduct';
 import { formatCoinsAsCurrency } from '@/utils/currency';
+import { ModalProps } from '@/types/shared';
 
-interface PurchaseConfirmDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface PurchaseConfirmDialogProps extends ModalProps {
   product: RewardsProduct | null;
   currentCoins: number;
   onConfirm: () => void;

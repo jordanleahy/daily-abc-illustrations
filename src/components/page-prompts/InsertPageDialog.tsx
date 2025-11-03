@@ -4,10 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { ModalProps } from '@/types/shared';
 
-interface InsertPageDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface InsertPageDialogProps extends ModalProps {
   onInsert: (title: string, description: string) => Promise<void>;
   position: 'before' | 'after';
   referencePage: string; // page title for context

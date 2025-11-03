@@ -8,10 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useUpdateHabit } from '@/hooks/useUpdateHabit';
 import { Habit, HabitFrequency } from '@/types/habit';
 import { Loader2, X } from 'lucide-react';
+import { ModalProps } from '@/types/shared';
 
-interface EditHabitModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface EditHabitModalProps extends ModalProps {
   habit: Habit | null;
 }
 

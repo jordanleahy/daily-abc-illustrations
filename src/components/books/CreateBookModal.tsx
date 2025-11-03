@@ -15,11 +15,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useCreateBlankBook } from '@/hooks/useCreateBlankBook';
 import { useCreateThemedBook } from '@/hooks/useCreateThemedBook';
 import { BookOpen, MessageSquare, Zap, Sparkles } from 'lucide-react';
+import { ModalProps } from '@/types/shared';
 
-interface CreateBookModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}
+interface CreateBookModalProps extends ModalProps {}
 
 const categories = [
   'Animals',

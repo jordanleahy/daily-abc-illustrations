@@ -12,10 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCreatePage } from '@/hooks/useCreatePage';
+import { ModalProps } from '@/types/shared';
 
-interface CreatePageModalProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+interface CreatePageModalProps extends ModalProps {
   bookId: string;
   existingPages: number;
 }

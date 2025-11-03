@@ -5,7 +5,7 @@ export interface CharacterTheme {
 }
 
 export const CHARACTER_THEMES: Record<string, CharacterTheme> = {
-  'paw-patrol': { id: 'paw-patrol', altText: 'Paw Patrol' },
+  'paw-patrol': { id: 'paw-patrol', thumbnail: '/themes/paw-patrol.png', altText: 'Paw Patrol' },
   'frozen': { id: 'frozen', altText: 'Frozen' },
   'peppa-pig': { id: 'peppa-pig', altText: 'Peppa Pig' },
   'bluey': { id: 'bluey', altText: 'Bluey' },

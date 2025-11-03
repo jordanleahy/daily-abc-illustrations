@@ -14,6 +14,8 @@ interface MessageItemProps {
 
 const slugify = (text: string): string => {
   return text
+    .normalize('NFD') // split accented characters
+    .replace(/[\u0300-\u036f]/g, '') // remove diacritics
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
@@ -48,11 +50,13 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
           <div className="flex flex-wrap gap-2 pt-2">
             {message.suggestedActions.map((action) => {
               // Try themeId first, then fallback to slugified label
-              let theme = action.themeId ? characterThemes[action.themeId] : undefined;
-              if (!theme) {
-                const slugifiedLabel = slugify(action.label);
-                theme = characterThemes[slugifiedLabel];
-              }
+let theme = action.themeId
+  ? (characterThemes[action.themeId] ?? characterThemes[slugify(action.themeId)])
+  : undefined;
+if (!theme) {
+  const slugifiedLabel = slugify(action.label);
+  theme = characterThemes[slugifiedLabel];
+}
               
               if (theme) {
                 return (

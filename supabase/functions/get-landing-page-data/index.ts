@@ -315,18 +315,61 @@ Deno.serve(async (req) => {
 
     console.log(`🎨 Popular books with images: ${popularBooksWithImages.filter(b => b.image_url).length}/${popularBooks.length}`);
 
-    // Map images for library books directly
+    // Map images for library books with fallback to first page images
     let libraryBooksWithImages = libraryBooks;
     if (libraryDpIds.length > 0) {
+      // Get book_ids that need fallback images
+      const booksNeedingFallback = libraryBooks
+        .filter(lb => !seoMap.get(lb.id)?.og_image_url)
+        .map(lb => lb.book_id);
+      
+      let fallbackImageMap = new Map();
+      
+      // Fetch first page images for books without SEO images
+      if (booksNeedingFallback.length > 0) {
+        console.log(`🔄 Fetching fallback images for ${booksNeedingFallback.length} library books`);
+        
+        const pagesResult = await supabase
+          .from('pages')
+          .select('id, book_id, page_number')
+          .in('book_id', booksNeedingFallback)
+          .eq('page_number', 1);
+        
+        if (pagesResult.data && pagesResult.data.length > 0) {
+          const pageIds = pagesResult.data.map(p => p.id);
+          const imagesResult = await supabase
+            .from('page_image_urls')
+            .select('page_id, image_url')
+            .in('page_id', pageIds)
+            .eq('is_latest', true)
+            .not('image_url', 'is', null);
+          
+          if (imagesResult.data) {
+            imagesResult.data.forEach(img => {
+              const page = pagesResult.data.find(p => p.id === img.page_id);
+              if (page) {
+                fallbackImageMap.set(page.book_id, img.image_url);
+              }
+            });
+          }
+          
+          console.log(`✅ Found ${fallbackImageMap.size} fallback images`);
+        }
+      }
+      
       libraryBooksWithImages = libraryBooks.map(lb => {
         const seoData = seoMap.get(lb.id);
+        const fallbackImage = fallbackImageMap.get(lb.book_id);
+        
         return {
           ...lb,
-          og_image_url: seoData?.og_image_url || null,
+          og_image_url: seoData?.og_image_url || fallbackImage || null,
           seo_title: seoData?.seo_title || null,
           metadata: lb.books?.metadata || null
         };
       });
+      
+      console.log(`🖼️ Library books with images: ${libraryBooksWithImages.filter(b => b.og_image_url).length}/${libraryBooks.length}`);
     }
 
     const endTime = Date.now();

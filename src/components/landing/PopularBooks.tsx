@@ -7,16 +7,22 @@ import { LandingPopularBook } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { PopularBookSkeleton } from '@/components/ui/book-card-skeleton';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 function PopularBookCard({ book, priority = false }: { book: LandingPopularBook; priority?: boolean }) {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuthContext();
   const { ref, inView } = useIntersectionObserver({
     rootMargin: '50px', // Start loading 50px before entering viewport
     triggerOnce: true,
   });
 
   const handleCardClick = () => {
-    navigate('/pricing');
+    if (isAuthenticated) {
+      navigate(`/library/${book.id}`);
+    } else {
+      navigate('/pricing');
+    }
   };
 
   // Priority images (first 3) should load immediately without intersection observer

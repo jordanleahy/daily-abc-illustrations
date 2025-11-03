@@ -12,6 +12,13 @@ interface MessageItemProps {
   onQuickReply?: (action: SuggestedAction) => void;
 }
 
+const slugify = (text: string): string => {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+};
+
 export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) => {
   const isUser = message.role === 'user';
   
@@ -40,7 +47,12 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
         {message.suggestedActions && message.suggestedActions.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2">
             {message.suggestedActions.map((action) => {
-              const theme = action.themeId ? characterThemes[action.themeId] : undefined;
+              // Try themeId first, then fallback to slugified label
+              let theme = action.themeId ? characterThemes[action.themeId] : undefined;
+              if (!theme) {
+                const slugifiedLabel = slugify(action.label);
+                theme = characterThemes[slugifiedLabel];
+              }
               
               if (theme) {
                 return (

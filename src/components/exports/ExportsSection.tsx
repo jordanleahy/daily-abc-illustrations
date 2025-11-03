@@ -357,17 +357,26 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
    */
   useEffect(() => {
     const autoAddToQueue = async () => {
+      console.log('🔍 Auto-add effect triggered:', {
+        contentType,
+        bookStatus: bookData?.status,
+        isCheckingPublication,
+        existingPublicationStatus: existingPublication?.status,
+        existingPublicationId: existingPublication?.id
+      });
+
       // Only proceed if:
       // 1. Content is a book
       // 2. Book status is 'published'
-      // 3. No existing publication (or only draft/expired)
-      // 4. Not currently checking publication status
+      // 3. Not currently checking publication status (CRITICAL - prevents race condition)
+      // 4. No existing publication (or only draft/expired)
       if (
         contentType !== 'book' || 
         bookData?.status !== PublicationStatus.PUBLISHED ||
         isCheckingPublication ||
         (existingPublication && ['queued', 'active'].includes(existingPublication.status))
       ) {
+        console.log('⏭️ Auto-add skipped - conditions not met');
         return;
       }
 
@@ -378,7 +387,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     };
 
     autoAddToQueue();
-  }, [contentType, bookData?.status, existingPublication]);
+  }, [contentType, bookData?.status, existingPublication, isCheckingPublication]);
 
   /**
    * Formats a date string to a readable format with full details
@@ -831,6 +840,44 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
        return;
      }
 
+     // DUPLICATE PREVENTION: Check database directly for existing queued/active entries
+     // This provides a fail-safe even if local state is out of sync
+     console.log('🔍 Checking for existing queued/active publications...');
+     const { data: existingQueuedOrActive, error: checkError } = await supabase
+       .from('daily_published')
+       .select('id, status, slug, publish_date')
+       .eq('book_id', contentId)
+       .in('status', ['queued', 'active'])
+       .maybeSingle();
+
+     if (checkError) {
+       console.error('Error checking for duplicates:', checkError);
+       toast({
+         title: "Queue Check Failed",
+         description: "Unable to verify queue status. Please try again.",
+         variant: "destructive"
+       });
+       return;
+     }
+
+     if (existingQueuedOrActive) {
+       console.log('⚠️ Duplicate prevented - existing publication found:', existingQueuedOrActive);
+       toast({
+         title: "Already in Queue",
+         description: `This book is already ${existingQueuedOrActive.status}. Check the schedule to view its status.`,
+         variant: "default"
+       });
+       
+       // Update local state to match database reality
+       setExistingPublication(existingQueuedOrActive);
+       
+       // Open the queue page to show existing entry
+       window.open('/daily-published-schedule', '_blank');
+       return;
+     }
+
+     console.log('✅ No duplicates found - proceeding with queue addition');
+
      // Helper function to generate QR code after successful queue addition
      const generateQRCodeSafely = async () => {
        if (contentType === 'book' && generateQRCode) {
@@ -979,13 +1026,42 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     } catch (error: any) {
       console.error('Error adding to queue:', error);
       
-      // Check if this is a duplicate publication error
+      // Check for specific error types with user-friendly messages
       if (error.message?.includes('Only one publication can be active')) {
         toast({
           title: "Publication Limit Reached",
           description: "Only one book can be published daily. Please wait until tomorrow or contact support.",
           variant: "destructive"
         });
+        return;
+      }
+      
+      // Handle duplicate key constraint violations
+      if (error.message?.includes('duplicate key value') || 
+          error.code === '23505' || 
+          error.message?.includes('unique constraint')) {
+        console.error('Duplicate constraint violation:', error);
+        toast({
+          title: "Already in Queue",
+          description: "This book is already in the publication queue. Check the schedule to view its status.",
+          variant: "default"
+        });
+        
+        // Refresh publication data to get latest state
+        const { data: refreshed } = await supabase
+          .from('daily_published')
+          .select('*')
+          .eq('book_id', contentId)
+          .in('status', ['queued', 'active', 'draft'])
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (refreshed) {
+          setExistingPublication(refreshed);
+        }
+        
+        window.open('/daily-published-schedule', '_blank');
         return;
       }
 

@@ -37,6 +37,27 @@ export const InputArea = memo(({
   onOpenQAPanel
 }: InputAreaProps) => {
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      
+      // Check if the pasted item is an image
+      if (item.type.indexOf('image') !== -1) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          onImageSelect(file);
+          // Auto-show the image upload section when image is pasted
+          onImageUploadToggle(true);
+        }
+        break;
+      }
+    }
+  };
+
   return (
     <div className="border-t bg-background p-4">
       <div className="mx-auto flex max-w-4xl gap-2">
@@ -54,6 +75,7 @@ export const InputArea = memo(({
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyPress={onKeyPress}
+          onPaste={handlePaste}
           placeholder="Message Gemini..."
           disabled={isLoading}
           className="flex-1"

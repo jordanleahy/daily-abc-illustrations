@@ -109,7 +109,7 @@ serve(async (req) => {
     }
 
     // Fetch user's style templates
-    const { data: styleTemplates } = await supabaseClient
+    const { data: styleTemplates } = await supabase
       .from('books')
       .select('id, book_name, style_name')
       .eq('user_id', user.id)

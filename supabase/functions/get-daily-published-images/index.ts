@@ -10,7 +10,6 @@ interface PageImage {
   letter: string;
   page_number: number;
   image_url: string;
-  placeholder_base64?: string | null;
 }
 
 Deno.serve(async (req) => {
@@ -89,7 +88,7 @@ Deno.serve(async (req) => {
     const pageIds = pages.map(p => p.id);
     const { data: imageUrls, error: imagesError } = await supabase
       .from('page_image_urls')
-      .select('page_id, image_url, placeholder_base64')
+      .select('page_id, image_url')
       .in('page_id', pageIds)
       .eq('is_latest', true)
       .not('image_url', 'is', null);
@@ -115,7 +114,6 @@ Deno.serve(async (req) => {
           letter: page.letter,
           page_number: page.page_number,
           image_url: imageData?.image_url || '',
-          placeholder_base64: imageData?.placeholder_base64 || null,
         };
       });
 

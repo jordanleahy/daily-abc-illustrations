@@ -161,10 +161,11 @@ serve(async (req) => {
     const layoutFlow = styleGuideJSON?.compositionGuidelines?.layoutFlow || 'balanced composition';
     const focusHierarchy = styleGuideJSON?.compositionGuidelines?.focusHierarchy || 'centered focal point';
 
-    // Shorten title to max 4 words for better thumbnail readability
-    const shortenedTitle = book.book_name.split(' ').slice(0, 4).join(' ');
-    console.log('Original title:', book.book_name);
-    console.log('Shortened title (max 4 words):', shortenedTitle);
+    // Use book category as the title (e.g., "ABC Book", "Numbers Book")
+    const coverTitle = book.category || 'ABC Book';
+    console.log('Book name:', book.book_name);
+    console.log('Cover title (category):', coverTitle);
+    console.log('Book description:', book.book_description);
 
     // Create comprehensive prompt (with or without style guide)
     const styleSection = colors ? `
@@ -185,32 +186,44 @@ STYLE REQUIREMENTS:
 🎨 Colors: Use bright, vibrant, child-friendly colors that are engaging and educational
 `;
 
-    const prompt = `Generate a book thumbnail image for "${shortenedTitle}".
-${book.book_description ? `Book context: ${book.book_description}` : ''}
+    const prompt = `Generate a book thumbnail image that visually represents the theme and content of this book: "${book.book_name}".
+
+📚 BOOK DETAILS:
+${book.book_description ? `What this book is about: ${book.book_description}` : ''}
 Target audience: ${targetAudience}
+Book type: ${book.category}
+
+🎨 VISUAL CONTENT REQUIREMENTS:
+- The illustration should directly reflect the SPECIFIC THEME and CONTENT described above
+- Create characters, objects, and scenes that match what the book is actually about
+- If the book features specific characters (like Paw Patrol, Elsa, etc.), include those characters prominently
+- If the book teaches concepts (ABCs, numbers, sight words), show visual representations of those concepts
+- The imagery should make it immediately clear what the book teaches or is about
+- Make the illustration tell the story of what's inside the book
+
 ${styleSection}
 
 📐 COMPOSITION GUIDELINES:
 - Title placement: Absolute center of the image (both horizontally and vertically)
-- Character placement: Main characters/visual elements positioned to the LEFT and RIGHT of the centered title
-- The wide 16:9 format provides ample horizontal space for characters to flank the title symmetrically
+- Content placement: Main characters/themed visual elements positioned to the LEFT and RIGHT of the centered title
+- The wide 16:9 format provides ample horizontal space for thematic elements to flank the title symmetrically
 - Layout Flow: ${layoutFlow}
-- Focus Hierarchy: Title is the primary focal point, characters frame it symmetrically
+- Focus Hierarchy: Title is the primary focal point, thematic characters/objects frame it symmetrically
 - Create a balanced, symmetrical composition with the title as the anchor point
 - Ensure text elements are readable and prominent with clear negative space
 - Safe space: Keep key elements away from edges (15-20% margins left/right, 10% margins top/bottom)
 
 ✨ TITLE & TEXT REQUIREMENTS:
-- INCLUDE the book name "${book.book_name}" as the main title, prominently centered
+- INCLUDE the text "${coverTitle}" as the main title, prominently centered
 - Typography: Bold, child-friendly font that's highly readable and age-appropriate
 - Title color: Use colors from the palette above for consistency with the overall design
 - Ensure high contrast between title text and background for maximum readability
 - Title size: Large enough to be the primary focal point (should dominate the composition)
-- The title anchors the center while characters/visual elements flank it symmetrically
+- The title anchors the center while themed characters/visual elements flank it symmetrically
 - Text should feel integrated into the illustration style, not overlaid as a separate layer
 - Make the title feel like part of the artistic composition, naturally woven into the scene
 - Font style should match the educational, playful nature of the book's theme
-- The book title is the hero element - everything else supports and frames it
+- The category title is the hero element - everything else supports and frames it
 
 
 🎯 TECHNICAL SPECS:
@@ -237,7 +250,7 @@ Your output must be a SINGLE, DIRECT image generation prompt paragraph. Do not p
       messages: [
         { 
           role: 'system', 
-          content: 'You generate SINGLE, DIRECT image prompts for 16:9 landscape format images. Output only one paragraph describing the image - no options, no explanations, no formatting. The prompt should be ready to send directly to an image generator. CRITICAL: The image is 16:9 landscape format (1200x630px). Always place the title text in the absolute center with main characters/elements positioned to the left and right of the centered title, taking advantage of the wide horizontal space. Always include the exact title text and subtitle "for [audience]" centered in the composition.' 
+          content: 'You generate SINGLE, DIRECT image prompts for 16:9 landscape format book cover images. Output only one paragraph describing the image - no options, no explanations, no formatting. The prompt should be ready to send directly to an image generator. CRITICAL: The image is 16:9 landscape format (1200x630px). Always place the category title text (like "ABC Book" or "Numbers Book") in the absolute center with thematic characters/elements that represent the book\'s actual content positioned to the left and right of the centered title. The visual elements should directly reflect what the book teaches or is about - if it features specific characters, show those characters; if it teaches concepts, visualize those concepts. Always include the exact category title text centered in the composition.' 
         },
         { role: 'user', content: prompt }
       ],

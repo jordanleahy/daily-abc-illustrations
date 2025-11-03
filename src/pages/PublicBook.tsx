@@ -11,6 +11,7 @@ import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookImage } from '@/components/ui/book-image';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Download, Plus, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -20,7 +21,7 @@ const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: numbe
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <CardContent className="p-0">
-        <div className="aspect-square relative bg-muted">
+        <AspectRatio ratio={16/9} className="relative bg-muted">
           <BookImage
             src={imageData?.image_url}
             alt={`Letter ${page.letter} - ${page.title}`}
@@ -36,7 +37,7 @@ const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: numbe
               </p>
             </div>
           )}
-        </div>
+        </AspectRatio>
         <div className="p-4">
           <h3 className="font-semibold text-lg mb-1">{page.title}</h3>
         </div>

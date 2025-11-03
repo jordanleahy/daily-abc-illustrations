@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
+import { generateSpecializedPrompt } from '../_shared/promptTemplates.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -468,6 +469,76 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     }
 
     console.log(`Cover page + ${pages.length - 1} content pages created`);
+
+    // Generate page system prompts for all pages
+    console.log('Generating page system prompts...');
+    
+    const bookContext = {
+      bookName: sanitizeText(bookData.bookName, 200),
+      category: sanitizeText(bookData.category || 'General', 100),
+      bookDescription: sanitizeText(bookData.bookDescription || '', 1000),
+      theme: validatedMetadata.characterTheme,
+      characterTheme: validatedMetadata.characterTheme,
+      targetAge: validatedMetadata.targetAge,
+      bookType: validatedMetadata.bookType
+    };
+
+    // Fetch created pages with IDs
+    const { data: createdPagesForPrompts, error: fetchCreatedPagesError } = await supabase
+      .from('pages')
+      .select('id, page_number, letter, title, description, content')
+      .eq('book_id', book.id)
+      .order('page_number', { ascending: true });
+
+    if (!fetchCreatedPagesError && createdPagesForPrompts) {
+      for (const page of createdPagesForPrompts) {
+        const isCover = page.page_number === 0;
+        
+        const pageContext = {
+          pageNumber: page.page_number,
+          letter: page.letter,
+          title: page.title,
+          description: page.description || '',
+          mainConcept: page.content?.mainConcept
+        };
+
+        // Generate specialized prompt using templates
+        const promptContent = generateSpecializedPrompt(bookContext, pageContext, isCover);
+
+        // Get version number for this page
+        const { data: pageVersionData, error: pageVersionError } = await supabase
+          .rpc('get_next_page_prompt_version_number', { p_page_id: page.id });
+
+        if (!pageVersionError) {
+          const pageVersionNumber = pageVersionData || 1;
+
+          // Insert page system prompt
+          await supabase
+            .from('page_system_prompts')
+            .insert({
+              page_id: page.id,
+              book_id: book.id,
+              user_id: userId,
+              version_number: pageVersionNumber,
+              content: promptContent,
+              is_latest: true,
+              is_deployed: true,
+              deployed_at: new Date().toISOString(),
+              source_type: 'book_creation',
+              generation_metadata: {
+                generator: 'google-create-book',
+                bookType: validatedMetadata.bookType,
+                pageType: isCover ? 'cover' : 'content',
+                generatedAt: new Date().toISOString()
+              }
+            });
+          
+          console.log(`Created prompt for page ${page.page_number} (${isCover ? 'cover' : page.letter})`);
+        }
+      }
+      
+      console.log(`Generated page system prompts for ${createdPagesForPrompts.length} pages`);
+    }
 
     // Create default style guide for the book
     const defaultStyleGuide = `You are an AI specialized in creating vibrant, educational children's book illustrations.

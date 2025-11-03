@@ -152,3 +152,6 @@ verify_jwt = false
 
 [functions.delete-daily-published-oneoff]
 verify_jwt = false
+
+[functions.copy-seo-draft-to-queued]
+verify_jwt = true

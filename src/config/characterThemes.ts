@@ -53,7 +53,7 @@ export const characterThemes: Record<string, CharacterTheme> = {
     altText: 'Pokemon themed book'
   },
   'mario': {
-    thumbnail: '/placeholder.svg',
+    thumbnail: '/themes/mario.png',
     altText: 'Mario themed book'
   },
   'sesame-street': {

@@ -63,7 +63,7 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
                   onClick={() => onQuickReply?.(action)}
                   className="text-xs"
                 >
-                  {action.label}
+                  {action.label.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()}
                 </Button>
               );
             })}

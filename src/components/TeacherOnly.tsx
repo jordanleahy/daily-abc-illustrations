@@ -1,41 +1,38 @@
-import { ReactNode } from 'react';
-import { useIsAdmin, useIsModerator, useIsTeacher } from '@/contexts/RoleContext';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ShieldX } from 'lucide-react';
+/**
+ * Teacher access control component
+ * Thin wrapper around RoleGuard for teacher access
+ * Automatically includes moderator and admin access via role hierarchy
+ */
 
-interface TeacherOnlyProps {
+import { ReactNode } from 'react';
+import { RoleGuard } from './RoleGuard';
+import { BaseComponentProps } from '@/types/shared/base';
+
+interface TeacherOnlyProps extends Pick<BaseComponentProps, 'className'> {
   children: ReactNode;
   fallback?: ReactNode;
   showMessage?: boolean;
 }
 
+/**
+ * Restricts content to teacher users and higher (moderators, admins)
+ * Uses RoleGuard with allowHigherRoles=true to include higher privilege access
+ */
 export const TeacherOnly = ({ 
   children, 
   fallback, 
-  showMessage = false 
+  showMessage = false,
+  className
 }: TeacherOnlyProps) => {
-  const isTeacher = useIsTeacher();
-  const isModerator = useIsModerator();
-  const isAdmin = useIsAdmin(); // Admins and moderators can access teacher features
-  
-  if (isTeacher || isModerator || isAdmin) {
-    return <>{children}</>;
-  }
-  
-  if (fallback) {
-    return <>{fallback}</>;
-  }
-  
-  if (showMessage) {
-    return (
-      <Alert variant="destructive">
-        <ShieldX className="h-4 w-4" />
-        <AlertDescription>
-          Access denied. Teacher privileges required.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  return null;
+  return (
+    <RoleGuard
+      requiredRole="teacher"
+      fallback={fallback}
+      showMessage={showMessage}
+      allowHigherRoles={true}
+      className={className}
+    >
+      {children}
+    </RoleGuard>
+  );
 };

@@ -1,61 +1,21 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type {
+  LandingPageData,
+  LandingDailyPublished,
+  LandingPopularBook,
+  LandingLibraryBook,
+  LandingPageImage,
+} from '@/types/book-extended';
 
-export interface LandingPageImage {
-  id: string;
-  letter: string;
-  page_number: number;
-  title: string;
-  description: string;
-  image_url: string | null;
-}
-
-export interface LandingDailyPublished {
-  id: string;
-  book_id: string;
-  title: string;
-  description: string;
-  status: string;
-  is_active: boolean;
-  expires_at: string;
-  pages: LandingPageImage[];
-}
-
-export interface LandingPopularBook {
-  id: string;
-  book_name: string;
-  book_description: string;
-  status: string;
-  is_highlighted: boolean;
-  image_url: string | null;
-  metadata?: {
-    bookType?: string;
-    targetAge?: string;
-  };
-}
-
-export interface LandingLibraryBook {
-  id: string;
-  book_id: string;
-  title: string;
-  description: string;
-  status: string;
-  is_active: boolean;
-  published_at: string;
-  slug?: string | null;
-  og_image_url: string | null;
-  seo_title?: string | null;
-  metadata?: {
-    bookType?: string;
-    targetAge?: string;
-  };
-}
-
-export interface LandingPageData {
-  dailyPublished: LandingDailyPublished | null;
-  popularBooks: LandingPopularBook[];
-  libraryBooks: LandingLibraryBook[];
-}
+// Re-export types for backward compatibility
+export type {
+  LandingPageData,
+  LandingDailyPublished,
+  LandingPopularBook,
+  LandingLibraryBook,
+  LandingPageImage,
+};
 
 /**
  * Single optimized hook that fetches ALL landing page data in one request

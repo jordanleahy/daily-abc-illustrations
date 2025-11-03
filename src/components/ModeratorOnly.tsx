@@ -1,40 +1,38 @@
-import { ReactNode } from 'react';
-import { useIsAdmin, useIsModerator } from '@/contexts/RoleContext';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ShieldX } from 'lucide-react';
+/**
+ * Moderator access control component
+ * Thin wrapper around RoleGuard for moderator access
+ * Automatically includes admin access via role hierarchy
+ */
 
-interface ModeratorOnlyProps {
+import { ReactNode } from 'react';
+import { RoleGuard } from './RoleGuard';
+import { BaseComponentProps } from '@/types/shared/base';
+
+interface ModeratorOnlyProps extends Pick<BaseComponentProps, 'className'> {
   children: ReactNode;
   fallback?: ReactNode;
   showMessage?: boolean;
 }
 
+/**
+ * Restricts content to moderator users and higher (admins)
+ * Uses RoleGuard with allowHigherRoles=true to include admin access
+ */
 export const ModeratorOnly = ({ 
   children, 
   fallback, 
-  showMessage = false 
+  showMessage = false,
+  className
 }: ModeratorOnlyProps) => {
-  const isModerator = useIsModerator();
-  const isAdmin = useIsAdmin(); // Admins can access moderator features
-  
-  if (isModerator || isAdmin) {
-    return <>{children}</>;
-  }
-  
-  if (fallback) {
-    return <>{fallback}</>;
-  }
-  
-  if (showMessage) {
-    return (
-      <Alert variant="destructive">
-        <ShieldX className="h-4 w-4" />
-        <AlertDescription>
-          Access denied. Moderator privileges required.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  return null;
+  return (
+    <RoleGuard
+      requiredRole="moderator"
+      fallback={fallback}
+      showMessage={showMessage}
+      allowHigherRoles={true}
+      className={className}
+    >
+      {children}
+    </RoleGuard>
+  );
 };

@@ -1,41 +1,37 @@
-import { ReactNode } from 'react';
-import { useIsAdmin, useRole } from '@/contexts/RoleContext';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ShieldX } from 'lucide-react';
+/**
+ * Admin-only access control component
+ * Thin wrapper around RoleGuard for admin-specific access
+ */
 
-interface AdminOnlyProps {
+import { ReactNode } from 'react';
+import { RoleGuard } from './RoleGuard';
+import { BaseComponentProps } from '@/types/shared/base';
+
+interface AdminOnlyProps extends Pick<BaseComponentProps, 'className'> {
   children: ReactNode;
   fallback?: ReactNode;
   showMessage?: boolean;
 }
 
+/**
+ * Restricts content to admin users only
+ * Uses RoleGuard with allowHigherRoles=false to enforce strict admin access
+ */
 export const AdminOnly = ({ 
   children, 
   fallback, 
-  showMessage = false 
+  showMessage = false,
+  className
 }: AdminOnlyProps) => {
-  const isAdmin = useIsAdmin();
-  const { isLoading } = useRole();
-  
-  // Show children while loading to prevent flash
-  if (isLoading || isAdmin) {
-    return <>{children}</>;
-  }
-  
-  if (fallback) {
-    return <>{fallback}</>;
-  }
-  
-  if (showMessage) {
-    return (
-      <Alert variant="destructive">
-        <ShieldX className="h-4 w-4" />
-        <AlertDescription>
-          Access denied. Admin privileges required.
-        </AlertDescription>
-      </Alert>
-    );
-  }
-  
-  return null;
+  return (
+    <RoleGuard
+      requiredRole="admin"
+      fallback={fallback}
+      showMessage={showMessage}
+      allowHigherRoles={false}
+      className={className}
+    >
+      {children}
+    </RoleGuard>
+  );
 };

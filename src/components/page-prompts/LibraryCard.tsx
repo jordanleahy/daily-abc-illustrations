@@ -140,7 +140,7 @@ export function LibraryCard({ page, bookId }: LibraryCardProps) {
               size="icon"
               className="w-6 h-6"
               onClick={handleDownloadImage}
-              disabled={!currentImage?.image_url || currentImage?.generation_status !== 'complete'}
+              disabled={!currentImage?.image_url}
               title="Download page image as PNG"
               aria-label="Download page image as PNG"
             >

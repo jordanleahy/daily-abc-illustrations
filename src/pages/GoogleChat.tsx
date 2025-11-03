@@ -289,42 +289,9 @@ export default function GoogleChat() {
 
   // Auto-generate cover prompt for QA panel
   const handleGenerateCoverPrompt = useCallback(async () => {
-    if (!currentSessionId || !user?.id) return;
-    
-    // Get book metadata from messages
-    const metadata = getBookMetadata(messages);
-    if (!metadata) return;
-
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-book-thumbnail-prompt', {
-        body: {
-          bookId: null, // No book ID yet during outline review
-          userId: user.id,
-          bookMetadata: {
-            bookName: metadata.name,
-            category: 'Educational',
-            description: metadata.description
-          }
-        }
-      });
-
-      if (error) throw error;
-
-      if (data?.enhancedPrompt) {
-        const newPrompts = { ...qaPagePrompts, 0: data.enhancedPrompt };
-        setQAPagePrompts(newPrompts);
-        
-        // Persist to database
-        await updateQAPagePrompts({ 
-          sessionId: currentSessionId, 
-          qaPagePrompts: newPrompts 
-        });
-      }
-    } catch (error) {
-      console.error('Error generating cover prompt:', error);
-      // Silently fail - not critical for UX
-    }
-  }, [currentSessionId, user, messages, qaPagePrompts, updateQAPagePrompts]);
+    // Cover prompt generation removed - images now uploaded from external sources
+    console.log('Cover prompt generation skipped - using external image generation');
+  }, []);
 
   const handleBookTypeSelect = useCallback(async (bookType: typeof BOOK_TYPES[0]) => {
     // Store the book type ID for later use

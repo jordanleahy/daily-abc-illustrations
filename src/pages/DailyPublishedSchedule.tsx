@@ -11,12 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Clock, BookOpen, RefreshCw } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { DailyPublishedQueueCard } from '@/components/daily-published/DailyPublishedQueueCard';
-import { GenerateMissingThumbnails } from '@/components/admin/GenerateMissingThumbnails';
-import { useHasRole } from '@/hooks/useUserRole';
 
 export default function DailyPublishedSchedule() {
   const { user } = useAuthContext();
-  const isAdmin = useHasRole('admin');
   const { data: scheduleItems, isLoading, error } = useDailyPublishedSchedule();
   const expireContent = useExpireContent();
 
@@ -133,13 +130,6 @@ export default function DailyPublishedSchedule() {
             Refresh
           </Button>
         </div>
-
-        {/* Admin Tool: Generate Missing Thumbnails */}
-        {isAdmin && (
-          <div className="mb-8">
-            <GenerateMissingThumbnails />
-          </div>
-        )}
 
         {/* Active Item */}
         {activeItems.length > 0 && (

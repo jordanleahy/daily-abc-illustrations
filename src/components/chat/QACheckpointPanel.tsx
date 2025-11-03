@@ -198,22 +198,7 @@ export function QACheckpointPanel({
           </div>
         )}
 
-        {/* Generate Images Buttons */}
-        <Button
-          variant="secondary"
-          size="lg"
-          onClick={() => {
-            window.open(
-              'https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-flash-image',
-              '_blank',
-              'noopener,noreferrer'
-            );
-          }}
-          className="w-full"
-        >
-          1. Generate Images in Google AI Studio
-        </Button>
-
+        {/* Image Prompt Helper */}
         <Button
           variant="secondary"
           size="lg"
@@ -222,14 +207,14 @@ export function QACheckpointPanel({
             if (prompt) {
               navigator.clipboard.writeText(prompt);
               toast.success('Prompt copied to clipboard!', {
-                description: 'Paste in Google AI Studio to generate the image',
+                description: 'Use with external image generation tools',
                 duration: 3000
               });
             }
           }}
           className="w-full"
         >
-          2. Copy & Paste Image Prompt
+          Copy Image Prompt
         </Button>
       </div>
 

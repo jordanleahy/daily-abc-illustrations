@@ -12,7 +12,6 @@ interface PageCardOptimizedProps {
   page: Page;
   bookId: string;
   onRegeneratePrompt?: () => void;
-  onRegenerateImage?: () => void;
   onCopyPrompt?: () => void;
   onDownloadImage?: () => void;
   onDeletePage?: () => void;
@@ -24,7 +23,6 @@ export const PageCardOptimized: React.FC<PageCardOptimizedProps> = ({
   page,
   bookId,
   onRegeneratePrompt,
-  onRegenerateImage,
   onCopyPrompt,
   onDownloadImage,
   onDeletePage,
@@ -153,17 +151,6 @@ export const PageCardOptimized: React.FC<PageCardOptimizedProps> = ({
           >
             <RefreshCw className={`h-4 w-4 ${isRegenerating ? 'animate-spin' : ''}`} />
             Regenerate Prompt
-          </Button>
-          
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onRegenerateImage}
-            disabled={isRegenerating}
-            className="gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isRegenerating ? 'animate-spin' : ''}`} />
-            Regenerate Image
           </Button>
           
           <Button

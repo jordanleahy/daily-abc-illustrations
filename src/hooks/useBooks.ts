@@ -22,7 +22,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Book } from '@/types/book';
 import { toast } from 'sonner';
-import { usePageImageSubscription } from './usePageImageSubscription';
 import { getBookViewTimestamps } from '@/utils/bookViewTracking';
 
 /**
@@ -59,9 +58,6 @@ import { getBookViewTimestamps } from '@/utils/bookViewTracking';
 export const useBooks = () => {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
-  
-  // Enable real-time subscriptions for page images
-  usePageImageSubscription();
 
   const { data: books = [], isLoading, error } = useQuery({
     queryKey: ['books', user?.id],

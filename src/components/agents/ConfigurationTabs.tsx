@@ -1,8 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
-import { InstructionsTab } from './InstructionsTab';
 import { ModelSettingsTab } from './ModelSettingsTab';
-import { ProviderModelTab } from './ProviderModelTab';
 import { AgentConfig } from '@/types/agent';
 
 interface ConfigurationTabsProps {
@@ -38,28 +36,17 @@ export const ConfigurationTabs = ({
               </p>
             </div>
           )}
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="provider">Provider & Model</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="instructions">Instructions</TabsTrigger>
             <TabsTrigger value="model-settings">Advanced Settings</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="provider" className="mt-6">
-            <ProviderModelTab
-              config={config}
-              onUpdate={onUpdate}
-            />
-          </TabsContent>
-          
           <TabsContent value="instructions" className="mt-6">
-            <InstructionsTab
-              config={config}
-              onUpdate={onUpdate}
-              onSaveWithOverrides={onSaveWithOverrides}
-              isLoading={isLoading}
-              hasUnsavedChanges={hasUnsavedChanges}
-              agentType={agentType}
-            />
+            <div className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Agent instructions configuration has been simplified. All agents now use text-based configuration.
+              </p>
+            </div>
           </TabsContent>
           
           <TabsContent value="model-settings" className="mt-6">

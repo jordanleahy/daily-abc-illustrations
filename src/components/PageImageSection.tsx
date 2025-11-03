@@ -4,7 +4,6 @@ import { Shimmer } from "@/components/ui/shimmer";
 import { BookImage } from "@/components/ui/book-image";
 import { usePageImageUrls } from "@/hooks/usePageImageUrls";
 import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
-import { usePageGenerationCost } from "@/hooks/usePageGenerationCost";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -34,8 +33,6 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
   const { user } = useAuthContext();
   const { currentImage, versions, isLoading, createImageRecord, uploadImage, refreshData } = usePageImageUrls(pageId);
   const { currentPrompt } = usePageSystemPrompt(pageId);
-  const { data: costData } = usePageGenerationCost(pageId);
-  const [isLocalGenerating, setIsLocalGenerating] = useState(false);
   
   const [internalShowUpload, setInternalShowUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -47,93 +44,6 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
 
   // Check if there's a deployed page system prompt
   const hasDeployedPrompt = currentPrompt?.is_deployed === true;
-
-  // Helper function to detect navigation/cancellation errors
-  const isNavigationError = (error: any): boolean => {
-    return error?.name === 'AbortError' || 
-           error?.message?.includes('cancelled') ||
-           error?.message?.includes('aborted') ||
-           error?.code === 'ABORT_ERR';
-  };
-
-  // Enhanced state recovery on component mount
-  useEffect(() => {
-    // Check if there's an ongoing generation when component mounts
-    if (currentImage?.generation_status === 'in_progress' && !isLocalGenerating) {
-      console.log('🔄 Recovering generation state on mount');
-      setIsLocalGenerating(true);
-    }
-  }, [currentImage?.id, currentImage?.generation_status]); // Only run when image or status changes
-
-  // Clear local generating state when backend status updates to complete or error
-  useEffect(() => {
-    console.log('🔄 Image state update:', {
-      imageId: currentImage?.id,
-      status: currentImage?.generation_status,
-      hasImageUrl: !!currentImage?.image_url,
-      isLocalGenerating,
-      timestamp: new Date().toISOString()
-    });
-    
-    // Only clear local generating if we have a definitive completion state
-    if (currentImage && isLocalGenerating) {
-      if (currentImage.generation_status === 'complete' && currentImage.image_url) {
-        console.log('✅ Image generation complete, clearing local state');
-        setIsLocalGenerating(false);
-        toast.success('Image generated successfully!');
-      } else if (currentImage.generation_status === 'error') {
-        console.log('❌ Image generation failed, clearing local state');
-        setIsLocalGenerating(false);
-        toast.error('Image generation failed');
-      }
-    }
-  }, [currentImage?.id, currentImage?.generation_status, currentImage?.image_url, isLocalGenerating]);
-
-  const handleGenerateImageDirectly = async () => {
-    if (!user || !hasDeployedPrompt) return;
-
-    setIsLocalGenerating(true);
-    toast.info('Starting image generation...');
-    
-    try {
-      // Include auth token so storage insert passes RLS
-      const { data: sessionRes } = await supabase.auth.getSession();
-      const token = sessionRes.session?.access_token;
-      if (!token) throw new Error('Not authenticated');
-
-      // Call new unified image generation function (don't await, let it run in background)
-      supabase.functions.invoke('generate-page-image', {
-        body: { pageId, userId: user.id },
-        headers: { Authorization: `Bearer ${token}` },
-      }).then(({ data, error }) => {
-        if (error) {
-          console.error('Edge function error:', error);
-          toast.error(error.message || 'Failed to start generation');
-          setIsLocalGenerating(false);
-          return;
-        }
-        if (!data?.success) {
-          console.error('Generation failed:', data?.error);
-          toast.error(data?.error || 'Failed to start generation');
-          setIsLocalGenerating(false);
-          return;
-        }
-        // Success message will be shown when real-time update completes
-        console.log('✅ Image generation started successfully');
-      }).catch((error) => {
-        console.error('Unexpected error:', error);
-        toast.error('Failed to start generation');
-        setIsLocalGenerating(false);
-      });
-
-      // Immediately refresh to get the 'in_progress' status
-      await refreshData();
-    } catch (error) {
-      console.error('Error starting image generation:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to start generation');
-      setIsLocalGenerating(false);
-    }
-  };
 
   // Helper function to get stored prompt from page_system_prompts
   const getStoredPrompt = async (): Promise<string | null> => {
@@ -184,7 +94,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
 
   const handlePaste = async (e: React.ClipboardEvent) => {
     e.preventDefault();
-    if (!user || isUploading || isGenerating) return;
+    if (!user || isUploading) return;
 
     const items = e.clipboardData?.items;
     if (!items) return;
@@ -205,7 +115,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
 
   // Handle paste from clipboard button (mobile-friendly)
   const handlePasteFromClipboard = async () => {
-    if (!user || isUploading || isGenerating) return;
+    if (!user || isUploading) return;
 
     try {
       // Check if Clipboard API is supported
@@ -250,18 +160,12 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
 
   // Prefer latest DB image; fall back to preloaded (from editor preloader)
   const displayImageUrl = currentImage?.image_url || preloadedImageUrl;
-  const isGenerating = currentImage?.generation_status === 'in_progress' || isLocalGenerating;
-  const hasImage = Boolean((currentImage?.generation_status === 'complete' && currentImage?.image_url) || preloadedImageUrl);
-  const hasError = currentImage?.generation_status === 'error';
+  const hasImage = Boolean(currentImage?.image_url || preloadedImageUrl);
   const isUserUploaded = currentImage?.source_type === 'user_uploaded';
   
   console.log('🎨 Render state:', {
     hasImage,
-    isGenerating,
-    hasError,
     imageUrl: currentImage?.image_url ? 'present' : 'missing',
-    status: currentImage?.generation_status,
-    isLocalGenerating,
     currentImageId: currentImage?.id
   });
 
@@ -315,64 +219,15 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             onLoad={() => console.log('🖼️ Image loaded successfully:', displayImageUrl)}
             onError={() => console.error('🚫 Image failed to load:', displayImageUrl)}
           />
-          {/* Source indicator - only show for AI generated */}
+          {/* Source indicator */}
           {!isUserUploaded && (
             <div className="absolute top-2 left-2">
               <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                {costData && costData.totalCostCents > 0 ? (
-                  <>
-                    <DollarSign className="w-3 h-3" />
-                    <span>{costData.totalCostFormatted}</span>
-                    {costData.versionCount > 1 && (
-                      <span className="opacity-70 ml-0.5">
-                        ({costData.versionCount})
-                      </span>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="w-3 h-3" />
-                    AI Generated
-                  </>
-                )}
+                <Sparkles className="w-3 h-3" />
+                AI Generated
               </div>
             </div>
           )}
-        </div>
-      ) : isGenerating ? (
-        // Show shimmer skeleton while generating
-        <div className="relative w-full h-full bg-muted">
-          {/* Skeleton base */}
-          <div className="absolute inset-0 animate-pulse bg-gradient-to-br from-muted via-muted-foreground/10 to-muted" />
-          
-          {/* Animated shimmer overlay */}
-          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/20 to-transparent animate-shimmer bg-[length:200%_100%]" />
-          
-          {/* Centered content */}
-          <div className="absolute inset-0 flex flex-col items-center justify-center space-y-3">
-            <div className="relative">
-              <Sparkles className="w-12 h-12 text-primary animate-pulse" />
-              <div className="absolute inset-0 animate-ping">
-                <Sparkles className="w-12 h-12 text-primary/30" />
-              </div>
-            </div>
-            <div className="text-center space-y-1">
-              <p className="text-sm font-medium text-foreground">Generating image...</p>
-              {currentImage?.generation_started_at && (
-                <p className="text-xs text-muted-foreground">
-                  Started {new Date(currentImage.generation_started_at).toLocaleTimeString()}
-                </p>
-              )}
-            </div>
-          </div>
-        </div>
-      ) : hasError ? (
-        // Show error state
-        <div className="flex flex-col items-center justify-center h-full space-y-2 p-4 text-center">
-          <p className="text-sm text-destructive font-medium">Generation Failed</p>
-          <p className="text-xs text-muted-foreground">
-            {currentImage?.error_message || 'Unknown error occurred'}
-          </p>
         </div>
       ) : showPromptViewer && currentPrompt?.content ? (
         // Show prompt viewer
@@ -433,7 +288,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               size="sm"
               variant="default"
               className="w-full max-w-xs"
-              disabled={isUploading || isGenerating}
+              disabled={isUploading}
             >
               <Clipboard className="w-4 h-4 mr-2" />
               Paste from Clipboard
@@ -452,21 +307,6 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               </Button>
             )}
           </div>
-          
-          {hasDeployedPrompt && (
-            <div className="w-full pt-2 border-t border-border">
-              <Button 
-                onClick={handleGenerateImageDirectly}
-                size="sm"
-                variant="outline"
-                className="w-full"
-                disabled={isGenerating}
-              >
-                <Sparkles className="w-4 h-4 mr-2" />
-                Generate with AI
-              </Button>
-            </div>
-          )}
         </div>
       )}
 

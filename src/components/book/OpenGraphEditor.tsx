@@ -49,15 +49,13 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedPrompt, setGeneratedPrompt] = useState<string | null>(null);
   const [showTextOverlayEditor, setShowTextOverlayEditor] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentTitle = seoMetadata?.seo_title || bookTitle;
   const currentDescription = seoMetadata?.seo_description || bookDescription || '';
   const currentImage = seoMetadata?.og_image_url;
-  const fallbackImage = firstPageImage?.image_url && firstPageImage?.generation_status === 'complete' ? firstPageImage.image_url : null;
+  const fallbackImage = firstPageImage?.image_url || null;
 
   // Debug the current state of images
   console.log('🖼️ [OpenGraphEditor] Image state:', {
@@ -502,114 +500,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
   };
 
-
-  const handleGenerateThumbPrompt = async () => {
-    if (!user?.id) {
-      toast.error('User not authenticated');
-      return;
-    }
-
-    setIsGenerating(true);
-    setGeneratedPrompt(null); // Clear previous prompt
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-book-thumbnail-prompt', {
-        body: {
-          bookId,
-          userId: user.id,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.success && data?.thumbnailPrompt) {
-        // Store the prompt in state to display in UI
-        setGeneratedPrompt(data.thumbnailPrompt);
-        
-        // Show success message
-        toast.success('Thumbnail prompt generated successfully!');
-        
-        // Log the prompt to console for debugging
-        console.log('Generated Thumbnail Prompt:', data.thumbnailPrompt);
-        console.log('Original Prompt (before safe space rules):', data.originalPrompt);
-      } else {
-        throw new Error('Failed to generate thumbnail prompt');
-      }
-    } catch (error) {
-      console.error('Thumbnail prompt generation error:', error);
-      toast.error('Failed to generate thumbnail prompt');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  const handleCopyPrompt = async () => {
-    if (generatedPrompt && navigator.clipboard) {
-      await navigator.clipboard.writeText(generatedPrompt);
-      toast.success('Prompt copied to clipboard!');
-    }
-  };
-
-  const handleClearPrompt = () => {
-    setGeneratedPrompt(null);
-  };
-
-  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setGeneratedPrompt(e.target.value);
-  };
-
-  const handleWriteCustomPrompt = () => {
-    setGeneratedPrompt(''); // Set empty string to show editable field
-    toast.info('Write your custom thumbnail prompt below');
-  };
-
-  const handleGenerateThumbImage = async () => {
-    if (!user?.id) {
-      toast.error('User not authenticated');
-      return;
-    }
-
-    // Check if we have a generated prompt to use
-    if (!generatedPrompt) {
-      toast.error('Please generate a thumbnail prompt first');
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-book-thumbnail', {
-        body: {
-          bookId,
-          userId: user.id,
-          ...(generatedPrompt && { customPrompt: generatedPrompt }), // Only include if we have a prompt
-        },
-      });
-
-      if (error) throw error;
-
-      if (data?.success && data?.thumbnailUrl) {
-        // Clear the prompt since it's been used
-        setGeneratedPrompt(null);
-        
-        // Force refetch SEO metadata and invalidate all related queries
-        await Promise.all([
-          refetch(),
-          queryClient.invalidateQueries({ queryKey: ['book-seo-metadata', bookId] }),
-          queryClient.invalidateQueries({ queryKey: ['daily-published'] }),
-          queryClient.invalidateQueries({ queryKey: ['library-books'] })
-        ]);
-        
-        toast.success('Thumbnail image generated successfully!');
-      } else {
-        throw new Error('Failed to generate thumbnail image');
-      }
-    } catch (error) {
-      console.error('Thumbnail image generation error:', error);
-      toast.error('Failed to generate thumbnail image');
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
   if (isLoading) {
     return (
       <Card>
@@ -746,46 +636,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 )}
                 {currentImage ? 'Replace Image' : 'Upload Image'}
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => {
-                  if (generatedPrompt) {
-                    navigator.clipboard.writeText(generatedPrompt);
-                    toast.success('Prompt copied to clipboard');
-                  }
-                }}
-                disabled={!generatedPrompt}
-                className="flex items-center gap-2"
-              >
-                <Copy className="w-4 h-4" />
-                Copy Prompt
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleGenerateThumbPrompt}
-                disabled={isGenerating}
-                className="flex items-center gap-2"
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Wand2 className="w-4 h-4" />
-                )}
-                AI Prompt
-              </Button>
-              <Button
-                variant="outline"
-                onClick={handleGenerateThumbImage}
-                disabled={isGenerating || !generatedPrompt}
-                className="flex items-center gap-2"
-              >
-                {isGenerating ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <ImagePlus className="w-4 h-4" />
-                )}
-                {currentImage ? 'Regenerate Thumb Image' : 'Generate Thumb Image'}
-              </Button>
             </div>
           </div>
           
@@ -804,48 +654,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
             {seoMetadata ? 'Custom Settings' : 'Using Defaults'}
           </Badge>
         </div>
-
-        {/* Thumbnail Prompt */}
-        {generatedPrompt !== null && (
-          <div className="border rounded-md bg-blue-50/50 dark:bg-blue-950/20">
-            <div className="flex items-center justify-between p-3 border-b bg-blue-100/30 dark:bg-blue-900/20">
-              <Label className="text-sm font-medium">
-                Custom Thumbnail Prompt
-              </Label>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCopyPrompt}
-                  className="h-7 px-2"
-                  disabled={!generatedPrompt}
-                >
-                  <Copy className="w-3 h-3" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleClearPrompt}
-                  className="h-7 px-2"
-                >
-                  <X className="w-3 h-3" />
-                </Button>
-              </div>
-            </div>
-            <div className="p-3">
-              <textarea
-                value={generatedPrompt || ''}
-                onChange={handlePromptChange}
-                placeholder="Describe your thumbnail image in detail (e.g., style, subject, colors, composition)..."
-                className="w-full h-32 text-xs font-mono bg-transparent border-none resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 rounded p-2"
-                style={{ fontFamily: 'ui-monospace, SFMono-Regular, "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                Edit the AI-generated prompt or write your own custom instructions
-              </p>
-            </div>
-          </div>
-        )}
 
         {/* Preview Card */}
         <div className="border rounded-md p-4 bg-muted/30">

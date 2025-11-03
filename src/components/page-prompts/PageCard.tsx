@@ -337,7 +337,7 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
               size="icon"
               className="w-6 h-6"
               onClick={handleDownloadImage}
-              disabled={!currentImage?.image_url || currentImage?.generation_status !== 'complete'}
+              disabled={!currentImage?.image_url}
               title="Download page image as PNG"
               aria-label="Download page image as PNG"
             >
@@ -348,7 +348,7 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
               size="icon"
               className="w-6 h-6"
               onClick={() => setShowTextOverlayEditor(true)}
-              disabled={!currentImage?.image_url || currentImage?.generation_status !== 'complete'}
+              disabled={!currentImage?.image_url}
               title={currentImage?.text_overlay_config ? "Edit text overlay" : "Add text overlay"}
               aria-label={currentImage?.text_overlay_config ? "Edit text overlay" : "Add text overlay"}
             >

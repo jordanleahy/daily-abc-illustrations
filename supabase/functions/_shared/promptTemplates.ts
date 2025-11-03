@@ -24,7 +24,7 @@ interface PageContext {
 /**
  * Generate cover page prompt based on book type and context
  */
-export function generateCoverPrompt(book: BookContext, textOverlayEnabled: boolean = true): string {
+export function generateCoverPrompt(book: BookContext, textOverlayEnabled: boolean = true, styleGuide?: string): string {
   const characterInfo = book.characterTheme 
     ? `featuring ${book.characterTheme} characters` 
     : '';
@@ -80,7 +80,7 @@ Create a captivating cover that immediately communicates this is an exciting ${t
 /**
  * Generate content page prompt based on page details
  */
-export function generatePagePrompt(book: BookContext, page: PageContext, textOverlayEnabled: boolean = true): string {
+export function generatePagePrompt(book: BookContext, page: PageContext, textOverlayEnabled: boolean = true, styleGuide?: string): string {
   const isFirstPage = page.pageNumber === 1;
   const characterInfo = book.characterTheme 
     ? `featuring ${book.characterTheme}` 
@@ -160,8 +160,9 @@ function getBookTypeDescription(bookType: string): string {
 export function generateSpecializedPrompt(
   book: BookContext, 
   page: PageContext, 
-  isCover: boolean,
-  textOverlayEnabled: boolean = true
+  isCover: boolean, 
+  textOverlayEnabled: boolean = true,
+  styleGuide?: string
 ): string {
   if (isCover) {
     return generateCoverPrompt(book, textOverlayEnabled);

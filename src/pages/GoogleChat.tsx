@@ -327,34 +327,33 @@ export default function GoogleChat() {
       return;
     }
 
-    // Parse structured page details from conversation
     const pageDetails = parsedPageDetails;
     
     if (pageDetails) {
       console.log(`Extracted ${pageDetails.length} page details from conversation`);
-    } else {
-      console.log('No structured page details found, will let AI generate structure');
     }
 
-    // Extract text overlay preference from messages
-    const extractTextOverlayPreference = (messages: any[]): 'with-text' | 'without-text' | undefined => {
-      // Look for user messages that match the text overlay selection
-      for (let i = messages.length - 1; i >= 0; i--) {
-        const msg = messages[i];
-        if (msg.role === 'user') {
-          const content = typeof msg.content === 'string' ? msg.content.toLowerCase() : '';
-          if (content === 'with text' || content.includes('with text')) {
-            return 'with-text';
-          }
-          if (content === 'without text' || content.includes('without text')) {
-            return 'without-text';
-          }
+    // Extract text overlay and style reference
+    let textOverlayPreference: 'with-text' | 'without-text' | undefined;
+    let referenceBookId: string | undefined;
+    
+    for (const msg of messages) {
+      if (msg.role === 'user' && typeof msg.content === 'string') {
+        const content = msg.content.toLowerCase();
+        if (content === 'with text' || content.includes('with text')) {
+          textOverlayPreference = 'with-text';
+        } else if (content === 'without text' || content.includes('without text')) {
+          textOverlayPreference = 'without-text';
+        }
+        
+        const styleMatch = msg.content.match(/style-([a-f0-9-]{36})/i);
+        if (styleMatch) {
+          referenceBookId = styleMatch[1];
         }
       }
-      return undefined;
-    };
+    }
 
-    const textOverlayPreference = extractTextOverlayPreference(messages);
+    console.log('Text overlay:', textOverlayPreference, 'Style ref:', referenceBookId);
 
     // Convert messages to simple text format for book creation
     const textMessages = messages.map(msg => ({
@@ -372,7 +371,8 @@ export default function GoogleChat() {
         pageDetails: pageDetails || undefined,
         qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined,
         bookType: selectedBookType || undefined,
-        textOverlayPreference: textOverlayPreference
+        textOverlayPreference,
+        referenceBookId
       });
       
       // Set local book ID immediately for UI responsiveness

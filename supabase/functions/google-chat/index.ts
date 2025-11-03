@@ -108,6 +108,20 @@ serve(async (req) => {
       );
     }
 
+    // Fetch user's style templates
+    const { data: styleTemplates } = await supabaseClient
+      .from('books')
+      .select('id, book_name, style_name')
+      .eq('user_id', user.id)
+      .eq('is_style_template', true)
+      .order('created_at', { ascending: false });
+
+    // Build custom styles list for system prompt
+    const customStylesList = styleTemplates && styleTemplates.length > 0
+      ? '\n\nYour custom styles:\n' + 
+        styleTemplates.map((t: any) => `style-${t.id}: 🎨 ${t.style_name || t.book_name}`).join('\n') + '\n'
+      : '';
+
     // Prepare messages with system prompt
     const systemMessage: Message = {
       role: 'system',
@@ -142,37 +156,24 @@ custom: ✨ Custom focus
 [/SUGGEST]"
 
 CHARACTER THEME RECOMMENDATION (FIRST QUESTION - CRITICAL):
-IMMEDIATELY after a book type is selected, ask if they want to use popular character themes. This should be your VERY FIRST question before anything else (even before clarification questions).
+IMMEDIATELY after a book type is selected, ask if they want to use popular character themes OR custom styles from their own books. This should be your VERY FIRST question before anything else (even before clarification questions).
 
-Present 5-10 popular toddler show characters or visual styles as suggestions. Choose from:
-- Paw Patrol 🐾
-- Bluey 🐶
-- Frozen ❄️ (Elsa & Anna)
-- Cocomelon 🎵
-- PJ Masks 🦎
-- Daniel Tiger 🐯
-- Peppa Pig 🐷
-- Mickey Mouse 🐭
-- Sesame Street 🎪
-- Spider-Man 🕷️
-- Black & White ⚫⚪ (simple black objects with shading on white background)
-
-Format the question with suggestions:
-"Would you like to feature any popular characters in your [book type]? Kids love seeing familiar faces! Here are some popular options, or you can skip this:
+Present popular character themes AND user's custom styles as suggestions:
+"Would you like to feature any characters or visual styles? You can choose popular characters, or use a style from your own books:
 
 [SUGGEST]
 paw-patrol: 🐾 Paw Patrol
-bluey: 🐶 Bluey
 frozen: ❄️ Frozen
-cocomelon: 🎵 Cocomelon
-pj-masks: 🦎 PJ Masks
-daniel-tiger: 🐯 Daniel Tiger
 peppa-pig: 🐷 Peppa Pig
-mickey: 🐭 Mickey Mouse
-sesame: 🎪 Sesame Street
-spiderman: 🕷️ Spider-Man
-black-white: ⚫⚪ Black & White
-skip: ✨ No theme (generic)
+bluey: 🐶 Bluey
+cocomelon: 🎵 Cocomelon
+moana: 🌊 Moana
+mickey-mouse: 🐭 Mickey Mouse
+spider-man: 🕷️ Spider-Man
+toy-story: 🤠 Toy Story
+sonic: 💨 Sonic
+pokemon: ⚡ Pokémon
+mario: 🍄 Mario${customStylesList}skip: ✨ No theme (generic)
 [/SUGGEST]"
 
 IMPORTANT: 

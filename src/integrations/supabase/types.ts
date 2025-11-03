@@ -162,11 +162,14 @@ export type Database = {
           current_system_prompt_id: string | null
           id: string
           is_highlighted: boolean
+          is_style_template: boolean | null
           last_activity_at: string | null
           metadata: Json | null
           pdf_url: string | null
           product_description: string | null
+          reference_book_id: string | null
           status: Database["public"]["Enums"]["publication_status"]
+          style_name: string | null
           tags: string[] | null
           total_pages: number | null
           updated_at: string
@@ -180,11 +183,14 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           is_highlighted?: boolean
+          is_style_template?: boolean | null
           last_activity_at?: string | null
           metadata?: Json | null
           pdf_url?: string | null
           product_description?: string | null
+          reference_book_id?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
+          style_name?: string | null
           tags?: string[] | null
           total_pages?: number | null
           updated_at?: string
@@ -198,11 +204,14 @@ export type Database = {
           current_system_prompt_id?: string | null
           id?: string
           is_highlighted?: boolean
+          is_style_template?: boolean | null
           last_activity_at?: string | null
           metadata?: Json | null
           pdf_url?: string | null
           product_description?: string | null
+          reference_book_id?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
+          style_name?: string | null
           tags?: string[] | null
           total_pages?: number | null
           updated_at?: string
@@ -214,6 +223,13 @@ export type Database = {
             columns: ["current_system_prompt_id"]
             isOneToOne: false
             referencedRelation: "book_system_prompts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "books_reference_book_id_fkey"
+            columns: ["reference_book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
             referencedColumns: ["id"]
           },
         ]

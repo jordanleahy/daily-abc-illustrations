@@ -22,7 +22,8 @@ const requestSchema = z.object({
   pageDetails: z.array(pageDetailSchema).optional(),
   qaImages: z.record(z.string()).optional(),
   bookType: z.string().optional(),
-  textOverlayPreference: z.enum(['with-text', 'without-text']).optional()
+  textOverlayPreference: z.enum(['with-text', 'without-text']).optional(),
+  referenceBookId: z.string().uuid().optional()
 });
 
 serve(async (req) => {
@@ -33,7 +34,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference, referenceBookId } = validatedData;
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -66,6 +67,51 @@ serve(async (req) => {
     console.log('Creating book using Lovable AI for user:', userId);
     if (bookType) {
       console.log('Book type specified:', bookType);
+    }
+
+    // Fetch style guide if referenceBookId is provided
+    let styleGuide: string | null = null;
+    if (referenceBookId) {
+      console.log('Fetching style guide from reference book:', referenceBookId);
+      
+      const { data: refBook } = await supabase
+        .from('books')
+        .select('book_name, book_description, category, metadata')
+        .eq('id', referenceBookId)
+        .single();
+
+      if (refBook) {
+        const { data: refPages } = await supabase
+          .from('pages')
+          .select('title, description')
+          .eq('book_id', referenceBookId)
+          .order('page_number')
+          .limit(3);
+
+        const { data: stylePrompt } = await supabase
+          .from('book_system_prompts')
+          .select('content')
+          .eq('book_id', referenceBookId)
+          .eq('is_latest', true)
+          .single();
+
+        // Build comprehensive style guide from reference book
+        styleGuide = `VISUAL STYLE REFERENCE (maintain this exact style):
+
+Book: ${refBook.book_name}
+Category: ${refBook.category}
+
+Style Description:
+${refBook.book_description || 'Educational children\'s book style'}
+
+${stylePrompt ? `\nDetailed Style Guide:\n${stylePrompt.content}` : ''}
+
+${refPages && refPages.length > 0 ? `\nExample Pages:\n${refPages.map((p, i) => `${i + 1}. ${p.title}: ${p.description}`).join('\n')}` : ''}
+
+CRITICAL: Maintain consistent visual style, character appearance (if applicable), color palette, art approach, and atmosphere throughout all pages.`;
+        
+        console.log('Style guide generated, length:', styleGuide.length);
+      }
     }
 
     // Color extraction utility function
@@ -421,9 +467,10 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         book_name: sanitizeText(bookData.bookName, 200),
         category: sanitizeText(bookData.category || 'General', 100),
         book_description: sanitizeText(bookData.bookDescription || '', 1000),
-        total_pages: sanitizedPages.length + 1, // Add 1 for cover page
+        total_pages: sanitizedPages.length + 1,
         status: 'draft',
-        metadata: validatedMetadata
+        reference_book_id: referenceBookId || null,
+        metadata: { ...validatedMetadata, hasStyleGuide: !!styleGuide }
       })
       .select()
       .single();

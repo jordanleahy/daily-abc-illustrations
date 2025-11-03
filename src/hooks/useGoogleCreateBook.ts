@@ -14,12 +14,14 @@ interface PageDetail {
   description: string;
 }
 
-interface CreateBookParams {
+export interface CreateBookParams {
   conversationHistory: Message[];
   pageDetails?: PageDetail[];
-  qaImages?: Record<number, string>;
   bookType?: string;
+  characterTheme?: string;
   textOverlayPreference?: 'with-text' | 'without-text';
+  referenceBookId?: string;
+  qaImages?: Record<string, string>;
 }
 
 interface CreateBookResponse {
@@ -34,19 +36,20 @@ export const useGoogleCreateBook = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ conversationHistory, pageDetails, qaImages, bookType, textOverlayPreference }: CreateBookParams): Promise<CreateBookResponse> => {
+    mutationFn: async (params: CreateBookParams): Promise<CreateBookResponse> => {
       if (!user?.id) {
         throw new Error('User not authenticated');
       }
 
       const { data, error } = await supabase.functions.invoke('google-create-book', {
         body: {
-          conversationHistory,
+          conversationHistory: params.conversationHistory,
           userId: user.id,
-          pageDetails: pageDetails || undefined,
-          qaImages: qaImages || undefined,
-          bookType: bookType || undefined,
-          textOverlayPreference: textOverlayPreference || undefined,
+          pageDetails: params.pageDetails || undefined,
+          qaImages: params.qaImages || undefined,
+          bookType: params.bookType || undefined,
+          textOverlayPreference: params.textOverlayPreference || undefined,
+          referenceBookId: params.referenceBookId || undefined,
         },
       });
 

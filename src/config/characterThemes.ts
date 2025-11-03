@@ -29,7 +29,7 @@ export const characterThemes: Record<string, CharacterTheme> = {
 export const getThemeByLabel = (label: string): CharacterTheme | undefined => {
   // Remove all emojis (comprehensive Unicode ranges), punctuation, and filler words
   const cleanedLabel = label
-    .replace(/[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{FE0F}\u{1F000}-\u{1FFFF}]/gu, '')
+    .replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '')
     .replace(/[^\w\s-]/g, '') // Remove punctuation
     .replace(/\b(themed|book|the|a|an)\b/gi, '') // Remove filler words
     .trim()

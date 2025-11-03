@@ -88,8 +88,10 @@ export enum PublicationStatus {
 
 /**
  * AI provider types
+ * NOTE: Must stay in sync with src/types/shared/agent.ts
+ * Edge functions run in Deno, frontend types run in different environment
  */
-export type AIProvider = 'openai' | 'deepseek';
+export type AIProvider = 'openai' | 'deepseek' | 'google';
 
 /**
  * Agent configuration structure for edge functions
@@ -108,7 +110,7 @@ export interface AgentConfig {
   status: string;
   /** System instructions that define agent behavior */
   instructions: string;
-  /** AI provider (OpenAI or DeepSeek) */
+  /** AI provider (OpenAI, DeepSeek, or Google) */
   provider: AIProvider;
   /** AI model identifier */
   model: string;

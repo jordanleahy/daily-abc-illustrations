@@ -1013,25 +1013,25 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       <CardContent className="space-y-4">
         {/* Download All Images Section - Only for books */}
         {contentType === 'book' && (
-          <div className="flex items-center justify-between pb-4 border-b">
+          <div className="flex flex-col gap-3 pb-4 border-b">
             <div className="space-y-1">
               <h4 className="text-sm font-medium">Download All Images</h4>
               <p className="text-sm text-muted-foreground">
                 Download all page images (A-Z) as a ZIP file
               </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
               <Button 
                 onClick={handleDownloadAllImages}
                 disabled={isDownloadingImages}
-                className="flex items-center gap-2"
+                className="flex items-center justify-center gap-2 w-full md:w-auto"
                 variant="outline"
               >
                 <Download className="h-4 w-4" />
-                {isDownloadingImages 
+                <span>{isDownloadingImages 
                   ? `Downloading... (${imageDownloadProgress.current}/${imageDownloadProgress.total}${imageDownloadProgress.currentPage ? ` - ${imageDownloadProgress.currentPage}` : ''})` 
                   : 'Download All Images'
-                }
+                }</span>
               </Button>
               {isDownloadingImages && imageDownloadProgress.total > 0 && (
                 <div className="text-sm text-muted-foreground">
@@ -1042,21 +1042,21 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           </div>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col gap-3">
           <div className="space-y-1">
             <h4 className="text-sm font-medium">PDF Export</h4>
             <p className="text-sm text-muted-foreground">
               Download a PDF version with all available content
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
             <Button 
               onClick={action}
               disabled={disabled}
-              className="flex items-center gap-2"
+              className="flex items-center justify-center gap-2 w-full md:w-auto"
             >
               <Icon className="h-4 w-4" />
-              {text}
+              <span>{text}</span>
             </Button>
             {isGeneratingPdf && pdfProgress.total > 0 && (
               <div className="text-sm text-muted-foreground">
@@ -1069,58 +1069,57 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         {/* Product Description Section - Only for books */}
         {contentType === 'book' && (
           <div className="flex flex-col gap-3 pt-4 border-t">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <h4 className="text-sm font-medium flex items-center gap-2">
-                  Product Description
-                  {productDescription && (
-                    isProductDescriptionSaved ? (
-                      <Check className="h-4 w-4 text-green-600" />
-                    ) : (
-                      <div className="h-2 w-2 rounded-full bg-orange-500" />
-                    )
-                  )}
-                </h4>
-                <p className="text-sm text-muted-foreground">
-                  Sales-focused description for online publishing
-                  {productDescription && !isProductDescriptionSaved && (
-                    <span className="text-orange-600 ml-1">(Unsaved changes)</span>
-                  )}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Button 
-                  onClick={handleGenerateProductDescription}
-                  disabled={isGeneratingProductDescription}
-                  variant="outline"
-                  className="flex items-center gap-2"
-                >
-                  <ShoppingCart className="h-4 w-4" />
-                  {isGeneratingProductDescription ? 'Generating...' : 'Generate'}
-                </Button>
-                {productDescription && !isProductDescriptionSaved && (
-                  <Button 
-                    onClick={saveProductDescription}
-                    disabled={isSavingProductDescription}
-                    variant="default"
-                    className="flex items-center gap-2"
-                  >
-                    <Save className="h-4 w-4" />
-                    {isSavingProductDescription ? 'Saving...' : 'Save'}
-                  </Button>
-                )}
+            <div className="space-y-1">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                Product Description
                 {productDescription && (
-                  <Button 
-                    onClick={handleCopyProductDescription}
-                    variant="outline"
-                    className="flex items-center gap-2"
-                  >
-                    <Copy className="h-4 w-4" />
-                    Copy
-                  </Button>
+                  isProductDescriptionSaved ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <div className="h-2 w-2 rounded-full bg-orange-500" />
+                  )
                 )}
-              </div>
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                Sales-focused description for online publishing
+                {productDescription && !isProductDescriptionSaved && (
+                  <span className="text-orange-600 ml-1">(Unsaved changes)</span>
+                )}
+              </p>
             </div>
+            <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
+              <Button 
+                onClick={handleGenerateProductDescription}
+                disabled={isGeneratingProductDescription}
+                variant="outline"
+                className="flex items-center justify-center gap-2 w-full md:w-auto"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                <span>{isGeneratingProductDescription ? 'Generating...' : 'Generate'}</span>
+              </Button>
+              {productDescription && !isProductDescriptionSaved && (
+                <Button 
+                  onClick={saveProductDescription}
+                  disabled={isSavingProductDescription}
+                  variant="default"
+                  className="flex items-center justify-center gap-2 w-full md:w-auto"
+                >
+                  <Save className="h-4 w-4" />
+                  <span>{isSavingProductDescription ? 'Saving...' : 'Save'}</span>
+                </Button>
+              )}
+              {productDescription && (
+                <Button 
+                  onClick={handleCopyProductDescription}
+                  variant="outline"
+                  className="flex items-center justify-center gap-2 w-full md:w-auto"
+                >
+                  <Copy className="h-4 w-4" />
+                  <span>Copy</span>
+                </Button>
+              )}
+            </div>
+            
             {productDescription && (
               <div className="bg-muted/50 rounded-md p-3 text-sm">
                 <div className="whitespace-pre-line text-muted-foreground">

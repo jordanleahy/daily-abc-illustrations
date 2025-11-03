@@ -4,6 +4,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/hooks/useGoogleChat';
 import type { SuggestedAction } from '@/hooks/useGoogleChat';
+import { ImageButton } from './ImageButton';
+import { getThemeByLabel } from '@/config/characterThemes';
 
 interface MessageItemProps {
   message: Message;
@@ -37,17 +39,34 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
         </p>
         {message.suggestedActions && message.suggestedActions.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2">
-            {message.suggestedActions.map((action) => (
-              <Button
-                key={action.id}
-                variant="outline"
-                size="sm"
-                onClick={() => onQuickReply?.(action)}
-                className="text-xs"
-              >
-                {action.label}
-              </Button>
-            ))}
+            {message.suggestedActions.map((action) => {
+              const theme = getThemeByLabel(action.label);
+              
+              if (theme) {
+                return (
+                  <ImageButton
+                    key={action.id}
+                    action={action}
+                    imageSrc={theme.thumbnail}
+                    altText={theme.altText}
+                    size={160}
+                    onClick={() => onQuickReply?.(action)}
+                  />
+                );
+              }
+              
+              return (
+                <Button
+                  key={action.id}
+                  variant="outline"
+                  size="sm"
+                  onClick={() => onQuickReply?.(action)}
+                  className="text-xs"
+                >
+                  {action.label}
+                </Button>
+              );
+            })}
           </div>
         )}
       </div>

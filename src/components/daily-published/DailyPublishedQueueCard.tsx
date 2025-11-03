@@ -1,9 +1,11 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { formatTimeRemaining, formatFixedScheduleTime } from '@/utils/timeUtils';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
-import { Clock, Calendar, Hash, Image } from 'lucide-react';
+import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
+import { Clock, Calendar, Hash, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 interface DailyPublishedQueueCardProps {
   item: DailyPublishedWithBook;
@@ -16,6 +18,7 @@ export function DailyPublishedQueueCard({
   expectedActivationTime
 }: DailyPublishedQueueCardProps) {
   const navigate = useNavigate();
+  const deleteMutation = useDeleteDailyPublished();
 
   // Format publish date in user's local timezone
   const formatPublishDate = (dateString: string): string => {
@@ -48,6 +51,13 @@ export function DailyPublishedQueueCard({
     // Only allow viewing active content
     if (effectiveStatus === 'active') {
       navigate(`/editor/${item.book_id}`);
+    }
+  };
+
+  const handleDelete = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card click
+    if (confirm(`Delete "${item.title}" from the queue?`)) {
+      deleteMutation.mutate(item.id);
     }
   };
   const getStatusVariant = (status: string) => {
@@ -135,6 +145,19 @@ export function DailyPublishedQueueCard({
                 {seoMetadata.seo_description}
               </p>}
           </div>
+
+          {/* Delete button - only show for queued/draft items */}
+          {(effectiveStatus === 'queued' || effectiveStatus === 'draft') && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
+              className="flex-shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </CardHeader>
       

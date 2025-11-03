@@ -5,6 +5,7 @@ import { formatTimeRemaining, formatFixedScheduleTime } from '@/utils/timeUtils'
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Clock, Calendar, Hash, Image, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 interface DailyPublishedQueueCardProps {
@@ -19,6 +20,7 @@ export function DailyPublishedQueueCard({
 }: DailyPublishedQueueCardProps) {
   const navigate = useNavigate();
   const deleteMutation = useDeleteDailyPublished();
+  const { data: userRole } = useUserRole();
 
   // Format publish date in user's local timezone
   const formatPublishDate = (dateString: string): string => {
@@ -41,7 +43,18 @@ export function DailyPublishedQueueCard({
   const {
     data: seoMetadata
   } = useSeoMetadata(item.id);
+
+  // Show lock icon for premium-gated content (but not for admins/teachers)
+  const hasFullAccess = userRole?.isAdmin || userRole?.isTeacher;
+  const isPremiumGated = !hasFullAccess && (effectiveStatus === 'expired' || effectiveStatus === 'queued');
+
   const handleCardClick = () => {
+    // Admins and teachers can view any content
+    if (hasFullAccess) {
+      navigate(`/editor/${item.book_id}`);
+      return;
+    }
+
     // Premium gate: Redirect to pricing for expired or scheduled items
     if (effectiveStatus === 'expired' || effectiveStatus === 'queued') {
       navigate('/pricing');
@@ -113,8 +126,6 @@ export function DailyPublishedQueueCard({
   };
   const timingInfo = getTimingDisplay();
 
-  // Show lock icon for premium-gated content
-  const isPremiumGated = effectiveStatus === 'expired' || effectiveStatus === 'queued';
   return <Card className={`overflow-hidden border-l-4 transition-all cursor-pointer hover:shadow-lg ${effectiveStatus === 'active' ? 'border-l-green-500 hover:border-l-green-600' : 'border-l-primary/20 hover:border-l-primary/50'} ${isPremiumGated ? 'opacity-75 hover:opacity-100' : ''}`} onClick={handleCardClick}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">

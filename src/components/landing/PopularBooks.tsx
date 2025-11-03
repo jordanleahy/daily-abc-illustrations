@@ -34,7 +34,7 @@ function PopularBookCard({ book, priority = false }: { book: LandingPopularBook;
           Featured
         </Badge>
         
-        <AspectRatio ratio={1200/630} className="bg-muted rounded-lg overflow-hidden mb-4">
+        <AspectRatio ratio={16/9} className="bg-muted rounded-lg overflow-hidden mb-4">
           {shouldLoad ? (
             <OptimizedImage
               src={book.image_url}

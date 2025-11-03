@@ -197,7 +197,7 @@ function ScheduleThumbnail({
   return <>
       {/* Mobile: Full width with aspect ratio */}
       <div className="md:hidden w-full">
-        <AspectRatio ratio={1.91} className="rounded-lg overflow-hidden bg-muted">
+        <AspectRatio ratio={16/9} className="rounded-lg overflow-hidden bg-muted">
           {imageUrl ? <img src={imageUrl} alt={title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center">
               <Image className="h-8 w-8 text-muted-foreground" />
             </div>}

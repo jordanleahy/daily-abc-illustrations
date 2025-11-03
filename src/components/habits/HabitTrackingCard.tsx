@@ -2,6 +2,7 @@ import { HabitCompletionWithDetails } from '@/types/habit';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { X, Coins, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -180,11 +181,13 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
 
       <CardContent className="space-y-3">
         {habit.photo_url && (
-          <img 
-            src={habit.photo_url} 
-            alt={habit.title}
-            className="w-full h-32 object-cover rounded"
-          />
+          <AspectRatio ratio={16/9} className="rounded-lg overflow-hidden">
+            <img 
+              src={habit.photo_url} 
+              alt={habit.title}
+              className="w-full h-full object-cover"
+            />
+          </AspectRatio>
         )}
 
         {habit.description && (

@@ -306,6 +306,52 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   }, [contentType, bookData?.product_description]);
 
   /**
+   * Auto-fix missing slugs for existing publications
+   */
+  useEffect(() => {
+    const fixMissingSlug = async () => {
+      if (!existingPublication || existingPublication.slug || contentType !== 'book') {
+        return;
+      }
+
+      console.log('🔧 Fixing missing slug for publication:', existingPublication.id);
+      
+      try {
+        const slug = await generateUniqueSlug(contentName, contentId);
+        
+        const { error } = await supabase
+          .from('daily_published')
+          .update({ slug, updated_at: new Date().toISOString() })
+          .eq('id', existingPublication.id);
+
+        if (error) {
+          console.error('Failed to fix slug:', error);
+          return;
+        }
+
+        // Refresh the publication data
+        const { data: updated } = await supabase
+          .from('daily_published')
+          .select('*')
+          .eq('id', existingPublication.id)
+          .single();
+
+        if (updated) {
+          setExistingPublication(updated);
+          toast({
+            title: "Public URL Generated",
+            description: "Missing slug has been automatically fixed."
+          });
+        }
+      } catch (error) {
+        console.error('Error fixing slug:', error);
+      }
+    };
+
+    fixMissingSlug();
+  }, [existingPublication?.id, existingPublication?.slug]);
+
+  /**
    * Auto-add to queue when book status changes to 'published'
    * Automatically generates SEO and adds book to daily publication queue
    */

@@ -32,23 +32,47 @@ serve(async (req) => {
     logStep("Stripe key verified");
 
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
+    if (!authHeader) {
+      logStep("No authorization header provided - treating as unauthenticated");
+      return new Response(JSON.stringify({ subscribed: false }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     logStep("Authorization header found");
-
     const token = authHeader.replace("Bearer ", "");
     logStep("Authenticating user with token");
     
     const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
     if (userError) {
+      const msg = userError.message || '';
       // Handle connection pool exhaustion gracefully
-      if (userError.message?.includes('connection slots') || userError.message?.includes('SUPERUSER')) {
+      if (msg.includes('connection slots') || msg.includes('SUPERUSER')) {
         logStep("Database connection pool exhausted - retry needed");
         throw new Error("Service temporarily unavailable - too many concurrent requests. Please try again.");
       }
-      throw new Error(`Authentication error: ${userError.message}`);
+      // Treat unexpected auth failures as unauthenticated, not a server error
+      if (msg.toLowerCase().includes('unexpected')) {
+        logStep("Auth unexpected failure - returning unsubscribed");
+        return new Response(JSON.stringify({ subscribed: false, error: 'unauthenticated' }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+      logStep("Authentication error", { message: msg });
+      return new Response(JSON.stringify({ subscribed: false, error: 'unauthenticated' }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
     }
     const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
+    if (!user?.email) {
+      logStep("No user email - treating as unauthenticated");
+      return new Response(JSON.stringify({ subscribed: false }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
     // Query Stripe API directly - single source of truth

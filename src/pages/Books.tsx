@@ -131,6 +131,9 @@ export default function Books() {
       .update({ last_activity_at: new Date().toISOString() })
       .eq('id', bookId);
     
+    // Invalidate query to refresh sort order immediately
+    queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
+    
     navigate(`/editor/${bookId}`);
   };
 

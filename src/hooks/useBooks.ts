@@ -87,24 +87,11 @@ export const useBooks = () => {
       }
 
       // Combine books with their daily_published status
-      const processedBooks = booksData.map(book => ({
+      // Database ordering (is_highlighted DESC, last_activity_at DESC) is already applied
+      return booksData.map(book => ({
         ...book,
         dailyPublishedStatus: book.daily_published?.[0]?.status || undefined
       }));
-      
-      // Sort by most recent activity
-      return processedBooks.sort((a, b) => {
-        // Highlighted books always come first
-        if (a.is_highlighted !== b.is_highlighted) {
-          return b.is_highlighted ? 1 : -1;
-        }
-        
-        // Sort by last activity (most recent first)
-        const aActivity = new Date(a.last_activity_at || a.updated_at).getTime();
-        const bActivity = new Date(b.last_activity_at || b.updated_at).getTime();
-        
-        return bActivity - aActivity;
-      });
     },
     enabled: !!user?.id,
   });

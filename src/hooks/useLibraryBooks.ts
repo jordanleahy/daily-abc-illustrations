@@ -47,13 +47,13 @@ export const useLibraryBooks = () => {
       const { data: firstPageImages, error: imageError } = await supabase
         .from('page_image_urls')
         .select(`
-          book_id,
           image_url,
           pages!inner(
-            page_number
+            page_number,
+            book_id
           )
         `)
-        .in('book_id', bookIds)
+        .in('pages.book_id', bookIds)
         .eq('pages.page_number', 1)
         .eq('is_latest', true)
         .not('image_url', 'is', null);
@@ -73,7 +73,7 @@ export const useLibraryBooks = () => {
 
       // Map first page images by book_id
       const firstPageMap = new Map(
-        firstPageImages?.map((img: any) => [img.book_id, img.image_url]) || []
+        firstPageImages?.map((img: any) => [img.pages.book_id, img.image_url]) || []
       );
 
       const enrichedData = dailyPublishedData?.map(item => {

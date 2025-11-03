@@ -5,7 +5,7 @@ export interface CharacterTheme {
 
 export const characterThemes: Record<string, CharacterTheme> = {
   'paw-patrol': {
-    thumbnail: '/placeholder.svg',
+    thumbnail: '/themes/paw-patrol.png',
     altText: 'Paw Patrol themed book'
   },
   'peppa-pig': {

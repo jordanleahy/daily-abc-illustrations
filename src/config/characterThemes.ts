@@ -19,10 +19,20 @@ export const characterThemes: Record<string, CharacterTheme> = {
   'daniel-tiger': {
     thumbnail: '/themes/daniel-tiger.png',
     altText: 'Daniel Tiger themed book'
+  },
+  'frozen': {
+    thumbnail: '/themes/frozen.png',
+    altText: 'Frozen themed book'
   }
 };
 
 export const getThemeByLabel = (label: string): CharacterTheme | undefined => {
-  const normalizedLabel = label.toLowerCase().replace(/\s+/g, '-');
-  return characterThemes[normalizedLabel];
+  // Remove emojis and extra whitespace, then normalize
+  const cleanedLabel = label
+    .replace(/[\u{1F300}-\u{1F9FF}]/gu, '') // Remove emojis
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-');
+  
+  return characterThemes[cleanedLabel];
 };

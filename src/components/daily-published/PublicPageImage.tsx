@@ -12,6 +12,10 @@ interface PublicPageImageProps {
   showUploadButton?: boolean;
   /** Handler when upload button is clicked */
   onUploadClick?: () => void;
+  /** Text content to display in overlay (from Page.content.mainConcept) */
+  pageContent?: string;
+  /** Toggle to enable/disable text overlay */
+  showTextOverlay?: boolean;
 }
 
 export function PublicPageImage({ 
@@ -19,7 +23,9 @@ export function PublicPageImage({
   bookId, 
   className = "",
   showUploadButton = false,
-  onUploadClick
+  onUploadClick,
+  pageContent,
+  showTextOverlay = false
 }: PublicPageImageProps) {
   const { data: imageData, isLoading } = usePublicPageImage(pageId);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -41,6 +47,29 @@ export function PublicPageImage({
         className={`w-full h-full object-cover object-top ${className}`}
         onLoad={() => setImageLoaded(true)}
       />
+      
+      {/* Text overlay with dark gradient background */}
+      {showTextOverlay && pageContent && imageLoaded && (
+        <div 
+          className="absolute bottom-0 left-0 right-0 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.6) 40%, transparent 100%)',
+            paddingTop: '4rem',
+            paddingBottom: '2rem',
+            paddingLeft: '1.5rem',
+            paddingRight: '1.5rem'
+          }}
+        >
+          <p 
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-white text-center pointer-events-auto select-text leading-tight"
+            style={{ 
+              textShadow: '2px 2px 4px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.5)' 
+            }}
+          >
+            {pageContent}
+          </p>
+        </div>
+      )}
       
       {/* Upload button overlay */}
       {showUploadButton && onUploadClick && imageLoaded && (

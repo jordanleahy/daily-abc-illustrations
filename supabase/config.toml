@@ -149,3 +149,6 @@ verify_jwt = false
 
 [functions.expire-pending-habits]
 verify_jwt = false
+
+[functions.delete-daily-published-oneoff]
+verify_jwt = false

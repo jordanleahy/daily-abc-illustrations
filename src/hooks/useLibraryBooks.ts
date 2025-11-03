@@ -35,8 +35,7 @@ export const useLibraryBooks = () => {
         .from('seo_metadata')
         .select('daily_published_id, seo_title, seo_description, og_image_url')
         .eq('is_latest', true)
-        .eq('is_active', true)
-        .eq('optimization_status', 'complete');
+        .eq('is_active', true);
 
       if (seoError) {
         console.error('Error fetching SEO metadata:', seoError);

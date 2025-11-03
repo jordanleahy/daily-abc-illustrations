@@ -7,15 +7,13 @@ interface ImageButtonProps {
   action: SuggestedAction;
   imageSrc: string;
   altText: string;
-  size?: number;
   onClick: () => void;
 }
 
 export const ImageButton = memo(({ 
   action, 
   imageSrc, 
-  altText, 
-  size = 160,
+  altText,
   onClick 
 }: ImageButtonProps) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -32,13 +30,12 @@ export const ImageButton = memo(({
       onClick={onClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        "cursor-pointer rounded-lg overflow-hidden",
+        "w-full cursor-pointer rounded-lg overflow-hidden",
         "transition-all duration-200",
         "hover:scale-105 hover:shadow-lg",
         "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
         "active:scale-95"
       )}
-      style={{ width: `${size}px` }}
       aria-label={action.label}
     >
       <AspectRatio ratio={1}>

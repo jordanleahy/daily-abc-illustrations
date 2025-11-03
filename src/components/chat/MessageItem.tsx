@@ -47,7 +47,7 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
           {content}
         </p>
         {message.suggestedActions && message.suggestedActions.length > 0 && (
-          <div className="flex flex-wrap gap-2 pt-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
             {message.suggestedActions.map((action) => {
               // Try themeId first, then fallback to slugified label
 let theme = action.themeId
@@ -65,7 +65,6 @@ if (!theme) {
                   action={action}
                   imageSrc={theme.thumbnail}
                   altText={theme.altText}
-                  size={80}
                   onClick={() => onQuickReply?.(action)}
                 />
                 );

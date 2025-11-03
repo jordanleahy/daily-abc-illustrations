@@ -49,7 +49,7 @@ export const characterThemes: Record<string, CharacterTheme> = {
     altText: 'Sonic themed book'
   },
   'pokemon': {
-    thumbnail: '/placeholder.svg',
+    thumbnail: '/themes/pokemon.png',
     altText: 'Pokemon themed book'
   },
   'mario': {

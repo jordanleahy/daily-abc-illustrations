@@ -23,6 +23,38 @@ export const characterThemes: Record<string, CharacterTheme> = {
   'frozen': {
     thumbnail: '/placeholder.svg',
     altText: 'Frozen themed book'
+  },
+  'cocomelon': {
+    thumbnail: '/placeholder.svg',
+    altText: 'Cocomelon themed book'
+  },
+  'moana': {
+    thumbnail: '/placeholder.svg',
+    altText: 'Moana themed book'
+  },
+  'mickey-mouse': {
+    thumbnail: '/placeholder.svg',
+    altText: 'Mickey Mouse themed book'
+  },
+  'spider-man': {
+    thumbnail: '/placeholder.svg',
+    altText: 'Spider-Man themed book'
+  },
+  'toy-story': {
+    thumbnail: '/placeholder.svg',
+    altText: 'Toy Story themed book'
+  },
+  'sonic': {
+    thumbnail: '/placeholder.svg',
+    altText: 'Sonic themed book'
+  },
+  'pokemon': {
+    thumbnail: '/placeholder.svg',
+    altText: 'Pokemon themed book'
+  },
+  'mario': {
+    thumbnail: '/placeholder.svg',
+    altText: 'Mario themed book'
   }
 };
 

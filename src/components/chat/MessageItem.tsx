@@ -1,11 +1,9 @@
 import { memo } from 'react';
 import { Sparkles, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/hooks/useGoogleChat';
 import type { SuggestedAction } from '@/hooks/useGoogleChat';
-import { CHARACTER_THEMES } from '@/config/characterThemes';
 
 interface MessageItemProps {
   message: Message;
@@ -39,44 +37,17 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
         </p>
         {message.suggestedActions && message.suggestedActions.length > 0 && (
           <div className="flex flex-wrap gap-2 pt-2">
-            {message.suggestedActions.map((action) => {
-              const theme = CHARACTER_THEMES[action.id];
-              const hasThumbnail = theme?.thumbnail;
-
-              return hasThumbnail ? (
-                <div
-                  key={action.id}
-                  role="button"
-                  tabIndex={0}
-                  className="border border-input rounded-md p-0 h-auto overflow-hidden hover:ring-2 hover:ring-primary transition-all cursor-pointer"
-                  onClick={() => onQuickReply?.(action)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onQuickReply?.(action);
-                    }
-                  }}
-                >
-                  <AspectRatio ratio={1} className="w-40">
-                    <img 
-                      src={theme.thumbnail}
-                      alt={theme.altText}
-                      className="w-full h-full object-cover"
-                    />
-                  </AspectRatio>
-                </div>
-              ) : (
-                <Button
-                  key={action.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onQuickReply?.(action)}
-                  className="text-xs"
-                >
-                  {action.label}
-                </Button>
-              );
-            })}
+            {message.suggestedActions.map((action) => (
+              <Button
+                key={action.id}
+                variant="outline"
+                size="sm"
+                onClick={() => onQuickReply?.(action)}
+                className="text-xs"
+              >
+                {action.label}
+              </Button>
+            ))}
           </div>
         )}
       </div>

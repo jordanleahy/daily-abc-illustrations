@@ -13,7 +13,7 @@ export const usePublicPageImage = (pageId?: string) => {
         .select('image_url')
         .eq('page_id', pageId)
         .eq('is_latest', true)
-        .eq('generation_status', 'complete')
+        .not('image_url', 'is', null)
         .maybeSingle();
 
       if (error) {

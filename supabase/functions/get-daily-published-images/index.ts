@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
       .select('page_id, image_url, placeholder_base64')
       .in('page_id', pageIds)
       .eq('is_latest', true)
-      .eq('generation_status', 'complete');
+      .not('image_url', 'is', null);
 
     if (imagesError) {
       console.error('Error fetching images:', imagesError);

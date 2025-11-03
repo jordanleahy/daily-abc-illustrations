@@ -22,7 +22,7 @@ export const useBookPageImages = (bookId: string | null | undefined) => {
         `)
         .eq('book_id', bookId)
         .eq('is_latest', true)
-        .eq('generation_status', 'complete')
+        .not('image_url', 'is', null)
         .order('pages(page_number)', { ascending: true });
 
       if (error) {

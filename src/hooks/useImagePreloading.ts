@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useImagePreloader } from './useImagePreloader';
 
 interface Book {
   id: string;
@@ -6,35 +6,17 @@ interface Book {
 }
 
 /**
- * Hook to preload critical book thumbnail images
- * Preloads first 2 images immediately, next 4 after 1 second delay
+ * Hook to preload library book thumbnail images
+ * Uses unified image preloader with service worker caching
  */
 export function useImagePreloading(books: Book[] | undefined) {
-  useEffect(() => {
-    if (!books || books.length === 0) return;
-
-    // Preload first 2 critical book thumbnails immediately
-    const criticalBooks = books.slice(0, 2);
-    
-    criticalBooks.forEach((book) => {
-      if (book.firstPageImageUrl) {
-        const img = new Image();
-        img.src = book.firstPageImageUrl;
-      }
-    });
-
-    // Preload next 4 books with lower priority (delayed)
-    const timeoutId = setTimeout(() => {
-      const secondaryBooks = books.slice(2, 6);
-      
-      secondaryBooks.forEach((book) => {
-        if (book.firstPageImageUrl) {
-          const img = new Image();
-          img.src = book.firstPageImageUrl;
-        }
-      });
-    }, 1000);
-
-    return () => clearTimeout(timeoutId);
-  }, [books]);
+  const imageUrls = books?.map(b => b.firstPageImageUrl).filter(Boolean) || [];
+  
+  useImagePreloader(imageUrls, {
+    priority: false,
+    width: 600,
+    quality: 85,
+    batchSize: 4,
+    batchDelay: 250
+  });
 }

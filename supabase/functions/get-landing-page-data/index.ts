@@ -133,10 +133,10 @@ Deno.serve(async (req) => {
           const pageIds = pagesResult.data.map(p => p.id);
           const imagesResult = await supabase
             .from('page_image_urls')
-            .select('page_id, image_url, is_latest, generation_status')
+            .select('page_id, image_url, is_latest')
             .in('page_id', pageIds)
             .eq('is_latest', true)
-            .eq('generation_status', 'complete');
+            .not('image_url', 'is', null);
 
           if (imagesResult.error) {
             console.error('  ❌ Error fetching images:', imagesResult.error);
@@ -245,7 +245,6 @@ Deno.serve(async (req) => {
                 .select('page_id, image_url')
                 .in('page_id', pageIds)
                 .eq('is_latest', true)
-                .eq('generation_status', 'complete')
                 .not('image_url', 'is', null);
               
               if (imagesResult.data) {

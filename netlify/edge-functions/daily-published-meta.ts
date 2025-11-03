@@ -102,7 +102,7 @@ async function fetchSEOMetadata(dailyId: string) {
 async function fetchBookThumbnail(bookId: string) {
   try {
     const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/book_thumbnails?select=thumbnail_url&book_id=eq.${bookId}&is_latest=eq.true&generation_status=eq.complete`,
+      `${SUPABASE_URL}/rest/v1/book_thumbnails?select=thumbnail_url&book_id=eq.${bookId}&is_latest=eq.true&thumbnail_url=not.is.null`,
       {
         headers: {
           'apikey': SUPABASE_ANON_KEY,

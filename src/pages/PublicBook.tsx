@@ -10,6 +10,7 @@ import { generateDailyPublishedOpenGraph } from '@/utils/openGraph';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { BookImage } from '@/components/ui/book-image';
 import { Download, Plus, Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -20,18 +21,12 @@ const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: numbe
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <CardContent className="p-0">
         <div className="aspect-square relative bg-muted">
-          {imageData?.image_url ? (
-            <img
-              src={imageData.image_url}
-              alt={`Letter ${page.letter} - ${page.title}`}
-              className={`w-full h-full object-cover transition-all ${isLocked ? 'blur-md' : ''}`}
-              loading="lazy"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <Skeleton className="w-full h-full" />
-            </div>
-          )}
+          <BookImage
+            src={imageData?.image_url}
+            alt={`Letter ${page.letter} - ${page.title}`}
+            priority={index < 3}
+            className={`w-full h-full object-cover ${isLocked ? 'blur-md' : ''}`}
+          />
           
           {isLocked && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">

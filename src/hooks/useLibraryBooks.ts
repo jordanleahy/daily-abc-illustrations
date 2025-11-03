@@ -56,7 +56,7 @@ export const useLibraryBooks = () => {
         .in('book_id', bookIds)
         .eq('pages.page_number', 1)
         .eq('is_latest', true)
-        .eq('generation_status', 'complete');
+        .not('image_url', 'is', null);
 
       if (imageError) {
         console.error('Error fetching first page images:', imageError);

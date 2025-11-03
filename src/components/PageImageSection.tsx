@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Shimmer } from "@/components/ui/shimmer";
+import { BookImage } from "@/components/ui/book-image";
 import { usePageImageUrls } from "@/hooks/usePageImageUrls";
 import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
 import { usePageGenerationCost } from "@/hooks/usePageGenerationCost";
@@ -305,22 +306,14 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
       ) : hasImage && displayImageUrl ? (
         // Show image with source indicator
         <div className="relative w-full h-full">
-          <img 
+          <BookImage
             src={displayImageUrl}
             alt={isUserUploaded ? "Uploaded page image" : "Generated page image"}
+            priority={true}
+            enableMobileSave={enableMobileSave}
             className="w-full h-full object-cover"
-            style={enableMobileSave ? { 
-              touchAction: 'auto', 
-              WebkitTouchCallout: 'default' 
-            } : undefined}
-            loading="lazy"
-            decoding="async"
             onLoad={() => console.log('🖼️ Image loaded successfully:', displayImageUrl)}
             onError={() => console.error('🚫 Image failed to load:', displayImageUrl)}
-            onContextMenu={enableMobileSave ? (e) => {
-              // Allow default context menu behavior for mobile save
-              console.log('📱 Context menu triggered for mobile save');
-            } : undefined}
           />
           {/* Source indicator - only show for AI generated */}
           {!isUserUploaded && (

@@ -33,7 +33,7 @@ export const characterThemes: Record<string, CharacterTheme> = {
     altText: 'Moana themed book'
   },
   'mickey-mouse': {
-    thumbnail: '/placeholder.svg',
+    thumbnail: '/themes/mickey-mouse.png',
     altText: 'Mickey Mouse themed book'
   },
   'spider-man': {

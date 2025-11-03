@@ -7,7 +7,7 @@ export interface CharacterTheme {
 export const CHARACTER_THEMES: Record<string, CharacterTheme> = {
   'paw-patrol': { id: 'paw-patrol', thumbnail: '/themes/paw-patrol.png', altText: 'Paw Patrol' },
   'frozen': { id: 'frozen', altText: 'Frozen' },
-  'peppa-pig': { id: 'peppa-pig', altText: 'Peppa Pig' },
+  'peppa-pig': { id: 'peppa-pig', thumbnail: '/themes/peppa-pig.png', altText: 'Peppa Pig' },
   'bluey': { id: 'bluey', altText: 'Bluey' },
   'cocomelon': { id: 'cocomelon', altText: 'Cocomelon' },
   'moana': { id: 'moana', altText: 'Moana' },

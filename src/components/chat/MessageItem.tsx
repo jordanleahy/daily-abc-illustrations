@@ -57,7 +57,7 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
                     }
                   }}
                 >
-                  <AspectRatio ratio={1} className="w-24">
+                  <AspectRatio ratio={1} className="w-40">
                     <img 
                       src={theme.thumbnail}
                       alt={theme.altText}

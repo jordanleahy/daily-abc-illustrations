@@ -273,6 +273,35 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   }, [contentType, bookData?.product_description]);
 
   /**
+   * Auto-add to queue when book status changes to 'published'
+   * Automatically generates SEO and adds book to daily publication queue
+   */
+  useEffect(() => {
+    const autoAddToQueue = async () => {
+      // Only proceed if:
+      // 1. Content is a book
+      // 2. Book status is 'published'
+      // 3. No existing publication (or only draft/expired)
+      // 4. Not currently checking publication status
+      if (
+        contentType !== 'book' || 
+        bookData?.status !== PublicationStatus.PUBLISHED ||
+        isCheckingPublication ||
+        (existingPublication && ['queued', 'active'].includes(existingPublication.status))
+      ) {
+        return;
+      }
+
+      console.log('📚 Auto-adding published book to queue:', contentName);
+      
+      // Trigger the add to queue process
+      await handleAddToQueue();
+    };
+
+    autoAddToQueue();
+  }, [contentType, bookData?.status, existingPublication]);
+
+  /**
    * Formats a date string to a readable format with full details
    * Handles DATE-only strings (YYYY-MM-DD) without timezone conversion issues
    * @param dateString - ISO date string to format (e.g., "2025-11-02")
@@ -1177,82 +1206,85 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           </div>
         )}
 
-        <div className="flex items-center justify-between pt-4 border-t">
-          <div className="space-y-1">
-            <h4 className="text-sm font-medium flex items-center gap-2">
-              Daily Queue
-              {publicationHistory.length > 1 && (
-                <History className="h-4 w-4 text-muted-foreground" />
-              )}
-            </h4>
-            <p className="text-sm text-muted-foreground">
-              {getDailyQueueStatusMessage()}
-            </p>
-            {publicationHistory.length > 1 && (
-              <p className="text-xs text-muted-foreground">
-                Published {publicationHistory.filter(p => p.status === 'expired').length} time(s) previously
+        {/* Daily Queue Section - Only show for published books */}
+        {contentType === 'book' && bookData?.status !== PublicationStatus.DRAFT && (
+          <div className="flex items-center justify-between pt-4 border-t">
+            <div className="space-y-1">
+              <h4 className="text-sm font-medium flex items-center gap-2">
+                Daily Queue
+                {publicationHistory.length > 1 && (
+                  <History className="h-4 w-4 text-muted-foreground" />
+                )}
+              </h4>
+              <p className="text-sm text-muted-foreground">
+                {getDailyQueueStatusMessage()}
               </p>
-            )}
-          </div>
-           <div className="flex items-center gap-2">
-             {existingPublication && existingPublication.status === 'active' && (
-               <Button 
-                 onClick={handleCopyLink}
-                 variant="outline"
-                 size="sm"
-                 className="flex items-center gap-2"
-               >
-                 <Copy className="h-4 w-4" />
-                 Copy Link
-               </Button>
-             )}
-             {existingPublication && existingPublication.status === 'expired' && (
-               <>
+              {publicationHistory.length > 1 && (
+                <p className="text-xs text-muted-foreground">
+                  Published {publicationHistory.filter(p => p.status === 'expired').length} time(s) previously
+                </p>
+              )}
+            </div>
+             <div className="flex items-center gap-2">
+               {existingPublication && existingPublication.status === 'active' && (
+                 <Button 
+                   onClick={handleCopyLink}
+                   variant="outline"
+                   size="sm"
+                   className="flex items-center gap-2"
+                 >
+                   <Copy className="h-4 w-4" />
+                   Copy Link
+                 </Button>
+               )}
+               {existingPublication && existingPublication.status === 'expired' && (
+                 <>
+                   <Button 
+                     onClick={handleViewPublication}
+                     variant="outline"
+                     size="sm"
+                     className="flex items-center gap-2"
+                   >
+                     <History className="h-4 w-4" />
+                     View Archive
+                   </Button>
+                   <Button 
+                     onClick={handleRepublish}
+                     variant="outline"
+                     size="sm"
+                     className="flex items-center gap-2"
+                   >
+                     <RefreshCw className="h-4 w-4" />
+                     Republish
+                   </Button>
+                 </>
+               )}
+               {(!existingPublication || existingPublication.status === 'draft' || existingPublication.status === 'expired') && (
+                 <Button 
+                   onClick={handleAddToQueue}
+                   variant="outline"
+                   className="flex items-center gap-2"
+                   disabled={isCheckingPublication}
+                 >
+                   <Globe className="h-4 w-4" />
+                   {isCheckingPublication ? 'Checking...' : 'Add to Queue'}
+                 </Button>
+               )}
+               {existingPublication && ['queued', 'active'].includes(existingPublication.status) && (
                  <Button 
                    onClick={handleViewPublication}
                    variant="outline"
-                   size="sm"
                    className="flex items-center gap-2"
+                   disabled={isCheckingPublication}
                  >
-                   <History className="h-4 w-4" />
-                   View Archive
+                   <Eye className="h-4 w-4" />
+                   {isCheckingPublication ? 'Checking...' : 
+                     existingPublication.status === 'active' ? 'View Live' : 'View in Queue'}
                  </Button>
-                 <Button 
-                   onClick={handleRepublish}
-                   variant="outline"
-                   size="sm"
-                   className="flex items-center gap-2"
-                 >
-                   <RefreshCw className="h-4 w-4" />
-                   Republish
-                 </Button>
-               </>
-             )}
-             {(!existingPublication || existingPublication.status === 'draft' || existingPublication.status === 'expired') && (
-               <Button 
-                 onClick={handleAddToQueue}
-                 variant="outline"
-                 className="flex items-center gap-2"
-                 disabled={isCheckingPublication}
-               >
-                 <Globe className="h-4 w-4" />
-                 {isCheckingPublication ? 'Checking...' : 'Add to Queue'}
-               </Button>
-             )}
-             {existingPublication && ['queued', 'active'].includes(existingPublication.status) && (
-               <Button 
-                 onClick={handleViewPublication}
-                 variant="outline"
-                 className="flex items-center gap-2"
-                 disabled={isCheckingPublication}
-               >
-                 <Eye className="h-4 w-4" />
-                 {isCheckingPublication ? 'Checking...' : 
-                   existingPublication.status === 'active' ? 'View Live' : 'View in Queue'}
-               </Button>
-             )}
-           </div>
-        </div>
+               )}
+             </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

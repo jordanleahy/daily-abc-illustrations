@@ -13,7 +13,7 @@ export const characterThemes: Record<string, CharacterTheme> = {
     altText: 'Peppa Pig themed book'
   },
   'bluey': {
-    thumbnail: '/placeholder.svg',
+    thumbnail: '/themes/bluey.png',
     altText: 'Bluey themed book'
   },
   'daniel-tiger': {

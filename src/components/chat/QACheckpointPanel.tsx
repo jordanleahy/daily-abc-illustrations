@@ -107,7 +107,7 @@ export function QACheckpointPanel({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate(`/books/${createdBookId}`)}
+                onClick={() => navigate(`/editor/${createdBookId}`)}
                 className="w-full"
               >
                 <BookOpen className="h-4 w-4 mr-2" />

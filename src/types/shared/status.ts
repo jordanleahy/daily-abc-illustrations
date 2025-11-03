@@ -1,6 +1,10 @@
 /**
  * Centralized status enums for consistent status tracking across the application
- * Single source of truth for all status-related types
+ * Single source of truth for all frontend status-related types
+ * 
+ * NOTE: ProcessStatus and PublicationStatus are mirrored in supabase/functions/_shared/types.ts
+ * for edge functions. Edge functions cannot import from src/ due to Deno runtime.
+ * Keep both files synchronized when making changes to these enums.
  */
 
 /**

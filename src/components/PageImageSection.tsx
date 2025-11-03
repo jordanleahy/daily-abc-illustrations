@@ -8,7 +8,7 @@ import { usePageGenerationCost } from "@/hooks/usePageGenerationCost";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-import { ProcessStatus } from "@/types/process";
+import { ProcessStatus } from "@/types/shared";
 import { useState, useEffect } from "react";
 import { Loader2, Upload, Sparkles, Clipboard, Copy, ArrowLeft, DollarSign } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";

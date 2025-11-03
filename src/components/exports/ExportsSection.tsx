@@ -32,7 +32,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { SITE_CONFIG } from '@/config/site';
 import { DailyPublishedStatus } from '@/types/dailyPublished';
-import { PublicationStatus } from '@/types/status';
+import { PublicationStatus } from '@/types/shared';
 import { getAppendPublishDate } from '@/utils/publishQueue';
 
 /**
@@ -1144,7 +1144,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                   
                   updateBookStatusMutation.mutate({
                     bookId: bookData.id,
-                    status: newStatus as 'draft' | 'published' | 'archived',
+                    status: newStatus as PublicationStatus,
                   });
                 }}
                 disabled={updateBookStatusMutation.isPending}

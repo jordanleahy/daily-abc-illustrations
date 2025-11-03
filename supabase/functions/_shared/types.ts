@@ -4,8 +4,9 @@
  * This file contains common types, enums, and utility functions used across
  * all edge functions to ensure consistency and reduce code duplication.
  * 
- * NOTE: ProcessStatus enum is duplicated in src/types/process.ts for frontend use.
- * Keep both enums synchronized when making changes.
+ * NOTE: These status enums are mirrored in src/types/shared/status.ts for frontend use.
+ * Edge functions cannot import from src/ due to Deno runtime, so these enums are duplicated.
+ * Keep both files synchronized when making changes to status enums.
  */
 
 /**

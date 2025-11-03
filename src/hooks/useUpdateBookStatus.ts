@@ -2,7 +2,9 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-type BookStatus = 'draft' | 'published' | 'archived';
+import { PublicationStatus } from '@/types/shared';
+
+type BookStatus = PublicationStatus;
 
 interface UpdateBookStatusData {
   bookId: string;

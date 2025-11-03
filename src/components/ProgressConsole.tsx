@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, ChevronUp, CheckCircle, AlertCircle, Loader2, Info, SkipForward, AlertTriangle } from 'lucide-react';
-import { ProcessStatus } from '@/types/process';
+import { ProcessStatus } from '@/types/shared';
 
 /**
  * Message structure for progress tracking in console displays

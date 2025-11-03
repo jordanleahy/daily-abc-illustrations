@@ -25,7 +25,7 @@ export const characterThemes: Record<string, CharacterTheme> = {
     altText: 'Frozen themed book'
   },
   'cocomelon': {
-    thumbnail: '/placeholder.svg',
+    thumbnail: '/themes/cocomelon.png',
     altText: 'Cocomelon themed book'
   },
   'moana': {

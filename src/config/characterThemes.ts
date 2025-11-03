@@ -55,6 +55,10 @@ export const characterThemes: Record<string, CharacterTheme> = {
   'mario': {
     thumbnail: '/placeholder.svg',
     altText: 'Mario themed book'
+  },
+  'sesame-street': {
+    thumbnail: '/themes/sesame-street.png',
+    altText: 'Sesame Street themed book'
   }
 };
 

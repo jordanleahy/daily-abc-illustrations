@@ -1287,7 +1287,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
         {/* Daily Queue Section - Only show for published books */}
         {contentType === 'book' && bookData?.status !== PublicationStatus.DRAFT && (
-          <div className="flex items-center justify-between pt-4 border-t">
+          <div className="flex flex-col gap-3 pt-4 border-t">
             <div className="space-y-1">
               <h4 className="text-sm font-medium flex items-center gap-2">
                 Daily Queue
@@ -1304,16 +1304,16 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                 </p>
               )}
             </div>
-             <div className="flex items-center gap-2">
+             <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
                {existingPublication && existingPublication.status === 'active' && (
                  <Button 
                    onClick={handleCopyLink}
                    variant="outline"
                    size="sm"
-                   className="flex items-center gap-2"
+                   className="flex items-center justify-center gap-2 w-full md:w-auto"
                  >
                    <Copy className="h-4 w-4" />
-                   Copy Link
+                   <span>Copy Link</span>
                  </Button>
                )}
                {existingPublication && existingPublication.status === 'expired' && (
@@ -1322,19 +1322,19 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                      onClick={handleViewPublication}
                      variant="outline"
                      size="sm"
-                     className="flex items-center gap-2"
+                     className="flex items-center justify-center gap-2 w-full md:w-auto"
                    >
                      <History className="h-4 w-4" />
-                     View Archive
+                     <span>View Archive</span>
                    </Button>
                    <Button 
                      onClick={handleRepublish}
                      variant="outline"
                      size="sm"
-                     className="flex items-center gap-2"
+                     className="flex items-center justify-center gap-2 w-full md:w-auto"
                    >
                      <RefreshCw className="h-4 w-4" />
-                     Republish
+                     <span>Republish</span>
                    </Button>
                  </>
                )}
@@ -1342,23 +1342,23 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                  <Button 
                    onClick={handleAddToQueue}
                    variant="outline"
-                   className="flex items-center gap-2"
+                   className="flex items-center justify-center gap-2 w-full md:w-auto"
                    disabled={isCheckingPublication}
                  >
                    <Globe className="h-4 w-4" />
-                   {isCheckingPublication ? 'Checking...' : 'Add to Queue'}
+                   <span>{isCheckingPublication ? 'Checking...' : 'Add to Queue'}</span>
                  </Button>
                )}
                {existingPublication && ['queued', 'active'].includes(existingPublication.status) && (
                  <Button 
                    onClick={handleViewPublication}
                    variant="outline"
-                   className="flex items-center gap-2"
+                   className="flex items-center justify-center gap-2 w-full md:w-auto"
                    disabled={isCheckingPublication}
                  >
                    <Eye className="h-4 w-4" />
-                   {isCheckingPublication ? 'Checking...' : 
-                     existingPublication.status === 'active' ? 'View Live' : 'View in Queue'}
+                   <span>{isCheckingPublication ? 'Checking...' : 
+                     existingPublication.status === 'active' ? 'View Live' : 'View in Queue'}</span>
                  </Button>
                )}
              </div>

@@ -29,7 +29,7 @@ export const characterThemes: Record<string, CharacterTheme> = {
     altText: 'Cocomelon themed book'
   },
   'moana': {
-    thumbnail: '/placeholder.svg',
+    thumbnail: '/themes/moana.png',
     altText: 'Moana themed book'
   },
   'mickey-mouse': {

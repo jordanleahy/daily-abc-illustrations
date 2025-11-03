@@ -73,6 +73,39 @@ const generateSlugFromTitle = (title: string): string => {
 };
 
 /**
+ * Generates a unique slug by checking for existing slugs and appending a timestamp if needed
+ * @param title - The title to convert to a slug
+ * @param bookId - The book ID to check for existing publications
+ * @returns Unique URL-safe slug string
+ */
+const generateUniqueSlug = async (title: string, bookId: string): Promise<string> => {
+  const baseSlug = generateSlugFromTitle(title);
+  
+  // Check if this slug already exists for any publication
+  const { data: existing } = await supabase
+    .from('daily_published')
+    .select('slug')
+    .eq('slug', baseSlug)
+    .maybeSingle();
+  
+  // If no conflict, use the base slug
+  if (!existing) {
+    return baseSlug;
+  }
+  
+  // If conflict exists, append timestamp to make it unique
+  // Use date format: YYYYMMDD
+  const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+  
+  // Ensure total length stays within 60 chars
+  // Format: base-slug-YYYYMMDD
+  const maxBaseLength = 60 - timestamp.length - 1; // -1 for the hyphen
+  const truncatedBase = baseSlug.substring(0, maxBaseLength).replace(/-+$/, '');
+  
+  return `${truncatedBase}-${timestamp}`;
+};
+
+/**
  * ExportsSection Component
  * 
  * A comprehensive component that manages both PDF exports and daily publication queue functionality.
@@ -427,8 +460,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       const nextDate = await getAppendPublishDate(supabase);
       
       // Create new daily publication scheduled for next available date
-      // Generate slug for republished books
-      const slug = generateSlugFromTitle(contentName);
+      // Generate unique slug for republished books
+      const slug = await generateUniqueSlug(contentName, contentId);
 
       const { data: newPublication, error: insertError } = await supabase
         .from('daily_published')
@@ -805,8 +838,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           // Convert draft to queued with next publish date (appends to end - FIFO)
           const nextDate = await getAppendPublishDate(supabase);
           
-          // Generate slug immediately if not already present
-          const slug = existingPublication.slug || generateSlugFromTitle(contentName);
+          // Generate unique slug if not already present
+          const slug = existingPublication.slug || await generateUniqueSlug(contentName, contentId);
 
           const { data: updatedPublication, error: updateError } = await supabase
             .from('daily_published')
@@ -849,8 +882,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           // Get next publish date (appends to end of queue - FIFO)
           const nextDate = await getAppendPublishDate(supabase);
           
-          // Generate slug immediately for new publications
-          const slug = generateSlugFromTitle(contentName);
+          // Generate unique slug for new publications
+          const slug = await generateUniqueSlug(contentName, contentId);
 
           // Create new daily publication scheduled for next available date
           const { data: newPublication, error: insertError } = await supabase

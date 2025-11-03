@@ -44,14 +44,14 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
               
               if (theme) {
                 return (
-                  <ImageButton
-                    key={action.id}
-                    action={action}
-                    imageSrc={theme.thumbnail}
-                    altText={theme.altText}
-                    size={160}
-                    onClick={() => onQuickReply?.(action)}
-                  />
+                <ImageButton
+                  key={action.id}
+                  action={action}
+                  imageSrc={theme.thumbnail}
+                  altText={theme.altText}
+                  size={80}
+                  onClick={() => onQuickReply?.(action)}
+                />
                 );
               }
               

@@ -18,10 +18,6 @@ interface SEOMetadata {
   og_image_url: string | null;
 }
 
-interface BookThumbnail {
-  thumbnail_url: string;
-}
-
 /**
  * Check if the request comes from a social media crawler
  */
@@ -97,43 +93,16 @@ async function fetchSEOMetadata(dailyId: string) {
 }
 
 /**
- * Fetch book thumbnail from Supabase
- */
-async function fetchBookThumbnail(bookId: string) {
-  try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/book_thumbnails?select=thumbnail_url&book_id=eq.${bookId}&is_latest=eq.true&thumbnail_url=not.is.null`,
-      {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    
-    if (!response.ok) return null;
-    
-    const data = await response.json();
-    return data[0] as BookThumbnail | null;
-  } catch (error) {
-    console.error('Error fetching book thumbnail:', error);
-    return null;
-  }
-}
-
-/**
  * Generate prerendered HTML with meta tags
  */
 function generatePrerenderedHTML(
   dailyData: DailyPublished,
-  seoData: SEOMetadata | null,
-  thumbnail: BookThumbnail | null
+  seoData: SEOMetadata | null
 ) {
   // Use SEO optimized data if available, otherwise fallback to daily published data
   const title = seoData?.seo_title || dailyData.title || 'ABC Cards - Daily Published Content';
   const description = seoData?.seo_description || dailyData.description || 'Explore our daily published ABC content for children.';
-  const imageUrl = seoData?.og_image_url || thumbnail?.thumbnail_url || '/placeholder.svg';
+  const imageUrl = seoData?.og_image_url || '/placeholder.svg';
   const canonicalUrl = `https://abc-cards.lovableproject.com/daily-published/${dailyData.id}`;
   
   return `<!DOCTYPE html>
@@ -269,12 +238,8 @@ export default async function handler(request: Request, context: Context) {
       return context.next();
     }
     
-    // Fetch book thumbnail if we don't have SEO image
-    const thumbnail = !seoData?.og_image_url ? 
-      await fetchBookThumbnail(dailyData.book_id) : null;
-    
     // Generate and return prerendered HTML
-    const html = generatePrerenderedHTML(dailyData, seoData, thumbnail);
+    const html = generatePrerenderedHTML(dailyData, seoData);
     
     return new Response(html, {
       headers: {

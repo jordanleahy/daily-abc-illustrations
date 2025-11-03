@@ -19,10 +19,6 @@ interface SEOMetadata {
   book_id: string | null;
 }
 
-interface BookThumbnail {
-  thumbnail_url: string;
-}
-
 // Supabase configuration
 const SUPABASE_URL = "https://foxdnspwzhjxjxuicute.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI";
@@ -133,45 +129,17 @@ async function fetchSEOMetadataByBook(bookId: string): Promise<SEOMetadata | nul
 }
 
 /**
- * Fetch book thumbnail as fallback
- */
-async function fetchBookThumbnail(bookId: string): Promise<BookThumbnail | null> {
-  try {
-    const response = await fetch(
-      `${SUPABASE_URL}/rest/v1/book_thumbnails?book_id=eq.${bookId}&is_latest=eq.true&select=thumbnail_url`,
-      {
-        headers: {
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        },
-      }
-    );
-
-    if (!response.ok) {
-      return null;
-    }
-
-    const data = await response.json();
-    return data?.[0] || null;
-  } catch (error) {
-    console.error('Error fetching book thumbnail:', error);
-    return null;
-  }
-}
-
-/**
  * Generate prerendered HTML with meta tags
  */
 function generatePrerenderedHTML(
   dailyPublished: DailyPublished,
   seoMetadata: SEOMetadata | null,
-  bookThumbnail: BookThumbnail | null,
   dailyId: string
 ): string {
   // Priority: SEO metadata > daily_published data
   const title = seoMetadata?.seo_title || dailyPublished.title;
   const description = seoMetadata?.seo_description || dailyPublished.description || 'Daily ABC Illustrations';
-  const imageUrl = seoMetadata?.og_image_url || bookThumbnail?.thumbnail_url || '';
+  const imageUrl = seoMetadata?.og_image_url || '';
   const pageUrl = `https://dailyabcillustrations.com/library/${dailyId}/detail`;
 
   return `<!DOCTYPE html>
@@ -274,17 +242,10 @@ export default async function handler(request: Request, context: Context) {
       finalSeoMetadata = await fetchSEOMetadataByBook(dailyPublished.book_id);
     }
 
-    // Fetch book thumbnail as fallback for image
-    let bookThumbnail = null;
-    if (!finalSeoMetadata?.og_image_url && dailyPublished.book_id) {
-      bookThumbnail = await fetchBookThumbnail(dailyPublished.book_id);
-    }
-
     // Generate and return prerendered HTML
     const html = generatePrerenderedHTML(
       dailyPublished,
       finalSeoMetadata,
-      bookThumbnail,
       dailyId
     );
 

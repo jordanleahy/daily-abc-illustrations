@@ -21,7 +21,8 @@ const requestSchema = z.object({
   userId: z.string().uuid(),
   pageDetails: z.array(pageDetailSchema).optional(),
   qaImages: z.record(z.string()).optional(),
-  bookType: z.string().optional()
+  bookType: z.string().optional(),
+  textOverlayPreference: z.enum(['with-text', 'without-text']).optional()
 });
 
 serve(async (req) => {
@@ -32,7 +33,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages, bookType } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference } = validatedData;
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -349,6 +350,9 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       console.log(`Extracted ${extractedColors.length} colors for color book:`, bookData.metadata.colorsList);
     }
 
+    // Determine showTextOverlay flag (default to true for backwards compatibility)
+    const showTextOverlay = textOverlayPreference !== 'without-text';
+
     // Extract and validate metadata
     const metadata = bookData.metadata || {};
     const validatedMetadata = {
@@ -366,6 +370,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       characterTheme: metadata.characterTheme,
       colorsList: metadata.colorsList,
       colorsCount: metadata.colorsCount,
+      showTextOverlay: showTextOverlay,
       customOptions: {}
     };
 
@@ -503,7 +508,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         };
 
         // Generate specialized prompt using templates
-        const promptContent = generateSpecializedPrompt(bookContext, pageContext, isCover);
+        const promptContent = generateSpecializedPrompt(bookContext, pageContext, isCover, showTextOverlay);
 
         // Get version number for this page
         const { data: pageVersionData, error: pageVersionError } = await supabase

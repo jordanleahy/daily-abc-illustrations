@@ -24,7 +24,7 @@ interface PageContext {
 /**
  * Generate cover page prompt based on book type and context
  */
-export function generateCoverPrompt(book: BookContext): string {
+export function generateCoverPrompt(book: BookContext, textOverlayEnabled: boolean = true): string {
   const characterInfo = book.characterTheme 
     ? `featuring ${book.characterTheme} characters` 
     : '';
@@ -63,13 +63,24 @@ VISUAL STYLE:
 - Positive, encouraging atmosphere
 - Professional children's book quality
 
+${textOverlayEnabled ? `TEXT INCLUSION:
+- Include the title text "${book.bookName}" prominently in the illustration
+- Make the text clear, bold, and easy to read for young children
+- Use playful, child-friendly typography
+- Integrate the text naturally into the cover design` : `CRITICAL - NO TEXT REQUIREMENT:
+- DO NOT include ANY text, words, letters, numbers, or the title in the illustration
+- NO visible text of any kind - not the book title, not on signs, books, labels, or anywhere
+- This is a CLEAN ILLUSTRATION ONLY - all text will be added separately as an overlay
+- If elements would normally have text (like signs or books), show them as blank objects
+- The image must be 100% text-free - this is mandatory`}
+
 Create a captivating cover that immediately communicates this is an exciting ${typeInfo} learning adventure!`;
 }
 
 /**
  * Generate content page prompt based on page details
  */
-export function generatePagePrompt(book: BookContext, page: PageContext): string {
+export function generatePagePrompt(book: BookContext, page: PageContext, textOverlayEnabled: boolean = true): string {
   const isFirstPage = page.pageNumber === 1;
   const characterInfo = book.characterTheme 
     ? `featuring ${book.characterTheme}` 
@@ -100,7 +111,6 @@ COMPOSITION:
 - Simple, supportive background that doesn't distract
 - Square format (1:1) optimized for viewing
 - High contrast for visual clarity
-- No text in the image (text will be overlaid separately)
 
 VISUAL STYLE:
 - Bright, bold colors with clear outlines
@@ -108,6 +118,18 @@ VISUAL STYLE:
 - Age-appropriate detail level (3-6 years)
 - Engaging and fun while educational
 - Professional children's book illustration quality
+
+${textOverlayEnabled ? `TEXT INCLUSION:
+- Include the page text "${page.title}" prominently in the illustration
+- Make the text clear, bold, and easy to read for young children
+- Use playful, child-friendly typography appropriate for learning
+- Integrate the text naturally into the scene` : `CRITICAL - NO TEXT REQUIREMENT:
+- DO NOT include ANY text, words, letters, or numbers in the illustration
+- NO visible text of any kind - not on signs, books, labels, clothing, or anywhere else
+- This is a CLEAN ILLUSTRATION ONLY - all text will be added separately as an overlay
+- If the concept involves text elements (like books, signs, or labels), show them as blank objects
+- The image must be 100% text-free - this is absolutely mandatory
+- Focus purely on visual storytelling without any written words`}
 
 Create an illustration that brings "${page.title}" to life in an engaging, educational way!`;
 }
@@ -138,10 +160,11 @@ function getBookTypeDescription(bookType: string): string {
 export function generateSpecializedPrompt(
   book: BookContext, 
   page: PageContext, 
-  isCover: boolean
+  isCover: boolean,
+  textOverlayEnabled: boolean = true
 ): string {
   if (isCover) {
-    return generateCoverPrompt(book);
+    return generateCoverPrompt(book, textOverlayEnabled);
   }
   
   // Check for specialized book types
@@ -150,26 +173,26 @@ export function generateSpecializedPrompt(
   switch (bookType) {
     case 'abc':
     case 'alphabet':
-      return generateAlphabetPagePrompt(book, page);
+      return generateAlphabetPagePrompt(book, page, textOverlayEnabled);
     
     case 'numbers':
-      return generateNumbersPagePrompt(book, page);
+      return generateNumbersPagePrompt(book, page, textOverlayEnabled);
     
     case 'colors':
-      return generateColorsPagePrompt(book, page);
+      return generateColorsPagePrompt(book, page, textOverlayEnabled);
     
     case 'emotions':
-      return generateEmotionsPagePrompt(book, page);
+      return generateEmotionsPagePrompt(book, page, textOverlayEnabled);
     
     default:
-      return generatePagePrompt(book, page);
+      return generatePagePrompt(book, page, textOverlayEnabled);
   }
 }
 
 /**
  * Specialized prompt for alphabet books
  */
-function generateAlphabetPagePrompt(book: BookContext, page: PageContext): string {
+function generateAlphabetPagePrompt(book: BookContext, page: PageContext, textOverlayEnabled: boolean = true): string {
   return `You are creating an ALPHABET PAGE for "${book.bookName}".
 
 LETTER PAGE DETAILS:
@@ -187,8 +210,17 @@ ALPHABET PAGE REQUIREMENTS:
 COMPOSITION:
 - Main subject representing "${page.title}" as the focal point
 - Supporting elements that enhance the learning connection
-- Leave space for the letter "${page.letter}" to be overlaid
 - Square format (1:1) with clear, uncluttered design
+
+${textOverlayEnabled ? `TEXT INCLUSION:
+- Display the letter "${page.letter}" prominently in large, bold text
+- Include the word "${page.title}" clearly in the illustration
+- Use playful, educational typography suitable for early learners` : `CRITICAL - NO TEXT REQUIREMENT:
+- DO NOT include the letter "${page.letter}" as text anywhere in the image
+- DO NOT show any words, letters, or alphabet characters
+- Focus purely on the visual concept - show only the object/scene
+- All text (letter and word) will be added separately as an overlay
+- The illustration must be completely text-free`}
 
 Create an engaging illustration that makes learning the letter "${page.letter}" fun and memorable!`;
 }
@@ -196,7 +228,7 @@ Create an engaging illustration that makes learning the letter "${page.letter}" 
 /**
  * Specialized prompt for numbers books
  */
-function generateNumbersPagePrompt(book: BookContext, page: PageContext): string {
+function generateNumbersPagePrompt(book: BookContext, page: PageContext, textOverlayEnabled: boolean = true): string {
   return `You are creating a NUMBERS PAGE for "${book.bookName}".
 
 NUMBER PAGE DETAILS:
@@ -214,8 +246,17 @@ COUNTING PAGE REQUIREMENTS:
 COMPOSITION:
 - ${page.letter} clearly identifiable items as main subjects
 - Arrangement that guides counting (left to right, top to bottom)
-- Leave space for the number "${page.letter}" to be overlaid
 - Square format (1:1) with organized, countable layout
+
+${textOverlayEnabled ? `TEXT INCLUSION:
+- Display the number "${page.letter}" prominently in large, bold text
+- Include the word "${page.title}" clearly in the illustration
+- Use playful numerals that children can easily recognize` : `CRITICAL - NO TEXT REQUIREMENT:
+- DO NOT include the number "${page.letter}" as text anywhere
+- DO NOT show any numerals, words, or counting labels
+- Show only the countable objects visually
+- All numbers and text will be added separately as an overlay
+- The illustration must be 100% text-free`}
 
 Create an illustration that makes learning to count ${page.letter} fun and clear!`;
 }
@@ -223,7 +264,7 @@ Create an illustration that makes learning to count ${page.letter} fun and clear
 /**
  * Specialized prompt for colors books
  */
-function generateColorsPagePrompt(book: BookContext, page: PageContext): string {
+function generateColorsPagePrompt(book: BookContext, page: PageContext, textOverlayEnabled: boolean = true): string {
   // Extract color from title (typically format: "**Red:** Description")
   const colorMatch = page.title.match(/\*\*([A-Za-z]+):\*\*/);
   const color = colorMatch ? colorMatch[1] : page.letter;
@@ -248,13 +289,23 @@ COMPOSITION:
 - High saturation to make the color memorable
 - Square format (1:1) with bold, clear ${color} presence
 
+${textOverlayEnabled ? `TEXT INCLUSION:
+- Display the color name "${color}" prominently in the illustration
+- Use the actual color for the text to reinforce learning
+- Make the text bold, clear, and playful` : `CRITICAL - NO TEXT REQUIREMENT:
+- DO NOT include the color name or any text in the illustration
+- DO NOT show any words or labels
+- Focus purely on showing vibrant examples of the color
+- All color names and text will be added separately as an overlay
+- The illustration must be text-free`}
+
 Create a stunning ${color}-focused illustration that helps children learn and love the color ${color}!`;
 }
 
 /**
  * Specialized prompt for emotions books
  */
-function generateEmotionsPagePrompt(book: BookContext, page: PageContext): string {
+function generateEmotionsPagePrompt(book: BookContext, page: PageContext, textOverlayEnabled: boolean = true): string {
   return `You are creating an EMOTIONS PAGE for "${book.bookName}".
 
 EMOTION PAGE DETAILS:
@@ -274,6 +325,16 @@ COMPOSITION:
 - Scene that contextualizes why they feel ${page.letter}
 - Warm, empathetic visual tone
 - Square format (1:1) with emphasis on emotional expression
+
+${textOverlayEnabled ? `TEXT INCLUSION:
+- Display the emotion word "${page.letter}" prominently
+- Use text styling that reflects the emotion (bold for anger, flowing for calm, etc.)
+- Make it clear and readable for young learners` : `CRITICAL - NO TEXT REQUIREMENT:
+- DO NOT include the emotion name or any text in the illustration
+- DO NOT show any words, labels, or written content
+- Focus purely on visual emotional expression through faces and body language
+- All emotion names and text will be added separately as an overlay
+- The illustration must be completely text-free`}
 
 Create an illustration that helps children recognize and understand the emotion of ${page.letter}!`;
 }

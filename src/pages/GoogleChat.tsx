@@ -336,6 +336,26 @@ export default function GoogleChat() {
       console.log('No structured page details found, will let AI generate structure');
     }
 
+    // Extract text overlay preference from messages
+    const extractTextOverlayPreference = (messages: any[]): 'with-text' | 'without-text' | undefined => {
+      // Look for user messages that match the text overlay selection
+      for (let i = messages.length - 1; i >= 0; i--) {
+        const msg = messages[i];
+        if (msg.role === 'user') {
+          const content = typeof msg.content === 'string' ? msg.content.toLowerCase() : '';
+          if (content === 'with text' || content.includes('with text')) {
+            return 'with-text';
+          }
+          if (content === 'without text' || content.includes('without text')) {
+            return 'without-text';
+          }
+        }
+      }
+      return undefined;
+    };
+
+    const textOverlayPreference = extractTextOverlayPreference(messages);
+
     // Convert messages to simple text format for book creation
     const textMessages = messages.map(msg => ({
       role: msg.role,
@@ -351,7 +371,8 @@ export default function GoogleChat() {
         conversationHistory: textMessages,
         pageDetails: pageDetails || undefined,
         qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined,
-        bookType: selectedBookType || undefined
+        bookType: selectedBookType || undefined,
+        textOverlayPreference: textOverlayPreference
       });
       
       // Set local book ID immediately for UI responsiveness

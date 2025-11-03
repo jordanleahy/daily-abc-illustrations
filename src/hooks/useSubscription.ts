@@ -73,9 +73,14 @@ export const useSubscription = () => {
   const { user } = useAuthContext();
   const { toast } = useToast();
 
-  // Use React Query with 30-day localStorage caching
+  // Use React Query with 30-day localStorage caching + strict deduplication
   const query = useQuery<SubscriptionStatus>({
     queryKey: ['subscription', user?.id],
+    // CRITICAL: Ensure only ONE request happens across all components
+    queryKeyHashFn: (queryKey) => JSON.stringify(queryKey),
+    retry: 3, // Retry 3 times on connection errors
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
+    networkMode: 'online', // Only fetch when online
     queryFn: async (): Promise<SubscriptionStatus> => {
       if (!user) {
         SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);

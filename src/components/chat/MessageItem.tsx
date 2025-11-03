@@ -50,7 +50,7 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
                   className="p-0 h-auto overflow-hidden hover:ring-2 hover:ring-primary transition-all"
                   onClick={() => onQuickReply?.(action)}
                 >
-                  <AspectRatio ratio={16/9} className="w-24">
+                  <AspectRatio ratio={1} className="w-24">
                     <img 
                       src={theme.thumbnail}
                       alt={theme.altText}

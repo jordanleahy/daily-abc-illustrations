@@ -17,6 +17,24 @@ export const useUpdateBookStatus = () => {
   
   return useMutation({
     mutationFn: async ({ bookId, status }: UpdateBookStatusData) => {
+      // If changing to published, check for existing daily_published entries
+      if (status === 'published') {
+        const { data: existingPublished, error: checkError } = await supabase
+          .from('daily_published')
+          .select('id, status')
+          .eq('book_id', bookId)
+          .in('status', ['queued', 'active'])
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('Error checking daily_published:', checkError);
+        }
+
+        if (existingPublished) {
+          throw new Error('ALREADY_IN_QUEUE');
+        }
+      }
+
       const { data, error } = await supabase
         .from('books')
         .update({ status })
@@ -41,12 +59,17 @@ export const useUpdateBookStatus = () => {
         description: `Book status changed to ${variables.status}`,
       });
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Failed to update book status:', error);
+      
+      const description = error?.message === 'ALREADY_IN_QUEUE'
+        ? 'This book is already in the publishing queue'
+        : 'Failed to update book status. Please try again.';
+      
       toast({
         variant: 'destructive',
         title: 'Update Failed',
-        description: 'Failed to update book status. Please try again.',
+        description,
       });
     },
   });

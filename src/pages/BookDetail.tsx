@@ -276,6 +276,26 @@ export default function BookDetail() {
     }
     
     try {
+      // If changing to published, check for existing daily_published entries
+      if (newStatus === 'published') {
+        const { data: existingPublished, error: checkError } = await supabase
+          .from('daily_published')
+          .select('id, status')
+          .eq('book_id', book.id)
+          .in('status', ['queued', 'active'])
+          .maybeSingle();
+
+        if (checkError) {
+          console.error('Error checking daily_published:', checkError);
+        }
+
+        if (existingPublished) {
+          toast.error('This book is already in the publishing queue');
+          setIsEditingStatus(false);
+          return;
+        }
+      }
+
       const { error } = await supabase
         .from('books')
         .update({ status: newStatus as PublicationStatus })

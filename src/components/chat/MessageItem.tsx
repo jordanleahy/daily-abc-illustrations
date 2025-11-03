@@ -44,11 +44,18 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
               const hasThumbnail = theme?.thumbnail;
 
               return hasThumbnail ? (
-                <Button
+                <div
                   key={action.id}
-                  variant="outline"
-                  className="p-0 h-auto overflow-hidden hover:ring-2 hover:ring-primary transition-all"
+                  role="button"
+                  tabIndex={0}
+                  className="border border-input rounded-md p-0 h-auto overflow-hidden hover:ring-2 hover:ring-primary transition-all cursor-pointer"
                   onClick={() => onQuickReply?.(action)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onQuickReply?.(action);
+                    }
+                  }}
                 >
                   <AspectRatio ratio={1} className="w-24">
                     <img 
@@ -57,7 +64,7 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
                       className="w-full h-full object-cover"
                     />
                   </AspectRatio>
-                </Button>
+                </div>
               ) : (
                 <Button
                   key={action.id}

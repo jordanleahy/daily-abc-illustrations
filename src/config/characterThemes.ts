@@ -36,17 +36,9 @@ export const characterThemes: Record<string, CharacterTheme> = {
     thumbnail: '/themes/mickey-mouse.png',
     altText: 'Mickey Mouse themed book'
   },
-  'spider-man': {
-    thumbnail: '/placeholder.svg',
-    altText: 'Spider-Man themed book'
-  },
   'toy-story': {
     thumbnail: '/themes/toy-story.png',
     altText: 'Toy Story themed book'
-  },
-  'sonic': {
-    thumbnail: '/placeholder.svg',
-    altText: 'Sonic themed book'
   },
   'pokemon': {
     thumbnail: '/themes/pokemon.png',

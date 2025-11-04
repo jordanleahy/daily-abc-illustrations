@@ -238,7 +238,7 @@ const LibraryBookCard = memo(function LibraryBookCard({
             </div>
           </div>
           
-          <div className="aspect-[1200/630] rounded-lg flex items-center justify-center overflow-hidden">
+          <div className="aspect-square rounded-lg flex items-center justify-center overflow-hidden">
             {item.og_image_url ? (
               <BookImage
                 src={item.og_image_url}

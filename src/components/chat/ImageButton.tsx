@@ -1,5 +1,6 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Shimmer } from '@/components/ui/shimmer';
 import { cn } from '@/lib/utils';
 import type { SuggestedAction } from '@/hooks/useGoogleChat';
 
@@ -16,6 +17,9 @@ export const ImageButton = memo(({
   altText,
   onClick 
 }: ImageButtonProps) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
@@ -39,16 +43,27 @@ export const ImageButton = memo(({
       aria-label={action.label}
     >
       <AspectRatio ratio={1}>
-        <img
-          src={imageSrc}
-          alt={altText}
-          className="h-full w-full object-cover"
-          loading="lazy"
-          decoding="async"
-          onError={(e) => {
-            e.currentTarget.src = '/placeholder.svg';
-          }}
-        />
+        <div className="relative w-full h-full">
+          {!imageLoaded && !imageError && (
+            <Shimmer className="absolute inset-0" isShimmering={true} />
+          )}
+          <img
+            src={imageSrc}
+            alt={altText}
+            className={cn(
+              "h-full w-full object-cover transition-opacity duration-300",
+              imageLoaded ? "opacity-100" : "opacity-0"
+            )}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+            onLoad={() => setImageLoaded(true)}
+            onError={(e) => {
+              setImageError(true);
+              e.currentTarget.src = '/placeholder.svg';
+            }}
+          />
+        </div>
       </AspectRatio>
     </div>
   );

@@ -10,6 +10,7 @@ import { useGoogleChatSessions } from '@/hooks/useGoogleChatSessions';
 import { useSessionMessages, usePrefetchSession } from '@/hooks/useSessionMessages';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { useBookPages } from '@/hooks/useBookPages';
+import { useThemeImagePreloader } from '@/hooks/useThemeImagePreloader';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
 import { QACheckpointPanel } from '@/components/chat/QACheckpointPanel';
 import { MessageList } from '@/components/chat/MessageList';
@@ -32,6 +33,9 @@ export default function GoogleChat() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedBookType, setSelectedBookType] = useState<string | null>(null);
+
+  // Preload all theme images for instant display
+  useThemeImagePreloader();
 
   // Detect mobile screen size
   useEffect(() => {

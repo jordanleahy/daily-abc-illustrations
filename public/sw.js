@@ -25,12 +25,16 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Fetch event - cache-first strategy for Supabase images
+// Fetch event - cache-first strategy for images
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
   
-  // Only cache Supabase storage images
-  if (url.includes('supabase.co/storage') || url.includes('foxdnspwzhjxjxuicute.supabase.co/storage')) {
+  // Cache Supabase storage images AND local theme images
+  const shouldCache = url.includes('supabase.co/storage') || 
+                      url.includes('foxdnspwzhjxjxuicute.supabase.co/storage') ||
+                      url.includes('/themes/');
+  
+  if (shouldCache) {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((cachedResponse) => {
@@ -39,7 +43,7 @@ self.addEventListener('fetch', (event) => {
             const cachedDate = new Date(cachedResponse.headers.get('sw-cache-date'));
             const now = new Date();
             
-            // If cache is still fresh (within 30 days), return it
+            // If cache is still fresh (within 30 days), return it immediately
             if (now - cachedDate < CACHE_DURATION) {
               console.log('[Service Worker] Serving from cache:', url);
               return cachedResponse;

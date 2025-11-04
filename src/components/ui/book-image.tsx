@@ -42,7 +42,7 @@ export function BookImage({
 
   return (
     <div className="relative w-full h-full">
-      {!imageLoaded && <Shimmer className="absolute inset-0" isShimmering={priority} />}
+      {!imageLoaded && <Shimmer className="absolute inset-0" isShimmering={true} />}
       <img
         src={optimizedUrl || src}
         srcSet={srcSet}

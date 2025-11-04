@@ -10,7 +10,7 @@ export const Shimmer = ({ className, children, isShimmering = false, ...props }:
   return (
     <div 
       className={cn(
-        "relative overflow-hidden transition-all duration-300",
+        "relative overflow-hidden transition-all duration-300 bg-muted/30",
         isShimmering && "ring-2 ring-primary shadow-lg shadow-primary/20",
         className
       )}
@@ -18,7 +18,7 @@ export const Shimmer = ({ className, children, isShimmering = false, ...props }:
     >
       {children}
       {isShimmering && (
-        <div className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-primary/90 to-transparent animate-shimmer bg-[length:200%_100%] opacity-100" />
+        <div className="pointer-events-none absolute inset-0 rounded-lg bg-gradient-to-r from-transparent via-primary/40 to-transparent animate-shimmer bg-[length:200%_100%] opacity-100" />
       )}
     </div>
   );

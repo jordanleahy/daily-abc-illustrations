@@ -1,5 +1,5 @@
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
-import { HabitTrackingCard } from '@/components/habits';
+import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -10,6 +10,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index = () => {
   const { isAuthenticated } = useAuthContext();
@@ -55,6 +56,7 @@ const Index = () => {
   
   const isLoading = isLoadingKids || isLoadingHabits;
   const timeOfDay = getTimeBasedGreeting();
+  const isMobile = useIsMobile();
 
   if (isLoading) {
     return (
@@ -109,6 +111,8 @@ const Index = () => {
               Ask your parent to schedule habits from the Manage Habits page.
             </p>
           </div>
+        ) : isMobile ? (
+          <HabitCarousel completions={activeCompletions} />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {activeCompletions.map((completion) => (

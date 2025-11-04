@@ -31,9 +31,7 @@ export function BookImage({
   
   if (!src) {
     return (
-      <div className={`bg-muted/50 flex items-center justify-center ${className}`}>
-        <div className="text-xs text-muted-foreground">No image</div>
-      </div>
+      <Shimmer className={className} isShimmering={true} />
     );
   }
 

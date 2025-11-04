@@ -5,3 +5,5 @@ export { PricingSection } from './PricingSection';
 export { LibrarySection } from './LibrarySection';
 export { SignupSection } from './SignupSection';
 export { Footer } from './Footer';
+export { BookCarousel } from './BookCarousel';
+export { BookCarouselCard } from './BookCarouselCard';

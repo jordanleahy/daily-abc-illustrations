@@ -11,6 +11,9 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { BookCarousel } from '@/components/landing';
+import { useLibraryBooks } from '@/hooks/useLibraryBooks';
+import { getBookViewTimestamps } from '@/utils/bookViewTracking';
 
 const Index = () => {
   const { isAuthenticated } = useAuthContext();
@@ -30,6 +33,9 @@ const Index = () => {
   
   // Fetch today's habits for the first kid
   const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
+  
+  // Fetch library books for recently viewed section
+  const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooks();
   
   // Filter out skipped habits and sort by status (pending first, completed/failed last)
   const activeCompletions = completions
@@ -53,6 +59,17 @@ const Index = () => {
       // If same status, maintain creation order
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
+  
+  // Get recently viewed books
+  const viewTimestamps = getBookViewTimestamps();
+  const recentBooks = libraryItems
+    .filter(book => viewTimestamps[book.id])
+    .sort((a, b) => {
+      const aTime = viewTimestamps[a.id] || 0;
+      const bTime = viewTimestamps[b.id] || 0;
+      return bTime - aTime;
+    })
+    .slice(0, 10);
   
   const isLoading = isLoadingKids || isLoadingHabits;
   const timeOfDay = getTimeBasedGreeting();
@@ -121,6 +138,14 @@ const Index = () => {
                 completion={completion}
               />
             ))}
+          </div>
+        )}
+
+        {/* Recently Viewed Books */}
+        {recentBooks.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Recently Viewed</h2>
+            <BookCarousel books={recentBooks} />
           </div>
         )}
       </div>

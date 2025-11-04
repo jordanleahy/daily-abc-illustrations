@@ -378,8 +378,6 @@ export default function LibraryBookView() {
                 pageId={currentPage.id}
                 bookId={dailyContent.book_id}
                 className="rounded-lg"
-                pageContent={currentPage.content.mainConcept}
-                showTextOverlay={true}
                 showUploadButton={false}
                 onUploadClick={handleUploadClick}
               />

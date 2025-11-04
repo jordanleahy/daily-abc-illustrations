@@ -101,12 +101,7 @@ export function DailyPublishedPageView({
             <CardContent className="p-0">
               {/* Large illustration area with tap-to-advance overlay */}
               <div className="aspect-square bg-gradient-to-br from-background to-muted/50 relative">
-                <PublicPageImage 
-                  pageId={page.id} 
-                  bookId={bookId}
-                  pageContent={page.content.mainConcept}
-                  showTextOverlay={true}
-                />
+                <PublicPageImage pageId={page.id} bookId={bookId} />
                 {/* Transparent overlay for tap-to-advance that doesn't block image context menu */}
                 <div 
                   className="absolute inset-0 cursor-pointer"

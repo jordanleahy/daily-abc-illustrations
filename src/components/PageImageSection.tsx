@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Shimmer } from "@/components/ui/shimmer";
-import { BookImage } from "@/components/ui/book-image";
+import { OptimizedImage } from "@/components/ui/optimized-image";
 import { usePageImageUrls } from "@/hooks/usePageImageUrls";
 import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
 import { supabase } from "@/integrations/supabase/client";
@@ -210,14 +210,15 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
       ) : hasImage && displayImageUrl ? (
         // Show image with source indicator
         <div className="relative w-full h-full">
-          <BookImage
+          <OptimizedImage
             src={displayImageUrl}
             alt={isUserUploaded ? "Uploaded page image" : "Generated page image"}
             priority={true}
-            enableMobileSave={enableMobileSave}
+            width={800}
+            quality={85}
+            srcSetSizes={[400, 800, 1200]}
             className="w-full h-full object-cover"
-            onLoad={() => console.log('🖼️ Image loaded successfully:', displayImageUrl)}
-            onError={() => console.error('🚫 Image failed to load:', displayImageUrl)}
+            containerClassName="w-full h-full"
           />
           {/* Source indicator */}
           {!isUserUploaded && (

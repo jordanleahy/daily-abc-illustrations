@@ -484,7 +484,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
   /**
    * Opens the appropriate page based on publication status
-   * Active publications open the public page, others open the schedule
+   * Active/expired publications open the public page, queued shows notification
    */
   const handleViewPublication = () => {
     if (existingPublication) {
@@ -493,7 +493,10 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       } else if (existingPublication.status === 'expired') {
         window.open(`/daily-published/${existingPublication.id}`, '_blank');
       } else {
-        window.open('/daily-published-schedule', '_blank');
+        toast({
+          title: "Queued for Publication",
+          description: "Navigate to the schedule page to see queue details.",
+        });
       }
     }
   };
@@ -585,7 +588,10 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       setPublicationHistory(prev => [newPublication, ...prev]);
       
       // Open the queue page to show status
-      window.open('/daily-published-schedule', '_blank');
+      toast({
+        title: "View Schedule",
+        description: "Navigate to the schedule page to see the queue status.",
+      });
 
     } catch (error: any) {
       console.error('Error republishing:', error);
@@ -870,11 +876,6 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         
         // Update local state to match database reality
         setExistingPublication(existingQueuedOrActive);
-        
-        // Only open schedule page if user explicitly clicked (not automatic)
-        if (!isAutomatic) {
-          window.open('/daily-published-schedule', '_blank');
-        }
         return;
       }
 
@@ -1021,13 +1022,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           // Generate QR code automatically
           await generateQRCodeSafely();
         }
-
-        // Only open schedule page if user explicitly clicked (not automatic)
-        if (!isAutomatic) {
-          window.open('/daily-published-schedule', '_blank');
-        }
-
-    } catch (error: any) {
+      } catch (error: any) {
       console.error('Error adding to queue:', error);
       
       // Check for specific error types with user-friendly messages
@@ -1063,11 +1058,6 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         
         if (refreshed) {
           setExistingPublication(refreshed);
-        }
-        
-        // Only open schedule page if user explicitly clicked (not automatic)
-        if (!isAutomatic) {
-          window.open('/daily-published-schedule', '_blank');
         }
         return;
       }

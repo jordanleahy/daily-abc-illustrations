@@ -330,8 +330,29 @@ export function Header({
             )}
           </nav>
           
-          {/* Right section: Admin controls + QR button */}
+          {/* Right section: Review button + Admin controls + QR button */}
           <div className="flex items-center gap-2">
+            {/* Desktop Review/View Book Button - Google Chat only */}
+            {showReviewButton && onReviewClick && (
+              <Button
+                onClick={onReviewClick}
+                className="hidden md:flex"
+                size="sm"
+                variant="default"
+              >
+                {reviewButtonVariant === 'view-book' ? (
+                  <>
+                    <Book className="h-4 w-4 mr-2" />
+                    View Book
+                  </>
+                ) : (
+                  <>
+                    <BookOpen className="h-4 w-4 mr-2" />
+                    Review Outline
+                  </>
+                )}
+              </Button>
+            )}
 
             {/* Mobile Menu for authenticated users */}
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>

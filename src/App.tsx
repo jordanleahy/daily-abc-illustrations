@@ -33,8 +33,6 @@ import SubscriptionCancel from "./pages/SubscriptionCancel";
 import SubscriptionManage from "./pages/SubscriptionManage";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
-import { QuickTestInlineEdit } from '@/components/demo/QuickTestInlineEdit';
-import PerformanceComparison from '@/components/demo/PerformanceComparison';
 import NotFound from "./pages/NotFound";
 import { GA4Tracker } from "./components/GA4Tracker";
 import HabitsManage from "./pages/HabitsManage";
@@ -100,9 +98,6 @@ const App = () => (
                <Route path="/subscription/manage" element={<ProtectedRoute><SubscriptionManage /></ProtectedRoute>} />
                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                <Route path="/terms-of-service" element={<TermsOfService />} />
-                <Route path="/test-inline-edit" element={<div className="container mx-auto py-8"><QuickTestInlineEdit /></div>} />
-                <Route path="/test" element={<div className="container mx-auto py-8"><QuickTestInlineEdit /></div>} />
-                <Route path="/performance" element={<PerformanceComparison />} />
                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

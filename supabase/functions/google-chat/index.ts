@@ -41,8 +41,8 @@ function parseSuggestions(aiResponse: string): {
   // Known character themes that have image thumbnails
   const CHARACTER_THEMES = new Set([
     'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
-    'moana', 'mickey-mouse', 'spider-man', 'toy-story', 
-    'sonic', 'pokemon', 'mario', 'daniel-tiger'
+    'moana', 'mickey-mouse', 'toy-story', 
+    'pokemon', 'mario', 'daniel-tiger'
   ]);
 
   const suggestedActions = suggestionsText
@@ -178,9 +178,7 @@ bluey: Bluey
 cocomelon: Cocomelon
 moana: Moana
 mickey-mouse: Mickey Mouse
-spider-man: Spider-Man
 toy-story: Toy Story
-sonic: Sonic
 pokemon: Pokémon
 mario: Mario${customStylesList}skip: No theme (generic)
 [/SUGGEST]"

@@ -552,13 +552,25 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         pagePrompts.set(pageNumber, fullPrompt);
       }
       
-      // Extract cover/book description from the same message
-      const bookTitleMatch = lastAssistantMessage.content.match(/\*\*Book Title:\*\*\s*["']?([^"'\n]+)["']?/i);
-      const bookDescMatch = lastAssistantMessage.content.match(/\*\*Book Description:\*\*\s*([^\n]+(?:\n(?!\*\*)[^\n]+)*)/i);
+      // Extract cover prompt (NEW FORMAT: **Cover: Title**)
+      const coverRegex = /\*\*Cover:\s*([^*\n]+)\*+\s*\n([^\n]+(?:\n(?!\*\*(?:Page|Cover))[^\n]+)*)/gi;
+      const coverMatch = coverRegex.exec(lastAssistantMessage.content);
       
-      if (bookTitleMatch && bookDescMatch) {
-        const coverPrompt = `${bookDescMatch[1].trim()}\n\nAn educational children's book about ${bookTitleMatch[1].trim()}\n\nCreate a vibrant, engaging cover illustration that captures this theme. The image should:\n- Feature a central focal point\n- Use bright, child-friendly colors\n- Have a clear composition suitable for a book cover\n- Leave space for text overlay in the center`;
+      if (coverMatch) {
+        const [, coverTitle, coverDescription] = coverMatch;
+        const coverPrompt = `**Cover: ${coverTitle.trim()}**\n\n${coverDescription.trim()}`;
         pagePrompts.set(0, coverPrompt); // Cover is page 0
+        console.log('Extracted AI-generated cover prompt with theme');
+      } else {
+        // FALLBACK: Use old format (Book Title + Book Description)
+        const bookTitleMatch = lastAssistantMessage.content.match(/\*\*Book Title:\*\*\s*["']?([^"'\n]+)["']?/i);
+        const bookDescMatch = lastAssistantMessage.content.match(/\*\*Book Description:\*\*\s*([^\n]+(?:\n(?!\*\*)[^\n]+)*)/i);
+        
+        if (bookTitleMatch && bookDescMatch) {
+          const coverPrompt = `${bookDescMatch[1].trim()}\n\nAn educational children's book about ${bookTitleMatch[1].trim()}\n\nCreate a vibrant, engaging cover illustration that captures this theme. The image should:\n- Feature a central focal point\n- Use bright, child-friendly colors\n- Have a clear composition suitable for a book cover\n- Leave space for text overlay in the center`;
+          pagePrompts.set(0, coverPrompt);
+          console.log('Using fallback cover prompt (old format)');
+        }
       }
       
       console.log(`Extracted ${pagePrompts.size} AI-generated prompts from conversation`);

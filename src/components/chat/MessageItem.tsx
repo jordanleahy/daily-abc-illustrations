@@ -62,44 +62,63 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
             ))}
           </div>
         )}
-        {message.suggestedActions && message.suggestedActions.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
-            {message.suggestedActions.map((action) => {
-              // Try themeId first, then fallback to slugified label
-let theme = action.themeId
-  ? (characterThemes[action.themeId] ?? characterThemes[slugify(action.themeId)])
-  : undefined;
-if (!theme) {
-  const slugifiedLabel = slugify(action.label);
-  theme = characterThemes[slugifiedLabel];
-}
+        {message.suggestedActions && message.suggestedActions.length > 0 && (() => {
+          // Separate actions into text and image buttons
+          const textActions = [];
+          const imageActions = [];
+          
+          for (const action of message.suggestedActions) {
+            let theme = action.themeId
+              ? (characterThemes[action.themeId] ?? characterThemes[slugify(action.themeId)])
+              : undefined;
+            if (!theme) {
+              const slugifiedLabel = slugify(action.label);
+              theme = characterThemes[slugifiedLabel];
+            }
+            
+            if (theme) {
+              imageActions.push({ action, theme });
+            } else {
+              textActions.push(action);
+            }
+          }
+          
+          return (
+            <>
+              {/* Text buttons - full width blocks */}
+              {textActions.length > 0 && (
+                <div className="flex flex-col gap-2 pt-2">
+                  {textActions.map((action) => (
+                    <Button
+                      key={action.id}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => onQuickReply?.(action)}
+                      className="text-xs w-full"
+                    >
+                      {action.label.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()}
+                    </Button>
+                  ))}
+                </div>
+              )}
               
-              if (theme) {
-                return (
-                <ImageButton
-                  key={action.id}
-                  action={action}
-                  imageSrc={theme.thumbnail}
-                  altText={theme.altText}
-                  onClick={() => onQuickReply?.(action)}
-                />
-                );
-              }
-              
-              return (
-                <Button
-                  key={action.id}
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onQuickReply?.(action)}
-                  className="text-xs"
-                >
-                  {action.label.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()}
-                </Button>
-              );
-            })}
-          </div>
-        )}
+              {/* Image buttons - grid layout */}
+              {imageActions.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
+                  {imageActions.map(({ action, theme }) => (
+                    <ImageButton
+                      key={action.id}
+                      action={action}
+                      imageSrc={theme.thumbnail}
+                      altText={theme.altText}
+                      onClick={() => onQuickReply?.(action)}
+                    />
+                  ))}
+                </div>
+              )}
+            </>
+          );
+        })()}
       </div>
     </div>
   );

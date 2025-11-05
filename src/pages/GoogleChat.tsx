@@ -473,6 +473,8 @@ export default function GoogleChat() {
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
         setSelectedBookType(null);
+        // Close mobile sidebar when creating new session
+        setIsMobileSidebarOpen(false);
       });
     } catch (error) {
       console.error('Error creating session:', error);

@@ -260,14 +260,19 @@ export default function GoogleChat() {
     return messages;
   }, [messages, pageCount]);
 
-  // Smart scroll: only auto-scroll when user is actively chatting or AI is loading
-  // Don't auto-scroll when AI finishes (let user see response from top)
+  // Smart scroll: only auto-scroll when user sends a message
+  // Keep viewport at top when AI responds so user sees text first
+  const previousMessagesLengthRef = useRef(messages.length);
   useEffect(() => {
-    if (scrollRef.current && isLoading) {
-      // Only scroll to bottom while AI is actively responding
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollRef.current) {
+      // If user just sent a message (messages increased), scroll to bottom
+      if (messages.length > previousMessagesLengthRef.current && !isLoading) {
+        scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+      }
+      // Update the ref for next comparison
+      previousMessagesLengthRef.current = messages.length;
     }
-  }, [messages, isLoading]);
+  }, [messages.length, isLoading]);
 
   const handleSend = async () => {
     if (!input.trim()) return;

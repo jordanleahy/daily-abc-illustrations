@@ -145,6 +145,7 @@ export function Header({
   const regularNavigation = [
     { name: 'Home', href: '/home' },
     { name: 'Library', href: '/library' },
+    { name: 'Google Chat', href: '/google-chat' },
     ...(hasHabitsRewards ? [
       { name: 'Rewards', href: '/rewards' },
       { name: 'Manage Habits', href: '/habits/manage' }

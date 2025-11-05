@@ -260,11 +260,14 @@ export default function GoogleChat() {
     return messages;
   }, [messages, pageCount]);
 
+  // Smart scroll: only auto-scroll when user is actively chatting or AI is loading
+  // Don't auto-scroll when AI finishes (let user see response from top)
   useEffect(() => {
-    if (scrollRef.current) {
+    if (scrollRef.current && isLoading) {
+      // Only scroll to bottom while AI is actively responding
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  }, [messages]);
+  }, [messages, isLoading]);
 
   const handleSend = async () => {
     if (!input.trim()) return;

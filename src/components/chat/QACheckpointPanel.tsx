@@ -106,16 +106,14 @@ export function QACheckpointPanel({
                   alt={`Page ${currentQAPage} preview`}
                   className="w-full h-full object-contain"
                 />
-                {!isBookCreated && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => onRemoveImage(currentQAPage)}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
-                  >
-                    Replace
-                  </Button>
-                )}
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => onRemoveImage(currentQAPage)}
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
+                >
+                  Replace
+                </Button>
                 <div className="absolute bottom-2 left-2 right-2">
                   <div className="flex items-center gap-2 text-xs bg-green-600/90 text-white px-2 py-1 rounded">
                     <Check className="h-3 w-3" />

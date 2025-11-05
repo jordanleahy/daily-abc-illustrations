@@ -115,10 +115,21 @@ export default function GoogleChat() {
   const [qaPagePrompts, setQAPagePrompts] = useState<Record<number, string>>({});
   const [showQACheckpoint, setShowQACheckpoint] = useState(false);
   const [outlineJustCompleted, setOutlineJustCompleted] = useState(false);
+  const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
   const previousShouldShow = useRef(false);
 
   // Priority: Show book images from storage if book exists, otherwise show QA checkpoint images
-  const displayImages = (createdBookId && bookPageImages) ? bookPageImages : qaPageImages;
+  // But hide images for pages in replace mode
+  const displayImages = useMemo(() => {
+    const baseImages = (createdBookId && bookPageImages) ? bookPageImages : qaPageImages;
+    const filtered: Record<number, string> = {};
+    Object.entries(baseImages).forEach(([pageNum, imageUrl]) => {
+      if (!replacePageMode[Number(pageNum)]) {
+        filtered[Number(pageNum)] = imageUrl;
+      }
+    });
+    return filtered;
+  }, [createdBookId, bookPageImages, qaPageImages, replacePageMode]);
   const isBookCreated = !!createdBookId;
 
   // Memoize parsed page details to avoid re-parsing on every render
@@ -481,6 +492,7 @@ export default function GoogleChat() {
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
         setSelectedBookType(null);
+        setReplacePageMode({});
         // Close mobile sidebar when creating new session
         setIsMobileSidebarOpen(false);
       });
@@ -524,6 +536,7 @@ export default function GoogleChat() {
         setOutlineJustCompleted(false);
         setIsMobileSidebarOpen(false);
         setSelectedBookType(null);
+        setReplacePageMode({});
         
         // Load QA images from the selected session
         const session = sessions.find(s => s.id === sessionId);
@@ -555,33 +568,116 @@ export default function GoogleChat() {
   }, [updateSessionName]);
 
   const handleQAImageUpload = useCallback(async (imageDataUrl: string) => {
-    // Store image for the current page
-    const updatedImages = {
-      ...qaPageImages,
-      [currentQAPage]: imageDataUrl
-    };
-    setQAPageImages(updatedImages);
-    
-    // Persist to database
-    if (currentSessionId) {
+    // If book is created, update actual page image
+    if (createdBookId && dbPages) {
+      const currentPage = dbPages.find(p => p.page_number === currentQAPage);
+      if (!currentPage) {
+        toast.error('Page not found');
+        return;
+      }
+
       try {
-        await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
-      } catch (error) {
-        console.error('Failed to save QA image:', error);
+        toast.info('Uploading image...');
+        
+        // Convert base64 to blob
+        const response = await fetch(imageDataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], `page-${currentQAPage}-${Date.now()}.png`, { type: 'image/png' });
+        
+        // Upload to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('page-images')
+          .upload(`${user?.id}/${createdBookId}/page-${currentQAPage}-${Date.now()}.png`, file, {
+            cacheControl: '3600',
+            upsert: false,
+          });
+        
+        if (uploadError) throw uploadError;
+        
+        // Get public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('page-images')
+          .getPublicUrl(uploadData.path);
+        
+        // Get next version number
+        const { data: existingImages } = await supabase
+          .from('page_image_urls')
+          .select('version_number')
+          .eq('page_id', currentPage.id)
+          .order('version_number', { ascending: false })
+          .limit(1);
+        
+        const nextVersion = (existingImages?.[0]?.version_number || 0) + 1;
+        
+        // Mark all previous versions as not latest
+        await supabase
+          .from('page_image_urls')
+          .update({ is_latest: false })
+          .eq('page_id', currentPage.id);
+        
+        // Insert new image record
+        const { error: insertError } = await supabase
+          .from('page_image_urls')
+          .insert({
+            page_id: currentPage.id,
+            book_id: createdBookId,
+            user_id: user?.id,
+            version_number: nextVersion,
+            image_url: publicUrl,
+            source_type: 'user_uploaded',
+            is_latest: true,
+          });
+        
+        if (insertError) throw insertError;
+        
+        // Clear replace mode for this page
+        setReplacePageMode(prev => {
+          const updated = { ...prev };
+          delete updated[currentQAPage];
+          return updated;
+        });
+        
+        toast.success('Image updated successfully!');
+        
+        // Auto-advance to next page if not the last page
+        if (currentQAPage < pageCount) {
+          setTimeout(() => {
+            setCurrentQAPage(currentQAPage + 1);
+          }, 500);
+        }
+      } catch (error: any) {
+        console.error('Image upload error:', error);
+        toast.error('Failed to upload image: ' + error.message);
+      }
+    } else {
+      // Pre-creation: Store in session QA images
+      const updatedImages = {
+        ...qaPageImages,
+        [currentQAPage]: imageDataUrl
+      };
+      setQAPageImages(updatedImages);
+      
+      // Persist to database
+      if (currentSessionId) {
+        try {
+          await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
+        } catch (error) {
+          console.error('Failed to save QA image:', error);
+        }
+      }
+      
+      // Auto-advance to next page if not the last page
+      if (currentQAPage < pageCount) {
+        setTimeout(() => {
+          setCurrentQAPage(currentQAPage + 1);
+        }, 500);
+      } else {
+        toast.success('All pages reviewed!', {
+          description: 'Click "Create Book" when ready to finalize.'
+        });
       }
     }
-    
-    // Auto-advance to next page if not the last page
-    if (currentQAPage < pageCount) {
-      setTimeout(() => {
-        setCurrentQAPage(currentQAPage + 1);
-      }, 500);
-    } else {
-      toast.success('All pages reviewed!', {
-        description: 'Click "Create Book" when ready to finalize.'
-      });
-    }
-  }, [qaPageImages, currentQAPage, pageCount, currentSessionId, updateQAPageImages]);
+  }, [qaPageImages, currentQAPage, pageCount, currentSessionId, updateQAPageImages, createdBookId, dbPages, user]);
 
   const handleQAPageNavigation = useCallback((direction: 'next' | 'prev') => {
     if (!parsedPageDetails) return;
@@ -596,18 +692,24 @@ export default function GoogleChat() {
   }, [parsedPageDetails, currentQAPage]);
 
   const handleRemoveQAImage = useCallback(async (pageNumber: number) => {
-    const updatedImages = { ...qaPageImages };
-    delete updatedImages[pageNumber];
-    setQAPageImages(updatedImages);
-    
-    if (currentSessionId) {
-      try {
-        await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
-      } catch (error) {
-        console.error('Failed to remove QA image:', error);
+    if (createdBookId) {
+      // For created books, just enable replace mode to show upload UI
+      setReplacePageMode(prev => ({ ...prev, [pageNumber]: true }));
+    } else {
+      // For pre-creation, remove from QA images
+      const updatedImages = { ...qaPageImages };
+      delete updatedImages[pageNumber];
+      setQAPageImages(updatedImages);
+      
+      if (currentSessionId) {
+        try {
+          await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
+        } catch (error) {
+          console.error('Failed to remove QA image:', error);
+        }
       }
     }
-  }, [qaPageImages, currentSessionId, updateQAPageImages]);
+  }, [qaPageImages, currentSessionId, updateQAPageImages, createdBookId]);
 
   // Fetch cover page ID when book is created
   useEffect(() => {

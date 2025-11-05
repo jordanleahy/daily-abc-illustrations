@@ -354,6 +354,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   /**
    * Auto-add to queue when book status changes to 'published'
    * Automatically generates SEO and adds book to daily publication queue
+   * NOTE: Disabled automatic tab opening - users must manually view queue
    */
   useEffect(() => {
     const autoAddToQueue = async () => {
@@ -382,8 +383,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
       console.log('📚 Auto-adding published book to queue:', contentName);
       
-      // Trigger the add to queue process
-      await handleAddToQueue();
+      // Trigger the add to queue process (with auto flag)
+      await handleAddToQueue(true);
     };
 
     autoAddToQueue();
@@ -826,11 +827,10 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
    * After successful queue addition, it automatically generates a QR code for the content
    * (only for book content type) and provides user feedback through toast notifications.
    * 
-   * The function also opens the publication schedule page to show the queue status.
-   * 
+   * @param isAutomatic - If true, suppresses automatic tab opening (used for auto-add)
    * @throws Will display error toast if authentication fails, queue addition fails, or QR generation fails
    */
-   const handleAddToQueue = async () => {
+   const handleAddToQueue = async (isAutomatic = false) => {
      if (!user?.id) {
        toast({
          title: "Authentication Required",
@@ -860,21 +860,23 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
        return;
      }
 
-     if (existingQueuedOrActive) {
-       console.log('⚠️ Duplicate prevented - existing publication found:', existingQueuedOrActive);
-       toast({
-         title: "Already in Queue",
-         description: `This book is already ${existingQueuedOrActive.status}. Check the schedule to view its status.`,
-         variant: "default"
-       });
-       
-       // Update local state to match database reality
-       setExistingPublication(existingQueuedOrActive);
-       
-       // Open the queue page to show existing entry
-       window.open('/daily-published-schedule', '_blank');
-       return;
-     }
+       if (existingQueuedOrActive) {
+        console.log('⚠️ Duplicate prevented - existing publication found:', existingQueuedOrActive);
+        toast({
+          title: "Already in Queue",
+          description: `This book is already ${existingQueuedOrActive.status}. Check the schedule to view its status.`,
+          variant: "default"
+        });
+        
+        // Update local state to match database reality
+        setExistingPublication(existingQueuedOrActive);
+        
+        // Only open schedule page if user explicitly clicked (not automatic)
+        if (!isAutomatic) {
+          window.open('/daily-published-schedule', '_blank');
+        }
+        return;
+      }
 
      console.log('✅ No duplicates found - proceeding with queue addition');
 
@@ -1016,12 +1018,14 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
          // Update local state
          setExistingPublication(newPublication);
          
-         // Generate QR code automatically
-         await generateQRCodeSafely();
-       }
+          // Generate QR code automatically
+          await generateQRCodeSafely();
+        }
 
-       // Open the queue page to show status
-       window.open('/daily-published-schedule', '_blank');
+        // Only open schedule page if user explicitly clicked (not automatic)
+        if (!isAutomatic) {
+          window.open('/daily-published-schedule', '_blank');
+        }
 
     } catch (error: any) {
       console.error('Error adding to queue:', error);
@@ -1061,7 +1065,10 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           setExistingPublication(refreshed);
         }
         
-        window.open('/daily-published-schedule', '_blank');
+        // Only open schedule page if user explicitly clicked (not automatic)
+        if (!isAutomatic) {
+          window.open('/daily-published-schedule', '_blank');
+        }
         return;
       }
 
@@ -1413,14 +1420,14 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                    </Button>
                  </>
                )}
-               {(!existingPublication || existingPublication.status === 'draft' || existingPublication.status === 'expired') && (
-                 <Button 
-                   onClick={handleAddToQueue}
-                   variant="outline"
-                   className="flex items-center justify-center gap-2 w-full md:w-auto"
-                   disabled={isCheckingPublication}
-                 >
-                   <Globe className="h-4 w-4" />
+                {(!existingPublication || existingPublication.status === 'draft' || existingPublication.status === 'expired') && (
+                  <Button 
+                    onClick={() => handleAddToQueue(false)}
+                    variant="outline"
+                    className="flex items-center justify-center gap-2 w-full md:w-auto"
+                    disabled={isCheckingPublication}
+                  >
+                    <Globe className="h-4 w-4" />
                    <span>{isCheckingPublication ? 'Checking...' : 'Add to Queue'}</span>
                  </Button>
                )}

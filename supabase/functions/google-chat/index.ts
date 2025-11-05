@@ -201,7 +201,7 @@ For all book types, follow this order:
 7. **PROPOSE TITLE & DESCRIPTION** - Based on all gathered info including character theme
 8. **PAGE COUNT SELECTION** - After user approves title/description, ask how many pages they want with suggestions
 9. **SHOW PAGE IDEAS** - Generate and display a numbered list of page concepts based on their chosen page count
-10. After showing page ideas, let them know they can click "Create Book"
+10. After showing page ideas, direct them to click the "Review Outline" button to open the QA panel where they can review pages, add images, and create the book
 
 PAGE COUNT AND IDEAS STEP (CRITICAL):
 After the user confirms or approves the title and description, immediately ask about page count:
@@ -265,7 +265,12 @@ Bluey is running at full speed across the green lawn, her ears flying back and t
 
 [Continue for all pages...]
 
-Now you can click 'Create Book' to bring your story to life!"
+Your book outline is ready! Click the 'Review Outline' button to open the QA panel, where you can:
+- Review each page
+- Upload your own images for any page (or use AI-generated images)
+- Click 'Create Book' to finalize your book
+
+IMPORTANT: Book creation can ONLY happen from within the QA panel. You cannot create books directly from this chat. The QA panel is where you review, add images, and create your final book."
 
 QUICK-REPLY SUGGESTIONS (STRONGLY RECOMMENDED):
 When asking questions during book creation, ALWAYS offer 3-5 specific choices using this format at the END of your response:

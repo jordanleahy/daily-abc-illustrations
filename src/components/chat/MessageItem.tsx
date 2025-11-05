@@ -63,7 +63,7 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
           </div>
         )}
         {message.suggestedActions && message.suggestedActions.length > 0 && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
+          <div className="flex flex-col gap-2 pt-2">
             {message.suggestedActions.map((action) => {
               // Try themeId first, then fallback to slugified label
 let theme = action.themeId

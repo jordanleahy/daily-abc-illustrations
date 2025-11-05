@@ -6,6 +6,8 @@ import type { Message } from '@/hooks/useGoogleChat';
 import type { SuggestedAction } from '@/hooks/useGoogleChat';
 import { ImageButton } from './ImageButton';
 import { characterThemes } from '@/config/characterThemes';
+import { BookRecommendationCard } from './BookRecommendationCard';
+import { parseRecommendations } from '@/utils/recommendationParser';
 
 interface MessageItemProps {
   message: Message;
@@ -30,6 +32,11 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
     content = content.replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '').trim();
   }
 
+  // Parse book recommendations from AI responses
+  const { recommendations, remainingText } = typeof content === 'string' && !isUser
+    ? parseRecommendations(content)
+    : { recommendations: [], remainingText: content };
+
   return (
     <div className={cn('flex gap-3 p-4', isUser ? 'bg-muted/30' : 'bg-background')}>
       <div className={cn(
@@ -43,9 +50,18 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
         )}
       </div>
       <div className="flex-1 space-y-2 overflow-hidden">
-        <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
-          {content}
-        </p>
+        {remainingText && (
+          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+            {remainingText}
+          </p>
+        )}
+        {recommendations.length > 0 && (
+          <div className="space-y-3 mt-3">
+            {recommendations.map((rec, idx) => (
+              <BookRecommendationCard key={idx} title={rec.title} description={rec.description} />
+            ))}
+          </div>
+        )}
         {message.suggestedActions && message.suggestedActions.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
             {message.suggestedActions.map((action) => {

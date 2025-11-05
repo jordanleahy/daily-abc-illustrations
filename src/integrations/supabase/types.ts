@@ -860,11 +860,7 @@ export type Database = {
           book_id: string
           created_at: string
           error_message: string | null
-          generation_completed_at: string | null
           generation_cost_cents: number | null
-          generation_duration_ms: number | null
-          generation_started_at: string | null
-          generation_status: string
           id: string
           image_url: string | null
           is_latest: boolean
@@ -881,11 +877,7 @@ export type Database = {
           book_id: string
           created_at?: string
           error_message?: string | null
-          generation_completed_at?: string | null
           generation_cost_cents?: number | null
-          generation_duration_ms?: number | null
-          generation_started_at?: string | null
-          generation_status?: string
           id?: string
           image_url?: string | null
           is_latest?: boolean
@@ -902,11 +894,7 @@ export type Database = {
           book_id?: string
           created_at?: string
           error_message?: string | null
-          generation_completed_at?: string | null
           generation_cost_cents?: number | null
-          generation_duration_ms?: number | null
-          generation_started_at?: string | null
-          generation_status?: string
           id?: string
           image_url?: string | null
           is_latest?: boolean

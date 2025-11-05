@@ -66,7 +66,6 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
       hasPromptUsed: !!currentImage.prompt_used,
       promptLength: currentImage.prompt_used?.length,
       sourceType: currentImage.source_type,
-      generationStatus: currentImage.generation_status,
       promptPreview: currentImage.prompt_used?.substring(0, 100)
     } : 'NULL/UNDEFINED'
   });

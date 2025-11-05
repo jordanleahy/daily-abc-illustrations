@@ -677,15 +677,14 @@ export default function GoogleChat() {
       const { error: insertError } = await supabase
         .from('page_image_urls')
         .insert({
-          page_id: coverPageId,
-          book_id: createdBookId,
-          user_id: user?.id,
-          version_number: nextVersion,
-          image_url: publicUrl,
-          source_type: 'user_uploaded',
-          generation_status: 'complete',
-          is_latest: true,
-        });
+        page_id: coverPageId,
+        book_id: createdBookId,
+        user_id: user?.id,
+        version_number: nextVersion,
+        image_url: publicUrl,
+        source_type: 'user_uploaded',
+        is_latest: true,
+      });
       
       if (insertError) throw insertError;
       

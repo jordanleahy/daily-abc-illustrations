@@ -105,10 +105,8 @@ export const useTextOverlay = ({ pageId, bookId, userId }: UseTextOverlayProps) 
             version_number: nextVersion,
             is_latest: true,
             image_url: publicUrl,
-            generation_status: 'complete' as const,
             source_type: 'user_uploaded' as const,
             text_overlay_config: config as any,
-            generation_completed_at: new Date().toISOString(),
           }])
           .select()
           .single();
@@ -215,10 +213,8 @@ export const useTextOverlay = ({ pageId, bookId, userId }: UseTextOverlayProps) 
             version_number: nextVersion,
             is_latest: true,
             image_url: publicUrl,
-            generation_status: 'complete' as const,
             source_type: 'user_uploaded' as const,
             text_overlay_config: null,
-            generation_completed_at: new Date().toISOString(),
           }])
           .select()
           .single();

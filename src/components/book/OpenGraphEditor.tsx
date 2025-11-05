@@ -62,8 +62,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     currentImage,
     fallbackImage,
     firstPageImage: firstPageImage ? {
-      url: firstPageImage.image_url,
-      status: firstPageImage.generation_status
+      url: firstPageImage.image_url
     } : null
   });
 

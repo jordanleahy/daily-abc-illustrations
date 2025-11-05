@@ -1,6 +1,6 @@
 /**
- * Image generation record for a book page
- * Tracks the lifecycle of AI-generated images from prompt to completion
+ * Image record for a book page
+ * All images are user-uploaded - no AI generation in this codebase
  */
 export interface PageImageUrl {
   /** Unique identifier for this image record */
@@ -13,17 +13,9 @@ export interface PageImageUrl {
   user_id: string;
   /** Version number for image iterations (1, 2, 3, etc.) */
   version_number: number;
-  /** Public URL of the generated image (null while generating) */
+  /** Public URL of the uploaded image */
   image_url: string | null;
-  /** Current status of the image generation process */
-  generation_status: 'not_started' | 'in_progress' | 'complete' | 'error';
-  /** ISO timestamp when generation began */
-  generation_started_at: string | null;
-  /** ISO timestamp when generation completed */
-  generation_completed_at: string | null;
-  /** Time taken to generate the image in milliseconds */
-  generation_duration_ms: number | null;
-  /** AI prompt used to generate this image */
+  /** Description/prompt associated with this image */
   prompt_used: string | null;
   /** Error message if generation failed */
   error_message: string | null;

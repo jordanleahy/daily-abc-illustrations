@@ -31,7 +31,6 @@ export function usePageImageUrls(pageId: string) {
       console.log(`[usePageImageUrls] Current image result:`, data ? {
         id: data.id,
         version: data.version_number,
-        status: data.generation_status,
         hasUrl: !!data.image_url,
         isLatest: data.is_latest
       } : 'No current image found');
@@ -85,7 +84,6 @@ export function usePageImageUrls(pageId: string) {
           book_id: bookId,
           user_id: user.id,
           version_number: versionNumber,
-          generation_status: sourceType === 'user_uploaded' ? 'complete' : 'not_started',
           prompt_used: promptUsed,
           source_type: sourceType
         })
@@ -164,7 +162,6 @@ export function usePageImageUrls(pageId: string) {
             versionNumber: updatedImage.version_number,
             isLatest: updatedImage.is_latest,
             wasLatest: oldImage.is_latest,
-            status: updatedImage.generation_status,
             hasImageUrl: !!updatedImage.image_url
           });
           
@@ -178,15 +175,6 @@ export function usePageImageUrls(pageId: string) {
             console.log(`[usePageImageUrls] ✅ Updated image is now latest (version ${updatedImage.version_number})`);
             // Force update the cache to ensure the UI shows the image
             queryClient.setQueryData(['page-image-latest', pageId], updatedImage);
-            
-            // If image is complete, make sure we refresh to avoid any stale state
-            if (updatedImage.generation_status === 'complete' && updatedImage.image_url) {
-              console.log(`[usePageImageUrls] 🔄 Image complete, ensuring fresh cache`);
-              // Small delay to ensure database consistency, then refresh
-              setTimeout(() => {
-                queryClient.invalidateQueries({ queryKey: ['page-image-latest', pageId] });
-              }, 100);
-            }
           } else if (oldImage.is_latest && !updatedImage.is_latest) {
             // This image was latest but no longer is - need to find the new latest
             console.log(`[usePageImageUrls] Image was latest but no longer is, refreshing current image`);
@@ -217,24 +205,6 @@ export function usePageImageUrls(pageId: string) {
       supabase.removeChannel(channel);
     };
   }, [pageId, user, queryClient]);
-
-  // Add polling for active image generation
-  useEffect(() => {
-    if (!currentImage || currentImage.generation_status !== 'in_progress') return;
-
-    console.log(`[usePageImageUrls] Starting polling for image generation: ${currentImage.id}`);
-    
-    const pollInterval = setInterval(() => {
-      console.log(`[usePageImageUrls] Polling for image updates...`);
-      queryClient.invalidateQueries({ queryKey: ['page-image-latest', pageId] });
-      queryClient.invalidateQueries({ queryKey: ['page-image-versions', pageId] });
-    }, 2000); // Poll every 2 seconds
-
-    return () => {
-      console.log(`[usePageImageUrls] Stopping polling for image generation`);
-      clearInterval(pollInterval);
-    };
-  }, [currentImage?.id, currentImage?.generation_status, pageId, queryClient]);
 
   const refreshData = async () => {
     console.log(`[usePageImageUrls] Manual refresh requested for page ${pageId}`);
@@ -289,8 +259,7 @@ export function usePageImageUrls(pageId: string) {
     const { data: updatedRecord, error: updateError } = await supabase
       .from('page_image_urls')
       .update({
-        image_url: publicUrlData.publicUrl,
-        generation_completed_at: new Date().toISOString()
+        image_url: publicUrlData.publicUrl
       })
       .eq('id', record.id)
       .select()

@@ -13,6 +13,39 @@ const logStep = (step: string, details?: any) => {
   console.log(`[CHECK-SUBSCRIPTION] ${step}${detailsStr}`);
 };
 
+// In-memory cache to prevent rate limiting (5-second TTL)
+interface CacheEntry {
+  data: any;
+  timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry>();
+const CACHE_TTL_MS = 5000; // 5 seconds
+
+const getCachedResult = (key: string): any | null => {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  
+  const age = Date.now() - entry.timestamp;
+  if (age > CACHE_TTL_MS) {
+    cache.delete(key);
+    return null;
+  }
+  
+  logStep("Using cached result", { key, age: `${age}ms` });
+  return entry.data;
+};
+
+const setCachedResult = (key: string, data: any): void => {
+  cache.set(key, { data, timestamp: Date.now() });
+  
+  // Clean up old entries (keep cache small)
+  if (cache.size > 100) {
+    const oldestKey = cache.keys().next().value;
+    cache.delete(oldestKey);
+  }
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -73,11 +106,23 @@ serve(async (req) => {
     }
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Check cache first to prevent rate limiting
+    const cacheKey = `subscription_${user.email}`;
+    const cachedResult = getCachedResult(cacheKey);
+    if (cachedResult) {
+      return new Response(JSON.stringify(cachedResult), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     // Retrieve Stripe key only after authentication
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {
       logStep("Stripe key missing - returning unsubscribed");
-      return new Response(JSON.stringify({ subscribed: false }), {
+      const result = { subscribed: false };
+      setCachedResult(cacheKey, result);
+      return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
@@ -89,7 +134,9 @@ serve(async (req) => {
     
     if (customers.data.length === 0) {
       logStep("No customer found, returning unsubscribed state");
-      return new Response(JSON.stringify({ subscribed: false }), {
+      const result = { subscribed: false };
+      setCachedResult(cacheKey, result);
+      return new Response(JSON.stringify(result), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
       });
@@ -157,14 +204,19 @@ serve(async (req) => {
       logStep("No active subscription found");
     }
 
-    return new Response(JSON.stringify({
+    const result = {
       subscribed: hasActiveSub,
       product_id: productId,
       price_id: priceId,
       interval: interval,
       subscription_end: subscriptionEnd,
       cancel_at_period_end: cancelAtPeriodEnd
-    }), {
+    };
+
+    // Cache the result
+    setCachedResult(cacheKey, result);
+
+    return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
     });

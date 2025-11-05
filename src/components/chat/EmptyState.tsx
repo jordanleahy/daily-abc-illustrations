@@ -10,16 +10,16 @@ interface EmptyStateProps {
 
 export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
   return (
-    <div className="flex h-full flex-col items-center justify-center p-8">
-      <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
-        <Sparkles className="h-8 w-8 text-primary" />
+    <div className="flex h-full flex-col items-center justify-start p-4 sm:p-8 pt-8 sm:pt-16 overflow-y-auto">
+      <div className="mb-6 sm:mb-8 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
+        <Sparkles className="h-7 w-7 sm:h-8 sm:w-8 text-primary" />
       </div>
-      <h2 className="mb-2 text-2xl font-bold">What would you like to create?</h2>
-      <p className="mb-8 text-center text-muted-foreground">
+      <h2 className="mb-2 text-xl sm:text-2xl font-bold text-center">What would you like to create?</h2>
+      <p className="mb-6 sm:mb-8 text-center text-sm sm:text-base text-muted-foreground px-2">
         Choose a book type to start creating your educational content
       </p>
       
-      <div className="grid w-full max-w-2xl gap-4 sm:grid-cols-2">
+      <div className="grid w-full max-w-2xl gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 pb-8">
         {BOOK_TYPES.map((bookType) => {
           const IconComponent = bookType.icon;
           return (

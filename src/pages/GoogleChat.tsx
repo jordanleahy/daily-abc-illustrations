@@ -643,7 +643,7 @@ export default function GoogleChat() {
         {/* Main Chat Area - Full width, no margin adjustment */}
         <div className="flex-1 flex flex-col w-full">
           {/* Messages Area */}
-          <div ref={scrollRef} className="flex-1 overflow-y-auto">
+          <div ref={scrollRef} className="flex-1 overflow-y-auto pt-safe-top">
             {messages.length === 0 ? (
               <EmptyState onBookTypeSelect={handleBookTypeSelect} />
             ) : (

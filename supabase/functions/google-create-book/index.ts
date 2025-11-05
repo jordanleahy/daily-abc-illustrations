@@ -3,7 +3,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
-import { generateSpecializedPrompt } from '../_shared/promptTemplates.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -522,18 +521,51 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
 
     console.log(`Cover page + ${pages.length - 1} content pages created`);
 
-    // Generate page system prompts for all pages
-    console.log('Generating page system prompts...');
+    // Extract AI-generated prompts from conversation history and store them
+    console.log('Extracting AI-generated prompts from conversation...');
     
-    const bookContext = {
-      bookName: sanitizeText(bookData.bookName, 200),
-      category: sanitizeText(bookData.category || 'General', 100),
-      bookDescription: sanitizeText(bookData.bookDescription || '', 1000),
-      theme: validatedMetadata.characterTheme,
-      characterTheme: validatedMetadata.characterTheme,
-      targetAge: validatedMetadata.targetAge,
-      bookType: validatedMetadata.bookType
+    // Helper function to extract page prompts from conversation
+    const extractPagePromptsFromConversation = (messages: any[]): Map<number, string> => {
+      const pagePrompts = new Map<number, string>();
+      
+      // Find the last assistant message with page details
+      const lastAssistantMessage = messages
+        .filter((m: any) => m.role === 'assistant')
+        .reverse()
+        .find((m: any) => m.content.includes('**Page'));
+      
+      if (!lastAssistantMessage) {
+        console.log('No AI-generated page prompts found in conversation');
+        return pagePrompts;
+      }
+      
+      // Regex to extract page prompts (matches: **Page 1: Title**\nDescription...)
+      const pageRegex = /\*\*Page\s+(\d+):\s*["']?([^"'\n*]+)["']?\*+\s*\n([^\n]+(?:\n(?!\*\*Page)[^\n]+)*)/gi;
+      let match;
+      
+      while ((match = pageRegex.exec(lastAssistantMessage.content)) !== null) {
+        const [, pageNumStr, title, description] = match;
+        const pageNumber = parseInt(pageNumStr, 10);
+        
+        // Combine title and description as the full prompt
+        const fullPrompt = `**Page ${pageNumber}: "${title.trim()}"**\n\n${description.trim()}`;
+        pagePrompts.set(pageNumber, fullPrompt);
+      }
+      
+      // Extract cover/book description from the same message
+      const bookTitleMatch = lastAssistantMessage.content.match(/\*\*Book Title:\*\*\s*["']?([^"'\n]+)["']?/i);
+      const bookDescMatch = lastAssistantMessage.content.match(/\*\*Book Description:\*\*\s*([^\n]+(?:\n(?!\*\*)[^\n]+)*)/i);
+      
+      if (bookTitleMatch && bookDescMatch) {
+        const coverPrompt = `${bookDescMatch[1].trim()}\n\nAn educational children's book about ${bookTitleMatch[1].trim()}\n\nCreate a vibrant, engaging cover illustration that captures this theme. The image should:\n- Feature a central focal point\n- Use bright, child-friendly colors\n- Have a clear composition suitable for a book cover\n- Leave space for text overlay in the center`;
+        pagePrompts.set(0, coverPrompt); // Cover is page 0
+      }
+      
+      console.log(`Extracted ${pagePrompts.size} AI-generated prompts from conversation`);
+      return pagePrompts;
     };
+    
+    const aiPrompts = extractPagePromptsFromConversation(conversationHistory);
 
     // Fetch created pages with IDs
     const { data: createdPagesForPrompts, error: fetchCreatedPagesError } = await supabase
@@ -546,16 +578,34 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       for (const page of createdPagesForPrompts) {
         const isCover = page.page_number === 0;
         
-        const pageContext = {
-          pageNumber: page.page_number,
-          letter: page.letter,
-          title: page.title,
-          description: page.description || '',
-          mainConcept: page.content?.mainConcept
-        };
+        // Use AI-generated prompt if available, otherwise create a basic fallback
+        let promptContent = aiPrompts.get(page.page_number);
+        
+        if (!promptContent) {
+          // Fallback: Create a simple prompt from page data
+          if (isCover) {
+            promptContent = `${sanitizeText(bookData.bookDescription || '', 1000)}
 
-        // Generate specialized prompt using templates
-        const promptContent = generateSpecializedPrompt(bookContext, pageContext, isCover, showTextOverlay);
+An educational children's book about ${sanitizeText(bookData.bookName, 200)}
+
+Create a vibrant, engaging cover illustration that captures this theme. The image should:
+- Feature a central focal point
+- Use bright, child-friendly colors
+- Have a clear composition suitable for a book cover
+${showTextOverlay ? '- Leave space for text overlay in the center' : '- No text overlay needed'}`;
+          } else {
+            promptContent = `**Page ${page.page_number}: "${page.title}"**
+
+${page.description || ''}
+
+${page.content?.mainConcept ? `Main Concept: ${page.content.mainConcept}` : ''}
+
+Create an educational illustration that brings this concept to life with bright, child-friendly visuals.`;
+          }
+          console.log(`Using fallback prompt for page ${page.page_number}`);
+        } else {
+          console.log(`Using AI-generated prompt for page ${page.page_number}`);
+        }
 
         // Get version number for this page
         const { data: pageVersionData, error: pageVersionError } = await supabase
@@ -564,7 +614,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         if (!pageVersionError) {
           const pageVersionNumber = pageVersionData || 1;
 
-          // Insert page system prompt
+          // Insert page system prompt with AI-generated content
           await supabase
             .from('page_system_prompts')
             .insert({
@@ -576,20 +626,21 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
               is_latest: true,
               is_deployed: true,
               deployed_at: new Date().toISOString(),
-              source_type: 'book_creation',
+              source_type: 'ai_generated',
               generation_metadata: {
-                generator: 'google-create-book',
+                generator: 'google-chat-ai',
                 bookType: validatedMetadata.bookType,
                 pageType: isCover ? 'cover' : 'content',
-                generatedAt: new Date().toISOString()
+                generatedAt: new Date().toISOString(),
+                extractedFromConversation: aiPrompts.has(page.page_number)
               }
             });
           
-          console.log(`Created prompt for page ${page.page_number} (${isCover ? 'cover' : page.letter})`);
+          console.log(`Stored AI prompt for page ${page.page_number} (${isCover ? 'cover' : page.letter})`);
         }
       }
       
-      console.log(`Generated page system prompts for ${createdPagesForPrompts.length} pages`);
+      console.log(`Stored AI-generated prompts for ${createdPagesForPrompts.length} pages`);
     }
 
     // Create default style guide for the book

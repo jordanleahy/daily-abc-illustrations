@@ -470,7 +470,7 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
             open={showTextOverlayEditor}
             onOpenChange={setShowTextOverlayEditor}
             imageUrl={currentImage.image_url}
-            defaultText={page.title}
+            defaultText={titleEdit.value}
             pageId={page.id}
             bookId={bookId}
             userId={user.id}

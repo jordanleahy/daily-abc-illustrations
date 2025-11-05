@@ -60,6 +60,13 @@ export function ImageTextOverlayEditor({
     text: existingConfig?.text || defaultText,
   });
 
+  // Sync text field when defaultText changes (e.g., when page title is edited)
+  useEffect(() => {
+    if (open && !existingConfig?.text) {
+      setConfig(prev => ({ ...prev, text: defaultText }));
+    }
+  }, [defaultText, open, existingConfig]);
+
   // Use appropriate hook based on mode
   const pageOverlay = useTextOverlay({
     pageId: pageId || '',

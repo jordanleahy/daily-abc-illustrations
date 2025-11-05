@@ -696,8 +696,8 @@ export default function GoogleChat() {
             }}
           >
             <SheetContent 
-              side="right" 
-              className="w-full sm:w-[500px] p-0 flex flex-col overflow-hidden"
+              side="bottom" 
+              className="w-full h-[95vh] p-0 flex flex-col overflow-hidden rounded-t-xl z-[100]"
             >
               <QACheckpointPanel
                 showQACheckpoint={true}

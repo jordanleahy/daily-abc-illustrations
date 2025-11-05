@@ -14,7 +14,7 @@ import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useIsTeacher } from '@/contexts/RoleContext';
 import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { getBookViewTimestamps, trackBookView } from '@/utils/bookViewTracking';
+import { trackBookView } from '@/utils/bookViewTracking';
 import { useFavorites } from '@/hooks/useFavorites';
 import { PremiumContentWrapper } from '@/components/subscription/PremiumContentWrapper';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
@@ -54,51 +54,28 @@ export default memo(function Library() {
     );
   }
 
-  // Four-tier sorting: Active daily -> Favorites -> Recently Visited -> Unvisited
-  const viewTimestamps = getBookViewTimestamps();
-  
-  // Find the active daily published book from library items
-  const activeDailyBook = libraryItems?.find(item => item.id === activeDailyPublished?.id);
-  
-  // Filter out the active daily book from the rest
-  const otherBooks = libraryItems?.filter(item => item.id !== activeDailyPublished?.id) || [];
-  
-  // Separate favorites from other books
-  const favoriteBooks = otherBooks.filter(item => favoriteIds.has(item.id));
-  const nonFavoriteBooks = otherBooks.filter(item => !favoriteIds.has(item.id));
-  
-  // Sort favorites by when they were favorited (most recent first)
-  const sortedFavorites = [...favoriteBooks].sort((a, b) => {
-    const aFavorite = favorites.find(f => f.daily_published_id === a.id);
-    const bFavorite = favorites.find(f => f.daily_published_id === b.id);
-    const aTime = aFavorite ? new Date(aFavorite.created_at).getTime() : 0;
-    const bTime = bFavorite ? new Date(bFavorite.created_at).getTime() : 0;
-    return bTime - aTime; // Most recent first
+  // Sort by favorites, then respect the database-provided sort order (most recent activity first)
+  const allBooks = [...(libraryItems || [])].sort((a, b) => {
+    // Favorites come first
+    const aIsFavorite = favoriteIds.has(a.id);
+    const bIsFavorite = favoriteIds.has(b.id);
+    
+    if (aIsFavorite && !bIsFavorite) return -1;
+    if (!aIsFavorite && bIsFavorite) return 1;
+    
+    // For favorites, sort by when favorited (most recent first)
+    if (aIsFavorite && bIsFavorite) {
+      const aFavorite = favorites.find(f => f.daily_published_id === a.id);
+      const bFavorite = favorites.find(f => f.daily_published_id === b.id);
+      const aTime = aFavorite ? new Date(aFavorite.created_at).getTime() : 0;
+      const bTime = bFavorite ? new Date(bFavorite.created_at).getTime() : 0;
+      return bTime - aTime;
+    }
+    
+    // For non-favorites, the database already sorted by last_viewed_at
+    // Just maintain that order (return 0)
+    return 0;
   });
-  
-  // Split non-favorites into visited and unvisited books
-  const visitedBooks = nonFavoriteBooks.filter(item => viewTimestamps[item.id]);
-  const unvisitedBooks = nonFavoriteBooks.filter(item => !viewTimestamps[item.id]);
-  
-  // Sort visited by most recent view time
-  visitedBooks.sort((a, b) => {
-    const aViewTime = viewTimestamps[a.id] || 0;
-    const bViewTime = viewTimestamps[b.id] || 0;
-    return bViewTime - aViewTime;
-  });
-  
-  // Sort unvisited by publish_date (newest first)
-  unvisitedBooks.sort((a, b) => 
-    new Date(b.publish_date).getTime() - new Date(a.publish_date).getTime()
-  );
-  
-  // Combine in order: active daily -> favorites -> visited -> unvisited
-  const allBooks = [
-    ...(activeDailyBook ? [activeDailyBook] : []),
-    ...sortedFavorites,
-    ...visitedBooks,
-    ...unvisitedBooks
-  ];
 
   return (
     <>

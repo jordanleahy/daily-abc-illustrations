@@ -13,7 +13,6 @@ import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { BookCarousel } from '@/components/landing';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
-import { getBookViewTimestamps } from '@/utils/bookViewTracking';
 
 const Index = () => {
   const { isAuthenticated } = useAuthContext();
@@ -34,7 +33,7 @@ const Index = () => {
   // Fetch today's habits for the first kid
   const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
   
-  // Fetch library books for recently viewed section
+  // Fetch library books - already sorted by most recent activity from the hook
   const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooks();
   
   // Filter out skipped habits and sort by status (pending first, completed/failed last)
@@ -60,16 +59,10 @@ const Index = () => {
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
   
-  // Get recently viewed books
-  const viewTimestamps = getBookViewTimestamps();
+  // Get recently viewed books (books with activity, already sorted by most recent)
   const recentBooks = libraryItems
-    .filter(book => viewTimestamps[book.id])
-    .sort((a, b) => {
-      const aTime = viewTimestamps[a.id] || 0;
-      const bTime = viewTimestamps[b.id] || 0;
-      return bTime - aTime;
-    })
-    .slice(0, 10);
+    .filter(book => book.last_viewed_at) // Only books that have been viewed
+    .slice(0, 10); // Take top 10 most recently viewed
   
   const isLoading = isLoadingKids || isLoadingHabits;
   const timeOfDay = getTimeBasedGreeting();

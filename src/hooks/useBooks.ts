@@ -22,7 +22,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Book } from '@/types/book';
 import { toast } from 'sonner';
-import { getBookViewTimestamps } from '@/utils/bookViewTracking';
 
 /**
  * Books data management hook

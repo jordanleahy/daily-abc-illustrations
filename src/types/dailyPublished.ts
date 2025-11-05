@@ -31,6 +31,8 @@ export interface DailyPublishedWithBook extends DailyPublished {
   og_image_url?: string | null;
   seo_title?: string | null;
   seo_description?: string | null;
+  last_viewed_at?: string | null;
+  view_count?: number;
 }
 
 export interface DailyPublishedWithTotalPages extends DailyPublished {

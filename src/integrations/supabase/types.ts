@@ -1252,6 +1252,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_book_activity: {
+        Row: {
+          created_at: string
+          daily_published_id: string
+          id: string
+          last_viewed_at: string
+          updated_at: string
+          user_id: string
+          view_count: number
+        }
+        Insert: {
+          created_at?: string
+          daily_published_id: string
+          id?: string
+          last_viewed_at?: string
+          updated_at?: string
+          user_id: string
+          view_count?: number
+        }
+        Update: {
+          created_at?: string
+          daily_published_id?: string
+          id?: string
+          last_viewed_at?: string
+          updated_at?: string
+          user_id?: string
+          view_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_book_activity_daily_published_id_fkey"
+            columns: ["daily_published_id"]
+            isOneToOne: false
+            referencedRelation: "active_daily_published"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_book_activity_daily_published_id_fkey"
+            columns: ["daily_published_id"]
+            isOneToOne: false
+            referencedRelation: "daily_published"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_favorites: {
         Row: {
           created_at: string

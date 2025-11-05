@@ -46,7 +46,7 @@ export function QACheckpointPanel({
   const currentCoverPrompt = qaPagePrompts[0] || null;
 
   return (
-    <div className="flex flex-col h-full bg-background">
+    <div className="flex flex-col max-h-[90vh] bg-background pt-[env(safe-area-inset-top,1rem)]">
       {/* Header with Close Button */}
       <div className="sticky top-0 bg-background border-b px-4 py-3 flex items-center justify-between shrink-0 z-10">
         <div className="flex items-center gap-2">

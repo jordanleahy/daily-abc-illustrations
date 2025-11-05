@@ -89,34 +89,6 @@ export function QACheckpointPanel({
 
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
-        {/* Book Created Banner */}
-        {isBookCreated && (
-          <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-4">
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
-                <Check className="h-5 w-5 text-green-600 dark:text-green-400" />
-                <div>
-                  <p className="font-medium text-sm text-green-900 dark:text-green-100">
-                    Book Created!
-                  </p>
-                  <p className="text-xs text-green-700 dark:text-green-300">
-                    Images are from your book
-                  </p>
-                </div>
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/editor/${createdBookId}`)}
-                className="w-full"
-              >
-                <BookOpen className="h-4 w-4 mr-2" />
-                View Book
-              </Button>
-            </div>
-          </div>
-        )}
-
         {/* Image Upload/Display Area */}
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Page Image</p>

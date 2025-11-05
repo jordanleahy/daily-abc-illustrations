@@ -2,8 +2,8 @@
  * Configuration for text overlay on images
  */
 export interface TextOverlayConfig {
-  /** Text to display on the image */
-  text: string;
+  /** Text to display on the image (optional - usually passed from page title) */
+  text?: string;
   /** Font family name */
   fontFamily: string;
   /** Font size in pixels */

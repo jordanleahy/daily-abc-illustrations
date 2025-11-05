@@ -22,11 +22,28 @@ export const useTextOverlay = ({ pageId, bookId, userId }: UseTextOverlayProps) 
       config,
     }: {
       imageUrl: string;
-      config: TextOverlayConfig;
+      config: Omit<TextOverlayConfig, 'text'>;
     }) => {
       setIsProcessing(true);
 
       try {
+        // Fetch the page title to use as overlay text
+        const { data: pageData } = await supabase
+          .from('pages')
+          .select('title')
+          .eq('id', pageId)
+          .single();
+
+        if (!pageData?.title) {
+          throw new Error('Page title not found');
+        }
+
+        // Create full config with page title as text
+        const fullConfig: TextOverlayConfig = {
+          ...config,
+          text: pageData.title,
+        };
+
         // Fetch the base image without any text overlay
         const { data: baseVersion } = await supabase
           .from('page_image_urls')
@@ -42,8 +59,8 @@ export const useTextOverlay = ({ pageId, bookId, userId }: UseTextOverlayProps) 
         
         console.log('Applying text overlay to base image:', baseUrl === imageUrl ? 'current image (no base found)' : 'original base image');
 
-        // Create text overlay on the base image (never on already-overlaid image)
-        const overlayBlob = await createTextOverlay(baseUrl, config);
+        // Create text overlay on the base image using full config with text
+        const overlayBlob = await createTextOverlay(baseUrl, fullConfig);
 
         // Process/compress the image
         const processed = await processImage(
@@ -106,7 +123,7 @@ export const useTextOverlay = ({ pageId, bookId, userId }: UseTextOverlayProps) 
             is_latest: true,
             image_url: publicUrl,
             source_type: 'user_uploaded' as const,
-            text_overlay_config: config as any,
+            text_overlay_config: config as any, // Save config without text
           }])
           .select()
           .single();

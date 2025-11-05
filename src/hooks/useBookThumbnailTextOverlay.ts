@@ -28,11 +28,28 @@ export const useBookThumbnailTextOverlay = ({
       config 
     }: { 
       imageUrl: string; 
-      config: TextOverlayConfig;
+      config: Omit<TextOverlayConfig, 'text'>;
     }) => {
       setIsProcessing(true);
 
       try {
+        // Fetch the book name to use as overlay text
+        const { data: bookData } = await supabase
+          .from('books')
+          .select('book_name')
+          .eq('id', bookId)
+          .single();
+
+        if (!bookData?.book_name) {
+          throw new Error('Book name not found');
+        }
+
+        // Create full config with book name as text
+        const fullConfig: TextOverlayConfig = {
+          ...config,
+          text: bookData.book_name,
+        };
+
         // Fetch the base image without any text overlay
         const { data: baseMeta } = await supabase
           .from('seo_metadata')
@@ -48,8 +65,8 @@ export const useBookThumbnailTextOverlay = ({
         
         console.log('Applying text overlay to base image:', baseUrl === imageUrl ? 'current image (no base found)' : 'original base image');
 
-        // Create text overlay on the base image (never on already-overlaid image)
-        const overlayBlob = await createTextOverlay(baseUrl, config);
+        // Create text overlay on the base image using full config with text
+        const overlayBlob = await createTextOverlay(baseUrl, fullConfig);
 
         // Process the image (compress to webp)
         const processed = await processImage(
@@ -86,7 +103,7 @@ export const useBookThumbnailTextOverlay = ({
           .from('seo_metadata')
           .update({
             og_image_url: publicUrl,
-            text_overlay_config: config as any,
+            text_overlay_config: config as any, // Save config without text
             updated_at: new Date().toISOString(),
           })
           .eq('id', seoMetadataId);

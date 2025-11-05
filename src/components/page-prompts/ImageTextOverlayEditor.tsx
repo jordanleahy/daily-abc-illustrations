@@ -36,6 +36,7 @@ interface ImageTextOverlayEditorProps extends ModalProps {
   dailyPublishedId?: string;
   seoMetadataId?: string;
   existingConfig?: TextOverlayConfig | null;
+  onTextChange?: (newText: string) => void; // Callback to update page title
 }
 
 export function ImageTextOverlayEditor({
@@ -50,22 +51,16 @@ export function ImageTextOverlayEditor({
   dailyPublishedId,
   seoMetadataId,
   existingConfig,
+  onTextChange,
 }: ImageTextOverlayEditorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement | null>(null);
   
-  const [config, setConfig] = useState<TextOverlayConfig>({
+  // Config state without text (text comes from defaultText prop)
+  const [config, setConfig] = useState<Omit<TextOverlayConfig, 'text'>>({
     ...DEFAULT_TEXT_OVERLAY_CONFIG,
     ...existingConfig,
-    text: existingConfig?.text || defaultText,
   });
-
-  // Sync text field when defaultText changes (e.g., when page title is edited)
-  useEffect(() => {
-    if (open && !existingConfig?.text) {
-      setConfig(prev => ({ ...prev, text: defaultText }));
-    }
-  }, [defaultText, open, existingConfig]);
 
   // Use appropriate hook based on mode
   const pageOverlay = useTextOverlay({
@@ -84,16 +79,16 @@ export function ImageTextOverlayEditor({
   const { applyTextOverlay, removeTextOverlay, isProcessing } = 
     mode === 'page' ? pageOverlay : thumbnailOverlay;
 
-  // Reload existing config when dialog opens
+  // Reload existing config when dialog opens (without text - that comes from defaultText)
   useEffect(() => {
     if (open) {
-      setConfig({
+      const { text, ...styleConfig } = {
         ...DEFAULT_TEXT_OVERLAY_CONFIG,
         ...existingConfig,
-        text: existingConfig?.text || defaultText,
-      });
+      };
+      setConfig(styleConfig);
     }
-  }, [open, existingConfig, defaultText]);
+  }, [open, existingConfig]);
 
   const updatePreview = useCallback(async () => {
     if (!canvasRef.current || !imageRef.current) return;
@@ -111,8 +106,10 @@ export function ImageTextOverlayEditor({
       await loadGoogleFont(config.fontFamily);
     }
 
-    drawTextOnCanvas(canvas, image, config);
-  }, [config]);
+    // Create full config with text from defaultText prop
+    const fullConfig: TextOverlayConfig = { ...config, text: defaultText };
+    drawTextOnCanvas(canvas, image, fullConfig);
+  }, [config, defaultText]);
 
   // Load image when dialog opens
   useEffect(() => {
@@ -143,6 +140,8 @@ export function ImageTextOverlayEditor({
   };
 
   const handleSave = () => {
+    // Don't save text in config - it's stored as page title
+    // Only pass the style configuration
     applyTextOverlay({ imageUrl, config });
     onOpenChange(false);
   };
@@ -184,9 +183,9 @@ export function ImageTextOverlayEditor({
     }
   };
 
-  const updateConfig = <K extends keyof TextOverlayConfig>(
+  const updateConfig = <K extends keyof Omit<TextOverlayConfig, 'text'>>(
     key: K,
-    value: TextOverlayConfig[K]
+    value: Omit<TextOverlayConfig, 'text'>[K]
   ) => {
     setConfig((prev) => ({ ...prev, [key]: value }));
   };
@@ -235,19 +234,19 @@ export function ImageTextOverlayEditor({
                   <div className="relative">
                     <Textarea
                       id="text"
-                      value={config.text}
-                      onChange={(e) => updateConfig('text', e.target.value)}
+                      value={defaultText}
+                      onChange={(e) => onTextChange?.(e.target.value)}
                       placeholder="Enter text... (Press Enter for new line)"
                       className="min-h-[80px] pr-8 resize-y"
                       rows={3}
                     />
-                    {config.text && (
+                    {defaultText && (
                       <Button
                         type="button"
                         variant="ghost"
                         size="sm"
                         className="absolute right-1 top-1 h-6 w-6 p-0"
-                        onClick={() => updateConfig('text', '')}
+                        onClick={() => onTextChange?.('')}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -535,7 +534,7 @@ export function ImageTextOverlayEditor({
             <Button 
               variant="outline" 
               onClick={handleDownload} 
-              disabled={!config.text.trim()}
+              disabled={!defaultText.trim()}
               className="gap-2"
               title="Download preview as PNG (does not save to database)"
             >
@@ -556,7 +555,7 @@ export function ImageTextOverlayEditor({
             )}
             <Button 
               onClick={handleSave} 
-              disabled={isProcessing || !config.text.trim()}
+              disabled={isProcessing || !defaultText.trim()}
               title="Save this text overlay to the database"
             >
               {isProcessing ? 'Saving...' : existingConfig ? 'Update Overlay' : 'Apply Overlay'}

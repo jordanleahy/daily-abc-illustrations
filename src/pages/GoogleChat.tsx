@@ -693,68 +693,39 @@ export default function GoogleChat() {
           />
         </div>
 
-        {/* QA Checkpoint Panel - Desktop: Side Panel, Mobile: Drawer */}
-        {isMobile ? (
-          // Mobile: Sheet drawer overlay
-          <Sheet 
-            open={showQACheckpoint && !createBookMutation.isSuccess} 
-            onOpenChange={(open) => {
-              setShowQACheckpoint(open);
-              if (!open) {
-                toast.info('Continue chatting to refine prompts');
-              }
-            }}
+        {/* QA Checkpoint Panel - Bottom Sheet for all screen sizes */}
+        <Sheet 
+          open={showQACheckpoint && !createBookMutation.isSuccess} 
+          onOpenChange={(open) => {
+            setShowQACheckpoint(open);
+            if (!open) {
+              toast.info('Continue chatting to refine prompts');
+            }
+          }}
+        >
+          <SheetContent 
+            side="bottom" 
+            className="w-full h-[95vh] p-0 flex flex-col overflow-hidden rounded-t-xl z-[100] pt-[env(safe-area-inset-top,1rem)]"
           >
-            <SheetContent 
-              side="bottom" 
-              className="w-full h-[95vh] p-0 flex flex-col overflow-hidden rounded-t-xl z-[100] pt-[env(safe-area-inset-top,1rem)]"
-            >
-              <QACheckpointPanel
-                showQACheckpoint={true}
-                isBookCreated={isBookCreated}
-                createdBookId={createdBookId}
-                currentQAPage={currentQAPage}
-                pageCount={pageCount}
-                displayImages={displayImages}
-                qaPageImages={qaPageImages}
-                qaPagePrompts={qaPagePrompts}
-                getCurrentPagePrompt={getCurrentPagePrompt}
-                createBookMutation={createBookMutation}
-                onClose={() => setShowQACheckpoint(false)}
-                onNavigate={handleQAPageNavigation}
-                onImageUpload={handleQAImageUpload}
-                onRemoveImage={handleRemoveQAImage}
-                onCreateBook={handleCreateBook}
-              />
-            </SheetContent>
-          </Sheet>
-        ) : (
-          // Desktop: Fixed side panel
-          showQACheckpoint && !createBookMutation.isSuccess && (
-            <div className="w-[500px] border-l flex-none bg-background">
-              <QACheckpointPanel
-                showQACheckpoint={true}
-                isBookCreated={isBookCreated}
-                createdBookId={createdBookId}
-                currentQAPage={currentQAPage}
-                pageCount={pageCount}
-                displayImages={displayImages}
-                qaPageImages={qaPageImages}
-                qaPagePrompts={qaPagePrompts}
-                getCurrentPagePrompt={getCurrentPagePrompt}
-                createBookMutation={createBookMutation}
-                onClose={() => {
-                  setShowQACheckpoint(false);
-                  toast.info('Continue chatting to refine prompts');
-                }}
-                onNavigate={handleQAPageNavigation}
-                onImageUpload={handleQAImageUpload}
-                onRemoveImage={handleRemoveQAImage}
-                onCreateBook={handleCreateBook}
-              />
-            </div>
-          )
-        )}
+            <QACheckpointPanel
+              showQACheckpoint={true}
+              isBookCreated={isBookCreated}
+              createdBookId={createdBookId}
+              currentQAPage={currentQAPage}
+              pageCount={pageCount}
+              displayImages={displayImages}
+              qaPageImages={qaPageImages}
+              qaPagePrompts={qaPagePrompts}
+              getCurrentPagePrompt={getCurrentPagePrompt}
+              createBookMutation={createBookMutation}
+              onClose={() => setShowQACheckpoint(false)}
+              onNavigate={handleQAPageNavigation}
+              onImageUpload={handleQAImageUpload}
+              onRemoveImage={handleRemoveQAImage}
+              onCreateBook={handleCreateBook}
+            />
+          </SheetContent>
+        </Sheet>
       </div>
     </PageLayout>
   );

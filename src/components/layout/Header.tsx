@@ -376,11 +376,8 @@ export function Header({
                     <Link
                       key={item.name}
                       to={item.href}
-                      onClick={() => {
-                        // Add delay to allow tap animation
-                        setTimeout(() => setIsSheetOpen(false), 150);
-                      }}
-                      className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 active:scale-95"
+                      onClick={() => setIsSheetOpen(false)}
+                      className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 active:scale-[0.98] active:bg-muted/80"
                     >
                       {item.name}
                     </Link>
@@ -392,21 +389,19 @@ export function Header({
                       setTimeout(() => {
                         setIsSheetOpen(false);
                         setIsProfileModalOpen(true);
-                      }, 150);
+                      }, 100);
                     }}
-                    className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 active:scale-95"
+                    className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 active:scale-[0.98] active:bg-muted/80"
                   >
                     <User className="mr-2 h-4 w-4" />
                     Profile
                   </button>
                   <button
                     onClick={() => {
-                      setTimeout(() => {
-                        setIsSheetOpen(false);
-                        handleSignOut();
-                      }, 150);
+                      setIsSheetOpen(false);
+                      handleSignOut();
                     }}
-                    className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-200 active:scale-95"
+                    className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 active:scale-[0.98] active:bg-muted/80"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
                     Sign out

@@ -9,7 +9,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { ProcessStatus } from "@/types/shared";
 import { useState, useEffect } from "react";
-import { Loader2, Upload, Sparkles, Clipboard, Copy, ArrowLeft, DollarSign } from "lucide-react";
+import { Loader2, Upload, Clipboard, Copy, ArrowLeft, DollarSign } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
 import {
   DropdownMenu,
@@ -208,7 +208,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
           </Button>
         </div>
       ) : hasImage && displayImageUrl ? (
-        // Show image with source indicator
+        // Show image
         <div className="relative w-full h-full">
           <OptimizedImage
             src={displayImageUrl}
@@ -220,15 +220,6 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             className="w-full h-full object-cover"
             containerClassName="w-full h-full"
           />
-          {/* Source indicator */}
-          {!isUserUploaded && (
-            <div className="absolute top-2 left-2">
-              <div className="flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200">
-                <Sparkles className="w-3 h-3" />
-                AI Generated
-              </div>
-            </div>
-          )}
         </div>
       ) : showPromptViewer && currentPrompt?.content ? (
         // Show prompt viewer

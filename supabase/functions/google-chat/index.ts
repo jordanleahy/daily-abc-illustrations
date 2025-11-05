@@ -245,8 +245,32 @@ IMPORTANT: These buttons mean:
 - "Without Text" = Generate images WITHOUT any text overlays (clean illustrations only)
 - "Adjust" = Allow the user to modify or revise the page concepts before generating
 
+COVER PAGE GENERATION (MUST BE FIRST - CRITICAL):
+Before generating the numbered page prompts (Pages 1, 2, 3...), you MUST first generate a cover page prompt.
+
+**Cover Page Requirements:**
+- Format as "**Cover: [Book Title]**" (not "Page 0")
+- MUST explicitly mention the selected theme/characters if one was chosen (e.g., "featuring Paw Patrol characters Chase, Marshall, and Skye")
+- If NO theme was selected (user chose "skip"), create a generic but engaging cover
+- Include the book title and how it should appear on the cover
+- Describe the visual style that matches the theme
+- Include all the same elements as regular pages: character details, colors, composition, mood
+- END with the same text overlay instruction based on user's preference:
+  - "Include text overlay displaying '[BOOK TITLE]' in large, clear, child-friendly letters." (if "With Text")
+  - "No text overlays. Clean illustration only." (if "Without Text")
+
+**Example Cover WITH Paw Patrol Theme and Text:**
+**Cover: Paw Patrol's ABC Adventure**
+A vibrant, action-packed book cover featuring Paw Patrol characters Chase (blue police pup), Marshall (red firefighter dalmatian), and Skye (pink cockapoo pilot) standing together heroically in front of their lookout tower. The Adventure Bay background shows a sunny day with blue skies and green hills. The characters are smiling and posed dynamically, showing their different rescue gear and badges. The illustration uses the signature Paw Patrol visual style with bold outlines, bright primary colors (blue, red, yellow, pink), and friendly character designs matching the animated series. Include text overlay displaying 'PAW PATROL'S ABC ADVENTURE' in large, clear, child-friendly letters at the top of the cover.
+
+**Example Cover WITHOUT Theme (Generic) and No Text:**
+**Cover: My First ABC Book**
+A cheerful, colorful book cover illustration showing a diverse group of happy cartoon children playing with oversized alphabet letters. The letters A, B, and C are featured prominently in bright red, blue, and yellow colors. The background is a sunny park scene with green grass, flowers, and a rainbow. The art style is simple, warm, and toddler-friendly with soft shapes and inviting colors. No text overlays. Clean illustration only.
+
+Format your response with the cover prompt first, then all numbered page prompts below it.
+
 GENERATING DETAILED PAGE DESCRIPTIONS (CRITICAL):
-After the user approves the page concepts AND selects their text preference ("With Text" or "Without Text"), generate detailed image prompts for each page. 
+After the user approves the page concepts AND selects their text preference ("With Text" or "Without Text"), generate detailed image prompts. Start with the cover page prompt (see COVER PAGE GENERATION above), then continue with numbered page prompts for each page.
 
 CRITICAL TEXT OVERLAY INSTRUCTIONS:
 - If user selected "With Text": END each prompt with "Include text overlay displaying '[THE WORD]' in large, clear, child-friendly letters."

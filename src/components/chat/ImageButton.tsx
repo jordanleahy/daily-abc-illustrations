@@ -51,8 +51,8 @@ export const ImageButton = memo(({
             src={imageSrc}
             alt={altText}
             className={cn(
-              "h-full w-full object-cover transition-opacity duration-300",
-              imageLoaded ? "opacity-100" : "opacity-0"
+              "h-full w-full object-cover transition-all duration-500 ease-out",
+              imageLoaded ? "opacity-100 scale-100" : "opacity-0 scale-95"
             )}
             loading="eager"
             decoding="async"

@@ -22,6 +22,9 @@ interface QACheckpointPanelProps {
   onImageUpload: (base64: string) => void;
   onRemoveImage: (pageNumber: number) => void;
   onCreateBook: () => void;
+  coverPageId?: string | null;
+  bookId?: string | null;
+  onCoverUpload?: (file: File) => void;
 }
 
 export function QACheckpointPanel({
@@ -40,6 +43,9 @@ export function QACheckpointPanel({
   onImageUpload,
   onRemoveImage,
   onCreateBook,
+  coverPageId,
+  bookId,
+  onCoverUpload,
 }: QACheckpointPanelProps) {
   const navigate = useNavigate();
 
@@ -115,6 +121,19 @@ export function QACheckpointPanel({
                     <Check className="h-3 w-3" />
                     <span>{isBookCreated ? 'From book' : 'Uploaded'}</span>
                   </div>
+                </div>
+              </div>
+            ) : isBookCreated && currentQAPage === 0 && coverPageId ? (
+              <div className="relative h-full">
+                <ImageUpload 
+                  onImageSelect={(file) => onCoverUpload?.(file)}
+                  disabled={false}
+                  className="h-full"
+                />
+                <div className="absolute bottom-2 left-2 right-2">
+                  <p className="text-xs text-muted-foreground bg-background/90 rounded px-2 py-1">
+                    Upload custom cover image or use Image Generator
+                  </p>
                 </div>
               </div>
             ) : isBookCreated ? (

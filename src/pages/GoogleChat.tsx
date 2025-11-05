@@ -92,6 +92,9 @@ export default function GoogleChat() {
 
   // Track locally created book ID (separate from session data for immediate UI updates)
   const [localCreatedBookId, setLocalCreatedBookId] = useState<string | null>(null);
+  
+  // Track cover page ID for post-creation uploads
+  const [coverPageId, setCoverPageId] = useState<string | null>(null);
 
   // Get the created book ID from current session or local state
   const selectedSession = useMemo(
@@ -606,6 +609,93 @@ export default function GoogleChat() {
     }
   }, [qaPageImages, currentSessionId, updateQAPageImages]);
 
+  // Fetch cover page ID when book is created
+  useEffect(() => {
+    if (!createdBookId) {
+      setCoverPageId(null);
+      return;
+    }
+    
+    const fetchCoverPage = async () => {
+      const { data, error } = await supabase
+        .from('pages')
+        .select('id')
+        .eq('book_id', createdBookId)
+        .eq('page_number', 0)
+        .single();
+      
+      if (!error && data) {
+        setCoverPageId(data.id);
+      }
+    };
+    
+    fetchCoverPage();
+  }, [createdBookId]);
+
+  // Handle cover image upload after book creation
+  const handleCoverImageUpload = useCallback(async (file: File) => {
+    if (!coverPageId || !createdBookId) {
+      toast.error('Cover page information not found');
+      return;
+    }
+    
+    try {
+      toast.info('Uploading cover image...');
+      
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('page-images')
+        .upload(`${user?.id}/${createdBookId}/cover-${Date.now()}.png`, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('page-images')
+        .getPublicUrl(uploadData.path);
+      
+      // Get next version number
+      const { data: existingImages } = await supabase
+        .from('page_image_urls')
+        .select('version_number')
+        .eq('page_id', coverPageId)
+        .order('version_number', { ascending: false })
+        .limit(1);
+      
+      const nextVersion = (existingImages?.[0]?.version_number || 0) + 1;
+      
+      // Mark all previous versions as not latest
+      await supabase
+        .from('page_image_urls')
+        .update({ is_latest: false })
+        .eq('page_id', coverPageId);
+      
+      // Insert new image record
+      const { error: insertError } = await supabase
+        .from('page_image_urls')
+        .insert({
+          page_id: coverPageId,
+          book_id: createdBookId,
+          user_id: user?.id,
+          version_number: nextVersion,
+          image_url: publicUrl,
+          source_type: 'user_uploaded',
+          generation_status: 'complete',
+          is_latest: true,
+        });
+      
+      if (insertError) throw insertError;
+      
+      toast.success('Cover image uploaded successfully!');
+    } catch (error: any) {
+      console.error('Cover upload error:', error);
+      toast.error('Failed to upload cover image: ' + error.message);
+    }
+  }, [coverPageId, createdBookId, user]);
+
   return (
     <PageLayout 
       title="Chat with Google Gemini"
@@ -723,6 +813,9 @@ export default function GoogleChat() {
               onImageUpload={handleQAImageUpload}
               onRemoveImage={handleRemoveQAImage}
               onCreateBook={handleCreateBook}
+              coverPageId={coverPageId}
+              bookId={createdBookId}
+              onCoverUpload={handleCoverImageUpload}
             />
           </SheetContent>
         </Sheet>

@@ -12,28 +12,43 @@ export interface PageDetail {
  * Parse page details from chat messages containing book outline
  */
 export const parsePageDetailsFromMessages = (messages: any[]): PageDetail[] | null => {
-  // Find the last assistant message containing the book outline
-  const lastAssistantMsg = [...messages].reverse().find(
-    msg => msg.role === 'assistant' && 
-    typeof msg.content === 'string' && 
-    /\*\*Page\s+\d+:/i.test(msg.content)
+  // Find the last message (assistant or user) containing the book outline
+  const lastMsgWithPages = [...messages].reverse().find(
+    (msg) => typeof msg.content === 'string' && /\*\*Page\s+\d+/i.test(msg.content)
   );
   
-  if (!lastAssistantMsg || typeof lastAssistantMsg.content !== 'string') {
+  if (!lastMsgWithPages || typeof lastMsgWithPages.content !== 'string') {
     return null;
   }
   
-  // Regex pattern to match: **Page 16: "I"*** OR **Page 16: my** (quotes optional)
-  const pagePattern = /\*\*Page\s+(\d+):\s*["']?([^"'\n*]+)["']?\*+\s*\n([^\n]+(?:\n(?!\*\*Page)[^\n]+)*)/gi;
-  const pages: PageDetail[] = [];
-  let match;
+  const content = lastMsgWithPages.content as string;
   
-  while ((match = pagePattern.exec(lastAssistantMsg.content)) !== null) {
-    const [, pageNum, title, description] = match;
+  // Flexible pattern:
+  // Matches "**Page N ...** Description..." where title/descriptor may include parentheses
+  // and description may be on the same line or following lines, up to next **Page N or end
+  const pagePattern = /\*\*Page\s+(\d+)([^*]*)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/gi;
+  const pages: PageDetail[] = [];
+  let match: RegExpExecArray | null;
+  
+  while ((match = pagePattern.exec(content)) !== null) {
+    const [, pageNum, rawHeader, rawDesc] = match;
+    // Derive a reasonable title from header segment (remove leading colon/space and trailing colon)
+    let header = (rawHeader || '').trim(); // e.g. ": \"I\"" or " (Big/Small):"
+    header = header.replace(/^:\s*/, '').replace(/\*+$/, '').trim();
+    // Common wrappers
+    header = header.replace(/^\((.*)\):?$/, '$1').replace(/:$/, '').trim();
+    // If still empty, fallback to "Page X"
+    const title = header || `Page ${pageNum}`;
+    
+    const description = (rawDesc || '')
+      .trim()
+      .replace(/\n+/g, ' ') // single line
+      .replace(/\s{2,}/g, ' ');
+    
     pages.push({
       pageNumber: parseInt(pageNum, 10),
-      title: title.trim(),
-      description: description.trim().replace(/\n/g, ' ') // Single line
+      title,
+      description
     });
   }
   
@@ -54,17 +69,15 @@ export interface EducationalFocusDetail {
  * Parse educational focus section from chat messages
  */
 export const parseEducationalFocus = (messages: any[]): EducationalFocusDetail | null => {
-  const lastAssistantMsg = [...messages].reverse().find(
-    msg => msg.role === 'assistant' && 
-    typeof msg.content === 'string' && 
-    /\*\*Educational Focus:\*\*/i.test(msg.content)
+  const lastMsg = [...messages].reverse().find(
+    msg => typeof msg.content === 'string' && /\*\*Educational Focus:\*\*/i.test(msg.content)
   );
   
-  if (!lastAssistantMsg || typeof lastAssistantMsg.content !== 'string') {
+  if (!lastMsg || typeof lastMsg.content !== 'string') {
     return null;
   }
   
-  const content = lastAssistantMsg.content;
+  const content = lastMsg.content as string;
   
   // Extract the three badge fields
   const ageMatch = content.match(/Target Age:\s*([^\n]+)/i);
@@ -72,7 +85,7 @@ export const parseEducationalFocus = (messages: any[]): EducationalFocusDetail |
   const skillMatch = content.match(/Specific Skill:\s*([^\n]+)/i);
   
   // Extract image prompt (paragraph after "Educational Focus Image:")
-  const promptMatch = content.match(/\*\*Educational Focus Image:\*\*\s*\n([^\n*]+(?:\n(?!\*\*)[^\n*]+)*)/i);
+  const promptMatch = content.match(/\*\*Educational Focus Image:\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
   
   if (!ageMatch || !typeMatch || !skillMatch || !promptMatch) return null;
   

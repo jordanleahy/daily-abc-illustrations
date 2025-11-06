@@ -199,18 +199,16 @@ export default function GoogleChat() {
     // Pre-creation: parse from messages
     if (pageNum === 1) {
       // Cover page (Page 1)
-      const lastAssistantMsg = [...messages].reverse().find(
-        msg => msg.role === 'assistant' && 
-        typeof msg.content === 'string' && 
-        /\*\*Cover:/i.test(msg.content)
+      const lastCoverMsg = [...messages].reverse().find(
+        (msg) => typeof msg.content === 'string' && /\*\*Cover:/i.test(msg.content)
       );
       
-      if (!lastAssistantMsg || typeof lastAssistantMsg.content !== 'string') {
+      if (!lastCoverMsg || typeof lastCoverMsg.content !== 'string') {
         return null;
       }
       
-      // Extract cover description
-      const coverMatch = lastAssistantMsg.content.match(/\*\*Cover:[^\n]*\*\*\s*\n([^\n]+(?:\n(?!\*\*)[^\n]+)*)/i);
+      // Extract cover description (tolerate inline or multiline, stop at next section)
+      const coverMatch = (lastCoverMsg.content as string).match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
       return coverMatch ? `Cover Page\n${coverMatch[1].trim()}` : null;
     }
     

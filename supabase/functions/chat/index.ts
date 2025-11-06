@@ -33,6 +33,18 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { corsHeaders } from '../_shared/types.ts';
 import type { AgentConfig } from '../_shared/types.ts';
 import { callAIProvider } from '../_shared/aiProviders.ts';
+import { z } from 'https://esm.sh/zod@3.22.4';
+
+// Input validation schema
+const messageSchema = z.object({
+  role: z.enum(['user', 'assistant', 'system']),
+  content: z.string().min(1).max(50000),
+  images: z.array(z.string().url()).max(10).optional(),
+});
+
+const requestSchema = z.object({
+  messages: z.array(messageSchema).min(1).max(100),
+});
 
 
 serve(async (req) => {
@@ -42,7 +54,21 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    // Parse and validate input
+    const body = await req.json();
+    const validationResult = requestSchema.safeParse(body);
+    
+    if (!validationResult.success) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Invalid input parameters',
+          details: validationResult.error.issues.map(i => `${i.path.join('.')}: ${i.message}`)
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const { messages } = validationResult.data;
     
     // Environment variables
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');

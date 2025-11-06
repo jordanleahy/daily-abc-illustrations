@@ -1,8 +1,18 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
+import { z } from 'https://esm.sh/zod@3.22.4';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+
+// Input validation schema
+const requestSchema = z.object({
+  bookId: z.string().uuid().optional(),
+  pageImageUrlId: z.string().uuid().optional(),
+}).refine(
+  (data) => data.bookId || data.pageImageUrlId,
+  { message: 'Either bookId or pageImageUrlId is required' }
+);
 
 interface GeneratePngRequest {
   bookId?: string;
@@ -24,14 +34,21 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { bookId, pageImageUrlId }: GeneratePngRequest = await req.json();
-
-    if (!bookId && !pageImageUrlId) {
+    // Parse and validate input
+    const body = await req.json();
+    const validationResult = requestSchema.safeParse(body);
+    
+    if (!validationResult.success) {
       return new Response(
-        JSON.stringify({ error: 'Either bookId or pageImageUrlId is required' }),
+        JSON.stringify({ 
+          error: 'Invalid input parameters',
+          details: validationResult.error.issues.map(i => i.message)
+        }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    const { bookId, pageImageUrlId } = validationResult.data;
 
     console.log(`🎨 Starting PNG generation for ${bookId ? `book: ${bookId}` : `image: ${pageImageUrlId}`}`);
 

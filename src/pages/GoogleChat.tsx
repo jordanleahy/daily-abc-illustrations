@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect, useMemo, useCallback, startTransition } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Menu, BookOpen, Book } from 'lucide-react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { cn } from '@/lib/utils';
 import { useGoogleChat, type SuggestedAction } from '@/hooks/useGoogleChat';
 import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
 import { useGoogleChatSessions } from '@/hooks/useGoogleChatSessions';
@@ -20,7 +21,6 @@ import { InputArea } from '@/components/chat/InputArea';
 import { toast } from 'sonner';
 import { parsePageDetailsFromMessages, parseEducationalFocus, getBookMetadata } from '@/utils/chatHelpers';
 import { BOOK_TYPES } from '@/config/bookTypes';
-import { cn } from '@/lib/utils';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -947,6 +947,33 @@ export default function GoogleChat() {
             onOpenQAPanel={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
           />
         </div>
+
+        {/* Floating Action Button - Always visible when content is ready */}
+        {(shouldShowQACheckpoint || !!createdBookId) && (
+          <Button
+            onClick={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
+            size="lg"
+            className={cn(
+              "fixed z-50 shadow-lg hover:shadow-xl transition-all duration-200",
+              "flex items-center gap-2",
+              isMobile 
+                ? "bottom-24 right-4" 
+                : "bottom-6 right-6"
+            )}
+          >
+            {createdBookId ? (
+              <>
+                <Book className="h-5 w-5" />
+                <span className="hidden sm:inline">View Book</span>
+              </>
+            ) : (
+              <>
+                <BookOpen className="h-5 w-5" />
+                <span className="hidden sm:inline">Review Outline</span>
+              </>
+            )}
+          </Button>
+        )}
 
         {/* QA Checkpoint Panel - Responsive: Bottom Sheet on Mobile, Sliding Div on Desktop */}
         {isMobile ? (

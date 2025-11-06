@@ -605,7 +605,7 @@ export default function GoogleChat() {
         setQAPageImages(selectedSession.qa_page_images);
       }
       setShowQACheckpoint(true);
-      setCurrentQAPage(0);
+      setCurrentQAPage(1);
     }
   }, [createdBookId, selectedSession]);
 
@@ -618,7 +618,7 @@ export default function GoogleChat() {
       setQAPagePrompts(selectedSession.qa_page_prompts);
     }
     setShowQACheckpoint(true);
-    setCurrentQAPage(0);
+    setCurrentQAPage(1);
   }, [selectedSession]);
 
   const handleSelectSession = useCallback((sessionId: string) => {

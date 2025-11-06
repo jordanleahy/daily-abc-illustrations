@@ -864,7 +864,7 @@ export default function GoogleChat() {
       showHeader={true}
       fullHeight={true}
       onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
-      showReviewButton={!!createdBookId || (shouldShowQACheckpoint && !showQACheckpoint)}
+      showReviewButton={!!createdBookId || shouldShowQACheckpoint || showQACheckpoint}
       onReviewClick={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
       reviewButtonVariant={createdBookId ? 'view-book' : 'review'}
     >

@@ -360,7 +360,14 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
               </Badge>
             )}
             <span className="text-sm text-muted-foreground">
-              Page {page.page_number}
+              {page.page_number === 1 
+                ? 'Cover' 
+                : page.page_number === 2
+                ? 'Focus'
+                : page.letter 
+                  ? `Letter ${page.letter}`
+                  : `Page ${page.page_number}`
+              }
             </span>
           </div>
         </div>

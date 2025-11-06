@@ -87,10 +87,10 @@ export function QACheckpointPanel({
           <div>
             <h3 className="font-semibold text-sm">
               {currentQAPage === 1 
-                ? 'Cover Page' 
+                ? 'Page 1: Cover' 
                 : currentQAPage === 2
-                ? 'Educational Focus'
-                : `Review Page ${currentQAPage}`
+                ? 'Page 2: Focus'
+                : `Page ${currentQAPage}`
               }
             </h3>
             <p className="text-xs text-muted-foreground line-clamp-1">

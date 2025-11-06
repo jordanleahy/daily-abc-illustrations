@@ -54,7 +54,7 @@ export const characterThemes: Record<string, CharacterTheme> = {
   },
   'benji-davies': {
     thumbnail: '/themes/benji-davies.png',
-    altText: 'Benji Davies illustrated style'
+    altText: 'Benji Davies style - Grandad\'s Island inspired watercolor illustrations'
   },
   'black-and-white': {
     thumbnail: '/themes/black-and-white.png',

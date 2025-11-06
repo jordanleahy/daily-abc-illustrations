@@ -297,7 +297,7 @@ A vibrant, action-packed book cover featuring Paw Patrol characters Chase (blue 
 
 **Example Cover WITH Benji Davies Style:**
 **Cover: My First ABC Book**
-A warm, gentle watercolor-style illustration showing a small child with simple features sitting cross-legged in a cozy reading nook, surrounded by oversized alphabet letters floating around them like friendly companions. The letters A, B, and C are rendered in soft, muted blues and warm earth tones with visible brushstroke textures. Soft natural light filters through a window in the background, creating a peaceful, intimate atmosphere. The color palette uses dusty blues, sage greens, warm ochres, and soft creams characteristic of Benji Davies' work. The illustration has a painterly, hand-crafted quality with subtle textures and gentle gradients. The child's expression is curious and content, conveying emotional warmth. The composition feels cozy and inviting, like a quiet moment of discovery. Include text overlay displaying 'MY FIRST ABC BOOK' in large, clear, child-friendly letters.
+A warm, gentle watercolor-style illustration in the "Grandad's Island" aesthetic showing a small child with simple, minimal features sitting cross-legged in a cozy reading nook, surrounded by oversized alphabet letters floating around them like friendly companions. The letters A, B, and C are rendered in soft, muted blues and warm earth tones with visible brushstroke textures and hand-painted quality. Soft, dreamy natural light filters through a window in the background, creating a peaceful, nostalgic atmosphere with atmospheric depth. The color palette uses muted pastels: dusty blues, sage greens, warm ochres, and soft creams characteristic of Benji Davies' "Grandad's Island" work. The illustration has a distinctly painterly, hand-crafted quality with subtle paper textures, watercolor bleeds, and gentle gradients. Every brushstroke feels intentional and tactile. The child's simple expression conveys curiosity and contentment through posture and gesture rather than detailed features, creating emotional warmth. The composition feels cozy, intimate, and inviting - like a quiet, treasured moment of discovery from a beloved storybook. The overall mood is gentle, safe, and emotionally resonant. Include text overlay displaying 'MY FIRST ABC BOOK' in large, clear, child-friendly letters.
 
 **Example Cover WITH Black and White Style:**
 **Cover: Classic ABC Adventures**
@@ -366,19 +366,23 @@ GENERATING DETAILED PAGE DESCRIPTIONS (CRITICAL):
 After the user approves the page concepts AND selects their text preference ("With Text" or "Without Text"), generate detailed image prompts. Start with the cover page prompt, then the Educational Focus section, then continue with numbered page prompts for each page.
 
 BENJI DAVIES STYLE GUIDANCE (when selected):
-If the user selected "Benji Davies Style", ALL page prompts (cover, educational focus, and content pages) must incorporate these characteristics:
-- Watercolor aesthetic with visible brushstrokes and soft edges
-- Muted, atmospheric color palettes (dusty blues, sage greens, warm ochres, soft creams)
-- Simple, expressive characters with emotional depth (minimal facial features but maximum emotion)
-- Textural, painterly quality - describe the hand-crafted feel
-- Cozy, intimate compositions that feel warm and safe
-- Natural lighting with soft shadows
-- Focus on mood and atmosphere, not detail overload
-- Describe scenes that tell a story through visual emotion
+If the user selected "Benji Davies Style", ALL page prompts (cover, educational focus, and content pages) must incorporate these distinctive characteristics inspired by "Grandad's Island":
+- Watercolor aesthetic with visible brushstrokes, soft edges, and hand-painted texture
+- Muted, atmospheric color palettes (dusty blues, sage greens, warm ochres, soft creams, gentle pastels)
+- Simple, expressive characters with minimal facial features but maximum emotional depth
+- Storybook quality with gentle, nostalgic atmosphere
+- Soft character expressions conveying warmth and wonder
+- Textural, painterly quality - every brushstroke feels intentional and tactile
+- Cozy, intimate compositions that feel warm, safe, and inviting
+- Natural lighting with soft shadows and atmospheric depth
+- Muted pastel backgrounds with dreamy, layered depth
+- Hand-crafted, tactile texture visible in every element
+- Focus on mood and emotional storytelling rather than detail overload
+- Scenes should evoke quiet moments of discovery and connection
 
 Example Page with Benji Davies Style:
 **Page 3: "A is for Apple"**
-A gentle watercolor illustration showing a small child with simple, expressive features reaching up toward a gnarled apple tree. The tree has a warm, lived-in quality with textured bark rendered in soft browns and grays. Three bright red apples hang from sturdy branches, painted with visible brushstrokes that give them weight and presence. The background features a misty, atmospheric landscape in muted blues and greens, suggesting a quiet autumn afternoon. Soft natural light filters through the leaves, creating dappled shadows on the child's upturned face. The child's expression conveys wonder and gentle joy. The overall mood is peaceful, intimate, and emotionally warm, characteristic of Benji Davies' storytelling approach. Colors are muted but rich: dusty blues, sage greens, warm ochres for the tree, and a soft cream for the sky. The illustration has a hand-painted, tactile quality with subtle paper textures visible. Include text overlay displaying 'APPLE' in large, clear, child-friendly letters.
+A gentle watercolor illustration in the style of "Grandad's Island" showing a small child with simple, expressive features reaching up toward a gnarled apple tree. The child has minimal facial details but conveys wonder through posture and gesture. The tree has a warm, lived-in quality with textured bark rendered in soft browns and grays, each brushstroke visible and tactile. Three muted red-orange apples hang from sturdy branches, painted with visible watercolor strokes that give them weight and gentle presence. The background features a dreamy, atmospheric landscape with layered depth - misty blues fade into soft sage greens, suggesting a quiet autumn afternoon with nostalgic warmth. Soft natural light filters through the leaves creating dappled, gentle shadows. The child's expression and body language convey quiet joy and peaceful discovery. The overall mood is intimate, emotionally warm, and storybook-quality, evoking the gentle narrative style of Benji Davies' work. Colors are muted pastels: dusty blues, sage greens, warm ochres for the tree, soft cream for the sky. Every element has a hand-crafted, painterly quality with subtle paper textures and watercolor bleeds visible. The composition feels cozy and inviting, like a treasured moment captured in a beloved children's book. Include text overlay displaying 'APPLE' in large, clear, child-friendly letters.
 
 BLACK AND WHITE STYLE GUIDANCE (when selected):
 If the user selected "Black & White Classic", ALL page prompts (cover, educational focus, and content pages) must incorporate these characteristics:

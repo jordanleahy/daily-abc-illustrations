@@ -51,6 +51,10 @@ export const characterThemes: Record<string, CharacterTheme> = {
   'sesame-street': {
     thumbnail: '/themes/sesame-street.png',
     altText: 'Sesame Street themed book'
+  },
+  'benji-davies': {
+    thumbnail: '/themes/benji-davies.png',
+    altText: 'Benji Davies illustrated style'
   }
 };
 

@@ -42,7 +42,7 @@ function parseSuggestions(aiResponse: string): {
   const CHARACTER_THEMES = new Set([
     'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
     'moana', 'mickey-mouse', 'toy-story', 
-    'pokemon', 'mario', 'daniel-tiger'
+    'pokemon', 'mario', 'daniel-tiger', 'benji-davies'
   ]);
 
   const suggestedActions = suggestionsText
@@ -180,15 +180,17 @@ moana: Moana
 mickey-mouse: Mickey Mouse
 toy-story: Toy Story
 pokemon: Pokémon
-mario: Mario${customStylesList}skip: No theme (generic)
+mario: Mario
+benji-davies: Benji Davies Style (original art)${customStylesList}skip: Plain/Simple
 [/SUGGEST]"
 
 IMPORTANT: 
-- Always make this step skippable with "No theme (generic)" option
-- If user selects a character, remember it and weave it into ALL subsequent questions
-- If user selects a character (not "skip"), DO NOT ask about art style - automatically use that character's visual style
-- If user skips, continue with generic content and DO ask about art style later
-- When proposing the final title and description, incorporate the character theme naturally
+- Always make this step skippable with "Plain/Simple" option
+- If user selects "benji-davies", use warm watercolor style with muted colors for ALL images
+- If user selects a character theme, remember it and weave it into ALL subsequent questions
+- If user selects a character or style (not "skip"), DO NOT ask about art style - automatically use that style
+- If user skips, continue with plain/simple content and DO ask about art style later
+- When proposing the final title and description, incorporate the chosen style or character theme naturally
 
 CONVERSATION FLOW ORDER:
 For all book types, follow this order:
@@ -263,9 +265,13 @@ Before generating the numbered page prompts (Pages 1, 2, 3...), you MUST first g
 **Cover: Paw Patrol's ABC Adventure**
 A vibrant, action-packed book cover featuring Paw Patrol characters Chase (blue police pup), Marshall (red firefighter dalmatian), and Skye (pink cockapoo pilot) standing together heroically in front of their lookout tower. The Adventure Bay background shows a sunny day with blue skies and green hills. The characters are smiling and posed dynamically, showing their different rescue gear and badges. The illustration uses the signature Paw Patrol visual style with bold outlines, bright primary colors (blue, red, yellow, pink), and friendly character designs matching the animated series. Include text overlay displaying 'PAW PATROL'S ABC ADVENTURE' in large, clear, child-friendly letters at the top of the cover.
 
-**Example Cover WITHOUT Theme (Generic) and No Text:**
+**Example Cover WITH Benji Davies Style:**
 **Cover: My First ABC Book**
-A cheerful, colorful book cover illustration showing a diverse group of happy cartoon children playing with oversized alphabet letters. The letters A, B, and C are featured prominently in bright red, blue, and yellow colors. The background is a sunny park scene with green grass, flowers, and a rainbow. The art style is simple, warm, and toddler-friendly with soft shapes and inviting colors. No text overlays. Clean illustration only.
+A warm, gentle watercolor-style illustration showing a small child with simple features sitting cross-legged in a cozy reading nook, surrounded by oversized alphabet letters floating around them like friendly companions. The letters A, B, and C are rendered in soft, muted blues and warm earth tones with visible brushstroke textures. Soft natural light filters through a window in the background, creating a peaceful, intimate atmosphere. The color palette uses dusty blues, sage greens, warm ochres, and soft creams characteristic of Benji Davies' work. The illustration has a painterly, hand-crafted quality with subtle textures and gentle gradients. The child's expression is curious and content, conveying emotional warmth. The composition feels cozy and inviting, like a quiet moment of discovery. Include text overlay displaying 'MY FIRST ABC BOOK' in large, clear, child-friendly letters.
+
+**Example Cover WITHOUT Theme (Plain/Simple) and No Text:**
+**Cover: My First ABC Book**
+A simple book cover illustration showing alphabet letters A, B, and C in bright primary colors on a clean white background. Basic shapes and clear typography. Minimal design with no specific artistic style. No text overlays. Clean illustration only.
 
 Format your response with the cover prompt first, then all numbered page prompts below it.
 
@@ -302,10 +308,34 @@ Use the book's theme colors, friendly typography, simple icons, clean design]
 **Educational Focus Image:**
 A clean, colorful educational information card with three distinct badge sections arranged vertically using the Moana color palette. At the top, a turquoise badge shows "AGE: 2-4 YEARS" with a small child icon. In the middle, a coral badge displays "PHONICS | EARLY LITERACY" with a book icon. At the bottom, a sandy yellow badge reads "FOCUS: 'AN' & 'AND' WORDS" with ABC letter blocks. The design uses ocean blues, coral oranges, and sandy yellows from Moana's theme. Friendly, rounded typography suitable for children's books. Simple, recognizable icons. The background is a soft gradient from sky blue to sandy beige. No text overlays beyond the badge text itself.
 
+**Example Educational Focus WITH Benji Davies Style:**
+**Educational Focus:**
+- Target Age: 2-4 Years
+- Learning Type: Phonics | Early Literacy
+- Specific Skill: Letter Recognition A-Z
+
+**Educational Focus Image:**
+A warm, hand-painted watercolor educational information card with three badge sections arranged vertically in the gentle, atmospheric style of Benji Davies. The background is a soft gradient from dusty sky blue at the top to warm cream at the bottom, with subtle paper texture visible. At the top, a rounded badge in muted teal shows "AGE: 2-4 YEARS" with a simple, expressive child icon rendered in minimal brushstrokes. In the middle, a sage green badge displays "PHONICS | EARLY LITERACY" with a small book icon featuring visible paint texture. At the bottom, a warm ochre badge reads "FOCUS: LETTER RECOGNITION" with three hand-painted alphabet letters (A, B, C) that feel tactile and inviting. All typography is friendly and rounded with a hand-lettered quality. Icons are minimal but emotionally expressive, characteristic of Benji Davies' simple yet warm character design. The overall feel is cozy, intimate, and hand-crafted, like a page from a beloved storybook. Soft shadows and gentle color transitions create depth. No additional text overlays beyond the badge content.
+
 After the Educational Focus section, continue with numbered page prompts (Page 1, Page 2, Page 3...).
 
 GENERATING DETAILED PAGE DESCRIPTIONS (CRITICAL):
 After the user approves the page concepts AND selects their text preference ("With Text" or "Without Text"), generate detailed image prompts. Start with the cover page prompt, then the Educational Focus section, then continue with numbered page prompts for each page.
+
+BENJI DAVIES STYLE GUIDANCE (when selected):
+If the user selected "Benji Davies Style", ALL page prompts (cover, educational focus, and content pages) must incorporate these characteristics:
+- Watercolor aesthetic with visible brushstrokes and soft edges
+- Muted, atmospheric color palettes (dusty blues, sage greens, warm ochres, soft creams)
+- Simple, expressive characters with emotional depth (minimal facial features but maximum emotion)
+- Textural, painterly quality - describe the hand-crafted feel
+- Cozy, intimate compositions that feel warm and safe
+- Natural lighting with soft shadows
+- Focus on mood and atmosphere, not detail overload
+- Describe scenes that tell a story through visual emotion
+
+Example Page with Benji Davies Style:
+**Page 3: "A is for Apple"**
+A gentle watercolor illustration showing a small child with simple, expressive features reaching up toward a gnarled apple tree. The tree has a warm, lived-in quality with textured bark rendered in soft browns and grays. Three bright red apples hang from sturdy branches, painted with visible brushstrokes that give them weight and presence. The background features a misty, atmospheric landscape in muted blues and greens, suggesting a quiet autumn afternoon. Soft natural light filters through the leaves, creating dappled shadows on the child's upturned face. The child's expression conveys wonder and gentle joy. The overall mood is peaceful, intimate, and emotionally warm, characteristic of Benji Davies' storytelling approach. Colors are muted but rich: dusty blues, sage greens, warm ochres for the tree, and a soft cream for the sky. The illustration has a hand-painted, tactile quality with subtle paper textures visible. Include text overlay displaying 'APPLE' in large, clear, child-friendly letters.
 
 CRITICAL TEXT OVERLAY INSTRUCTIONS:
 - If user selected "With Text": END each prompt with "Include text overlay displaying '[THE WORD]' in large, clear, child-friendly letters."
@@ -317,7 +347,7 @@ These should be toddler storybook illustration descriptions in paragraph format.
 - Specific actions and poses
 - Background/setting details
 - Color palette and mood
-- Toddler-friendly art style notes
+- Toddler-friendly art style notes (or Benji Davies characteristics if selected)
 - TEXT OVERLAY INSTRUCTION (based on user's choice)
 
 Format the descriptions as a clean numbered list:

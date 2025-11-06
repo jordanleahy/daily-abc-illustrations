@@ -887,7 +887,7 @@ export default function GoogleChat() {
           />
         </div>
 
-        {/* QA Checkpoint Panel - Responsive: Bottom Sheet on Mobile, Side Panel on Desktop */}
+        {/* QA Checkpoint Panel - Responsive: Bottom Sheet on Mobile, Sliding Div on Desktop */}
         {isMobile ? (
           <Sheet 
             open={showQACheckpoint && !createBookMutation.isSuccess} 
@@ -925,41 +925,36 @@ export default function GoogleChat() {
             </SheetContent>
           </Sheet>
         ) : (
-          <Sheet 
-            open={showQACheckpoint && !createBookMutation.isSuccess} 
-            onOpenChange={(open) => {
-              setShowQACheckpoint(open);
-              if (!open) {
-                toast.info('Continue chatting to refine prompts');
-              }
-            }}
+          <div
+            className={cn(
+              "fixed right-0 top-[3.5rem] bottom-0 w-[400px] bg-background border-l shadow-lg z-[100]",
+              "transition-transform duration-300 ease-out",
+              showQACheckpoint && !createBookMutation.isSuccess
+                ? "translate-x-0"
+                : "translate-x-full"
+            )}
           >
-            <SheetContent 
-              side="right" 
-              className="w-[400px] h-full p-0 overflow-hidden z-[100]"
-            >
-              <QACheckpointPanel
-                showQACheckpoint={true}
-                isBookCreated={isBookCreated}
-                createdBookId={createdBookId}
-                currentQAPage={currentQAPage}
-                pageCount={pageCount}
-                displayImages={displayImages}
-                qaPageImages={qaPageImages}
-                qaPagePrompts={qaPagePrompts}
-                getCurrentPagePrompt={getCurrentPagePrompt}
-                createBookMutation={createBookMutation}
-                onClose={() => setShowQACheckpoint(false)}
-                onNavigate={handleQAPageNavigation}
-                onImageUpload={handleQAImageUpload}
-                onRemoveImage={handleRemoveQAImage}
-                onCreateBook={handleCreateBook}
-                coverPageId={coverPageId}
-                bookId={createdBookId}
-                onCoverUpload={handleCoverImageUpload}
-              />
-            </SheetContent>
-          </Sheet>
+            <QACheckpointPanel
+              showQACheckpoint={true}
+              isBookCreated={isBookCreated}
+              createdBookId={createdBookId}
+              currentQAPage={currentQAPage}
+              pageCount={pageCount}
+              displayImages={displayImages}
+              qaPageImages={qaPageImages}
+              qaPagePrompts={qaPagePrompts}
+              getCurrentPagePrompt={getCurrentPagePrompt}
+              createBookMutation={createBookMutation}
+              onClose={() => setShowQACheckpoint(false)}
+              onNavigate={handleQAPageNavigation}
+              onImageUpload={handleQAImageUpload}
+              onRemoveImage={handleRemoveQAImage}
+              onCreateBook={handleCreateBook}
+              coverPageId={coverPageId}
+              bookId={createdBookId}
+              onCoverUpload={handleCoverImageUpload}
+            />
+          </div>
         )}
       </div>
     </PageLayout>

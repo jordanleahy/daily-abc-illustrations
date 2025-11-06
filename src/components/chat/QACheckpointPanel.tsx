@@ -120,19 +120,6 @@ export function QACheckpointPanel({
                   Replace
                 </Button>
               </div>
-            ) : isBookCreated && currentQAPage === 0 && coverPageId && !displayImages[0] ? (
-              <div className="relative h-full">
-                <ImageUpload 
-                  onImageSelect={(file) => onCoverUpload?.(file)}
-                  disabled={false}
-                  className="h-full"
-                />
-                <div className="absolute bottom-2 left-2 right-2">
-                  <p className="text-xs text-muted-foreground bg-background/90 rounded px-2 py-1">
-                    Upload custom cover image or use Image Generator
-                  </p>
-                </div>
-              </div>
             ) : isBookCreated ? (
               <div className="flex flex-col items-center justify-center h-full p-6 text-center">
                 <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
@@ -159,8 +146,8 @@ export function QACheckpointPanel({
           </div>
         </div>
 
-        {/* Cover Image Prompt - Show on page 0 */}
-        {currentQAPage === 0 && currentCoverPrompt && (
+        {/* Cover Image Prompt - Show on page 1 (Cover Page) */}
+        {currentQAPage === 1 && currentCoverPrompt && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">Cover Image Prompt</p>
             <div className="border rounded-lg p-3 bg-muted/30 space-y-2">
@@ -214,7 +201,7 @@ export function QACheckpointPanel({
             variant="outline"
             size="sm"
             onClick={() => onNavigate('prev')}
-            disabled={currentQAPage === 0}
+            disabled={currentQAPage === 1}
             className="flex-1"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />

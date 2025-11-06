@@ -50,13 +50,34 @@ export function QACheckpointPanel({
 }: QACheckpointPanelProps) {
   const navigate = useNavigate();
   const [hasClickedCopy, setHasClickedCopy] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
 
   const currentCoverPrompt = qaPagePrompts[0] || null;
 
-  // Reset hasClickedCopy when page changes
+  // Reset states when page changes
   useEffect(() => {
     setHasClickedCopy(false);
+    setShowConfirmation(false);
   }, [currentQAPage]);
+
+  // Handle copy with confirmation and delayed transition
+  const handleCopyPrompt = () => {
+    const prompt = getCurrentPagePrompt(currentQAPage);
+    if (prompt) {
+      navigator.clipboard.writeText(prompt);
+      setShowConfirmation(true);
+      toast.success('Prompt copied to clipboard!', {
+        description: 'Paste in Google AI Studio to generate image',
+        duration: 3000
+      });
+
+      // Transition to upload after 5 seconds
+      setTimeout(() => {
+        setShowConfirmation(false);
+        setHasClickedCopy(true);
+      }, 5000);
+    }
+  };
 
   return (
     <div className="flex flex-col max-h-[90vh] md:h-full bg-background pt-[env(safe-area-inset-top,1rem)] md:pt-0">
@@ -127,19 +148,19 @@ export function QACheckpointPanel({
                   Replace
                 </Button>
               </div>
+            ) : showConfirmation ? (
+              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+                <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4 animate-in zoom-in duration-300">
+                  <Check className="h-8 w-8 text-green-600" />
+                </div>
+                <p className="text-base font-semibold mb-2">Prompt Copied!</p>
+                <p className="text-xs text-muted-foreground">
+                  Upload area loading...
+                </p>
+              </div>
             ) : !hasClickedCopy ? (
               <button
-                onClick={() => {
-                  const prompt = getCurrentPagePrompt(currentQAPage);
-                  if (prompt) {
-                    navigator.clipboard.writeText(prompt);
-                    setHasClickedCopy(true);
-                    toast.success('Prompt copied to clipboard!', {
-                      description: 'Paste in Google AI Studio to generate image',
-                      duration: 3000
-                    });
-                  }
-                }}
+                onClick={handleCopyPrompt}
                 className="w-full h-full flex flex-col items-center justify-center p-6 text-center hover:bg-muted/50 transition-colors cursor-pointer"
               >
                 <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
@@ -193,24 +214,16 @@ export function QACheckpointPanel({
           </div>
         )}
 
-        {/* Image Prompt Helper - Only show after clicking copy or when image exists */}
-        {(hasClickedCopy || displayImages[currentQAPage]) && (
+        {/* Copy Prompt Button - Show when upload area is visible */}
+        {hasClickedCopy && !displayImages[currentQAPage] && (
           <Button
             variant="secondary"
             size="lg"
-            onClick={() => {
-              const prompt = getCurrentPagePrompt(currentQAPage);
-              if (prompt) {
-                navigator.clipboard.writeText(prompt);
-                toast.success('Prompt copied to clipboard!', {
-                  description: 'Use with external image generation tools',
-                  duration: 3000
-                });
-              }
-            }}
+            onClick={handleCopyPrompt}
             className="w-full"
           >
-            Copy Image Prompt
+            <Copy className="h-4 w-4 mr-2" />
+            Copy Image Prompt Again
           </Button>
         )}
       </div>

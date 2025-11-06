@@ -990,12 +990,14 @@ export default function GoogleChat() {
             showImageUpload={showImageUpload}
             createdBookId={createdBookId}
             isMobile={isMobile}
+            shouldShowReviewButton={shouldShowQACheckpoint || !!createdBookId}
             onInputChange={setInput}
             onSend={handleSend}
             onKeyPress={handleKeyPress}
             onImageUploadToggle={setShowImageUpload}
             onImageSelect={handleImageSelect}
             onViewBook={handleViewCreatedBook}
+            onOpenReview={handleOpenQAPanel}
           />
         </div>
 

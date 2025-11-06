@@ -368,7 +368,10 @@ export default function GoogleChat() {
       return;
     }
 
-    await sendMessage(raw, undefined, messages);
+    await sendMessage(raw, undefined, messages, {
+      outlineReady: shouldShowQACheckpoint && !createdBookId,
+      bookCreated: !!createdBookId
+    });
     setInput('');
   };
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
@@ -385,10 +388,13 @@ export default function GoogleChat() {
       const message = input.trim() || 'What do you think of this style for inspiration?';
       setInput('');
       setShowImageUpload(false);
-      await sendMessageWithImage(message, base64Data, messages);
+      await sendMessageWithImage(message, base64Data, messages, {
+        outlineReady: shouldShowQACheckpoint && !createdBookId,
+        bookCreated: !!createdBookId
+      });
     };
     reader.readAsDataURL(file);
-  }, [input, sendMessageWithImage, messages]);
+  }, [input, sendMessageWithImage, messages, shouldShowQACheckpoint, createdBookId]);
 
   // Auto-generate cover prompt for QA panel
   const handleGenerateCoverPrompt = useCallback(async () => {
@@ -412,12 +418,18 @@ export default function GoogleChat() {
     if (bookType.needsClarification && bookType.clarificationContext) {
       // Format as natural instruction without internal tags
       const clarificationPrompt = `${bookType.prompt}\n\nBefore we proceed, please ask me about: ${bookType.clarificationContext}`;
-      await sendMessage(clarificationPrompt);
+      await sendMessage(clarificationPrompt, undefined, messages, {
+        outlineReady: shouldShowQACheckpoint && !createdBookId,
+        bookCreated: !!createdBookId
+      });
     } else {
       // Send direct prompt
-      await sendMessage(bookType.prompt);
+      await sendMessage(bookType.prompt, undefined, messages, {
+        outlineReady: shouldShowQACheckpoint && !createdBookId,
+        bookCreated: !!createdBookId
+      });
     }
-  }, [currentSessionId, sendMessage, updateSessionName]);
+  }, [currentSessionId, sendMessage, updateSessionName, shouldShowQACheckpoint, createdBookId]);
 
   const handleCreateBook = useCallback(async () => {
     if (!currentSessionId) {
@@ -549,7 +561,10 @@ export default function GoogleChat() {
     // Regular quick reply
     if (action.value) {
       // Send the predefined response
-      await sendMessage(action.value, undefined, messages);
+      await sendMessage(action.value, undefined, messages, {
+        outlineReady: shouldShowQACheckpoint && !createdBookId,
+        bookCreated: !!createdBookId
+      });
     } else {
       // "Custom" option - just focus the input field
       const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
@@ -557,7 +572,9 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage, messages]);
+  }, [handleCreateBook, sendMessage, messages, shouldShowQACheckpoint, createdBookId]);
+  // Note: handleOpenQAPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
+  // because they're useCallback functions defined below and are stable
 
   const handleCreateNewSession = useCallback(async () => {
     try {

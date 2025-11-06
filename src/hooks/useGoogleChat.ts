@@ -30,7 +30,12 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
   const { user } = useAuthContext();
   const [isLoading, setIsLoading] = useState(false);
 
-  const sendMessage = async (content: string | MessageContent[], displayText?: string, currentMessages: Message[] = []) => {
+  const sendMessage = async (
+    content: string | MessageContent[], 
+    displayText?: string, 
+    currentMessages: Message[] = [],
+    context?: { outlineReady?: boolean; bookCreated?: boolean }
+  ) => {
     if (!user?.id) {
       toast.error('Please sign in to use Google chat');
       return;
@@ -80,7 +85,11 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ messages: [...messagesWithoutSuggestions, apiUserMessage] })
+          body: JSON.stringify({ 
+            messages: [...messagesWithoutSuggestions, apiUserMessage],
+            outlineReady: context?.outlineReady,
+            bookCreated: context?.bookCreated
+          })
         }
       );
 
@@ -222,14 +231,20 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
   return {
     isLoading,
     sendMessage,
-    sendMessageWithImage: async (text: string, imageDataUrl: string, currentMessages: Message[] = []) => {
+    sendMessageWithImage: async (
+      text: string, 
+      imageDataUrl: string, 
+      currentMessages: Message[] = [],
+      context?: { outlineReady?: boolean; bookCreated?: boolean }
+    ) => {
       return sendMessage(
         [
           { type: 'text', text },
           { type: 'image_url', image_url: { url: imageDataUrl } }
         ],
         text,
-        currentMessages
+        currentMessages,
+        context
       );
     }
   };

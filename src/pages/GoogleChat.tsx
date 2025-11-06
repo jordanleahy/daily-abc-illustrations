@@ -215,10 +215,13 @@ export default function GoogleChat() {
       if (!descMatch) return null;
       
       const bookTitle = titleMatch ? titleMatch[1].trim() : '';
-      const description = descMatch[1].trim();
+      let description = descMatch[1].trim();
+      
+      // Replace "book cover" with "square card cover" to ensure 1:1 aspect ratio
+      description = description.replace(/\bbook cover\b/gi, 'square card cover');
       
       // Format with title and text overlay instruction
-      return `**Cover: ${bookTitle}**\n${description}\n\nInclude text overlay displaying '${bookTitle.toUpperCase()}' in large, clear, child-friendly letters.`;
+      return `**Cover: ${bookTitle}**\nSquare card cover (1:1 aspect ratio). ${description}\n\nInclude text overlay displaying '${bookTitle.toUpperCase()}' in large, clear, child-friendly letters.`;
     }
     
     if (pageNum === 2 && educationalFocus) {

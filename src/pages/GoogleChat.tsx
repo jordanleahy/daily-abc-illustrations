@@ -524,9 +524,6 @@ export default function GoogleChat() {
         });
       }
       
-      toast.success('Book created successfully!', {
-        description: 'Continue uploading images or click "View Book" when ready.'
-      });
       
       // Reset image/prompt state for next book (keep panel open)
       setQAPageImages({});

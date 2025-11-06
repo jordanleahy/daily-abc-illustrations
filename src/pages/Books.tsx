@@ -12,8 +12,7 @@ import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { CreateBookModal } from '@/components/books/CreateBookModal';
 import { LoadingState } from '@/components/ui/loading-state';
-import { trackBookView } from '@/utils/bookViewTracking';
-import { supabase } from '@/integrations/supabase/client';
+import { trackUserBookActivity } from '@/utils/bookViewTracking';
 
 function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
@@ -122,8 +121,8 @@ export default function Books() {
   }, [queryClient, user?.id]);
 
   const handleViewBook = async (bookId: string) => {
-    // Track the book view (writes to user_book_activity table)
-    trackBookView(bookId);
+    // Track the user book activity (writes to user_book_activity table with book_id)
+    trackUserBookActivity(bookId);
     
     // Invalidate query to refresh sort order with new activity
     queryClient.invalidateQueries({ queryKey: ['books', user?.id] });

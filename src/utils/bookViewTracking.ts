@@ -7,7 +7,7 @@
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Track that a book was viewed by the current user
+ * Track that a daily published book was viewed by the current user
  * Uses a two-step process: fetch current count, then upsert with increment
  */
 export const trackBookView = async (dailyPublishedId: string): Promise<void> => {
@@ -47,6 +47,50 @@ export const trackBookView = async (dailyPublishedId: string): Promise<void> => 
     }
   } catch (error) {
     console.warn('Failed to track book view:', error);
+  }
+};
+
+/**
+ * Track that a user's own book was viewed/opened
+ * For tracking activity on the Books page (user's created books)
+ */
+export const trackUserBookActivity = async (bookId: string): Promise<void> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      console.warn('Cannot track user book activity: User not authenticated');
+      return;
+    }
+
+    // First, try to get existing activity record
+    const { data: existing } = await supabase
+      .from('user_book_activity')
+      .select('view_count')
+      .eq('user_id', user.id)
+      .eq('book_id', bookId)
+      .maybeSingle();
+
+    // Upsert with incremented view count
+    const { error } = await supabase
+      .from('user_book_activity')
+      .upsert(
+        {
+          user_id: user.id,
+          book_id: bookId,
+          last_viewed_at: new Date().toISOString(),
+          view_count: existing ? existing.view_count + 1 : 1,
+        },
+        {
+          onConflict: 'user_id,book_id',
+        }
+      );
+
+    if (error) {
+      console.warn('Failed to track user book activity:', error);
+    }
+  } catch (error) {
+    console.warn('Failed to track user book activity:', error);
   }
 };
 

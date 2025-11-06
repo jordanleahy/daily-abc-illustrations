@@ -63,7 +63,7 @@ export const useBooks = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // Get all books with their daily_published status and user activity
+      // Get all books with their daily_published status
       const { data: booksData, error: booksError } = await supabase
         .from('books')
         .select(`
@@ -83,17 +83,18 @@ export const useBooks = () => {
         return [];
       }
 
-      // Fetch user activity for all books
+      // Fetch user activity for all books from user_book_activity table
       const bookIds = booksData.map(book => book.id);
       const { data: activityData } = await supabase
         .from('user_book_activity')
         .select('book_id, last_viewed_at, view_count')
         .eq('user_id', user.id)
-        .in('book_id', bookIds);
+        .in('book_id', bookIds)
+        .not('book_id', 'is', null);
 
       // Create a map for quick lookup
       const activityMap = new Map(
-        activityData?.map(activity => [activity.book_id, activity]) || []
+        activityData?.map(activity => [activity.book_id!, activity]) || []
       );
 
       // Combine books with their daily_published status and activity

@@ -1254,8 +1254,9 @@ export type Database = {
       }
       user_book_activity: {
         Row: {
+          book_id: string | null
           created_at: string
-          daily_published_id: string
+          daily_published_id: string | null
           id: string
           last_viewed_at: string
           updated_at: string
@@ -1263,8 +1264,9 @@ export type Database = {
           view_count: number
         }
         Insert: {
+          book_id?: string | null
           created_at?: string
-          daily_published_id: string
+          daily_published_id?: string | null
           id?: string
           last_viewed_at?: string
           updated_at?: string
@@ -1272,8 +1274,9 @@ export type Database = {
           view_count?: number
         }
         Update: {
+          book_id?: string | null
           created_at?: string
-          daily_published_id?: string
+          daily_published_id?: string | null
           id?: string
           last_viewed_at?: string
           updated_at?: string
@@ -1281,6 +1284,13 @@ export type Database = {
           view_count?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "user_book_activity_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_book_activity_daily_published_id_fkey"
             columns: ["daily_published_id"]

@@ -127,16 +127,6 @@ export function QACheckpointPanel({
                   Replace
                 </Button>
               </div>
-            ) : isBookCreated ? (
-              <div className="flex flex-col items-center justify-center h-full p-6 text-center">
-                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                  <BookOpen className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <p className="text-sm font-medium mb-1">No image generated yet</p>
-                <p className="text-xs text-muted-foreground">
-                  Click "View Book" to generate images for all pages
-                </p>
-              </div>
             ) : !hasClickedCopy ? (
               <button
                 onClick={() => {

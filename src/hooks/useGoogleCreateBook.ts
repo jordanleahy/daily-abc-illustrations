@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { parseEducationalFocus } from '@/utils/chatHelpers';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -41,6 +42,9 @@ export const useGoogleCreateBook = () => {
         throw new Error('User not authenticated');
       }
 
+      // Parse educational focus from conversation
+      const educationalFocus = parseEducationalFocus(params.conversationHistory);
+
       const { data, error } = await supabase.functions.invoke('google-create-book', {
         body: {
           conversationHistory: params.conversationHistory,
@@ -50,6 +54,7 @@ export const useGoogleCreateBook = () => {
           bookType: params.bookType || undefined,
           textOverlayPreference: params.textOverlayPreference || undefined,
           referenceBookId: params.referenceBookId || undefined,
+          educationalFocus: educationalFocus || undefined,
         },
       });
 

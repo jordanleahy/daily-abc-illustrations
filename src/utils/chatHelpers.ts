@@ -41,6 +41,50 @@ export const parsePageDetailsFromMessages = (messages: any[]): PageDetail[] | nu
 };
 
 /**
+ * Educational Focus metadata extracted from AI messages
+ */
+export interface EducationalFocusDetail {
+  targetAge: string;
+  learningType: string;
+  specificSkill: string;
+  imagePrompt: string;
+}
+
+/**
+ * Parse educational focus section from chat messages
+ */
+export const parseEducationalFocus = (messages: any[]): EducationalFocusDetail | null => {
+  const lastAssistantMsg = [...messages].reverse().find(
+    msg => msg.role === 'assistant' && 
+    typeof msg.content === 'string' && 
+    /\*\*Educational Focus:\*\*/i.test(msg.content)
+  );
+  
+  if (!lastAssistantMsg || typeof lastAssistantMsg.content !== 'string') {
+    return null;
+  }
+  
+  const content = lastAssistantMsg.content;
+  
+  // Extract the three badge fields
+  const ageMatch = content.match(/Target Age:\s*([^\n]+)/i);
+  const typeMatch = content.match(/Learning Type:\s*([^\n]+)/i);
+  const skillMatch = content.match(/Specific Skill:\s*([^\n]+)/i);
+  
+  // Extract image prompt (paragraph after "Educational Focus Image:")
+  const promptMatch = content.match(/\*\*Educational Focus Image:\*\*\s*\n([^\n*]+(?:\n(?!\*\*)[^\n*]+)*)/i);
+  
+  if (!ageMatch || !typeMatch || !skillMatch || !promptMatch) return null;
+  
+  return {
+    targetAge: ageMatch[1].trim(),
+    learningType: typeMatch[1].trim(),
+    specificSkill: skillMatch[1].trim(),
+    imagePrompt: promptMatch[1].trim()
+  };
+};
+
+/**
  * Extract book metadata (name and description) from messages
  */
 export const getBookMetadata = (messages: any[]): { name: string, description: string } | null => {

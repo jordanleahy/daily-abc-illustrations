@@ -160,6 +160,7 @@ export type Database = {
           category: string | null
           created_at: string
           current_system_prompt_id: string | null
+          educational_focus: Json | null
           id: string
           is_highlighted: boolean
           is_style_template: boolean | null
@@ -181,6 +182,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           current_system_prompt_id?: string | null
+          educational_focus?: Json | null
           id?: string
           is_highlighted?: boolean
           is_style_template?: boolean | null
@@ -202,6 +204,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           current_system_prompt_id?: string | null
+          educational_focus?: Json | null
           id?: string
           is_highlighted?: boolean
           is_style_template?: boolean | null

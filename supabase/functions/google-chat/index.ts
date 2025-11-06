@@ -269,8 +269,43 @@ A cheerful, colorful book cover illustration showing a diverse group of happy ca
 
 Format your response with the cover prompt first, then all numbered page prompts below it.
 
+EDUCATIONAL FOCUS PAGE (AFTER COVER - CRITICAL):
+After generating the cover page prompt, you MUST generate an Educational Focus section that communicates the learning objectives in a scannable, badge-like format.
+
+**Educational Focus Requirements:**
+- Format as "**Educational Focus:**" header
+- Include three specific learning metadata fields:
+  - Target Age: [age range like "2-4 Years", "4-6 Years"]
+  - Learning Type: [category like "Phonics | Early Literacy", "Math Concepts"]
+  - Specific Skill: [specific learning outcome like "CVC Word Recognition", "Counting 1-10"]
+- Then generate a detailed image prompt for an educational info card with three badge sections
+
+**Educational Focus Format:**
+**Educational Focus:**
+- Target Age: [age range]
+- Learning Type: [learning category]
+- Specific Skill: [specific skill being taught]
+
+**Educational Focus Image:**
+[Detailed prompt for an educational info card showing three badge sections:
+1. AGE badge with target age range
+2. LEARNING TYPE badge with educational category  
+3. SKILL FOCUS badge with specific learning outcome
+Use the book's theme colors, friendly typography, simple icons, clean design]
+
+**Example Educational Focus WITH Theme:**
+**Educational Focus:**
+- Target Age: 2-4 Years
+- Learning Type: Phonics | Early Literacy
+- Specific Skill: "An" & "And" Word Recognition
+
+**Educational Focus Image:**
+A clean, colorful educational information card with three distinct badge sections arranged vertically using the Moana color palette. At the top, a turquoise badge shows "AGE: 2-4 YEARS" with a small child icon. In the middle, a coral badge displays "PHONICS | EARLY LITERACY" with a book icon. At the bottom, a sandy yellow badge reads "FOCUS: 'AN' & 'AND' WORDS" with ABC letter blocks. The design uses ocean blues, coral oranges, and sandy yellows from Moana's theme. Friendly, rounded typography suitable for children's books. Simple, recognizable icons. The background is a soft gradient from sky blue to sandy beige. No text overlays beyond the badge text itself.
+
+After the Educational Focus section, continue with numbered page prompts (Page 1, Page 2, Page 3...).
+
 GENERATING DETAILED PAGE DESCRIPTIONS (CRITICAL):
-After the user approves the page concepts AND selects their text preference ("With Text" or "Without Text"), generate detailed image prompts. Start with the cover page prompt (see COVER PAGE GENERATION above), then continue with numbered page prompts for each page.
+After the user approves the page concepts AND selects their text preference ("With Text" or "Without Text"), generate detailed image prompts. Start with the cover page prompt, then the Educational Focus section, then continue with numbered page prompts for each page.
 
 CRITICAL TEXT OVERLAY INSTRUCTIONS:
 - If user selected "With Text": END each prompt with "Include text overlay displaying '[THE WORD]' in large, clear, child-friendly letters."

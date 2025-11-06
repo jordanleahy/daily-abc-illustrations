@@ -22,7 +22,13 @@ const requestSchema = z.object({
   qaImages: z.record(z.string()).optional(),
   bookType: z.string().optional(),
   textOverlayPreference: z.enum(['with-text', 'without-text']).optional(),
-  referenceBookId: z.string().uuid().optional()
+  referenceBookId: z.string().uuid().optional(),
+  educationalFocus: z.object({
+    targetAge: z.string(),
+    learningType: z.string(),
+    specificSkill: z.string(),
+    imagePrompt: z.string()
+  }).optional()
 });
 
 serve(async (req) => {
@@ -33,7 +39,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference, referenceBookId } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference, referenceBookId, educationalFocus } = validatedData;
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -481,11 +487,27 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
 
     console.log('Book created with ID:', book.id);
 
-    // Create cover page first (page_number 0)
+    // Store educational focus in books table if provided
+    if (educationalFocus) {
+      const { error: eduFocusError } = await supabase
+        .from('books')
+        .update({
+          educational_focus: educationalFocus
+        })
+        .eq('id', book.id);
+        
+      if (eduFocusError) {
+        console.error('Error storing educational focus:', eduFocusError);
+      } else {
+        console.log('Educational focus stored in books table');
+      }
+    }
+
+    // Create cover page as page 1
     const coverPage = {
       book_id: book.id,
-      letter: 'Cover',
-      page_number: 0,
+      letter: 'COVER',
+      page_number: 1,
       title: sanitizeText(bookData.bookName, 100),
       description: sanitizeText(bookData.bookDescription || '', 500),
       content: {
@@ -495,18 +517,38 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       }
     };
 
-    // Insert sanitized pages (starting from page 1)
-    const pages = [
-      coverPage,
-      ...sanitizedPages.map((page: any) => ({
+    const pages = [coverPage];
+
+    // Create educational focus page as page 2 if provided
+    if (educationalFocus) {
+      const eduFocusPage = {
+        book_id: book.id,
+        letter: 'FOCUS',
+        page_number: 2,
+        title: 'Educational Focus',
+        description: `Age: ${sanitizeText(educationalFocus.targetAge, 50)} | ${sanitizeText(educationalFocus.learningType, 100)}`,
+        content: {
+          mainConcept: sanitizeText(educationalFocus.targetAge, 200),
+          funFact: sanitizeText(educationalFocus.learningType, 200),
+          activity: sanitizeText(educationalFocus.specificSkill, 200)
+        }
+      };
+      pages.push(eduFocusPage);
+      console.log('Educational focus page created');
+    }
+
+    // Add content pages (starting from page 3 if edu focus exists, else page 2)
+    const startingPageNumber = educationalFocus ? 3 : 2;
+    pages.push(
+      ...sanitizedPages.map((page: any, index: number) => ({
         book_id: book.id,
         letter: page.letter || `Page ${page.pageNumber}`,
-        page_number: page.pageNumber,
+        page_number: startingPageNumber + index,
         title: page.title,
         description: page.description || '',
         content: page.content
       }))
-    ];
+    );
 
     const { error: pagesError } = await supabase
       .from('pages')
@@ -519,7 +561,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       throw new Error('Failed to create pages');
     }
 
-    console.log(`Cover page + ${pages.length - 1} content pages created`);
+    console.log(`${pages.length} total pages created (cover${educationalFocus ? ' + edu focus' : ''} + ${sanitizedPages.length} content pages)`);
 
     // Extract AI-generated prompts from conversation history and store them
     console.log('Extracting AI-generated prompts from conversation...');

@@ -18,9 +18,9 @@ import { MessageList } from '@/components/chat/MessageList';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { InputArea } from '@/components/chat/InputArea';
 import { toast } from 'sonner';
+import { parsePageDetailsFromMessages, parseEducationalFocus, getBookMetadata } from '@/utils/chatHelpers';
 import { BOOK_TYPES } from '@/config/bookTypes';
 import { cn } from '@/lib/utils';
-import { parsePageDetailsFromMessages, getBookMetadata } from '@/utils/chatHelpers';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -151,14 +151,21 @@ export default function GoogleChat() {
     return hasPages && !createBookMutation.isSuccess;
   }, [messages, isLoading, createBookMutation.isSuccess, parsedPageDetails]);
 
+  // Parse educational focus from messages
+  const educationalFocus = useMemo(() => 
+    parseEducationalFocus(messages), 
+    [messages]
+  );
+
   const pageCount = useMemo(() => {
-    // If book is created, use database page count (excluding cover page 0)
-    if (isBookCreated && dbPages && dbPages.length > 0) {
-      return dbPages.length - 1;
+    // If book is created, use database pages count
+    if (isBookCreated && dbPages) {
+      return dbPages.length;
     }
-    // Otherwise use parsed page details
-    return parsedPageDetails?.length || 0;
-  }, [isBookCreated, dbPages, parsedPageDetails]);
+    // Pre-creation: Cover + Educational Focus (if exists) + parsed pages
+    const contentPages = parsedPageDetails?.length || 0;
+    return educationalFocus ? contentPages + 2 : contentPages + 1;
+  }, [isBookCreated, dbPages, parsedPageDetails, educationalFocus]);
   
   // Get the max page number for navigation boundaries
   const maxPageNumber = useMemo(() => {
@@ -170,35 +177,57 @@ export default function GoogleChat() {
 
   // Helper to get current page prompt - uses database if book is created, otherwise parses messages
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
-    // If book is created, use database pages (live data)
+    // If book is created, get from database
     if (isBookCreated && dbPages && dbPages.length > 0) {
-      const dbPage = dbPages.find(p => p.page_number === pageNum);
-      if (dbPage) {
-        if (pageNum === 0) {
-          // Cover page from database - only use book name as title
-          return `${dbPage.description || ''}\n\nAn educational children's book\n\nCreate a vibrant, engaging cover illustration that captures this theme. Place the title "${dbPage.title}" prominently in the center of the image with clear, readable text.`;
-        }
-        // Content page from database
-        return `**Page ${pageNum}: \"${dbPage.title}\"**\n\n${dbPage.description || ''}`;
-      }
-    }
-    
-    // Fall back to parsing conversation (pre-creation)
-    if (pageNum === 0) {
-      // Cover page - use book metadata from messages
-      const metadata = getBookMetadata(messages);
-      if (!metadata) return null;
+      const page = dbPages.find(p => p.page_number === pageNum);
+      if (!page) return null;
       
-      return `${metadata.description}\n\nAn educational children's book\n\nCreate a vibrant, engaging cover illustration that captures this theme. Place the title "${metadata.name}" prominently in the center of the image with clear, readable text.`;
+      // For educational focus page (page 2), check if it's the FOCUS page
+      if (page.letter === 'FOCUS' && qaPagePrompts[2]) {
+        return qaPagePrompts[2];
+      }
+      
+      // Try to get from qaPagePrompts first (user-uploaded or edited)
+      if (qaPagePrompts[pageNum]) {
+        return qaPagePrompts[pageNum];
+      }
+      
+      // Fallback to page description
+      return page.description || null;
     }
     
-    if (!parsedPageDetails || parsedPageDetails.length === 0) return null;
+    // Pre-creation: parse from messages
+    if (pageNum === 1) {
+      // Cover page (Page 1)
+      const lastAssistantMsg = [...messages].reverse().find(
+        msg => msg.role === 'assistant' && 
+        typeof msg.content === 'string' && 
+        /\*\*Cover:/i.test(msg.content)
+      );
+      
+      if (!lastAssistantMsg || typeof lastAssistantMsg.content !== 'string') {
+        return null;
+      }
+      
+      // Extract cover description
+      const coverMatch = lastAssistantMsg.content.match(/\*\*Cover:[^\n]*\*\*\s*\n([^\n]+(?:\n(?!\*\*)[^\n]+)*)/i);
+      return coverMatch ? `Cover Page\n${coverMatch[1].trim()}` : null;
+    }
     
-    const page = parsedPageDetails.find((p: any) => p.pageNumber === pageNum);
-    if (!page) return null;
+    if (pageNum === 2 && educationalFocus) {
+      // Educational focus page (Page 2)
+      return `Educational Focus\n${educationalFocus.imagePrompt}`;
+    }
     
-    return `**Page ${page.pageNumber}: \"${page.title}\"**\n\n${page.description}`;
-  }, [isBookCreated, dbPages, messages, parsedPageDetails]);
+    // Regular content pages (Page 3+)
+    if (parsedPageDetails && pageNum > 2) {
+      const pageIndex = pageNum - 3; // Page 3 = index 0, Page 4 = index 1, etc.
+      const pageDetail = parsedPageDetails[pageIndex];
+      return pageDetail ? qaPagePrompts[pageNum] || pageDetail.description : null;
+    }
+    
+    return null;
+  }, [isBookCreated, dbPages, qaPagePrompts, educationalFocus, parsedPageDetails, messages]);
 
   // Create initial session on mount if none exists
   useEffect(() => {
@@ -710,16 +739,15 @@ export default function GoogleChat() {
       return;
     }
     
-    // Pre-creation: use parsed page details with simple increment
-    if (!parsedPageDetails) return;
-    const maxPage = parsedPageDetails.length;
+    // Pre-creation navigation with educational focus
+    const maxPage = (parsedPageDetails?.length || 0) + (educationalFocus ? 2 : 1);
     
     if (direction === 'next' && currentQAPage < maxPage) {
       setCurrentQAPage(currentQAPage + 1);
-    } else if (direction === 'prev' && currentQAPage > 0) {
-      setCurrentQAPage(currentQAPage - 1);
+    } else if (direction === 'prev' && currentQAPage > 1) {
+      setCurrentQAPage(Math.max(1, currentQAPage - 1));
     }
-  }, [parsedPageDetails, currentQAPage, isBookCreated, dbPages]);
+  }, [parsedPageDetails, currentQAPage, educationalFocus, isBookCreated, dbPages]);
 
   const handleRemoveQAImage = useCallback(async (pageNumber: number) => {
     if (createdBookId) {

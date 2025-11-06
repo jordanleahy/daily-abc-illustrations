@@ -67,9 +67,14 @@ export function QACheckpointPanel({
       navigator.clipboard.writeText(prompt);
       setShowConfirmation(true);
       toast.success('Prompt copied to clipboard!', {
-        description: 'Paste in Google AI Studio to generate image',
+        description: 'Creating your book...',
         duration: 3000
       });
+
+      // Create book immediately if not already created
+      if (!isBookCreated && !createBookMutation.isPending) {
+        onCreateBook();
+      }
 
       // Transition to upload after 5 seconds
       setTimeout(() => {
@@ -264,32 +269,6 @@ export function QACheckpointPanel({
           </Button>
         </div>
 
-        {/* Create Book Button - Always visible when book not created */}
-        {!isBookCreated && (
-          <div className="space-y-2">
-            <Shimmer isShimmering={createBookMutation.isPending} className="rounded-md">
-              <Button
-                onClick={onCreateBook}
-                disabled={createBookMutation.isPending}
-                className="w-full gap-2"
-                size="sm"
-              >
-                <BookOpen className="h-4 w-4" />
-                {createBookMutation.isPending 
-                  ? 'Creating Book...'
-                  : Object.keys(qaPageImages).length > 0
-                    ? `Create Book (${Object.keys(qaPageImages).length} photo${Object.keys(qaPageImages).length > 1 ? 's' : ''})`
-                    : 'Create Book'
-                }
-              </Button>
-            </Shimmer>
-            {Object.keys(qaPageImages).length === 0 && (
-              <p className="text-xs text-muted-foreground text-center">
-                Photos optional • Add now or generate later
-              </p>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

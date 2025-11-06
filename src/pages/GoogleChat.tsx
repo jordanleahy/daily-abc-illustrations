@@ -525,12 +525,10 @@ export default function GoogleChat() {
       }
       
       toast.success('Book created successfully!', {
-        description: 'Click "View Created Book" to see your new book.'
+        description: 'Continue uploading images or click "View Book" when ready.'
       });
       
-      // Reset QA checkpoint state
-      setShowQACheckpoint(false);
-      setCurrentQAPage(0);
+      // Reset image/prompt state for next book (keep panel open)
       setQAPageImages({});
       setQAPagePrompts({});
     } catch (error) {

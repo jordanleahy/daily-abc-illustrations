@@ -207,9 +207,18 @@ export default function GoogleChat() {
         return null;
       }
       
-      // Extract cover description (tolerate inline or multiline, stop at next section)
-      const coverMatch = (lastCoverMsg.content as string).match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
-      return coverMatch ? `Cover Page\n${coverMatch[1].trim()}` : null;
+      // Extract cover description and title
+      const content = lastCoverMsg.content as string;
+      const titleMatch = content.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
+      const descMatch = content.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
+      
+      if (!descMatch) return null;
+      
+      const bookTitle = titleMatch ? titleMatch[1].trim() : '';
+      const description = descMatch[1].trim();
+      
+      // Format with title and text overlay instruction
+      return `**Cover: ${bookTitle}**\n${description}\n\nInclude text overlay displaying '${bookTitle.toUpperCase()}' in large, clear, child-friendly letters.`;
     }
     
     if (pageNum === 2 && educationalFocus) {

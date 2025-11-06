@@ -26,6 +26,7 @@ import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useBook } from '@/hooks/useBook';
 import { useUpdateBookStatus } from '@/hooks/useUpdateBookStatus';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
+import { useDownloadBookImages } from '@/hooks/useDownloadBookImages';
 import { formatScheduleTimestamp } from '@/utils/timezone';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -135,6 +136,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const { data: bookData } = useBook(contentType === 'book' ? contentId : undefined);
   const { data: existingSeoMetadata } = useBookSeoMetadata(contentType === 'book' ? contentId : undefined);
   const updateBookStatusMutation = useUpdateBookStatus();
+  const downloadImagesMutation = useDownloadBookImages();
   const [existingPublication, setExistingPublication] = useState<any>(null);
   const [publicationHistory, setPublicationHistory] = useState<any[]>([]);
   const [isCheckingPublication, setIsCheckingPublication] = useState(false);
@@ -150,12 +152,6 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
    */
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [pdfProgress, setPdfProgress] = useState({ current: 0, total: 0, currentPage: '' });
-  
-  /**
-   * Handles downloading all images as a ZIP file
-   */
-  const [isDownloadingImages, setIsDownloadingImages] = useState(false);
-  const [imageDownloadProgress, setImageDownloadProgress] = useState({ current: 0, total: 0, currentPage: '' });
 
   const handleCreatePdf = async () => {
     setIsGeneratingPdf(true);
@@ -205,56 +201,13 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   };
 
   /**
-   * Handles downloading all images as individual files in a ZIP archive
+   * Handles downloading all images via server-side edge function
    */
-  const handleDownloadAllImages = async () => {
-    setIsDownloadingImages(true);
-    setImageDownloadProgress({ current: 0, total: 0, currentPage: '' });
-
-    try {
-      const { downloadAllBookImages } = await import('@/services/pdfGenerator');
-      
-      const options = {
-        onProgress: (current: number, total: number, currentPage?: string) => {
-          setImageDownloadProgress({ current, total, currentPage: currentPage || '' });
-        },
-        onError: (error: string, pageId?: string) => {
-          console.warn(`Image download warning: ${error}`, pageId);
-        }
-      };
-
-      toast({
-        title: "Downloading Images",
-        description: "Preparing all images for download..."
-      });
-
-      const result = await downloadAllBookImages(contentId, contentName, options);
-
-      if (result.successCount === result.totalCount) {
-        toast({
-          title: "Images Downloaded Successfully",
-          description: `All ${result.totalCount} images have been downloaded as a ZIP file.`
-        });
-      } else {
-        toast({
-          title: "Download Completed with Warnings",
-          description: `Downloaded ${result.successCount} of ${result.totalCount} images. Check console for details on failed images.`,
-          variant: "default"
-        });
-      }
-
-    } catch (error) {
-      console.error('Error downloading images:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
-      toast({
-        variant: "destructive",
-        title: "Download Failed",
-        description: errorMessage
-      });
-    } finally {
-      setIsDownloadingImages(false);
-      setImageDownloadProgress({ current: 0, total: 0, currentPage: '' });
-    }
+  const handleDownloadAllImages = () => {
+    downloadImagesMutation.mutate({
+      bookId: contentId,
+      bookName: contentName,
+    });
   };
 
   /**
@@ -1096,21 +1049,16 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             <div className="flex flex-col md:flex-row items-stretch md:items-center gap-2 w-full md:w-auto">
               <Button 
                 onClick={handleDownloadAllImages}
-                disabled={isDownloadingImages}
+                disabled={downloadImagesMutation.isPending}
                 className="flex items-center justify-center gap-2 w-full md:w-auto"
                 variant="outline"
               >
                 <Download className="h-4 w-4" />
-                <span>{isDownloadingImages 
-                  ? `Downloading... (${imageDownloadProgress.current}/${imageDownloadProgress.total}${imageDownloadProgress.currentPage ? ` - ${imageDownloadProgress.currentPage}` : ''})` 
+                <span>{downloadImagesMutation.isPending 
+                  ? 'Downloading...' 
                   : 'Download All Images'
                 }</span>
               </Button>
-              {isDownloadingImages && imageDownloadProgress.total > 0 && (
-                <div className="text-sm text-muted-foreground">
-                  {Math.round((imageDownloadProgress.current / imageDownloadProgress.total) * 100)}%
-                </div>
-              )}
             </div>
           </div>
         )}

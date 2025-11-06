@@ -153,5 +153,8 @@ verify_jwt = false
 [functions.copy-seo-draft-to-queued]
 verify_jwt = true
 
+[functions.download-book-images]
+verify_jwt = true
+
 [functions.generate-page-system-prompts]
 verify_jwt = true

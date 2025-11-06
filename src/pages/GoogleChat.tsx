@@ -10,6 +10,7 @@ import { useGoogleChatSessions } from '@/hooks/useGoogleChatSessions';
 import { useSessionMessages, usePrefetchSession } from '@/hooks/useSessionMessages';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { useBookPages } from '@/hooks/useBookPages';
+import { usePageImageUrlsSubscription } from '@/hooks/usePageImageUrlsSubscription';
 import { useThemeImagePreloader } from '@/hooks/useThemeImagePreloader';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
 import { QACheckpointPanel } from '@/components/chat/QACheckpointPanel';
@@ -107,6 +108,9 @@ export default function GoogleChat() {
 
   // Fetch book images from storage if book exists
   const { data: bookPageImages, isLoading: bookImagesLoading } = useBookPageImages(createdBookId);
+  
+  // Subscribe to real-time page image updates
+  usePageImageUrlsSubscription(createdBookId);
   
   // Fetch book pages from database if book exists
   const { pages: dbPages } = useBookPages(createdBookId || undefined);

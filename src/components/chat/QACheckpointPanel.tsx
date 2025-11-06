@@ -206,9 +206,14 @@ export function QACheckpointPanel({
                 onClick={() => {
                   navigator.clipboard.writeText(currentCoverPrompt);
                   toast.success('Cover prompt copied!', {
-                    description: 'Paste in Google AI Studio',
+                    description: 'Creating your book...',
                     duration: 3000
                   });
+                  
+                  // Create book immediately if not already created
+                  if (!isBookCreated && !createBookMutation.isPending) {
+                    onCreateBook();
+                  }
                 }}
                 className="w-full"
               >

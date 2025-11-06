@@ -259,7 +259,7 @@ export function QACheckpointPanel({
             disabled={currentQAPage === pageCount}
             className="flex-1"
           >
-            {currentQAPage === pageCount ? 'Review' : `Page ${currentQAPage + 1}`}
+            Next
             <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         </div>

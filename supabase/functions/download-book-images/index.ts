@@ -1,7 +1,7 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 import JSZip from 'https://esm.sh/jszip@3.10.1';
-import { Image } from 'https://deno.land/x/imagescript@1.2.16/mod.ts';
+import { Image } from 'https://esm.sh/imagescript@1.2.15';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;

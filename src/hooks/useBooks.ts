@@ -63,7 +63,7 @@ export const useBooks = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // Get all books with their daily_published status
+      // Get all books with their daily_published status and user activity
       const { data: booksData, error: booksError } = await supabase
         .from('books')
         .select(`
@@ -71,9 +71,7 @@ export const useBooks = () => {
           daily_published!left(status)
         `)
         .eq('user_id', user.id)
-        .neq('status', 'archived')
-        .order('is_highlighted', { ascending: false })
-        .order('last_activity_at', { ascending: false });
+        .neq('status', 'archived');
 
       if (booksError) {
         console.error('Error fetching books:', booksError);
@@ -85,12 +83,44 @@ export const useBooks = () => {
         return [];
       }
 
-      // Combine books with their daily_published status
-      // Database ordering (is_highlighted DESC, last_activity_at DESC) is already applied
-      return booksData.map(book => ({
+      // Fetch user activity for all books
+      const bookIds = booksData.map(book => book.id);
+      const { data: activityData } = await supabase
+        .from('user_book_activity')
+        .select('book_id, last_viewed_at, view_count')
+        .eq('user_id', user.id)
+        .in('book_id', bookIds);
+
+      // Create a map for quick lookup
+      const activityMap = new Map(
+        activityData?.map(activity => [activity.book_id, activity]) || []
+      );
+
+      // Combine books with their daily_published status and activity
+      const booksWithActivity = booksData.map(book => ({
         ...book,
-        dailyPublishedStatus: book.daily_published?.[0]?.status || undefined
+        dailyPublishedStatus: book.daily_published?.[0]?.status || undefined,
+        last_viewed_at: activityMap.get(book.id)?.last_viewed_at,
+        view_count: activityMap.get(book.id)?.view_count || 0,
       }));
+
+      // Sort by: highlighted first, then by last viewed date (most recent first), then by created date
+      return booksWithActivity.sort((a, b) => {
+        // First, sort by is_highlighted
+        if (a.is_highlighted !== b.is_highlighted) {
+          return b.is_highlighted ? 1 : -1;
+        }
+
+        // Then sort by last_viewed_at (most recent first)
+        if (a.last_viewed_at && b.last_viewed_at) {
+          return new Date(b.last_viewed_at).getTime() - new Date(a.last_viewed_at).getTime();
+        }
+        if (a.last_viewed_at) return -1;
+        if (b.last_viewed_at) return 1;
+
+        // Finally, sort by created_at (most recent first)
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
     },
     enabled: !!user?.id,
   });

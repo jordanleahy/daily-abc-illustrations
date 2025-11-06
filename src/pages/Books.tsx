@@ -122,16 +122,10 @@ export default function Books() {
   }, [queryClient, user?.id]);
 
   const handleViewBook = async (bookId: string) => {
-    // Track the book view immediately
+    // Track the book view (writes to user_book_activity table)
     trackBookView(bookId);
     
-    // Update last_activity_at in database for accurate sorting
-    await supabase
-      .from('books')
-      .update({ last_activity_at: new Date().toISOString() })
-      .eq('id', bookId);
-    
-    // Invalidate query to refresh sort order immediately
+    // Invalidate query to refresh sort order with new activity
     queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
     
     navigate(`/editor/${bookId}`);

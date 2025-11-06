@@ -16,12 +16,16 @@ export const useDownloadBookImages = () => {
 
       if (error) throw error;
       
-      // The response is a blob (ZIP file)
+      // Ensure we have data
+      if (!data) {
+        throw new Error('No data received from server');
+      }
+      
       return { data, bookName };
     },
     onSuccess: ({ data, bookName }) => {
-      // Create a blob from the response
-      const blob = new Blob([data], { type: 'application/zip' });
+      // Create a blob from the response (which should be a Uint8Array)
+      const blob = data instanceof Blob ? data : new Blob([data], { type: 'application/zip' });
       
       // Create download link
       const url = URL.createObjectURL(blob);
@@ -39,7 +43,7 @@ export const useDownloadBookImages = () => {
     },
     onError: (error) => {
       console.error('Download error:', error);
-      toast.error('Failed to download images');
+      toast.error('Failed to download images. Please try again.');
     },
   });
 };

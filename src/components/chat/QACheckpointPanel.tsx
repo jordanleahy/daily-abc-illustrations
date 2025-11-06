@@ -121,7 +121,7 @@ export function QACheckpointPanel({
                   </div>
                 </div>
               </div>
-            ) : isBookCreated && currentQAPage === 0 && coverPageId ? (
+            ) : isBookCreated && currentQAPage === 0 && coverPageId && !displayImages[0] ? (
               <div className="relative h-full">
                 <ImageUpload 
                   onImageSelect={(file) => onCoverUpload?.(file)}

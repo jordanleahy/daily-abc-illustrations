@@ -22,10 +22,12 @@ import { cn } from '@/lib/utils';
 import { parsePageDetailsFromMessages, getBookMetadata } from '@/utils/chatHelpers';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
   const { user } = useAuthContext();
+  const queryClient = useQueryClient();
   const [input, setInput] = useState('');
   const [showImageUpload, setShowImageUpload] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -630,6 +632,9 @@ export default function GoogleChat() {
         
         if (insertError) throw insertError;
         
+        // Invalidate queries to refetch images
+        await queryClient.invalidateQueries({ queryKey: ['book-page-images', createdBookId] });
+        
         // Clear replace mode for this page
         setReplacePageMode(prev => {
           const updated = { ...prev };
@@ -677,7 +682,7 @@ export default function GoogleChat() {
         });
       }
     }
-  }, [qaPageImages, currentQAPage, pageCount, currentSessionId, updateQAPageImages, createdBookId, dbPages, user]);
+  }, [qaPageImages, currentQAPage, pageCount, currentSessionId, updateQAPageImages, createdBookId, dbPages, user, queryClient]);
 
   const handleQAPageNavigation = useCallback((direction: 'next' | 'prev') => {
     if (!parsedPageDetails) return;
@@ -790,12 +795,15 @@ export default function GoogleChat() {
       
       if (insertError) throw insertError;
       
+      // Invalidate queries to refetch images
+      await queryClient.invalidateQueries({ queryKey: ['book-page-images', createdBookId] });
+      
       toast.success('Cover image uploaded successfully!');
     } catch (error: any) {
       console.error('Cover upload error:', error);
       toast.error('Failed to upload cover image: ' + error.message);
     }
-  }, [coverPageId, createdBookId, user]);
+  }, [coverPageId, createdBookId, user, queryClient]);
 
   return (
     <PageLayout 

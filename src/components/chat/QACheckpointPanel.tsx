@@ -114,12 +114,6 @@ export function QACheckpointPanel({
                 >
                   Replace
                 </Button>
-                <div className="absolute bottom-2 left-2 right-2">
-                  <div className="flex items-center gap-2 text-xs bg-green-600/90 text-white px-2 py-1 rounded">
-                    <Check className="h-3 w-3" />
-                    <span>{isBookCreated ? 'From book' : 'Uploaded'}</span>
-                  </div>
-                </div>
               </div>
             ) : isBookCreated && currentQAPage === 0 && coverPageId && !displayImages[0] ? (
               <div className="relative h-full">

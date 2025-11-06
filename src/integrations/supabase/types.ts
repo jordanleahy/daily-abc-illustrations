@@ -1528,6 +1528,19 @@ export type Database = {
         Args: { p_daily_published_id: string; p_new_expires_at: string }
         Returns: Json
       }
+      analyze_page_image_storage: { Args: never; Returns: Json }
+      cleanup_old_page_images: {
+        Args: {
+          p_dry_run?: boolean
+          p_keep_versions?: number
+          p_older_than_days?: number
+        }
+        Returns: Json
+      }
+      cleanup_orphaned_image_records: {
+        Args: { p_dry_run?: boolean; p_older_than_days?: number }
+        Returns: Json
+      }
       create_daily_habit_completions: { Args: never; Returns: Json }
       create_habit_completion_unified: {
         Args: {

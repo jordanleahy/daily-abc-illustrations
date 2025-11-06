@@ -213,17 +213,6 @@ const navigate = useNavigate();
         };
         
         setMessages(prev => [...prev, assistantMessage]);
-
-        // Automatic book creation removed - use manual button instead
-      } else if (data.content) {
-        // Handle legacy response format
-        const assistantMessage: Message = {
-          id: Date.now().toString(),
-          role: 'assistant',
-          content: data.content,
-        };
-        
-        setMessages(prev => [...prev, assistantMessage]);
       } else {
         throw new Error('No response received from assistant');
       }

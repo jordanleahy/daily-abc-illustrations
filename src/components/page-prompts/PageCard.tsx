@@ -57,18 +57,6 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
   const { currentImage, uploadImage } = usePageImageUrls(page.id);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // DEBUG: Log the current state to diagnose "Copy Full Prompt" button issue
-  console.log('[PageCard] Component rendered:', {
-    pageId: page.id,
-    pageTitle: page.title,
-    currentImage: currentImage ? {
-      id: currentImage.id,
-      hasPromptUsed: !!currentImage.prompt_used,
-      promptLength: currentImage.prompt_used?.length,
-      sourceType: currentImage.source_type,
-      promptPreview: currentImage.prompt_used?.substring(0, 100)
-    } : 'NULL/UNDEFINED'
-  });
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTextOverlayEditor, setShowTextOverlayEditor] = useState(false);
 

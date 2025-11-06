@@ -9,4 +9,3 @@ export { CreatePageModal } from './CreatePageModal';
 export { FloatingInsertZone } from './FloatingInsertZone';
 export { InsertPageDialog } from './InsertPageDialog';
 export { ImageTextOverlayEditor } from './ImageTextOverlayEditor';
-export { PageCardOptimized } from './PageCardOptimized';

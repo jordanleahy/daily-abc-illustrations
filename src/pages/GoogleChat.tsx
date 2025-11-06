@@ -116,7 +116,7 @@ export default function GoogleChat() {
   const { pages: dbPages } = useBookPages(createdBookId || undefined);
 
   // QA Checkpoint state
-  const [currentQAPage, setCurrentQAPage] = useState(0);
+  const [currentQAPage, setCurrentQAPage] = useState(1);
   const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
   const [qaPagePrompts, setQAPagePrompts] = useState<Record<number, string>>({});
   const [showQACheckpoint, setShowQACheckpoint] = useState(false);
@@ -267,7 +267,7 @@ export default function GoogleChat() {
   // Auto-show QA checkpoint only when outline is just completed (not on page load)
   useEffect(() => {
     if (outlineJustCompleted && !showQACheckpoint) {
-      setCurrentQAPage(0); // Start at cover page
+      setCurrentQAPage(1); // Start at cover page
       
       if (isMobile) {
         // Don't auto-open on mobile — keep the brand chat experience visible
@@ -834,7 +834,7 @@ export default function GoogleChat() {
         .from('pages')
         .select('id')
         .eq('book_id', createdBookId)
-        .eq('page_number', 0)
+        .eq('page_number', 1)
         .single();
       
       if (!error && data) {

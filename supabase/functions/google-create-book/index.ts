@@ -630,7 +630,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
 
     if (!fetchCreatedPagesError && createdPagesForPrompts) {
       for (const page of createdPagesForPrompts) {
-        const isCover = page.page_number === 0;
+        const isCover = page.page_number === 1;
         
         // Use AI-generated prompt if available, otherwise create a basic fallback
         let promptContent = aiPrompts.get(page.page_number);

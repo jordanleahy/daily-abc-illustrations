@@ -70,7 +70,7 @@ serve(async (req) => {
 
     // Generate prompts for each page
     for (const page of pages) {
-      const isCover = page.page_number === 0;
+      const isCover = page.page_number === 1;
       
       const pageContext = {
         pageNumber: page.page_number,

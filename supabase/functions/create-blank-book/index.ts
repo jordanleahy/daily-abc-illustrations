@@ -122,11 +122,11 @@ serve(async (req) => {
 
     console.log('Book created with ID:', book.id);
 
-    // Create cover page first (page_number 0)
+    // Create cover page first (page_number 1)
     const coverPage = {
       book_id: book.id,
       letter: 'Cover',
-      page_number: 0,
+      page_number: 1,
       title: sanitizedBookName,
       description: `An ABC learning book about ${sanitizedBookName.toLowerCase()}. Each page features engaging content and activities for young learners.`,
       content: {
@@ -144,7 +144,7 @@ serve(async (req) => {
         return {
           book_id: book.id,
           letter: letter,
-          page_number: index + 1,
+          page_number: index + 2,
           title: `${letter}`,
           description: null,
           content: {

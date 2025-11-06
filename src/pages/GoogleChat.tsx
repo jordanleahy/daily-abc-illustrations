@@ -332,11 +332,45 @@ export default function GoogleChat() {
   }, [messages.length, isLoading]);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
-    await sendMessage(input, undefined, messages);
+    const raw = input.trim();
+    if (!raw) return;
+
+    // If the user is asking for the Review/View Outline button, surface a clickable option in chat
+    const lower = raw.toLowerCase();
+    const asksForOutline = (
+      lower.includes('review outline') ||
+      lower.includes('view outline') ||
+      lower.includes('review button') ||
+      lower.includes('view button') ||
+      (lower.includes('review') && (lower.includes('outline') || lower.includes('pages'))) ||
+      lower.includes('open qa') || lower.includes('open review')
+    );
+
+    if (asksForOutline && currentSessionId) {
+      const userMsg = { role: 'user' as const, content: raw };
+      const action = createdBookId
+        ? { id: 'view_book', label: 'View Book', value: 'view_book' }
+        : { id: 'open_qa', label: '📖 View Pages & Add Photos', value: 'open_qa' };
+      const assistantMsg = {
+        role: 'assistant' as const,
+        content: createdBookId
+          ? 'Your book is ready. Use the button below to view it.'
+          : 'Your outline is ready. Use the button below to review pages and add photos.',
+        suggestedActions: [action]
+      };
+
+      const newMessages = [...messages, userMsg, assistantMsg];
+      // Update cache immediately
+      queryClient.setQueryData(['session-messages', currentSessionId], newMessages);
+      // Persist to DB
+      await updateSessionMessages({ sessionId: currentSessionId, messages: newMessages as any });
+      setInput('');
+      return;
+    }
+
+    await sendMessage(raw, undefined, messages);
     setInput('');
   };
-
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -484,9 +518,13 @@ export default function GoogleChat() {
   }, [currentSessionId, messages, parsedPageDetails, qaPageImages, createBookMutation, linkBookToSession]);
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
-    // Handle special create book actions
+    // Handle special actions
     if (action.value === 'open_qa') {
       handleOpenQAPanel();
+      return;
+    }
+    if (action.value === 'view_book') {
+      handleViewCreatedBook();
       return;
     }
     if (action.value === 'create_book') {

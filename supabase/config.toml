@@ -156,5 +156,8 @@ verify_jwt = true
 [functions.download-book-images]
 verify_jwt = true
 
+[functions.generate-png-variants]
+verify_jwt = true
+
 [functions.generate-page-system-prompts]
 verify_jwt = true

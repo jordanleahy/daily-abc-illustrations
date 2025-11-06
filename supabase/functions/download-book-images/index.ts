@@ -1,15 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 import JSZip from 'https://esm.sh/jszip@3.10.1';
+import { Image } from 'https://deno.land/x/imagescript@1.2.16/mod.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-
-interface PageImageData {
-  page_number: number;
-  letter: string;
-  image_url: string | null;
-}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -26,73 +21,125 @@ Deno.serve(async (req) => {
       );
     }
 
-    console.log(`📚 Fetching images for book: ${bookId}`);
+    console.log(`📚 Fetching PNG images for book: ${bookId}`);
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Fetch all pages with their latest images
-    const { data: pages, error: pagesError } = await supabase
-      .from('pages')
+    // Fetch all pages with their latest images and metadata
+    const { data: images, error: imagesError } = await supabase
+      .from('page_image_urls')
       .select(`
-        page_number,
-        letter,
-        page_image_urls!inner(image_url)
+        id,
+        image_url,
+        usage_metadata,
+        pages!inner(page_number, letter)
       `)
       .eq('book_id', bookId)
-      .eq('page_image_urls.is_latest', true)
-      .not('page_image_urls.image_url', 'is', null)
-      .order('page_number', { ascending: true });
+      .eq('is_latest', true)
+      .not('image_url', 'is', null)
+      .order('pages(page_number)', { ascending: true });
 
-    if (pagesError) {
-      console.error('Error fetching pages:', pagesError);
-      throw pagesError;
+    if (imagesError) {
+      console.error('Error fetching images:', imagesError);
+      throw imagesError;
     }
 
-    if (!pages || pages.length === 0) {
+    if (!images || images.length === 0) {
       return new Response(
         JSON.stringify({ error: 'No images found for this book' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`✅ Found ${pages.length} pages with images`);
+    console.log(`✅ Found ${images.length} pages with images`);
 
     // Create ZIP using JSZip
     const zip = new JSZip();
 
-    for (const page of pages) {
-      const imageUrl = (page.page_image_urls as any)[0]?.image_url;
-      if (!imageUrl) continue;
+    for (const image of images) {
+      const pageData = (image.pages as any);
+      const pageNumber = pageData.page_number;
+      const letter = pageData.letter;
+      const filename = `page-${String(pageNumber).padStart(2, '0')}-${letter}.png`;
 
       try {
-        console.log(`📥 Downloading page ${page.page_number}: ${page.letter}`);
+        console.log(`📥 Processing page ${pageNumber}: ${letter}`);
         
-        const response = await fetch(imageUrl);
-        if (!response.ok) {
-          console.error(`Failed to download ${imageUrl}: ${response.statusText}`);
-          continue;
+        let pngBytes: Uint8Array;
+
+        // Check if PNG already exists in metadata
+        const pngUrl = image.usage_metadata?.png_url;
+        
+        if (pngUrl) {
+          console.log(`✅ Using existing PNG from storage`);
+          const response = await fetch(pngUrl);
+          if (!response.ok) {
+            throw new Error(`Failed to download PNG: ${response.statusText}`);
+          }
+          pngBytes = new Uint8Array(await response.arrayBuffer());
+        } else {
+          console.log(`🔄 Converting WebP to PNG on-the-fly`);
+          
+          // Download the WebP image
+          const response = await fetch(image.image_url);
+          if (!response.ok) {
+            throw new Error(`Failed to download image: ${response.statusText}`);
+          }
+
+          const imageBytes = new Uint8Array(await response.arrayBuffer());
+
+          // Convert to PNG
+          const decodedImage = await Image.decode(imageBytes);
+          pngBytes = await decodedImage.encode();
+
+          // Store PNG for future use
+          const storagePath = `${bookId}/page-${String(pageNumber).padStart(2, '0')}-${letter}.png`;
+          
+          await supabase.storage
+            .from('page-images-png')
+            .upload(storagePath, pngBytes, {
+              contentType: 'image/png',
+              upsert: true,
+            });
+
+          const { data: urlData } = supabase.storage
+            .from('page-images-png')
+            .getPublicUrl(storagePath);
+
+          // Update metadata with PNG info
+          const updatedMetadata = {
+            ...(image.usage_metadata || {}),
+            png_url: urlData.publicUrl,
+            png_path: storagePath,
+            png_size: pngBytes.length,
+            converted_at: new Date().toISOString(),
+          };
+
+          await supabase
+            .from('page_image_urls')
+            .update({ usage_metadata: updatedMetadata })
+            .eq('id', image.id);
+
+          console.log(`💾 Stored PNG for future use`);
         }
-
-        const imageData = await response.arrayBuffer();
-        const filename = `page-${String(page.page_number).padStart(2, '0')}-${page.letter}.webp`;
         
-        zip.file(filename, new Uint8Array(imageData));
-
-        console.log(`✅ Downloaded ${filename} (${imageData.byteLength} bytes)`);
+        zip.file(filename, pngBytes);
+        console.log(`✅ Added ${filename} to ZIP (${(pngBytes.length / 1024).toFixed(2)} KB)`);
+        
       } catch (error) {
-        console.error(`Error downloading page ${page.page_number}:`, error);
+        console.error(`Error processing page ${pageNumber}:`, error);
       }
     }
 
     const files = Object.keys(zip.files);
     if (files.length === 0) {
       return new Response(
-        JSON.stringify({ error: 'Failed to download any images' }),
+        JSON.stringify({ error: 'Failed to process any images' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log(`📦 Creating ZIP with ${files.length} images`);
+    console.log(`📦 Creating ZIP with ${files.length} PNG images`);
 
     const zipBlob = await zip.generateAsync({ 
       type: 'uint8array',
@@ -100,7 +147,7 @@ Deno.serve(async (req) => {
       compressionOptions: { level: 6 }
     });
 
-    console.log(`✅ ZIP created successfully (${zipBlob.byteLength} bytes)`);
+    console.log(`✅ ZIP created successfully (${(zipBlob.byteLength / 1024 / 1024).toFixed(2)} MB)`);
 
     return new Response(zipBlob, {
       headers: {

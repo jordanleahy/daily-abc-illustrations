@@ -274,6 +274,13 @@ export function usePageImageUrls(pageId: string) {
       old.map(img => img.id === finalRecord.id ? finalRecord as PageImageUrlVersion : img)
     );
     
+    // Generate PNG variant asynchronously (don't block return)
+    supabase.functions.invoke('generate-png-variants', {
+      body: { pageImageUrlId: finalRecord.id }
+    }).catch(error => {
+      console.warn('PNG generation failed (non-blocking):', error);
+    });
+    
     return finalRecord;
   };
 

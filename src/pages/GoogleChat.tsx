@@ -159,6 +159,14 @@ export default function GoogleChat() {
     // Otherwise use parsed page details
     return parsedPageDetails?.length || 0;
   }, [isBookCreated, dbPages, parsedPageDetails]);
+  
+  // Get the max page number for navigation boundaries
+  const maxPageNumber = useMemo(() => {
+    if (isBookCreated && dbPages && dbPages.length > 0) {
+      return Math.max(...dbPages.map(p => p.page_number));
+    }
+    return pageCount;
+  }, [isBookCreated, dbPages, pageCount]);
 
   // Helper to get current page prompt - uses database if book is created, otherwise parses messages
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
@@ -689,8 +697,21 @@ export default function GoogleChat() {
   }, [qaPageImages, currentQAPage, pageCount, currentSessionId, updateQAPageImages, createdBookId, dbPages, user, queryClient]);
 
   const handleQAPageNavigation = useCallback((direction: 'next' | 'prev') => {
-    if (!parsedPageDetails) return;
+    // If book is created, use actual page numbers from database
+    if (isBookCreated && dbPages && dbPages.length > 0) {
+      const sortedPages = [...dbPages].sort((a, b) => a.page_number - b.page_number);
+      const currentIndex = sortedPages.findIndex(p => p.page_number === currentQAPage);
+      
+      if (direction === 'next' && currentIndex < sortedPages.length - 1) {
+        setCurrentQAPage(sortedPages[currentIndex + 1].page_number);
+      } else if (direction === 'prev' && currentIndex > 0) {
+        setCurrentQAPage(sortedPages[currentIndex - 1].page_number);
+      }
+      return;
+    }
     
+    // Pre-creation: use parsed page details with simple increment
+    if (!parsedPageDetails) return;
     const maxPage = parsedPageDetails.length;
     
     if (direction === 'next' && currentQAPage < maxPage) {
@@ -698,7 +719,7 @@ export default function GoogleChat() {
     } else if (direction === 'prev' && currentQAPage > 0) {
       setCurrentQAPage(currentQAPage - 1);
     }
-  }, [parsedPageDetails, currentQAPage]);
+  }, [parsedPageDetails, currentQAPage, isBookCreated, dbPages]);
 
   const handleRemoveQAImage = useCallback(async (pageNumber: number) => {
     if (createdBookId) {

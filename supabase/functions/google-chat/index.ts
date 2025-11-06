@@ -42,7 +42,7 @@ function parseSuggestions(aiResponse: string): {
   const CHARACTER_THEMES = new Set([
     'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
     'moana', 'mickey-mouse', 'toy-story', 
-    'pokemon', 'mario', 'daniel-tiger', 'benji-davies'
+    'pokemon', 'mario', 'daniel-tiger', 'benji-davies', 'black-and-white'
   ]);
 
   const suggestedActions = suggestionsText
@@ -181,12 +181,14 @@ mickey-mouse: Mickey Mouse
 toy-story: Toy Story
 pokemon: Pokémon
 mario: Mario
-benji-davies: Benji Davies Style (original art)${customStylesList}skip: Plain/Simple
+benji-davies: Benji Davies Style (original art)
+black-and-white: Black & White Classic${customStylesList}skip: Plain/Simple
 [/SUGGEST]"
 
 IMPORTANT: 
 - Always make this step skippable with "Plain/Simple" option
 - If user selects "benji-davies", use warm watercolor style with muted colors for ALL images
+- If user selects "black-and-white", use classic line art with high contrast for ALL images
 - If user selects a character theme, remember it and weave it into ALL subsequent questions
 - If user selects a character or style (not "skip"), DO NOT ask about art style - automatically use that style
 - If user skips, continue with plain/simple content and DO ask about art style later
@@ -269,6 +271,10 @@ A vibrant, action-packed book cover featuring Paw Patrol characters Chase (blue 
 **Cover: My First ABC Book**
 A warm, gentle watercolor-style illustration showing a small child with simple features sitting cross-legged in a cozy reading nook, surrounded by oversized alphabet letters floating around them like friendly companions. The letters A, B, and C are rendered in soft, muted blues and warm earth tones with visible brushstroke textures. Soft natural light filters through a window in the background, creating a peaceful, intimate atmosphere. The color palette uses dusty blues, sage greens, warm ochres, and soft creams characteristic of Benji Davies' work. The illustration has a painterly, hand-crafted quality with subtle textures and gentle gradients. The child's expression is curious and content, conveying emotional warmth. The composition feels cozy and inviting, like a quiet moment of discovery. Include text overlay displaying 'MY FIRST ABC BOOK' in large, clear, child-friendly letters.
 
+**Example Cover WITH Black and White Style:**
+**Cover: Classic ABC Adventures**
+A bold, high-contrast black and white line art illustration showing a cheerful child sitting among oversized alphabet blocks and books. The letters A, B, and C are drawn with thick, clean outlines and filled with solid black. The child has simple, expressive features rendered in classic line art style with clear contours and hatching for shading. The background features a simple bookshelf with books shown using parallel line work and cross-hatching techniques. The composition uses strong black and white contrast reminiscent of vintage children's book illustrations. Bold shapes, clear silhouettes, and decorative line patterns create visual interest without color. The style evokes classic educational materials and timeless storybook aesthetics with clean, professional linework. Include text overlay displaying 'CLASSIC ABC ADVENTURES' in large, clear, child-friendly letters.
+
 **Example Cover WITHOUT Theme (Plain/Simple) and No Text:**
 **Cover: My First ABC Book**
 A simple book cover illustration showing alphabet letters A, B, and C in bright primary colors on a clean white background. Basic shapes and clear typography. Minimal design with no specific artistic style. No text overlays. Clean illustration only.
@@ -317,6 +323,15 @@ A clean, colorful educational information card with three distinct badge section
 **Educational Focus Image:**
 A warm, hand-painted watercolor educational information card with three badge sections arranged vertically in the gentle, atmospheric style of Benji Davies. The background is a soft gradient from dusty sky blue at the top to warm cream at the bottom, with subtle paper texture visible. At the top, a rounded badge in muted teal shows "AGE: 2-4 YEARS" with a simple, expressive child icon rendered in minimal brushstrokes. In the middle, a sage green badge displays "PHONICS | EARLY LITERACY" with a small book icon featuring visible paint texture. At the bottom, a warm ochre badge reads "FOCUS: LETTER RECOGNITION" with three hand-painted alphabet letters (A, B, C) that feel tactile and inviting. All typography is friendly and rounded with a hand-lettered quality. Icons are minimal but emotionally expressive, characteristic of Benji Davies' simple yet warm character design. The overall feel is cozy, intimate, and hand-crafted, like a page from a beloved storybook. Soft shadows and gentle color transitions create depth. No additional text overlays beyond the badge content.
 
+**Example Educational Focus WITH Black and White Style:**
+**Educational Focus:**
+- Target Age: 2-4 Years
+- Learning Type: Phonics | Early Literacy
+- Specific Skill: Letter Recognition A-Z
+
+**Educational Focus Image:**
+A clean, professional black and white educational information card with three distinct badge sections arranged vertically using classic line art techniques. The background is white with subtle decorative border patterns created using simple line work. At the top, a badge with bold black outline shows "AGE: 2-4 YEARS" with a simple child icon rendered in solid black silhouette. In the middle, another outlined badge displays "PHONICS | EARLY LITERACY" with a book icon featuring hatching patterns for depth. At the bottom, a third badge reads "FOCUS: LETTER RECOGNITION" with three bold alphabet letters (A, B, C) drawn with thick outlines. All typography uses clear, friendly sans-serif lettering in black. Icons use a mix of solid fills, outline work, and cross-hatching for visual interest. The overall design is crisp, educational, and timeless, reminiscent of classic textbook illustrations and vintage educational materials. Strong contrast between black elements and white background ensures clarity. Decorative corner flourishes add visual polish. No additional text overlays beyond the badge content.
+
 After the Educational Focus section, continue with numbered page prompts (Page 1, Page 2, Page 3...).
 
 GENERATING DETAILED PAGE DESCRIPTIONS (CRITICAL):
@@ -336,6 +351,22 @@ If the user selected "Benji Davies Style", ALL page prompts (cover, educational 
 Example Page with Benji Davies Style:
 **Page 3: "A is for Apple"**
 A gentle watercolor illustration showing a small child with simple, expressive features reaching up toward a gnarled apple tree. The tree has a warm, lived-in quality with textured bark rendered in soft browns and grays. Three bright red apples hang from sturdy branches, painted with visible brushstrokes that give them weight and presence. The background features a misty, atmospheric landscape in muted blues and greens, suggesting a quiet autumn afternoon. Soft natural light filters through the leaves, creating dappled shadows on the child's upturned face. The child's expression conveys wonder and gentle joy. The overall mood is peaceful, intimate, and emotionally warm, characteristic of Benji Davies' storytelling approach. Colors are muted but rich: dusty blues, sage greens, warm ochres for the tree, and a soft cream for the sky. The illustration has a hand-painted, tactile quality with subtle paper textures visible. Include text overlay displaying 'APPLE' in large, clear, child-friendly letters.
+
+BLACK AND WHITE STYLE GUIDANCE (when selected):
+If the user selected "Black & White Classic", ALL page prompts (cover, educational focus, and content pages) must incorporate these characteristics:
+- High-contrast black and white only (no grays or color)
+- Bold, clean line art with thick outlines
+- Classic storybook illustration aesthetic
+- Use cross-hatching, stippling, and parallel lines for texture and shading
+- Strong silhouettes and clear shapes
+- Decorative line patterns and flourishes for visual interest
+- Timeless, educational material aesthetic
+- Clear, easy-to-read compositions perfect for young learners
+- Vintage children's book illustration style
+
+Example Page with Black and White Style:
+**Page 3: "A is for Apple"**
+A classic black and white line art illustration showing a cheerful child reaching toward an apple tree. The child is rendered with bold, clean outlines and simple facial features drawn in black ink. The apple tree has a thick trunk with vertical line patterns suggesting bark texture, and branches extend with decorative curls and swirls. Three large apples hang from the branches, each drawn with solid black outlines and filled with cross-hatching patterns to create dimension. The apples have small highlight circles left white to show shine. The background features simple grass indicated by short vertical lines at the bottom, and a few puffy clouds drawn with curved outlines and minimal internal lines. The child's clothing uses different hatching patterns (horizontal lines on the shirt, diagonal on pants) to distinguish garments. The overall composition is clean, bold, and educational, reminiscent of classic Dick and Jane readers or vintage Highlights magazine illustrations. Strong black and white contrast ensures clarity for young readers. Include text overlay displaying 'APPLE' in large, clear, child-friendly letters.
 
 CRITICAL TEXT OVERLAY INSTRUCTIONS:
 - If user selected "With Text": END each prompt with "Include text overlay displaying '[THE WORD]' in large, clear, child-friendly letters."

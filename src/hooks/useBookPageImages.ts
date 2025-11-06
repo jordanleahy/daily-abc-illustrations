@@ -33,7 +33,7 @@ export const useBookPageImages = (bookId: string | null | undefined) => {
       // Transform to Record<number, string> for easy lookup
       const imageMap: Record<number, string> = {};
       data?.forEach((item: any) => {
-        if (item.image_url && item.pages?.page_number) {
+        if (item.image_url && item.pages?.page_number !== undefined && item.pages?.page_number !== null) {
           imageMap[item.pages.page_number] = item.image_url;
         }
       });

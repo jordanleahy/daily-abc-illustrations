@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { Send, Image as ImageIcon, BookOpen, ChevronLeft } from 'lucide-react';
+import { Send, Image as ImageIcon, BookOpen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ImageUpload } from '@/components/ImageUpload';
@@ -11,14 +11,12 @@ interface InputAreaProps {
   showImageUpload: boolean;
   createdBookId: string | null;
   isMobile: boolean;
-  shouldShowOpenButton: boolean;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
   onImageUploadToggle: (show: boolean) => void;
   onImageSelect: (file: File) => void;
   onViewBook: () => void;
-  onOpenQAPanel: () => void;
 }
 
 export const InputArea = memo(({
@@ -27,14 +25,12 @@ export const InputArea = memo(({
   showImageUpload,
   createdBookId,
   isMobile,
-  shouldShowOpenButton,
   onInputChange,
   onSend,
   onKeyPress,
   onImageUploadToggle,
   onImageSelect,
-  onViewBook,
-  onOpenQAPanel
+  onViewBook
 }: InputAreaProps) => {
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
@@ -61,16 +57,6 @@ export const InputArea = memo(({
   return (
     <div className="border-t bg-background p-4">
       <div className="mx-auto flex max-w-4xl gap-2">
-        {shouldShowOpenButton && (
-          <Button
-            onClick={onOpenQAPanel}
-            variant="outline"
-            className="shrink-0"
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">Open</span>
-          </Button>
-        )}
         <Input
           value={input}
           onChange={(e) => onInputChange(e.target.value)}

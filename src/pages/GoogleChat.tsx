@@ -864,7 +864,7 @@ export default function GoogleChat() {
       showHeader={true}
       fullHeight={true}
       onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
-      showReviewButton={(shouldShowQACheckpoint && !showQACheckpoint) || !!createdBookId}
+      showReviewButton={!!createdBookId || (shouldShowQACheckpoint && !showQACheckpoint)}
       onReviewClick={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
       reviewButtonVariant={createdBookId ? 'view-book' : 'review'}
     >
@@ -937,7 +937,7 @@ export default function GoogleChat() {
             showImageUpload={showImageUpload}
             createdBookId={createdBookId}
             isMobile={isMobile}
-            shouldShowOpenButton={!showQACheckpoint && (shouldShowQACheckpoint || !!createdBookId)}
+            shouldShowOpenButton={!showQACheckpoint && (!!createdBookId || shouldShowQACheckpoint)}
             onInputChange={setInput}
             onSend={handleSend}
             onKeyPress={handleKeyPress}

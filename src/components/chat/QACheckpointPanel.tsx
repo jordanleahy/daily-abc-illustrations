@@ -28,6 +28,7 @@ interface QACheckpointPanelProps {
   coverPageId?: string | null;
   bookId?: string | null;
   onCoverUpload?: (file: File) => void;
+  thumbnailUrl?: string | null;
   pageTextOverlays?: Record<number, string>;
   onUpdatePageText?: (pageNumber: number, newText: string) => void;
   onPublish?: () => void;
@@ -52,6 +53,7 @@ export function QACheckpointPanel({
   coverPageId,
   bookId,
   onCoverUpload,
+  thumbnailUrl,
   pageTextOverlays = {},
   onUpdatePageText,
   onPublish,
@@ -316,22 +318,32 @@ export function QACheckpointPanel({
 
       {/* Sticky Footer with Actions */}
       <div className="sticky bottom-0 bg-background border-t px-4 py-3 space-y-3 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-        {/* Cover Image Upload - Show when book is created */}
+        {/* Thumbnail Image Upload - Show when book is created */}
         {isBookCreated && onCoverUpload && (
           <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Cover Image (Optional)</p>
+            <p className="text-xs font-medium text-muted-foreground">Book Thumbnail (Optional)</p>
             <div className="h-48 rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
-              {displayImages[1] ? (
+              {thumbnailUrl ? (
                 <div className="relative w-full h-full group">
                   <img 
-                    src={displayImages[1]} 
-                    alt="Book cover preview"
+                    src={thumbnailUrl} 
+                    alt="Book thumbnail preview"
                     className="w-full h-full object-cover"
                   />
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => onRemoveImage(1)}
+                    onClick={() => {
+                      // Trigger file picker to replace
+                      const input = document.createElement('input');
+                      input.type = 'file';
+                      input.accept = 'image/png,image/jpeg,image/jpg,image/webp';
+                      input.onchange = (e) => {
+                        const file = (e.target as HTMLInputElement).files?.[0];
+                        if (file) onCoverUpload(file);
+                      };
+                      input.click();
+                    }}
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
                   >
                     Replace

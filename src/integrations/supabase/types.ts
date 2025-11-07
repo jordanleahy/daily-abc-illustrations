@@ -172,6 +172,7 @@ export type Database = {
           status: Database["public"]["Enums"]["publication_status"]
           style_name: string | null
           tags: string[] | null
+          thumbnail_url: string | null
           total_pages: number | null
           updated_at: string
           user_id: string
@@ -194,6 +195,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["publication_status"]
           style_name?: string | null
           tags?: string[] | null
+          thumbnail_url?: string | null
           total_pages?: number | null
           updated_at?: string
           user_id: string
@@ -216,6 +218,7 @@ export type Database = {
           status?: Database["public"]["Enums"]["publication_status"]
           style_name?: string | null
           tags?: string[] | null
+          thumbnail_url?: string | null
           total_pages?: number | null
           updated_at?: string
           user_id?: string

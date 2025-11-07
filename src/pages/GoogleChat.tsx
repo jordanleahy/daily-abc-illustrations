@@ -977,20 +977,20 @@ export default function GoogleChat() {
     fetchCoverPage();
   }, [createdBookId]);
 
-  // Handle cover image upload after book creation
-  const handleCoverImageUpload = useCallback(async (file: File) => {
-    if (!coverPageId || !createdBookId) {
-      toast.error('Cover page information not found');
+  // Handle thumbnail image upload (separate from cover page)
+  const handleThumbnailUpload = useCallback(async (file: File) => {
+    if (!createdBookId) {
+      toast.error('Book not created yet');
       return;
     }
     
     try {
-      toast.info('Uploading cover image...');
+      toast.info('Uploading thumbnail...');
       
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('page-images')
-        .upload(`${user?.id}/${createdBookId}/cover-${Date.now()}.png`, file, {
+        .upload(`${user?.id}/${createdBookId}/thumbnail-${Date.now()}.png`, file, {
           cacheControl: '3600',
           upsert: false,
         });
@@ -1002,46 +1002,47 @@ export default function GoogleChat() {
         .from('page-images')
         .getPublicUrl(uploadData.path);
       
-      // Get next version number
-      const { data: existingImages } = await supabase
-        .from('page_image_urls')
-        .select('version_number')
-        .eq('page_id', coverPageId)
-        .order('version_number', { ascending: false })
-        .limit(1);
+      // Update book with thumbnail URL
+      const { error: updateError } = await supabase
+        .from('books')
+        .update({ thumbnail_url: publicUrl })
+        .eq('id', createdBookId);
       
-      const nextVersion = (existingImages?.[0]?.version_number || 0) + 1;
+      if (updateError) throw updateError;
       
-      // Mark all previous versions as not latest
-      await supabase
-        .from('page_image_urls')
-        .update({ is_latest: false })
-        .eq('page_id', coverPageId);
+      // Invalidate book query to refetch with new thumbnail
+      await queryClient.invalidateQueries({ queryKey: ['book', createdBookId] });
       
-      // Insert new image record
-      const { error: insertError } = await supabase
-        .from('page_image_urls')
-        .insert({
-        page_id: coverPageId,
-        book_id: createdBookId,
-        user_id: user?.id,
-        version_number: nextVersion,
-        image_url: publicUrl,
-        source_type: 'user_uploaded',
-        is_latest: true,
-      });
-      
-      if (insertError) throw insertError;
-      
-      // Invalidate queries to refetch images
-      await queryClient.invalidateQueries({ queryKey: ['book-page-images', createdBookId] });
-      
-      toast.success('Cover image uploaded successfully!');
+      toast.success('Thumbnail uploaded successfully!');
     } catch (error: any) {
-      console.error('Cover upload error:', error);
-      toast.error('Failed to upload cover image: ' + error.message);
+      console.error('Thumbnail upload error:', error);
+      toast.error('Failed to upload thumbnail: ' + error.message);
     }
-  }, [coverPageId, createdBookId, user, queryClient]);
+  }, [createdBookId, user, queryClient]);
+
+  // Fetch current thumbnail URL
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  
+  useEffect(() => {
+    if (!createdBookId) {
+      setThumbnailUrl(null);
+      return;
+    }
+    
+    const fetchThumbnail = async () => {
+      const { data, error } = await supabase
+        .from('books')
+        .select('thumbnail_url')
+        .eq('id', createdBookId)
+        .single();
+      
+      if (!error && data?.thumbnail_url) {
+        setThumbnailUrl(data.thumbnail_url);
+      }
+    };
+    
+    fetchThumbnail();
+  }, [createdBookId]);
 
   return (
     <PageLayout 
@@ -1194,7 +1195,8 @@ export default function GoogleChat() {
                 onCreateBook={handleCreateBook}
                 coverPageId={coverPageId}
                 bookId={createdBookId}
-                onCoverUpload={handleCoverImageUpload}
+                onCoverUpload={handleThumbnailUpload}
+                thumbnailUrl={thumbnailUrl}
                 pageTextOverlays={pageTextOverlays}
                 onUpdatePageText={handleUpdatePageText}
                 onPublish={handlePublishBook}
@@ -1229,7 +1231,8 @@ export default function GoogleChat() {
               onCreateBook={handleCreateBook}
               coverPageId={coverPageId}
               bookId={createdBookId}
-              onCoverUpload={handleCoverImageUpload}
+              onCoverUpload={handleThumbnailUpload}
+              thumbnailUrl={thumbnailUrl}
               pageTextOverlays={pageTextOverlays}
               onUpdatePageText={handleUpdatePageText}
               onPublish={handlePublishBook}

@@ -12,6 +12,7 @@ import { parseRecommendations } from '@/utils/recommendationParser';
 interface MessageItemProps {
   message: Message;
   onQuickReply?: (action: SuggestedAction) => void;
+  isBookCreated?: boolean;
 }
 
 const slugify = (text: string): string => {
@@ -23,7 +24,7 @@ const slugify = (text: string): string => {
     .replace(/^-+|-+$/g, '');
 };
 
-export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) => {
+export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: MessageItemProps) => {
   const isUser = message.role === 'user';
   
   // Strip out [CLARIFICATION_NEEDED: ...] tags that should never be shown to users
@@ -32,8 +33,8 @@ export const MessageItem = memo(({ message, onQuickReply }: MessageItemProps) =>
     content = content.replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '').trim();
   }
 
-  // Parse book recommendations from AI responses
-  const { recommendations, remainingText } = typeof content === 'string' && !isUser
+  // Parse book recommendations from AI responses (disabled if book already created)
+  const { recommendations, remainingText } = typeof content === 'string' && !isUser && !isBookCreated
     ? parseRecommendations(content)
     : { recommendations: [], remainingText: content };
 

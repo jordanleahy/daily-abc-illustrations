@@ -976,6 +976,7 @@ export default function GoogleChat() {
                 <MessageList 
                   messages={messagesWithCreateOptions}
                   onQuickReply={handleQuickReply}
+                  isBookCreated={!!createdBookId}
                 />
                 {isLoading && (
                   <div className="flex justify-start mt-4">

@@ -6,9 +6,10 @@ import type { SuggestedAction } from '@/hooks/useGoogleChat';
 interface MessageListProps {
   messages: Message[];
   onQuickReply?: (action: SuggestedAction) => void;
+  isBookCreated?: boolean;
 }
 
-export const MessageList = memo(({ messages, onQuickReply }: MessageListProps) => {
+export const MessageList = memo(({ messages, onQuickReply, isBookCreated }: MessageListProps) => {
   // Filter out system messages
   const visibleMessages = messages.filter(msg => msg.role !== 'system');
 
@@ -19,6 +20,7 @@ export const MessageList = memo(({ messages, onQuickReply }: MessageListProps) =
           key={index}
           message={message}
           onQuickReply={onQuickReply}
+          isBookCreated={isBookCreated}
         />
       ))}
     </div>

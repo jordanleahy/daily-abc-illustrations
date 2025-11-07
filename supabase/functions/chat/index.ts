@@ -44,6 +44,8 @@ const messageSchema = z.object({
 
 const requestSchema = z.object({
   messages: z.array(messageSchema).min(1).max(100),
+  outlineReady: z.boolean().optional(),
+  bookCreated: z.boolean().optional(),
 });
 
 
@@ -168,10 +170,12 @@ serve(async (req) => {
       }
     });
 
-    // Prepare system message
+    // Prepare system message with context-aware instructions
     const systemMessage = {
       role: 'system',
-      content: agentConfig.instructions
+      content: agentConfig.instructions + (validationResult.data.bookCreated 
+        ? '\n\nIMPORTANT: A book has already been created in this session. You should:\n- Continue general conversation and answer questions\n- Provide help and guidance about their created book\n- NOT suggest creating new books\n- NOT provide [SUGGEST] action buttons for new books\n- NOT include book recommendations\n- Inform user they need to start a new chat session to create another book'
+        : '')
     };
 
     // Combine system message with formatted user messages

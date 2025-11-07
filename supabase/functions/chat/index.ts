@@ -178,7 +178,7 @@ serve(async (req) => {
           ? '\n\nIMPORTANT: A book has already been created in this session. You should:\n- Continue general conversation and answer questions\n- Provide help and guidance about their created book\n- NOT suggest creating new books\n- NOT provide [SUGGEST] action buttons for new books\n- NOT include book recommendations\n- Inform user they need to start a new chat session to create another book'
           : '') +
         (validationResult.data.outlineReady && !validationResult.data.bookCreated
-          ? '\n\nUI Button Instructions: When telling users to open the QA panel to review pages and add photos, instruct them to click the "📖 View Pages & Add Photos" button that appears in your response messages, or the "Review Outline" floating button at the bottom-right of the screen.'
+          ? '\n\nUI Button Instructions: When telling users to open the QA panel to review pages and add photos, instruct them to click the "📖 View Pages & Add Photos" button that appears in your response messages, or the "Review Outline" floating button at the bottom-right of the screen.\n\nREGENERATION INSTRUCTIONS: If the user asks to change the style, theme, tone, or regenerate any part of the book outline, you MUST output the COMPLETE outline again in the exact same format:\n\n**Cover: [Title]**\n[Full cover description]\n\n**Educational Focus:**\n- Target Age: [age]\n- Learning Type: [type]\n- Specific Skill: [skill]\n\n**Educational Focus Image:**\n[Image prompt]\n\n**Page 1: [Title]**\n[Page description]\n\n**Page 2: [Title]**\n[Page description]\n\n...and so on for ALL pages.\n\nDo NOT just describe what you changed - output the complete formatted outline so the system can parse it.'
           : '')
     };
 

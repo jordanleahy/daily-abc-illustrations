@@ -159,6 +159,22 @@ export default function GoogleChat() {
     [messages]
   );
 
+  // Clear cached prompts when new outline is detected (for regeneration support)
+  useEffect(() => {
+    if (parsedPageDetails && parsedPageDetails.length > 0) {
+      // Check if this is a new/different outline by comparing page count
+      const currentPageCount = Object.keys(qaPagePrompts).length;
+      const newPageCount = parsedPageDetails.length + (educationalFocus ? 2 : 1);
+      
+      // If page count changed, or if we have parsed details but empty cache, clear the cache
+      if (currentPageCount !== newPageCount || currentPageCount === 0) {
+        console.log('[QA Debug] New outline detected, clearing cached prompts');
+        setQAPagePrompts({});
+        toast.info('Prompts updated! Open the QA panel to see the new descriptions.');
+      }
+    }
+  }, [parsedPageDetails, educationalFocus]);
+
   const pageCount = useMemo(() => {
     // If book is created, use database pages count
     if (isBookCreated && dbPages) {

@@ -994,6 +994,10 @@ export default function GoogleChat() {
       
       // Invalidate book query to refetch with new thumbnail
       await queryClient.invalidateQueries({ queryKey: ['book', createdBookId] });
+      await queryClient.invalidateQueries({ queryKey: ['book-thumbnail', createdBookId] });
+      
+      // Also update the local state immediately
+      setThumbnailUrl(publicUrl);
       
       toast.success('Thumbnail uploaded successfully!');
     } catch (error: any) {

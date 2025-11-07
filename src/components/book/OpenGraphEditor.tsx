@@ -17,6 +17,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { ImageTextOverlayEditor } from '@/components/page-prompts/ImageTextOverlayEditor';
 import { processImageForOpenGraph, formatFileSize } from '@/utils/imageProcessor';
+import { useQuery } from '@tanstack/react-query';
 
 interface OpenGraphEditorProps {
   bookId: string;
@@ -32,6 +33,21 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
+  
+  // Fetch book thumbnail from books table
+  const { data: bookData } = useQuery({
+    queryKey: ['book-thumbnail', bookId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('books')
+        .select('thumbnail_url')
+        .eq('id', bookId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 30000,
+  });
   
   // Debug logging for OpenGraph editor
   console.log('🎨 [OpenGraphEditor] Rendering with:', {
@@ -55,11 +71,13 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const currentTitle = seoMetadata?.seo_title || bookTitle;
   const currentDescription = seoMetadata?.seo_description || bookDescription || '';
   const currentImage = seoMetadata?.og_image_url;
-  const fallbackImage = firstPageImage?.image_url || null;
+  const bookThumbnail = bookData?.thumbnail_url || null;
+  const fallbackImage = bookThumbnail || firstPageImage?.image_url || null;
 
   // Debug the current state of images
   console.log('🖼️ [OpenGraphEditor] Image state:', {
     currentImage,
+    bookThumbnail,
     fallbackImage,
     firstPageImage: firstPageImage ? {
       url: firstPageImage.image_url

@@ -24,6 +24,9 @@ import { BOOK_TYPES } from '@/config/bookTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import { useUpdateBookStatus } from '@/hooks/useUpdateBookStatus';
+import { useQuery } from '@tanstack/react-query';
+import { PublicationStatus } from '@/types/shared/status';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
@@ -114,6 +117,24 @@ export default function GoogleChat() {
   
   // Fetch book pages from database if book exists
   const { pages: dbPages } = useBookPages(createdBookId || undefined);
+  
+  // Fetch book status
+  const { data: bookData } = useQuery({
+    queryKey: ['book', createdBookId],
+    queryFn: async () => {
+      if (!createdBookId) return null;
+      const { data, error } = await supabase
+        .from('books')
+        .select('status')
+        .eq('id', createdBookId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!createdBookId,
+  });
+  
+  const updateBookStatusMutation = useUpdateBookStatus();
 
   // QA Checkpoint state
   const [currentQAPage, setCurrentQAPage] = useState(1);
@@ -887,62 +908,23 @@ export default function GoogleChat() {
     }
   }, [createdBookId, dbPages, queryClient]);
 
-  // Publish book to daily content
-  const handlePublishBook = useCallback(async () => {
-    if (!createdBookId || !dbPages) {
-      toast.error('Book not ready to publish');
+  // Toggle book status between draft and published
+  const handleToggleBookStatus = useCallback(async () => {
+    if (!createdBookId) {
+      toast.error('Book not ready');
       return;
     }
     
-    // Get book details
-    const { data: book, error: bookError } = await supabase
-      .from('books')
-      .select('book_name, book_description')
-      .eq('id', createdBookId)
-      .single();
+    const currentStatus = bookData?.status || PublicationStatus.DRAFT;
+    const newStatus = currentStatus === PublicationStatus.DRAFT 
+      ? PublicationStatus.PUBLISHED 
+      : PublicationStatus.DRAFT;
     
-    if (bookError || !book) {
-      toast.error('Failed to fetch book details');
-      return;
-    }
-    
-    const loadingToast = toast.loading('Publishing to daily content...');
-    
-    try {
-      // Insert into daily_published table with status 'queued'
-      const { data, error } = await supabase
-        .from('daily_published')
-        .insert({
-          book_id: createdBookId,
-          title: book.book_name,
-          description: book.book_description || '',
-          status: 'queued',
-          is_active: false,
-        })
-        .select()
-        .single();
-      
-      if (error) {
-        console.error('Publish error:', error);
-        toast.error('Failed to publish book: ' + error.message, { id: loadingToast });
-        return;
-      }
-      
-      toast.success('Book queued for publication!', {
-        id: loadingToast,
-        description: 'Your book will be published in the daily content rotation.'
-      });
-      
-      // Close QA panel
-      setShowQACheckpoint(false);
-      
-      // Navigate to schedule page to see the book in queue
-      navigate('/schedule');
-    } catch (error: any) {
-      console.error('Publish error:', error);
-      toast.error('Failed to publish book', { id: loadingToast });
-    }
-  }, [createdBookId, dbPages, navigate]);
+    updateBookStatusMutation.mutate({
+      bookId: createdBookId,
+      status: newStatus,
+    });
+  }, [createdBookId, bookData?.status, updateBookStatusMutation]);
 
   // Extract page text overlays from database pages
   const pageTextOverlays = useMemo(() => {
@@ -1195,11 +1177,12 @@ export default function GoogleChat() {
                 onCreateBook={handleCreateBook}
                 coverPageId={coverPageId}
                 bookId={createdBookId}
-                onCoverUpload={handleThumbnailUpload}
-                thumbnailUrl={thumbnailUrl}
-                pageTextOverlays={pageTextOverlays}
-                onUpdatePageText={handleUpdatePageText}
-                onPublish={handlePublishBook}
+              onCoverUpload={handleThumbnailUpload}
+              thumbnailUrl={thumbnailUrl}
+              pageTextOverlays={pageTextOverlays}
+              onUpdatePageText={handleUpdatePageText}
+              onToggleStatus={handleToggleBookStatus}
+              bookStatus={(bookData?.status as PublicationStatus) || PublicationStatus.DRAFT}
               />
             </SheetContent>
           </Sheet>
@@ -1231,11 +1214,12 @@ export default function GoogleChat() {
               onCreateBook={handleCreateBook}
               coverPageId={coverPageId}
               bookId={createdBookId}
-              onCoverUpload={handleThumbnailUpload}
-              thumbnailUrl={thumbnailUrl}
-              pageTextOverlays={pageTextOverlays}
-              onUpdatePageText={handleUpdatePageText}
-              onPublish={handlePublishBook}
+                onCoverUpload={handleThumbnailUpload}
+                thumbnailUrl={thumbnailUrl}
+                pageTextOverlays={pageTextOverlays}
+                onUpdatePageText={handleUpdatePageText}
+                onToggleStatus={handleToggleBookStatus}
+                bookStatus={(bookData?.status as PublicationStatus) || PublicationStatus.DRAFT}
             />
           </div>
         )}

@@ -3,11 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
 import { Shimmer } from '@/components/ui/shimmer';
-import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil } from 'lucide-react';
+import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
+import { PublicationStatus } from '@/types/shared/status';
 
 interface QACheckpointPanelProps {
   showQACheckpoint: boolean;
@@ -31,7 +32,8 @@ interface QACheckpointPanelProps {
   thumbnailUrl?: string | null;
   pageTextOverlays?: Record<number, string>;
   onUpdatePageText?: (pageNumber: number, newText: string) => void;
-  onPublish?: () => void;
+  onToggleStatus?: () => void;
+  bookStatus?: PublicationStatus;
 }
 
 export function QACheckpointPanel({
@@ -56,7 +58,8 @@ export function QACheckpointPanel({
   thumbnailUrl,
   pageTextOverlays = {},
   onUpdatePageText,
-  onPublish,
+  onToggleStatus,
+  bookStatus = PublicationStatus.DRAFT,
 }: QACheckpointPanelProps) {
   const navigate = useNavigate();
   const [hasClickedCopy, setHasClickedCopy] = useState(false);
@@ -369,16 +372,28 @@ export function QACheckpointPanel({
           </div>
         )}
         
-        {/* Publish Button - Show when all images are uploaded */}
-        {allImagesUploaded && onPublish && (
+        {/* Publish/Unpublish Toggle - Show when all images are uploaded */}
+        {allImagesUploaded && onToggleStatus && (
           <Button
-            variant="default"
+            variant={bookStatus === PublicationStatus.DRAFT ? 'default' : 'outline'}
             size="lg"
-            onClick={onPublish}
-            className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+            onClick={onToggleStatus}
+            className={bookStatus === PublicationStatus.DRAFT 
+              ? "w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+              : "w-full"
+            }
           >
-            <Send className="h-4 w-4 mr-2" />
-            Publish Book to Daily Content
+            {bookStatus === PublicationStatus.DRAFT ? (
+              <>
+                <FileUp className="h-4 w-4 mr-2" />
+                Publish Book
+              </>
+            ) : (
+              <>
+                <FileX className="h-4 w-4 mr-2" />
+                Unpublish Book
+              </>
+            )}
           </Button>
         )}
         

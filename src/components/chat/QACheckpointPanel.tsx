@@ -321,17 +321,17 @@ export function QACheckpointPanel({
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">Cover Image (Optional)</p>
             <div className="h-48 rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
-              {displayImages[0] ? (
+              {displayImages[1] ? (
                 <div className="relative w-full h-full group">
                   <img 
-                    src={displayImages[0]} 
+                    src={displayImages[1]} 
                     alt="Book cover preview"
                     className="w-full h-full object-cover"
                   />
                   <Button
                     variant="secondary"
                     size="sm"
-                    onClick={() => onRemoveImage(0)}
+                    onClick={() => onRemoveImage(1)}
                     className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
                   >
                     Replace

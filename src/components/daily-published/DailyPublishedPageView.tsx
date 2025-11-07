@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { PublicPageImage } from './PublicPageImage';
+import { TextOverlay } from '@/components/ui/text-overlay';
 import { FreemiumHeader } from './FreemiumHeader';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { formatTimeRemaining } from '@/utils/timeUtils';
@@ -102,6 +103,15 @@ export function DailyPublishedPageView({
               {/* Large illustration area with tap-to-advance overlay */}
               <div className="aspect-square bg-gradient-to-br from-background to-muted/50 relative">
                 <PublicPageImage pageId={page.id} bookId={bookId} />
+                
+                {/* CSS Text Overlay - Only for GoogleChat books with textOverlay enabled */}
+                {page.content?.textOverlay?.enabled && (
+                  <TextOverlay 
+                    text={page.content.textOverlay.text}
+                    show={true}
+                  />
+                )}
+                
                 {/* Transparent overlay for tap-to-advance that doesn't block image context menu */}
                 <div 
                   className="absolute inset-0 cursor-pointer"

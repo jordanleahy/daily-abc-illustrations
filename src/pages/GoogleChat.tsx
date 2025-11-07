@@ -847,6 +847,56 @@ export default function GoogleChat() {
     }
   }, [qaPageImages, currentSessionId, updateQAPageImages, createdBookId]);
 
+  // Update page text overlay
+  const handleUpdatePageText = useCallback(async (pageNumber: number, newText: string) => {
+    if (!createdBookId || !dbPages) return;
+    
+    const page = dbPages.find(p => p.page_number === pageNumber);
+    if (!page) {
+      toast.error('Page not found');
+      return;
+    }
+    
+    try {
+      // Update the page content with new text overlay
+      const updatedContent = {
+        ...(page.content || {}),
+        textOverlay: {
+          ...((page.content as any)?.textOverlay || {}),
+          enabled: true,
+          text: newText,
+          position: 'bottom-center' as const
+        }
+      } as any;
+      
+      const { error } = await supabase
+        .from('pages')
+        .update({ 
+          content: updatedContent,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', page.id);
+      
+      if (error) throw error;
+      
+      // Invalidate queries to refresh
+      await queryClient.invalidateQueries({ queryKey: ['book-pages', createdBookId] });
+    } catch (error) {
+      console.error('Error updating text:', error);
+      toast.error('Failed to update text');
+    }
+  }, [createdBookId, dbPages, queryClient]);
+
+  // Extract page text overlays from database pages
+  const pageTextOverlays = useMemo(() => {
+    if (!dbPages) return {};
+    
+    return dbPages.reduce((acc, page) => ({
+      ...acc,
+      [page.page_number]: (page.content as any)?.textOverlay?.text || page.title
+    }), {} as Record<number, string>);
+  }, [dbPages]);
+
   // Fetch cover page ID when book is created
   useEffect(() => {
     if (!createdBookId) {
@@ -1088,6 +1138,8 @@ export default function GoogleChat() {
                 coverPageId={coverPageId}
                 bookId={createdBookId}
                 onCoverUpload={handleCoverImageUpload}
+                pageTextOverlays={pageTextOverlays}
+                onUpdatePageText={handleUpdatePageText}
               />
             </SheetContent>
           </Sheet>
@@ -1120,6 +1172,8 @@ export default function GoogleChat() {
               coverPageId={coverPageId}
               bookId={createdBookId}
               onCoverUpload={handleCoverImageUpload}
+              pageTextOverlays={pageTextOverlays}
+              onUpdatePageText={handleUpdatePageText}
             />
           </div>
         )}

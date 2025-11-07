@@ -109,6 +109,13 @@ export interface Page {
     funFact: string;
     /** Interactive activity or exercise for engagement */
     activity: string;
+    /** CSS text overlay configuration for GoogleChat books */
+    textOverlay?: {
+      enabled: boolean;
+      text: string;
+      position: 'bottom-center';
+      createdAt?: string;
+    };
   };
   /** ID of the currently deployed system prompt for this page */
   current_system_prompt_id?: string;

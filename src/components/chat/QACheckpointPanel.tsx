@@ -3,9 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
 import { Shimmer } from '@/components/ui/shimmer';
-import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink } from 'lucide-react';
+import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { TextOverlay } from '@/components/ui/text-overlay';
+import { InlineEditInput } from '@/components/ui/inline-edit-input';
 
 interface QACheckpointPanelProps {
   showQACheckpoint: boolean;
@@ -26,6 +28,8 @@ interface QACheckpointPanelProps {
   coverPageId?: string | null;
   bookId?: string | null;
   onCoverUpload?: (file: File) => void;
+  pageTextOverlays?: Record<number, string>;
+  onUpdatePageText?: (pageNumber: number, newText: string) => void;
 }
 
 export function QACheckpointPanel({
@@ -47,17 +51,40 @@ export function QACheckpointPanel({
   coverPageId,
   bookId,
   onCoverUpload,
+  pageTextOverlays = {},
+  onUpdatePageText,
 }: QACheckpointPanelProps) {
   const navigate = useNavigate();
   const [hasClickedCopy, setHasClickedCopy] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isEditingText, setIsEditingText] = useState(false);
 
   const currentCoverPrompt = qaPagePrompts[0] || null;
+  
+  // Get current page text from database or extract from prompt
+  const currentPageText = pageTextOverlays[currentQAPage] || (() => {
+    const prompt = getCurrentPagePrompt(currentQAPage);
+    if (!prompt) return '';
+    
+    // Extract title from prompt
+    const titleMatch = prompt.match(/^(.+?)(?:\n|$)/);
+    let title = titleMatch ? titleMatch[1].trim() : '';
+    
+    // Clean the title
+    title = title
+      .replace(/\*\*/g, '')
+      .replace(/^(Page \d+:|Cover:)\s*/i, '')
+      .replace(/^["']|["']$/g, '')
+      .trim();
+    
+    return title;
+  })();
 
   // Reset states when page changes
   useEffect(() => {
     setHasClickedCopy(false);
     setShowConfirmation(false);
+    setIsEditingText(false);
   }, [currentQAPage]);
 
   // Handle copy with confirmation and delayed transition
@@ -144,6 +171,40 @@ export function QACheckpointPanel({
                   alt={`Page ${currentQAPage} preview`}
                   className="w-full h-full object-contain"
                 />
+                
+                {/* Text Overlay with Editing */}
+                {currentPageText && (
+                  <>
+                    {isEditingText && onUpdatePageText ? (
+                      <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">
+                        <InlineEditInput
+                          value={currentPageText}
+                          onSave={(newText) => {
+                            onUpdatePageText(currentQAPage, newText);
+                            setIsEditingText(false);
+                            toast.success('Text updated!');
+                          }}
+                          className="text-white text-center font-semibold text-lg bg-transparent border-white/30"
+                          isEditing={true}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        <TextOverlay text={currentPageText} show={true} />
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => setIsEditingText(true)}
+                          className="absolute bottom-2 left-2 h-8 w-8 bg-black/60 hover:bg-black/80 text-white opacity-70 hover:opacity-100 transition-opacity"
+                          title="Edit text"
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </>
+                    )}
+                  </>
+                )}
+                
                 <Button
                   variant="secondary"
                   size="sm"

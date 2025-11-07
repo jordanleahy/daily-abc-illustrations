@@ -460,7 +460,13 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       content: {
         mainConcept: sanitizeText(page.content?.mainConcept || '', 500),
         funFact: sanitizeText(page.content?.funFact || '', 500),
-        activity: sanitizeText(page.content?.activity || '', 500)
+        activity: sanitizeText(page.content?.activity || '', 500),
+        textOverlay: {
+          enabled: true,
+          text: sanitizeText(page.title, 100),
+          position: 'bottom-center' as const,
+          createdAt: new Date().toISOString()
+        }
       }
     }));
 
@@ -513,7 +519,13 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       content: {
         mainConcept: sanitizeText(bookData.bookName, 500),
         funFact: sanitizeText(bookData.bookDescription || '', 500),
-        activity: ''
+        activity: '',
+        textOverlay: {
+          enabled: true,
+          text: sanitizeText(bookData.bookName, 100),
+          position: 'bottom-center' as const,
+          createdAt: new Date().toISOString()
+        }
       }
     };
 
@@ -530,7 +542,13 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         content: {
           mainConcept: sanitizeText(educationalFocus.targetAge, 200),
           funFact: sanitizeText(educationalFocus.learningType, 200),
-          activity: sanitizeText(educationalFocus.specificSkill, 200)
+          activity: sanitizeText(educationalFocus.specificSkill, 200),
+          textOverlay: {
+            enabled: true,
+            text: 'Educational Focus',
+            position: 'bottom-center' as const,
+            createdAt: new Date().toISOString()
+          }
         }
       };
       pages.push(eduFocusPage);

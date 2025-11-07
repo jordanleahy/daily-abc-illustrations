@@ -167,7 +167,8 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
         // First, strip out [CLARIFICATION_NEEDED: ...] tags that should never be shown
         let cleanedText = text.replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '').trim();
         
-        const suggestRegex = /\[SUGGEST\]([\s\S]*?)\[\/SUGGEST\]/;
+        // Handle both [SUGGEST] and [SUGEST] (typo version)
+        const suggestRegex = /\[SUGE?ST\]([\s\S]*?)\[\/SUGE?ST\]/i;
         const match = cleanedText.match(suggestRegex);
         
         if (!match) return { cleanContent: cleanedText, suggestedActions: undefined };

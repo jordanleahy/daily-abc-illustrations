@@ -887,6 +887,63 @@ export default function GoogleChat() {
     }
   }, [createdBookId, dbPages, queryClient]);
 
+  // Publish book to daily content
+  const handlePublishBook = useCallback(async () => {
+    if (!createdBookId || !dbPages) {
+      toast.error('Book not ready to publish');
+      return;
+    }
+    
+    // Get book details
+    const { data: book, error: bookError } = await supabase
+      .from('books')
+      .select('book_name, book_description')
+      .eq('id', createdBookId)
+      .single();
+    
+    if (bookError || !book) {
+      toast.error('Failed to fetch book details');
+      return;
+    }
+    
+    const loadingToast = toast.loading('Publishing to daily content...');
+    
+    try {
+      // Insert into daily_published table with status 'queued'
+      const { data, error } = await supabase
+        .from('daily_published')
+        .insert({
+          book_id: createdBookId,
+          title: book.book_name,
+          description: book.book_description || '',
+          status: 'queued',
+          is_active: false,
+        })
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Publish error:', error);
+        toast.error('Failed to publish book: ' + error.message, { id: loadingToast });
+        return;
+      }
+      
+      toast.success('Book queued for publication!', {
+        id: loadingToast,
+        description: 'Your book will be published in the daily content rotation.'
+      });
+      
+      // Close QA panel
+      setShowQACheckpoint(false);
+      
+      // Navigate to schedule page to see the book in queue
+      navigate('/schedule');
+    } catch (error: any) {
+      console.error('Publish error:', error);
+      toast.error('Failed to publish book', { id: loadingToast });
+    }
+  }, [createdBookId, dbPages, navigate]);
+
   // Extract page text overlays from database pages
   const pageTextOverlays = useMemo(() => {
     if (!dbPages) return {};
@@ -1140,6 +1197,7 @@ export default function GoogleChat() {
                 onCoverUpload={handleCoverImageUpload}
                 pageTextOverlays={pageTextOverlays}
                 onUpdatePageText={handleUpdatePageText}
+                onPublish={handlePublishBook}
               />
             </SheetContent>
           </Sheet>
@@ -1174,6 +1232,7 @@ export default function GoogleChat() {
               onCoverUpload={handleCoverImageUpload}
               pageTextOverlays={pageTextOverlays}
               onUpdatePageText={handleUpdatePageText}
+              onPublish={handlePublishBook}
             />
           </div>
         )}

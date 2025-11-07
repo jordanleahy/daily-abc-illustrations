@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
@@ -30,6 +30,7 @@ interface QACheckpointPanelProps {
   onCoverUpload?: (file: File) => void;
   pageTextOverlays?: Record<number, string>;
   onUpdatePageText?: (pageNumber: number, newText: string) => void;
+  onPublish?: () => void;
 }
 
 export function QACheckpointPanel({
@@ -53,6 +54,7 @@ export function QACheckpointPanel({
   onCoverUpload,
   pageTextOverlays = {},
   onUpdatePageText,
+  onPublish,
 }: QACheckpointPanelProps) {
   const navigate = useNavigate();
   const [hasClickedCopy, setHasClickedCopy] = useState(false);
@@ -60,6 +62,19 @@ export function QACheckpointPanel({
   const [isEditingText, setIsEditingText] = useState(false);
 
   const currentCoverPrompt = qaPagePrompts[0] || null;
+  
+  // Check if all pages have images uploaded
+  const allImagesUploaded = useMemo(() => {
+    if (!isBookCreated) return false;
+    
+    // Check pages 1 through pageCount
+    for (let i = 1; i <= pageCount; i++) {
+      if (!displayImages[i]) {
+        return false;
+      }
+    }
+    return true;
+  }, [isBookCreated, pageCount, displayImages]);
   
   // Get current page text from database or extract from prompt
   const currentPageText = pageTextOverlays[currentQAPage] || (() => {
@@ -301,6 +316,19 @@ export function QACheckpointPanel({
 
       {/* Sticky Footer with Actions */}
       <div className="sticky bottom-0 bg-background border-t px-4 py-3 space-y-3 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        {/* Publish Button - Show when all images are uploaded */}
+        {allImagesUploaded && onPublish && (
+          <Button
+            variant="default"
+            size="lg"
+            onClick={onPublish}
+            className="w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+          >
+            <Send className="h-4 w-4 mr-2" />
+            Publish Book to Daily Content
+          </Button>
+        )}
+        
         {/* Navigation */}
         <div className="flex gap-2">
           <Button

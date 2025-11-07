@@ -173,9 +173,13 @@ serve(async (req) => {
     // Prepare system message with context-aware instructions
     const systemMessage = {
       role: 'system',
-      content: agentConfig.instructions + (validationResult.data.bookCreated 
-        ? '\n\nIMPORTANT: A book has already been created in this session. You should:\n- Continue general conversation and answer questions\n- Provide help and guidance about their created book\n- NOT suggest creating new books\n- NOT provide [SUGGEST] action buttons for new books\n- NOT include book recommendations\n- Inform user they need to start a new chat session to create another book'
-        : '')
+      content: agentConfig.instructions + 
+        (validationResult.data.bookCreated 
+          ? '\n\nIMPORTANT: A book has already been created in this session. You should:\n- Continue general conversation and answer questions\n- Provide help and guidance about their created book\n- NOT suggest creating new books\n- NOT provide [SUGGEST] action buttons for new books\n- NOT include book recommendations\n- Inform user they need to start a new chat session to create another book'
+          : '') +
+        (validationResult.data.outlineReady && !validationResult.data.bookCreated
+          ? '\n\nUI Button Instructions: When telling users to open the QA panel to review pages and add photos, instruct them to click the "📖 View Pages & Add Photos" button that appears in your response messages, or the "Review Outline" floating button at the bottom-right of the screen.'
+          : '')
     };
 
     // Combine system message with formatted user messages

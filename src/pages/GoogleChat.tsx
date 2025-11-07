@@ -139,17 +139,19 @@ export default function GoogleChat() {
   const isBookCreated = !!createdBookId;
 
   // Memoize parsed page details to avoid re-parsing on every render
-  const parsedPageDetails = useMemo(
-    () => parsePageDetailsFromMessages(messages),
-    [messages]
-  );
+  const parsedPageDetails = useMemo(() => {
+    const result = parsePageDetailsFromMessages(messages);
+    console.log('[QA Debug] Parsed pages:', result?.length || 0, 'pages');
+    return result;
+  }, [messages]);
 
   // Detect when book outline is ready for QA checkpoint
   const shouldShowQACheckpoint = useMemo(() => {
     if (isLoading || messages.length === 0) return false;
     const hasPages = parsedPageDetails !== null && parsedPageDetails.length >= 5;
-    return hasPages && !createBookMutation.isSuccess;
-  }, [messages, isLoading, createBookMutation.isSuccess, parsedPageDetails]);
+    // Always show button if we have pages, even after book creation
+    return hasPages;
+  }, [messages, isLoading, parsedPageDetails]);
 
   // Parse educational focus from messages
   const educationalFocus = useMemo(() => 
@@ -1015,11 +1017,11 @@ export default function GoogleChat() {
             onClick={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
             size="lg"
             className={cn(
-              "fixed z-50 shadow-lg hover:shadow-xl transition-all duration-200",
+              "fixed z-[100] shadow-lg hover:shadow-xl transition-all duration-200",
               "flex items-center gap-2",
               isMobile 
                 ? "bottom-24 right-4" 
-                : "bottom-6 right-6"
+                : "bottom-8 right-8"
             )}
           >
             {createdBookId ? (

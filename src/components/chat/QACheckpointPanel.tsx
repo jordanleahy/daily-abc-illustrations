@@ -189,18 +189,18 @@ export function QACheckpointPanel({
                         />
                       </div>
                     ) : (
-                      <>
-                        <TextOverlay text={currentPageText} show={true} />
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setIsEditingText(true)}
-                          className="absolute bottom-2 left-2 h-8 w-8 bg-black/60 hover:bg-black/80 text-white opacity-70 hover:opacity-100 transition-opacity"
-                          title="Edit text"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </>
+                      <div 
+                        onClick={() => setIsEditingText(true)}
+                        className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3 cursor-pointer hover:bg-black/70 transition-colors group"
+                        title="Click to edit text"
+                      >
+                        <div className="flex items-center justify-center gap-2">
+                          <p className="text-white text-center font-semibold text-lg leading-tight line-clamp-2">
+                            {currentPageText}
+                          </p>
+                          <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />
+                        </div>
+                      </div>
                     )}
                   </>
                 )}

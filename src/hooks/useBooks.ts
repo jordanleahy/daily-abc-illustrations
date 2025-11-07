@@ -63,15 +63,20 @@ export const useBooks = () => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // Get all books with their daily_published status
+      // ⚡ OPTIMIZED: Single query with JOIN instead of 2 separate queries
       const { data: booksData, error: booksError } = await supabase
         .from('books')
         .select(`
           *,
-          daily_published!left(status)
+          daily_published!left(status),
+          activity:user_book_activity!left(
+            last_viewed_at,
+            view_count
+          )
         `)
         .eq('user_id', user.id)
-        .neq('status', 'archived');
+        .neq('status', 'archived')
+        .eq('user_book_activity.user_id', user.id);
 
       if (booksError) {
         console.error('Error fetching books:', booksError);
@@ -83,26 +88,12 @@ export const useBooks = () => {
         return [];
       }
 
-      // Fetch user activity for all books from user_book_activity table
-      const bookIds = booksData.map(book => book.id);
-      const { data: activityData } = await supabase
-        .from('user_book_activity')
-        .select('book_id, last_viewed_at, view_count')
-        .eq('user_id', user.id)
-        .in('book_id', bookIds)
-        .not('book_id', 'is', null);
-
-      // Create a map for quick lookup
-      const activityMap = new Map(
-        activityData?.map(activity => [activity.book_id!, activity]) || []
-      );
-
-      // Combine books with their daily_published status and activity
+      // Map activity data directly from JOIN
       const booksWithActivity = booksData.map(book => ({
         ...book,
         dailyPublishedStatus: book.daily_published?.[0]?.status || undefined,
-        last_viewed_at: activityMap.get(book.id)?.last_viewed_at,
-        view_count: activityMap.get(book.id)?.view_count || 0,
+        last_viewed_at: book.activity?.[0]?.last_viewed_at,
+        view_count: book.activity?.[0]?.view_count || 0,
       }));
 
       // Sort by: highlighted first, then by last viewed date (most recent first), then by created date

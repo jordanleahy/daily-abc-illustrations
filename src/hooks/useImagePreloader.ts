@@ -31,36 +31,31 @@ export function useImagePreloader(
 
     const validUrls = imageUrls.filter((url): url is string => !!url);
     
-    // Prefetch to service worker cache in background
+    // ⚡ OPTIMIZED: Only use service worker cache, avoid Image object creation
+    // Browser will handle preloading via link rel=preload tags in OptimizedImage component
     prefetchImagesToCache(validUrls).catch(error => {
       console.error('[Image Preloader] Cache prefetch failed:', error);
     });
 
-    // If priority, load all immediately
+    // For priority images only, use native browser preload hints (more efficient)
     if (priority) {
-      validUrls.forEach(url => {
-        const img = new Image();
-        img.src = optimizeImageUrl(url, { width, quality }) || url;
+      const links: HTMLLinkElement[] = [];
+      validUrls.slice(0, 6).forEach(url => { // Limit to first 6 priority images
+        const optimizedUrl = optimizeImageUrl(url, { width, quality });
+        if (optimizedUrl) {
+          const link = document.createElement('link');
+          link.rel = 'preload';
+          link.as = 'image';
+          link.href = optimizedUrl;
+          document.head.appendChild(link);
+          links.push(link);
+        }
       });
-      return;
-    }
-
-    // Otherwise, batch load with delays
-    const timeouts: NodeJS.Timeout[] = [];
-    
-    for (let i = 0; i < validUrls.length; i += batchSize) {
-      const batch = validUrls.slice(i, i + batchSize);
-      const delay = (i / batchSize) * batchDelay;
       
-      timeouts.push(setTimeout(() => {
-        batch.forEach(url => {
-          const img = new Image();
-          img.src = optimizeImageUrl(url, { width, quality }) || url;
-        });
-      }, delay));
+      return () => {
+        links.forEach(link => link.remove());
+      };
     }
-
-    return () => timeouts.forEach(clearTimeout);
-  }, [imageUrls, priority, width, quality, batchSize, batchDelay]);
+  }, [imageUrls, priority, width, quality]);
 }
 

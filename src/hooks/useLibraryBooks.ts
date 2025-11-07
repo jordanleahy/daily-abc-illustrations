@@ -12,7 +12,7 @@ export const useLibraryBooks = () => {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // Fetch daily_published with books
+      // ⚡ OPTIMIZED: Single query with all JOINs instead of 4 separate queries
       const { data: dailyPublishedData, error: dpError } = await supabase
         .from('daily_published')
         .select(`
@@ -21,92 +21,72 @@ export const useLibraryBooks = () => {
             book_name,
             book_description,
             user_id
+          ),
+          seo_metadata!daily_published_id(
+            seo_title,
+            seo_description, 
+            og_image_url
+          ),
+          user_book_activity!daily_published_id(
+            last_viewed_at,
+            view_count
           )
         `)
-        .neq('status', 'draft');
+        .neq('status', 'draft')
+        .eq('seo_metadata.is_latest', true)
+        .eq('seo_metadata.is_active', true)
+        .eq('user_book_activity.user_id', user?.id || '');
 
       if (dpError) {
         console.error('Error fetching library books:', dpError);
         throw dpError;
       }
 
-      // Fetch user activity data if authenticated
-      let activityData: any[] = [];
-      if (user) {
-        const { data: activityResponse, error: activityError } = await supabase
-          .from('user_book_activity')
-          .select('daily_published_id, last_viewed_at, view_count')
-          .eq('user_id', user.id);
-
-        if (activityError) {
-          console.error('Error fetching user activity:', activityError);
-        } else {
-          activityData = activityResponse || [];
-        }
+      // Fetch first page images only for books without og_image_url
+      const bookIdsNeedingImages = dailyPublishedData
+        ?.filter((dp: any) => {
+          const seoArr = Array.isArray(dp.seo_metadata) ? dp.seo_metadata : [dp.seo_metadata].filter(Boolean);
+          return !seoArr[0]?.og_image_url && dp.book_id;
+        })
+        .map((dp: any) => dp.book_id) || [];
+      
+      let firstPageImages: any[] = [];
+      if (bookIdsNeedingImages.length > 0) {
+        const { data: imageData } = await supabase
+          .from('page_image_urls')
+          .select(`
+            image_url,
+            pages!inner(
+              page_number,
+              book_id
+            )
+          `)
+          .in('pages.book_id', bookIdsNeedingImages)
+          .eq('pages.page_number', 1)
+          .eq('is_latest', true)
+          .not('image_url', 'is', null)
+          .limit(bookIdsNeedingImages.length);
+        
+        firstPageImages = imageData || [];
       }
 
-      // Fetch latest SEO metadata for all daily_published items
-      const { data: seoData, error: seoError } = await supabase
-        .from('seo_metadata')
-        .select('daily_published_id, seo_title, seo_description, og_image_url')
-        .eq('is_latest', true)
-        .eq('is_active', true);
-
-      if (seoError) {
-        console.error('Error fetching SEO metadata:', seoError);
-      }
-
-      // Fetch first page images as fallback - query from page_image_urls table
-      const bookIds = dailyPublishedData?.map(dp => dp.book_id).filter(Boolean) || [];
-      const { data: firstPageImages, error: imageError } = await supabase
-        .from('page_image_urls')
-        .select(`
-          image_url,
-          pages!inner(
-            page_number,
-            book_id
-          )
-        `)
-        .in('pages.book_id', bookIds)
-        .eq('pages.page_number', 1)
-        .eq('is_latest', true)
-        .not('image_url', 'is', null);
-
-      if (imageError) {
-        console.error('Error fetching first page images:', imageError);
-      }
-
-      // Map SEO data to daily_published items
-      const seoMap = new Map(
-        seoData?.map(seo => [seo.daily_published_id, { 
-          seo_title: seo.seo_title, 
-          seo_description: seo.seo_description, 
-          og_image_url: seo.og_image_url 
-        }]) || []
-      );
-
-      // Map first page images by book_id
+      // Map first page images by book_id (only for fallback)
       const firstPageMap = new Map(
         firstPageImages?.map((img: any) => [img.pages.book_id, img.image_url]) || []
       );
 
-      // Map activity data by daily_published_id
-      const activityMap = new Map(
-        activityData.map(act => [act.daily_published_id, {
-          last_viewed_at: act.last_viewed_at,
-          view_count: act.view_count
-        }])
-      );
-
-      const enrichedData = dailyPublishedData?.map(item => {
-        const seoData = seoMap.get(item.id);
+      const enrichedData = dailyPublishedData?.map((item: any) => {
+        const seoArr = Array.isArray(item.seo_metadata) ? item.seo_metadata : [item.seo_metadata].filter(Boolean);
+        const activityArr = Array.isArray(item.user_book_activity) ? item.user_book_activity : [item.user_book_activity].filter(Boolean);
+        const seo = seoArr[0];
+        const activity = activityArr[0];
         const fallbackImage = firstPageMap.get(item.book_id);
-        const activity = activityMap.get(item.id);
+        
         return {
           ...item,
-          og_image_url: seoData?.og_image_url || fallbackImage || null,
-          seo_title: seoData?.seo_title || null,
-          seo_description: seoData?.seo_description || null,
+          og_image_url: seo?.og_image_url || fallbackImage || null,
+          seo_title: seo?.seo_title || null,
+          seo_description: seo?.seo_description || null,
           last_viewed_at: activity?.last_viewed_at || null,
           view_count: activity?.view_count || 0,
         };
@@ -128,7 +108,7 @@ export const useLibraryBooks = () => {
       return enrichedData as DailyPublishedWithBook[];
 
     },
-    staleTime: 30 * 1000, // 30 seconds - more frequent updates for library
-    gcTime: 60 * 1000, // 1 minute
+    staleTime: 2 * 60 * 1000, // 2 minutes - reduce refetch frequency
+    gcTime: 5 * 60 * 1000, // 5 minutes - keep in cache longer
   });
 };

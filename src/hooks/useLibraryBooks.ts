@@ -12,7 +12,7 @@ export const useLibraryBooks = () => {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // ⚡ OPTIMIZED: Single query with JOINs
+      // ⚡ OPTIMIZED: Fetch daily_published with books JOIN
       const { data: dailyPublishedData, error: dpError } = await supabase
         .from('daily_published')
         .select(`
@@ -20,11 +20,6 @@ export const useLibraryBooks = () => {
           book:books(
             book_name,
             book_description,
-            user_id
-          ),
-          user_book_activity!daily_published_id(
-            last_viewed_at,
-            view_count,
             user_id
           )
         `)
@@ -45,6 +40,17 @@ export const useLibraryBooks = () => {
       // Create SEO lookup map
       const seoMap = new Map(
         (seoData || []).map(seo => [seo.daily_published_id, seo])
+      );
+
+      // Fetch user activity separately
+      const { data: activityData } = await supabase
+        .from('user_book_activity')
+        .select('daily_published_id, last_viewed_at, view_count')
+        .eq('user_id', user?.id || '');
+
+      // Create activity lookup map
+      const activityMap = new Map(
+        (activityData || []).map(activity => [activity.daily_published_id, activity])
       );
 
       // Fetch first page images only for books without og_image_url
@@ -81,13 +87,11 @@ export const useLibraryBooks = () => {
       );
 
       const enrichedData = dailyPublishedData?.map((item: any) => {
-        const activityArr = Array.isArray(item.user_book_activity) ? item.user_book_activity : [item.user_book_activity].filter(Boolean);
-        
         // Get SEO metadata from map
         const seo = seoMap.get(item.id);
         
-        // Filter activity to only include current user's activity
-        const activity = activityArr.find((a: any) => a?.user_id === user?.id);
+        // Get activity from map
+        const activity = activityMap.get(item.id);
         
         const fallbackImage = firstPageMap.get(item.book_id);
         

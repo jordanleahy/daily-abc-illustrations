@@ -12,7 +12,7 @@ export const useLibraryBooks = () => {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       
-      // ⚡ OPTIMIZED: Single query with all JOINs instead of 4 separate queries
+      // ⚡ OPTIMIZED: Single query with JOINs
       const { data: dailyPublishedData, error: dpError } = await supabase
         .from('daily_published')
         .select(`
@@ -21,13 +21,6 @@ export const useLibraryBooks = () => {
             book_name,
             book_description,
             user_id
-          ),
-          seo_metadata!daily_published_id(
-            seo_title,
-            seo_description, 
-            og_image_url,
-            is_latest,
-            is_active
           ),
           user_book_activity!daily_published_id(
             last_viewed_at,
@@ -42,11 +35,23 @@ export const useLibraryBooks = () => {
         throw dpError;
       }
 
+      // Fetch SEO metadata separately
+      const { data: seoData } = await supabase
+        .from('seo_metadata')
+        .select('daily_published_id, og_image_url, seo_title, seo_description')
+        .eq('is_latest', true)
+        .eq('is_active', true);
+
+      // Create SEO lookup map
+      const seoMap = new Map(
+        (seoData || []).map(seo => [seo.daily_published_id, seo])
+      );
+
       // Fetch first page images only for books without og_image_url
       const bookIdsNeedingImages = dailyPublishedData
         ?.filter((dp: any) => {
-          const seoArr = Array.isArray(dp.seo_metadata) ? dp.seo_metadata : [dp.seo_metadata].filter(Boolean);
-          return !seoArr[0]?.og_image_url && dp.book_id;
+          const seo = seoMap.get(dp.id);
+          return !seo?.og_image_url && dp.book_id;
         })
         .map((dp: any) => dp.book_id) || [];
       
@@ -76,11 +81,10 @@ export const useLibraryBooks = () => {
       );
 
       const enrichedData = dailyPublishedData?.map((item: any) => {
-        const seoArr = Array.isArray(item.seo_metadata) ? item.seo_metadata : [item.seo_metadata].filter(Boolean);
         const activityArr = Array.isArray(item.user_book_activity) ? item.user_book_activity : [item.user_book_activity].filter(Boolean);
         
-        // Filter SEO metadata to only include latest and active
-        const seo = seoArr.find((s: any) => s?.is_latest && s?.is_active);
+        // Get SEO metadata from map
+        const seo = seoMap.get(item.id);
         
         // Filter activity to only include current user's activity
         const activity = activityArr.find((a: any) => a?.user_id === user?.id);

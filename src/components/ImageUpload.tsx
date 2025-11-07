@@ -10,9 +10,10 @@ interface ImageUploadProps {
   disabled?: boolean;
   className?: string;
   autoTrigger?: boolean;
+  requireSquare?: boolean;
 }
 
-export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false }: ImageUploadProps) {
+export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false, requireSquare = true }: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -71,10 +72,12 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
       return;
     }
 
-    const isSquare = await checkAspectRatio(file);
-    if (!isSquare) {
-      toast.error('Image must have a 1:1 aspect ratio (square)');
-      return;
+    if (requireSquare) {
+      const isSquare = await checkAspectRatio(file);
+      if (!isSquare) {
+        toast.error('Image must have a 1:1 aspect ratio (square)');
+        return;
+      }
     }
 
     // Process and compress the image
@@ -257,7 +260,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
           <div className="flex flex-col items-center justify-center text-center space-y-4 h-full">
             <Upload className="w-8 h-8 text-muted-foreground mx-auto" />
             <div className="mx-auto">
-              <p className="text-sm font-medium">Upload 1:1 Image</p>
+              <p className="text-sm font-medium">{requireSquare ? 'Upload 1:1 Image' : 'Upload Image'}</p>
               <p className="text-xs text-muted-foreground">
                 Drop, paste, or click to browse
               </p>

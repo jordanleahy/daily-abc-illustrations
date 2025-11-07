@@ -25,17 +25,17 @@ export const useLibraryBooks = () => {
           seo_metadata!daily_published_id(
             seo_title,
             seo_description, 
-            og_image_url
+            og_image_url,
+            is_latest,
+            is_active
           ),
           user_book_activity!daily_published_id(
             last_viewed_at,
-            view_count
+            view_count,
+            user_id
           )
         `)
-        .neq('status', 'draft')
-        .eq('seo_metadata.is_latest', true)
-        .eq('seo_metadata.is_active', true)
-        .eq('user_book_activity.user_id', user?.id || '');
+        .neq('status', 'draft');
 
       if (dpError) {
         console.error('Error fetching library books:', dpError);
@@ -78,8 +78,13 @@ export const useLibraryBooks = () => {
       const enrichedData = dailyPublishedData?.map((item: any) => {
         const seoArr = Array.isArray(item.seo_metadata) ? item.seo_metadata : [item.seo_metadata].filter(Boolean);
         const activityArr = Array.isArray(item.user_book_activity) ? item.user_book_activity : [item.user_book_activity].filter(Boolean);
-        const seo = seoArr[0];
-        const activity = activityArr[0];
+        
+        // Filter SEO metadata to only include latest and active
+        const seo = seoArr.find((s: any) => s?.is_latest && s?.is_active);
+        
+        // Filter activity to only include current user's activity
+        const activity = activityArr.find((a: any) => a?.user_id === user?.id);
+        
         const fallbackImage = firstPageMap.get(item.book_id);
         
         return {

@@ -71,12 +71,12 @@ export const useBooks = () => {
           daily_published!left(status),
           activity:user_book_activity!left(
             last_viewed_at,
-            view_count
+            view_count,
+            user_id
           )
         `)
         .eq('user_id', user.id)
-        .neq('status', 'archived')
-        .eq('user_book_activity.user_id', user.id);
+        .neq('status', 'archived');
 
       if (booksError) {
         console.error('Error fetching books:', booksError);
@@ -88,13 +88,18 @@ export const useBooks = () => {
         return [];
       }
 
-      // Map activity data directly from JOIN
-      const booksWithActivity = booksData.map(book => ({
-        ...book,
-        dailyPublishedStatus: book.daily_published?.[0]?.status || undefined,
-        last_viewed_at: book.activity?.[0]?.last_viewed_at,
-        view_count: book.activity?.[0]?.view_count || 0,
-      }));
+      // Map activity data directly from JOIN, filtering for current user
+      const booksWithActivity = booksData.map(book => {
+        const activityArr = Array.isArray(book.activity) ? book.activity : [book.activity].filter(Boolean);
+        const userActivity = activityArr.find((a: any) => a?.user_id === user.id);
+        
+        return {
+          ...book,
+          dailyPublishedStatus: book.daily_published?.[0]?.status || undefined,
+          last_viewed_at: userActivity?.last_viewed_at,
+          view_count: userActivity?.view_count || 0,
+        };
+      });
 
       // Sort by: highlighted first, then by last viewed date (most recent first), then by created date
       return booksWithActivity.sort((a, b) => {

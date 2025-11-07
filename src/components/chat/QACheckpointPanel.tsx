@@ -62,6 +62,7 @@ export function QACheckpointPanel({
   const [hasClickedCopy, setHasClickedCopy] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
+  const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
 
   const currentCoverPrompt = qaPagePrompts[0] || null;
   
@@ -99,10 +100,11 @@ export function QACheckpointPanel({
 
   // Reset states when page changes
   useEffect(() => {
-    setHasClickedCopy(false);
     setShowConfirmation(false);
     setIsEditingText(false);
-  }, [currentQAPage]);
+    // Check if this page has been copied before
+    setHasClickedCopy(copiedPages.has(currentQAPage));
+  }, [currentQAPage, copiedPages]);
 
   // Handle copy with confirmation and delayed transition
   const handleCopyPrompt = () => {
@@ -110,6 +112,10 @@ export function QACheckpointPanel({
     if (prompt) {
       navigator.clipboard.writeText(prompt);
       setShowConfirmation(true);
+      
+      // Mark this page as copied
+      setCopiedPages(prev => new Set(prev).add(currentQAPage));
+      
       toast.success('Prompt copied to clipboard!', {
         description: 'Creating your book...',
         duration: 3000

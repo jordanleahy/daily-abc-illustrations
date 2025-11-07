@@ -28,8 +28,7 @@ function parseSuggestions(aiResponse: string): {
   cleanContent: string; 
   suggestedActions?: SuggestedAction[] 
 } {
-  // Handle both [SUGGEST] and [SUGEST] (typo version)
-  const suggestRegex = /\[SUGE?ST\]([\s\S]*?)\[\/SUGE?ST\]/i;
+  const suggestRegex = /\[SUGGEST\]([\s\S]*?)\[\/SUGGEST\]/;
   const match = aiResponse.match(suggestRegex);
   
   if (!match) {

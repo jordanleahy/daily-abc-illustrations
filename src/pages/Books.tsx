@@ -38,9 +38,9 @@ function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
       <CardContent className="space-y-4">
         {/* Book Thumbnail */}
         <AspectRatio ratio={16/9} className="bg-muted rounded-lg overflow-hidden">
-          {seoMetadata?.og_image_url ? (
+          {book.thumbnail_url || seoMetadata?.og_image_url ? (
             <img
-              src={seoMetadata.og_image_url}
+              src={book.thumbnail_url || seoMetadata.og_image_url}
               alt={book.book_name}
               className="w-full h-full object-cover object-center"
               loading="lazy"

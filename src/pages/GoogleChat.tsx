@@ -995,6 +995,7 @@ export default function GoogleChat() {
       // Invalidate book query to refetch with new thumbnail
       await queryClient.invalidateQueries({ queryKey: ['book', createdBookId] });
       await queryClient.invalidateQueries({ queryKey: ['book-thumbnail', createdBookId] });
+      await queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
       
       // Also update the local state immediately
       setThumbnailUrl(publicUrl);

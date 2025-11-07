@@ -316,6 +316,40 @@ export function QACheckpointPanel({
 
       {/* Sticky Footer with Actions */}
       <div className="sticky bottom-0 bg-background border-t px-4 py-3 space-y-3 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        {/* Cover Image Upload - Show when book is created */}
+        {isBookCreated && onCoverUpload && (
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-muted-foreground">Cover Image (Optional)</p>
+            <div className="aspect-video rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
+              {displayImages[0] ? (
+                <div className="relative w-full h-full group">
+                  <img 
+                    src={displayImages[0]} 
+                    alt="Book cover preview"
+                    className="w-full h-full object-cover"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => onRemoveImage(0)}
+                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
+                  >
+                    Replace
+                  </Button>
+                </div>
+              ) : (
+                <ImageUpload 
+                  onImageSelect={(file) => {
+                    onCoverUpload(file);
+                  }}
+                  disabled={createBookMutation.isPending}
+                  className="h-full"
+                />
+              )}
+            </div>
+          </div>
+        )}
+        
         {/* Publish Button - Show when all images are uploaded */}
         {allImagesUploaded && onPublish && (
           <Button

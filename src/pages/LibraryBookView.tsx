@@ -12,6 +12,8 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { useWordAssessment } from '@/hooks/useWordAssessment';
+import { extractWords } from '@/utils/wordExtractor';
 import { trackBookView } from '@/utils/bookViewTracking';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
@@ -19,15 +21,18 @@ import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { PublicPageImage } from '@/components/daily-published';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { processImage } from '@/utils/imageProcessor';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { UpcomingBooksPreview } from '@/components/daily-published';
 import { RoleDebugger } from '@/components/RoleDebugger';
-import { Calendar, Clock } from 'lucide-react';
+import { Calendar, Clock, Plus, X, Check, BookOpen } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
 import { isValidUUID } from '@/utils/uuid';
+import { cn } from '@/lib/utils';
+import type { ExtractedWord } from '@/types/wordAssessment';
 
 export default function LibraryBookView() {
   const { id } = useParams<{ id: string }>();
@@ -65,7 +70,14 @@ export default function LibraryBookView() {
   const [uploadingForPageId, setUploadingForPageId] = useState<string | null>(null);
   const [initialPageTracked, setInitialPageTracked] = useState(false);
   
+  // Word learning mode state
+  const [wordLearningMode, setWordLearningMode] = useState(false);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [wordSize, setWordSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [words, setWords] = useState<ExtractedWord[]>([]);
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const assessWord = useWordAssessment();
   
   // Auto-select kid if only one exists
   const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
@@ -116,6 +128,76 @@ export default function LibraryBookView() {
   const handleBack = () => {
     endSession('back_button');
     navigate('/library');
+  };
+
+  // Extract words from text overlay when page changes
+  useEffect(() => {
+    const page = reorderedPages[currentPageIndex];
+    if (page?.content?.textOverlay?.enabled && page?.content?.textOverlay?.text) {
+      const extracted = extractWords(page.content.textOverlay.text);
+      setWords(extracted);
+      setCurrentWordIndex(0);
+    } else {
+      setWords([]);
+    }
+  }, [reorderedPages, currentPageIndex]);
+
+  const handlePlusClick = () => {
+    setWordSize(prev => {
+      if (prev === 'small') return 'medium';
+      if (prev === 'medium') return 'large';
+      return 'small';
+    });
+  };
+
+  const handleKnowsWord = async (knowsWord: boolean) => {
+    const currentPage = reorderedPages[currentPageIndex];
+    if (!selectedKidId || words.length === 0 || !currentPage || !dailyContent) return;
+    
+    const currentWord = words[currentWordIndex];
+    
+    try {
+      await assessWord.mutateAsync({
+        kidProfileId: selectedKidId,
+        bookId: dailyContent.book_id,
+        pageId: currentPage.id,
+        word: currentWord.word,
+        wordIndex: currentWord.index,
+        knowsWord
+      });
+      
+      // Auto-advance to next word
+      if (currentWordIndex < words.length - 1) {
+        setCurrentWordIndex(prev => prev + 1);
+      } else {
+        // Completed all words
+        toast.success('All words completed!');
+        setWordLearningMode(false);
+        setCurrentWordIndex(0);
+      }
+    } catch (error) {
+      console.error('Failed to save word assessment:', error);
+    }
+  };
+
+  const handleStartWordLearning = () => {
+    if (!selectedKidId) {
+      toast.error('No kid profile selected');
+      return;
+    }
+    
+    if (words.length === 0) {
+      toast.error('No words available on this page');
+      return;
+    }
+    
+    setWordLearningMode(true);
+  };
+
+  const handleExitWordLearning = () => {
+    setWordLearningMode(false);
+    setCurrentWordIndex(0);
+    setWordSize('medium');
   };
 
   if (isLoading) {
@@ -401,13 +483,86 @@ export default function LibraryBookView() {
             </Card>
           </div>
           
-          {/* Navigation */}
-          <BottomSlideNavigation 
-            onSlide={handleNext}
-            disabled={isAddingCoins}
-            variant="compact"
-            slideText={isLastPage ? "Finish & Collect Coins" : undefined}
-          />
+          {/* Navigation / Word Learning Mode */}
+          {wordLearningMode && words.length > 0 ? (
+            <div className="px-4 pb-4">
+              <Card className="p-6">
+                <div className="flex flex-col items-center gap-6">
+                  <div className="flex-1 flex items-center justify-center min-h-[150px]">
+                    <h1 className={cn(
+                      "font-bold text-center transition-all duration-300 select-none",
+                      wordSize === 'small' && "text-4xl",
+                      wordSize === 'medium' && "text-6xl md:text-7xl",
+                      wordSize === 'large' && "text-7xl md:text-8xl"
+                    )}>
+                      {words[currentWordIndex]?.word}
+                    </h1>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 w-full justify-center">
+                    <div className="flex items-center gap-2">
+                      <Button 
+                        size="lg" 
+                        variant="outline"
+                        onClick={handlePlusClick}
+                        className="w-14 h-14"
+                        title="Change word size"
+                      >
+                        <Plus className="w-6 h-6" />
+                      </Button>
+                      <Button 
+                        size="lg" 
+                        className="w-14 h-14 bg-red-500 hover:bg-red-600 text-white"
+                        onClick={() => handleKnowsWord(false)}
+                        disabled={assessWord.isPending}
+                        title="Don't know this word"
+                      >
+                        <X className="w-6 h-6" />
+                      </Button>
+                      <Button 
+                        size="lg" 
+                        className="w-14 h-14 bg-green-500 hover:bg-green-600 text-white"
+                        onClick={() => handleKnowsWord(true)}
+                        disabled={assessWord.isPending}
+                        title="Know this word"
+                      >
+                        <Check className="w-6 h-6" />
+                      </Button>
+                    </div>
+                    <Button 
+                      variant="outline"
+                      onClick={handleExitWordLearning}
+                      size="sm"
+                    >
+                      Exit
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            </div>
+          ) : (
+            <>
+              {words.length > 0 && selectedKidId && (
+                <div className="px-4 pb-2">
+                  <Button 
+                    onClick={handleStartWordLearning}
+                    variant="secondary"
+                    size="sm"
+                    className="w-full"
+                  >
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Practice Words
+                  </Button>
+                </div>
+              )}
+              <BottomSlideNavigation 
+                onSlide={handleNext}
+                disabled={isAddingCoins}
+                variant="compact"
+                slideText={isLastPage ? "Finish & Collect Coins" : undefined}
+              />
+            </>
+          )}
         </div>
       </div>
       

@@ -95,6 +95,58 @@ self.addEventListener('message', (event) => {
     );
   }
   
+  // PHASE 3: Delete cache for specific book
+  if (event.data && event.data.type === 'DELETE_BOOK_CACHE') {
+    const bookId = event.data.bookId;
+    console.log('[Service Worker] Deleting cache for book:', bookId);
+    
+    event.waitUntil(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.keys().then((requests) => {
+          const deletions = requests
+            .filter((req) => req.url.includes(`/${bookId}/`))
+            .map((req) => {
+              console.log('[Service Worker] Deleting cached URL:', req.url);
+              return cache.delete(req);
+            });
+          return Promise.all(deletions).then(() => {
+            if (event.ports[0]) {
+              event.ports[0].postMessage({ success: true, deletedCount: deletions.length });
+            }
+          });
+        });
+      })
+    );
+  }
+  
+  // PHASE 3: Delete cache for multiple books (batch operation)
+  if (event.data && event.data.type === 'DELETE_BOOKS_CACHE') {
+    const bookIds = event.data.bookIds || [];
+    console.log('[Service Worker] Batch deleting cache for', bookIds.length, 'books');
+    
+    event.waitUntil(
+      caches.open(CACHE_NAME).then((cache) => {
+        return cache.keys().then((requests) => {
+          let totalDeleted = 0;
+          const deletions = requests
+            .filter((req) => {
+              return bookIds.some((bookId) => req.url.includes(`/${bookId}/`));
+            })
+            .map((req) => {
+              totalDeleted++;
+              return cache.delete(req);
+            });
+          return Promise.all(deletions).then(() => {
+            console.log('[Service Worker] Batch deleted', totalDeleted, 'cached images');
+            if (event.ports[0]) {
+              event.ports[0].postMessage({ success: true, deletedCount: totalDeleted, bookCount: bookIds.length });
+            }
+          });
+        });
+      })
+    );
+  }
+  
   // Prefetch library images
   if (event.data && event.data.type === 'PREFETCH_IMAGES') {
     const urls = event.data.urls || [];

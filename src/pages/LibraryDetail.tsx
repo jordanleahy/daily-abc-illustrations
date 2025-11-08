@@ -11,6 +11,7 @@ import { ArrowLeft, BookOpen, Calendar, Users } from 'lucide-react';
 import { MetaHead } from '@/components/common/MetaHead';
 import { useSeoMetadata, useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
 import { LibraryCard } from '@/components/page-prompts/LibraryCard';
+import { trackBookViewForCache } from '@/utils/bookViewTracking';
 
 export default function LibraryDetail() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +29,13 @@ export default function LibraryDetail() {
       navigate('/auth');
     }
   }, [user, navigate]);
+
+  // PHASE 2: Track book view for cache management
+  useEffect(() => {
+    if (id) {
+      trackBookViewForCache(id);
+    }
+  }, [id]);
 
   const handleBack = () => {
     navigate('/library');

@@ -38,6 +38,8 @@ import { GA4Tracker } from "./components/GA4Tracker";
 import HabitsManage from "./pages/HabitsManage";
 import MyHabits from "./pages/MyHabits";
 import Profile from "./pages/Profile";
+import { useEffect } from "react";
+import { scheduleCacheCleanup } from "./utils/cacheCleanup";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -53,16 +55,22 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <HelmetProvider>
-      <AuthProvider>
-        <RoleProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <GA4Tracker />
-              <Routes>
+const App = () => {
+  // PHASE 4: Schedule automatic cache cleanup on app mount
+  useEffect(() => {
+    scheduleCacheCleanup();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <HelmetProvider>
+        <AuthProvider>
+          <RoleProvider>
+              <Toaster />
+              <Sonner />
+              <BrowserRouter>
+                <GA4Tracker />
+                <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/admin/chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
@@ -106,6 +114,7 @@ const App = () => (
         </AuthProvider>
     </HelmetProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

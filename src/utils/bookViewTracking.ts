@@ -94,3 +94,80 @@ export const trackUserBookActivity = async (bookId: string): Promise<void> => {
   }
 };
 
+/**
+ * PHASE 2: LRU Cache Management - localStorage view tracking
+ * Track when a book detail page is viewed for cache management
+ */
+export const trackBookViewForCache = (bookId: string): void => {
+  try {
+    const timestamp = Date.now();
+    localStorage.setItem(`book-last-viewed-${bookId}`, timestamp.toString());
+  } catch (error) {
+    console.warn('Failed to track book view in localStorage:', error);
+  }
+};
+
+/**
+ * Get the last viewed timestamp for a book
+ */
+export const getLastViewed = (bookId: string): number | null => {
+  try {
+    const timestamp = localStorage.getItem(`book-last-viewed-${bookId}`);
+    return timestamp ? parseInt(timestamp, 10) : null;
+  } catch (error) {
+    console.warn('Failed to get last viewed timestamp:', error);
+    return null;
+  }
+};
+
+/**
+ * Get all books that haven't been viewed in X days
+ */
+export const getStaleBooks = (daysThreshold: number = 7): string[] => {
+  try {
+    const staleBooks: string[] = [];
+    const cutoffTime = Date.now() - (daysThreshold * 24 * 60 * 60 * 1000);
+    
+    // Scan localStorage for book-last-viewed-* entries
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('book-last-viewed-')) {
+        const bookId = key.replace('book-last-viewed-', '');
+        const timestamp = parseInt(localStorage.getItem(key) || '0', 10);
+        
+        if (timestamp < cutoffTime) {
+          staleBooks.push(bookId);
+        }
+      }
+    }
+    
+    return staleBooks;
+  } catch (error) {
+    console.warn('Failed to get stale books:', error);
+    return [];
+  }
+};
+
+/**
+ * Get all tracked books with their last viewed timestamps
+ */
+export const getAllTrackedBooks = (): Record<string, number> => {
+  try {
+    const trackedBooks: Record<string, number> = {};
+    
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith('book-last-viewed-')) {
+        const bookId = key.replace('book-last-viewed-', '');
+        const timestamp = parseInt(localStorage.getItem(key) || '0', 10);
+        trackedBooks[bookId] = timestamp;
+      }
+    }
+    
+    return trackedBooks;
+  } catch (error) {
+    console.warn('Failed to get all tracked books:', error);
+    return {};
+  }
+};
+

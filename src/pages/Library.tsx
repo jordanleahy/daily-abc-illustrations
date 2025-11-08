@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useLibraryImagePreloader } from '@/hooks/useLibraryImagePreloader';
+import { useAggressiveLibraryPrefetch } from '@/hooks/useAggressiveLibraryPrefetch';
 import { useDailyPublished } from '@/hooks/useDailyPublished';
 import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
@@ -33,8 +34,11 @@ export default memo(function Library() {
   // Get user favorites
   const { favoriteIds, toggleFavorite, favorites } = useFavorites();
   
-  // Preload book images for instant display
+  // Preload library images for instant display
   useLibraryImagePreloader(libraryItems);
+  
+  // PHASE 1: Aggressive prefetch all book pages in background
+  useAggressiveLibraryPrefetch(libraryItems, true);
   
 
   if (isLoading) {

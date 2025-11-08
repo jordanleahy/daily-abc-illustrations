@@ -1,9 +1,11 @@
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
+import { BookCarousel } from '@/components/landing/BookCarousel';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { useKidRecentlyRead } from '@/hooks/useKidRecentlyRead';
 import { LoadingState } from '@/components/ui/loading-state';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import { CoinCounter } from '@/components/ui/coin-counter';
 import { getTimeBasedGreeting } from '@/utils/timeUtils';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -11,10 +13,6 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useLibraryBooks } from '@/hooks/useLibraryBooks';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { BookImage } from '@/components/ui/book-image';
-import { BookOpen } from 'lucide-react';
 
 const Index = () => {
   const { isAuthenticated } = useAuthContext();
@@ -35,8 +33,8 @@ const Index = () => {
   // Fetch today's habits for the first kid
   const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
   
-  // Fetch library books with reduced staleTime for real-time updates
-  const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooks();
+  // Fetch recently read books for the first kid
+  const { data: recentlyReadBooks = [], isLoading: isLoadingBooks } = useKidRecentlyRead(firstKid?.id);
   
   // Filter out skipped habits and sort by status (pending first, completed/failed last)
   const activeCompletions = completions
@@ -60,11 +58,6 @@ const Index = () => {
       // If same status, maintain creation order
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
-  
-  // Get recently viewed books (books with activity, already sorted by most recent)
-  const recentBooks = libraryItems
-    .filter(book => book.last_viewed_at) // Only books that have been viewed
-    .slice(0, 10); // Take top 10 most recently viewed
   
   const isLoading = isLoadingKids || isLoadingHabits;
   const timeOfDay = getTimeBasedGreeting();
@@ -136,40 +129,11 @@ const Index = () => {
           </div>
         )}
 
-        {/* Recently Viewed Books */}
-        {recentBooks.length > 0 && (
+        {/* Recently Read Books */}
+        {recentlyReadBooks.length > 0 && (
           <div className="space-y-4">
-            <h2 className="text-2xl font-bold">Recently Viewed</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recentBooks.map((book) => (
-                <Card 
-                  key={book.id} 
-                  className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/library/${book.id}/detail`)}
-                >
-                  <div className="aspect-video rounded-t-lg flex items-center justify-center overflow-hidden">
-                    {book.og_image_url ? (
-                      <BookImage
-                        src={book.og_image_url}
-                        alt={book.seo_title || book.title}
-                        className="w-full h-full object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      />
-                    ) : (
-                      <BookOpen className="w-8 h-8 text-muted-foreground" />
-                    )}
-                  </div>
-                  <CardHeader>
-                    <CardTitle className="text-lg line-clamp-2">{book.seo_title || book.title}</CardTitle>
-                    {book.last_viewed_at && (
-                      <CardDescription className="text-xs">
-                        {formatDistanceToNow(new Date(book.last_viewed_at), { addSuffix: true })}
-                      </CardDescription>
-                    )}
-                  </CardHeader>
-                </Card>
-              ))}
-            </div>
+            <h2 className="text-2xl font-bold">Recently Read</h2>
+            <BookCarousel books={recentlyReadBooks} />
           </div>
         )}
       </div>

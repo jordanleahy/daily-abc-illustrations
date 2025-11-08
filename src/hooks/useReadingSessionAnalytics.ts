@@ -113,7 +113,7 @@ export const useReadingSessionAnalytics = (): ReadingSessionAnalytics => {
     });
   }, [trackEvent]);
 
-  const endSession = useCallback((exitMethod = 'navigation_away') => {
+  const endSession = useCallback(async (exitMethod = 'navigation_away') => {
     const session = sessionRef.current;
     if (!session.config || !session.sessionId) return;
 
@@ -130,6 +130,42 @@ export const useReadingSessionAnalytics = (): ReadingSessionAnalytics => {
         session.highestPageReached,
         isCompleted
       );
+    }
+
+    // Save reading session to database for authenticated users
+    if (user && session.config.contentType === 'daily_published') {
+      try {
+        const { supabase } = await import('@/integrations/supabase/client');
+        
+        // Get existing activity record
+        const { data: existing } = await supabase
+          .from('user_book_activity')
+          .select('view_count')
+          .eq('user_id', user.id)
+          .eq('daily_published_id', session.config.contentId)
+          .maybeSingle();
+
+        // Get selected kid from local storage (same pattern as habits)
+        const selectedKidId = localStorage.getItem('selectedKidId');
+        
+        // Upsert reading session data
+        await supabase
+          .from('user_book_activity')
+          .upsert({
+            user_id: user.id,
+            daily_published_id: session.config.contentId,
+            kid_id: selectedKidId || null,
+            last_reading_session_at: new Date().toISOString(),
+            pages_read: session.highestPageReached,
+            reading_completed: isCompleted,
+            view_count: (existing?.view_count || 0) + 1,
+            last_viewed_at: new Date().toISOString(),
+          }, {
+            onConflict: 'user_id,daily_published_id',
+          });
+      } catch (error) {
+        console.error('Failed to save reading session:', error);
+      }
     }
 
     // Get updated stats after tracking

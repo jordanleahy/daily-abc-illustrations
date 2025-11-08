@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { useCreateHabit } from '@/hooks/useCreateHabit';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { HabitFrequency } from '@/types/habit';
@@ -19,9 +19,10 @@ export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) 
   const [description, setDescription] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [coinAmount, setCoinAmount] = useState('10');
-  const [frequency, setFrequency] = useState<HabitFrequency>('daily');
+  const [frequency, setFrequency] = useState<HabitFrequency>('manual');
   const [deadlineTime, setDeadlineTime] = useState('');
   const [selectedKids, setSelectedKids] = useState<string[]>([]);
+  const [isAutoSchedule, setIsAutoSchedule] = useState(false);
 
   const { data: kids = [] } = useKidProfiles();
   const createHabit = useCreateHabit();
@@ -45,7 +46,7 @@ export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) 
       description: description || undefined,
       photo_url: photoUrl || undefined,
       coin_amount: parseInt(coinAmount),
-      frequency,
+      frequency: isAutoSchedule ? 'daily' : 'manual',
       deadline_time: deadlineTime || undefined,
       assignedKidIds: selectedKids,
     });
@@ -55,9 +56,10 @@ export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) 
     setDescription('');
     setPhotoUrl('');
     setCoinAmount('10');
-    setFrequency('daily');
+    setFrequency('manual');
     setDeadlineTime('');
     setSelectedKids([]);
+    setIsAutoSchedule(false);
     onOpenChange(false);
   };
 
@@ -123,21 +125,6 @@ export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) 
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="frequency">Frequency *</Label>
-            <Select value={frequency} onValueChange={(value) => setFrequency(value as HabitFrequency)}>
-              <SelectTrigger id="frequency">
-                <SelectValue placeholder="Select frequency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="daily">Daily</SelectItem>
-                <SelectItem value="weekly">Weekly</SelectItem>
-                <SelectItem value="monthly">Monthly</SelectItem>
-                <SelectItem value="manual">Manual</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="deadlineTime">Deadline Time (Optional)</Label>
             <div className="relative">
               <Input
@@ -160,6 +147,25 @@ export function CreateHabitModal({ open, onOpenChange }: CreateHabitModalProps) 
             <p className="text-xs text-muted-foreground">
               If set, habit will automatically decline after this time
             </p>
+          </div>
+
+          {/* Auto-schedule toggle */}
+          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-border">
+            <div className="flex flex-col gap-1">
+              <Label htmlFor="auto-schedule" className="text-sm font-medium cursor-pointer">
+                Auto-schedule daily
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                {isAutoSchedule 
+                  ? 'Habit will appear automatically every day' 
+                  : 'You will need to schedule this habit manually'}
+              </span>
+            </div>
+            <Switch
+              id="auto-schedule"
+              checked={isAutoSchedule}
+              onCheckedChange={setIsAutoSchedule}
+            />
           </div>
 
           <div className="space-y-2">

@@ -2,6 +2,8 @@ import { Habit } from '@/types/habit';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { Coins, Clock, Trash2, MoreVertical, Pencil } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { ScheduleBadge } from './ScheduleBadge';
@@ -20,9 +22,12 @@ interface HabitCardProps {
   onScheduleToggle?: (habitId: string) => void;
   onAddToday?: (habitId: string) => void;
   timesAddedToday?: number;
+  onToggleAutoSchedule?: (habitId: string, isCurrentlyAuto: boolean) => void;
 }
 
-export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleToggle, onAddToday, timesAddedToday }: HabitCardProps) {
+export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleToggle, onAddToday, timesAddedToday, onToggleAutoSchedule }: HabitCardProps) {
+  const isAutoSchedule = habit.frequency === 'daily';
+  
   const formatDeadlineTime = (time: string) => {
     try {
       return format(parseISO(`2000-01-01T${time}`), 'h:mm a');
@@ -101,16 +106,36 @@ export function HabitCard({ habit, onDelete, onEdit, isScheduled, onScheduleTogg
         </div>
       </CardContent>
       
-      {onScheduleToggle && (
-        <CardFooter className="pt-0">
+      <CardFooter className="flex-col gap-3 pt-4">
+        {/* Auto-schedule toggle */}
+        {onToggleAutoSchedule && (
+          <div className="flex items-center justify-between w-full p-3 rounded-lg bg-muted/50 border border-border">
+            <div className="flex flex-col gap-0.5">
+              <Label htmlFor={`auto-schedule-${habit.id}`} className="text-sm font-medium cursor-pointer">
+                Auto-schedule daily
+              </Label>
+              <span className="text-xs text-muted-foreground">
+                {isAutoSchedule ? 'Appears every day automatically' : 'Requires manual scheduling'}
+              </span>
+            </div>
+            <Switch
+              id={`auto-schedule-${habit.id}`}
+              checked={isAutoSchedule}
+              onCheckedChange={() => onToggleAutoSchedule(habit.id, isAutoSchedule)}
+            />
+          </div>
+        )}
+
+        {/* Schedule buttons - hidden when auto-schedule is ON */}
+        {!isAutoSchedule && onScheduleToggle && (
           <ScheduleBadge
             isScheduled={isScheduled || false}
             onClick={() => onScheduleToggle(habit.id)}
             onAddToday={onAddToday ? () => onAddToday(habit.id) : undefined}
             timesAddedToday={timesAddedToday}
           />
-        </CardFooter>
-      )}
+        )}
+      </CardFooter>
     </Card>
   );
 }

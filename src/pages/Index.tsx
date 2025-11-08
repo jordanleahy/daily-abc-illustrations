@@ -36,9 +36,28 @@ const Index = () => {
   // Fetch recently read books for the selected kid
   const { data: recentlyReadBooks = [], isLoading: isLoadingBooks } = useKidRecentlyRead(selectedKid?.id);
   
-  // Preload recently read book cover images (first 6 as priority)
+  // Preload recently read book cover images with batching (same as library)
   const recentlyReadImageUrls = recentlyReadBooks.map(b => b.og_image_url || undefined);
-  useImagePreloader(recentlyReadImageUrls, { priority: true, width: 800, quality: 85 });
+  const priorityUrls = recentlyReadImageUrls.slice(0, 6);
+  const remainingUrls = recentlyReadImageUrls.slice(6);
+  
+  // Preload priority images immediately
+  useImagePreloader(priorityUrls, {
+    priority: true,
+    width: 800,
+    quality: 85,
+    batchSize: 6,
+    batchDelay: 0
+  });
+  
+  // Preload remaining images with batching
+  useImagePreloader(remainingUrls, {
+    priority: false,
+    width: 800,
+    quality: 85,
+    batchSize: 6,
+    batchDelay: 200
+  });
   // Filter out skipped habits and sort by status (pending first, completed/failed last)
   const activeCompletions = completions
     .filter(c => c.status !== 'skipped')

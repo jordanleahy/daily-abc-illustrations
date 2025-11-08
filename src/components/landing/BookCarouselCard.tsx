@@ -6,9 +6,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Badge } from '@/components/ui/badge';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { DailyPublishedWithActivity } from '@/hooks/useKidRecentlyRead';
-// trackBookView removed - tracking centralized in UserLibraryDetail
 import { formatDistanceToNow } from 'date-fns';
-import { PremiumContentWrapper } from '@/components/subscription/PremiumContentWrapper';
 import { Clock } from 'lucide-react';
 
 interface BookCarouselCardProps {
@@ -35,11 +33,10 @@ export const BookCarouselCard = memo(({ book }: BookCarouselCardProps) => {
   const dateLabel = activityBook.last_viewed_at ? 'Last read' : 'Published';
 
   return (
-    <PremiumContentWrapper showOverlay={true}>
-      <Card 
-        className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
-        onClick={handleClick}
-      >
+    <Card 
+      className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow"
+      onClick={handleClick}
+    >
         <CardContent className="p-0">
           <AspectRatio ratio={16/9}>
             <BookImage
@@ -61,7 +58,6 @@ export const BookCarouselCard = memo(({ book }: BookCarouselCardProps) => {
           </div>
         </CardContent>
       </Card>
-    </PremiumContentWrapper>
   );
 });
 

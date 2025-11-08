@@ -6,7 +6,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Badge } from '@/components/ui/badge';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { DailyPublishedWithActivity } from '@/hooks/useKidRecentlyRead';
-import { trackBookView } from '@/utils/bookViewTracking';
+// trackBookView removed - tracking centralized in UserLibraryDetail
 import { formatDistanceToNow } from 'date-fns';
 import { PremiumContentWrapper } from '@/components/subscription/PremiumContentWrapper';
 import { Clock } from 'lucide-react';
@@ -21,7 +21,7 @@ export const BookCarouselCard = memo(({ book }: BookCarouselCardProps) => {
   const activityBook = book as DailyPublishedWithActivity;
 
   const handleClick = () => {
-    trackBookView(book.id);
+    // Tracking centralized in UserLibraryDetail - just navigate
     navigate(`/library/${book.id}/detail`);
   };
 

@@ -19,7 +19,7 @@ import { generateBookPDF } from '@/services/pdfGenerator';
 import { toast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { useKidSelection } from '@/contexts/KidSelectionContext';
-import { trackBookView } from '@/utils/bookViewTracking';
+import { trackKidBookView } from '@/utils/bookViewTracking';
 
 export default function UserLibraryDetail() {
   const { id } = useParams<{ id: string }>();
@@ -41,10 +41,10 @@ export default function UserLibraryDetail() {
   // Preload all page images for instant display
   useDailyPublishedImagePreloader(pages, dailyContent?.book_id);
 
-  // Track book view for recently viewed section
+  // SINGLE SOURCE OF TRUTH: Track book view for recently viewed section
   useEffect(() => {
-    if (safeId && selectedKidId) {
-      trackBookView(safeId, selectedKidId);
+    if (safeId) {
+      trackKidBookView(safeId, selectedKidId);
     }
   }, [safeId, selectedKidId]);
   

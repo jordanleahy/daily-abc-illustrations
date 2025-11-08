@@ -15,7 +15,7 @@ import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useIsTeacher } from '@/contexts/RoleContext';
 import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { trackBookView } from '@/utils/bookViewTracking';
+// trackBookView removed - tracking centralized in UserLibraryDetail
 import { useFavorites } from '@/hooks/useFavorites';
 import { PremiumContentWrapper } from '@/components/subscription/PremiumContentWrapper';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
@@ -159,10 +159,7 @@ const LibraryBookCard = memo(function LibraryBookCard({
       return; // Blocked by premium overlay
     }
     
-    // Track the book view for sorting
-    trackBookView(item.id);
-    
-    // Navigate to detail page to choose starting page
+    // Tracking centralized in UserLibraryDetail - just navigate
     navigate(`/library/${item.id}/detail`);
   };
 

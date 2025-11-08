@@ -12,7 +12,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
-import { trackBookView } from '@/utils/bookViewTracking';
+// trackBookView removed - tracking centralized in UserLibraryDetail
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
@@ -43,12 +43,7 @@ export default function LibraryBookView() {
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   
-  // Track book view when page loads
-  useEffect(() => {
-    if (dailyContent?.id && user) {
-      trackBookView(dailyContent.id);
-    }
-  }, [dailyContent?.id, user]);
+  // Tracking centralized in UserLibraryDetail - removed from here
   
   // Get starting page index from location state (from UserLibraryDetail)
   const startingPageIndex = location.state?.startingPageIndex ?? 0;

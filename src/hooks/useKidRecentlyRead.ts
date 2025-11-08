@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 
-interface UserBookActivity {
+export interface UserBookActivity {
   id: string;
   user_id: string;
   daily_published_id: string;
@@ -17,6 +17,11 @@ interface UserBookActivity {
   daily_published: DailyPublishedWithBook;
 }
 
+export interface DailyPublishedWithActivity extends DailyPublishedWithBook {
+  last_viewed_at?: string;
+  view_count?: number;
+}
+
 /**
  * Fetches the last 10 books that a specific kid has recently viewed in the library
  * Filters by last_viewed_at to show their browsing history
@@ -24,7 +29,7 @@ interface UserBookActivity {
 export function useKidRecentlyRead(kidId: string | undefined) {
   return useQuery({
     queryKey: ['kid-recently-read', kidId],
-    queryFn: async (): Promise<DailyPublishedWithBook[]> => {
+    queryFn: async (): Promise<DailyPublishedWithActivity[]> => {
       if (!kidId) return [];
       
       const { data, error } = await supabase
@@ -51,10 +56,17 @@ export function useKidRecentlyRead(kidId: string | undefined) {
         throw error;
       }
       
-      // Extract and return the daily_published objects
-      return data
-        ?.map(activity => activity.daily_published)
-        .filter((book): book is DailyPublishedWithBook => book !== null) || [];
+      // Extract and return the daily_published objects with activity metadata
+      return (data || [])
+        .map(activity => {
+          if (!activity.daily_published) return null;
+          return {
+            ...activity.daily_published,
+            last_viewed_at: activity.last_viewed_at,
+            view_count: activity.view_count,
+          } as DailyPublishedWithActivity;
+        })
+        .filter((book): book is DailyPublishedWithActivity => book !== null);
     },
     enabled: !!kidId,
     staleTime: 1000 * 60, // 1 minute - fresh data for recent reads

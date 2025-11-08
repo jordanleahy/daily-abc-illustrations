@@ -101,4 +101,6 @@ export interface SkipHabitParams {
   completionId: string;
   coinsAmount: number;
   habitTitle: string;
+  coinsDeposited: number;
+  kidId: string;
 }

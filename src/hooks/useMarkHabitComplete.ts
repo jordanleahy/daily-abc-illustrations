@@ -3,9 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from './use-toast';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { MarkHabitCompleteParams } from '@/types/habit';
+import { HabitCompletionWithDetails } from '@/types/habit';
 
 /**
- * Hook to mark a habit as complete or incomplete
+ * Hook to mark a habit as complete or incomplete with optimistic updates
  */
 export function useMarkHabitComplete() {
   const queryClient = useQueryClient();
@@ -60,10 +61,74 @@ export function useMarkHabitComplete() {
         if (coinError) throw coinError;
       }
       
-      // If completed, coins stay (they were already deposited at 3 AM for regular habits,
-      // or will be deposited in reading view for book habits)
+      return { completionId, isComplete, coinsAmount, kidId, amountToDeduct };
+    },
+    onMutate: async ({ completionId, isComplete, coinsAmount, kidId }) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['today-habits'] });
+      await queryClient.cancelQueries({ queryKey: ['kid-profiles'] });
+
+      // Snapshot previous values
+      const previousHabits = queryClient.getQueryData(['today-habits', user?.id]);
+      const previousKidProfiles = queryClient.getQueryData(['kid-profiles', user?.id]);
+
+      // Optimistically update habit completion status
+      queryClient.setQueriesData(
+        { queryKey: ['today-habits'] },
+        (old: HabitCompletionWithDetails[] | undefined) => {
+          if (!old) return old;
+          return old.map(completion => {
+            if (completion.id === completionId) {
+              return {
+                ...completion,
+                status: isComplete ? 'completed' : 'declined',
+                coins_retained: isComplete ? coinsAmount : 0,
+                marked_at: new Date().toISOString(),
+              };
+            }
+            return completion;
+          });
+        }
+      );
+
+      // Optimistically update kid profile coins (only for declined habits)
+      if (!isComplete) {
+        queryClient.setQueryData(
+          ['kid-profiles', user?.id],
+          (old: any[] | undefined) => {
+            if (!old) return old;
+            return old.map(profile => {
+              if (profile.id === kidId) {
+                return {
+                  ...profile,
+                  earned_coins: Math.max(0, profile.earned_coins - coinsAmount),
+                };
+              }
+              return profile;
+            });
+          }
+        );
+      }
+
+      return { previousHabits, previousKidProfiles };
+    },
+    onError: (error, variables, context) => {
+      // Rollback on error
+      if (context?.previousHabits) {
+        queryClient.setQueriesData({ queryKey: ['today-habits'] }, context.previousHabits);
+      }
+      if (context?.previousKidProfiles) {
+        queryClient.setQueryData(['kid-profiles', user?.id], context.previousKidProfiles);
+      }
+      
+      toast({
+        title: 'Error',
+        description: `Failed to update habit: ${error.message}`,
+        variant: 'destructive',
+      });
     },
     onSuccess: (_, variables) => {
+      // Real-time subscription will update the data, but invalidate to ensure consistency
       queryClient.invalidateQueries({ queryKey: ['today-habits'] });
       queryClient.invalidateQueries({ queryKey: ['kid-profiles', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['my-habits'] });
@@ -71,13 +136,6 @@ export function useMarkHabitComplete() {
       toast({
         title: 'Success',
         description: variables.isComplete ? 'Habit marked as complete' : 'Habit marked as not done',
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to update habit: ${error.message}`,
-        variant: 'destructive',
       });
     },
   });

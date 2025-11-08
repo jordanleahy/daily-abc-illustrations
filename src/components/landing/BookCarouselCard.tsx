@@ -46,6 +46,7 @@ export const BookCarouselCard = memo(({ book }: BookCarouselCardProps) => {
               src={book.og_image_url || undefined}
               alt={bookData?.book_name || 'Book cover'}
               priority={false}
+              sizes="(max-width: 640px) 85vw, (max-width: 1024px) 45vw, 30vw"
               className="w-full h-full object-cover"
             />
           </AspectRatio>

@@ -102,13 +102,13 @@ Deno.serve(async (req) => {
       image_url: page.page_image_urls?.[0]?.image_url || '',
     })).filter(img => img.image_url); // Extra safety filter
 
-    // Add aggressive caching headers (1 hour for active content)
+    // Add aggressive caching headers (cache images list for 10 minutes)
     const cacheHeaders = {
       ...corsHeaders,
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=7200',
-      'CDN-Cache-Control': 'public, max-age=3600',
-      'Vercel-CDN-Cache-Control': 'public, max-age=3600',
+      'Cache-Control': 'public, max-age=600, stale-while-revalidate=1800',
+      'CDN-Cache-Control': 'public, max-age=600',
+      'Vercel-CDN-Cache-Control': 'public, max-age=600',
     };
 
     return new Response(

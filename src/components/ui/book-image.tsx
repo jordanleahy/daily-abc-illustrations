@@ -48,6 +48,7 @@ export function BookImage({
         alt={alt}
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}
+        decoding="async"
         crossOrigin="anonymous"
         className={`transition-opacity duration-200 ${className} ${
           imageLoaded ? 'opacity-100' : 'opacity-0'

@@ -13,6 +13,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useImagePreloader } from '@/hooks/useImagePreloader';
 
 const Index = () => {
   const { isAuthenticated } = useAuthContext();
@@ -35,6 +36,9 @@ const Index = () => {
   // Fetch recently read books for the selected kid
   const { data: recentlyReadBooks = [], isLoading: isLoadingBooks } = useKidRecentlyRead(selectedKid?.id);
   
+  // Preload recently read book cover images (first 6 as priority)
+  const recentlyReadImageUrls = recentlyReadBooks.map(b => b.og_image_url || undefined);
+  useImagePreloader(recentlyReadImageUrls, { priority: true, width: 800, quality: 85 });
   // Filter out skipped habits and sort by status (pending first, completed/failed last)
   const activeCompletions = completions
     .filter(c => c.status !== 'skipped')

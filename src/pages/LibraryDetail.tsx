@@ -12,6 +12,8 @@ import { MetaHead } from '@/components/common/MetaHead';
 import { useSeoMetadata, useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
 import { LibraryCard } from '@/components/page-prompts/LibraryCard';
 import { trackBookViewForCache } from '@/utils/bookViewTracking';
+import { useLibraryDetailImagePreloader } from '@/hooks/useLibraryDetailImagePreloader';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LibraryDetail() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +25,9 @@ export default function LibraryDetail() {
   const { data: pages = [], isLoading: pagesLoading } = useDailyPublishedPages(id);
   const { data: seoMetadata } = useSeoMetadata(id);
   const { data: bookSeoMetadata } = useSeoMetadataByBook(book?.book_id || undefined);
+  
+  // Progressive image preloading - priority images load first
+  const { priorityCount, totalCount } = useLibraryDetailImagePreloader(book?.book_id);
 
   useEffect(() => {
     if (!user) {
@@ -41,7 +46,8 @@ export default function LibraryDetail() {
     navigate('/library');
   };
 
-  const isLoading = bookLoading || pagesLoading;
+  // Only show full loading skeleton on first load with no data
+  const isInitialLoading = (bookLoading || pagesLoading) && !book && pages.length === 0;
 
   const pageTitle = seoMetadata?.seo_title || bookSeoMetadata?.seo_title || book?.title || 'ABC Cards Library';
   const pageDescription =
@@ -62,7 +68,7 @@ export default function LibraryDetail() {
     );
   }
 
-  if (isLoading) {
+  if (isInitialLoading) {
     return (
       <StandardPageLayout>
         <div className="space-y-6">
@@ -199,11 +205,16 @@ export default function LibraryDetail() {
             />
           )}
 
-          {/* All Pages Grid (collapsed by default) */}
+          {/* All Pages Grid - Progressive Loading */}
           {pages.length > 1 && (
             <Card>
               <CardHeader>
                 <CardTitle>All Pages</CardTitle>
+                {pagesLoading && (
+                  <p className="text-sm text-muted-foreground">
+                    Loading pages...
+                  </p>
+                )}
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

@@ -267,7 +267,9 @@ export function Header({
             {/* Mobile User Info - Hidden on google-chat page */}
             {location.pathname !== '/google-chat' && (
               <div className="flex md:hidden items-center gap-2">
-                <span className="text-sm font-medium">{displayName}</span>
+                <Link to="/" className="text-sm font-medium hover:text-primary transition-colors">
+                  {displayName}
+                </Link>
                 <span className="text-muted-foreground text-xs">·</span>
                 <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
               </div>

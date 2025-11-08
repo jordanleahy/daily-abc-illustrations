@@ -34,7 +34,10 @@ const Index = () => {
   const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(selectedKid?.id);
   
   // Fetch recently read books for the selected kid
-  const { data: recentlyReadBooks = [], isLoading: isLoadingBooks } = useKidRecentlyRead(selectedKid?.id);
+  const { data: recentlyReadBooksRaw = [], isLoading: isLoadingBooks } = useKidRecentlyRead(selectedKid?.id);
+  
+  // Filter out books without og_image_url to prevent infinite shimmer
+  const recentlyReadBooks = recentlyReadBooksRaw.filter(b => b.og_image_url);
   
   // Preload recently read book cover images with batching (same as library)
   const recentlyReadImageUrls = recentlyReadBooks.map(b => b.og_image_url || undefined);

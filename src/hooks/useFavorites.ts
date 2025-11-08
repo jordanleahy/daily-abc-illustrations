@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -14,11 +15,38 @@ export interface UserFavorite {
 /**
  * Hook to manage user favorites (heart collection)
  * Provides functionality to fetch, add, and remove favorites
+ * Includes real-time subscription for instant updates across devices
  */
 export const useFavorites = () => {
   const { user } = useAuthContext();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+
+  // Real-time subscription for favorites changes
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('user-favorites-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_favorites',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('User favorite changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ['user-favorites', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
 
   // Fetch all favorites for the current user
   const { data: favorites = [], isLoading } = useQuery({

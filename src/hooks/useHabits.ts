@@ -1,13 +1,42 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { Habit } from '@/types/habit';
 
 /**
  * Hook to fetch all active habits for the current parent user
+ * Includes real-time subscription for instant updates across devices
  */
 export function useHabits() {
   const { user } = useAuthContext();
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for habits changes
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('habits-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'habits',
+          filter: `parent_user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Habit changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ['habits', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
 
   return useQuery({
     queryKey: ['habits', user?.id],

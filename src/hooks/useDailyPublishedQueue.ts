@@ -1,11 +1,38 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadataSubscription } from './useSeoMetadataSubscription';
 
 export const useDailyPublishedQueue = () => {
+  const queryClient = useQueryClient();
+  
   // Enable real-time subscriptions for SEO metadata updates
   useSeoMetadataSubscription();
+  
+  // Real-time subscription for daily_published changes (schedule updates)
+  useEffect(() => {
+    const channel = supabase
+      .channel('daily-published-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'daily_published',
+        },
+        (payload) => {
+          console.log('Daily published changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ['daily-published-queue'] });
+          queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
   
   return useQuery({
     queryKey: ['daily-published-queue'],

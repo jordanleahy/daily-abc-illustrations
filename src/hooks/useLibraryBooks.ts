@@ -1,12 +1,49 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadataSubscription } from './useSeoMetadataSubscription';
 import { cacheLibraryBooks, getCachedLibraryBooks } from '@/utils/libraryCache';
 
 export const useLibraryBooks = () => {
+  const queryClient = useQueryClient();
+  
   // Enable real-time subscriptions for SEO metadata updates
   useSeoMetadataSubscription();
+  
+  // Real-time subscription for user book activity (Recently Viewed updates)
+  useEffect(() => {
+    const getUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.id) return;
+
+      const channel = supabase
+        .channel('user-book-activity-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'user_book_activity',
+            filter: `user_id=eq.${user.id}`,
+          },
+          (payload) => {
+            console.log('User book activity changed:', payload);
+            queryClient.invalidateQueries({ queryKey: ['library-books'] });
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    };
+
+    const cleanup = getUser();
+    return () => {
+      cleanup.then(cleanupFn => cleanupFn?.());
+    };
+  }, [queryClient]);
   
   return useQuery({
     queryKey: ['library-books'],

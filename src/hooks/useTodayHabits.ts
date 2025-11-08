@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
@@ -16,7 +17,34 @@ import { HabitCompletionWithDetails } from '@/types/habit';
  */
 export function useTodayHabits(kidProfileId?: string) {
   const { user } = useAuthContext();
+  const queryClient = useQueryClient();
   const todayDate = format(new Date(), 'yyyy-MM-dd');
+
+  // Real-time subscription for habit completions
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const channel = supabase
+      .channel('habit-completions-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'habit_completions',
+          filter: `parent_user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('Habit completion changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ['today-habits', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
 
   return useQuery({
     queryKey: ['today-habits', user?.id, kidProfileId, todayDate],

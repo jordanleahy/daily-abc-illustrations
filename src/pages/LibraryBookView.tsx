@@ -133,8 +133,11 @@ export default function LibraryBookView() {
   // Extract words from text overlay when page changes
   useEffect(() => {
     const page = reorderedPages[currentPageIndex];
-    if (page?.content?.textOverlay?.enabled && page?.content?.textOverlay?.text) {
-      const extracted = extractWords(page.content.textOverlay.text);
+    const textOverlayText = page?.content?.textOverlay?.text;
+    const textOverlayEnabled = page?.content?.textOverlay?.enabled ?? false;
+    
+    if (textOverlayEnabled && textOverlayText) {
+      const extracted = extractWords(textOverlayText);
       setWords(extracted);
       setCurrentWordIndex(0);
     } else {
@@ -181,13 +184,13 @@ export default function LibraryBookView() {
   };
 
   const handleStartWordLearning = () => {
-    if (!selectedKidId) {
-      toast.error('No kid profile selected');
+    if (words.length === 0) {
+      toast.error('No words available on this page');
       return;
     }
     
-    if (words.length === 0) {
-      toast.error('No words available on this page');
+    if (!selectedKidId && (!kidProfiles || kidProfiles.length === 0)) {
+      toast.error('Please create a kid profile first');
       return;
     }
     
@@ -542,7 +545,7 @@ export default function LibraryBookView() {
             </div>
           ) : (
             <>
-              {words.length > 0 && selectedKidId && (
+              {words.length > 0 ? (
                 <div className="px-4 pb-2">
                   <Button 
                     onClick={handleStartWordLearning}
@@ -554,13 +557,14 @@ export default function LibraryBookView() {
                     Practice Words
                   </Button>
                 </div>
+              ) : (
+                <BottomSlideNavigation 
+                  onSlide={handleNext}
+                  disabled={isAddingCoins}
+                  variant="compact"
+                  slideText={isLastPage ? "Finish & Collect Coins" : undefined}
+                />
               )}
-              <BottomSlideNavigation 
-                onSlide={handleNext}
-                disabled={isAddingCoins}
-                variant="compact"
-                slideText={isLastPage ? "Finish & Collect Coins" : undefined}
-              />
             </>
           )}
         </div>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useKidSelection } from '@/contexts/KidSelectionContext';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -24,19 +24,20 @@ import { AddKidModal } from '@/components/profile/AddKidModal';
 
 export default function Rewards() {
   const { user, loading: authLoading } = useAuthContext();
-  const { selectedKid, selectedKidId, availableKids, setSelectedKidId } = useKidSelection();
+  const { data: kidProfiles, isLoading } = useKidProfiles();
+  const [selectedKidId, setSelectedKidId] = useState<string>('');
   const [purchaseProduct, setPurchaseProduct] = useState<RewardsProduct | null>(null);
   const [showAddKidModal, setShowAddKidModal] = useState(false);
   
   const { data: products } = useRewardsProducts();
-  const { data: purchases } = useKidPurchases(selectedKidId || undefined);
+  const { data: purchases } = useKidPurchases(selectedKidId || kidProfiles?.[0]?.id);
   const purchaseReward = usePurchaseReward();
   
   // Preload product images for instant display
   useRewardsImagePreloader(products);
 
   const activeProducts = products?.filter((p) => p.is_active && (p.quantity_available === null || p.quantity_available > 0)) || [];
-  const kidPurchases = purchases?.filter((p) => p.kid_profile_id === selectedKidId) || [];
+  const kidPurchases = purchases?.filter((p) => p.kid_profile_id === (selectedKidId || kidProfiles?.[0]?.id)) || [];
 
   // Redirect if not authenticated
   if (authLoading) {
@@ -53,7 +54,15 @@ export default function Rewards() {
     );
   }
 
-  if (!availableKids || availableKids.length === 0) {
+  if (isLoading) {
+    return (
+      <StandardPageLayout>
+        <LoadingState text="Loading rewards..." />
+      </StandardPageLayout>
+    );
+  }
+
+  if (!kidProfiles || kidProfiles.length === 0) {
     return (
       <StandardPageLayout>
         <div className="container max-w-4xl mx-auto p-6 space-y-6">
@@ -149,16 +158,25 @@ export default function Rewards() {
     );
   }
 
+  // Auto-select first kid if none selected
+  const currentKid = selectedKidId 
+    ? kidProfiles.find(kid => kid.id === selectedKidId)
+    : kidProfiles[0];
+
+  if (!currentKid && !selectedKidId && kidProfiles.length > 0) {
+    setSelectedKidId(kidProfiles[0].id);
+  }
+
   const handleBuyProduct = (product: RewardsProduct) => {
     setPurchaseProduct(product);
   };
 
   const handleConfirmPurchase = () => {
-    if (!purchaseProduct || !selectedKid) return;
+    if (!purchaseProduct || !currentKid) return;
 
     purchaseReward.mutate(
       {
-        kidProfileId: selectedKid.id,
+        kidProfileId: currentKid.id,
         productId: purchaseProduct.id,
       },
       {
@@ -179,7 +197,7 @@ export default function Rewards() {
           </p>
         </div>
 
-        {availableKids.length > 1 && (
+        {kidProfiles.length > 1 && (
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -188,12 +206,12 @@ export default function Rewards() {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <Select value={selectedKidId || ''} onValueChange={setSelectedKidId}>
+              <Select value={selectedKidId || kidProfiles[0]?.id} onValueChange={setSelectedKidId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select a kid to view rewards" />
                 </SelectTrigger>
-                <SelectContent className="bg-background z-[100]">
-                  {availableKids.map((kid) => (
+                <SelectContent>
+                  {kidProfiles.map((kid) => (
                     <SelectItem key={kid.id} value={kid.id}>
                       <div className="flex items-center gap-2">
                         <Avatar className="h-6 w-6">
@@ -212,7 +230,7 @@ export default function Rewards() {
           </Card>
         )}
 
-        {selectedKid && (
+        {currentKid && (
           <div className="space-y-6">
             {/* Kid Info & Coin Balance */}
             <Card className="bg-gradient-to-r from-primary/10 to-secondary/10">
@@ -220,19 +238,19 @@ export default function Rewards() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
                     <Avatar className="h-16 w-16">
-                      <AvatarImage src={selectedKid.profile_image_url} />
+                      <AvatarImage src={currentKid.profile_image_url} />
                       <AvatarFallback className="text-xl">
-                        {selectedKid.first_name[0]}{selectedKid.last_name[0]}
+                        {currentKid.first_name[0]}{currentKid.last_name[0]}
                       </AvatarFallback>
                     </Avatar>
                     <div>
                       <h2 className="text-2xl font-bold">
-                        {selectedKid.first_name} {selectedKid.last_name}
+                        {currentKid.first_name} {currentKid.last_name}
                       </h2>
                       <p className="text-muted-foreground">Reading Champion</p>
                     </div>
                   </div>
-                  <CoinCounter coins={selectedKid.earned_coins || 0} size="md" />
+                  <CoinCounter coins={currentKid.earned_coins || 0} size="md" />
                 </div>
               </CardContent>
             </Card>
@@ -246,9 +264,9 @@ export default function Rewards() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {selectedKid.earned_coins > 0 ? (
+                {currentKid.earned_coins > 0 ? (
                   <div className="bg-muted/50 rounded-lg">
-                    <RewardContainer earnedRewards={selectedKid.earned_coins} />
+                    <RewardContainer earnedRewards={currentKid.earned_coins} />
                   </div>
                 ) : (
                   <div className="text-center py-8">
@@ -311,7 +329,7 @@ export default function Rewards() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {activeProducts.map((product) => {
-                      const canAfford = (selectedKid.earned_coins || 0) >= product.coin_price;
+                      const canAfford = (currentKid.earned_coins || 0) >= product.coin_price;
                       return (
                         <ProductCard
                           key={product.id}
@@ -380,7 +398,7 @@ export default function Rewards() {
           open={!!purchaseProduct}
           onOpenChange={(open) => !open && setPurchaseProduct(null)}
           product={purchaseProduct}
-          currentCoins={selectedKid?.earned_coins || 0}
+          currentCoins={currentKid?.earned_coins || 0}
           onConfirm={handleConfirmPurchase}
         />
       </div>

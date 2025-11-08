@@ -5,7 +5,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AuthProvider } from "@/contexts/AuthContext";
-import { KidSelectionProvider } from "@/contexts/KidSelectionContext";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import AdminChat from "./pages/AdminChat";
@@ -70,7 +69,6 @@ const App = () => {
       <HelmetProvider>
         <AuthProvider>
           <RoleProvider>
-            <KidSelectionProvider>
               <Toaster />
               <Sonner />
               <BrowserRouter>
@@ -115,7 +113,6 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
-            </KidSelectionProvider>
           </RoleProvider>
         </AuthProvider>
     </HelmetProvider>

@@ -9,7 +9,6 @@ import { useHabitSchedule } from '@/hooks/useHabitSchedule';
 import { useToggleHabitSchedule } from '@/hooks/useToggleHabitSchedule';
 import { useAddHabitToday } from '@/hooks/useAddHabitToday';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
-import { useToggleAutoSchedule } from '@/hooks/useToggleAutoSchedule';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Link } from 'react-router-dom';
 import { addDays } from 'date-fns';
@@ -39,7 +38,6 @@ export default function HabitsManage() {
   const { data: todayCompletions = [] } = useTodayHabits();
   const toggleSchedule = useToggleHabitSchedule();
   const addToday = useAddHabitToday();
-  const toggleAutoSchedule = useToggleAutoSchedule();
 
   // Count how many times each habit has been added today
   const todayHabitsCount = todayCompletions.reduce((acc, completion) => {
@@ -81,10 +79,6 @@ export default function HabitsManage() {
 
   const handleAddToday = (habitId: string) => {
     addToday.mutate(habitId);
-  };
-
-  const handleToggleAutoSchedule = (habitId: string, isCurrentlyAuto: boolean) => {
-    toggleAutoSchedule.mutate({ habitId, isAutoSchedule: !isCurrentlyAuto });
   };
 
   return (
@@ -133,7 +127,6 @@ export default function HabitsManage() {
                 onScheduleToggle={handleScheduleToggle}
                 onAddToday={handleAddToday}
                 timesAddedToday={todayHabitsCount.get(habit.id) || 0}
-                onToggleAutoSchedule={handleToggleAutoSchedule}
               />
             ))}
           </div>

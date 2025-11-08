@@ -21,8 +21,8 @@ import { useIsAdmin, useIsTeacher } from '@/contexts/RoleContext';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { useProfile } from '@/hooks/useProfile';
-import { useKidSelection } from '@/contexts/KidSelectionContext';
-import { KidSelector } from '@/components/profile/KidSelector';
+import { useParentTotalCoins } from '@/hooks/useParentTotalCoins';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
 import { UserProfileModal } from '@/components/profile/UserProfileModal';
@@ -103,17 +103,18 @@ export function Header({
   const { qrCodeData } = useBookQRCode(bookId || '');
   const { hasHabitsRewards } = useFeatureAccess();
   const { data: profile } = useProfile();
-  const { selectedKid, availableKids } = useKidSelection();
+  const { totalCoins } = useParentTotalCoins();
+  const { data: kidProfiles } = useKidProfiles();
   const navigate = useNavigate();
   const location = useLocation();
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  // Display name: Use selected kid's name if exists, otherwise parent's name
-  const displayName = selectedKid?.first_name || profile?.first_name || user?.email?.split('@')[0] || 'User';
-  
-  // Show selected kid's coins, not total
-  const displayedCoins = selectedKid?.earned_coins || 0;
+  // Display name strategy: Use kid's name if only one kid exists, otherwise use parent's name
+  // This matches the pattern used in ReadingHeader, Index, LibraryBookView, and Rewards pages
+  const displayName = kidProfiles?.length === 1 
+    ? kidProfiles[0].first_name
+    : profile?.first_name || user?.email?.split('@')[0] || 'User';
 
   /** Sign out handler with automatic redirect to authentication page */
   const handleSignOut = async () => {
@@ -270,7 +271,7 @@ export function Header({
                   {displayName}
                 </Link>
                 <span className="text-muted-foreground text-xs">·</span>
-                <CoinCounter coins={displayedCoins} size="sm" showLabel={false} />
+                <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
               </div>
             )}
             
@@ -332,14 +333,8 @@ export function Header({
             )}
           </nav>
           
-          {/* Right section: Kid selector + Review button + Admin controls + QR button */}
+          {/* Right section: Review button + Admin controls + QR button */}
           <div className="flex items-center gap-2">
-            {/* Kid Selector - Desktop Only */}
-            {availableKids.length > 1 && (
-              <div className="hidden md:block">
-                <KidSelector compact showCoins={false} />
-              </div>
-            )}
             {/* Desktop Review/View Book Button - Google Chat only */}
             {showReviewButton && onReviewClick && (
               <Button
@@ -376,10 +371,7 @@ export function Header({
                 </SheetHeader>
                 <div className="flex items-center justify-between px-6 py-3 border-b">
                   <span className="text-base font-semibold">{displayName}</span>
-                  <CoinCounter coins={displayedCoins} size="sm" showLabel={false} />
-                </div>
-                <div className="mt-6 px-6">
-                  <KidSelector />
+                  <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
                 </div>
                 <div className="mt-6 space-y-2">
                   {/* Navigation Links - show admin nav for admins, regular nav for others */}
@@ -427,7 +419,7 @@ export function Header({
                 <Button variant="ghost" size="sm" className="relative hidden md:flex items-center gap-2 px-3">
                   <span className="text-sm font-medium">{displayName}</span>
                   <span className="text-muted-foreground text-sm">·</span>
-                  <CoinCounter coins={displayedCoins} size="sm" showLabel={false} />
+                  <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
                   <span className="sr-only">User menu</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -437,7 +429,7 @@ export function Header({
                     <p className="font-medium text-sm">{displayName}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
-                  <CoinCounter coins={displayedCoins} size="sm" showLabel={false} />
+                  <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setIsProfileModalOpen(true)}>

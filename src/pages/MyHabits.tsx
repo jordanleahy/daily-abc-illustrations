@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { CoinCounter } from '@/components/ui/coin-counter';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
-import { useKidSelection } from '@/contexts/KidSelectionContext';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useDeleteHabit } from '@/hooks/useDeleteHabit';
 import { LoadingState } from '@/components/ui/loading-state';
 import { Coins, Trash2, BookOpen } from 'lucide-react';
@@ -12,9 +12,12 @@ import { useNavigate } from 'react-router-dom';
 
 export default function MyHabits() {
   const navigate = useNavigate();
-  const { selectedKid } = useKidSelection();
+  const { data: kids = [] } = useKidProfiles();
   const deleteHabit = useDeleteHabit();
   
+  // For now, show habits for the first kid
+  // In a real app, you'd have kid selection or authentication
+  const selectedKid = kids[0];
   const { data: completions = [], isLoading } = useTodayHabits(selectedKid?.id);
 
   const handleDelete = (habitId: string, habitTitle: string) => {

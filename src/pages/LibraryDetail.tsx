@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useKidSelection } from '@/contexts/KidSelectionContext';
 import { StandardPageLayout } from '@/components/layout';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
@@ -15,13 +14,10 @@ import { LibraryCard } from '@/components/page-prompts/LibraryCard';
 import { trackBookViewForCache, trackBookView } from '@/utils/bookViewTracking';
 import { useLibraryDetailImagePreloader } from '@/hooks/useLibraryDetailImagePreloader';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useUserBookActivity } from '@/hooks/useUserBookActivity';
-import { formatDistanceToNow } from 'date-fns';
 
 export default function LibraryDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthContext();
-  const { selectedKidId } = useKidSelection();
   const navigate = useNavigate();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
@@ -29,7 +25,6 @@ export default function LibraryDetail() {
   const { data: pages = [], isLoading: pagesLoading } = useDailyPublishedPages(id);
   const { data: seoMetadata } = useSeoMetadata(id);
   const { data: bookSeoMetadata } = useSeoMetadataByBook(book?.book_id || undefined);
-  const { data: recentActivity = [] } = useUserBookActivity(10);
   
   // Progressive image preloading - priority images load first
   const { priorityCount, totalCount } = useLibraryDetailImagePreloader(book?.book_id);
@@ -44,9 +39,9 @@ export default function LibraryDetail() {
   useEffect(() => {
     if (id) {
       trackBookViewForCache(id);
-      trackBookView(id, selectedKidId); // Update database for Recently Viewed
+      trackBookView(id); // Update database for Recently Viewed
     }
-  }, [id, selectedKidId]);
+  }, [id]);
 
   const handleBack = () => {
     navigate('/library');
@@ -254,54 +249,6 @@ export default function LibraryDetail() {
                 <p className="text-muted-foreground">
                   This book doesn't have any pages to display yet.
                 </p>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Recent Activity Section */}
-          {recentActivity.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="w-5 h-5" />
-                  Recent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {recentActivity.map((activity) => {
-                    const bookTitle = activity.daily_published?.title || activity.book?.book_name || 'Untitled';
-                    const timeAgo = formatDistanceToNow(new Date(activity.last_viewed_at), { addSuffix: true });
-                    const viewText = activity.view_count === 1 ? '1 view' : `${activity.view_count} views`;
-                    
-                    return (
-                      <div
-                        key={activity.id}
-                        className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
-                      >
-                        <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <BookOpen className="w-4 h-4 text-muted-foreground shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <p className="font-medium text-sm truncate">{bookTitle}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {viewText} • {timeAgo}
-                            </p>
-                          </div>
-                        </div>
-                        {activity.daily_published_id && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => navigate(`/library/${activity.daily_published_id}`)}
-                            className="shrink-0 ml-2"
-                          >
-                            View
-                          </Button>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
               </CardContent>
             </Card>
           )}

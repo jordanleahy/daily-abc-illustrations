@@ -17,9 +17,7 @@ import { Calendar, BookOpen, Download, Plus, CheckCircle, Lock, Loader2 } from '
 import { isValidUUID } from '@/utils/uuid';
 import { generateBookPDF } from '@/services/pdfGenerator';
 import { toast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
-import { useKidSelection } from '@/contexts/KidSelectionContext';
-import { trackKidBookView } from '@/utils/bookViewTracking';
+import { useState } from 'react';
 
 export default function UserLibraryDetail() {
   const { id } = useParams<{ id: string }>();
@@ -34,19 +32,11 @@ export default function UserLibraryDetail() {
   const { data: isBookAdded = false } = useIsBookAddedAsHabit(dailyContent?.book_id);
   const { hasHabitsRewards } = useFeatureAccess();
   const { hasActiveSubscription } = useSubscription();
-  const { selectedKidId } = useKidSelection();
   
   const [isDownloading, setIsDownloading] = useState(false);
   
   // Preload all page images for instant display
   useDailyPublishedImagePreloader(pages, dailyContent?.book_id);
-
-  // SINGLE SOURCE OF TRUTH: Track book view for recently viewed section
-  useEffect(() => {
-    if (safeId) {
-      trackKidBookView(safeId, selectedKidId);
-    }
-  }, [safeId, selectedKidId]);
   
   const isLoading = isLoadingDaily || isLoadingPages;
 

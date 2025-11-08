@@ -8,11 +8,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { queryClient } from '@/App';
 
 /**
- * SIMPLIFIED: Track book view with kid-specific scoping
- * Uses deterministic two-step write (select, then update OR insert)
- * Correctly invalidates kid-specific cache for immediate home page updates
+ * Track that a daily published book was viewed by the current user
+ * Uses a two-step process: fetch current count, then upsert with increment
+ * Invalidates library cache to update Recently Viewed in real-time
  */
-export const trackKidBookView = async (dailyPublishedId: string, kidId?: string): Promise<void> => {
+export const trackBookView = async (dailyPublishedId: string): Promise<void> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -21,71 +21,39 @@ export const trackKidBookView = async (dailyPublishedId: string, kidId?: string)
       return;
     }
 
-    // Step 1: Scoped query - check for existing activity with this exact kid_id (or null for parent)
-    let query = supabase
+    // First, try to get existing activity record
+    const { data: existing } = await supabase
       .from('user_book_activity')
-      .select('id, view_count')
+      .select('view_count')
       .eq('user_id', user.id)
-      .eq('daily_published_id', dailyPublishedId);
-    
-    // Apply kid_id filter based on whether kidId is provided
-    if (kidId) {
-      query = query.eq('kid_id', kidId);
-    } else {
-      query = query.is('kid_id', null);
-    }
-    
-    const { data: existing } = await query.maybeSingle();
+      .eq('daily_published_id', dailyPublishedId)
+      .maybeSingle();
 
-    const now = new Date().toISOString();
-
-    if (existing) {
-      // Step 2a: Update existing record with scoped match
-      const { error } = await supabase
-        .from('user_book_activity')
-        .update({
-          last_viewed_at: now,
-          view_count: existing.view_count + 1,
-        })
-        .match({
+    // Upsert with incremented view count
+    const { error } = await supabase
+      .from('user_book_activity')
+      .upsert(
+        {
           user_id: user.id,
           daily_published_id: dailyPublishedId,
-          kid_id: kidId || null,
-        });
+          last_viewed_at: new Date().toISOString(),
+          view_count: existing ? existing.view_count + 1 : 1,
+        },
+        {
+          onConflict: 'user_id,daily_published_id',
+        }
+      );
 
-      if (error) {
-        console.warn('Failed to update book view:', error);
-        return;
-      }
+    if (error) {
+      console.warn('Failed to track book view:', error);
     } else {
-      // Step 2b: Insert new record
-      const { error } = await supabase
-        .from('user_book_activity')
-        .insert({
-          user_id: user.id,
-          daily_published_id: dailyPublishedId,
-          kid_id: kidId || null,
-          last_viewed_at: now,
-          view_count: 1,
-        });
-
-      if (error) {
-        console.warn('Failed to insert book view:', error);
-        return;
-      }
+      // Invalidate library books query to update Recently Viewed
+      queryClient.invalidateQueries({ queryKey: ['library-books'] });
     }
-
-    // CRITICAL: Invalidate the CORRECT cache key that the home page uses
-    queryClient.invalidateQueries({ queryKey: ['kid-recently-read', kidId] });
   } catch (error) {
     console.warn('Failed to track book view:', error);
   }
 };
-
-/**
- * @deprecated Use trackKidBookView instead for proper kid-scoped tracking
- */
-export const trackBookView = trackKidBookView;
 
 /**
  * Track that a user's own book was viewed/opened

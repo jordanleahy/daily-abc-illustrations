@@ -31,11 +31,7 @@ export function BookImage({
   
   if (!src) {
     return (
-      <div className={`${className} flex items-center justify-center bg-muted/30`}>
-        <div className="text-center p-4">
-          <p className="text-sm text-muted-foreground">No image available</p>
-        </div>
-      </div>
+      <Shimmer className={className} isShimmering={true} />
     );
   }
 
@@ -52,7 +48,6 @@ export function BookImage({
         alt={alt}
         loading={priority ? "eager" : "lazy"}
         fetchPriority={priority ? "high" : "auto"}
-        decoding="async"
         crossOrigin="anonymous"
         className={`transition-opacity duration-200 ${className} ${
           imageLoaded ? 'opacity-100' : 'opacity-0'

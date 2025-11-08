@@ -6,13 +6,13 @@ import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImagePreloader';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
-import { useKidSelection } from '@/contexts/KidSelectionContext';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidCoins } from '@/hooks/useKidCoins';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
-// trackBookView removed - tracking centralized in UserLibraryDetail
+import { trackBookView } from '@/utils/bookViewTracking';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
@@ -37,13 +37,18 @@ export default function LibraryBookView() {
   const safeId = id && isValidUUID(id) ? id : undefined;
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
-  const { selectedKid } = useKidSelection();
+  const { data: kidProfiles } = useKidProfiles();
   const { completeBookHabit } = useCompleteBookHabit();
   const { hasHabitsRewards } = useFeatureAccess();
   
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
   
-  // Tracking centralized in UserLibraryDetail - removed from here
+  // Track book view when page loads
+  useEffect(() => {
+    if (dailyContent?.id && user) {
+      trackBookView(dailyContent.id);
+    }
+  }, [dailyContent?.id, user]);
   
   // Get starting page index from location state (from UserLibraryDetail)
   const startingPageIndex = location.state?.startingPageIndex ?? 0;
@@ -62,8 +67,9 @@ export default function LibraryBookView() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Use selected kid from context
-  const { addCoins, isAddingCoins } = useKidCoins(selectedKid?.id);
+  // Auto-select kid if only one exists
+  const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
+  const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
   
   // Get upload function for current page (must be called before any early returns)
   const { uploadImage } = usePageImageUrls(uploadingForPageId || '');
@@ -171,18 +177,18 @@ export default function LibraryBookView() {
   const handleNext = async () => {
     if (isLastPage) {
       // Auto-complete reading habit if exists (only for Plus tier users)
-      if (hasHabitsRewards && selectedKid?.id && dailyContent?.book_id) {
+      if (hasHabitsRewards && selectedKidId && dailyContent?.book_id) {
         await completeBookHabit({
           bookId: dailyContent.book_id,
-          kidProfileId: selectedKid.id,
+          kidProfileId: selectedKidId,
         });
       }
 
       // User finished the book - ONLY deposit coins for Plus tier users
-      if (hasHabitsRewards && selectedKid?.id && earnedRewards > 0) {
+      if (hasHabitsRewards && selectedKidId && earnedRewards > 0) {
         try {
           await addCoins({ 
-            kidId: selectedKid.id, 
+            kidId: selectedKidId, 
             coinsToAdd: earnedRewards 
           });
           
@@ -361,7 +367,7 @@ export default function LibraryBookView() {
           subtitle={`${currentPageIndex + 1} of ${reorderedPages.length}`}
           bookId={dailyContent.book_id}
           onBack={handleBack}
-          kidId={selectedKid?.id}
+          kidId={selectedKidId}
           onPrevious={handleHeaderPrevious}
           onNext={handleHeaderNext}
           hasPrevious={currentPageIndex > 0}

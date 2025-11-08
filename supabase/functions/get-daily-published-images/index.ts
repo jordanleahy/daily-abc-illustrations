@@ -61,13 +61,12 @@ Deno.serve(async (req) => {
       targetBookId = dpData.book_id;
     }
 
-    // Step 1: Fetch pages for the target book (simple indexed query)
+    // Fetch pages for the book
     const { data: pages, error: pagesError } = await supabase
       .from('pages')
       .select('id, letter, page_number')
       .eq('book_id', targetBookId)
-      .order('page_number', { ascending: true })
-      .limit(60); // Safety limit
+      .order('page_number', { ascending: true });
 
     if (pagesError) {
       console.error('Error fetching pages:', pagesError);
@@ -78,15 +77,16 @@ Deno.serve(async (req) => {
     }
 
     if (!pages || pages.length === 0) {
+      console.log('No pages found for book');
       return new Response(
-        JSON.stringify({ bookId: targetBookId, totalPages: 0, imagesFound: 0, images: [] }),
+        JSON.stringify({ error: 'No pages found', images: [] }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Step 2: Fetch latest image URLs for these pages (uses idx_page_image_urls_page_latest)
-    const pageIds = pages.map((p) => p.id);
-    const { data: imageRows, error: imagesError } = await supabase
+    // Fetch all latest complete images for these pages in one query
+    const pageIds = pages.map(p => p.id);
+    const { data: imageUrls, error: imagesError } = await supabase
       .from('page_image_urls')
       .select('page_id, image_url')
       .in('page_id', pageIds)
@@ -94,33 +94,36 @@ Deno.serve(async (req) => {
       .not('image_url', 'is', null);
 
     if (imagesError) {
-      console.error('Error fetching page images:', imagesError);
+      console.error('Error fetching images:', imagesError);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch images' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Build a map of page_id -> image_url and construct response array
-    const imageMap = new Map<string, string>((imageRows || []).map((r: any) => [r.page_id, r.image_url]));
+    // Create a map for quick image lookup
+    const imageMap = new Map(imageUrls?.map(img => [img.page_id, img]) || []);
 
-    const pageImages: PageImage[] = (pages || [])
-      .map((p: any) => ({
-        page_id: p.id,
-        letter: p.letter,
-        page_number: p.page_number,
-        image_url: imageMap.get(p.id) || ''
-      }))
-      .filter((img) => !!img.image_url);
+    // Build response with page metadata, only include pages that have images
+    const pageImages: PageImage[] = pages
+      .filter(page => imageMap.has(page.id))
+      .map(page => {
+        const imageData = imageMap.get(page.id);
+        return {
+          page_id: page.id,
+          letter: page.letter,
+          page_number: page.page_number,
+          image_url: imageData?.image_url || '',
+        };
+      });
 
-
-    // Add aggressive caching headers (cache images list for 10 minutes)
+    // Add aggressive caching headers (1 hour for active content)
     const cacheHeaders = {
       ...corsHeaders,
       'Content-Type': 'application/json',
-      'Cache-Control': 'public, max-age=600, stale-while-revalidate=1800',
-      'CDN-Cache-Control': 'public, max-age=600',
-      'Vercel-CDN-Cache-Control': 'public, max-age=600',
+      'Cache-Control': 'public, max-age=3600, stale-while-revalidate=7200',
+      'CDN-Cache-Control': 'public, max-age=3600',
+      'Vercel-CDN-Cache-Control': 'public, max-age=3600',
     };
 
     return new Response(

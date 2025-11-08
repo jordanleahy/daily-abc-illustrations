@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useUpdateHabit } from '@/hooks/useUpdateHabit';
 import { Habit, HabitFrequency } from '@/types/habit';
 import { Loader2, X } from 'lucide-react';
@@ -19,9 +19,8 @@ export function EditHabitModal({ open, onOpenChange, habit }: EditHabitModalProp
   const [description, setDescription] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [coinAmount, setCoinAmount] = useState('10');
-  const [frequency, setFrequency] = useState<HabitFrequency>('manual');
+  const [frequency, setFrequency] = useState<HabitFrequency>('daily');
   const [deadlineTime, setDeadlineTime] = useState('');
-  const [isAutoSchedule, setIsAutoSchedule] = useState(false);
 
   const updateHabit = useUpdateHabit();
 
@@ -34,7 +33,6 @@ export function EditHabitModal({ open, onOpenChange, habit }: EditHabitModalProp
       setCoinAmount(habit.coin_amount.toString());
       setFrequency(habit.frequency);
       setDeadlineTime(habit.deadline_time || '');
-      setIsAutoSchedule(habit.frequency === 'daily');
     }
   }, [habit]);
 
@@ -51,7 +49,7 @@ export function EditHabitModal({ open, onOpenChange, habit }: EditHabitModalProp
       description: description || undefined,
       photo_url: photoUrl || undefined,
       coin_amount: parseInt(coinAmount),
-      frequency: isAutoSchedule ? 'daily' : 'manual',
+      frequency,
       deadline_time: deadlineTime || undefined,
     });
 
@@ -112,6 +110,21 @@ export function EditHabitModal({ open, onOpenChange, habit }: EditHabitModalProp
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="frequency">Frequency *</Label>
+            <Select value={frequency} onValueChange={(value) => setFrequency(value as HabitFrequency)}>
+              <SelectTrigger id="frequency">
+                <SelectValue placeholder="Select frequency" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="daily">Daily</SelectItem>
+                <SelectItem value="weekly">Weekly</SelectItem>
+                <SelectItem value="monthly">Monthly</SelectItem>
+                <SelectItem value="manual">Manual</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="deadlineTime">Deadline Time (Optional)</Label>
             <div className="relative">
               <Input
@@ -134,25 +147,6 @@ export function EditHabitModal({ open, onOpenChange, habit }: EditHabitModalProp
             <p className="text-xs text-muted-foreground">
               If set, habit will automatically decline after this time
             </p>
-          </div>
-
-          {/* Auto-schedule toggle */}
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border border-border">
-            <div className="flex flex-col gap-1">
-              <Label htmlFor="edit-auto-schedule" className="text-sm font-medium cursor-pointer">
-                Auto-schedule daily
-              </Label>
-              <span className="text-xs text-muted-foreground">
-                {isAutoSchedule 
-                  ? 'Habit will appear automatically every day' 
-                  : 'You will need to schedule this habit manually'}
-              </span>
-            </div>
-            <Switch
-              id="edit-auto-schedule"
-              checked={isAutoSchedule}
-              onCheckedChange={setIsAutoSchedule}
-            />
           </div>
 
           <DialogFooter>

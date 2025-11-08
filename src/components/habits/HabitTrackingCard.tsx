@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Shimmer } from '@/components/ui/shimmer';
 import { X, Coins, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -125,13 +126,18 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
   const isPending = completion.status === 'pending';
   const isCompleted = completion.status === 'completed';
   const isDeclined = completion.status === 'declined';
+  const isProcessing = markComplete.isPending || deleteHabitCompletion.isPending;
 
   return (
-    <Card className={
-      isCompleted ? 'border-green-500 bg-green-50/50' :
-      isDeclined ? 'border-red-500 bg-red-50/50' :
-      ''
-    }>
+    <Shimmer 
+      isShimmering={isProcessing}
+      className="rounded-lg"
+    >
+      <Card className={
+        isCompleted ? 'border-green-500 bg-green-50/50' :
+        isDeclined ? 'border-red-500 bg-red-50/50' :
+        ''
+      }>
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -250,5 +256,6 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
         )}
       </CardContent>
     </Card>
+    </Shimmer>
   );
 }

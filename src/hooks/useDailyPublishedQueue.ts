@@ -44,7 +44,8 @@ export const useDailyPublishedQueue = () => {
           book:books(
             book_name,
             book_description,
-            user_id
+            user_id,
+            created_at
           )
         `)
         .neq('status', 'draft') // Filter out draft entries from public queue view

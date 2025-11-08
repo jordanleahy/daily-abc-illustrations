@@ -16,7 +16,8 @@ export const usePublicBookBySlug = (slug: string | undefined) => {
             book_name,
             book_description,
             user_id,
-            total_pages
+            total_pages,
+            created_at
           )
         `)
         .eq('slug', slug)

@@ -13,7 +13,8 @@ export const useUpcomingDailyPublished = (limit = 5) => {
           book:books(
             book_name,
             book_description,
-            user_id
+            user_id,
+            created_at
           )
         `)
         .eq('status', 'queued') // Only queued items

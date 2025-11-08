@@ -65,7 +65,8 @@ export const useLibraryBooks = () => {
           book:books(
             book_name,
             book_description,
-            user_id
+            user_id,
+            created_at
           )
         `)
         .neq('status', 'draft');
@@ -150,17 +151,18 @@ export const useLibraryBooks = () => {
         };
       }) || [];
 
-      // Sort by last_viewed_at (most recent first), then by publish_date
+      // Sort by books.created_at (newest first)
       enrichedData.sort((a, b) => {
-        // If both have view activity, sort by most recent
-        if (a.last_viewed_at && b.last_viewed_at) {
-          return new Date(b.last_viewed_at).getTime() - new Date(a.last_viewed_at).getTime();
-        }
-        // Items with activity come before items without
-        if (a.last_viewed_at && !b.last_viewed_at) return -1;
-        if (!a.last_viewed_at && b.last_viewed_at) return 1;
-        // For items without activity, sort by publish_date
-        return new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime();
+        const aCreatedAt = a.book?.created_at;
+        const bCreatedAt = b.book?.created_at;
+        
+        // Handle missing created_at gracefully
+        if (!aCreatedAt && !bCreatedAt) return 0;
+        if (!aCreatedAt) return 1;  // Push items without created_at to end
+        if (!bCreatedAt) return -1;
+        
+        // Newest books first
+        return new Date(bCreatedAt).getTime() - new Date(aCreatedAt).getTime();
       });
 
       // Cache the fresh data for next visit

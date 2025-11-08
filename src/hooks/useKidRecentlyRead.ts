@@ -18,8 +18,8 @@ interface UserBookActivity {
 }
 
 /**
- * Fetches the last 10 books that a specific kid has actually read (not just clicked)
- * Filters by last_reading_session_at to ensure we only show books they went through in reading mode
+ * Fetches the last 10 books that a specific kid has recently viewed in the library
+ * Filters by last_viewed_at to show their browsing history
  */
 export function useKidRecentlyRead(kidId: string | undefined) {
   return useQuery({
@@ -41,8 +41,8 @@ export function useKidRecentlyRead(kidId: string | undefined) {
           )
         `)
         .eq('kid_id', kidId)
-        .not('last_reading_session_at', 'is', null)
-        .order('last_reading_session_at', { ascending: false })
+        .not('last_viewed_at', 'is', null)
+        .order('last_viewed_at', { ascending: false })
         .limit(10)
         .returns<UserBookActivity[]>();
       

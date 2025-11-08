@@ -12,7 +12,7 @@ import { queryClient } from '@/App';
  * Uses a two-step process: fetch current count, then upsert with increment
  * Invalidates library cache to update Recently Viewed in real-time
  */
-export const trackBookView = async (dailyPublishedId: string): Promise<void> => {
+export const trackBookView = async (dailyPublishedId: string, kidId?: string): Promise<void> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -36,6 +36,7 @@ export const trackBookView = async (dailyPublishedId: string): Promise<void> => 
         {
           user_id: user.id,
           daily_published_id: dailyPublishedId,
+          kid_id: kidId || null,
           last_viewed_at: new Date().toISOString(),
           view_count: existing ? existing.view_count + 1 : 1,
         },

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useKidSelection } from '@/contexts/KidSelectionContext';
 import { StandardPageLayout } from '@/components/layout';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
@@ -20,6 +21,7 @@ import { formatDistanceToNow } from 'date-fns';
 export default function LibraryDetail() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuthContext();
+  const { selectedKidId } = useKidSelection();
   const navigate = useNavigate();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
@@ -42,9 +44,9 @@ export default function LibraryDetail() {
   useEffect(() => {
     if (id) {
       trackBookViewForCache(id);
-      trackBookView(id); // Update database for Recently Viewed
+      trackBookView(id, selectedKidId); // Update database for Recently Viewed
     }
-  }, [id]);
+  }, [id, selectedKidId]);
 
   const handleBack = () => {
     navigate('/library');

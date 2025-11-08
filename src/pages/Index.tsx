@@ -145,7 +145,7 @@ const Index = () => {
                 <Card 
                   key={book.id} 
                   className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-                  onClick={() => navigate(`/library/${book.book_id}/detail`)}
+                  onClick={() => navigate(`/library/${book.id}/detail`)}
                 >
                   <div className="aspect-video rounded-t-lg flex items-center justify-center overflow-hidden">
                     {book.og_image_url ? (

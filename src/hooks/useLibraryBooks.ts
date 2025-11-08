@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadataSubscription } from './useSeoMetadataSubscription';
+import { cacheLibraryBooks, getCachedLibraryBooks } from '@/utils/libraryCache';
 
 export const useLibraryBooks = () => {
   // Enable real-time subscriptions for SEO metadata updates
@@ -11,6 +12,13 @@ export const useLibraryBooks = () => {
     queryKey: ['library-books'],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
+      
+      // Try to return cached data immediately for instant load
+      const cachedBooks = getCachedLibraryBooks(user?.id || '');
+      if (cachedBooks) {
+        // Return cached data immediately, React Query will refetch in background
+        return cachedBooks;
+      }
       
       // ⚡ OPTIMIZED: Fetch daily_published with books JOIN
       const { data: dailyPublishedData, error: dpError } = await supabase
@@ -117,6 +125,9 @@ export const useLibraryBooks = () => {
         // For items without activity, sort by publish_date
         return new Date(a.publish_date).getTime() - new Date(b.publish_date).getTime();
       });
+
+      // Cache the fresh data for next visit
+      cacheLibraryBooks(enrichedData as DailyPublishedWithBook[], user?.id || '');
 
       return enrichedData as DailyPublishedWithBook[];
 

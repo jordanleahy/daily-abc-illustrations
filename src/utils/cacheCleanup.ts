@@ -4,6 +4,7 @@
  */
 
 import { getStaleBooks } from './bookViewTracking';
+import { clearLibraryCache } from './libraryCache';
 
 /**
  * Clean up cache for books not viewed in the specified number of days
@@ -25,7 +26,7 @@ export async function cleanupStaleBookCaches(daysThreshold: number = 7): Promise
 
     console.log(`[Cache Cleanup] Found ${staleBooks.length} stale books (not viewed in ${daysThreshold} days)`);
 
-    // Send batch deletion message to service worker
+    // Send batch deletion message to service worker for images
     return new Promise((resolve, reject) => {
       const messageChannel = new MessageChannel();
       
@@ -41,6 +42,10 @@ export async function cleanupStaleBookCaches(daysThreshold: number = 7): Promise
               console.warn(`[Cache Cleanup] Failed to remove localStorage entry for ${bookId}:`, error);
             }
           });
+          
+          // Also clear library metadata cache to force refresh on next visit
+          clearLibraryCache();
+          console.log('[Cache Cleanup] Cleared library metadata cache');
           
           resolve();
         } else {

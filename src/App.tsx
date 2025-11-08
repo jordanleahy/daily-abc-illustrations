@@ -55,6 +55,9 @@ const queryClient = new QueryClient({
   },
 });
 
+// Export queryClient for use in utilities and edge cases
+export { queryClient };
+
 const App = () => {
   // PHASE 4: Schedule automatic cache cleanup on app mount
   useEffect(() => {

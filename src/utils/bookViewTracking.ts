@@ -5,10 +5,12 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { queryClient } from '@/App';
 
 /**
  * Track that a daily published book was viewed by the current user
  * Uses a two-step process: fetch current count, then upsert with increment
+ * Invalidates library cache to update Recently Viewed in real-time
  */
 export const trackBookView = async (dailyPublishedId: string): Promise<void> => {
   try {
@@ -44,6 +46,9 @@ export const trackBookView = async (dailyPublishedId: string): Promise<void> => 
 
     if (error) {
       console.warn('Failed to track book view:', error);
+    } else {
+      // Invalidate library books query to update Recently Viewed
+      queryClient.invalidateQueries({ queryKey: ['library-books'] });
     }
   } catch (error) {
     console.warn('Failed to track book view:', error);

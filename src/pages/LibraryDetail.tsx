@@ -11,7 +11,7 @@ import { ArrowLeft, BookOpen, Calendar, Users } from 'lucide-react';
 import { MetaHead } from '@/components/common/MetaHead';
 import { useSeoMetadata, useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
 import { LibraryCard } from '@/components/page-prompts/LibraryCard';
-import { trackBookViewForCache } from '@/utils/bookViewTracking';
+import { trackBookViewForCache, trackBookView } from '@/utils/bookViewTracking';
 import { useLibraryDetailImagePreloader } from '@/hooks/useLibraryDetailImagePreloader';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -35,10 +35,11 @@ export default function LibraryDetail() {
     }
   }, [user, navigate]);
 
-  // PHASE 2: Track book view for cache management
+  // Track book view for cache management and database
   useEffect(() => {
     if (id) {
       trackBookViewForCache(id);
+      trackBookView(id); // Update database for Recently Viewed
     }
   }, [id]);
 

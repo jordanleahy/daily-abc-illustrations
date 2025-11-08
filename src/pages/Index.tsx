@@ -35,7 +35,7 @@ const Index = () => {
   // Fetch today's habits for the first kid
   const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
   
-  // Fetch library books - already sorted by most recent activity from the hook
+  // Fetch library books with reduced staleTime for real-time updates
   const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooks();
   
   // Filter out skipped habits and sort by status (pending first, completed/failed last)

@@ -1,9 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Toggle } from '@/components/ui/toggle';
-import { FileText, Copy, Download } from 'lucide-react';
+import { FileText, Copy, Download, Plus, X, Check, BookOpen } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,7 +16,13 @@ import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useToast } from '@/hooks/use-toast';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
+import { useWordAssessment } from '@/hooks/useWordAssessment';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { extractWords } from '@/utils/wordExtractor';
+import { cn } from '@/lib/utils';
+import { toast as sonnerToast } from 'sonner';
 import type { Page } from '@/types/book';
+import type { ExtractedWord } from '@/types/wordAssessment';
 
 interface LibraryCardProps {
   page: Page;
@@ -28,6 +34,27 @@ export function LibraryCard({ page, bookId }: LibraryCardProps) {
   const { toast } = useToast();
   const { currentImage } = usePageImageUrls(page.id);
   const [showPrompt, setShowPrompt] = useState(false);
+  
+  // Word learning mode state
+  const [wordLearningMode, setWordLearningMode] = useState(false);
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [wordSize, setWordSize] = useState<'small' | 'medium' | 'large'>('medium');
+  const [words, setWords] = useState<ExtractedWord[]>([]);
+  const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
+  
+  const assessWord = useWordAssessment();
+  const { data: kidProfiles } = useKidProfiles();
+
+  // Extract words from text overlay when image changes
+  useEffect(() => {
+    if (currentImage?.text_overlay_config?.text) {
+      const extracted = extractWords(currentImage.text_overlay_config.text);
+      setWords(extracted);
+      setCurrentWordIndex(0);
+    } else {
+      setWords([]);
+    }
+  }, [currentImage?.text_overlay_config]);
 
   const handleCopyJsonPrompt = async () => {
     if (!currentPrompt?.content) {
@@ -126,6 +153,65 @@ export function LibraryCard({ page, bookId }: LibraryCardProps) {
       });
     }
   };
+
+  const handlePlusClick = () => {
+    setWordSize(prev => {
+      if (prev === 'small') return 'medium';
+      if (prev === 'medium') return 'large';
+      return 'small';
+    });
+  };
+
+  const handleKnowsWord = async (knowsWord: boolean) => {
+    if (!selectedKidId || words.length === 0 || !currentImage) return;
+    
+    const currentWord = words[currentWordIndex];
+    
+    try {
+      await assessWord.mutateAsync({
+        kidProfileId: selectedKidId,
+        bookId: bookId,
+        pageId: page.id,
+        word: currentWord.word,
+        wordIndex: currentWord.index,
+        knowsWord
+      });
+      
+      // Auto-advance to next word
+      if (currentWordIndex < words.length - 1) {
+        setCurrentWordIndex(prev => prev + 1);
+      } else {
+        // Completed all words
+        sonnerToast.success('All words completed!');
+        setWordLearningMode(false);
+        setCurrentWordIndex(0);
+      }
+    } catch (error) {
+      console.error('Failed to save word assessment:', error);
+    }
+  };
+
+  const handleStartWordLearning = () => {
+    if (!kidProfiles || kidProfiles.length === 0) {
+      sonnerToast.error('Please create a kid profile first');
+      return;
+    }
+    
+    if (words.length === 0) {
+      sonnerToast.error('No words available on this page');
+      return;
+    }
+    
+    // Auto-select first kid (can be enhanced with kid selector)
+    setSelectedKidId(kidProfiles[0].id);
+    setWordLearningMode(true);
+  };
+
+  const handleExitWordLearning = () => {
+    setWordLearningMode(false);
+    setCurrentWordIndex(0);
+    setWordSize('medium');
+  };
   
   return (
     <Card className="hover:shadow-md transition-shadow">
@@ -180,7 +266,61 @@ export function LibraryCard({ page, bookId }: LibraryCardProps) {
         )}
       </CardHeader>
       <CardContent className="p-4 space-y-3">
-        {showPrompt && currentPrompt ? (
+        {wordLearningMode && words.length > 0 ? (
+          <div className="w-full aspect-square bg-background rounded-lg flex flex-col items-center justify-center p-8 relative border">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="absolute top-2 right-2"
+              onClick={handleExitWordLearning}
+            >
+              <X className="w-4 h-4" />
+            </Button>
+            
+            <div className="flex-1 flex items-center justify-center">
+              <h1 className={cn(
+                "font-bold text-center transition-all duration-300 select-none",
+                wordSize === 'small' && "text-4xl",
+                wordSize === 'medium' && "text-6xl md:text-7xl",
+                wordSize === 'large' && "text-7xl md:text-8xl lg:text-9xl"
+              )}>
+                {words[currentWordIndex]?.word}
+              </h1>
+            </div>
+            
+            <div className="flex items-center gap-8 mt-8">
+              <div className="flex items-center gap-2">
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  onClick={handlePlusClick}
+                  className="w-14 h-14"
+                  title="Change word size"
+                >
+                  <Plus className="w-6 h-6" />
+                </Button>
+                <Button 
+                  size="lg" 
+                  className="w-14 h-14 bg-red-500 hover:bg-red-600 text-white"
+                  onClick={() => handleKnowsWord(false)}
+                  disabled={assessWord.isPending}
+                  title="Don't know this word"
+                >
+                  <X className="w-6 h-6" />
+                </Button>
+                <Button 
+                  size="lg" 
+                  className="w-14 h-14 bg-green-500 hover:bg-green-600 text-white"
+                  onClick={() => handleKnowsWord(true)}
+                  disabled={assessWord.isPending}
+                  title="Know this word"
+                >
+                  <Check className="w-6 h-6" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        ) : showPrompt && currentPrompt ? (
           <div className="w-full aspect-square bg-muted rounded-lg overflow-hidden flex flex-col">
             <div className="flex items-center justify-between text-sm font-medium text-foreground p-3 pb-2 border-b border-border/50">
               <span>System Prompt:</span>
@@ -246,6 +386,18 @@ export function LibraryCard({ page, bookId }: LibraryCardProps) {
             bookId={bookId}
             showUpload={false}
           />
+        )}
+        
+        {!wordLearningMode && currentImage?.text_overlay_config?.text && (
+          <Button 
+            onClick={handleStartWordLearning}
+            variant="secondary"
+            size="sm"
+            className="w-full"
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            Practice Words
+          </Button>
         )}
       </CardContent>
     </Card>

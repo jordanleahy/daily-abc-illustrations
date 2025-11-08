@@ -1442,6 +1442,67 @@ export type Database = {
         }
         Relationships: []
       }
+      word_assessments: {
+        Row: {
+          assessed_at: string | null
+          book_id: string
+          created_at: string | null
+          id: string
+          kid_profile_id: string
+          knows_word: boolean
+          page_id: string
+          parent_user_id: string
+          word: string
+          word_index: number
+        }
+        Insert: {
+          assessed_at?: string | null
+          book_id: string
+          created_at?: string | null
+          id?: string
+          kid_profile_id: string
+          knows_word: boolean
+          page_id: string
+          parent_user_id: string
+          word: string
+          word_index: number
+        }
+        Update: {
+          assessed_at?: string | null
+          book_id?: string
+          created_at?: string | null
+          id?: string
+          kid_profile_id?: string
+          knows_word?: boolean
+          page_id?: string
+          parent_user_id?: string
+          word?: string
+          word_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "word_assessments_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_assessments_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_assessments_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       active_daily_published: {

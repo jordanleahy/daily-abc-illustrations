@@ -452,6 +452,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     }
     
     // Sanitize all page data before database insertion
+    // CRITICAL: Regular content pages should NOT have text overlays by default
     const sanitizedPages = bookData.pages.map((page: any) => ({
       ...page,
       letter: sanitizeText(page.letter || '', 10),
@@ -462,7 +463,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         funFact: sanitizeText(page.content?.funFact || '', 500),
         activity: sanitizeText(page.content?.activity || '', 500),
         textOverlay: {
-          enabled: true,
+          enabled: false, // Regular pages: NO text overlay by default
           text: sanitizeText(page.title, 100),
           position: 'bottom-center' as const,
           createdAt: new Date().toISOString()
@@ -510,6 +511,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     }
 
     // Create cover page as page 1
+    // CRITICAL: Cover ALWAYS has text overlay enabled
     const coverPage = {
       book_id: book.id,
       letter: 'COVER',
@@ -521,7 +523,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         funFact: sanitizeText(bookData.bookDescription || '', 500),
         activity: '',
         textOverlay: {
-          enabled: true,
+          enabled: true, // Cover: ALWAYS has text
           text: sanitizeText(bookData.bookName, 100),
           position: 'bottom-center' as const,
           createdAt: new Date().toISOString()
@@ -532,6 +534,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     const pages = [coverPage];
 
     // Create educational focus page as page 2 if provided
+    // CRITICAL: Educational focus page ALWAYS has text overlay enabled
     if (educationalFocus) {
       const eduFocusPage = {
         book_id: book.id,
@@ -544,7 +547,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
           funFact: sanitizeText(educationalFocus.learningType, 200),
           activity: sanitizeText(educationalFocus.specificSkill, 200),
           textOverlay: {
-            enabled: true,
+            enabled: true, // Educational focus: ALWAYS has text
             text: 'Educational Focus',
             position: 'bottom-center' as const,
             createdAt: new Date().toISOString()
@@ -734,8 +737,12 @@ Create an educational illustration that brings this concept to life with bright,
 **Technical Specifications:**
 - Square format (1:1 aspect ratio)
 - High contrast and clarity for young readers
-- No text in the image (text will be overlaid separately)
 - Child-friendly, positive imagery only
+
+**TEXT OVERLAY POLICY:**
+- **Cover pages**: Text overlay ENABLED - Include space for title text at bottom center
+- **Educational focus pages**: Text overlay ENABLED - Include space for descriptive text
+- **Regular content pages (A-Z, numbers, etc.)**: Text overlay DISABLED - No text space needed, image fills entire frame
 
 Create an illustration that brings the page content to life while maintaining these guidelines.`;
 

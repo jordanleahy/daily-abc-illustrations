@@ -6,7 +6,7 @@ import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImagePreloader';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
-import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { useKidSelection } from '@/contexts/KidSelectionContext';
 import { useKidCoins } from '@/hooks/useKidCoins';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
@@ -37,7 +37,7 @@ export default function LibraryBookView() {
   const safeId = id && isValidUUID(id) ? id : undefined;
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
-  const { data: kidProfiles } = useKidProfiles();
+  const { selectedKid } = useKidSelection();
   const { completeBookHabit } = useCompleteBookHabit();
   const { hasHabitsRewards } = useFeatureAccess();
   
@@ -67,9 +67,8 @@ export default function LibraryBookView() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
-  // Auto-select kid if only one exists
-  const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
-  const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
+  // Use selected kid from context
+  const { addCoins, isAddingCoins } = useKidCoins(selectedKid?.id);
   
   // Get upload function for current page (must be called before any early returns)
   const { uploadImage } = usePageImageUrls(uploadingForPageId || '');
@@ -177,18 +176,18 @@ export default function LibraryBookView() {
   const handleNext = async () => {
     if (isLastPage) {
       // Auto-complete reading habit if exists (only for Plus tier users)
-      if (hasHabitsRewards && selectedKidId && dailyContent?.book_id) {
+      if (hasHabitsRewards && selectedKid?.id && dailyContent?.book_id) {
         await completeBookHabit({
           bookId: dailyContent.book_id,
-          kidProfileId: selectedKidId,
+          kidProfileId: selectedKid.id,
         });
       }
 
       // User finished the book - ONLY deposit coins for Plus tier users
-      if (hasHabitsRewards && selectedKidId && earnedRewards > 0) {
+      if (hasHabitsRewards && selectedKid?.id && earnedRewards > 0) {
         try {
           await addCoins({ 
-            kidId: selectedKidId, 
+            kidId: selectedKid.id, 
             coinsToAdd: earnedRewards 
           });
           
@@ -367,7 +366,7 @@ export default function LibraryBookView() {
           subtitle={`${currentPageIndex + 1} of ${reorderedPages.length}`}
           bookId={dailyContent.book_id}
           onBack={handleBack}
-          kidId={selectedKidId}
+          kidId={selectedKid?.id}
           onPrevious={handleHeaderPrevious}
           onNext={handleHeaderNext}
           hasPrevious={currentPageIndex > 0}

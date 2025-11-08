@@ -2,7 +2,7 @@ import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
 import { BookCarousel } from '@/components/landing/BookCarousel';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
-import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { useKidSelection } from '@/contexts/KidSelectionContext';
 import { useKidRecentlyRead } from '@/hooks/useKidRecentlyRead';
 import { LoadingState } from '@/components/ui/loading-state';
 import { format } from 'date-fns';
@@ -26,15 +26,14 @@ const Index = () => {
     }
   }, [isAuthenticated, hasActiveSubscription, subscriptionLoading, navigate]);
   
-  // Get the first kid profile
-  const { data: kidProfiles = [], isLoading: isLoadingKids } = useKidProfiles();
-  const firstKid = kidProfiles[0];
+  // Get selected kid from context
+  const { selectedKid, isLoading: isLoadingKids } = useKidSelection();
   
-  // Fetch today's habits for the first kid
-  const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
+  // Fetch today's habits for the selected kid
+  const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(selectedKid?.id);
   
-  // Fetch recently read books for the first kid
-  const { data: recentlyReadBooks = [], isLoading: isLoadingBooks } = useKidRecentlyRead(firstKid?.id);
+  // Fetch recently read books for the selected kid
+  const { data: recentlyReadBooks = [], isLoading: isLoadingBooks } = useKidRecentlyRead(selectedKid?.id);
   
   // Filter out skipped habits and sort by status (pending first, completed/failed last)
   const activeCompletions = completions
@@ -73,7 +72,7 @@ const Index = () => {
     );
   }
 
-  if (!firstKid) {
+  if (!selectedKid) {
     return (
       <StandardPageLayout>
         <div className="container mx-auto py-8">
@@ -94,9 +93,9 @@ const Index = () => {
         <div className="space-y-2">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <h1 className="text-4xl font-bold">
-              Good {timeOfDay}, {firstKid.first_name}!
+              Good {timeOfDay}, {selectedKid.first_name}!
             </h1>
-            <CoinCounter coins={firstKid.earned_coins} size="md" />
+            <CoinCounter coins={selectedKid.earned_coins} size="md" />
           </div>
           <p className="text-xl text-muted-foreground">
             Today is {format(new Date(), 'EEEE, MMMM do')}

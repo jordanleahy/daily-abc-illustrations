@@ -3,7 +3,7 @@ import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { LoadingState } from '@/components/ui/loading-state';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import { CoinCounter } from '@/components/ui/coin-counter';
 import { getTimeBasedGreeting } from '@/utils/timeUtils';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -11,8 +11,10 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { BookCarousel } from '@/components/landing';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
+import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { BookImage } from '@/components/ui/book-image';
+import { BookOpen } from 'lucide-react';
 
 const Index = () => {
   const { isAuthenticated } = useAuthContext();
@@ -138,7 +140,36 @@ const Index = () => {
         {recentBooks.length > 0 && (
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">Recently Viewed</h2>
-            <BookCarousel books={recentBooks} />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {recentBooks.map((book) => (
+                <Card 
+                  key={book.id} 
+                  className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  onClick={() => navigate(`/library/${book.book_id}/detail`)}
+                >
+                  <div className="aspect-video rounded-t-lg flex items-center justify-center overflow-hidden">
+                    {book.og_image_url ? (
+                      <BookImage
+                        src={book.og_image_url}
+                        alt={book.seo_title || book.title}
+                        className="w-full h-full object-cover"
+                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      />
+                    ) : (
+                      <BookOpen className="w-8 h-8 text-muted-foreground" />
+                    )}
+                  </div>
+                  <CardHeader>
+                    <CardTitle className="text-lg line-clamp-2">{book.seo_title || book.title}</CardTitle>
+                    {book.last_viewed_at && (
+                      <CardDescription className="text-xs">
+                        {formatDistanceToNow(new Date(book.last_viewed_at), { addSuffix: true })}
+                      </CardDescription>
+                    )}
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>

@@ -41,7 +41,9 @@ export default memo(function Library() {
   useAggressiveLibraryPrefetch(libraryItems, true);
   
 
-  if (isLoading) {
+  // Only show loading on FIRST load (no cached data)
+  // Don't show skeleton if we have cached data being refetched
+  if (isLoading && !libraryItems) {
     return (
       <StandardPageLayout>
         <LoadingState text="Loading library..." />

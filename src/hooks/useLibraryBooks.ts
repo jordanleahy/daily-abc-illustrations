@@ -121,7 +121,9 @@ export const useLibraryBooks = () => {
       return enrichedData as DailyPublishedWithBook[];
 
     },
-    staleTime: 2 * 60 * 1000, // 2 minutes - reduce refetch frequency
-    gcTime: 5 * 60 * 1000, // 5 minutes - keep in cache longer
+    staleTime: 30 * 60 * 1000, // 30 minutes - aggressive cache-first for instant load
+    gcTime: 60 * 60 * 1000, // 60 minutes - keep in cache much longer
+    refetchOnMount: false, // Don't refetch if data exists
+    refetchOnWindowFocus: false, // Don't refetch on focus
   });
 };

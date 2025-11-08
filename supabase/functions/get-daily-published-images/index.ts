@@ -61,61 +61,46 @@ Deno.serve(async (req) => {
       targetBookId = dpData.book_id;
     }
 
-    // Fetch pages for the book
-    const { data: pages, error: pagesError } = await supabase
+    // Fetch pages with their images in a single optimized query using a join
+    const { data: pagesWithImages, error: queryError } = await supabase
       .from('pages')
-      .select('id, letter, page_number')
+      .select(`
+        id,
+        letter,
+        page_number,
+        page_image_urls!inner(
+          image_url
+        )
+      `)
       .eq('book_id', targetBookId)
-      .order('page_number', { ascending: true });
+      .eq('page_image_urls.is_latest', true)
+      .not('page_image_urls.image_url', 'is', null)
+      .order('page_number', { ascending: true })
+      .limit(50); // Safety limit to prevent huge queries
 
-    if (pagesError) {
-      console.error('Error fetching pages:', pagesError);
-      return new Response(
-        JSON.stringify({ error: 'Failed to fetch pages' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!pages || pages.length === 0) {
-      console.log('No pages found for book');
-      return new Response(
-        JSON.stringify({ error: 'No pages found', images: [] }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Fetch all latest complete images for these pages in one query
-    const pageIds = pages.map(p => p.id);
-    const { data: imageUrls, error: imagesError } = await supabase
-      .from('page_image_urls')
-      .select('page_id, image_url')
-      .in('page_id', pageIds)
-      .eq('is_latest', true)
-      .not('image_url', 'is', null);
-
-    if (imagesError) {
-      console.error('Error fetching images:', imagesError);
+    if (queryError) {
+      console.error('Error fetching pages with images:', queryError);
       return new Response(
         JSON.stringify({ error: 'Failed to fetch images' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Create a map for quick image lookup
-    const imageMap = new Map(imageUrls?.map(img => [img.page_id, img]) || []);
+    if (!pagesWithImages || pagesWithImages.length === 0) {
+      console.log('No pages with images found for book');
+      return new Response(
+        JSON.stringify({ bookId: targetBookId, totalPages: 0, imagesFound: 0, images: [] }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    // Build response with page metadata, only include pages that have images
-    const pageImages: PageImage[] = pages
-      .filter(page => imageMap.has(page.id))
-      .map(page => {
-        const imageData = imageMap.get(page.id);
-        return {
-          page_id: page.id,
-          letter: page.letter,
-          page_number: page.page_number,
-          image_url: imageData?.image_url || '',
-        };
-      });
+    // Transform the joined data into the expected format
+    const pageImages: PageImage[] = pagesWithImages.map((page: any) => ({
+      page_id: page.id,
+      letter: page.letter,
+      page_number: page.page_number,
+      image_url: page.page_image_urls?.[0]?.image_url || '',
+    })).filter(img => img.image_url); // Extra safety filter
 
     // Add aggressive caching headers (1 hour for active content)
     const cacheHeaders = {

@@ -9,6 +9,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { BookImage } from '@/components/ui/book-image';
+import { TextOverlay } from '@/components/ui/text-overlay';
 import { BookOpen, Calendar, Users, Heart } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useIsTeacher } from '@/contexts/RoleContext';
@@ -147,6 +148,11 @@ const LibraryBookCard = memo(function LibraryBookCard({
   const navigate = useNavigate();
   const { hasLibraryAccess } = useFeatureAccess();
   
+  // Determine if this book should show text overlay (created after Nov 5, 2025)
+  const TEXT_OVERLAY_CUTOFF_DATE = new Date('2025-11-06T00:00:00Z');
+  const bookCreatedDate = new Date(item.created_at);
+  const shouldShowTextOverlay = bookCreatedDate >= TEXT_OVERLAY_CUTOFF_DATE;
+  
   const handleCardClick = () => {
     // Only allow navigation if user has library access (active subscription)
     if (!hasLibraryAccess) {
@@ -215,15 +221,23 @@ const LibraryBookCard = memo(function LibraryBookCard({
             </div>
           </div>
           
-          <div className="aspect-video rounded-lg flex items-center justify-center overflow-hidden">
+          <div className="aspect-video rounded-lg flex items-center justify-center overflow-hidden relative">
             {item.og_image_url ? (
-              <BookImage
-                src={item.og_image_url}
-                alt={`Preview of ${item.seo_title || item.title}`}
-                priority={index < 6}
-                className="w-full h-full object-cover object-center"
-                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              />
+              <>
+                <BookImage
+                  src={item.og_image_url}
+                  alt={`Preview of ${item.seo_title || item.title}`}
+                  priority={index < 6}
+                  className="w-full h-full object-cover object-center"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+                {shouldShowTextOverlay && (
+                  <TextOverlay 
+                    text={item.seo_title || item.title} 
+                    show={true}
+                  />
+                )}
+              </>
             ) : (
               <BookOpen className="w-8 h-8 text-muted-foreground" />
             )}

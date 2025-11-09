@@ -55,23 +55,18 @@ export const useUnifiedLibrary = () => {
   const { data: libraryBooksData, isLoading: libraryLoading } = useLibraryBooks();
   const { hasLibraryAccess, loading: accessLoading } = useFeatureAccess();
 
-  // Deduplicate: Remove user's books that are also in the library
-  // If a book is both user-created and officially published, show it only in library
+  // User's books - always show all of them in My Books section
   const myBooks = useMemo(() => {
-    if (!userBooks || !libraryBooksData) return userBooks || [];
-    
-    const libraryBookIds = new Set(
-      libraryBooksData.map(lb => lb.book_id)
-    );
-    
-    return userBooks.filter(book => !libraryBookIds.has(book.id));
-  }, [userBooks, libraryBooksData]);
+    return userBooks || [];
+  }, [userBooks]);
 
-  // Only return library books if user has access
+  // Library books - exclude user's own books from library section
   const libraryBooks = useMemo(() => {
-    if (!hasLibraryAccess) return [];
-    return libraryBooksData || [];
-  }, [hasLibraryAccess, libraryBooksData]);
+    if (!hasLibraryAccess || !libraryBooksData) return [];
+    
+    const userBookIds = new Set(userBooks?.map(b => b.id) || []);
+    return libraryBooksData.filter(lb => !userBookIds.has(lb.book_id));
+  }, [hasLibraryAccess, libraryBooksData, userBooks]);
 
   return {
     myBooks,

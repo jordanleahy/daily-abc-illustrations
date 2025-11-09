@@ -129,7 +129,7 @@ export function ReadingHeader({
       
       {/* Center section: Kid info - Only show coins for Plus tier users */}
       <div className="flex items-center gap-2 text-sm">
-        {displayKid && hasHabitsRewards && (
+        {displayKid && hasHabitsRewards && kidCoins !== undefined && (
           <>
             <span className="font-medium text-foreground">{displayKid.first_name}</span>
             <span className="text-muted-foreground">•</span>

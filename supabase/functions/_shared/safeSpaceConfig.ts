@@ -36,10 +36,10 @@ export interface SafeSpaceConfig {
 const SAFE_SPACE_CONFIGS: Record<string, SafeSpaceConfig> = {
   '1:1': {
     aspectRatio: '1:1 Square Format',
-    description: 'Centered layout with balanced margins on all sides',
-    safeZones: 'Maintain balanced 18-20% margins on all sides, especially TOP MARGIN for letter-based content',
-    composition: 'Centered layout with generous breathing room from top edge, well-framed central focus',
-    negativePrompts: 'No corner-to-corner compositions, maintain balanced spacing, no edge-hugging elements, NEVER allow letters to touch or get close to the top edge, no cramped letter positioning'
+    description: 'Centered layout with balanced margins on all sides and protected bottom zone for text overlay',
+    safeZones: 'Maintain balanced 18-20% margins on all sides, especially TOP MARGIN for letter-based content. CRITICAL: Keep bottom 8-10% (minimum 40px) completely clear for text overlay',
+    composition: 'Centered layout with generous breathing room from top edge, well-framed central focus. All important visual elements must stay in the top 90% of the image to preserve space for bottom text overlay',
+    negativePrompts: 'No corner-to-corner compositions, maintain balanced spacing, no edge-hugging elements, NEVER allow letters to touch or get close to the top edge, no cramped letter positioning, CRITICAL: no important content in bottom 10% of image, keep bottom safe zone clear for text overlay'
   },
   '16:9': {
     aspectRatio: '16:9 Landscape Format',

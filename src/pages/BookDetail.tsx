@@ -448,6 +448,18 @@ export default function BookDetail() {
                 <CardHeader>
                   {/* Archive Button and Delete Button (mobile only) - Above Title */}
                   <div className="mb-4 flex items-center gap-2">
+                    {/* Read Book button - navigate to reading view */}
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={() => navigate(`/books/${book.id}/read`)}
+                      title="Read this book"
+                      className="gap-2"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Read Book
+                    </Button>
+
                     <Button
                       variant={book.is_highlighted ? "default" : "outline"}
                       size="icon"

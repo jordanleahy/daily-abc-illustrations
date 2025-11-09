@@ -187,6 +187,7 @@ Return only JSON format:
     const { data: seoMetadata, error: seoError } = await supabase
       .from('seo_metadata')
       .insert({
+        book_id: bookId, // ✅ Phase 0.3.1: Store book_id in dedicated column
         daily_published_id: dailyPublishedId || null,
         user_id: finalUserId,
         version_number: versionNumber,

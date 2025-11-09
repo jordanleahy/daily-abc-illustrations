@@ -656,6 +656,9 @@ export default function GoogleChat() {
   }, [createdBookId, selectedSession]);
 
   const handleOpenQAPanel = useCallback(() => {
+    // Reset mutation state to allow panel to open after book creation
+    createBookMutation.reset();
+    
     // Load QA images and prompts from current session
     if (selectedSession?.qa_page_images) {
       setQAPageImages(selectedSession.qa_page_images);
@@ -665,7 +668,7 @@ export default function GoogleChat() {
     }
     setShowQACheckpoint(true);
     setCurrentQAPage(1);
-  }, [selectedSession]);
+  }, [selectedSession, createBookMutation]);
 
   const handleSelectSession = useCallback((sessionId: string) => {
     if (sessionId !== currentSessionId) {

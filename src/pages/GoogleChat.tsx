@@ -185,6 +185,11 @@ export default function GoogleChat() {
 
   // Clear cached prompts when new outline is detected (for regeneration support)
   useEffect(() => {
+    // Don't detect outline changes for published books
+    if (createdBookId && bookData?.status === 'published') {
+      return;
+    }
+    
     if (parsedPageDetails && parsedPageDetails.length > 0) {
       // Check if this is a new/different outline by comparing page count
       const currentPageCount = Object.keys(qaPagePrompts).length;
@@ -197,7 +202,7 @@ export default function GoogleChat() {
         toast.info('Prompts updated! Open the QA panel to see the new descriptions.');
       }
     }
-  }, [parsedPageDetails, educationalFocus]);
+  }, [parsedPageDetails, educationalFocus, createdBookId, bookData?.status]);
 
   const pageCount = useMemo(() => {
     // If book is created, use database pages count
@@ -306,6 +311,11 @@ export default function GoogleChat() {
 
   // Detect when outline is newly completed (transition from false → true)
   useEffect(() => {
+    // Don't detect completion for published books
+    if (createdBookId && bookData?.status === 'published') {
+      return;
+    }
+    
     const currentShouldShow = shouldShowQACheckpoint;
     
     // If we just transitioned from false → true, the outline was just completed
@@ -316,10 +326,15 @@ export default function GoogleChat() {
     }
     
     previousShouldShow.current = currentShouldShow;
-  }, [shouldShowQACheckpoint]);
+  }, [shouldShowQACheckpoint, createdBookId, bookData?.status]);
 
   // Auto-show QA checkpoint only when outline is just completed (not on page load)
   useEffect(() => {
+    // Don't auto-show QA for published books
+    if (createdBookId && bookData?.status === 'published') {
+      return;
+    }
+    
     if (outlineJustCompleted && !showQACheckpoint) {
       setCurrentQAPage(1); // Start at cover page
       
@@ -338,7 +353,7 @@ export default function GoogleChat() {
       // Reset flag after opening
       setOutlineJustCompleted(false);
     }
-  }, [outlineJustCompleted, showQACheckpoint, isMobile]);
+  }, [outlineJustCompleted, showQACheckpoint, isMobile, createdBookId, bookData?.status]);
 
   // Add quick reply buttons when AI indicates book is ready to create
   const messagesWithCreateOptions = useMemo(() => {

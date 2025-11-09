@@ -71,6 +71,10 @@ export default function BookReadingView() {
   const isLastPage = currentPageIndex === reorderedPages.length - 1;
   const isLoading = isLoadingBook || isLoadingPages;
 
+  useEffect(() => {
+    console.log('[BookReadingView] Loading state', { isLoadingBook, isLoadingPages, hasBook: !!book, pagesCount: pages.length });
+  }, [isLoadingBook, isLoadingPages, book, pages]);
+
   // Start analytics session when content loads
   useEffect(() => {
     if (book && reorderedPages.length > 0 && !sessionStarted) {
@@ -337,6 +341,7 @@ export default function BookReadingView() {
           title={book.book_name}
           subtitle={`${currentPageIndex + 1} of ${reorderedPages.length}`}
           bookId={book.id}
+          showQRCode={false}
           onBack={handleBack}
           kidId={selectedKidId}
         />

@@ -17,8 +17,8 @@ import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { PublicPageImage } from '@/components/daily-published';
-import { TextOverlay } from '@/components/ui/text-overlay';
 import { Card } from '@/components/ui/card';
+import { ReadingPageDisplay } from '@/components/reading';
 import { processImage } from '@/utils/imageProcessor';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
@@ -382,23 +382,24 @@ export default function LibraryBookView() {
         {/* Main content area */}
         <div className="flex-1 flex flex-col pb-4">
           <div className="flex-1 flex items-center justify-center p-4">
-            <Card className="w-full max-w-sm mx-auto shadow-lg relative">
-              <PublicPageImage 
+            <div className="w-full max-w-sm mx-auto">
+              <ReadingPageDisplay
                 pageId={currentPage.id}
                 bookId={dailyContent.book_id}
-                className="rounded-lg"
-                showUploadButton={false}
-                onUploadClick={handleUploadClick}
+                pageNumber={currentPage.page_number}
+                pageText={currentPage.content?.textOverlay?.enabled ? currentPage.content.textOverlay.text : ''}
+                imageUrl=""
+                imageComponent={
+                  <PublicPageImage 
+                    pageId={currentPage.id}
+                    bookId={dailyContent.book_id}
+                    className="rounded-lg"
+                    showUploadButton={false}
+                    onUploadClick={handleUploadClick}
+                  />
+                }
               />
-              
-              {/* CSS Text Overlay - Only for GoogleChat books with textOverlay enabled */}
-              {currentPage.content?.textOverlay?.enabled && (
-                <TextOverlay 
-                  text={currentPage.content.textOverlay.text}
-                  show={true}
-                />
-              )}
-            </Card>
+            </div>
           </div>
           
           {/* Navigation */}

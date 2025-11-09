@@ -12,13 +12,14 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
-import { TextOverlay } from '@/components/ui/text-overlay';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookImage } from '@/components/ui/book-image';
+import { ReadingPageDisplay } from '@/components/reading';
 import { processImage } from '@/utils/imageProcessor';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { RewardContainer } from '@/components/ui/reward-container';
@@ -329,6 +330,34 @@ export default function BookReadingView() {
     }
   };
 
+  // Handle updating page text overlay
+  const handleUpdatePageText = async (newText: string) => {
+    if (!currentPage) return;
+    
+    try {
+      const updatedContent = {
+        ...currentPage.content,
+        textOverlay: {
+          enabled: true,
+          text: newText
+        }
+      };
+      
+      const { error } = await supabase
+        .from('pages')
+        .update({ 
+          content: updatedContent,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentPage.id);
+      
+      if (error) throw error;
+    } catch (error) {
+      console.error('Failed to update page text:', error);
+      toast.error('Failed to update text');
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Dynamic meta tags */}
@@ -356,37 +385,40 @@ export default function BookReadingView() {
         {/* Main content area */}
         <div className="flex-1 flex flex-col pb-4">
           <div className="flex-1 flex items-center justify-center p-4">
-            <Card className="w-full max-w-sm mx-auto shadow-lg relative">
-              <div className="relative w-full aspect-square rounded-lg overflow-hidden">
-                {currentImageUrl ? (
-                  <>
+            <div className="w-full max-w-sm mx-auto">
+              {currentImageUrl ? (
+                <ReadingPageDisplay
+                  pageId={currentPage.id}
+                  bookId={book.id}
+                  pageNumber={currentPage.page_number}
+                  pageText={currentPage?.content?.textOverlay?.enabled ? currentPage.content.textOverlay.text : ''}
+                  imageUrl={currentImageUrl}
+                  onUpdatePageText={handleUpdatePageText}
+                  imageComponent={
                     <BookImage
                       src={currentImageUrl}
                       alt={currentPage?.content?.mainConcept || currentPage?.title || "Page illustration"}
                       priority={true}
                       className="w-full h-full object-cover object-top rounded-lg"
                     />
-                    {/* CSS Text Overlay - Only for GoogleChat books with textOverlay enabled */}
-                    {currentPage?.content?.textOverlay?.enabled && (
-                      <TextOverlay 
-                        text={currentPage.content.textOverlay.text}
-                        show={true}
-                      />
-                    )}
-                  </>
-                ) : (
-                  <div className="w-full h-full bg-gradient-to-b from-muted to-muted/60 flex items-center justify-center">
-                    <div className="text-center px-6">
-                      <p className="text-sm font-semibold">{currentPage?.title || currentPage?.letter || 'Page'}</p>
-                      <p className="text-xs text-muted-foreground mt-1">No image yet. Upload one to start reading.</p>
-                      <Button className="mt-3" size="sm" variant="secondary" onClick={handleUploadClick}>
-                        Upload image
-                      </Button>
+                  }
+                />
+              ) : (
+                <Card className="shadow-lg">
+                  <div className="relative w-full aspect-square rounded-lg overflow-hidden">
+                    <div className="w-full h-full bg-gradient-to-b from-muted to-muted/60 flex items-center justify-center">
+                      <div className="text-center px-6">
+                        <p className="text-sm font-semibold">{currentPage?.title || currentPage?.letter || 'Page'}</p>
+                        <p className="text-xs text-muted-foreground mt-1">No image yet. Upload one to start reading.</p>
+                        <Button className="mt-3" size="sm" variant="secondary" onClick={handleUploadClick}>
+                          Upload image
+                        </Button>
+                      </div>
                     </div>
                   </div>
-                )}
-              </div>
-            </Card>
+                </Card>
+              )}
+            </div>
           </div>
           
               {/* Educational Content Drawer */}

@@ -1,8 +1,8 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { PublicPageImage } from './PublicPageImage';
-import { TextOverlay } from '@/components/ui/text-overlay';
 import { FreemiumHeader } from './FreemiumHeader';
+import { ReadingPageDisplay } from '@/components/reading';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { Page } from '@/types/book';
@@ -42,6 +42,18 @@ export function DailyPublishedPageView({
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
   const navigate = useNavigate();
+  
+  // Determine if we should show text overlay (ABC books)
+  const bookName = openGraphMetadata?.title || '';
+  const bookDescription = openGraphMetadata?.description || '';
+  const pageTextOverlay = page.content?.textOverlay?.enabled ? page.content.textOverlay.text : '';
+  
+  // Tap-to-advance handler
+  const handleTapToAdvance = (e: React.MouseEvent) => {
+    // Allow context menu to work on image
+    if (e.button === 2) return;
+    onNext();
+  };
 
   // Simple expiration check - redirect to home if expired
   const isExpired = new Date() > new Date(expiresAt);
@@ -97,47 +109,18 @@ export function DailyPublishedPageView({
 
       {/* Focused page card - Fixed height to prevent scrolling */}
       <div className="h-[calc(100vh-12rem)] mt-4 px-4 flex items-center justify-center">
-        <div className="max-w-md w-full">
-          <Card className="overflow-hidden shadow-lg">
-            <CardContent className="p-0">
-              {/* Large illustration area with tap-to-advance overlay */}
-              <div className="aspect-square bg-gradient-to-br from-background to-muted/50 relative">
-                <PublicPageImage pageId={page.id} bookId={bookId} />
-                
-                {/* CSS Text Overlay - Only for GoogleChat books with textOverlay enabled */}
-                {page.content?.textOverlay?.enabled && (
-                  <TextOverlay 
-                    text={page.content.textOverlay.text}
-                    show={true}
-                  />
-                )}
-                
-                {/* Transparent overlay for tap-to-advance that doesn't block image context menu */}
-                <div 
-                  className="absolute inset-0 cursor-pointer"
-                  style={{ pointerEvents: 'auto' }}
-                  role="button"
-                  tabIndex={0}
-                  aria-label="Tap to go to next page"
-                  onClick={onNext}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault();
-                      onNext();
-                    }
-                  }}
-                  onContextMenu={(e) => {
-                    // Allow context menu to pass through to image below
-                    e.stopPropagation();
-                    e.currentTarget.style.pointerEvents = 'none';
-                    setTimeout(() => {
-                      e.currentTarget.style.pointerEvents = 'auto';
-                    }, 100);
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
+        <div className="max-w-md w-full cursor-pointer" onClick={handleTapToAdvance}>
+          <ReadingPageDisplay
+            pageId={page.id}
+            bookId={bookId}
+            pageNumber={pageNumber}
+            pageText={(bookName?.toLowerCase().includes('abc') || 
+              bookDescription?.toLowerCase().includes('abc')) ? pageTextOverlay : ''}
+            imageUrl=""
+            imageComponent={
+              <PublicPageImage pageId={page.id} bookId={bookId} />
+            }
+          />
         </div>
       </div>
 

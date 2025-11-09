@@ -783,8 +783,6 @@ export default function GoogleChat() {
           return updated;
         });
         
-        toast.success('Image updated successfully!');
-        
         // Auto-advance to next page if not the last page
         if (currentQAPage < pageCount) {
           setTimeout(() => {

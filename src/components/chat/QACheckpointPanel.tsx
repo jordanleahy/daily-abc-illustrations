@@ -70,7 +70,7 @@ export function QACheckpointPanel({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
-  const [isTextOverlayVisible, setIsTextOverlayVisible] = useState(true);
+  const [hiddenOverlayPages, setHiddenOverlayPages] = useState<Set<number>>(new Set());
   const { generateMetadata, isGenerating } = useWordMetadata();
   
   // Word Learning Helper state
@@ -311,7 +311,7 @@ export function QACheckpointPanel({
                 />
                 
                 {/* Text Overlay with Editing and Word Learning */}
-                {currentPageText && isTextOverlayVisible && (
+                {currentPageText && !hiddenOverlayPages.has(currentQAPage) && (
                   <>
                     {isEditingText && onUpdatePageText ? (
                       <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">
@@ -365,8 +365,8 @@ export function QACheckpointPanel({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setIsTextOverlayVisible(false);
-                              toast.success('Text overlay hidden');
+                              setHiddenOverlayPages(prev => new Set(prev).add(currentQAPage));
+                              toast.success('Text overlay hidden for this page');
                             }}
                             className="h-6 w-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
                             title="Hide text overlay"

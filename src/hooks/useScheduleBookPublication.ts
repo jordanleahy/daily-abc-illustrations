@@ -14,10 +14,10 @@ export const useScheduleBookPublication = () => {
 
   return useMutation({
     mutationFn: async ({ bookId, title, description }: SchedulePublicationParams) => {
-      // Check if book is already scheduled
+      // Check if book is already scheduled (queued or active)
       const { data: existing, error: checkError } = await supabase
         .from('daily_published')
-        .select('id, status')
+        .select('id, status, publish_date')
         .eq('book_id', bookId)
         .in('status', ['queued', 'active'])
         .maybeSingle();
@@ -25,7 +25,17 @@ export const useScheduleBookPublication = () => {
       if (checkError) throw checkError;
 
       if (existing) {
-        throw new Error('This book is already scheduled for publication');
+        if (existing.status === 'active') {
+          throw new Error('This book is currently the active daily publication');
+        }
+        if (existing.status === 'queued') {
+          const date = new Date(existing.publish_date).toLocaleDateString('en-US', {
+            month: 'long',
+            day: 'numeric',
+            year: 'numeric'
+          });
+          throw new Error(`This book is already scheduled for ${date}`);
+        }
       }
 
       // Get next available publish date using FIFO logic
@@ -45,7 +55,13 @@ export const useScheduleBookPublication = () => {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Handle unique constraint violation gracefully
+        if (error.code === '23505' && error.message.includes('daily_published_unique_queued_book')) {
+          throw new Error('This book is already scheduled. Please refresh the page.');
+        }
+        throw error;
+      }
 
       return { ...data, publish_date: publishDate };
     },

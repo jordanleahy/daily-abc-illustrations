@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
@@ -20,6 +21,10 @@ export default function MyBookView() {
   const { data: book, isLoading: isLoadingBook } = useBook(safeId);
   const { pages = [], loading: isLoadingPages } = useBookPages(safeId);
   const { data: pageImages = {} } = useBookPageImages(safeId);
+  const { data: kidProfiles } = useKidProfiles();
+  
+  // Auto-select kid if only one exists
+  const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
   
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
@@ -133,6 +138,7 @@ export default function MyBookView() {
           subtitle={`${currentPageIndex + 1} of ${pages.length}`}
           bookId={book.id}
           onBack={handleBack}
+          kidId={selectedKidId}
           onPrevious={handleHeaderPrevious}
           onNext={handleHeaderNext}
           hasPrevious={currentPageIndex > 0}

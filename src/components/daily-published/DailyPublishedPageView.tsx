@@ -141,9 +141,12 @@ export function DailyPublishedPageView({
         </div>
       </div>
 
-      {/* Unified bottom slide navigation */}
+      {/* Unified arrow navigation */}
       <BottomSlideNavigation 
-        onSlide={onNext}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        disablePrevious={pageNumber <= 1}
+        disableNext={isLastPage}
         variant="compact"
         show={true}
       />

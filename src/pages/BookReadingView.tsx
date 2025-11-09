@@ -17,13 +17,14 @@ import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { BookImage } from '@/components/ui/book-image';
 import { processImage } from '@/utils/imageProcessor';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { RewardContainer } from '@/components/ui/reward-container';
+import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { RoleDebugger } from '@/components/RoleDebugger';
-import { Button } from '@/components/ui/button';
-import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
 
 export default function BookReadingView() {
@@ -420,29 +421,13 @@ export default function BookReadingView() {
           </SwipeUpDrawer>
           
           {/* Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t py-4 px-6 safe-area-inset-bottom">
-            <div className="flex items-center justify-between max-w-sm mx-auto">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handlePrevious}
-                disabled={currentPageIndex === 0}
-                className="h-12 w-12"
-              >
-                <ChevronLeft className="h-6 w-6" />
-              </Button>
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleNext}
-                disabled={isAddingCoins}
-                className="h-12 w-12"
-              >
-                <ChevronRight className="h-6 w-6" />
-              </Button>
-            </div>
-          </div>
+          <BottomSlideNavigation 
+            onPrevious={handlePrevious}
+            onNext={handleNext}
+            disablePrevious={currentPageIndex === 0}
+            disableNext={isAddingCoins}
+            variant="compact"
+          />
         </div>
       </div>
       

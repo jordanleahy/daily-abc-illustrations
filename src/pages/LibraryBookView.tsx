@@ -403,10 +403,11 @@ export default function LibraryBookView() {
           
           {/* Navigation */}
           <BottomSlideNavigation 
-            onSlide={handleNext}
-            disabled={isAddingCoins}
+            onPrevious={handlePrevious}
+            onNext={handleNext}
+            disablePrevious={currentPageIndex === 0}
+            disableNext={isAddingCoins || isLastPage}
             variant="compact"
-            slideText={isLastPage ? "Finish & Collect Coins" : undefined}
           />
         </div>
       </div>

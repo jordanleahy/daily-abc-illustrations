@@ -1,3 +1,8 @@
+/**
+ * @deprecated This component is deprecated. Use ArrowNavigation instead.
+ * Kept for backward compatibility only.
+ */
+
 import React, { useState, useRef, useCallback } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';

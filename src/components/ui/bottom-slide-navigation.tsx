@@ -1,10 +1,17 @@
-import { SlideToUnlock } from './slide-to-unlock';
+import { ArrowNavigation } from './arrow-navigation';
 import { cn } from '@/lib/utils';
 
 interface BottomSlideNavigationProps {
-  onSlide: () => void;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  /** @deprecated Use onNext instead */
+  onSlide?: () => void;
+  disablePrevious?: boolean;
+  disableNext?: boolean;
+  /** @deprecated Use disableNext instead */
   disabled?: boolean;
   variant?: 'compact' | 'normal' | 'wide' | 'inline';
+  /** @deprecated Not used in arrow navigation */
   slideText?: string;
   className?: string;
   show?: boolean;
@@ -13,11 +20,12 @@ interface BottomSlideNavigationProps {
 /**
  * BottomSlideNavigation Component
  * 
- * A unified slide navigation component that provides consistent positioning,
+ * A unified arrow navigation component that provides consistent positioning,
  * styling, and behavior across all reading contexts. Supports both fixed
- * bottom positioning and inline placement.
+ * bottom positioning and inline placement with bidirectional navigation.
  * 
  * Features:
+ * - Bidirectional navigation (previous/next)
  * - Consistent backdrop blur and border styling
  * - Configurable padding variants for different contexts
  * - Fixed positioning with safe-area support for mobile
@@ -26,27 +34,33 @@ interface BottomSlideNavigationProps {
  * 
  * @component
  * @example
- * // Fixed bottom navigation (most common)
+ * // Fixed bottom navigation with both directions
  * <BottomSlideNavigation 
- *   onSlide={handleNext} 
- *   disabled={isLastPage}
+ *   onPrevious={handlePrevious}
+ *   onNext={handleNext}
+ *   disablePrevious={isFirstPage}
+ *   disableNext={isLastPage}
  *   variant="normal"
  * />
  * 
  * @example
  * // Inline navigation for embedded contexts
  * <BottomSlideNavigation 
- *   onSlide={handleNext} 
- *   disabled={isLastPage}
+ *   onNext={handleNext}
+ *   disableNext={isLastPage}
  *   variant="inline"
  *   show={!isLastPage}
  * />
  */
 export function BottomSlideNavigation({
-  onSlide,
-  disabled = false,
+  onPrevious,
+  onNext,
+  onSlide, // Backward compatibility
+  disablePrevious = false,
+  disableNext = false,
+  disabled = false, // Backward compatibility
   variant = 'normal',
-  slideText,
+  slideText, // Ignored in arrow navigation
   className,
   show = true
 }: BottomSlideNavigationProps) {
@@ -54,6 +68,10 @@ export function BottomSlideNavigation({
   if (!show) {
     return null;
   }
+
+  // Backward compatibility: onSlide maps to onNext
+  const handleNext = onNext || onSlide;
+  const isNextDisabled = disableNext || disabled;
 
   // Determine positioning and padding based on variant
   const isFixed = variant !== 'inline';
@@ -75,10 +93,11 @@ export function BottomSlideNavigation({
   return (
     <div className={cn(baseClasses, paddingClasses[variant], className)}>
       <div className={containerClasses}>
-        <SlideToUnlock 
-          onUnlock={onSlide}
-          disabled={disabled}
-          text={slideText}
+        <ArrowNavigation 
+          onPrevious={onPrevious}
+          onNext={handleNext}
+          disablePrevious={disablePrevious}
+          disableNext={isNextDisabled}
           className="w-full"
         />
       </div>

@@ -78,10 +78,12 @@ export function FocusedPageView({
         </div>
       </div>
 
-      {/* Unified bottom slide navigation */}
+      {/* Unified arrow navigation */}
       <BottomSlideNavigation 
-        onSlide={onNext}
-        disabled={isLastPage}
+        onPrevious={onPrevious}
+        onNext={onNext}
+        disablePrevious={pageNumber <= 1}
+        disableNext={isLastPage}
         variant="wide"
       />
     </div>

@@ -175,8 +175,38 @@ export const useLibraryBooks = () => {
         };
       }) || [];
 
+      // Deduplicate by book_id - prefer active status, then most recent
+      const bookMap = new Map();
+      enrichedData.forEach(item => {
+        if (!item.book_id) return;
+        
+        const existing = bookMap.get(item.book_id);
+        if (!existing) {
+          bookMap.set(item.book_id, item);
+          return;
+        }
+        
+        // Prefer active over other statuses
+        if (item.status === 'active' && existing.status !== 'active') {
+          bookMap.set(item.book_id, item);
+          return;
+        }
+        
+        // If both same status, prefer newer publish_date
+        if (item.status === existing.status) {
+          const itemDate = new Date(item.publish_date).getTime();
+          const existingDate = new Date(existing.publish_date).getTime();
+          if (itemDate > existingDate) {
+            bookMap.set(item.book_id, item);
+          }
+        }
+      });
+      
+      // Convert map back to array
+      const deduplicatedData = Array.from(bookMap.values());
+      
       // Sort by books.created_at (newest first)
-      enrichedData.sort((a, b) => {
+      deduplicatedData.sort((a, b) => {
         const aCreatedAt = a.book?.created_at;
         const bCreatedAt = b.book?.created_at;
         
@@ -190,9 +220,9 @@ export const useLibraryBooks = () => {
       });
 
       // Cache the fresh data for next visit
-      cacheLibraryBooks(enrichedData as DailyPublishedWithBook[], user?.id || '');
+      cacheLibraryBooks(deduplicatedData as DailyPublishedWithBook[], user?.id || '');
 
-      return enrichedData as DailyPublishedWithBook[];
+      return deduplicatedData as DailyPublishedWithBook[];
 
     },
     staleTime: 30 * 60 * 1000, // 30 minutes - aggressive cache-first for instant load

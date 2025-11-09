@@ -5,27 +5,17 @@ import { StandardPageLayout } from '@/components/layout';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
-import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
-import { useBookPublicationStatus } from '@/hooks/useBookPublicationStatus';
-import { useHasRole } from '@/hooks/useUserRole';
-import { useSubscription } from '@/hooks/useSubscription';
-import { useAddBookAsHabit } from '@/hooks/useAddBookAsHabit';
-import { useIsBookAddedAsHabit } from '@/hooks/useIsBookAddedAsHabit';
-import { useFeatureAccess } from '@/hooks/useFeatureAccess';
-import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, BookOpen, Calendar, Users, Plus, Download, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, BookOpen, Calendar, Users } from 'lucide-react';
 import { MetaHead } from '@/components/common/MetaHead';
 import { useSeoMetadata, useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
 import { LibraryCard } from '@/components/page-prompts/LibraryCard';
 import { trackBookViewForCache, trackBookView } from '@/utils/bookViewTracking';
 import { useLibraryDetailImagePreloader } from '@/hooks/useLibraryDetailImagePreloader';
-import { generateBookPDF } from '@/services/pdfGenerator';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
-import { toast } from 'sonner';
 import type { Page } from '@/types/book';
 
 /**
@@ -99,20 +89,11 @@ export default function LibraryDetail() {
   const { user } = useAuthContext();
   const navigate = useNavigate();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [isDownloading, setIsDownloading] = useState(false);
   
   const { data: book, isLoading: bookLoading, error: bookError } = useLibraryBookById(id);
   const { data: pages = [], isLoading: pagesLoading } = useDailyPublishedPages(id);
   const { data: seoMetadata } = useSeoMetadata(id);
   const { data: bookSeoMetadata } = useSeoMetadataByBook(book?.book_id || undefined);
-  const { data: publicationStatus } = useBookPublicationStatus(book?.book_id);
-  const { hasActiveSubscription } = useSubscription();
-  const { hasHabitsRewards } = useFeatureAccess();
-  const isAdmin = useHasRole('admin');
-  const { data: kidProfiles = [] } = useKidProfiles();
-  const addBookAsHabit = useAddBookAsHabit();
-  const { data: isBookAdded = false } = useIsBookAddedAsHabit(book?.book_id);
-  const schedulePublication = useScheduleBookPublication();
   
   // Progressive image preloading - priority images load first
   const { priorityCount, totalCount } = useLibraryDetailImagePreloader(book?.book_id);
@@ -137,60 +118,6 @@ export default function LibraryDetail() {
 
   const handleBack = () => {
     navigate('/library');
-  };
-
-  const handleAddAsHabit = async () => {
-    if (!book?.book_id || !book?.title || isBookAdded || kidProfiles.length === 0) return;
-    
-    try {
-      const kidIds = kidProfiles.map(profile => profile.id);
-      // Get total pages from nested book object, default to 26 if not available
-      const totalPages = (book as any).book?.total_pages || 26;
-      
-      await addBookAsHabit.mutateAsync({
-        bookId: book.book_id,
-        bookTitle: book.title,
-        kidIds,
-        coinAmount: totalPages,
-      });
-      
-      toast.success('Book added to habits');
-    } catch (error) {
-      console.error('Error adding book as habit:', error);
-      toast.error('Failed to add book as habit');
-    }
-  };
-
-  const handleSchedulePublication = async () => {
-    if (!book?.book_id || !book?.title || publicationStatus) return;
-    
-    try {
-      await schedulePublication.mutateAsync({
-        bookId: book.book_id,
-        title: book.title,
-        description: book.description,
-      });
-      
-      toast.success('Book scheduled for publication');
-    } catch (error) {
-      console.error('Error scheduling publication:', error);
-      toast.error('Failed to schedule publication');
-    }
-  };
-
-  const handleDownloadPDF = async () => {
-    if (!book?.book_id || !book?.title || pages.length === 0) return;
-    
-    setIsDownloading(true);
-    try {
-      await generateBookPDF(book.book_id, book.title);
-      toast.success('PDF downloaded successfully');
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      toast.error('Failed to generate PDF');
-    } finally {
-      setIsDownloading(false);
-    }
   };
 
   // Only show full loading skeleton on first load with no data
@@ -262,96 +189,34 @@ export default function LibraryDetail() {
       <StandardPageLayout>
         <div className="space-y-6">
           {/* Navigation Header */}
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
             <Button 
               variant="ghost" 
               onClick={handleBack}
               className="gap-2"
             >
               <ArrowLeft className="w-4 h-4" />
-              <span className="hidden sm:inline">Back to Library</span>
+              Back to Library
             </Button>
-
-            {/* Action Buttons */}
-            <div className="flex items-center gap-2">
-              {/* Add as Habit - Plus Tier Only */}
-              {hasHabitsRewards && book?.book_id && (
-                <Button
-                  onClick={handleAddAsHabit}
-                  disabled={isBookAdded || addBookAsHabit.isPending || kidProfiles.length === 0}
-                  variant={isBookAdded ? "default" : "outline"}
-                  size="icon"
-                  className="h-9 w-9 flex-shrink-0"
-                  title={isBookAdded ? "Added to habits" : "Add to habits"}
-                >
-                  {isBookAdded ? (
-                    <CheckCircle className="h-4 w-4" />
-                  ) : addBookAsHabit.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Calendar className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
-
-              {/* Schedule Publication - Admin Only */}
-              {isAdmin && !publicationStatus && book?.book_id && (
-                <Button
-                  onClick={handleSchedulePublication}
-                  disabled={schedulePublication.isPending}
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 flex-shrink-0"
-                  title="Schedule for publication"
-                >
-                  {schedulePublication.isPending ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Plus className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
-
-              {/* Download PDF - Plus Tier */}
-              {hasActiveSubscription && book?.book_id && (
-                <Button
-                  onClick={handleDownloadPDF}
-                  disabled={isDownloading || pages.length === 0}
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9 flex-shrink-0"
-                  title="Download PDF"
-                >
-                  {isDownloading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Download className="h-4 w-4" />
-                  )}
-                </Button>
-              )}
-            </div>
           </div>
 
           {/* Book Header */}
           <Card>
             <CardHeader>
-              <div className="flex flex-col gap-3">
-                <div className="flex items-start justify-between gap-3">
-                  <CardTitle className="text-xl sm:text-2xl md:text-3xl leading-tight flex-1">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div className="space-y-2">
+                  <CardTitle className="text-2xl md:text-3xl">
                     {pageTitle}
                   </CardTitle>
-                  <Badge 
-                    variant="secondary" 
-                    className="flex-shrink-0"
-                  >
-                    {book.status}
-                  </Badge>
+                  {pageDescription && (
+                    <p className="text-muted-foreground text-lg">
+                      {pageDescription}
+                    </p>
+                  )}
                 </div>
-                {pageDescription && (
-                  <p className="text-muted-foreground text-sm sm:text-base md:text-lg">
-                    {pageDescription}
-                  </p>
-                )}
+                <Badge variant="secondary" className="w-fit">
+                  {book.status}
+                </Badge>
               </div>
             </CardHeader>
             <CardContent>

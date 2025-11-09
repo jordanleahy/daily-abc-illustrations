@@ -16,9 +16,9 @@ import { trackBookView } from '@/utils/bookViewTracking';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
-import { PublicPageImage } from '@/components/daily-published';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { Card } from '@/components/ui/card';
+import { BookImage } from '@/components/ui/book-image';
 import { processImage } from '@/utils/imageProcessor';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { RewardContainer } from '@/components/ui/reward-container';
@@ -168,6 +168,7 @@ export default function BookReadingView() {
   }
 
   const currentPage = reorderedPages[currentPageIndex];
+  const currentImageUrl = currentPage ? pageImages[currentPage.id]?.imageUrl : undefined;
 
   const handleNext = async () => {
     if (isLastPage) {
@@ -382,21 +383,22 @@ export default function BookReadingView() {
         <div className="flex-1 flex flex-col pb-4">
           <div className="flex-1 flex items-center justify-center p-4">
             <Card className="w-full max-w-sm mx-auto shadow-lg relative">
-              <PublicPageImage 
-                pageId={currentPage.id}
-                bookId={book.id}
-                className="rounded-lg"
-                showUploadButton={false}
-                onUploadClick={handleUploadClick}
-              />
-              
-              {/* CSS Text Overlay - Only for GoogleChat books with textOverlay enabled */}
-              {currentPage.content?.textOverlay?.enabled && (
-                <TextOverlay 
-                  text={currentPage.content.textOverlay.text}
-                  show={true}
+              <div className="relative w-full aspect-square">
+                <BookImage
+                  src={currentImageUrl}
+                  alt={currentPage?.content?.mainConcept || currentPage?.title || "Page illustration"}
+                  priority={true}
+                  className="w-full h-full object-cover object-top rounded-lg"
                 />
-              )}
+                
+                {/* CSS Text Overlay - Only for GoogleChat books with textOverlay enabled */}
+                {currentPage?.content?.textOverlay?.enabled && (
+                  <TextOverlay 
+                    text={currentPage.content.textOverlay.text}
+                    show={true}
+                  />
+                )}
+              </div>
             </Card>
           </div>
           

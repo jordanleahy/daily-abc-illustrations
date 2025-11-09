@@ -5,7 +5,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { trackBookReading, getBookReadingStats } from '@/utils/storage';
 
 interface ReadingSessionConfig {
-  contentType: 'daily_published' | 'library_book';
+  contentType: 'daily_published' | 'library_book' | 'user_book';
   contentId: string;
   bookId: string;
   totalPages: number;

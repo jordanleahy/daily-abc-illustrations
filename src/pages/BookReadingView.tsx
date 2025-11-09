@@ -12,7 +12,6 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
-import { trackBookView } from '@/utils/bookViewTracking';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
@@ -22,7 +21,6 @@ import { BookImage } from '@/components/ui/book-image';
 import { processImage } from '@/utils/imageProcessor';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { RewardContainer } from '@/components/ui/reward-container';
-import { UpcomingBooksPreview } from '@/components/daily-published';
 import { RoleDebugger } from '@/components/RoleDebugger';
 import { Button } from '@/components/ui/button';
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -42,13 +40,6 @@ export default function BookReadingView() {
   
   const { pages = [], loading: isLoadingPages } = useBookPages(safeId);
   const { data: pageImages = {} } = useBookPageImages(safeId);
-  
-  // Track book view when page loads
-  useEffect(() => {
-    if (book?.id && user) {
-      trackBookView(book.id);
-    }
-  }, [book?.id, user]);
   
   // Get starting page index from location state
   const startingPageIndex = location.state?.startingPageIndex ?? 0;
@@ -86,7 +77,7 @@ export default function BookReadingView() {
       const entryPoint = location.state?.from === 'library' ? 'library_card' : 'direct_link';
       
       startSession({
-        contentType: 'library_book',
+        contentType: 'user_book',
         contentId: book.id,
         bookId: book.id,
         totalPages: reorderedPages.length,
@@ -405,11 +396,6 @@ export default function BookReadingView() {
                     </div>
                   )}
                 </div>
-              )}
-              
-              {/* Upcoming Books Preview - Show at the end */}
-              {isLastPage && (
-                <UpcomingBooksPreview />
               )}
             </div>
           </SwipeUpDrawer>

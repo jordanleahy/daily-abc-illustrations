@@ -81,19 +81,19 @@ export function usePredictivePrefetch(currentBookId?: string) {
         };
       })
       .sort((a, b) => b.score - a.score) // Highest score first
-      .slice(0, 3) // Top 3 predictions
-      .map(item => item.book);
+      .slice(0, 3); // Top 3 predictions
 
     console.log('[PredictivePrefetch] Top 3 predicted books:', 
-      predictedBooks.map(b => ({ 
-        title: b.seo_title || b.title, 
-        isFavorite: favoriteIds.has(b.id),
-        lastViewed: b.last_viewed_at,
-        viewCount: b.view_count
+      scoredBooks.map(item => ({ 
+        title: item.book.seo_title || item.book.title, 
+        score: item.score,
+        isFavorite: favoriteIds.has(item.book.id),
+        lastViewed: item.book.last_viewed_at,
+        viewCount: item.book.view_count
       }))
     );
 
-    return predictedBooks;
+    return scoredBooks.map(item => item.book);
   }, [libraryBooks, currentBookId, favoriteIds, favorites]);
 
   // Background prefetch the predicted books

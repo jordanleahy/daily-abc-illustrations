@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Shimmer } from '@/components/ui/shimmer';
 import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
+import { createImageLoadTracker } from '@/utils/performanceMonitoring';
 
 interface BookImageProps {
   src: string | undefined;
@@ -15,7 +16,7 @@ interface BookImageProps {
 
 /**
  * Unified image component for all book images across the app
- * Handles optimization, responsive srcSet, loading states, and shimmer effect
+ * Handles optimization, responsive srcSet, loading states, shimmer effect, and performance tracking
  */
 export function BookImage({
   src,
@@ -37,6 +38,9 @@ export function BookImage({
 
   const optimizedUrl = optimizeImageUrl(src, { width: 800, quality: 85 });
   const srcSet = generateSrcSet(src, [400, 800, 1200]);
+  
+  // PHASE 4: Create performance tracker for this image
+  const performanceTracker = createImageLoadTracker(optimizedUrl || src);
 
   return (
     <div className="relative w-full h-full">
@@ -58,9 +62,13 @@ export function BookImage({
         } : undefined}
         onLoad={() => {
           setImageLoaded(true);
+          performanceTracker.onLoad(); // Track performance
           onLoad?.();
         }}
-        onError={onError}
+        onError={() => {
+          performanceTracker.onError(); // Track errors
+          onError?.();
+        }}
         onContextMenu={enableMobileSave ? (e) => {
           // Allow default context menu for mobile save
         } : undefined}

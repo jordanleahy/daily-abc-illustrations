@@ -42,6 +42,8 @@ import Profile from "./pages/Profile";
 import { useEffect } from "react";
 import { scheduleCacheCleanup } from "./utils/cacheCleanup";
 import { initializeCacheWarming } from "./utils/cacheWarming";
+import { initializePerformanceMonitoring } from "./utils/performanceMonitoring";
+import { PerformanceDashboard } from "./components/dev/PerformanceDashboard";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -61,10 +63,11 @@ const queryClient = new QueryClient({
 export { queryClient };
 
 const App = () => {
-  // PHASE 3: Initialize cache warming and cleanup on app mount
+  // PHASE 3 & 4: Initialize cache warming, cleanup, and performance monitoring
   useEffect(() => {
     scheduleCacheCleanup();
     initializeCacheWarming();
+    initializePerformanceMonitoring();
   }, []);
 
   return (
@@ -76,6 +79,7 @@ const App = () => {
               <Sonner />
               <BrowserRouter>
                 <GA4Tracker />
+                {process.env.NODE_ENV === 'development' && <PerformanceDashboard />}
                 <Routes>
                 <Route path="/" element={<Landing />} />
                 <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />

@@ -4,6 +4,7 @@ import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useLibraryImagePreloader } from '@/hooks/useLibraryImagePreloader';
 import { useAggressiveLibraryPrefetch } from '@/hooks/useAggressiveLibraryPrefetch';
 import { useDailyPublished } from '@/hooks/useDailyPublished';
+import { useLibraryPrefetch } from '@/hooks/useLibraryPrefetch';
 import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -40,6 +41,8 @@ export default memo(function Library() {
   // PHASE 1: Aggressive prefetch all book pages in background
   useAggressiveLibraryPrefetch(libraryItems, true);
   
+  // Hover prefetch for instant navigation
+  const { prefetchLibraryBook, prefetchLibraryPages } = useLibraryPrefetch();
 
   // Only show loading on FIRST load (no cached data)
   // Don't show skeleton if we have cached data being refetched
@@ -114,6 +117,12 @@ export default memo(function Library() {
                   isNewlyPublished={item.id === activeDailyPublished?.id}
                   isFavorited={favoriteIds.has(item.id)}
                   onToggleFavorite={toggleFavorite}
+                  onHover={() => {
+                    prefetchLibraryBook(item.id);
+                    if (item.book_id) {
+                      prefetchLibraryPages(item.book_id);
+                    }
+                  }}
                 />
               ))}
             </div>
@@ -142,6 +151,7 @@ interface LibraryBookCardProps {
   isNewlyPublished?: boolean;
   isFavorited?: boolean;
   onToggleFavorite: (dailyPublishedId: string) => void;
+  onHover?: () => void;
 }
 
 const LibraryBookCard = memo(function LibraryBookCard({ 
@@ -149,7 +159,8 @@ const LibraryBookCard = memo(function LibraryBookCard({
   index, 
   isNewlyPublished, 
   isFavorited = false,
-  onToggleFavorite 
+  onToggleFavorite,
+  onHover
 }: LibraryBookCardProps) {
   const navigate = useNavigate();
   const { hasLibraryAccess } = useFeatureAccess();
@@ -191,6 +202,7 @@ const LibraryBookCard = memo(function LibraryBookCard({
         ref={ref}
         className={`hover:shadow-md transition-shadow ${shouldShowPremiumOverlay ? '' : 'cursor-pointer hover:shadow-lg'} relative`}
         onClick={handleCardClick}
+        onMouseEnter={onHover}
       >
         {/* Favorite Heart Button - only functional if not locked */}
         {!shouldShowPremiumOverlay && (

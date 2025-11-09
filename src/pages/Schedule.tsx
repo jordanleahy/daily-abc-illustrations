@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
+import { useDailyPublishedPrefetch } from '@/hooks/useDailyPublishedPrefetch';
 import { MetaHead } from '@/components/common/MetaHead';
 import { FreemiumHeader } from '@/components/daily-published/FreemiumHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -64,6 +65,7 @@ export default function Schedule() {
   } = useDailyPublishedSchedule();
   const { hasActiveSubscription } = useSubscription();
   const { hasLibraryAccess } = useFeatureAccess();
+  const { prefetchDailyPublished } = useDailyPublishedPrefetch();
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -122,7 +124,7 @@ export default function Schedule() {
                 📺 Currently Live
               </h2>
               <div className="space-y-4">
-                {activeItems.map(item => <PublicScheduleCard key={item.id} item={item} position="active" />)}
+                {activeItems.map(item => <PublicScheduleCard key={item.id} item={item} position="active" onHover={() => prefetchDailyPublished(item.id, item.book_id)} />)}
               </div>
             </div>}
 
@@ -132,7 +134,7 @@ export default function Schedule() {
                 📅 Upcoming Books ({queuedItems.length})
               </h2>
               <div className="space-y-4">
-                {queuedItems.map((item, index) => <PublicScheduleCard key={item.id} item={item} position={index + 1} />)}
+                {queuedItems.map((item, index) => <PublicScheduleCard key={item.id} item={item} position={index + 1} onHover={() => prefetchDailyPublished(item.id, item.book_id)} />)}
               </div>
             </div>}
 
@@ -161,6 +163,7 @@ export default function Schedule() {
                         key={item.id} 
                         item={item}
                         position="expired"
+                        onHover={() => prefetchDailyPublished(item.id, item.book_id)}
                       />
                     ))}
                   </div>
@@ -214,10 +217,12 @@ type ScheduleCardItem = DailyPublishedWithBook;
 interface PublicScheduleCardProps {
   item: ScheduleCardItem;
   position: number | "active" | "expired";
+  onHover?: () => void;
 }
 function PublicScheduleCard({
   item,
-  position
+  position,
+  onHover
 }: PublicScheduleCardProps) {
   const navigate = useNavigate();
   const {
@@ -232,6 +237,7 @@ function PublicScheduleCard({
    return <Card 
      className={`transition-shadow group ${isActive ? "cursor-pointer hover:shadow-lg" : ""}`} 
      onClick={isActive ? handleCardClick : undefined}
+     onMouseEnter={onHover}
    >
       <CardHeader className="pb-3">
         <div className="flex flex-col md:flex-row gap-3 md:items-center">

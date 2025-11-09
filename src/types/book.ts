@@ -116,6 +116,20 @@ export interface Page {
       position: 'bottom-center';
       createdAt?: string;
     };
+    /** Word-level metadata for educational analysis */
+    words?: Array<{
+      word: string;
+      order: number;
+      syllableCount?: number;
+      syllableBreakdown?: string;
+      partOfSpeech?: string;
+      letters?: Array<{
+        letter: string;
+        position: number;
+        isVowel: boolean;
+        isConsonant: boolean;
+      }>;
+    }>;
   };
   /** ID of the currently deployed system prompt for this page */
   current_system_prompt_id?: string;

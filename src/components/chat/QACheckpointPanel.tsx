@@ -9,6 +9,9 @@ import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
+import { WordsCard } from './WordsCard';
+import { useWordMetadata } from '@/hooks/useWordMetadata';
+import { useBookPages } from '@/hooks/useBookPages';
 
 interface QACheckpointPanelProps {
   showQACheckpoint: boolean;
@@ -66,6 +69,10 @@ export function QACheckpointPanel({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
+  const { generateMetadata } = useWordMetadata();
+  
+  // Fetch pages data
+  const { pages } = useBookPages(bookId || undefined);
 
   const currentCoverPrompt = qaPagePrompts[0] || null;
   
@@ -100,6 +107,12 @@ export function QACheckpointPanel({
     
     return title;
   })();
+
+  // Get current page words metadata
+  const currentPageWords = useMemo(() => {
+    const currentPage = pages?.find(p => p.page_number === currentQAPage);
+    return currentPage?.content?.words;
+  }, [pages, currentQAPage]);
 
   // Reset states when page changes
   useEffect(() => {
@@ -200,10 +213,25 @@ export function QACheckpointPanel({
                       <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">
                         <InlineEditInput
                           value={currentPageText}
-                          onSave={(newText) => {
+                          onSave={async (newText) => {
                             onUpdatePageText(currentQAPage, newText);
                             setIsEditingText(false);
                             toast.success('Text updated!');
+                            
+                            // Generate word metadata
+                            const currentPage = pages?.find(p => p.page_number === currentQAPage);
+                            if (currentPage && bookId && newText.trim()) {
+                              try {
+                                await generateMetadata({
+                                  pageId: currentPage.id,
+                                  bookId,
+                                  title: newText,
+                                  currentContent: currentPage.content
+                                });
+                              } catch (error) {
+                                console.error('Failed to generate word metadata:', error);
+                              }
+                            }
                           }}
                           className="text-white text-center font-semibold text-lg bg-transparent border-white/30"
                           isEditing={true}
@@ -273,6 +301,14 @@ export function QACheckpointPanel({
             )}
           </div>
         </div>
+
+        {/* Words Analysis Card */}
+        {currentPageWords && currentPageWords.length > 0 && (
+          <WordsCard 
+            words={currentPageWords}
+            title={currentPageText}
+          />
+        )}
 
         {/* Cover Image Prompt - Show on page 1 (Cover Page) */}
         {currentQAPage === 1 && currentCoverPrompt && (

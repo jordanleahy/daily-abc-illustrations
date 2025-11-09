@@ -26,11 +26,7 @@ export const useBookPages = (bookId: string | undefined) => {
 
       return (data || []).map(page => ({
         ...page,
-        content: page.content as {
-          mainConcept: string;
-          funFact: string;
-          activity: string;
-        }
+        content: page.content as Page['content']
       }));
     },
     enabled: !!bookId,
@@ -55,11 +51,7 @@ export const useBookPages = (bookId: string | undefined) => {
           queryClient.setQueryData(['book-pages', bookId], (old: Page[] = []) => {
             const newPage = {
               ...payload.new,
-              content: payload.new.content as {
-                mainConcept: string;
-                funFact: string;
-                activity: string;
-              }
+              content: payload.new.content as Page['content']
             } as Page;
             // Insert in correct order by page_number
             return [...old, newPage].sort((a, b) => a.page_number - b.page_number);
@@ -80,11 +72,7 @@ export const useBookPages = (bookId: string | undefined) => {
             old.map(page =>
               page.id === payload.new.id ? {
                 ...payload.new,
-                content: payload.new.content as {
-                  mainConcept: string;
-                  funFact: string;
-                  activity: string;
-                }
+                content: payload.new.content as Page['content']
               } as Page : page
             )
           );

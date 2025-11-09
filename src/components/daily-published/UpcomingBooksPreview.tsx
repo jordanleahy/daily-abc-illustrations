@@ -1,5 +1,6 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { BookImage } from '@/components/ui/book-image';
 import { Calendar, Clock } from 'lucide-react';
 import { useUpcomingDailyPublished } from '@/hooks/useUpcomingDailyPublished';
 import { useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
@@ -39,9 +40,10 @@ function BookPreviewCard({ bookId, title, description, publishDate }: BookPrevie
           {/* SEO Thumbnail */}
           <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
             {seoMetadata?.og_image_url ? (
-              <img
+              <BookImage
                 src={seoMetadata.og_image_url}
                 alt={title}
+                priority={false}
                 className="w-full h-full object-cover"
               />
             ) : (

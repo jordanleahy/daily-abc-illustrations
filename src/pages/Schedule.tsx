@@ -15,6 +15,8 @@ import { format } from 'date-fns-tz';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { BookImage } from '@/components/ui/book-image';
+import { useScheduleImagePreloader } from '@/hooks/useScheduleImagePreloader';
 
 // Utility functions (reused from DailyPublishedSchedule)
 const getStatusColor = (status: string) => {
@@ -66,6 +68,9 @@ export default function Schedule() {
   const { hasActiveSubscription } = useSubscription();
   const { hasLibraryAccess } = useFeatureAccess();
   const { prefetchDailyPublished } = useDailyPublishedPrefetch();
+  
+  // Preload schedule images for instant display
+  useScheduleImagePreloader(scheduleItems);
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -201,15 +206,23 @@ function ScheduleThumbnail({
       {/* Mobile: Full width with aspect ratio */}
       <div className="md:hidden w-full">
         <AspectRatio ratio={16/9} className="rounded-lg overflow-hidden bg-muted">
-          {imageUrl ? <img src={imageUrl} alt={title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center">
+          {imageUrl ? (
+            <BookImage src={imageUrl} alt={title} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center">
               <Image className="h-8 w-8 text-muted-foreground" />
-            </div>}
+            </div>
+          )}
         </AspectRatio>
       </div>
       
       {/* Desktop: Fixed size */}
       <div className="hidden md:block w-32 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
-        {imageUrl ? <img src={imageUrl} alt={title} className="w-full h-full object-cover" /> : <Image className="h-6 w-6 text-muted-foreground" />}
+        {imageUrl ? (
+          <BookImage src={imageUrl} alt={title} className="w-full h-full object-cover" />
+        ) : (
+          <Image className="h-6 w-6 text-muted-foreground" />
+        )}
       </div>
     </>;
 }

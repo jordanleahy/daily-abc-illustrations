@@ -14,6 +14,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
+import { BookImage } from '@/components/ui/book-image';
 
 function BookCard({ book, onClick, index }: { book: any; onClick: () => void; index: number }) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
@@ -52,12 +53,11 @@ function BookCard({ book, onClick, index }: { book: any; onClick: () => void; in
         <AspectRatio ratio={16/9} className="bg-muted rounded-lg overflow-hidden">
           {shouldRender ? (
             book.thumbnail_url || seoMetadata?.og_image_url ? (
-              <img
+              <BookImage
                 src={book.thumbnail_url || seoMetadata.og_image_url}
                 alt={book.book_name}
+                priority={index < 6}
                 className="w-full h-full object-cover object-center"
-                loading={index < 6 ? 'eager' : 'lazy'}
-                decoding="async"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center">

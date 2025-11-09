@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { BookImage } from '@/components/ui/book-image';
 import { formatTimeRemaining, formatFixedScheduleTime } from '@/utils/timeUtils';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
@@ -131,7 +132,15 @@ export function DailyPublishedQueueCard({
         <div className="flex items-start justify-between gap-4">
           {/* SEO Thumbnail Image */}
           <div className="flex-shrink-0 w-32 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
-            {seoMetadata?.og_image_url ? <img src={seoMetadata.og_image_url} alt={`${item.title} preview`} className="w-full h-full object-cover" loading="lazy" /> : <Image className="h-6 w-6 text-muted-foreground" />}
+            {seoMetadata?.og_image_url ? (
+              <BookImage 
+                src={seoMetadata.og_image_url} 
+                alt={`${item.title} preview`} 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <Image className="h-6 w-6 text-muted-foreground" />
+            )}
           </div>
           
           <div className="flex-1 min-w-0">

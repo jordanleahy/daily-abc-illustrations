@@ -1,6 +1,6 @@
 import React, { memo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useUnifiedLibrary } from '@/hooks/useUnifiedLibrary';
+import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useLibraryImagePreloader } from '@/hooks/useLibraryImagePreloader';
 import { useAggressiveLibraryPrefetch } from '@/hooks/useAggressiveLibraryPrefetch';
 import { useDailyPublished } from '@/hooks/useDailyPublished';
@@ -15,16 +15,16 @@ import { BookImage } from '@/components/ui/book-image';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Calendar, Users, Heart } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
-import { Book } from '@/types/book';
 import { trackBookView } from '@/utils/bookViewTracking';
 import { useFavorites } from '@/hooks/useFavorites';
-import { PremiumContentWrapper } from '@/components/subscription/PremiumContentWrapper';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 
 export default memo(function Library() {
   const navigate = useNavigate();
-  const { myBooks, libraryBooks, hasLibraryAccess, isLoading } = useUnifiedLibrary();
+  const { data: libraryBooks, isLoading } = useLibraryBooks();
+  const { hasLibraryAccess } = useFeatureAccess();
   
   // Get the current active daily published book
   const { data: activeDailyPublished } = useDailyPublished();
@@ -54,13 +54,8 @@ export default memo(function Library() {
     );
   }
 
-  // Sort user's books by creation date (newest first)
-  const sortedMyBooks = [...myBooks].sort((a, b) => 
-    new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-  );
-
   // Sort library books by favorites, then respect the database order
-  const sortedLibraryBooks = [...libraryBooks].sort((a, b) => {
+  const sortedLibraryBooks = [...(libraryBooks || [])].sort((a, b) => {
     const aIsFavorite = favoriteIds.has(a.id);
     const bIsFavorite = favoriteIds.has(b.id);
     
@@ -88,28 +83,6 @@ export default memo(function Library() {
       
       <StandardPageLayout containerClassName="pb-8">
         <div className="space-y-12">
-          {/* My Books Section - Always Visible */}
-          {sortedMyBooks.length > 0 && (
-            <section className="space-y-6">
-              <div>
-                <h2 className="text-2xl font-bold tracking-tight">My Books</h2>
-                <p className="text-muted-foreground">
-                  Books you've created
-                </p>
-              </div>
-
-              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                {sortedMyBooks.map((book) => (
-              <MyBookCard 
-                key={book.id}
-                book={book as Book}
-                onClick={() => navigate(`/books/${book.id}/read`, { state: { from: 'library' } })}
-              />
-                ))}
-              </div>
-            </section>
-          )}
-
           {/* Official Library Section - Subscription Required */}
           <section className="space-y-6">
             <div>
@@ -162,70 +135,9 @@ export default memo(function Library() {
               </>
             )}
           </section>
-
-          {/* Empty State - No Books at All */}
-          {sortedMyBooks.length === 0 && sortedLibraryBooks.length === 0 && !hasLibraryAccess && (
-            <Card className="text-center py-12">
-              <CardContent className="space-y-4">
-                <BookOpen className="w-12 h-12 mx-auto text-muted-foreground" />
-                <div>
-                  <h3 className="text-lg font-semibold mb-2">No books yet</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Create your first ABC book or subscribe to access the library
-                  </p>
-                </div>
-                <Button onClick={() => navigate('/google-chat')}>
-                  Create Your First Book
-                </Button>
-              </CardContent>
-            </Card>
-          )}
         </div>
       </StandardPageLayout>
     </>
-  );
-});
-
-// My Book Card Component
-interface MyBookCardProps {
-  book: Book;
-  onClick: () => void;
-}
-
-const MyBookCard = memo(function MyBookCard({ book, onClick }: MyBookCardProps) {
-  return (
-    <Card 
-      className="hover:shadow-lg transition-shadow cursor-pointer"
-      onClick={onClick}
-    >
-      <CardHeader>
-        <CardTitle className="text-xl line-clamp-2">
-          {book.book_name}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="flex items-center gap-2">
-          <Badge variant={book.status === 'published' ? 'default' : 'secondary'}>
-            {book.status}
-          </Badge>
-          {book.dailyPublishedStatus && (
-            <Badge variant="outline">
-              {book.dailyPublishedStatus}
-            </Badge>
-          )}
-        </div>
-        
-        <div className="aspect-video rounded-lg flex items-center justify-center overflow-hidden bg-muted">
-          <BookOpen className="w-12 h-12 text-muted-foreground" />
-        </div>
-
-        {book.book_description && (
-          <p className="text-sm text-muted-foreground line-clamp-2">
-            {book.book_description}
-          </p>
-        )}
-      </CardContent>
-    </Card>
   );
 });
 

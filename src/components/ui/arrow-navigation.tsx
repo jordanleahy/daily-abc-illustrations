@@ -67,20 +67,20 @@ export function ArrowNavigation({
       {/* Center spacer */}
       <div className="flex-1" />
 
-      {/* Next/Right Arrow */}
+      {/* Next/Right Arrow - Wide button with dark background */}
       <button
         onClick={onNext}
         disabled={disableNext || !onNext}
         className={cn(
-          "flex items-center justify-center h-full w-16 rounded-r-full transition-colors",
-          "active:scale-95 transition-transform",
+          "flex items-center justify-center h-full rounded-r-full transition-all",
+          "active:scale-[0.98] transition-transform",
           disableNext || !onNext
-            ? "opacity-30 cursor-not-allowed"
-            : "hover:bg-muted/50 cursor-pointer"
+            ? "opacity-30 cursor-not-allowed w-16"
+            : "hover:opacity-90 cursor-pointer w-[48%] bg-[hsl(220,40%,15%)]"
         )}
         aria-label="Next page"
       >
-        <ChevronRight className="w-6 h-6 text-foreground" />
+        <ChevronRight className="w-6 h-6 text-white" />
       </button>
     </div>
   );

@@ -21,9 +21,10 @@ import type { Page } from '@/types/book';
 interface LibraryCardProps {
   page: Page;
   bookId: string;
+  priority?: boolean;
 }
 
-export function LibraryCard({ page, bookId }: LibraryCardProps) {
+export function LibraryCard({ page, bookId, priority = false }: LibraryCardProps) {
   const { currentPrompt } = usePageSystemPrompt(page.id);
   const { toast } = useToast();
   const { currentImage } = usePageImageUrls(page.id);
@@ -245,6 +246,7 @@ export function LibraryCard({ page, bookId }: LibraryCardProps) {
             pageId={page.id}
             bookId={bookId}
             showUpload={false}
+            priority={priority}
           />
         )}
       </CardContent>

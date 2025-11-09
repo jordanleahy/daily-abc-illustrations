@@ -14,6 +14,74 @@ import { LibraryCard } from '@/components/page-prompts/LibraryCard';
 import { trackBookViewForCache, trackBookView } from '@/utils/bookViewTracking';
 import { useLibraryDetailImagePreloader } from '@/hooks/useLibraryDetailImagePreloader';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import type { Page } from '@/types/book';
+
+/**
+ * Lazy-loading card wrapper with viewport detection
+ * Loads cards progressively as they approach the viewport
+ */
+function LazyLibraryCard({ 
+  page, 
+  bookId, 
+  index, 
+  isCurrentPage, 
+  onClick 
+}: { 
+  page: Page; 
+  bookId: string; 
+  index: number; 
+  isCurrentPage: boolean; 
+  onClick: () => void;
+}) {
+  const { ref, inView } = useIntersectionObserver({
+    rootMargin: '400px', // Start loading 400px before entering viewport
+    threshold: 0,
+    triggerOnce: true // Once loaded, keep it loaded
+  });
+
+  // First 3 cards always render immediately (above fold)
+  const shouldRenderImmediately = index < 3;
+  const priority = shouldRenderImmediately;
+
+  if (shouldRenderImmediately) {
+    return (
+      <div
+        className={`cursor-pointer transition-all duration-200 ${
+          isCurrentPage 
+            ? 'ring-2 ring-primary shadow-lg' 
+            : 'hover:shadow-md'
+        }`}
+        onClick={onClick}
+      >
+        <LibraryCard page={page} bookId={bookId} priority={priority} />
+      </div>
+    );
+  }
+
+  // Below fold: skeleton until in view
+  return (
+    <div
+      ref={ref}
+      className={`cursor-pointer transition-all duration-200 ${
+        isCurrentPage 
+          ? 'ring-2 ring-primary shadow-lg' 
+          : 'hover:shadow-md'
+      }`}
+      onClick={onClick}
+    >
+      {inView ? (
+        <LibraryCard page={page} bookId={bookId} priority={false} />
+      ) : (
+        <Card className="h-[400px]">
+          <CardContent className="p-4">
+            <Skeleton className="w-full h-full" />
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  );
+}
 
 export default function LibraryDetail() {
   const { id } = useParams<{ id: string }>();
@@ -198,11 +266,12 @@ export default function LibraryDetail() {
             </Card>
           )}
 
-          {/* Current Page Display */}
+          {/* Current Page Display - Priority Load */}
           {pages.length > 0 && pages[currentPageIndex] && (
             <LibraryCard
               page={pages[currentPageIndex]}
               bookId={book.book_id || book.id}
+              priority={true}
             />
           )}
 
@@ -220,20 +289,14 @@ export default function LibraryDetail() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {pages.map((page, index) => (
-                    <div
+                    <LazyLibraryCard
                       key={page.id}
-                      className={`cursor-pointer transition-all duration-200 ${
-                        currentPageIndex === index 
-                          ? 'ring-2 ring-primary shadow-lg' 
-                          : 'hover:shadow-md'
-                      }`}
+                      page={page}
+                      bookId={book.book_id || book.id}
+                      index={index}
+                      isCurrentPage={currentPageIndex === index}
                       onClick={() => setCurrentPageIndex(index)}
-                    >
-                      <LibraryCard
-                        page={page}
-                        bookId={book.book_id || book.id}
-                      />
-                    </div>
+                    />
                   ))}
                 </div>
               </CardContent>

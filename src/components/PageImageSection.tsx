@@ -27,9 +27,10 @@ interface PageImageSectionProps {
   onCloseUpload?: () => void;
   enableMobileSave?: boolean;
   preloadedImageUrl?: string;
+  priority?: boolean;
 }
 
-export function PageImageSection({ pageId, bookId, showUpload: externalShowUpload, onCloseUpload, enableMobileSave = false, preloadedImageUrl }: PageImageSectionProps) {
+export function PageImageSection({ pageId, bookId, showUpload: externalShowUpload, onCloseUpload, enableMobileSave = false, preloadedImageUrl, priority = false }: PageImageSectionProps) {
   const { user } = useAuthContext();
   const { currentImage, versions, isLoading, createImageRecord, uploadImage, refreshData } = usePageImageUrls(pageId);
   const { currentPrompt } = usePageSystemPrompt(pageId);
@@ -213,7 +214,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
           <OptimizedImage
             src={displayImageUrl}
             alt={isUserUploaded ? "Uploaded page image" : "Generated page image"}
-            priority={true}
+            priority={priority}
             width={800}
             quality={85}
             srcSetSizes={[400, 800, 1200]}

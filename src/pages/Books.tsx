@@ -12,12 +12,24 @@ import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 
-function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
+function BookCard({ book, onClick, index }: { book: any; onClick: () => void; index: number }) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
+  
+  // Viewport-based lazy loading
+  const { ref, inView } = useIntersectionObserver({
+    rootMargin: '200px',
+    triggerOnce: true,
+  });
+  
+  // Priority loading for first 6 cards
+  const shouldLoadImmediately = index < 6;
+  const shouldRender = shouldLoadImmediately || inView;
 
   return (
     <Card 
+      ref={ref}
       className="cursor-pointer hover:shadow-lg transition-shadow group overflow-hidden"
       onClick={onClick}
     >
@@ -37,17 +49,23 @@ function BookCard({ book, onClick }: { book: any; onClick: () => void }) {
       <CardContent className="space-y-4">
         {/* Book Thumbnail */}
         <AspectRatio ratio={16/9} className="bg-muted rounded-lg overflow-hidden">
-          {book.thumbnail_url || seoMetadata?.og_image_url ? (
-            <img
-              src={book.thumbnail_url || seoMetadata.og_image_url}
-              alt={book.book_name}
-              className="w-full h-full object-cover object-center"
-              loading="lazy"
-              decoding="async"
-            />
+          {shouldRender ? (
+            book.thumbnail_url || seoMetadata?.og_image_url ? (
+              <img
+                src={book.thumbnail_url || seoMetadata.og_image_url}
+                alt={book.book_name}
+                className="w-full h-full object-cover object-center"
+                loading={index < 6 ? 'eager' : 'lazy'}
+                decoding="async"
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <BookOpen className="h-12 w-12 text-muted-foreground" />
+              </div>
+            )
           ) : (
-            <div className="w-full h-full flex items-center justify-center">
-              <BookOpen className="h-12 w-12 text-muted-foreground" />
+            <div className="w-full h-full bg-muted flex items-center justify-center">
+              <BookOpen className="h-12 w-12 text-muted-foreground/30" />
             </div>
           )}
         </AspectRatio>
@@ -173,10 +191,11 @@ export default function Books() {
         {/* Books Grid */}
         {books && books.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {books.map((book) => (
+            {books.map((book, index) => (
               <BookCard
                 key={book.id}
                 book={book}
+                index={index}
                 onClick={() => handleViewBook(book.id)}
               />
             ))}

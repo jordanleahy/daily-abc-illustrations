@@ -145,6 +145,7 @@ export function Header({
   const regularNavigation = [
     { name: 'Home', href: '/home' },
     { name: 'Library', href: '/library' },
+    { name: 'My Books', href: '/books' },
     { name: 'Google Chat', href: '/google-chat' },
     ...(hasHabitsRewards ? [
       { name: 'Rewards', href: '/rewards' },
@@ -156,6 +157,7 @@ export function Header({
   const adminNavigation = [
     { name: 'Home', href: '/home' },
     { name: 'Library', href: '/library' },
+    { name: 'My Books', href: '/books' },
     { name: 'Google Chat', href: '/google-chat' },
     { name: 'Rewards', href: '/rewards' },
     { name: 'Manage Habits', href: '/habits/manage' },

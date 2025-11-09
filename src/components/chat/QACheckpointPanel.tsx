@@ -10,6 +10,7 @@ import { TextOverlay } from '@/components/ui/text-overlay';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
 import { WordsCard } from './WordsCard';
+import { WordLearningControls } from './WordLearningControls';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { useBookPages } from '@/hooks/useBookPages';
 
@@ -70,6 +71,11 @@ export function QACheckpointPanel({
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
   const { generateMetadata, isGenerating } = useWordMetadata();
+  
+  // Word Learning Helper state
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [isWordEnlarged, setIsWordEnlarged] = useState(true);
+  const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
   
   // Fetch pages data
   const { pages } = useBookPages(bookId || undefined);
@@ -136,7 +142,31 @@ export function QACheckpointPanel({
     setIsEditingText(false);
     // Check if this page has been copied before
     setHasClickedCopy(copiedPages.has(currentQAPage));
+    
+    // Reset word learning state
+    setCurrentWordIndex(0);
+    setIsWordEnlarged(true);
+    setWordStatuses({});
   }, [currentQAPage, copiedPages]);
+  
+  // Word Learning Helper handlers
+  const handleToggleEnlarge = () => setIsWordEnlarged(!isWordEnlarged);
+  
+  const handleMarkDifficult = () => {
+    setWordStatuses(prev => ({ ...prev, [currentWordIndex]: 'difficult' }));
+    // Move to next word if not last
+    if (currentWordIndex < (currentPageWords?.length || 0) - 1) {
+      setCurrentWordIndex(prev => prev + 1);
+    }
+  };
+  
+  const handleMarkUnderstood = () => {
+    setWordStatuses(prev => ({ ...prev, [currentWordIndex]: 'understood' }));
+    // Move to next word if not last
+    if (currentWordIndex < (currentPageWords?.length || 0) - 1) {
+      setCurrentWordIndex(prev => prev + 1);
+    }
+  };
 
   // Handle copy with confirmation and delayed transition
   const handleCopyPrompt = () => {
@@ -320,11 +350,26 @@ export function QACheckpointPanel({
 
         {/* Words Analysis Card */}
         {currentPageWords && currentPageWords.length > 0 && (
-          <WordsCard 
-            words={currentPageWords}
-            title={currentPageText}
-            isLoading={isGenerating}
-          />
+          <>
+            <WordsCard 
+              words={currentPageWords}
+              title={currentPageText}
+              isLoading={isGenerating}
+              currentWordIndex={currentWordIndex}
+              isEnlarged={isWordEnlarged}
+              wordStatuses={wordStatuses}
+            />
+            
+            {/* Word Learning Controls */}
+            <WordLearningControls
+              isEnlarged={isWordEnlarged}
+              onToggleEnlarge={handleToggleEnlarge}
+              onMarkDifficult={handleMarkDifficult}
+              onMarkUnderstood={handleMarkUnderstood}
+              currentWordIndex={currentWordIndex}
+              totalWords={currentPageWords.length}
+            />
+          </>
         )}
 
         {/* Cover Image Prompt - Show on page 1 (Cover Page) */}

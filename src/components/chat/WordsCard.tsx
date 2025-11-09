@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
+import { cn } from "@/lib/utils";
 
 interface LetterMetadata {
   letter: string;
@@ -23,9 +24,19 @@ interface WordsCardProps {
   words?: WordMetadata[];
   title?: string;
   isLoading?: boolean;
+  currentWordIndex?: number;
+  isEnlarged?: boolean;
+  wordStatuses?: Record<number, 'difficult' | 'understood'>;
 }
 
-export function WordsCard({ words, title, isLoading }: WordsCardProps) {
+export function WordsCard({ 
+  words, 
+  title, 
+  isLoading,
+  currentWordIndex,
+  isEnlarged = false,
+  wordStatuses = {}
+}: WordsCardProps) {
   if (!words || words.length === 0) {
     return null;
   }
@@ -46,8 +57,22 @@ export function WordsCard({ words, title, isLoading }: WordsCardProps) {
           {words.map((wordData, index) => (
             <div
               key={index}
-              className="flex flex-col items-center p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors min-w-[80px]"
+              className={cn(
+                "relative flex flex-col items-center p-3 rounded-lg bg-muted/30",
+                "hover:bg-muted/50 transition-all min-w-[80px]",
+                currentWordIndex === index && isEnlarged && "scale-125 shadow-lg z-10"
+              )}
             >
+              {/* Status dot indicator */}
+              {wordStatuses[index] && (
+                <div 
+                  className={cn(
+                    "absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-background",
+                    wordStatuses[index] === 'difficult' && "bg-red-500",
+                    wordStatuses[index] === 'understood' && "bg-green-500"
+                  )} 
+                />
+              )}
               {/* Word Display */}
               <span className="text-lg font-semibold text-foreground mb-2">
                 {wordData.word}

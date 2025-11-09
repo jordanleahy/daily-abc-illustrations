@@ -1,6 +1,7 @@
 import { useEffect, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
+import { WordsCard } from '@/components/chat/WordsCard';
 import { WordLearningControls } from '@/components/chat/WordLearningControls';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { useBookPages } from '@/hooks/useBookPages';
@@ -209,17 +210,27 @@ export function ReadingPageDisplay({
         </div>
       </Card>
 
-      {/* Word Learning Controls */}
+      {/* Word Learning Components */}
       {hasWords && (
-        <WordLearningControls
-          isEnlarged={isWordEnlarged}
-          onToggleEnlarge={handleToggleEnlarge}
-          onMarkDifficult={() => handleMarkDifficult(currentPageWords.length)}
-          onMarkUnderstood={() => handleMarkUnderstood(currentPageWords.length)}
-          currentWordIndex={currentWordIndex}
-          totalWords={currentPageWords.length}
-          onNavigateWord={(direction) => handleNavigateWord(direction, currentPageWords.length)}
-        />
+        <>
+          <WordsCard
+            words={currentPageWords}
+            title={pageText}
+            isLoading={isGenerating}
+            currentWordIndex={currentWordIndex}
+            wordStatuses={wordStatuses}
+          />
+          
+          <WordLearningControls
+            isEnlarged={isWordEnlarged}
+            onToggleEnlarge={handleToggleEnlarge}
+            onMarkDifficult={() => handleMarkDifficult(currentPageWords.length)}
+            onMarkUnderstood={() => handleMarkUnderstood(currentPageWords.length)}
+            currentWordIndex={currentWordIndex}
+            totalWords={currentPageWords.length}
+            onNavigateWord={(direction) => handleNavigateWord(direction, currentPageWords.length)}
+          />
+        </>
       )}
     </div>
   );

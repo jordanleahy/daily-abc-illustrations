@@ -151,7 +151,7 @@ export default function Books() {
   };
 
   const handleCreateNewBook = () => {
-    navigate('/'); // Redirect to GoogleChat page for book creation
+    navigate('/google-chat'); // Redirect to GoogleChat page for book creation
   };
 
   // Show loading while auth is being checked

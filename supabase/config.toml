@@ -84,9 +84,6 @@ verify_jwt = true
 [functions.google-create-book]
 verify_jwt = false
 
-[functions.create-book]
-verify_jwt = false
-
 [functions.generate-page-image]
 verify_jwt = true
 
@@ -125,12 +122,6 @@ verify_jwt = false
 
 [functions.get-landing-page-data]
 verify_jwt = false
-
-[functions.create-blank-book]
-verify_jwt = true
-
-[functions.create-themed-book]
-verify_jwt = true
 
 [functions.purchase-reward]
 verify_jwt = true

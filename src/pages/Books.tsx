@@ -10,7 +10,6 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { BookOpen, Calendar, Users } from 'lucide-react';
-import { CreateBookModal } from '@/components/books/CreateBookModal';
 import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 
@@ -113,7 +112,6 @@ export default function Books() {
   const { books, loading } = useBooks();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const [showCreateModal, setShowCreateModal] = useState(false);
 
   // Invalidate books query when component mounts to refresh sort order
   useEffect(() => {
@@ -131,7 +129,7 @@ export default function Books() {
   };
 
   const handleCreateNewBook = () => {
-    setShowCreateModal(true);
+    navigate('/'); // Redirect to GoogleChat page for book creation
   };
 
   // Show loading while auth is being checked
@@ -198,12 +196,6 @@ export default function Books() {
             </CardContent>
           </Card>
         )}
-
-        {/* Create Book Modal */}
-        <CreateBookModal
-          open={showCreateModal}
-          onOpenChange={setShowCreateModal}
-        />
       </div>
     </StandardPageLayout>
   );

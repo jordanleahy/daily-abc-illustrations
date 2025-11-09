@@ -518,6 +518,75 @@ const frontendConfig = {
 
 **Result:** Complete migration from fragile JSONB hacks to proper relational queries using dedicated `book_id` column, with simplified architecture.
 
+### Phase 0.6: Consolidate to Single Book Creation Function ✅
+
+**Problem:** Multiple book creation edge functions (`create-book`, `create-blank-book`, `create-themed-book`) created maintenance burden and inconsistent behavior. All auto-created unused draft `daily_published` entries.
+
+**Changes Made:**
+
+#### Edge Functions Removed:
+1. ✅ **create-book** - Replaced by google-create-book
+2. ✅ **create-blank-book** - Replaced by google-create-book
+3. ✅ **create-themed-book** - Replaced by google-create-book
+
+#### Frontend Hooks Removed:
+1. ✅ **useCreateBlankBook** - No longer needed
+2. ✅ **useCreateThemedBook** - No longer needed
+
+#### UI Components Removed:
+1. ✅ **CreateBookModal** - Deleted, users redirected to GoogleChat
+
+#### UI Updated:
+1. ✅ **Books.tsx**: "Create New Book" redirects to GoogleChat
+2. ✅ **AdminChat.tsx**: Uses `useGoogleCreateBook` instead of old `create-book` function
+
+#### Edge Functions Retained:
+- ✅ **google-create-book**: Primary book creation (AI-powered, flexible, well-tested)
+
+**Architecture Changes:**
+
+*Before (4 separate creation paths):*
+```
+┌─────────────────────────────────────┐
+│ CreateBookModal                     │
+│  ├─ Quick Template → create-blank   │
+│  ├─ AI Themed → create-themed       │
+│  └─ AI Assistant → google-chat      │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│ AdminChat                           │
+│  └─ Create Book → create-book       │
+└─────────────────────────────────────┘
+```
+
+*After (single unified path):*
+```
+┌─────────────────────────────────────┐
+│ Books.tsx                           │
+│  └─ Create New Book → GoogleChat    │
+└─────────────────────────────────────┘
+
+┌─────────────────────────────────────┐
+│ GoogleChat & AdminChat              │
+│  └─ Create Book → google-create-book│
+└─────────────────────────────────────┘
+```
+
+**Benefits:**
+- ✅ **Single source of truth**: All book creation uses google-create-book  
+- ✅ **Consistent behavior**: No variation between creation methods  
+- ✅ **Better AI**: Google's superior AI models for all books  
+- ✅ **Less maintenance**: 3 fewer edge functions to maintain  
+- ✅ **Simpler UX**: Direct path to AI assistant  
+- ✅ **No auto-drafts**: Books only created in books table (from Phase 0.5)  
+
+**Breaking Changes:**
+- ⚠️ Users can no longer create "quick templates" or "themed books" via modal
+- ✅ **Migration Path**: All users directed to GoogleChat (superior AI-powered creation)
+
+**Result:** Single unified book creation flow via `google-create-book`, eliminating maintenance burden and ensuring consistent AI-powered experiences.
+
 ---
 
 ## Best Practices

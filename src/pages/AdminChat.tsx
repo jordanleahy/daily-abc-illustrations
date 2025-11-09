@@ -30,6 +30,7 @@ import { useDailyPublished } from '@/hooks/useDailyPublished';
 import { useUserRole } from '@/hooks/useUserRole';
 import { useIsTeacher } from '@/contexts/RoleContext';
 import { AdminOnly } from '@/components/AdminOnly';
+import { useGoogleCreateBook } from '@/hooks/useGoogleCreateBook';
 import { toast } from 'sonner';
 import { LoadingState } from '@/components/ui/loading-state';
 
@@ -70,8 +71,8 @@ const navigate = useNavigate();
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isCreatingBook, setIsCreatingBook] = useState(false);
-  const [bookCreated, setBookCreated] = useState<{ id: string; message: string } | null>(null);
+  const createBook = useGoogleCreateBook();
+  const [bookCreated, setBookCreated] = useState<{ bookId: string; message: string } | null>(null);
   const [selectedImages, setSelectedImages] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -292,44 +293,26 @@ const navigate = useNavigate();
   };
 
   const handleCreateBook = async () => {
-    if (!session?.access_token || messages.length === 0 || isCreatingBook) return;
+    if (!session?.access_token || messages.length === 0 || createBook.isPending) return;
 
-    setIsCreatingBook(true);
-    
     try {
-      const response = await supabase.functions.invoke('create-book', {
-        body: { 
-          conversationHistory: messages.map(msg => ({
-            role: msg.role,
-            content: msg.content
-          })),
-          userId: session.user.id
-        },
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        }
+      const result = await createBook.mutateAsync({
+        conversationHistory: messages.map(msg => ({
+          role: msg.role,
+          content: msg.content,
+        })),
       });
 
-      if (response.error) {
-        throw new Error(response.data?.error || response.error.message);
-      }
-
-      const data = response.data;
-      
-      if (data.success) {
+      if (result.success && result.bookId) {
         setBookCreated({
-          id: data.bookId,
-          message: data.message || 'Your book has been created!'
+          bookId: result.bookId,
+          message: result.message || 'Your book has been created!'
         });
-        toast.success('Book created successfully!');
-      } else {
-        throw new Error(data.error || 'Failed to create book');
+        // Success toast is already handled by useGoogleCreateBook
       }
     } catch (error) {
       console.error('Book creation error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to create book');
-    } finally {
-      setIsCreatingBook(false);
+      // Error toast is already handled by useGoogleCreateBook
     }
   };
 
@@ -402,7 +385,7 @@ const navigate = useNavigate();
                           <p className="text-sm font-medium">{bookCreated.message}</p>
                           <Button 
                             size="sm" 
-                            onClick={() => navigate(`/editor/${bookCreated.id}`)}
+                            onClick={() => navigate(`/editor/${bookCreated.bookId}`)}
                             className="flex items-center gap-1"
                           >
                             View Book <ExternalLink className="w-3 h-3" />
@@ -442,12 +425,12 @@ const navigate = useNavigate();
             <div className="flex justify-center">
               <Button
                 onClick={handleCreateBook}
-                disabled={messages.length === 0 || isCreatingBook || isLoading}
+                disabled={messages.length === 0 || createBook.isPending || isLoading}
                 variant="outline"
                 className="gap-2"
               >
                 <BookOpen className="h-4 w-4" />
-                {isCreatingBook ? 'Creating Book...' : 'Give to Book Creation Agent'}
+                {createBook.isPending ? 'Creating Book...' : 'Give to Book Creation Agent'}
               </Button>
             </div>
             

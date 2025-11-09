@@ -1,36 +1,45 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { reorderPagesFromStartingLetter } from '@/utils/pageNavigation';
 import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';
+import { useBookEditorImagePreloader } from '@/hooks/useBookEditorImagePreloader';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { useKidCoins } from '@/hooks/useKidCoins';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { usePageImageUrls } from '@/hooks/usePageImageUrls';
+import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
+import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { trackBookView } from '@/utils/bookViewTracking';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
+import { PublicPageImage } from '@/components/daily-published';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { BookOpen, ChevronLeft, ChevronRight } from 'lucide-react';
+import { processImage } from '@/utils/imageProcessor';
+import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
+import { RewardContainer } from '@/components/ui/reward-container';
+import { RoleDebugger } from '@/components/RoleDebugger';
+import { Calendar } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
 
-/**
- * BookReadingView - Reading interface for user-created books
- * Similar to LibraryBookView but works with books table instead of daily_published
- */
 export default function BookReadingView() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthContext();
   const safeId = id && isValidUUID(id) ? id : undefined;
-  
   const { data: book, isLoading: isLoadingBook, error: bookError } = useBook(safeId);
-  const { pages = [], loading: isLoadingPages } = useBookPages(safeId);
-  const { data: pageImages = {}, isLoading: isLoadingImages } = useBookPageImages(safeId);
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
+  const { data: kidProfiles } = useKidProfiles();
+  const { completeBookHabit } = useCompleteBookHabit();
+  const { hasHabitsRewards } = useFeatureAccess();
+  
+  const { pages = [], loading: isLoadingPages } = useBookPages(safeId);
+  const { data: pageImages = {} } = useBookPageImages(safeId);
   
   // Track book view when page loads
   useEffect(() => {
@@ -49,10 +58,25 @@ export default function BookReadingView() {
   }, [pages, startingPageIndex]);
   
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [earnedRewards, setEarnedRewards] = useState(0);
   const [sessionStarted, setSessionStarted] = useState(false);
+  const [uploadingForPageId, setUploadingForPageId] = useState<string | null>(null);
   const [initialPageTracked, setInitialPageTracked] = useState(false);
   
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Auto-select kid if only one exists
+  const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
+  const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
+  
+  // Get upload function for current page (must be called before any early returns)
+  const { uploadImage } = usePageImageUrls(uploadingForPageId || '');
+  
+  // Prefetch all page images in the background for instant navigation
+  useBookEditorImagePreloader(pageImages);
+  
   const isLastPage = currentPageIndex === reorderedPages.length - 1;
+
   const isLoading = isLoadingBook || isLoadingPages;
 
   // Start analytics session when content loads
@@ -71,108 +95,72 @@ export default function BookReadingView() {
       
       setSessionStarted(true);
     }
-  }, [book, reorderedPages.length, sessionStarted, startSession, startingPageIndex]);
+  }, [book, reorderedPages, sessionStarted, startSession, location.state, startingPageIndex]);
 
-  // Track initial page view
+  // Track initial page view once session starts
   useEffect(() => {
-    if (reorderedPages.length > 0 && !initialPageTracked && sessionStarted) {
+    if (sessionStarted && reorderedPages.length > 0 && !initialPageTracked) {
       const currentPage = reorderedPages[currentPageIndex];
       if (currentPage) {
-        trackPageView(currentPage.page_number, currentPage.letter);
+        trackPageView(currentPageIndex + 1, currentPage.letter, 'session_start');
         setInitialPageTracked(true);
       }
     }
-  }, [reorderedPages, currentPageIndex, initialPageTracked, trackPageView, sessionStarted]);
+  }, [sessionStarted, reorderedPages, currentPageIndex, trackPageView, initialPageTracked]);
 
-  // Cleanup: end session on unmount
-  useEffect(() => {
-    return () => {
-      if (sessionStarted) {
-        endSession(String(currentPageIndex + 1));
-      }
-    };
-  }, [sessionStarted, currentPageIndex, endSession]);
-
-  // Handle page navigation
-  const handleNextPage = () => {
-    if (currentPageIndex < reorderedPages.length - 1) {
-      const newIndex = currentPageIndex + 1;
-      setCurrentPageIndex(newIndex);
-      const nextPage = reorderedPages[newIndex];
-      if (nextPage) {
-        trackPageView(nextPage.page_number, nextPage.letter, 'button_click');
-      }
-    }
-  };
-
-  const handlePrevPage = () => {
-    if (currentPageIndex > 0) {
-      const newIndex = currentPageIndex - 1;
-      setCurrentPageIndex(newIndex);
-      const prevPage = reorderedPages[newIndex];
-      if (prevPage) {
-        trackPageView(prevPage.page_number, prevPage.letter, 'button_click');
-      }
-    }
-  };
-
-  const handleBackToLibrary = () => {
-    if (sessionStarted) {
-      endSession(String(currentPageIndex + 1));
-    }
+  const handleBack = () => {
+    endSession('back_button');
     navigate('/library');
   };
 
-  // Handle errors
-  if (bookError) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md p-6">
-          <div className="text-center space-y-4">
-            <BookOpen className="w-12 h-12 mx-auto text-muted-foreground" />
-            <h2 className="text-2xl font-bold">Book Not Found</h2>
-            <p className="text-muted-foreground">
-              This book could not be found in your library.
-            </p>
-            <button
-              onClick={() => navigate('/library')}
-              className="text-primary hover:underline"
-            >
-              Return to Library
-            </button>
-          </div>
-        </Card>
-      </div>
-    );
-  }
-
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto" />
-          <p className="text-muted-foreground">Loading book...</p>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-2">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-sm text-muted-foreground">Loading content...</p>
         </div>
       </div>
     );
   }
 
-  if (!book || reorderedPages.length === 0) {
+  if (bookError || !book) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4">
-        <Card className="w-full max-w-md p-6">
-          <div className="text-center space-y-4">
-            <BookOpen className="w-12 h-12 mx-auto text-muted-foreground" />
-            <h2 className="text-2xl font-bold">No Pages Available</h2>
-            <p className="text-muted-foreground">
-              This book doesn't have any pages yet.
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 gap-4">
+        <ReadingHeader title="My Books" onBack={handleBack} showQRCode={false} />
+        <Card className="max-w-md w-full mt-20">
+          <div className="p-6 text-center space-y-4">
+            <div className="flex items-center justify-center gap-2">
+              <Calendar className="h-5 w-5" />
+              <h2 className="text-lg font-semibold">Book Not Found</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              This book could not be found in your library.
             </p>
-            <button
-              onClick={() => navigate('/library')}
-              className="text-primary hover:underline"
-            >
-              Return to Library
-            </button>
+            {bookError && (
+              <p className="text-sm text-destructive">
+                Error: {bookError.message}
+              </p>
+            )}
+          </div>
+        </Card>
+        
+        {/* Role debugger for troubleshooting */}
+        <RoleDebugger />
+      </div>
+    );
+  }
+
+  if (!reorderedPages || reorderedPages.length === 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <ReadingHeader title="My Books" onBack={handleBack} showQRCode={false} />
+        <Card className="max-w-md w-full mt-20">
+          <div className="p-6 text-center space-y-4">
+            <h2 className="text-lg font-semibold">{book.book_name}</h2>
+            <p className="text-sm text-muted-foreground">
+              This book doesn't have any pages to display.
+            </p>
           </div>
         </Card>
       </div>
@@ -180,105 +168,256 @@ export default function BookReadingView() {
   }
 
   const currentPage = reorderedPages[currentPageIndex];
-  const currentImageUrl = currentPage ? pageImages[currentPage.id]?.imageUrl : undefined;
-  const showTextOverlay = currentPage?.content?.textOverlay?.enabled && currentPage?.content?.textOverlay?.text;
+
+  const handleNext = async () => {
+    if (isLastPage) {
+      // Auto-complete reading habit if exists (only for Plus tier users)
+      if (hasHabitsRewards && selectedKidId && book?.id) {
+        await completeBookHabit({
+          bookId: book.id,
+          kidProfileId: selectedKidId,
+        });
+      }
+
+      // User finished the book - ONLY deposit coins for Plus tier users
+      if (hasHabitsRewards && selectedKidId && earnedRewards > 0) {
+        try {
+          await addCoins({ 
+            kidId: selectedKidId, 
+            coinsToAdd: earnedRewards 
+          });
+          
+          toast.success(`You earned ${earnedRewards} coins! 🎉`, {
+            description: "Great job reading!",
+          });
+          
+          endSession('book_completed');
+          navigate('/library');
+        } catch (error) {
+          console.error('Failed to deposit coins:', error);
+          toast.error("Couldn't save your coins. Try again.");
+        }
+      } else {
+        // No kid selected or no rewards access - just navigate back
+        endSession('book_completed');
+        navigate('/library');
+      }
+    } else {
+      // Normal page navigation - ALWAYS show visual reward animation
+      const newIndex = currentPageIndex + 1;
+      setCurrentPageIndex(newIndex);
+      setEarnedRewards(prev => prev + 1);
+      
+      if (sessionStarted && reorderedPages[newIndex]) {
+        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'next_swipe');
+      }
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentPageIndex > 0) {
+      const newIndex = currentPageIndex - 1;
+      setCurrentPageIndex(newIndex);
+      
+      // Track page view
+      if (sessionStarted && reorderedPages[newIndex]) {
+        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'previous_swipe');
+      }
+    }
+  };
+
+  // Header arrow navigation (no rewards)
+  const handleHeaderPrevious = () => {
+    if (currentPageIndex > 0) {
+      const newIndex = currentPageIndex - 1;
+      setCurrentPageIndex(newIndex);
+      
+      if (sessionStarted && reorderedPages[newIndex]) {
+        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'header_previous_arrow');
+      }
+    }
+  };
+
+  const handleHeaderNext = () => {
+    if (currentPageIndex < reorderedPages.length - 1) {
+      const newIndex = currentPageIndex + 1;
+      setCurrentPageIndex(newIndex);
+      
+      if (sessionStarted && reorderedPages[newIndex]) {
+        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'header_next_arrow');
+      }
+    }
+  };
+
+  // Validate image file
+  const validateImage = async (file: File): Promise<{ valid: boolean; error?: string }> => {
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+      return { valid: false, error: 'Please select an image file' };
+    }
+    
+    // Check supported formats
+    const supportedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!supportedTypes.includes(file.type)) {
+      return { valid: false, error: 'Supported formats: PNG, JPG, WEBP' };
+    }
+    
+    // Check file size (5MB limit)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      return { valid: false, error: 'Image must be smaller than 5MB' };
+    }
+    
+    // Check aspect ratio
+    const isSquare = await checkAspectRatio(file);
+    if (!isSquare) {
+      return { valid: false, error: 'Image must have a 1:1 aspect ratio (square)' };
+    }
+    
+    return { valid: true };
+  };
+
+  // Check if image has 1:1 aspect ratio
+  const checkAspectRatio = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => {
+        const aspectRatio = img.width / img.height;
+        const isSquare = Math.abs(aspectRatio - 1) < 0.1;
+        URL.revokeObjectURL(img.src);
+        resolve(isSquare);
+      };
+      img.onerror = () => {
+        URL.revokeObjectURL(img.src);
+        resolve(false);
+      };
+      img.src = URL.createObjectURL(file);
+    });
+  };
+
+  // Handle file selection
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !uploadingForPageId || !book) return;
+    
+    // Validate
+    const validation = await validateImage(file);
+    if (!validation.valid) {
+      toast.error(validation.error || 'Invalid image');
+      setUploadingForPageId(null);
+      return;
+    }
+    
+    // Show uploading toast
+    const toastId = toast.loading('Uploading image...');
+    
+    try {
+      // Process and compress image
+      const processed = await processImage(file, {
+        maxWidth: 1024,
+        maxHeight: 1024,
+        targetSizeBytes: 500 * 1024,
+        quality: 0.85,
+      });
+
+      const compressedFile = new File(
+        [processed.blob],
+        file.name.replace(/\.[^.]+$/, '.webp'),
+        { type: processed.blob.type }
+      );
+
+      // Upload
+      await uploadImage(compressedFile, book.id);
+      
+      // Success
+      toast.success('Image uploaded successfully!', { id: toastId });
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error('Failed to upload image. Please try again.', { id: toastId });
+    } finally {
+      setUploadingForPageId(null);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // Handle upload button click - trigger file picker directly
+  const handleUploadClick = () => {
+    if (currentPage) {
+      setUploadingForPageId(currentPage.id);
+      fileInputRef.current?.click();
+    }
+  };
 
   return (
-    <>
+    <div className="min-h-screen bg-background">
+      {/* Dynamic meta tags for social sharing */}
       <MetaHead metadata={{
         title: `${book.book_name} - Reading`,
         description: book.book_description || `Read ${book.book_name}`,
         type: 'article'
       }} />
-
-      <div className="min-h-screen bg-background">
-        <ReadingHeader
+      
+      <div className="flex flex-col h-screen" style={{ touchAction: 'none' }}>
+        <ReadingHeader 
           title={book.book_name}
-          onBack={handleBackToLibrary}
+          subtitle={`${currentPageIndex + 1} of ${reorderedPages.length}`}
+          bookId={book.id}
+          onBack={handleBack}
+          kidId={selectedKidId}
+          onPrevious={handleHeaderPrevious}
+          onNext={handleHeaderNext}
+          hasPrevious={currentPageIndex > 0}
+          hasNext={currentPageIndex < reorderedPages.length - 1}
         />
-
-        <main className="container max-w-4xl mx-auto px-4 pt-20 pb-32">
-          <div className="space-y-6">
-            {/* Page Progress */}
-            <div className="text-center text-sm text-muted-foreground">
-              Page {currentPageIndex + 1} of {reorderedPages.length}
-            </div>
-
-            {/* Main Image Card */}
-            <Card className="relative overflow-hidden">
-              <div className="relative aspect-square w-full">
-                {currentImageUrl ? (
-                  <>
-                    <img
-                      src={currentImageUrl}
-                      alt={currentPage?.content?.mainConcept || `Page ${currentPage?.page_number}`}
-                      className="w-full h-full object-contain bg-muted"
-                      loading="eager"
-                    />
-                    {showTextOverlay && currentPage?.content?.textOverlay && (
-                      <TextOverlay 
-                        text={currentPage.content.textOverlay.text} 
-                      />
-                    )}
-                  </>
-                ) : (
-                  <div className="w-full h-full bg-muted flex items-center justify-center">
-                    <BookOpen className="w-16 h-16 text-muted-foreground/30" />
-                  </div>
-                )}
-              </div>
-            </Card>
-
-            {/* Page Content */}
-            {currentPage && (
-              <Card className="p-6 space-y-4">
-                <div>
-                  <h2 className="text-3xl font-bold mb-2">
-                    {currentPage.content?.mainConcept || currentPage.title}
-                  </h2>
-                  {currentPage.content?.funFact && (
-                    <p className="text-lg text-muted-foreground">
-                      {currentPage.content.funFact}
-                    </p>
-                  )}
-                </div>
-
-                {currentPage.content?.activity && (
-                  <div className="mt-4 p-4 bg-accent/10 rounded-lg">
-                    <h3 className="font-semibold mb-2">Activity</h3>
-                    <p className="text-muted-foreground">{currentPage.content.activity}</p>
-                  </div>
-                )}
-              </Card>
-            )}
-
-            {/* Navigation Buttons */}
-            <div className="flex justify-between items-center gap-4">
-              <Button
-                onClick={handlePrevPage}
-                disabled={currentPageIndex === 0}
-                variant="outline"
-                size="lg"
-                className="flex-1"
-              >
-                <ChevronLeft className="w-5 h-5 mr-2" />
-                Previous
-              </Button>
+        
+        {/* Reward System */}
+        <div className="pt-20 pb-2">
+          <RewardContainer earnedRewards={earnedRewards} />
+        </div>
+        
+        {/* Main content area */}
+        <div className="flex-1 flex flex-col pb-4">
+          <div className="flex-1 flex items-center justify-center p-4">
+            <Card className="w-full max-w-sm mx-auto shadow-lg relative">
+              <PublicPageImage 
+                pageId={currentPage.id}
+                bookId={book.id}
+                className="rounded-lg"
+                showUploadButton={false}
+                onUploadClick={handleUploadClick}
+              />
               
-              <Button
-                onClick={handleNextPage}
-                disabled={isLastPage}
-                variant="default"
-                size="lg"
-                className="flex-1"
-              >
-                Next
-                <ChevronRight className="w-5 h-5 ml-2" />
-              </Button>
-            </div>
+              {/* CSS Text Overlay - Only for GoogleChat books with textOverlay enabled */}
+              {currentPage.content?.textOverlay?.enabled && (
+                <TextOverlay 
+                  text={currentPage.content.textOverlay.text}
+                  show={true}
+                />
+              )}
+            </Card>
           </div>
-        </main>
+          
+          {/* Navigation */}
+          <BottomSlideNavigation 
+            onSlide={handleNext}
+            disabled={isAddingCoins}
+            variant="compact"
+            slideText={isLastPage ? "Finish & Collect Coins" : undefined}
+          />
+        </div>
       </div>
-    </>
+      
+      {/* Hidden file input for direct upload */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/png,image/jpeg,image/jpg,image/webp"
+        onChange={handleFileSelect}
+        className="hidden"
+      />
+    </div>
   );
 }

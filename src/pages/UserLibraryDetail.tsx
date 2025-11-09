@@ -187,14 +187,14 @@ export default function UserLibraryDetail() {
         {/* Header Section */}
         <div className="space-y-6 mb-8">
           <div className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
+            <div className="flex flex-col sm:flex-row items-start gap-4">
               <div className="flex-1">
                 <h1 className="text-3xl font-bold tracking-tight mb-2">{dailyContent.title}</h1>
                 {dailyContent.description && (
                   <p className="text-muted-foreground">{dailyContent.description}</p>
                 )}
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 {/* Publication status badge */}
                 {publicationStatus && (
                   <Badge

@@ -168,6 +168,43 @@ export function QACheckpointPanel({
     }
   };
 
+  // Helper function to render text with enlarged current word
+  const renderTextWithEnlargedWord = (
+    fullText: string, 
+    currentWord: string | undefined,
+    isEnlarged: boolean
+  ) => {
+    // If not enlarged or no current word, return full text normally
+    if (!isEnlarged || !currentWord) {
+      return <span className="text-lg font-semibold">{fullText}</span>;
+    }
+
+    // Find the current word in the text (case-insensitive)
+    const lowerText = fullText.toLowerCase();
+    const lowerWord = currentWord.toLowerCase();
+    const wordIndex = lowerText.indexOf(lowerWord);
+
+    // If word not found, return full text normally
+    if (wordIndex === -1) {
+      return <span className="text-lg font-semibold">{fullText}</span>;
+    }
+
+    // Split text into: before word, the word, after word
+    const before = fullText.slice(0, wordIndex);
+    const word = fullText.slice(wordIndex, wordIndex + currentWord.length);
+    const after = fullText.slice(wordIndex + currentWord.length);
+
+    return (
+      <>
+        <span className="text-lg font-semibold">{before}</span>
+        <span className="text-6xl font-extrabold text-yellow-300 mx-1 animate-pulse">
+          {word}
+        </span>
+        <span className="text-lg font-semibold">{after}</span>
+      </>
+    );
+  };
+
   // Handle copy with confirmation and delayed transition
   const handleCopyPrompt = () => {
     const prompt = getCurrentPagePrompt(currentQAPage);
@@ -290,15 +327,13 @@ export function QACheckpointPanel({
                         title="Click to edit text"
                       >
                         <div className="flex items-center justify-center gap-2">
-                          <p className="text-white text-center font-semibold leading-tight line-clamp-2" 
-                             style={{
-                               fontSize: isWordEnlarged && currentPageWords?.[currentWordIndex] ? '4rem' : '1.125rem',
-                               fontWeight: isWordEnlarged && currentPageWords?.[currentWordIndex] ? '800' : '600',
-                               transition: 'all 0.3s ease'
-                             }}>
-                            {isWordEnlarged && currentPageWords?.[currentWordIndex] 
-                              ? currentPageWords[currentWordIndex].word 
-                              : currentPageText}
+                          <p className="text-white text-center leading-tight flex flex-wrap items-center justify-center gap-1"
+                             style={{ transition: 'all 0.3s ease' }}>
+                            {renderTextWithEnlargedWord(
+                              currentPageText, 
+                              currentPageWords?.[currentWordIndex]?.word,
+                              isWordEnlarged
+                            )}
                           </p>
                           <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />
                         </div>

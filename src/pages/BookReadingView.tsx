@@ -62,8 +62,9 @@ export default function BookReadingView() {
   const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
   const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
   
-  // Get upload function for current page (must be called before any early returns)
-  const { uploadImage } = usePageImageUrls(uploadingForPageId || '');
+  // Get upload function for current page only when needed
+  const currentPage = reorderedPages[currentPageIndex];
+  const { uploadImage } = usePageImageUrls(currentPage?.id || '');
   
   // Prefetch all page images in the background for instant navigation
   useBookEditorImagePreloader(pageImages);
@@ -163,7 +164,6 @@ export default function BookReadingView() {
     );
   }
 
-  const currentPage = reorderedPages[currentPageIndex];
   // FIX: Access pageImages by page_number instead of page.id
   const currentImageUrl = currentPage ? pageImages[currentPage.page_number] : undefined;
 
@@ -274,7 +274,7 @@ export default function BookReadingView() {
   // Handle file selection
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !uploadingForPageId || !book) return;
+    if (!file || !currentPage || !book) return;
     
     // Validate
     const validation = await validateImage(file);
@@ -302,16 +302,17 @@ export default function BookReadingView() {
         { type: processed.blob.type }
       );
 
-      // Upload
+      // Upload with pageId and bookId
       await uploadImage(compressedFile, book.id);
       
       // Success
       toast.success('Image uploaded successfully!', { id: toastId });
+      setUploadingForPageId(null);
     } catch (error) {
       console.error('Upload error:', error);
       toast.error('Failed to upload image. Please try again.', { id: toastId });
-    } finally {
       setUploadingForPageId(null);
+    } finally {
       // Reset file input
       if (fileInputRef.current) {
         fileInputRef.current.value = '';

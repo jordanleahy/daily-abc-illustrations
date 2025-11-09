@@ -36,8 +36,10 @@ export function useGoogleChatSessions() {
       if (error) throw error;
       return data as ChatSession[];
     },
-    staleTime: 30000, // 30 seconds - reduce refetches
-    gcTime: 5 * 60 * 1000, // 5 minutes - keep in cache
+    staleTime: 60 * 60 * 1000, // 1 hour - instant loading for returning users
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache for full day
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    refetchOnMount: false, // Use cached data for returning users
   });
 
   // Create new session

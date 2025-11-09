@@ -23,8 +23,8 @@ export function useSessionMessages(sessionId: string | undefined) {
       return (data?.messages as unknown as Message[]) || [];
     },
     enabled: !!sessionId,
-    staleTime: 5 * 60 * 1000, // 5 minutes - consider data fresh
-    gcTime: 30 * 60 * 1000, // 30 minutes - keep in cache
+    staleTime: 60 * 60 * 1000, // 1 hour - instant loading for returning users
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache for full day
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
 }

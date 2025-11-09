@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { BookImage } from '@/components/ui/book-image';
 import { Coins, BookOpen, Star, ShoppingBag, Package, Plus, UserPlus } from 'lucide-react';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { CoinCounter } from '@/components/ui/coin-counter';
@@ -364,10 +365,11 @@ export default function Rewards() {
                       >
                         <div className="flex items-center gap-3 flex-1">
                           {purchase.kid_rewards_products?.product_image_url && (
-                            <img
+                            <BookImage
                               src={purchase.kid_rewards_products.product_image_url}
                               alt={purchase.kid_rewards_products.title}
                               className="w-12 h-12 object-cover rounded"
+                              priority={false}
                             />
                           )}
                           <div className="flex-1">

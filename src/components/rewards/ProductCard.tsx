@@ -2,6 +2,7 @@ import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CoinCounter } from '@/components/ui/coin-counter';
+import { BookImage } from '@/components/ui/book-image';
 import { Edit2, Trash2, ShoppingCart, Check } from 'lucide-react';
 import type { RewardsProduct } from '@/types/rewardsProduct';
 import { formatCoinsAsCurrency } from '@/utils/currency';
@@ -41,10 +42,11 @@ export const ProductCard = ({
             autoPlay={false}
           />
         ) : product.product_image_url ? (
-          <img
+          <BookImage
             src={product.product_image_url}
             alt={product.title}
             className="w-full h-full object-cover"
+            priority={false}
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center">

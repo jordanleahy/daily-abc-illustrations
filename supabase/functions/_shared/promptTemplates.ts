@@ -31,7 +31,10 @@ export function generateCoverPrompt(book: BookContext, textOverlayEnabled: boole
   
   const typeInfo = getBookTypeDescription(book.bookType || book.category);
   
-  return `You are creating the COVER IMAGE for "${book.bookName}", a ${typeInfo} book for young children ${characterInfo}.
+  // Determine learning type and specific skill based on book type
+  const learningDetails = getLearningDetails(book.bookType || book.category);
+  
+  return `You are creating a COMPREHENSIVE COVER IMAGE for "${book.bookName}" that combines both a charming scene AND an educational information card.
 
 BOOK CONTEXT:
 - Title: ${book.bookName}
@@ -41,40 +44,59 @@ BOOK CONTEXT:
 ${book.characterTheme ? `- Character Theme: ${book.characterTheme}` : ''}
 ${book.targetAge ? `- Target Age: ${book.targetAge}` : ''}
 
-COVER DESIGN REQUIREMENTS:
-1. Create an inviting, colorful scene that captures the essence of "${book.bookName}"
-2. Feature main visual elements or characters that will appear throughout the book
-3. Make it engaging and exciting to make children want to explore the book
-4. Include visual cues that indicate this is a ${typeInfo} learning book
-5. Use bright, cheerful colors appropriate for early learners (ages 3-6)
-6. Create depth and visual interest while maintaining simplicity
+THIS IMAGE MUST CONTAIN TWO DISTINCT SECTIONS:
 
-COMPOSITION GUIDELINES:
-- Central focal point with the main character or key visual element
-- Supporting background that establishes the book's world/theme
-- Leave clear space in the CENTER for the title text "${book.bookName}"
-- Square format (1:1) with proper margins for text overlay
-- Ensure high contrast and clarity for young readers
+**SECTION 1: MAIN COVER SCENE (Top/Main portion)**
+Create an inviting, colorful scene that captures the essence of "${book.bookName}":
+- Feature ${characterInfo || 'engaging characters'} in a playful, educational setting
+- Background should be a bright, sunny field with fluffy clouds OR an appropriate thematic background
+- Overall mood should be playful and educational
+- Use vibrant colors and child-friendly illustration style
+- Professional children's book quality with clear, simple shapes
 
-VISUAL STYLE:
-- Bright, vibrant colors with bold outlines
-- Child-friendly, approachable illustration style
-- Clear, simple shapes that are easy to recognize
-- Positive, encouraging atmosphere
-- Professional children's book quality
+${textOverlayEnabled ? `Include text overlay displaying '${book.bookName.toUpperCase()}' in large, clear, child-friendly letters integrated naturally into the scene.` : ''}
+
+**SECTION 2: EDUCATIONAL FOCUS INFORMATION CARD (Lower portion or side panel)**
+Create a vibrant, clean educational information card with three distinct badge sections arranged vertically using ${book.characterTheme ? `${book.characterTheme}'s characteristic color palette` : 'bright, cheerful colors (red, blue, green, yellow, pink pastels)'}:
+
+1. TOP BADGE (Pink/Primary Color):
+   - Text: "AGE: ${book.targetAge || '1-3 YEARS'}"
+   - Include a simple child icon
+   - Rounded, cheerful badge design
+
+2. MIDDLE BADGE (Yellow/Secondary Color):
+   - Text: "${learningDetails.learningType}"
+   - Include an open book icon or relevant learning icon
+   - Same rounded, cheerful style
+
+3. BOTTOM BADGE (Green/Tertiary Color):
+   - Text: "${learningDetails.specificSkill}"
+   - Include an icon representing the skill (like a block with "abc" for letters)
+   - Consistent rounded design
+
+The information card should:
+- Use rounded, child-friendly typography consistent with ${book.characterTheme || 'the'} animation style
+- Have a pastel blue sky background with a hint of green grass
+- Feature NO text overlays beyond the badge text itself
+- Be cheerful and inviting with clear visual hierarchy
+- Integrate harmoniously with the main scene
+
+OVERALL COMPOSITION:
+- Square format (1:1) with balanced layout between scene and info card
+- High contrast and clarity for young readers
+- Ensure both the character scene and educational badges are clearly visible
+- The design should feel unified as one cohesive cover image
 
 ${textOverlayEnabled ? `TEXT INCLUSION:
-- Include the title text "${book.bookName}" prominently in the illustration
-- Make the text clear, bold, and easy to read for young children
-- Use playful, child-friendly typography
-- Integrate the text naturally into the cover design` : `CRITICAL - NO TEXT REQUIREMENT:
-- DO NOT include ANY text, words, letters, numbers, or the title in the illustration
-- NO visible text of any kind - not the book title, not on signs, books, labels, or anywhere
-- This is a CLEAN ILLUSTRATION ONLY - all text will be added separately as an overlay
-- If elements would normally have text (like signs or books), show them as blank objects
-- The image must be 100% text-free - this is mandatory`}
+- Main title "${book.bookName}" in the scene portion
+- Educational badge text as specified above
+- All text should be clear, bold, and easy to read for young children` : `CRITICAL - NO TEXT REQUIREMENT:
+- DO NOT include ANY text in the main scene portion
+- Educational badges should be shown as colored shapes WITHOUT text
+- All text will be added separately as an overlay
+- The illustration must be structured to accommodate text overlay`}
 
-Create a captivating cover that immediately communicates this is an exciting ${typeInfo} learning adventure!`;
+Create a captivating, comprehensive cover that combines an engaging scene with clear educational information!`;
 }
 
 /**
@@ -152,6 +174,55 @@ function getBookTypeDescription(bookType: string): string {
   };
   
   return typeMap[bookType.toLowerCase()] || 'educational learning';
+}
+
+/**
+ * Get learning details for educational focus card
+ */
+function getLearningDetails(bookType: string): { learningType: string; specificSkill: string } {
+  const detailsMap: Record<string, { learningType: string; specificSkill: string }> = {
+    'abc': {
+      learningType: 'PHONICS | EARLY LITERACY',
+      specificSkill: 'FOCUS: LOWERCASE A-Z'
+    },
+    'alphabet': {
+      learningType: 'PHONICS | EARLY LITERACY',
+      specificSkill: 'FOCUS: LETTER RECOGNITION'
+    },
+    'numbers': {
+      learningType: 'MATH | COUNTING',
+      specificSkill: 'FOCUS: NUMBERS 1-10'
+    },
+    'shapes': {
+      learningType: 'GEOMETRY | VISUAL',
+      specificSkill: 'FOCUS: BASIC SHAPES'
+    },
+    'colors': {
+      learningType: 'VISUAL | RECOGNITION',
+      specificSkill: 'FOCUS: COLOR LEARNING'
+    },
+    'animals': {
+      learningType: 'NATURE | SCIENCE',
+      specificSkill: 'FOCUS: ANIMAL DISCOVERY'
+    },
+    'emotions': {
+      learningType: 'SOCIAL | EMOTIONAL',
+      specificSkill: 'FOCUS: FEELINGS'
+    },
+    'sight-words': {
+      learningType: 'READING | LITERACY',
+      specificSkill: 'FOCUS: SIGHT WORDS'
+    },
+    'story': {
+      learningType: 'READING | COMPREHENSION',
+      specificSkill: 'FOCUS: STORYTELLING'
+    }
+  };
+  
+  return detailsMap[bookType.toLowerCase()] || {
+    learningType: 'EARLY LEARNING',
+    specificSkill: 'FOCUS: EDUCATIONAL'
+  };
 }
 
 /**

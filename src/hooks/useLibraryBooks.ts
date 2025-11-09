@@ -11,14 +11,14 @@ export const useLibraryBooks = () => {
   // Enable real-time subscriptions for SEO metadata updates
   useSeoMetadataSubscription();
   
-  // Real-time subscription for user book activity (Recently Viewed updates)
+  // Real-time subscription for user book activity, books, and daily_published
   useEffect(() => {
     const getUser = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user?.id) return;
 
       const channel = supabase
-        .channel('user-book-activity-changes')
+        .channel('library-realtime-changes')
         .on(
           'postgres_changes',
           {
@@ -29,6 +29,30 @@ export const useLibraryBooks = () => {
           },
           (payload) => {
             console.log('User book activity changed:', payload);
+            queryClient.invalidateQueries({ queryKey: ['library-books'] });
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'books',
+          },
+          (payload) => {
+            console.log('Book changed for library:', payload);
+            queryClient.invalidateQueries({ queryKey: ['library-books'] });
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'daily_published',
+          },
+          (payload) => {
+            console.log('Daily published changed for library:', payload);
             queryClient.invalidateQueries({ queryKey: ['library-books'] });
           }
         )

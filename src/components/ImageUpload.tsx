@@ -18,6 +18,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
   const [preview, setPreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
   // Auto-trigger file picker when autoTrigger is true
@@ -209,8 +210,10 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
 
   return (
     <div 
+      ref={containerRef}
       className={`w-full h-full ${className}`}
       onPaste={handlePaste}
+      onMouseEnter={() => containerRef.current?.focus()}
       tabIndex={0}
     >
       <input

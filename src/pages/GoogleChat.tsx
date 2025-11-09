@@ -694,16 +694,11 @@ export default function GoogleChat() {
   const handleDeleteSession = useCallback(async (sessionId: string) => {
     await deleteSession(sessionId);
     
-    // If we deleted the current session, switch to another one
+    // If we deleted the current session, always create a new one immediately
     if (sessionId === currentSessionId) {
-      const remainingSessions = sessions.filter(s => s.id !== sessionId);
-      if (remainingSessions.length > 0) {
-        setCurrentSessionId(remainingSessions[0].id);
-      } else {
-        handleCreateNewSession();
-      }
+      handleCreateNewSession();
     }
-  }, [currentSessionId, sessions, deleteSession, handleCreateNewSession]);
+  }, [currentSessionId, deleteSession, handleCreateNewSession]);
 
   const handleRenameSession = useCallback(async (sessionId: string, name: string) => {
     await updateSessionName({ sessionId, name });

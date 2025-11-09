@@ -327,8 +327,8 @@ export function QACheckpointPanel({
 
       {/* Sticky Footer with Actions */}
       <div className="sticky bottom-0 bg-background border-t px-4 py-3 space-y-3 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-        {/* Thumbnail Image Upload - Show when book is created */}
-        {isBookCreated && onCoverUpload && (
+        {/* Thumbnail Image Upload - Show only when all page images are uploaded */}
+        {allImagesUploaded && onCoverUpload && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">Book Thumbnail (Optional)</p>
             <div className="h-48 rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">

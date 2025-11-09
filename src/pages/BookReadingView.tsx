@@ -20,12 +20,12 @@ import { TextOverlay } from '@/components/ui/text-overlay';
 import { Card } from '@/components/ui/card';
 import { BookImage } from '@/components/ui/book-image';
 import { processImage } from '@/utils/imageProcessor';
-import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { UpcomingBooksPreview } from '@/components/daily-published';
 import { RoleDebugger } from '@/components/RoleDebugger';
-import { Calendar } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
 
 export default function BookReadingView() {
@@ -229,28 +229,6 @@ export default function BookReadingView() {
     }
   };
 
-  // Header arrow navigation (no rewards)
-  const handleHeaderPrevious = () => {
-    if (currentPageIndex > 0) {
-      const newIndex = currentPageIndex - 1;
-      setCurrentPageIndex(newIndex);
-      
-      if (sessionStarted && reorderedPages[newIndex]) {
-        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'header_previous_arrow');
-      }
-    }
-  };
-
-  const handleHeaderNext = () => {
-    if (currentPageIndex < reorderedPages.length - 1) {
-      const newIndex = currentPageIndex + 1;
-      setCurrentPageIndex(newIndex);
-      
-      if (sessionStarted && reorderedPages[newIndex]) {
-        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'header_next_arrow');
-      }
-    }
-  };
 
   // Validate image file
   const validateImage = async (file: File): Promise<{ valid: boolean; error?: string }> => {
@@ -370,10 +348,6 @@ export default function BookReadingView() {
           bookId={book.id}
           onBack={handleBack}
           kidId={selectedKidId}
-          onPrevious={handleHeaderPrevious}
-          onNext={handleHeaderNext}
-          hasPrevious={currentPageIndex > 0}
-          hasNext={currentPageIndex < reorderedPages.length - 1}
         />
         
         {/* Reward System */}
@@ -441,12 +415,29 @@ export default function BookReadingView() {
           </SwipeUpDrawer>
           
           {/* Navigation */}
-          <BottomSlideNavigation 
-            onSlide={handleNext}
-            disabled={isAddingCoins}
-            variant="compact"
-            slideText={isLastPage ? "Finish & Collect Coins" : undefined}
-          />
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t py-4 px-6 safe-area-inset-bottom">
+            <div className="flex items-center justify-between max-w-sm mx-auto">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handlePrevious}
+                disabled={currentPageIndex === 0}
+                className="h-12 w-12"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </Button>
+              
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNext}
+                disabled={isAddingCoins}
+                className="h-12 w-12"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
       

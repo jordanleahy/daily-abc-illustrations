@@ -306,42 +306,41 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
 
   /**
    * Auto-add to queue when book status changes to 'published'
-   * Automatically generates SEO and adds book to daily publication queue
-   * NOTE: Disabled automatic tab opening - users must manually view queue
+   * DISABLED: Users must manually add books to the publication queue
    */
-  useEffect(() => {
-    const autoAddToQueue = async () => {
-      console.log('🔍 Auto-add effect triggered:', {
-        contentType,
-        bookStatus: bookData?.status,
-        isCheckingPublication,
-        existingPublicationStatus: existingPublication?.status,
-        existingPublicationId: existingPublication?.id
-      });
+  // useEffect(() => {
+  //   const autoAddToQueue = async () => {
+  //     console.log('🔍 Auto-add effect triggered:', {
+  //       contentType,
+  //       bookStatus: bookData?.status,
+  //       isCheckingPublication,
+  //       existingPublicationStatus: existingPublication?.status,
+  //       existingPublicationId: existingPublication?.id
+  //     });
 
-      // Only proceed if:
-      // 1. Content is a book
-      // 2. Book status is 'published'
-      // 3. Not currently checking publication status (CRITICAL - prevents race condition)
-      // 4. No existing publication (or only draft/expired)
-      if (
-        contentType !== 'book' || 
-        bookData?.status !== PublicationStatus.PUBLISHED ||
-        isCheckingPublication ||
-        (existingPublication && ['queued', 'active'].includes(existingPublication.status))
-      ) {
-        console.log('⏭️ Auto-add skipped - conditions not met');
-        return;
-      }
+  //     // Only proceed if:
+  //     // 1. Content is a book
+  //     // 2. Book status is 'published'
+  //     // 3. Not currently checking publication status (CRITICAL - prevents race condition)
+  //     // 4. No existing publication (or only draft/expired)
+  //     if (
+  //       contentType !== 'book' || 
+  //       bookData?.status !== PublicationStatus.PUBLISHED ||
+  //       isCheckingPublication ||
+  //       (existingPublication && ['queued', 'active'].includes(existingPublication.status))
+  //     ) {
+  //       console.log('⏭️ Auto-add skipped - conditions not met');
+  //       return;
+  //     }
 
-      console.log('📚 Auto-adding published book to queue:', contentName);
+  //     console.log('📚 Auto-adding published book to queue:', contentName);
       
-      // Trigger the add to queue process (with auto flag)
-      await handleAddToQueue(true);
-    };
+  //     // Trigger the add to queue process (with auto flag)
+  //     await handleAddToQueue(true);
+  //   };
 
-    autoAddToQueue();
-  }, [contentType, bookData?.status, existingPublication, isCheckingPublication]);
+  //   autoAddToQueue();
+  // }, [contentType, bookData?.status, existingPublication, isCheckingPublication]);
 
   /**
    * Formats a date string to a readable format with full details

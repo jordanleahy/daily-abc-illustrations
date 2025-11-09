@@ -5,6 +5,7 @@ import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { usePublicPageImage } from '@/hooks/usePublicPageImage';
 import { useSeoMetadata, useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
 import { useGA4 } from '@/hooks/useGA4';
+import { usePublicBookImagePreloader } from '@/hooks/usePublicBookImagePreloader';
 import { MetaHead } from '@/components/common';
 import { generateDailyPublishedOpenGraph } from '@/utils/openGraph';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
@@ -51,6 +52,9 @@ export default function PublicBook() {
   const { trackEvent } = useGA4();
   const { data: bookData, isLoading: bookLoading } = usePublicBookBySlug(slug);
   const { data: pages, isLoading: pagesLoading } = useDailyPublishedPages(bookData?.book_id);
+  
+  // Preload all page images for instant display
+  usePublicBookImagePreloader(pages, bookData?.book_id);
   
   // Try to get SEO metadata by daily_published_id first, then by book_id
   const { data: seoByDaily } = useSeoMetadata(bookData?.id);

@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useLibraryBooks } from '@/hooks/useLibraryBooks';
+import { useHomeImagePreloader } from '@/hooks/useHomeImagePreloader';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BookImage } from '@/components/ui/book-image';
 import { BookOpen } from 'lucide-react';
@@ -37,6 +38,9 @@ const Index = () => {
   
   // Fetch library books with reduced staleTime for real-time updates
   const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooks();
+  
+  // Preload book images for instant display on return visits
+  useHomeImagePreloader(libraryItems);
   
   // Filter out skipped habits and sort by status (pending first, completed/failed last)
   const activeCompletions = completions

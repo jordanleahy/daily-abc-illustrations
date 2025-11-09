@@ -94,11 +94,13 @@ Deno.serve(async (req) => {
       }
 
       // Copy SEO to queued version
+      // ✅ Phase 0.3.3: book_id already copied (line 101), added missing user_id
       const { error: insertError } = await supabase
         .from('seo_metadata')
         .insert({
           daily_published_id: queuedItem.id,
           book_id: draftSeo.book_id,
+          user_id: draftSeo.user_id, // ✅ Added required user_id field
           seo_title: draftSeo.seo_title,
           seo_description: draftSeo.seo_description,
           og_image_url: draftSeo.og_image_url,

@@ -21,7 +21,9 @@ import { Card } from '@/components/ui/card';
 import { BookImage } from '@/components/ui/book-image';
 import { processImage } from '@/utils/imageProcessor';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
+import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { RewardContainer } from '@/components/ui/reward-container';
+import { UpcomingBooksPreview } from '@/components/daily-published';
 import { RoleDebugger } from '@/components/RoleDebugger';
 import { Calendar } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
@@ -76,7 +78,6 @@ export default function BookReadingView() {
   useBookEditorImagePreloader(pageImages);
   
   const isLastPage = currentPageIndex === reorderedPages.length - 1;
-
   const isLoading = isLoadingBook || isLoadingPages;
 
   // Start analytics session when content loads
@@ -168,7 +169,8 @@ export default function BookReadingView() {
   }
 
   const currentPage = reorderedPages[currentPageIndex];
-  const currentImageUrl = currentPage ? pageImages[currentPage.id]?.imageUrl : undefined;
+  // FIX: Access pageImages by page_number instead of page.id
+  const currentImageUrl = currentPage ? pageImages[currentPage.page_number] : undefined;
 
   const handleNext = async () => {
     if (isLastPage) {
@@ -354,7 +356,7 @@ export default function BookReadingView() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Dynamic meta tags for social sharing */}
+      {/* Dynamic meta tags */}
       <MetaHead metadata={{
         title: `${book.book_name} - Reading`,
         description: book.book_description || `Read ${book.book_name}`,
@@ -401,6 +403,42 @@ export default function BookReadingView() {
               </div>
             </Card>
           </div>
+          
+              {/* Educational Content Drawer */}
+          <SwipeUpDrawer>
+            <div className="space-y-6 pb-6">
+              {/* Page Content */}
+              {currentPage?.content && (
+                <div className="space-y-4">
+                  {currentPage.content.mainConcept && (
+                    <div>
+                      <h3 className="text-lg font-bold mb-2">Main Concept</h3>
+                      <p className="text-muted-foreground">{currentPage.content.mainConcept}</p>
+                    </div>
+                  )}
+                  
+                  {currentPage.content.funFact && (
+                    <div>
+                      <h3 className="text-lg font-bold mb-2">Fun Fact</h3>
+                      <p className="text-muted-foreground">{currentPage.content.funFact}</p>
+                    </div>
+                  )}
+                  
+                  {currentPage.content.activity && (
+                    <div>
+                      <h3 className="text-lg font-bold mb-2">Activity</h3>
+                      <p className="text-muted-foreground">{currentPage.content.activity}</p>
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Upcoming Books Preview - Show at the end */}
+              {isLastPage && (
+                <UpcomingBooksPreview />
+              )}
+            </div>
+          </SwipeUpDrawer>
           
           {/* Navigation */}
           <BottomSlideNavigation 

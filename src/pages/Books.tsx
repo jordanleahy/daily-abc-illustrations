@@ -13,6 +13,7 @@ import { BookOpen, Calendar, Users } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
 
 function BookCard({ book, onClick, index }: { book: any; onClick: () => void; index: number }) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
@@ -130,6 +131,9 @@ export default function Books() {
   const { books, loading } = useBooks();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // Preload book images for instant display on return visits
+  useEditorImagePreloader(books);
 
   // Invalidate books query when component mounts to refresh sort order
   useEffect(() => {

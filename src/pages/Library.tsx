@@ -103,7 +103,7 @@ export default memo(function Library() {
                   <MyBookCard 
                     key={book.id} 
                     book={book as Book}
-                    onClick={() => navigate(`/books/${book.id}`)}
+                    onClick={() => navigate(`/library/${book.id}`)}
                   />
                 ))}
               </div>

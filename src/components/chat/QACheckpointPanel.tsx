@@ -215,7 +215,7 @@ export function QACheckpointPanel({
             display: 'inline-block',
             margin: '0 1.5rem',
             fontWeight: '800',
-            transition: 'transform 0.3s ease'
+            transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
           }}
         >
           {word}

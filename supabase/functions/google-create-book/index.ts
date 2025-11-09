@@ -652,11 +652,16 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     if (!fetchCreatedPagesError && createdPagesForPrompts) {
       for (const page of createdPagesForPrompts) {
         const isCover = page.page_number === 1;
+        const isFocusPage = page.page_number === 2 && page.letter === 'FOCUS';
         
         // Use AI-generated prompt if available, otherwise create a basic fallback
         let promptContent = aiPrompts.get(page.page_number);
         
-        if (!promptContent) {
+        // Check if this is the educational focus page and use its dedicated image prompt
+        if (isFocusPage && educationalFocus && educationalFocus.imagePrompt) {
+          promptContent = educationalFocus.imagePrompt;
+          console.log('Using educational focus image prompt for page 2 (FOCUS page)');
+        } else if (!promptContent) {
           // Fallback: Create a simple prompt from page data
           if (isCover) {
             promptContent = `${sanitizeText(bookData.bookDescription || '', 1000)}
@@ -705,9 +710,10 @@ Create an educational illustration that brings this concept to life with bright,
               generation_metadata: {
                 generator: 'google-chat-ai',
                 bookType: validatedMetadata.bookType,
-                pageType: isCover ? 'cover' : 'content',
+                pageType: isCover ? 'cover' : isFocusPage ? 'educational-focus' : 'content',
                 generatedAt: new Date().toISOString(),
-                extractedFromConversation: aiPrompts.has(page.page_number)
+                extractedFromConversation: aiPrompts.has(page.page_number),
+                usedEducationalFocusPrompt: isFocusPage && educationalFocus && !!educationalFocus.imagePrompt
               }
             });
           

@@ -33,79 +33,59 @@ export function WordsCard({ words, title }: WordsCardProps) {
       <CardHeader className="pb-3">
         <CardTitle className="text-base flex items-center gap-2">
           <BookOpen className="h-4 w-4" />
-          Words Analysis
-          {title && <span className="text-xs text-muted-foreground font-normal ml-2">from "{title}"</span>}
+          Words
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {words.map((wordData, index) => (
-          <div
-            key={index}
-            className="flex items-start justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
-          >
-            <div className="flex-1 space-y-2">
+      <CardContent>
+        {/* Horizontal word row layout */}
+        <div className="flex flex-wrap gap-2">
+          {words.map((wordData, index) => (
+            <div
+              key={index}
+              className="flex flex-col items-center p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors min-w-[80px]"
+            >
               {/* Word Display */}
-              <div className="flex items-center gap-3">
-                <span className="text-lg font-semibold text-foreground">
-                  {wordData.word}
-                </span>
-                {wordData.partOfSpeech && (
-                  <Badge variant="secondary" className="text-xs">
-                    {wordData.partOfSpeech}
-                  </Badge>
-                )}
-              </div>
-              
-              {/* Syllable Info */}
-              {wordData.syllableCount && (
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">
-                    {wordData.syllableCount} syllable{wordData.syllableCount !== 1 ? 's' : ''}
-                  </span>
-                  {wordData.syllableBreakdown && wordData.syllableBreakdown !== wordData.word.toLowerCase() && (
-                    <>
-                      <span className="text-muted-foreground">·</span>
-                      <span className="font-mono text-muted-foreground">
-                        {wordData.syllableBreakdown}
-                      </span>
-                    </>
-                  )}
-                </div>
-              )}
+              <span className="text-lg font-semibold text-foreground mb-2">
+                {wordData.word}
+              </span>
               
               {/* Letter Breakdown */}
               {wordData.letters && wordData.letters.length > 0 && (
-                <div className="flex flex-wrap gap-1 pt-1">
+                <div className="flex gap-1">
                   {wordData.letters.map((letter, letterIndex) => (
                     <Badge
                       key={letterIndex}
                       variant="outline"
-                      className={`text-xs ${
+                      className={`text-xs h-6 w-6 flex items-center justify-center p-0 ${
                         letter.isVowel
                           ? 'bg-primary/10 border-primary/30 text-primary'
                           : letter.isConsonant
                           ? 'bg-secondary/10 border-secondary/30 text-secondary-foreground'
                           : 'bg-muted border-border'
                       }`}
+                      title={letter.isVowel ? 'Vowel' : letter.isConsonant ? 'Consonant' : ''}
                     >
                       {letter.letter}
-                      <span className="ml-1 text-[10px] opacity-60">
-                        {letter.isVowel ? 'V' : letter.isConsonant ? 'C' : ''}
-                      </span>
                     </Badge>
                   ))}
                 </div>
               )}
+              
+              {/* Syllable count and part of speech */}
+              <div className="flex flex-col items-center gap-1 mt-2">
+                {wordData.syllableCount && (
+                  <span className="text-xs text-muted-foreground">
+                    {wordData.syllableCount} syl
+                  </span>
+                )}
+                {wordData.partOfSpeech && (
+                  <Badge variant="secondary" className="text-[10px] h-5">
+                    {wordData.partOfSpeech}
+                  </Badge>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
-        
-        {/* Summary Stats */}
-        <div className="pt-2 border-t border-border/50 flex gap-4 text-xs text-muted-foreground">
-          <span>Total Words: {words.length}</span>
-          <span>
-            Total Syllables: {words.reduce((sum, w) => sum + (w.syllableCount || 0), 0)}
-          </span>
+          ))}
         </div>
       </CardContent>
     </Card>

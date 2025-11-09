@@ -12,6 +12,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { trackBookView } from '@/utils/bookViewTracking';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
@@ -42,9 +43,12 @@ export default function BookReadingView() {
   const { pages = [], loading: isLoadingPages } = useBookPages(safeId);
   const { data: pageImages = {} } = useBookPageImages(safeId);
   
-  // Note: No view tracking needed for your own books
-  // View tracking is only for library books in LibraryBookView
-  
+  // Track book view when page loads
+  useEffect(() => {
+    if (book?.id && user) {
+      trackBookView(book.id);
+    }
+  }, [book?.id, user]);
   
   // Get starting page index from location state
   const startingPageIndex = location.state?.startingPageIndex ?? 0;
@@ -411,22 +415,24 @@ export default function BookReadingView() {
           </SwipeUpDrawer>
           
           {/* Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
-            <div className="flex items-center">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t py-4 px-6 safe-area-inset-bottom">
+            <div className="flex items-center justify-between max-w-sm mx-auto">
               <Button
                 variant="ghost"
+                size="icon"
                 onClick={handlePrevious}
                 disabled={currentPageIndex === 0}
-                className="flex-1 h-16 rounded-none border-r"
+                className="h-12 w-12"
               >
                 <ChevronLeft className="h-6 w-6" />
               </Button>
               
               <Button
-                variant="default"
+                variant="ghost"
+                size="icon"
                 onClick={handleNext}
                 disabled={isAddingCoins}
-                className="flex-1 h-16 rounded-none"
+                className="h-12 w-12"
               >
                 <ChevronRight className="h-6 w-6" />
               </Button>

@@ -134,6 +134,9 @@ export default function GoogleChat() {
     enabled: !!createdBookId,
   });
   
+  // Only show "View Book" if book is published
+  const isBookPublished = bookData?.status === 'published';
+  
   const updateBookStatusMutation = useUpdateBookStatus();
 
   // QA Checkpoint state
@@ -1035,9 +1038,9 @@ export default function GoogleChat() {
       showHeader={true}
       fullHeight={true}
       onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
-      showReviewButton={!!createdBookId || shouldShowQACheckpoint || showQACheckpoint}
-      onReviewClick={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
-      reviewButtonVariant={createdBookId ? 'view-book' : 'review'}
+      showReviewButton={isBookPublished || shouldShowQACheckpoint || showQACheckpoint}
+      onReviewClick={isBookPublished ? handleViewCreatedBook : handleOpenQAPanel}
+      reviewButtonVariant={isBookPublished ? 'view-book' : 'review'}
     >
       <div className="fixed inset-0 top-[3.5rem] flex">
 
@@ -1107,9 +1110,9 @@ export default function GoogleChat() {
             input={input}
             isLoading={isLoading}
             showImageUpload={showImageUpload}
-            createdBookId={createdBookId}
+            createdBookId={isBookPublished ? createdBookId : null}
             isMobile={isMobile}
-            shouldShowReviewButton={shouldShowQACheckpoint || !!createdBookId}
+            shouldShowReviewButton={shouldShowQACheckpoint || isBookPublished}
             onInputChange={setInput}
             onSend={handleSend}
             onKeyPress={handleKeyPress}
@@ -1121,9 +1124,9 @@ export default function GoogleChat() {
         </div>
 
         {/* Floating Action Button - Always visible when content is ready */}
-        {(shouldShowQACheckpoint || !!createdBookId) && (
+        {(shouldShowQACheckpoint || isBookPublished) && (
           <Button
-            onClick={createdBookId ? handleViewCreatedBook : handleOpenQAPanel}
+            onClick={isBookPublished ? handleViewCreatedBook : handleOpenQAPanel}
             size="lg"
             className={cn(
               "fixed z-[100] shadow-lg hover:shadow-xl transition-all duration-200",
@@ -1133,7 +1136,7 @@ export default function GoogleChat() {
                 : "bottom-8 right-8"
             )}
           >
-            {createdBookId ? (
+            {isBookPublished ? (
               <>
                 <Book className="h-5 w-5" />
                 <span className="hidden sm:inline">View Book</span>

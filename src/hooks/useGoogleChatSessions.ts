@@ -145,9 +145,29 @@ export function useGoogleChatSessions() {
     },
   });
 
-  // Delete session (soft delete)
+  // Delete session and associated book
   const deleteSession = useMutation({
     mutationFn: async (sessionId: string) => {
+      // First, get the session to find the associated book
+      const { data: session, error: fetchError } = await supabase
+        .from('gemini_chat_sessions')
+        .select('created_book_id')
+        .eq('id', sessionId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // If there's an associated book, delete it first
+      if (session?.created_book_id) {
+        const { error: bookError } = await supabase
+          .from('books')
+          .delete()
+          .eq('id', session.created_book_id);
+
+        if (bookError) throw bookError;
+      }
+
+      // Then soft delete the session
       const { error } = await supabase
         .from('gemini_chat_sessions')
         .update({ is_active: false })
@@ -157,7 +177,8 @@ export function useGoogleChatSessions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
-      toast.success('Conversation deleted');
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      toast.success('Conversation and associated book deleted');
     },
     onError: () => {
       toast.error('Failed to delete conversation');

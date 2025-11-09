@@ -17,10 +17,9 @@ import Books from "./pages/Books";
 import BookDetail from "./pages/BookDetail";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Library from "./pages/Library";
-import LibraryDetail from "./pages/LibraryDetail";
 import LibraryBookView from "./pages/LibraryBookView";
+import LibraryDetail from "./pages/LibraryDetail";
 import UserLibraryDetail from "./pages/UserLibraryDetail";
-import MyBookView from "./pages/MyBookView";
 import PublicBook from "./pages/PublicBook";
 import Rewards from "./pages/Rewards";
 import RewardsManage from "./pages/RewardsManage";
@@ -85,9 +84,6 @@ const App = () => {
                <Route path="/agents" element={<Agents />} />
                <Route path="/editor" element={<ProtectedRoute requireRole="admin"><Books /></ProtectedRoute>} />
                <Route path="/editor/:id" element={<ProtectedRoute requireRole="admin"><BookDetail /></ProtectedRoute>} />
-               <Route path="/books" element={<ProtectedRoute><Books /></ProtectedRoute>} />
-               <Route path="/books/:id" element={<ProtectedRoute><BookDetail /></ProtectedRoute>} />
-               <Route path="/my-books/:id" element={<ProtectedRoute><MyBookView /></ProtectedRoute>} />
                 {/* Library routes - All subscription tiers */}
                 <Route path="/library" element={<ProtectedRoute requireSubscription={false}><Library key="library" /></ProtectedRoute>} />
                 <Route path="/library/:id" element={<ProtectedRoute requireSubscription={false}><LibraryBookView /></ProtectedRoute>} />

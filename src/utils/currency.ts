@@ -8,8 +8,8 @@
  * @param coins - The number of coins to convert
  * @returns Formatted currency string (e.g., "$1.60")
  */
-export function formatCoinsAsCurrency(coins: number | undefined): string {
-  const dollars = (coins ?? 0) / 100;
+export function formatCoinsAsCurrency(coins: number): string {
+  const dollars = coins / 100;
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',

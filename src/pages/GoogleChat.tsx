@@ -644,22 +644,16 @@ export default function GoogleChat() {
   }, [createSession]);
 
   const handleViewCreatedBook = useCallback(() => {
-    if (!createdBookId) return;
-    
-    // Check if book is published
-    if (bookData?.status === 'published') {
-      // Navigate to personal book view using book ID
-      navigate(`/my-books/${createdBookId}`);
-    } else {
-      toast.error('Please publish this book first using the "Publish" toggle in the review panel.');
-      // Open QA panel so they can publish it
+    // Open QA panel to view the book
+    if (createdBookId) {
+      // Load QA images from current session
       if (selectedSession?.qa_page_images) {
         setQAPageImages(selectedSession.qa_page_images);
       }
       setShowQACheckpoint(true);
       setCurrentQAPage(1);
     }
-  }, [createdBookId, bookData, navigate, selectedSession]);
+  }, [createdBookId, selectedSession]);
 
   const handleOpenQAPanel = useCallback(() => {
     // Load QA images and prompts from current session

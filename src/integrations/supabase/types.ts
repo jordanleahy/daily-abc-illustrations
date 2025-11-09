@@ -1200,8 +1200,9 @@ export type Database = {
       }
       seo_metadata: {
         Row: {
+          book_id: string | null
           created_at: string
-          daily_published_id: string
+          daily_published_id: string | null
           error_message: string | null
           generation_metadata: Json | null
           id: string
@@ -1219,8 +1220,9 @@ export type Database = {
           version_number: number
         }
         Insert: {
+          book_id?: string | null
           created_at?: string
-          daily_published_id: string
+          daily_published_id?: string | null
           error_message?: string | null
           generation_metadata?: Json | null
           id?: string
@@ -1238,8 +1240,9 @@ export type Database = {
           version_number?: number
         }
         Update: {
+          book_id?: string | null
           created_at?: string
-          daily_published_id?: string
+          daily_published_id?: string | null
           error_message?: string | null
           generation_metadata?: Json | null
           id?: string
@@ -1256,7 +1259,15 @@ export type Database = {
           user_id?: string
           version_number?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "seo_metadata_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_book_activity: {
         Row: {
@@ -1264,7 +1275,11 @@ export type Database = {
           created_at: string
           daily_published_id: string | null
           id: string
+          kid_id: string | null
+          last_reading_session_at: string | null
           last_viewed_at: string
+          pages_read: number | null
+          reading_completed: boolean | null
           updated_at: string
           user_id: string
           view_count: number
@@ -1274,7 +1289,11 @@ export type Database = {
           created_at?: string
           daily_published_id?: string | null
           id?: string
+          kid_id?: string | null
+          last_reading_session_at?: string | null
           last_viewed_at?: string
+          pages_read?: number | null
+          reading_completed?: boolean | null
           updated_at?: string
           user_id: string
           view_count?: number
@@ -1284,7 +1303,11 @@ export type Database = {
           created_at?: string
           daily_published_id?: string | null
           id?: string
+          kid_id?: string | null
+          last_reading_session_at?: string | null
           last_viewed_at?: string
+          pages_read?: number | null
+          reading_completed?: boolean | null
           updated_at?: string
           user_id?: string
           view_count?: number
@@ -1309,6 +1332,13 @@ export type Database = {
             columns: ["daily_published_id"]
             isOneToOne: false
             referencedRelation: "daily_published"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_book_activity_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1441,6 +1471,67 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      word_assessments: {
+        Row: {
+          assessed_at: string | null
+          book_id: string
+          created_at: string | null
+          id: string
+          kid_profile_id: string
+          knows_word: boolean
+          page_id: string
+          parent_user_id: string
+          word: string
+          word_index: number
+        }
+        Insert: {
+          assessed_at?: string | null
+          book_id: string
+          created_at?: string | null
+          id?: string
+          kid_profile_id: string
+          knows_word: boolean
+          page_id: string
+          parent_user_id: string
+          word: string
+          word_index: number
+        }
+        Update: {
+          assessed_at?: string | null
+          book_id?: string
+          created_at?: string | null
+          id?: string
+          kid_profile_id?: string
+          knows_word?: boolean
+          page_id?: string
+          parent_user_id?: string
+          word?: string
+          word_index?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "word_assessments_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_assessments_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_assessments_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

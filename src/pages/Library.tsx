@@ -100,11 +100,11 @@ export default memo(function Library() {
 
               <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {sortedMyBooks.map((book) => (
-                  <MyBookCard 
-                    key={book.id} 
-                    book={book as Book}
-                    onClick={() => navigate(`/library/${book.id}`)}
-                  />
+              <MyBookCard 
+                key={book.id}
+                book={book as Book}
+                onClick={() => navigate(`/books/${book.id}/read`, { state: { from: 'library' } })}
+              />
                 ))}
               </div>
             </section>

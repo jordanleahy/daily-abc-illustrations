@@ -387,6 +387,25 @@ export function QACheckpointPanel({
                 >
                   Replace
                 </Button>
+                
+                {/* Show Overlay button when overlay is hidden */}
+                {hiddenOverlayPages.has(currentQAPage) && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      setHiddenOverlayPages(prev => {
+                        const newSet = new Set(prev);
+                        newSet.delete(currentQAPage);
+                        return newSet;
+                      });
+                      toast.success('Text overlay shown');
+                    }}
+                    className="absolute top-11 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
+                  >
+                    Show Overlay
+                  </Button>
+                )}
               </div>
             ) : showConfirmation ? (
               <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">

@@ -775,14 +775,8 @@ Create an illustration that brings the page content to life while maintaining th
       }
     }
 
-    // Create draft daily_published entry
-    await supabase
-      .from('daily_published')
-      .insert({
-        book_id: book.id,
-        status: 'draft',
-        is_active: false
-      });
+    // Phase 0.6: No longer auto-creating draft daily_published entries
+    // Users must explicitly schedule books for publication via UI
 
 
     // Process QA images if provided

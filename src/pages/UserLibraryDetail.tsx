@@ -8,10 +8,14 @@ import { useAddBookAsHabit } from '@/hooks/useAddBookAsHabit';
 import { useIsBookAddedAsHabit } from '@/hooks/useIsBookAddedAsHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { useSubscription } from '@/hooks/useSubscription';
+import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
+import { useBookPublicationStatus } from '@/hooks/useBookPublicationStatus';
+import { useHasRole } from '@/hooks/useUserRole';
 import { MetaHead } from '@/components/common';
 import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { PublicPageImage } from '@/components/daily-published';
 import { Calendar, BookOpen, Download, Plus, CheckCircle, Lock, Loader2 } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
@@ -32,6 +36,9 @@ export default function UserLibraryDetail() {
   const { data: isBookAdded = false } = useIsBookAddedAsHabit(dailyContent?.book_id);
   const { hasHabitsRewards } = useFeatureAccess();
   const { hasActiveSubscription } = useSubscription();
+  const schedulePublication = useScheduleBookPublication();
+  const { data: publicationStatus } = useBookPublicationStatus(dailyContent?.book_id);
+  const isAdmin = useHasRole('admin');
   
   const [isDownloading, setIsDownloading] = useState(false);
   
@@ -187,7 +194,50 @@ export default function UserLibraryDetail() {
                   <p className="text-muted-foreground">{dailyContent.description}</p>
                 )}
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                {/* Publication status badge */}
+                {publicationStatus && (
+                  <Badge
+                    variant={
+                      publicationStatus.status === 'active'
+                        ? 'default'
+                        : publicationStatus.status === 'queued'
+                        ? 'secondary'
+                        : 'outline'
+                    }
+                    className="px-3 py-1"
+                  >
+                    {publicationStatus.status === 'active' && '🟢 Active'}
+                    {publicationStatus.status === 'queued' && `📅 ${new Date(publicationStatus.publish_date).toLocaleDateString()}`}
+                    {publicationStatus.status === 'expired' && '⏱️ Expired'}
+                  </Badge>
+                )}
+
+                {/* Schedule for publication button */}
+                {isAdmin && !publicationStatus && dailyContent && (
+                  <Button
+                    onClick={() => {
+                      schedulePublication.mutate({
+                        bookId: dailyContent.book_id,
+                        title: dailyContent.title,
+                        description: dailyContent.description || undefined,
+                      });
+                    }}
+                    disabled={schedulePublication.isPending}
+                    variant="outline"
+                    size="icon"
+                    className="shrink-0"
+                    title="Schedule for publication"
+                  >
+                    {schedulePublication.isPending ? (
+                      <Loader2 className="h-5 w-5 animate-spin" />
+                    ) : (
+                      <Calendar className="h-5 w-5" />
+                    )}
+                    <span className="sr-only">Schedule for publication</span>
+                  </Button>
+                )}
+                
                 {/* Conditional Habit Button - Only show for Plus tier users */}
                 {hasHabitsRewards ? (
                   <Button

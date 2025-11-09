@@ -34,6 +34,8 @@ import { ArrowLeft, Archive, Calendar, Users, Loader2, Trash2, Eye, FileText, St
 import { toast } from 'sonner';
 import { useToggleBookHighlight } from '@/hooks/useToggleBookHighlight';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
+import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
+import { useBookPublicationStatus } from '@/hooks/useBookPublicationStatus';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -97,6 +99,8 @@ export default function BookDetail() {
   
   const { mutate: toggleHighlight, isPending: isHighlightLoading } = useToggleBookHighlight();
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
+  const schedulePublication = useScheduleBookPublication();
+  const { data: publicationStatus } = useBookPublicationStatus(book?.id);
   
 
   useEffect(() => {
@@ -496,6 +500,50 @@ export default function BookDetail() {
                         <Copy className="w-4 h-4" />
                       )}
                     </Button>
+
+                    {/* Schedule for publication button */}
+                    {isAdmin && !publicationStatus && (
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        onClick={() => {
+                          if (book) {
+                            schedulePublication.mutate({
+                              bookId: book.id,
+                              title: book.book_name,
+                              description: book.book_description || undefined,
+                            });
+                          }
+                        }}
+                        disabled={schedulePublication.isPending}
+                        title="Schedule for publication"
+                        aria-label="Schedule for publication"
+                      >
+                        {schedulePublication.isPending ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Calendar className="w-4 h-4" />
+                        )}
+                      </Button>
+                    )}
+
+                    {/* Publication status badge */}
+                    {publicationStatus && (
+                      <Badge
+                        variant={
+                          publicationStatus.status === 'active'
+                            ? 'default'
+                            : publicationStatus.status === 'queued'
+                            ? 'secondary'
+                            : 'outline'
+                        }
+                        className="px-3 py-1"
+                      >
+                        {publicationStatus.status === 'active' && '🟢 Active'}
+                        {publicationStatus.status === 'queued' && `📅 Queued for ${new Date(publicationStatus.publish_date).toLocaleDateString()}`}
+                        {publicationStatus.status === 'expired' && '⏱️ Expired'}
+                      </Badge>
+                    )}
                     
                     {/* Archive button on mobile only */}
                     {isMobile && (

@@ -101,21 +101,14 @@ export const useBooks = () => {
         };
       });
 
-      // Sort by: highlighted first, then by last viewed date (most recent first), then by created date
+      // Sort by: highlighted first, then by books.created_at (newest first)
       return booksWithActivity.sort((a, b) => {
         // First, sort by is_highlighted
         if (a.is_highlighted !== b.is_highlighted) {
           return b.is_highlighted ? 1 : -1;
         }
 
-        // Then sort by last_viewed_at (most recent first)
-        if (a.last_viewed_at && b.last_viewed_at) {
-          return new Date(b.last_viewed_at).getTime() - new Date(a.last_viewed_at).getTime();
-        }
-        if (a.last_viewed_at) return -1;
-        if (b.last_viewed_at) return 1;
-
-        // Finally, sort by created_at (most recent first)
+        // Then sort by created_at (most recent first)
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
     },

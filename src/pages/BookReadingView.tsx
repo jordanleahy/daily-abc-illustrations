@@ -415,24 +415,22 @@ export default function BookReadingView() {
           </SwipeUpDrawer>
           
           {/* Navigation */}
-          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t py-4 px-6 safe-area-inset-bottom">
-            <div className="flex items-center justify-between max-w-sm mx-auto">
+          <div className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-sm border-t safe-area-inset-bottom">
+            <div className="flex items-center">
               <Button
                 variant="ghost"
-                size="icon"
                 onClick={handlePrevious}
                 disabled={currentPageIndex === 0}
-                className="h-12 w-12"
+                className="flex-1 h-16 rounded-none border-r"
               >
                 <ChevronLeft className="h-6 w-6" />
               </Button>
               
               <Button
-                variant="ghost"
-                size="icon"
+                variant="default"
                 onClick={handleNext}
                 disabled={isAddingCoins}
-                className="h-12 w-12"
+                className="flex-1 h-16 rounded-none"
               >
                 <ChevronRight className="h-6 w-6" />
               </Button>

@@ -60,7 +60,7 @@ export interface Book {
   book_description?: string;
   /** AI-generated product description for marketing purposes */
   product_description?: string;
-  /** Total number of pages in the book (typically 26 for A-Z) */
+  /** Total number of pages in the book (variable based on book type: 26 for ABC, 10 for numbers, etc.) */
   total_pages: number;
   /** Publication status of the book */
   status: 'draft' | 'published' | 'archived';

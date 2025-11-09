@@ -12,7 +12,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
-import { trackBookView } from '@/utils/bookViewTracking';
+import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
@@ -46,7 +46,7 @@ export default function BookReadingView() {
   // Track book view when page loads
   useEffect(() => {
     if (book?.id && user) {
-      trackBookView(book.id);
+      trackUserBookActivity(book.id);
     }
   }, [book?.id, user]);
   

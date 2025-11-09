@@ -19,6 +19,7 @@ import { trackBookView } from '@/utils/bookViewTracking';
 import { useFavorites } from '@/hooks/useFavorites';
 import { PremiumContentWrapper } from '@/components/subscription/PremiumContentWrapper';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 
 export default memo(function Library() {
   const {
@@ -153,6 +154,16 @@ const LibraryBookCard = memo(function LibraryBookCard({
   const navigate = useNavigate();
   const { hasLibraryAccess } = useFeatureAccess();
   
+  // Viewport-based lazy loading
+  const { ref, inView } = useIntersectionObserver({
+    rootMargin: '200px', // Start loading 200px before entering viewport
+    triggerOnce: true, // Once loaded, stay loaded
+  });
+  
+  // Priority loading for first 6 cards (above fold)
+  const shouldLoadImmediately = index < 6;
+  const shouldRender = shouldLoadImmediately || inView;
+  
   const handleCardClick = () => {
     // Only allow navigation if user has library access (active subscription)
     if (!hasLibraryAccess) {
@@ -177,6 +188,7 @@ const LibraryBookCard = memo(function LibraryBookCard({
   return (
     <PremiumContentWrapper showOverlay={shouldShowPremiumOverlay}>
       <Card 
+        ref={ref}
         className={`hover:shadow-md transition-shadow ${shouldShowPremiumOverlay ? '' : 'cursor-pointer hover:shadow-lg'} relative`}
         onClick={handleCardClick}
       >
@@ -222,16 +234,22 @@ const LibraryBookCard = memo(function LibraryBookCard({
           </div>
           
           <div className="aspect-video rounded-lg flex items-center justify-center overflow-hidden relative">
-            {item.og_image_url ? (
-              <BookImage
-                src={item.og_image_url}
-                alt={`Preview of ${item.seo_title || item.title}`}
-                priority={index < 6}
-                className="w-full h-full object-cover object-center"
-                sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-              />
+            {shouldRender ? (
+              item.og_image_url ? (
+                <BookImage
+                  src={item.og_image_url}
+                  alt={`Preview of ${item.seo_title || item.title}`}
+                  priority={index < 6}
+                  className="w-full h-full object-cover object-center"
+                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                />
+              ) : (
+                <BookOpen className="w-8 h-8 text-muted-foreground" />
+              )
             ) : (
-              <BookOpen className="w-8 h-8 text-muted-foreground" />
+              <div className="w-full h-full bg-muted flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-muted-foreground/30" />
+              </div>
             )}
           </div>
         </CardContent>

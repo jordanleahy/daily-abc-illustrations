@@ -120,6 +120,11 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
       let buffer = '';
       let fullContent = '';
 
+      // Helper to strip suggest tags during streaming for clean display
+      const stripSuggestTags = (text: string) => {
+        return text.replace(/\[SUGGEST\][\s\S]*?(\[\/SUGGEST\])?$/g, '').trim();
+      };
+
       // Add empty assistant message
       let messagesWithResponse = [...updatedMessages, { role: 'assistant' as const, content: '' }];
       if (sessionId) {
@@ -147,10 +152,14 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
             const delta = parsed.choices?.[0]?.delta?.content;
             if (delta) {
               fullContent += delta;
-              // Update the last message with accumulated content
+              
+              // Strip suggest tags during streaming for display
+              const displayContent = stripSuggestTags(fullContent);
+              
+              // Update the last message with cleaned content
               messagesWithResponse = [
                 ...messagesWithResponse.slice(0, -1),
-                { role: 'assistant' as const, content: fullContent }
+                { role: 'assistant' as const, content: displayContent }
               ];
               if (sessionId) {
                 queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);

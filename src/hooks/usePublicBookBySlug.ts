@@ -33,7 +33,9 @@ export const usePublicBookBySlug = (slug: string | undefined) => {
       return data as DailyPublishedWithBook | null;
     },
     enabled: !!slug,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 60 * 60 * 1000, // 1 hour - instant loading for returning users
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache for full day
+    refetchOnMount: false, // Use cached data for returning users
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
 };

@@ -29,7 +29,9 @@ export const useDailyPublished = () => {
       console.log('useDailyPublished: Query result:', data);
       return data as DailyPublished | null;
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 60 * 60 * 1000, // 1 hour - instant loading for returning users
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache for full day
+    refetchOnMount: false, // Use cached data for returning users
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches (realtime handles updates)
   });
 };

@@ -207,7 +207,17 @@ export function QACheckpointPanel({
     return (
       <>
         <span className="text-lg font-semibold">{before}</span>
-        <span className="text-6xl font-extrabold text-yellow-300 mx-1 animate-pulse">
+        <span 
+          className="text-lg font-semibold text-yellow-300 inline-block animate-pulse"
+          style={{ 
+            transform: 'scale(2.5)',
+            transformOrigin: 'center center',
+            display: 'inline-block',
+            margin: '0 1.5rem',
+            fontWeight: '800',
+            transition: 'transform 0.3s ease'
+          }}
+        >
           {word}
         </span>
         <span className="text-lg font-semibold">{after}</span>
@@ -334,11 +344,12 @@ export function QACheckpointPanel({
                       <div 
                         onClick={() => setIsEditingText(true)}
                         className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3 cursor-pointer hover:bg-black/70 transition-colors group"
+                        style={{ minHeight: '60px' }}
                         title="Click to edit text"
                       >
-                        <div className="flex items-center justify-center gap-2">
-                          <p className="text-white text-center leading-tight flex flex-wrap items-center justify-center gap-1"
-                             style={{ transition: 'all 0.3s ease' }}>
+                        <div className="flex items-center justify-center gap-2 h-full">
+                          <p className="text-white text-center flex flex-wrap items-center justify-center gap-1"
+                             style={{ lineHeight: '1.2' }}>
                             {renderTextWithEnlargedWord(
                               currentPageText, 
                               currentPageWords?.[currentWordIndex]?.word,

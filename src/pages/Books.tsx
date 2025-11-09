@@ -39,7 +39,10 @@ function BookCard({ book, onClick, index }: { book: any; onClick: () => void; in
           <CardTitle className="text-lg group-hover:text-primary transition-colors">
             {book.book_name}
           </CardTitle>
-          <Badge variant={book.status === 'published' ? 'default' : 'secondary'}>
+          <Badge 
+            variant={book.status === 'published' ? 'default' : 'secondary'}
+            className={book.status === 'published' ? 'bg-green-600' : ''}
+          >
             {book.status}
           </Badge>
         </div>
@@ -147,7 +150,7 @@ export default function Books() {
     // Invalidate query to refresh sort order with new activity
     queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
     
-    navigate(`/editor/${bookId}`);
+    navigate(`/book/${bookId}`);
   };
 
   const handleCreateNewBook = () => {

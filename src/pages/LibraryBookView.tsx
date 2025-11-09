@@ -6,6 +6,7 @@ import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImagePreloader';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
+import { useBookPages } from '@/hooks/useBookPages';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidCoins } from '@/hooks/useKidCoins';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -18,10 +19,8 @@ import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { PublicPageImage } from '@/components/daily-published';
 import { Card } from '@/components/ui/card';
-import { ReadingPageDisplay } from '@/components/reading';
+import { ReadingPageDisplay, useReadingPageState, UnifiedReadingControls } from '@/components/reading';
 import { processImage } from '@/utils/imageProcessor';
-import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
-import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { UpcomingBooksPreview } from '@/components/daily-published';
 import { RoleDebugger } from '@/components/RoleDebugger';
@@ -67,6 +66,9 @@ export default function LibraryBookView() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Word learning state
+  const readingState = useReadingPageState();
+  
   // Auto-select kid if only one exists
   const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
   const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
@@ -78,6 +80,11 @@ export default function LibraryBookView() {
   useDailyPublishedImagePreloader(reorderedPages, dailyContent?.book_id);
   
   const isLastPage = currentPageIndex === reorderedPages.length - 1;
+  
+  // Reset word learning state when page changes
+  useEffect(() => {
+    readingState.resetState();
+  }, [currentPageIndex]);
   
   // Generate OpenGraph metadata for the current page
   const { openGraphMetadata } = useDailyPublishedOpenGraph(safeId, currentPageIndex);
@@ -173,6 +180,13 @@ export default function LibraryBookView() {
   }
 
   const currentPage = reorderedPages[currentPageIndex];
+  
+  // Get current page words for word learning
+  const { pages: bookPages } = useBookPages(dailyContent?.book_id);
+  const currentPageWords = useMemo(() => {
+    const page = bookPages?.find(p => p.id === currentPage?.id);
+    return page?.content?.words || [];
+  }, [bookPages, currentPage]);
 
   const handleNext = async () => {
     if (isLastPage) {
@@ -352,39 +366,50 @@ export default function LibraryBookView() {
           <RewardContainer earnedRewards={earnedRewards} />
         </div>
         
-        {/* Main content area */}
-        <div className="flex-1 flex flex-col pb-4">
-          <div className="flex-1 flex items-center justify-center p-4">
-            <div className="w-full max-w-sm mx-auto">
-              <ReadingPageDisplay
-                pageId={currentPage.id}
-                bookId={dailyContent.book_id}
-                pageNumber={currentPage.page_number}
-                pageText={currentPage.content?.textOverlay?.enabled ? currentPage.content.textOverlay.text : ''}
-                imageUrl=""
-                imageComponent={
-                  <PublicPageImage 
-                    pageId={currentPage.id}
-                    bookId={dailyContent.book_id}
-                    className="rounded-lg"
-                    showUploadButton={false}
-                    onUploadClick={handleUploadClick}
-                  />
-                }
-              />
+          {/* Main content area */}
+          <div className="flex-1 flex flex-col pb-24">
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className="w-full max-w-sm mx-auto">
+                <ReadingPageDisplay
+                  pageId={currentPage.id}
+                  bookId={dailyContent.book_id}
+                  pageNumber={currentPage.page_number}
+                  pageText={currentPage.content?.textOverlay?.enabled ? currentPage.content.textOverlay.text : ''}
+                  imageUrl=""
+                  currentWordIndex={readingState.currentWordIndex}
+                  isWordEnlarged={readingState.isWordEnlarged}
+                  hiddenOverlayPages={readingState.hiddenOverlayPages}
+                  onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
+                  imageComponent={
+                    <PublicPageImage 
+                      pageId={currentPage.id}
+                      bookId={dailyContent.book_id}
+                      className="rounded-lg"
+                      showUploadButton={false}
+                      onUploadClick={handleUploadClick}
+                    />
+                  }
+                />
+              </div>
             </div>
           </div>
-          
-          {/* Navigation */}
-          <BottomSlideNavigation 
-            onPrevious={handlePrevious}
-            onNext={handleNext}
-            disablePrevious={currentPageIndex === 0}
-            disableNext={isAddingCoins || isLastPage}
-            variant="compact"
-          />
         </div>
-      </div>
+        
+        {/* Unified Reading Controls */}
+        <UnifiedReadingControls
+          hasWords={currentPageWords.length > 0}
+          isEnlarged={readingState.isWordEnlarged}
+          onToggleEnlarge={readingState.handleToggleEnlarge}
+          onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
+          onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
+          currentWordIndex={readingState.currentWordIndex}
+          totalWords={currentPageWords.length}
+          onNavigateWord={(dir) => readingState.handleNavigateWord(dir, currentPageWords.length)}
+          onPreviousPage={handlePrevious}
+          onNextPage={handleNext}
+          disablePreviousPage={currentPageIndex === 0}
+          disableNextPage={isAddingCoins || isLastPage}
+        />
       
       {/* Hidden file input for direct upload */}
       <input

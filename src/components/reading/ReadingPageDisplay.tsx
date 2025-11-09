@@ -1,12 +1,10 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
-import { WordLearningControls } from '@/components/chat/WordLearningControls';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { useBookPages } from '@/hooks/useBookPages';
 import { toast } from 'sonner';
 import { Pencil, X } from 'lucide-react';
-import { useReadingPageState } from './useReadingPageState';
 
 interface ReadingPageDisplayProps {
   pageId: string;
@@ -17,6 +15,11 @@ interface ReadingPageDisplayProps {
   onUpdatePageText?: (newText: string) => void;
   imageComponent?: React.ReactNode;
   className?: string;
+  // Word learning state passed from parent
+  currentWordIndex?: number;
+  isWordEnlarged?: boolean;
+  hiddenOverlayPages?: Set<string>;
+  onToggleOverlayVisibility?: (pageId: string) => void;
 }
 
 export function ReadingPageDisplay({
@@ -28,24 +31,14 @@ export function ReadingPageDisplay({
   onUpdatePageText,
   imageComponent,
   className = '',
+  currentWordIndex = 0,
+  isWordEnlarged = false,
+  hiddenOverlayPages,
+  onToggleOverlayVisibility,
 }: ReadingPageDisplayProps) {
-  const { generateMetadata, isGenerating } = useWordMetadata();
+  const { generateMetadata } = useWordMetadata();
   const { pages } = useBookPages(bookId);
-  
-  const {
-    currentWordIndex,
-    isWordEnlarged,
-    wordStatuses,
-    isEditingText,
-    hiddenOverlayPages,
-    setIsEditingText,
-    handleToggleEnlarge,
-    handleNavigateWord,
-    handleMarkDifficult,
-    handleMarkUnderstood,
-    resetState,
-    toggleOverlayVisibility,
-  } = useReadingPageState();
+  const [isEditingText, setIsEditingText] = useState(false);
 
   // Get current page words metadata
   const currentPageWords = useMemo(() => {
@@ -68,10 +61,6 @@ export function ReadingPageDisplay({
     }
   }, [pageId, pageText, currentPageWords, pages, bookId, generateMetadata]);
 
-  // Reset word learning state when page changes
-  useEffect(() => {
-    resetState();
-  }, [pageId, resetState]);
 
   // Helper function to render text with enlarged current word
   const renderTextWithEnlargedWord = (
@@ -139,61 +128,59 @@ export function ReadingPageDisplay({
     }
   };
 
-  const isOverlayHidden = hiddenOverlayPages.has(pageId);
-  const hasWords = currentPageWords && currentPageWords.length > 0;
+  const isOverlayHidden = hiddenOverlayPages?.has(pageId);
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Image with Text Overlay */}
-      <Card className="overflow-hidden">
-        <div className="relative aspect-square">
-          {imageComponent || (
-            <img 
-              src={imageUrl}
-              alt={`Page ${pageNumber}`}
-              className="w-full h-full object-contain"
-            />
-          )}
-          
-          {/* Text Overlay with Editing and Word Learning */}
-          {pageText && !isOverlayHidden && (
-            <>
-              {isEditingText && onUpdatePageText ? (
-                <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">
-                  <InlineEditInput
-                    value={pageText}
-                    onSave={handleSaveText}
-                    className="text-white text-center font-semibold text-lg bg-transparent border-white/30"
-                    isEditing={true}
-                  />
-                </div>
-              ) : (
-                <div 
-                  className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3 group"
-                  style={{ minHeight: '60px' }}
-                >
-                  <div className="flex items-center justify-center gap-2 h-full relative">
-                    <div 
-                      onClick={() => onUpdatePageText && setIsEditingText(true)}
-                      className={`flex items-center justify-center gap-2 flex-1 ${onUpdatePageText ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
-                      title={onUpdatePageText ? "Click to edit text" : undefined}
-                    >
-                      <p className="text-white text-center flex flex-wrap items-center justify-center gap-1"
-                         style={{ lineHeight: '1.2' }}>
-                        {renderTextWithEnlargedWord(
-                          pageText, 
-                          currentPageWords?.[currentWordIndex]?.word,
-                          isWordEnlarged
-                        )}
-                      </p>
-                      {onUpdatePageText && (
-                        <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />
+    <Card className={`overflow-hidden ${className}`}>
+      <div className="relative aspect-square">
+        {imageComponent || (
+          <img 
+            src={imageUrl}
+            alt={`Page ${pageNumber}`}
+            className="w-full h-full object-contain"
+          />
+        )}
+        
+        {/* Text Overlay with Editing and Word Learning */}
+        {pageText && !isOverlayHidden && (
+          <>
+            {isEditingText && onUpdatePageText ? (
+              <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">
+                <InlineEditInput
+                  value={pageText}
+                  onSave={handleSaveText}
+                  className="text-white text-center font-semibold text-lg bg-transparent border-white/30"
+                  isEditing={true}
+                />
+              </div>
+            ) : (
+              <div 
+                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3 group"
+                style={{ minHeight: '60px' }}
+              >
+                <div className="flex items-center justify-center gap-2 h-full relative">
+                  <div 
+                    onClick={() => onUpdatePageText && setIsEditingText(true)}
+                    className={`flex items-center justify-center gap-2 flex-1 ${onUpdatePageText ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
+                    title={onUpdatePageText ? "Click to edit text" : undefined}
+                  >
+                    <p className="text-white text-center flex flex-wrap items-center justify-center gap-1"
+                       style={{ lineHeight: '1.2' }}>
+                      {renderTextWithEnlargedWord(
+                        pageText, 
+                        currentPageWords?.[currentWordIndex]?.word,
+                        isWordEnlarged
                       )}
-                    </div>
+                    </p>
+                    {onUpdatePageText && (
+                      <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />
+                    )}
+                  </div>
+                  {onToggleOverlayVisibility && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleOverlayVisibility(pageId);
+                        onToggleOverlayVisibility(pageId);
                         toast.success('Text overlay hidden');
                       }}
                       className="h-6 w-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
@@ -201,26 +188,13 @@ export function ReadingPageDisplay({
                     >
                       <X className="h-3.5 w-3.5 text-white/70" />
                     </button>
-                  </div>
+                  )}
                 </div>
-              )}
-            </>
-          )}
-        </div>
-      </Card>
-
-      {/* Word Learning Controls */}
-      {hasWords && (
-        <WordLearningControls
-            isEnlarged={isWordEnlarged}
-            onToggleEnlarge={handleToggleEnlarge}
-            onMarkDifficult={() => handleMarkDifficult(currentPageWords.length)}
-            onMarkUnderstood={() => handleMarkUnderstood(currentPageWords.length)}
-            currentWordIndex={currentWordIndex}
-            totalWords={currentPageWords.length}
-            onNavigateWord={(direction) => handleNavigateWord(direction, currentPageWords.length)}
-          />
-      )}
-    </div>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    </Card>
   );
 }

@@ -19,11 +19,10 @@ import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookImage } from '@/components/ui/book-image';
-import { ReadingPageDisplay } from '@/components/reading';
+import { ReadingPageDisplay, useReadingPageState, UnifiedReadingControls } from '@/components/reading';
 import { processImage } from '@/utils/imageProcessor';
 import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
 import { RewardContainer } from '@/components/ui/reward-container';
-import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { RoleDebugger } from '@/components/RoleDebugger';
 import { Calendar } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
@@ -60,6 +59,9 @@ export default function BookReadingView() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   
+  // Word learning state
+  const readingState = useReadingPageState();
+  
   // Auto-select kid if only one exists
   const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
   const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
@@ -73,6 +75,11 @@ export default function BookReadingView() {
   
   const isLastPage = currentPageIndex === reorderedPages.length - 1;
   const isLoading = isLoadingBook || isLoadingPages;
+  
+  // Reset word learning state when page changes
+  useEffect(() => {
+    readingState.resetState();
+  }, [currentPageIndex]);
 
   useEffect(() => {
     console.log('[BookReadingView] Loading state', { isLoadingBook, isLoadingPages, hasBook: !!book, pagesCount: pages.length });
@@ -168,6 +175,12 @@ export default function BookReadingView() {
 
   // FIX: Access pageImages by page_number instead of page.id
   const currentImageUrl = currentPage ? pageImages[currentPage.page_number] : undefined;
+  
+  // Get current page words for word learning
+  const currentPageWords = useMemo(() => {
+    const page = pages?.find(p => p.id === currentPage?.id);
+    return page?.content?.words || [];
+  }, [pages, currentPage]);
 
   const handleNext = async () => {
     if (isLastPage) {
@@ -382,86 +395,97 @@ export default function BookReadingView() {
           <RewardContainer earnedRewards={earnedRewards} />
         </div>
         
-        {/* Main content area */}
-        <div className="flex-1 flex flex-col pb-4">
-          <div className="flex-1 flex items-center justify-center p-4">
-            <div className="w-full max-w-sm mx-auto">
-              {currentImageUrl ? (
-                <ReadingPageDisplay
-                  pageId={currentPage.id}
-                  bookId={book.id}
-                  pageNumber={currentPage.page_number}
-                  pageText={currentPage?.content?.textOverlay?.enabled ? currentPage.content.textOverlay.text : ''}
-                  imageUrl={currentImageUrl}
-                  onUpdatePageText={handleUpdatePageText}
-                  imageComponent={
-                    <BookImage
-                      src={currentImageUrl}
-                      alt={currentPage?.content?.mainConcept || currentPage?.title || "Page illustration"}
-                      priority={true}
-                      className="w-full h-full object-cover object-top rounded-lg"
-                    />
-                  }
-                />
-              ) : (
-                <Card className="shadow-lg">
-                  <div className="relative w-full aspect-square rounded-lg overflow-hidden">
-                    <div className="w-full h-full bg-gradient-to-b from-muted to-muted/60 flex items-center justify-center">
-                      <div className="text-center px-6">
-                        <p className="text-sm font-semibold">{currentPage?.title || currentPage?.letter || 'Page'}</p>
-                        <p className="text-xs text-muted-foreground mt-1">No image yet. Upload one to start reading.</p>
-                        <Button className="mt-3" size="sm" variant="secondary" onClick={handleUploadClick}>
-                          Upload image
-                        </Button>
+          {/* Main content area */}
+          <div className="flex-1 flex flex-col pb-24">
+            <div className="flex-1 flex items-center justify-center p-4">
+              <div className="w-full max-w-sm mx-auto">
+                {currentImageUrl ? (
+                  <ReadingPageDisplay
+                    pageId={currentPage.id}
+                    bookId={book.id}
+                    pageNumber={currentPage.page_number}
+                    pageText={currentPage?.content?.textOverlay?.enabled ? currentPage.content.textOverlay.text : ''}
+                    imageUrl={currentImageUrl}
+                    currentWordIndex={readingState.currentWordIndex}
+                    isWordEnlarged={readingState.isWordEnlarged}
+                    hiddenOverlayPages={readingState.hiddenOverlayPages}
+                    onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
+                    onUpdatePageText={handleUpdatePageText}
+                    imageComponent={
+                      <BookImage
+                        src={currentImageUrl}
+                        alt={currentPage?.content?.mainConcept || currentPage?.title || "Page illustration"}
+                        priority={true}
+                        className="w-full h-full object-cover object-top rounded-lg"
+                      />
+                    }
+                  />
+                ) : (
+                  <Card className="shadow-lg">
+                    <div className="relative w-full aspect-square rounded-lg overflow-hidden">
+                      <div className="w-full h-full bg-gradient-to-b from-muted to-muted/60 flex items-center justify-center">
+                        <div className="text-center px-6">
+                          <p className="text-sm font-semibold">{currentPage?.title || currentPage?.letter || 'Page'}</p>
+                          <p className="text-xs text-muted-foreground mt-1">No image yet. Upload one to start reading.</p>
+                          <Button className="mt-3" size="sm" variant="secondary" onClick={handleUploadClick}>
+                            Upload image
+                          </Button>
+                        </div>
                       </div>
                     </div>
+                  </Card>
+                )}
+              </div>
+            </div>
+            
+            {/* Educational Content Drawer */}
+            <SwipeUpDrawer>
+              <div className="space-y-6 pb-6">
+                {/* Page Content */}
+                {currentPage?.content && (
+                  <div className="space-y-4">
+                    {currentPage.content.mainConcept && (
+                      <div>
+                        <h3 className="text-lg font-bold mb-2">Main Concept</h3>
+                        <p className="text-muted-foreground">{currentPage.content.mainConcept}</p>
+                      </div>
+                    )}
+                    
+                    {currentPage.content.funFact && (
+                      <div>
+                        <h3 className="text-lg font-bold mb-2">Fun Fact</h3>
+                        <p className="text-muted-foreground">{currentPage.content.funFact}</p>
+                      </div>
+                    )}
+                    
+                    {currentPage.content.activity && (
+                      <div>
+                        <h3 className="text-lg font-bold mb-2">Activity</h3>
+                        <p className="text-muted-foreground">{currentPage.content.activity}</p>
+                      </div>
+                    )}
                   </div>
-                </Card>
-              )}
-            </div>
+                )}
+              </div>
+            </SwipeUpDrawer>
           </div>
-          
-              {/* Educational Content Drawer */}
-          <SwipeUpDrawer>
-            <div className="space-y-6 pb-6">
-              {/* Page Content */}
-              {currentPage?.content && (
-                <div className="space-y-4">
-                  {currentPage.content.mainConcept && (
-                    <div>
-                      <h3 className="text-lg font-bold mb-2">Main Concept</h3>
-                      <p className="text-muted-foreground">{currentPage.content.mainConcept}</p>
-                    </div>
-                  )}
-                  
-                  {currentPage.content.funFact && (
-                    <div>
-                      <h3 className="text-lg font-bold mb-2">Fun Fact</h3>
-                      <p className="text-muted-foreground">{currentPage.content.funFact}</p>
-                    </div>
-                  )}
-                  
-                  {currentPage.content.activity && (
-                    <div>
-                      <h3 className="text-lg font-bold mb-2">Activity</h3>
-                      <p className="text-muted-foreground">{currentPage.content.activity}</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          </SwipeUpDrawer>
-          
-          {/* Navigation */}
-          <BottomSlideNavigation 
-            onPrevious={handlePrevious}
-            onNext={handleNext}
-            disablePrevious={currentPageIndex === 0}
-            disableNext={isAddingCoins}
-            variant="compact"
-          />
         </div>
-      </div>
+        
+        {/* Unified Reading Controls */}
+        <UnifiedReadingControls
+          hasWords={currentPageWords.length > 0}
+          isEnlarged={readingState.isWordEnlarged}
+          onToggleEnlarge={readingState.handleToggleEnlarge}
+          onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
+          onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
+          currentWordIndex={readingState.currentWordIndex}
+          totalWords={currentPageWords.length}
+          onNavigateWord={(dir) => readingState.handleNavigateWord(dir, currentPageWords.length)}
+          onPreviousPage={handlePrevious}
+          onNextPage={handleNext}
+          disablePreviousPage={currentPageIndex === 0}
+          disableNextPage={isAddingCoins}
+        />
       
       {/* Hidden file input for direct upload */}
       <input

@@ -1,15 +1,15 @@
 import { Card, CardContent } from '@/components/ui/card';
-import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { PublicPageImage } from './PublicPageImage';
 import { FreemiumHeader } from './FreemiumHeader';
-import { ReadingPageDisplay } from '@/components/reading';
+import { ReadingPageDisplay, useReadingPageState, UnifiedReadingControls } from '@/components/reading';
 import { RewardContainer } from '@/components/ui/reward-container';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { Page } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { MetaHead } from '@/components/common';
 import { useNavigate } from 'react-router-dom';
+import { useBookPages } from '@/hooks/useBookPages';
 interface DailyPublishedPageViewProps {
   page: Page;
   bookId: string;
@@ -42,6 +42,21 @@ export function DailyPublishedPageView({
   const isLastPage = pageNumber >= totalPages;
   const [timeRemaining, setTimeRemaining] = useState(formatTimeRemaining(expiresAt));
   const navigate = useNavigate();
+  
+  // Word learning state
+  const readingState = useReadingPageState();
+  
+  // Reset word learning state when page changes
+  useEffect(() => {
+    readingState.resetState();
+  }, [page.id]);
+  
+  // Get current page words for word learning
+  const { pages } = useBookPages(bookId);
+  const currentPageWords = useMemo(() => {
+    const currentPage = pages?.find(p => p.id === page.id);
+    return currentPage?.content?.words || [];
+  }, [pages, page.id]);
   
   // Determine if we should show text overlay (ABC books)
   const bookName = openGraphMetadata?.title || '';
@@ -108,7 +123,7 @@ export function DailyPublishedPageView({
       )}
 
       {/* Focused page card - Fixed height to prevent scrolling */}
-      <div className="h-[calc(100vh-12rem)] mt-4 px-4 flex items-center justify-center">
+      <div className="h-[calc(100vh-12rem)] mt-4 px-4 flex items-center justify-center pb-24">
         <div className="max-w-md w-full cursor-pointer" onClick={handleTapToAdvance}>
           <ReadingPageDisplay
             pageId={page.id}
@@ -117,6 +132,10 @@ export function DailyPublishedPageView({
             pageText={(bookName?.toLowerCase().includes('abc') || 
               bookDescription?.toLowerCase().includes('abc')) ? pageTextOverlay : ''}
             imageUrl=""
+            currentWordIndex={readingState.currentWordIndex}
+            isWordEnlarged={readingState.isWordEnlarged}
+            hiddenOverlayPages={readingState.hiddenOverlayPages}
+            onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
             imageComponent={
               <PublicPageImage pageId={page.id} bookId={bookId} />
             }
@@ -124,14 +143,20 @@ export function DailyPublishedPageView({
         </div>
       </div>
 
-      {/* Unified arrow navigation */}
-      <BottomSlideNavigation 
-        onPrevious={onPrevious}
-        onNext={onNext}
-        disablePrevious={pageNumber <= 1}
-        disableNext={isLastPage}
-        variant="compact"
-        show={true}
+      {/* Unified Reading Controls */}
+      <UnifiedReadingControls
+        hasWords={currentPageWords.length > 0}
+        isEnlarged={readingState.isWordEnlarged}
+        onToggleEnlarge={readingState.handleToggleEnlarge}
+        onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
+        onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
+        currentWordIndex={readingState.currentWordIndex}
+        totalWords={currentPageWords.length}
+        onNavigateWord={(dir) => readingState.handleNavigateWord(dir, currentPageWords.length)}
+        onPreviousPage={onPrevious}
+        onNextPage={onNext}
+        disablePreviousPage={pageNumber <= 1}
+        disableNextPage={isLastPage}
       />
     </div>;
 }

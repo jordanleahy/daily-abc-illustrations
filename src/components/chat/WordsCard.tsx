@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BookOpen } from "lucide-react";
+import { LoadingState } from "@/components/ui/loading-state";
 
 interface LetterMetadata {
   letter: string;
@@ -21,9 +22,10 @@ interface WordMetadata {
 interface WordsCardProps {
   words?: WordMetadata[];
   title?: string;
+  isLoading?: boolean;
 }
 
-export function WordsCard({ words, title }: WordsCardProps) {
+export function WordsCard({ words, title, isLoading }: WordsCardProps) {
   if (!words || words.length === 0) {
     return null;
   }
@@ -37,8 +39,10 @@ export function WordsCard({ words, title }: WordsCardProps) {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {/* Horizontal word row layout */}
-        <div className="flex flex-wrap gap-2">
+        {isLoading ? (
+          <LoadingState text="Analyzing words..." spinnerSize="h-6 w-6" className="py-4" />
+        ) : (
+          <div className="flex flex-wrap gap-2">
           {words.map((wordData, index) => (
             <div
               key={index}
@@ -86,7 +90,8 @@ export function WordsCard({ words, title }: WordsCardProps) {
               </div>
             </div>
           ))}
-        </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );

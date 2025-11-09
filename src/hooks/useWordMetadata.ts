@@ -15,15 +15,29 @@ export function useWordMetadata() {
 
   const generateMetadata = useMutation({
     mutationFn: async ({ pageId, title, currentContent }: GenerateWordMetadataParams) => {
-      // Parse words from title
+      // Step 1: Fetch fresh page content from database to avoid race conditions
+      const { data: freshPage, error: fetchError } = await supabase
+        .from('pages')
+        .select('content')
+        .eq('id', pageId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Step 2: Parse words from title
       const words = parseWordsFromTitle(title);
       
-      // Update page content with word metadata
-      const updatedContent = {
-        ...currentContent,
-        words
-      };
+      // Step 3: Merge with FRESH content (preserves concurrent updates like textOverlay)
+      const baseContent = (freshPage?.content && typeof freshPage.content === 'object') 
+        ? freshPage.content 
+        : {};
       
+      const updatedContent = {
+        ...baseContent,
+        words
+      } as any;
+      
+      // Step 4: Update database with merged content
       const { error } = await supabase
         .from('pages')
         .update({ 

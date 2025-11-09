@@ -69,7 +69,7 @@ export function QACheckpointPanel({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
-  const { generateMetadata } = useWordMetadata();
+  const { generateMetadata, isGenerating } = useWordMetadata();
   
   // Fetch pages data
   const { pages } = useBookPages(bookId || undefined);
@@ -323,6 +323,7 @@ export function QACheckpointPanel({
           <WordsCard 
             words={currentPageWords}
             title={currentPageText}
+            isLoading={isGenerating}
           />
         )}
 

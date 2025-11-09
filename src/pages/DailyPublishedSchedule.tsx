@@ -3,13 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useExpireContent } from '@/hooks/useExpireContent';
-import { useCopySeoToQueued } from '@/hooks/useCopySeoToQueued';
 import { useScheduleImagePreloader } from '@/hooks/useScheduleImagePreloader';
 import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, BookOpen, RefreshCw, Copy } from 'lucide-react';
+import { Clock, BookOpen, RefreshCw } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { DailyPublishedQueueCard } from '@/components/daily-published/DailyPublishedQueueCard';
 
@@ -17,7 +16,6 @@ export default function DailyPublishedSchedule() {
   const { user } = useAuthContext();
   const { data: scheduleItems, isLoading, error } = useDailyPublishedSchedule();
   const expireContent = useExpireContent();
-  const copySeo = useCopySeoToQueued();
 
   // Preload schedule images for instant display
   useScheduleImagePreloader(scheduleItems);
@@ -27,14 +25,6 @@ export default function DailyPublishedSchedule() {
       await expireContent.mutateAsync();
     } catch (error) {
       console.error('Failed to refresh:', error);
-    }
-  };
-
-  const handleCopySeo = async () => {
-    try {
-      await copySeo.mutateAsync();
-    } catch (error) {
-      console.error('Failed to copy SEO:', error);
     }
   };
 
@@ -132,15 +122,6 @@ export default function DailyPublishedSchedule() {
           </div>
           
           <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={handleCopySeo}
-              disabled={copySeo.isPending}
-            >
-              <Copy className={`h-4 w-4 mr-2 ${copySeo.isPending ? 'animate-pulse' : ''}`} />
-              Copy SEO
-            </Button>
-            
             <Button 
               variant="outline" 
               onClick={handleRefresh}

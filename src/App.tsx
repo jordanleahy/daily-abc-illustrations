@@ -82,6 +82,10 @@ const App = () => {
           <Route path="/auth/confirm" element={<AuthConfirm />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
                <Route path="/agents" element={<Agents />} />
+               {/* User book routes - Own books only */}
+               <Route path="/books" element={<ProtectedRoute><Books /></ProtectedRoute>} />
+               <Route path="/books/:id" element={<ProtectedRoute><BookDetail /></ProtectedRoute>} />
+               {/* Admin book routes */}
                <Route path="/editor" element={<ProtectedRoute requireRole="admin"><Books /></ProtectedRoute>} />
                <Route path="/editor/:id" element={<ProtectedRoute requireRole="admin"><BookDetail /></ProtectedRoute>} />
                 {/* Library routes - All subscription tiers */}

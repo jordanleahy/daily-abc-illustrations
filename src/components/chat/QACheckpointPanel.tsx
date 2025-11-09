@@ -114,6 +114,22 @@ export function QACheckpointPanel({
     return currentPage?.content?.words;
   }, [pages, currentQAPage]);
 
+  // Auto-generate word metadata if page has text but no words
+  useEffect(() => {
+    const currentPage = pages?.find(p => p.page_number === currentQAPage);
+    if (currentPage && currentPageText && !currentPageWords && bookId) {
+      // Silently generate word metadata in the background
+      generateMetadata({
+        pageId: currentPage.id,
+        bookId,
+        title: currentPageText,
+        currentContent: currentPage.content
+      }).catch(error => {
+        console.error('Failed to auto-generate word metadata:', error);
+      });
+    }
+  }, [currentQAPage, currentPageText, currentPageWords, pages, bookId, generateMetadata]);
+
   // Reset states when page changes
   useEffect(() => {
     setShowConfirmation(false);

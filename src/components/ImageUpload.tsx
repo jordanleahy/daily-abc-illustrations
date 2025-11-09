@@ -226,14 +226,13 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
         className={`
           w-full h-full border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer
           ${dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
-          ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/5'}
+          ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/5 ring-2 ring-primary/20'}
           ${preview ? 'p-0' : 'p-6'}
         `}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
         onDrop={handleDrop}
-        onClick={openFileSelector}
       >
         {isProcessing ? (
           <div className="flex flex-col items-center justify-center text-center space-y-3">
@@ -259,11 +258,22 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
         ) : (
           <div className="flex flex-col items-center justify-center text-center space-y-4 h-full">
             <Upload className="w-8 h-8 text-muted-foreground mx-auto" />
-            <div className="mx-auto">
+            <div className="mx-auto space-y-3">
               <p className="text-sm font-medium">{requireSquare ? 'Upload 1:1 Image' : 'Upload Image'}</p>
               <p className="text-xs text-muted-foreground">
-                Drop, paste, or click to browse
+                Drop or paste your image here
               </p>
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openFileSelector();
+                }}
+                variant="outline"
+                size="sm"
+                disabled={disabled || isProcessing}
+              >
+                Browse Files
+              </Button>
             </div>
             {isMobile && (
               <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t">

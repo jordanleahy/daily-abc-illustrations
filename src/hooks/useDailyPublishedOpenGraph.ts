@@ -1,13 +1,12 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useDailyPublishedById } from './useDailyPublishedById';
 import { useDailyPublishedPages } from './useDailyPublishedPages';
 import { usePublicPageImage } from './usePublicPageImage';
 import { usePublicBook } from './usePublicBook';
-import { useSeoMetadata, useSeoMetadataByBook } from './useSeoMetadata';
+import { useBookSeoMetadata } from './useBookSeoMetadata';
 import { generateDailyPublishedOpenGraph } from '@/utils/openGraph';
 import { formatTimeRemaining } from '@/utils/timeUtils';
 import type { SEOMetadata } from '@/types/openGraph';
-import { supabase } from '@/integrations/supabase/client';
 
 /**
  * 🚀 BEGINNER'S GUIDE TO OPENGRAPH METADATA 🚀
@@ -89,77 +88,23 @@ export const useDailyPublishedOpenGraph = (
   const { data: firstPageImage } = usePublicPageImage(firstPage?.id);
 
   /**
-   * 🎯 SEO METADATA STRATEGY
+   * 🎯 SEO METADATA STRATEGY (Simplified)
    * 
-   * We implement a fallback system for SEO data:
-   * 1. First, try to get daily-specific SEO metadata
-   * 2. If not found, use book-level SEO metadata
-   * 3. If neither exists, auto-generate daily-specific SEO
+   * ✅ Phase 0.5 Cleanup: Removed daily-specific SEO system
+   * Now we only use book-level SEO metadata for all publications
    * 
-   * 📚 LEARNING NOTE - Destructuring with renaming:
-   * { data: seoMetadata, isLoading: isLoadingSeo } means:
-   * "Get 'data' property and rename it to 'seoMetadata', 
-   *  get 'isLoading' property and rename it to 'isLoadingSeo'"
+   * 📚 LEARNING NOTE:
+   * This is simpler and more maintainable - one SEO record per book
+   * rather than duplicate SEO for each publication.
    */
 
-  // Try to get SEO metadata specific to this daily published content
-  const { data: seoMetadata, isLoading: isLoadingSeo } = useSeoMetadata(dailyId);
-  
-  // Fallback: get book-level SEO metadata if no daily-specific SEO exists
-  // 📚 LEARNING NOTE - Conditional execution:
-  // This hook only runs if we have a book ID AND no daily SEO metadata yet
-  const { data: bookSeoMetadata, isLoading: isLoadingBookSeo } = useSeoMetadataByBook(
-    dailyContent?.book_id && !seoMetadata ? dailyContent.book_id : undefined
+  // Get book-level SEO metadata using the book_id
+  const { data: bookSeoMetadata, isLoading: isLoadingBookSeo } = useBookSeoMetadata(
+    dailyContent?.book_id
   );
   
-  /**
-   * 🤖 AUTO-GENERATION OF SEO METADATA
-   * 
-   * This useEffect automatically creates daily-specific SEO when needed.
-   * It runs when dependencies change and calls our edge function to generate
-   * optimized titles and descriptions.
-   * 
-   * 📚 LEARNING NOTE - useEffect:
-   * useEffect runs side effects (like API calls) in response to data changes.
-   * The dependency array at the end determines when it re-runs.
-   */
-  useEffect(() => {
-    const generateDailySEO = async () => {
-      // Exit early if we don't have required data or already have daily SEO
-      if (!dailyContent || !dailyId || seoMetadata || isLoadingSeo) return;
-      
-      // Only generate if we have book-level SEO but no daily-specific SEO
-      if (bookSeoMetadata && !isLoadingBookSeo) {
-        try {
-          console.log('Auto-generating daily-specific SEO for:', dailyId);
-          const timeRemaining = formatTimeRemaining(dailyContent.expires_at);
-          
-          // Call our edge function to generate optimized SEO content
-          await supabase.functions.invoke('update-seo-for-daily-published', {
-            body: {
-              dailyPublishedId: dailyId,
-              bookId: dailyContent.book_id,
-              contentTitle: dailyContent.title,
-              timeRemaining
-            }
-          });
-        } catch (error) {
-          console.error('Failed to generate daily SEO:', error);
-        }
-      }
-    };
-
-    generateDailySEO();
-  }, [dailyContent, dailyId, seoMetadata, isLoadingSeo, bookSeoMetadata, isLoadingBookSeo]);
-  
-  /**
-   * 🏆 SEO METADATA RESOLUTION
-   * 
-   * Choose the best available SEO metadata using the fallback chain
-   */
-  
-  // Use daily-specific SEO if available, otherwise fallback to book-level SEO
-  const finalSeoMetadata = seoMetadata || bookSeoMetadata;
+  // Use book SEO metadata directly
+  const finalSeoMetadata = bookSeoMetadata;
   
   // Extract the optimized titles and descriptions for social sharing
   const optimizedTitle = finalSeoMetadata?.seo_title;
@@ -167,7 +112,7 @@ export const useDailyPublishedOpenGraph = (
   
   // Boolean flags to track SEO status
   const hasOptimizedContent = !!(optimizedTitle && optimizedDescription);
-  const isOptimizing = isLoadingSeo || isLoadingBookSeo;
+  const isOptimizing = isLoadingBookSeo;
 
   /**
    * 🎨 OPENGRAPH METADATA GENERATION

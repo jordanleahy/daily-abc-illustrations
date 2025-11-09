@@ -494,7 +494,7 @@ const frontendConfig = {
 
 ### Phase 0.3: Edge Function Updates ✅
 - `generate-seo-metadata` - stores book_id
-- `update-seo-for-daily-published` - uses book_id query
+- `update-seo-for-daily-published` - uses book_id query (later removed in Phase 0.5)
 - `copy-seo-draft-to-queued` - copies book_id and user_id
 
 ### Phase 0.4: Hook Consolidation ✅
@@ -502,13 +502,21 @@ const frontendConfig = {
 - Refactored `useAdminBookSeoMetadata` - direct book_id query
 - Verified `useSeoMetadata` - already clean
 
-### Phase 0.5: Verification ✅
+### Phase 0.5: Cleanup & Simplification ✅
+- ✅ Deleted `update-seo-for-daily-published` edge function (unnecessary duplication)
+- ✅ Removed daily-specific SEO auto-generation from `useDailyPublishedOpenGraph`
+- ✅ Simplified to book-level SEO only (one SEO record per book)
 - ✅ All edge functions actively used and updated
-- ✅ No fragile JSONB queries remain (.like patterns eliminated)
-- ✅ All hooks use direct column queries
+- ✅ No fragile JSONB queries remain
 - ✅ Performance improved 5-10x per query
 
-**Result:** Complete migration from fragile JSONB hacks to proper relational queries using dedicated `book_id` column.
+**Key Decision:** Removed daily-specific SEO system because:
+- It only duplicated book-level SEO without customization
+- Simpler to maintain one SEO record per book
+- No loss of functionality (same SEO used for all publications)
+- Reduced database storage and query complexity
+
+**Result:** Complete migration from fragile JSONB hacks to proper relational queries using dedicated `book_id` column, with simplified architecture.
 
 ---
 

@@ -231,29 +231,6 @@ export default function LibraryBookView() {
     }
   };
 
-  // Header arrow navigation (no rewards)
-  const handleHeaderPrevious = () => {
-    if (currentPageIndex > 0) {
-      const newIndex = currentPageIndex - 1;
-      setCurrentPageIndex(newIndex);
-      
-      if (sessionStarted && reorderedPages[newIndex]) {
-        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'header_previous_arrow');
-      }
-    }
-  };
-
-  const handleHeaderNext = () => {
-    if (currentPageIndex < reorderedPages.length - 1) {
-      const newIndex = currentPageIndex + 1;
-      setCurrentPageIndex(newIndex);
-      
-      if (sessionStarted && reorderedPages[newIndex]) {
-        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'header_next_arrow');
-      }
-    }
-  };
-
   // Validate image file
   const validateImage = async (file: File): Promise<{ valid: boolean; error?: string }> => {
     // Check file type
@@ -365,13 +342,9 @@ export default function LibraryBookView() {
         <ReadingHeader 
           title={dailyContent.title}
           subtitle={`${currentPageIndex + 1} of ${reorderedPages.length}`}
-          bookId={dailyContent.book_id}
           onBack={handleBack}
           kidId={selectedKidId}
-          onPrevious={handleHeaderPrevious}
-          onNext={handleHeaderNext}
-          hasPrevious={currentPageIndex > 0}
-          hasNext={currentPageIndex < reorderedPages.length - 1}
+          showQRCode={false}
         />
         
         {/* Reward System */}

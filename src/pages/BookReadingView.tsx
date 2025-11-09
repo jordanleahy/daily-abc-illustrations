@@ -355,20 +355,33 @@ export default function BookReadingView() {
         <div className="flex-1 flex flex-col pb-4">
           <div className="flex-1 flex items-center justify-center p-4">
             <Card className="w-full max-w-sm mx-auto shadow-lg relative">
-              <div className="relative w-full aspect-square">
-                <BookImage
-                  src={currentImageUrl}
-                  alt={currentPage?.content?.mainConcept || currentPage?.title || "Page illustration"}
-                  priority={true}
-                  className="w-full h-full object-cover object-top rounded-lg"
-                />
-                
-                {/* CSS Text Overlay - Only for GoogleChat books with textOverlay enabled */}
-                {currentPage?.content?.textOverlay?.enabled && (
-                  <TextOverlay 
-                    text={currentPage.content.textOverlay.text}
-                    show={true}
-                  />
+              <div className="relative w-full aspect-square rounded-lg overflow-hidden">
+                {currentImageUrl ? (
+                  <>
+                    <BookImage
+                      src={currentImageUrl}
+                      alt={currentPage?.content?.mainConcept || currentPage?.title || "Page illustration"}
+                      priority={true}
+                      className="w-full h-full object-cover object-top rounded-lg"
+                    />
+                    {/* CSS Text Overlay - Only for GoogleChat books with textOverlay enabled */}
+                    {currentPage?.content?.textOverlay?.enabled && (
+                      <TextOverlay 
+                        text={currentPage.content.textOverlay.text}
+                        show={true}
+                      />
+                    )}
+                  </>
+                ) : (
+                  <div className="w-full h-full bg-gradient-to-b from-muted to-muted/60 flex items-center justify-center">
+                    <div className="text-center px-6">
+                      <p className="text-sm font-semibold">{currentPage?.title || currentPage?.letter || 'Page'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">No image yet. Upload one to start reading.</p>
+                      <Button className="mt-3" size="sm" variant="secondary" onClick={handleUploadClick}>
+                        Upload image
+                      </Button>
+                    </div>
+                  </div>
                 )}
               </div>
             </Card>

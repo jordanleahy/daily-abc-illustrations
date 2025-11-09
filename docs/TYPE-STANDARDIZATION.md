@@ -85,6 +85,223 @@ const bookWithPages: BookWithPages = { ...book, pages: [] };
 const bookWithSEO: BookWithSEO = { ...book, seo_title: '...' };
 ```
 
+## SEO Metadata Types ✅ Complete
+
+### Type System Overview
+
+SEO metadata types are centralized in `src/types/seoMetadata.ts` to bridge database schema and frontend display needs.
+
+**File Structure:**
+```
+src/types/
+├── seoMetadata.ts       # Complete SEO type system (PRIMARY)
+├── openGraph.ts         # Frontend meta tag types (legacy, used for meta tags)
+└── book-extended.ts     # BookWithSEO (uses SEO types)
+```
+
+### Database Types
+
+Use these for Supabase queries and mutations:
+
+```typescript
+import { SeoMetadataRow, SeoMetadataInsert, SeoMetadataUpdate } from '@/types/seoMetadata';
+
+// Query database
+const { data } = await supabase
+  .from('seo_metadata')
+  .select('*')
+  .eq('book_id', bookId)
+  .single();
+
+const seoRow: SeoMetadataRow = data;
+
+// Insert new SEO
+const insert: SeoMetadataInsert = {
+  book_id: bookId,
+  user_id: userId,
+  seo_title: 'Title',
+  seo_description: 'Description',
+  is_latest: true,
+  is_active: true,
+  optimization_status: 'complete'
+};
+
+await supabase.from('seo_metadata').insert(insert);
+```
+
+### Frontend Display Types
+
+Use these for UI components:
+
+```typescript
+import { BookSEO, DailyPublishedSEO } from '@/types/seoMetadata';
+
+// Library book cards
+interface LibraryCardProps {
+  book: Book;
+  seo: BookSEO | null;
+}
+
+// Homepage rotation
+interface DailyPublishedCardProps {
+  content: DailyPublished;
+  seo: DailyPublishedSEO | null;
+}
+```
+
+### Transformation Utilities
+
+Convert between database and display types:
+
+```typescript
+import { 
+  transformToSEOMetadata, 
+  transformToBookSEO,
+  transformToDailyPublishedSEO
+} from '@/types/seoMetadata';
+
+// For meta tags
+const dbRow: SeoMetadataRow = await fetchSeoData();
+const metaTags = transformToSEOMetadata(dbRow);
+<MetaHead metadata={metaTags} />
+
+// For library display
+const bookSeo = transformToBookSEO(dbRow);
+<LibraryCard book={book} seo={bookSeo} />
+
+// For homepage display
+const dpSeo = transformToDailyPublishedSEO(dbRowWithJoin);
+<DailyPublishedCard seo={dpSeo} />
+```
+
+### Helper Functions
+
+Use provided helpers for creating SEO records:
+
+```typescript
+import { createBookSeoInsert, createDailyPublishedSeoInsert } from '@/types/seoMetadata';
+
+// Create book-level SEO
+const bookSeoInsert = createBookSeoInsert({
+  bookId,
+  userId,
+  title: 'Optimized Title',
+  description: 'Optimized Description',
+  imageUrl: 'https://...',
+  sourceData: { ... },
+  metadata: { ... }
+});
+
+// Create daily-published-specific SEO variant
+const dpSeoInsert = createDailyPublishedSeoInsert({
+  bookId,
+  dailyPublishedId,
+  userId,
+  title: 'Title',
+  description: 'Description',
+  baseBookSeoId: originalSeoId
+});
+```
+
+### Validation Utilities
+
+```typescript
+import { 
+  validateSeoReference,
+  validateSeoTitle,
+  validateSeoDescription,
+  isBookLevelSeo,
+  isDailyPublishedSeo
+} from '@/types/seoMetadata';
+
+// Validate before insert
+if (!validateSeoReference(insert)) {
+  throw new Error('Must have book_id or daily_published_id');
+}
+
+if (!validateSeoTitle(title)) {
+  throw new Error('Title must be 1-60 characters');
+}
+
+// Check SEO type
+if (isBookLevelSeo(row)) {
+  // Book-level SEO (no daily_published_id)
+}
+
+if (isDailyPublishedSeo(row)) {
+  // Daily published variant
+}
+```
+
+### Database Schema Reference
+
+After Phase 0.1 migration, `seo_metadata` table structure:
+
+```sql
+-- Core columns
+id, created_at, updated_at
+
+-- References (CHECK constraint: at least one must be non-null)
+book_id UUID REFERENCES books(id)                    -- Book-level SEO
+daily_published_id UUID REFERENCES daily_published(id) -- Optional variant
+user_id UUID NOT NULL
+
+-- SEO Content
+seo_title TEXT NOT NULL
+seo_description TEXT NOT NULL
+og_image_url TEXT
+
+-- Versioning
+version_number INT NOT NULL DEFAULT 1
+is_latest BOOLEAN NOT NULL DEFAULT true
+is_active BOOLEAN NOT NULL DEFAULT true
+
+-- Status & Metadata
+optimization_status TEXT NOT NULL DEFAULT 'complete'
+optimized_at TIMESTAMPTZ
+source_data JSONB
+generation_metadata JSONB
+text_overlay_config JSONB
+```
+
+### Migration Patterns
+
+**Before (fragile JSONB hack):**
+```typescript
+// ❌ BAD: String matching in JSONB
+const { data } = await supabase
+  .from('seo_metadata')
+  .select('*')
+  .like('source_data', `%"bookId":"${bookId}"%`);
+```
+
+**After (clean column query):**
+```typescript
+// ✅ GOOD: Direct column query
+const { data } = await supabase
+  .from('seo_metadata')
+  .select('*')
+  .eq('book_id', bookId)
+  .eq('is_latest', true);
+```
+
+### Hook Consolidation
+
+**Before (4 overlapping hooks):**
+- `useBookSeoMetadata(bookId)` - Complex priority logic
+- `useSeoMetadata(dailyPublishedId)` - Direct query
+- `useSeoMetadataByBook(bookId)` - JSONB hack
+- `useAdminBookSeoMetadata(bookId)` - Similar logic
+
+**After refactoring (2 clean hooks):**
+```typescript
+// For book-level SEO
+const { data: bookSeo } = useBookSeoMetadata(bookId);
+
+// For daily-published-specific SEO
+const { data: dpSeo } = useDailyPublishedSeoMetadata(dailyPublishedId);
+```
+
 ## Role-Based Access Components ✅ Complete
 
 ### Base Component: RoleGuard

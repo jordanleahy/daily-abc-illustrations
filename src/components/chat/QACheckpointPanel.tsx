@@ -74,7 +74,7 @@ export function QACheckpointPanel({
   
   // Word Learning Helper state
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [isWordEnlarged, setIsWordEnlarged] = useState(true);
+  const [isWordEnlarged, setIsWordEnlarged] = useState(false);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
   
   // Fetch pages data
@@ -145,7 +145,7 @@ export function QACheckpointPanel({
     
     // Reset word learning state
     setCurrentWordIndex(0);
-    setIsWordEnlarged(true);
+    setIsWordEnlarged(false);
     setWordStatuses({});
   }, [currentQAPage, copiedPages]);
   

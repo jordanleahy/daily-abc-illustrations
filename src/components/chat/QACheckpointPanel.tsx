@@ -152,6 +152,16 @@ export function QACheckpointPanel({
   // Word Learning Helper handlers
   const handleToggleEnlarge = () => setIsWordEnlarged(!isWordEnlarged);
   
+  const handleNavigateWord = (direction: 'prev' | 'next') => {
+    setCurrentWordIndex(prev => {
+      if (direction === 'prev') {
+        return Math.max(0, prev - 1);
+      } else {
+        return Math.min((currentPageWords?.length || 0) - 1, prev + 1);
+      }
+    });
+  };
+  
   const handleMarkDifficult = () => {
     setWordStatuses(prev => ({ ...prev, [currentWordIndex]: 'difficult' }));
     // Move to next word if not last
@@ -407,6 +417,7 @@ export function QACheckpointPanel({
               onToggleEnlarge={handleToggleEnlarge}
               onMarkDifficult={handleMarkDifficult}
               onMarkUnderstood={handleMarkUnderstood}
+              onNavigateWord={handleNavigateWord}
               currentWordIndex={currentWordIndex}
               totalWords={currentPageWords.length}
             />

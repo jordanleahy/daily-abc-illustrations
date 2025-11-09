@@ -5,6 +5,7 @@ import { useLibraryImagePreloader } from '@/hooks/useLibraryImagePreloader';
 import { useAggressiveLibraryPrefetch } from '@/hooks/useAggressiveLibraryPrefetch';
 import { useDailyPublished } from '@/hooks/useDailyPublished';
 import { useLibraryPrefetch } from '@/hooks/useLibraryPrefetch';
+import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -43,6 +44,10 @@ export default memo(function Library() {
   
   // Hover prefetch for instant navigation
   const { prefetchLibraryBook, prefetchLibraryPages } = useLibraryPrefetch();
+  
+  // 🚀 Predictive prefetching: Anticipate which books user will view next
+  // Prefetches the top 3 most likely books based on favorites and viewing history
+  const { predictedBooks } = usePredictivePrefetch();
 
   // Only show loading on FIRST load (no cached data)
   // Don't show skeleton if we have cached data being refetched

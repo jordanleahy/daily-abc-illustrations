@@ -2,6 +2,9 @@ import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { useLibraryBooks } from '@/hooks/useLibraryBooks';
+import { useHomeImagePreloader } from '@/hooks/useHomeImagePreloader';
+import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { LoadingState } from '@/components/ui/loading-state';
 import { format, formatDistanceToNow } from 'date-fns';
 import { CoinCounter } from '@/components/ui/coin-counter';
@@ -11,8 +14,6 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useLibraryBooks } from '@/hooks/useLibraryBooks';
-import { useHomeImagePreloader } from '@/hooks/useHomeImagePreloader';
 import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { BookImage } from '@/components/ui/book-image';
 import { BookOpen } from 'lucide-react';
@@ -41,6 +42,10 @@ const Index = () => {
   
   // Preload book images for instant display on return visits
   useHomeImagePreloader(libraryItems);
+  
+  // 🚀 Predictive prefetching: Anticipate which books user will view next
+  // Prefetches the top 3 most likely books based on favorites and viewing history
+  const { predictedBooks } = usePredictivePrefetch();
   
   // Filter out skipped habits and sort by status (pending first, completed/failed last)
   const activeCompletions = completions

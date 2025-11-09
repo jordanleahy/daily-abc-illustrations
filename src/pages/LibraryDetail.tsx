@@ -4,6 +4,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { StandardPageLayout } from '@/components/layout';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
+import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -96,6 +97,10 @@ export default function LibraryDetail() {
   
   // Progressive image preloading - priority images load first
   const { priorityCount, totalCount } = useLibraryDetailImagePreloader(book?.book_id);
+  
+  // 🚀 Predictive prefetching: Anticipate which books user will view next
+  // Prefetches the top 3 most likely books based on favorites and viewing history
+  const { predictedBooks } = usePredictivePrefetch(id);
 
   useEffect(() => {
     if (!user) {

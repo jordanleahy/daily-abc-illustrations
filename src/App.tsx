@@ -41,6 +41,7 @@ import MyHabits from "./pages/MyHabits";
 import Profile from "./pages/Profile";
 import { useEffect } from "react";
 import { scheduleCacheCleanup } from "./utils/cacheCleanup";
+import { initializeCacheWarming } from "./utils/cacheWarming";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -60,9 +61,10 @@ const queryClient = new QueryClient({
 export { queryClient };
 
 const App = () => {
-  // PHASE 4: Schedule automatic cache cleanup on app mount
+  // PHASE 3: Initialize cache warming and cleanup on app mount
   useEffect(() => {
     scheduleCacheCleanup();
+    initializeCacheWarming();
   }, []);
 
   return (

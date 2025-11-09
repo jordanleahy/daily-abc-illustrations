@@ -1,8 +1,9 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
-import { useSeoMetadata } from '@/hooks/useSeoMetadata';
+import { useBatchSeoMetadata } from '@/hooks/useBatchSeoMetadata';
 import { useDailyPublishedPrefetch } from '@/hooks/useDailyPublishedPrefetch';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { MetaHead } from '@/components/common/MetaHead';
 import { FreemiumHeader } from '@/components/daily-published/FreemiumHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,6 +70,10 @@ export default function Schedule() {
   const { hasLibraryAccess } = useFeatureAccess();
   const { prefetchDailyPublished } = useDailyPublishedPrefetch();
   
+  // PHASE 3: Batch fetch all SEO metadata at once (reduces N queries to 1)
+  const dailyPublishedIds = scheduleItems?.map(item => item.id) || [];
+  const { data: seoMetadataMap = {} } = useBatchSeoMetadata(dailyPublishedIds);
+  
   // Preload schedule images for instant display
   useScheduleImagePreloader(scheduleItems);
   if (isLoading) {
@@ -129,7 +134,15 @@ export default function Schedule() {
                 📺 Currently Live
               </h2>
               <div className="space-y-4">
-                {activeItems.map(item => <PublicScheduleCard key={item.id} item={item} position="active" onHover={() => prefetchDailyPublished(item.id, item.book_id)} />)}
+                {activeItems.map(item => (
+                  <PublicScheduleCard 
+                    key={item.id} 
+                    item={item} 
+                    position="active" 
+                    seoMetadata={seoMetadataMap[item.id]}
+                    onHover={() => prefetchDailyPublished(item.id, item.book_id)} 
+                  />
+                ))}
               </div>
             </div>}
 
@@ -139,7 +152,15 @@ export default function Schedule() {
                 📅 Upcoming Books ({queuedItems.length})
               </h2>
               <div className="space-y-4">
-                {queuedItems.map((item, index) => <PublicScheduleCard key={item.id} item={item} position={index + 1} onHover={() => prefetchDailyPublished(item.id, item.book_id)} />)}
+                {queuedItems.map((item, index) => (
+                  <PublicScheduleCard 
+                    key={item.id} 
+                    item={item} 
+                    position={index + 1}
+                    seoMetadata={seoMetadataMap[item.id]}
+                    onHover={() => prefetchDailyPublished(item.id, item.book_id)} 
+                  />
+                ))}
               </div>
             </div>}
 
@@ -168,6 +189,7 @@ export default function Schedule() {
                         key={item.id} 
                         item={item}
                         position="expired"
+                        seoMetadata={seoMetadataMap[item.id]}
                         onHover={() => prefetchDailyPublished(item.id, item.book_id)}
                       />
                     ))}
@@ -230,24 +252,45 @@ type ScheduleCardItem = DailyPublishedWithBook;
 interface PublicScheduleCardProps {
   item: ScheduleCardItem;
   position: number | "active" | "expired";
+  seoMetadata?: any; // PHASE 3: Passed from parent batch fetch
   onHover?: () => void;
 }
 function PublicScheduleCard({
   item,
   position,
+  seoMetadata,
   onHover
 }: PublicScheduleCardProps) {
   const navigate = useNavigate();
-  const {
-    data: seoMetadata
-  } = useSeoMetadata(item.id);
+  
+  // PHASE 3: Progressive loading with intersection observer for long queues
+  const { ref, inView } = useIntersectionObserver({
+    rootMargin: '400px', // Load before scrolling into view
+    triggerOnce: true,
+  });
+  
+  // Priority loading for active item and first 5 queued
+  const shouldLoadImmediately = position === 'active' || (typeof position === 'number' && position <= 5);
+  const shouldRender = shouldLoadImmediately || inView;
   const handleCardClick = () => {
     navigate(`/daily-published/${item.id}`);
   };
   const isActive = item.status === 'active';
   const isQueued = item.status === 'queued' && typeof position === 'number';
   const isExpired = position === "expired";
+  // Don't render if not in view yet (for long queues)
+  if (!shouldRender) {
+    return (
+      <Card ref={ref} className="h-32 bg-muted/20">
+        <CardContent className="flex items-center justify-center h-full">
+          <div className="text-muted-foreground text-sm">Loading...</div>
+        </CardContent>
+      </Card>
+    );
+  }
+
    return <Card 
+     ref={ref}
      className={`transition-shadow group ${isActive ? "cursor-pointer hover:shadow-lg" : ""}`} 
      onClick={isActive ? handleCardClick : undefined}
      onMouseEnter={onHover}

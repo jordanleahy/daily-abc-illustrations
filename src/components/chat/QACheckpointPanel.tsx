@@ -118,11 +118,6 @@ export function QACheckpointPanel({
       
       // Mark this page as copied
       setCopiedPages(prev => new Set(prev).add(currentQAPage));
-      
-      toast.success('Prompt copied to clipboard!', {
-        description: 'Creating your book...',
-        duration: 3000
-      });
 
       // Create book immediately if not already created
       if (!isBookCreated && !createBookMutation.isPending) {

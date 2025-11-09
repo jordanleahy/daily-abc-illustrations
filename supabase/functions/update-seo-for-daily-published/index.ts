@@ -73,11 +73,12 @@ serve(async (req) => {
     }
 
     // Get book-level SEO metadata as base
+    // ✅ Phase 0.3.2: Use book_id column instead of fragile JSONB hack
     const { data: bookSeo } = await supabase
       .from('seo_metadata')
       .select('*')
+      .eq('book_id', bookId)
       .is('daily_published_id', null)
-      .like('source_data', `%"bookId":"${bookId}"%`)
       .eq('is_latest', true)
       .eq('optimization_status', 'complete')
       .maybeSingle();
@@ -106,6 +107,7 @@ serve(async (req) => {
     const { data: newSeoMetadata, error: seoError } = await supabase
       .from('seo_metadata')
       .insert({
+        book_id: bookId, // ✅ Phase 0.3.2: Store book_id in dedicated column
         daily_published_id: dailyPublishedId,
         user_id: bookSeo.user_id,
         version_number: 1, // New version for daily published

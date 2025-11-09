@@ -706,7 +706,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         dailyPublishedId={seoMetadata.daily_published_id}
         seoMetadataId={seoMetadata.id}
         userId={user.id}
-        existingConfig={seoMetadata.text_overlay_config}
+        existingConfig={seoMetadata.text_overlay_config as any}
       />
     )}
     </>

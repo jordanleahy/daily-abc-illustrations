@@ -3,12 +3,15 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSeoMetadataSubscription } from './useSeoMetadataSubscription';
 
 /**
- * Hook to fetch SEO metadata for a book (not tied to daily published content)
- * This will look for SEO metadata that was created specifically for this book
+ * Hook to fetch SEO metadata for a book
+ * ✅ Phase 0.4: Refactored to use direct book_id column query
+ * 
+ * Fetches book-level SEO (not daily-published-specific variants)
  */
 export const useBookSeoMetadata = (bookId?: string) => {
   // Enable real-time subscriptions for SEO metadata updates
   useSeoMetadataSubscription();
+  
   return useQuery({
     queryKey: ['book-seo-metadata', bookId],
     queryFn: async () => {
@@ -16,69 +19,36 @@ export const useBookSeoMetadata = (bookId?: string) => {
 
       console.log('🔍 [useBookSeoMetadata] Fetching SEO metadata for book_id:', bookId);
 
-      // Try to get ALL daily_published entries for this book to find the best one
-      const { data: dailyPublishedEntries, error: dailyError } = await supabase
-        .from('daily_published')
-        .select('id, status, created_at')
+      // ✅ Phase 0.4: Direct query using book_id column
+      const { data, error } = await supabase
+        .from('seo_metadata')
+        .select('*')
         .eq('book_id', bookId)
-        .order('created_at', { ascending: false });
+        .eq('is_latest', true)
+        .eq('is_active', true)
+        .eq('optimization_status', 'complete')
+        .maybeSingle();
 
-      if (dailyError) {
-        console.error('❌ [useBookSeoMetadata] Error fetching daily published entries:', dailyError);
+      if (error) {
+        console.error('❌ [useBookSeoMetadata] Error fetching SEO metadata:', error);
         return null;
       }
 
-      if (!dailyPublishedEntries || dailyPublishedEntries.length === 0) {
-        console.log('⚠️ [useBookSeoMetadata] No daily published entries found for book');
+      if (!data) {
+        console.log('⚠️ [useBookSeoMetadata] No SEO metadata found for book');
         return null;
       }
 
-      console.log('📝 [useBookSeoMetadata] Found daily published entries:', dailyPublishedEntries);
+      console.log('✅ [useBookSeoMetadata] Found SEO metadata:', {
+        id: data.id,
+        has_thumbnail: !!data.og_image_url,
+        thumbnail_url: data.og_image_url
+      });
 
-      // Look for SEO metadata for each daily published entry, prioritizing active/queued over expired/draft
-      const priorityOrder = ['active', 'queued', 'expired', 'draft'];
-      let bestDailyPublished = null;
-      let bestSeoData = null;
-
-      for (const priority of priorityOrder) {
-        const entries = dailyPublishedEntries.filter(entry => entry.status === priority);
-        
-        for (const entry of entries) {
-          const { data: seoData, error: seoError } = await supabase
-            .from('seo_metadata')
-            .select('*')
-            .eq('daily_published_id', entry.id)
-            .eq('is_latest', true)
-            .eq('is_active', true)
-            .eq('optimization_status', 'complete')
-            .maybeSingle();
-
-          if (!seoError && seoData) {
-            console.log(`✅ [useBookSeoMetadata] Found SEO metadata for ${priority} entry:`, {
-              daily_published_id: entry.id,
-              status: entry.status,
-              has_thumbnail: !!seoData.og_image_url,
-              thumbnail_url: seoData.og_image_url
-            });
-            
-            bestDailyPublished = entry;
-            bestSeoData = seoData;
-            break;
-          }
-        }
-        
-        if (bestSeoData) break;
-      }
-
-      if (!bestSeoData) {
-        console.log('⚠️ [useBookSeoMetadata] No SEO metadata found for any daily published entry');
-        return null;
-      }
-
-      return bestSeoData;
+      return data;
     },
     enabled: !!bookId,
-    staleTime: 1 * 60 * 1000, // 1 minute (more aggressive refresh)
-    gcTime: 3 * 60 * 1000, // 3 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    gcTime: 10 * 60 * 1000, // 10 minutes
   });
 };

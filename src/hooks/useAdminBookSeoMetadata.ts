@@ -3,8 +3,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { useSeoMetadataSubscription } from './useSeoMetadataSubscription';
 
 /**
- * Simplified hook for admin view - shows ANY complete SEO metadata
- * No restrictions on daily_published status or activation state
+ * Admin hook for SEO metadata - shows ANY complete SEO for book
+ * ✅ Phase 0.4: Refactored to use direct book_id column query
+ * 
+ * No restrictions on daily_published status, gets latest complete SEO with image
  */
 export const useAdminBookSeoMetadata = (bookId?: string) => {
   useSeoMetadataSubscription();
@@ -14,31 +16,32 @@ export const useAdminBookSeoMetadata = (bookId?: string) => {
     queryFn: async () => {
       if (!bookId) return null;
 
-      // Get recent daily_published entries for this book (most recent first)
-      const { data: dailyPublishedList } = await supabase
-        .from('daily_published')
-        .select('id, status')
-        .eq('book_id', bookId)
-        .order('created_at', { ascending: false })
-        .limit(10);
+      console.log('🔍 [useAdminBookSeoMetadata] Fetching SEO for book_id:', bookId);
 
-      if (!dailyPublishedList || dailyPublishedList.length === 0) return null;
-
-      const dpIds = dailyPublishedList.map((d) => d.id);
-
-      // Get the latest complete SEO metadata with an actual image across recent daily_published entries
-      const { data: seoData } = await supabase
+      // ✅ Phase 0.4: Direct query using book_id column
+      // Get most recent complete SEO with image (admin view needs thumbnail)
+      const { data, error } = await supabase
         .from('seo_metadata')
         .select('*')
-        .in('daily_published_id', dpIds)
+        .eq('book_id', bookId)
         .eq('optimization_status', 'complete')
-        .eq('is_active', true)
         .not('og_image_url', 'is', null)
         .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      return seoData;
+      if (error) {
+        console.error('❌ [useAdminBookSeoMetadata] Error:', error);
+        return null;
+      }
+
+      if (!data) {
+        console.log('⚠️ [useAdminBookSeoMetadata] No SEO found');
+        return null;
+      }
+
+      console.log('✅ [useAdminBookSeoMetadata] Found SEO:', data.id);
+      return data;
     },
     enabled: !!bookId,
     staleTime: 5 * 60 * 1000,

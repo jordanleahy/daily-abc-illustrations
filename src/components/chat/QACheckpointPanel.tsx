@@ -70,6 +70,7 @@ export function QACheckpointPanel({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
+  const [isTextOverlayVisible, setIsTextOverlayVisible] = useState(true);
   const { generateMetadata, isGenerating } = useWordMetadata();
   
   // Word Learning Helper state
@@ -310,7 +311,7 @@ export function QACheckpointPanel({
                 />
                 
                 {/* Text Overlay with Editing and Word Learning */}
-                {currentPageText && (
+                {currentPageText && isTextOverlayVisible && (
                   <>
                     {isEditingText && onUpdatePageText ? (
                       <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">
@@ -342,21 +343,36 @@ export function QACheckpointPanel({
                       </div>
                     ) : (
                       <div 
-                        onClick={() => setIsEditingText(true)}
-                        className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3 cursor-pointer hover:bg-black/70 transition-colors group"
+                        className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3 group"
                         style={{ minHeight: '60px' }}
-                        title="Click to edit text"
                       >
-                        <div className="flex items-center justify-center gap-2 h-full">
-                          <p className="text-white text-center flex flex-wrap items-center justify-center gap-1"
-                             style={{ lineHeight: '1.2' }}>
-                            {renderTextWithEnlargedWord(
-                              currentPageText, 
-                              currentPageWords?.[currentWordIndex]?.word,
-                              isWordEnlarged
-                            )}
-                          </p>
-                          <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />
+                        <div className="flex items-center justify-center gap-2 h-full relative">
+                          <div 
+                            onClick={() => setIsEditingText(true)}
+                            className="flex items-center justify-center gap-2 flex-1 cursor-pointer hover:opacity-80 transition-opacity"
+                            title="Click to edit text"
+                          >
+                            <p className="text-white text-center flex flex-wrap items-center justify-center gap-1"
+                               style={{ lineHeight: '1.2' }}>
+                              {renderTextWithEnlargedWord(
+                                currentPageText, 
+                                currentPageWords?.[currentWordIndex]?.word,
+                                isWordEnlarged
+                              )}
+                            </p>
+                            <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setIsTextOverlayVisible(false);
+                              toast.success('Text overlay hidden');
+                            }}
+                            className="h-6 w-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
+                            title="Hide text overlay"
+                          >
+                            <X className="h-3.5 w-3.5 text-white/70" />
+                          </button>
                         </div>
                       </div>
                     )}

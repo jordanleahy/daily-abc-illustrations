@@ -25,7 +25,6 @@ interface WordsCardProps {
   title?: string;
   isLoading?: boolean;
   currentWordIndex?: number;
-  isEnlarged?: boolean;
   wordStatuses?: Record<number, 'difficult' | 'understood'>;
 }
 
@@ -34,7 +33,6 @@ export function WordsCard({
   title, 
   isLoading,
   currentWordIndex,
-  isEnlarged = false,
   wordStatuses = {}
 }: WordsCardProps) {
   if (!words || words.length === 0) {
@@ -60,7 +58,7 @@ export function WordsCard({
               className={cn(
                 "relative flex flex-col items-center p-3 rounded-lg bg-muted/30",
                 "hover:bg-muted/50 transition-all min-w-[80px]",
-                currentWordIndex === index && isEnlarged && "scale-125 shadow-lg z-10"
+                currentWordIndex === index && "ring-2 ring-primary shadow-md"
               )}
             >
               {/* Status dot indicator */}

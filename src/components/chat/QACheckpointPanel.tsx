@@ -252,7 +252,7 @@ export function QACheckpointPanel({
                   className="w-full h-full object-contain"
                 />
                 
-                {/* Text Overlay with Editing */}
+                {/* Text Overlay with Editing and Word Learning */}
                 {currentPageText && (
                   <>
                     {isEditingText && onUpdatePageText ? (
@@ -290,8 +290,15 @@ export function QACheckpointPanel({
                         title="Click to edit text"
                       >
                         <div className="flex items-center justify-center gap-2">
-                          <p className="text-white text-center font-semibold text-lg leading-tight line-clamp-2">
-                            {currentPageText}
+                          <p className="text-white text-center font-semibold leading-tight line-clamp-2" 
+                             style={{
+                               fontSize: isWordEnlarged && currentPageWords?.[currentWordIndex] ? '4rem' : '1.125rem',
+                               fontWeight: isWordEnlarged && currentPageWords?.[currentWordIndex] ? '800' : '600',
+                               transition: 'all 0.3s ease'
+                             }}>
+                            {isWordEnlarged && currentPageWords?.[currentWordIndex] 
+                              ? currentPageWords[currentWordIndex].word 
+                              : currentPageText}
                           </p>
                           <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />
                         </div>
@@ -356,7 +363,6 @@ export function QACheckpointPanel({
               title={currentPageText}
               isLoading={isGenerating}
               currentWordIndex={currentWordIndex}
-              isEnlarged={isWordEnlarged}
               wordStatuses={wordStatuses}
             />
             

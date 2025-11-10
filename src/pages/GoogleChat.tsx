@@ -199,7 +199,6 @@ export default function GoogleChat() {
       if (currentPageCount !== newPageCount || currentPageCount === 0) {
         console.log('[QA Debug] New outline detected, clearing cached prompts');
         setQAPagePrompts({});
-        toast.info('Prompts updated! Open the QA panel to see the new descriptions.');
       }
     }
   }, [parsedPageDetails, educationalFocus, createdBookId, bookData?.status]);

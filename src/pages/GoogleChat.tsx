@@ -1069,9 +1069,6 @@ export default function GoogleChat() {
       showHeader={true}
       fullHeight={true}
       onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
-      showReviewButton={isBookPublished || shouldShowQACheckpoint || showQACheckpoint}
-      onReviewClick={isBookPublished ? handleViewCreatedBook : handleOpenQAPanel}
-      reviewButtonVariant={isBookPublished ? 'view-book' : 'review'}
     >
       <div className="fixed inset-0 top-[3.5rem] flex">
 
@@ -1154,32 +1151,6 @@ export default function GoogleChat() {
           />
         </div>
 
-        {/* Floating Action Button - Always visible when content is ready */}
-        {(shouldShowQACheckpoint || isBookPublished) && (
-          <Button
-            onClick={isBookPublished ? handleViewCreatedBook : handleOpenQAPanel}
-            size="lg"
-            className={cn(
-              "fixed z-[100] shadow-lg hover:shadow-xl transition-all duration-200",
-              "flex items-center gap-2",
-              isMobile 
-                ? "bottom-24 right-4" 
-                : "bottom-8 right-8"
-            )}
-          >
-            {isBookPublished ? (
-              <>
-                <Book className="h-5 w-5" />
-                <span className="hidden sm:inline">View Book</span>
-              </>
-            ) : (
-              <>
-                <BookOpen className="h-5 w-5" />
-                <span className="hidden sm:inline">Review Outline</span>
-              </>
-            )}
-          </Button>
-        )}
 
         {/* QA Checkpoint Panel - Responsive: Bottom Sheet on Mobile, Sliding Div on Desktop */}
         {isMobile ? (

@@ -27,6 +27,11 @@ export function useReadingPreferences() {
 
       return data as ReadingPreferences | null;
     },
+    // Align with 7-day educational learning cycle
+    staleTime: 7 * 24 * 60 * 60 * 1000,      // 7 days - active learning period
+    gcTime: 30 * 24 * 60 * 60 * 1000,        // 30 days - extended retention for review
+    refetchOnMount: false,                    // Use cached data during lesson
+    refetchOnWindowFocus: false,              // Real-time subscription handles updates
   });
 
   // Subscribe to real-time changes

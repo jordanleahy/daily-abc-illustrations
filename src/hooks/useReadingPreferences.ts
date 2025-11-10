@@ -67,15 +67,22 @@ export function useReadingPreferences() {
   // Toggle overlay visibility
   const toggleOverlay = useMutation({
     mutationFn: async (pageId: string) => {
+      console.log('Toggle overlay called for pageId:', pageId);
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user) {
+        console.error('User not authenticated');
+        throw new Error('Not authenticated');
+      }
 
+      console.log('Current preferences:', preferences);
       const currentHidden = preferences?.hidden_overlay_pages || [];
       const isCurrentlyHidden = currentHidden.includes(pageId);
       
       const newHidden = isCurrentlyHidden
         ? currentHidden.filter(id => id !== pageId)
         : [...currentHidden, pageId];
+
+      console.log('Saving new hidden pages:', newHidden);
 
       const { data, error } = await supabase
         .from('reading_preferences')
@@ -88,7 +95,11 @@ export function useReadingPreferences() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error saving preference:', error);
+        throw error;
+      }
+      console.log('Preference saved successfully:', data);
       return data;
     },
     onMutate: async (pageId: string) => {

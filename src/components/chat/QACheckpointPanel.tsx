@@ -72,9 +72,30 @@ export function QACheckpointPanel({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
-  const [hiddenOverlayPages, setHiddenOverlayPages] = useState<Set<number>>(new Set());
   const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
   const { generateMetadata, isGenerating } = useWordMetadata();
+  
+  // Load hidden overlays from localStorage on mount (for QA panel persistence)
+  const [hiddenOverlayPages, setHiddenOverlayPages] = useState<Set<number>>(() => {
+    try {
+      const stored = localStorage.getItem(`qa-hidden-overlays-${bookId || 'temp'}`);
+      return stored ? new Set(JSON.parse(stored)) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
+
+  // Save hidden overlays to localStorage whenever they change
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        `qa-hidden-overlays-${bookId || 'temp'}`,
+        JSON.stringify(Array.from(hiddenOverlayPages))
+      );
+    } catch (error) {
+      console.error('Failed to save hidden overlays:', error);
+    }
+  }, [hiddenOverlayPages, bookId]);
   
   // Word Learning Helper state
   const [currentWordIndex, setCurrentWordIndex] = useState(0);

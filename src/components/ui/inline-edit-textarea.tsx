@@ -42,11 +42,13 @@ export const InlineEditTextarea = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
+      e.preventDefault();
       setEditValue(value);
       setIsEditing(false);
     }
     // Allow Ctrl+Enter or Cmd+Enter to save
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+      e.preventDefault(); // Prevent form submission or new line
       onSave(editValue);
       setIsEditing(false);
     }

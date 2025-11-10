@@ -1198,6 +1198,30 @@ export type Database = {
         }
         Relationships: []
       }
+      reading_preferences: {
+        Row: {
+          created_at: string | null
+          hidden_overlay_pages: string[] | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          hidden_overlay_pages?: string[] | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          hidden_overlay_pages?: string[] | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       seo_metadata: {
         Row: {
           book_id: string | null

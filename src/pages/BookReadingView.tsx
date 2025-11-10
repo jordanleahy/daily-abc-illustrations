@@ -122,7 +122,12 @@ export default function BookReadingView() {
 
   const handleBack = () => {
     endSession('back_button');
-    navigate('/library');
+    // If user came from Google Chat, navigate back to chat
+    if (location.state?.from === 'google-chat') {
+      navigate('/google-chat');
+    } else {
+      navigate('/library');
+    }
   };
 
   if (isLoading) {
@@ -388,6 +393,7 @@ export default function BookReadingView() {
           showQRCode={false}
           onBack={handleBack}
           kidId={selectedKidId}
+          backLabel={location.state?.from === 'google-chat' ? 'Chat' : 'Library'}
         />
         
         {/* Reward System */}

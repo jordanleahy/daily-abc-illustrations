@@ -72,6 +72,8 @@ interface ReadingHeaderProps {
   hasPrevious?: boolean;
   /** Whether next navigation is available */
   hasNext?: boolean;
+  /** Label for the back button - defaults to "Library" */
+  backLabel?: string;
 }
 
 /**
@@ -89,7 +91,8 @@ export function ReadingHeader({
   onPrevious,
   onNext,
   hasPrevious = false,
-  hasNext = false
+  hasNext = false,
+  backLabel = "Library"
 }: ReadingHeaderProps) {
   const { qrCodeData } = useBookQRCode(showQRCode ? (bookId || undefined) : undefined);
   const navigate = useNavigate();
@@ -122,7 +125,7 @@ export function ReadingHeader({
       <div className="flex items-center gap-3">
         {onBack && (
           <Button variant="ghost" size="sm" onClick={onBack} className="p-2 h-8 rounded border border-border hover:bg-muted">
-            <span className="text-xs">← Library</span>
+            <span className="text-xs">← {backLabel}</span>
           </Button>
         )}
       </div>

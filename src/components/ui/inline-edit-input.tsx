@@ -22,6 +22,7 @@ export const InlineEditInput = ({
   const [editValue, setEditValue] = useState(value);
   const [isEditing, setIsEditing] = useState(externalIsEditing || false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const savedViaKeyboardRef = useRef(false);
 
   useEffect(() => {
     setEditValue(value);
@@ -42,19 +43,33 @@ export const InlineEditInput = ({
 
   const handleKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
-      e.preventDefault(); // Prevent form submission
-      // Wait for save to complete before closing
+      e.preventDefault();
+      e.stopPropagation();
+      savedViaKeyboardRef.current = true;
+      
+      // Blur the input to close it immediately
+      inputRef.current?.blur();
+      
+      // Save and close
       await Promise.resolve(onSave(editValue));
       setIsEditing(false);
     }
     if (e.key === 'Escape') {
       e.preventDefault();
+      e.stopPropagation();
+      savedViaKeyboardRef.current = true;
       setEditValue(value);
       setIsEditing(false);
     }
   };
 
   const handleBlur = async () => {
+    // Don't save again if we already saved via keyboard
+    if (savedViaKeyboardRef.current) {
+      savedViaKeyboardRef.current = false;
+      return;
+    }
+    
     // Wait for save to complete before closing
     await Promise.resolve(onSave(editValue));
     setIsEditing(false);

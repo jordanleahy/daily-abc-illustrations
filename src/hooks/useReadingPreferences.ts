@@ -64,6 +64,31 @@ export function useReadingPreferences() {
     };
   }, [queryClient]);
 
+  // Set multiple hidden pages at once (for migration)
+  const setHiddenPages = useMutation({
+    mutationFn: async (pageIds: string[]) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase
+        .from('reading_preferences')
+        .upsert({
+          user_id: user.id,
+          hidden_overlay_pages: pageIds,
+        }, {
+          onConflict: 'user_id',
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reading-preferences'] });
+    },
+  });
+
   // Toggle overlay visibility
   const toggleOverlay = useMutation({
     mutationFn: async (pageId: string) => {
@@ -155,5 +180,6 @@ export function useReadingPreferences() {
     isOverlayHidden,
     toggleOverlay: toggleOverlay.mutate,
     isToggling: toggleOverlay.isPending,
+    setHiddenPages: setHiddenPages.mutate,
   };
 }

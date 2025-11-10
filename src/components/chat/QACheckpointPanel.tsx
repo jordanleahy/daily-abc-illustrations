@@ -14,6 +14,7 @@ import { WordsCard } from './WordsCard';
 import { WordLearningControls } from './WordLearningControls';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { useBookPages } from '@/hooks/useBookPages';
+import { useReadingPreferences } from '@/hooks/useReadingPreferences';
 import { BookImage } from '@/components/ui/book-image';
 
 interface QACheckpointPanelProps {
@@ -74,6 +75,11 @@ export function QACheckpointPanel({
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
   const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
   const { generateMetadata, isGenerating } = useWordMetadata();
+  const { setHiddenPages } = useReadingPreferences();
+  const [hasMigrated, setHasMigrated] = useState(false);
+  
+  // Fetch pages data (needed before migration effect)
+  const { pages } = useBookPages(bookId || undefined);
   
   // Load hidden overlays from localStorage on mount (for QA panel persistence)
   const [hiddenOverlayPages, setHiddenOverlayPages] = useState<Set<number>>(() => {
@@ -96,14 +102,45 @@ export function QACheckpointPanel({
       console.error('Failed to save hidden overlays:', error);
     }
   }, [hiddenOverlayPages, bookId]);
+
+  // Migrate localStorage preferences to database once book is created
+  useEffect(() => {
+    if (!isBookCreated || !pages || pages.length === 0 || hasMigrated) return;
+
+    const localStorageKey = `qa-hidden-overlays-${bookId || 'temp'}`;
+    const stored = localStorage.getItem(localStorageKey);
+    if (!stored) {
+      setHasMigrated(true);
+      return;
+    }
+
+    try {
+      const hiddenPageNumbers = JSON.parse(stored) as number[];
+      if (hiddenPageNumbers.length === 0) {
+        setHasMigrated(true);
+        return;
+      }
+
+      const hiddenPageIds = hiddenPageNumbers
+        .map(pageNum => pages.find(p => p.page_number === pageNum)?.id)
+        .filter(Boolean) as string[];
+
+      if (hiddenPageIds.length > 0) {
+        setHiddenPages(hiddenPageIds);
+        localStorage.removeItem(localStorageKey);
+      }
+
+      setHasMigrated(true);
+    } catch (error) {
+      console.error('Failed to migrate overlay preferences:', error);
+      setHasMigrated(true);
+    }
+  }, [isBookCreated, pages, bookId, setHiddenPages, hasMigrated]);
   
   // Word Learning Helper state
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [isWordEnlarged, setIsWordEnlarged] = useState(false);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
-  
-  // Fetch pages data
-  const { pages } = useBookPages(bookId || undefined);
 
   const currentCoverPrompt = qaPagePrompts[0] || null;
   

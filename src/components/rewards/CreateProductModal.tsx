@@ -14,6 +14,7 @@ import { useUpdateRewardsProduct } from '@/hooks/useUpdateRewardsProduct';
 import { formatCoinsAsCurrency } from '@/utils/currency';
 import type { RewardsProduct } from '@/types/rewardsProduct';
 import { ModalProps } from '@/types/shared';
+import { BookImage } from '@/components/ui/book-image';
 
 interface CreateProductModalProps extends ModalProps {
   editProduct?: RewardsProduct;
@@ -182,7 +183,12 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
                 <ImageUpload onImageSelect={handleImageSelect} />
               </div>
               {existingImageUrl && !uploadedImage && (
-                <img src={existingImageUrl} alt="Current" className="w-32 h-32 object-cover rounded-lg" />
+                <BookImage 
+                  src={existingImageUrl} 
+                  alt="Current product image" 
+                  className="w-32 h-32 object-cover rounded-lg"
+                  priority={false}
+                />
               )}
             </div>
 

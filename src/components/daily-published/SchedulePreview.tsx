@@ -11,6 +11,7 @@ import { Clock, BookOpen, Image, Calendar, ExternalLink } from 'lucide-react';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { toEasternTime } from '@/utils/timezone';
 import { format } from 'date-fns-tz';
+import { BookImage } from '@/components/ui/book-image';
 
 // Helper function to get day name for queue position
 const getPublishDayName = (position: number): string => {
@@ -30,7 +31,12 @@ function ScheduleThumbnail({
   return (
     <div className="w-16 h-12 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
       {imageUrl ? (
-        <img src={imageUrl} alt={title} className="w-full h-full object-cover" />
+        <BookImage 
+          src={imageUrl} 
+          alt={title} 
+          className="w-full h-full object-cover"
+          priority={false}
+        />
       ) : (
         <Image className="h-4 w-4 text-muted-foreground" />
       )}

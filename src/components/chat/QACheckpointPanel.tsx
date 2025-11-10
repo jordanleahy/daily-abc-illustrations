@@ -13,6 +13,7 @@ import { WordsCard } from './WordsCard';
 import { WordLearningControls } from './WordLearningControls';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { useBookPages } from '@/hooks/useBookPages';
+import { BookImage } from '@/components/ui/book-image';
 
 interface QACheckpointPanelProps {
   showQACheckpoint: boolean;
@@ -304,10 +305,12 @@ export function QACheckpointPanel({
           <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
             {displayImages[currentQAPage] ? (
               <div className="relative w-full h-full group">
-                <img 
+                <BookImage
                   src={displayImages[currentQAPage]} 
                   alt={`Page ${currentQAPage} preview`}
                   className="w-full h-full object-contain"
+                  priority={true}
+                  enableMobileSave={true}
                 />
                 
                 {/* Text Overlay with Editing and Word Learning */}
@@ -525,10 +528,11 @@ export function QACheckpointPanel({
             <div className="h-48 rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
               {thumbnailUrl ? (
                 <div className="relative w-full h-full group">
-                  <img 
+                  <BookImage 
                     src={thumbnailUrl} 
                     alt="Book thumbnail preview"
-                    className="w-full h-full object-cover"
+                    className="w-full h-full object-cover rounded-lg"
+                    priority={false}
                   />
                   <Button
                     variant="secondary"

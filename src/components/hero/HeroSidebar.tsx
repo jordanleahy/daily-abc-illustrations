@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { BookImage } from '@/components/ui/book-image';
 
 interface HeroSidebarProps {
   thumbnails: string[];
@@ -26,10 +27,11 @@ export const HeroSidebar = ({ thumbnails, mainImage, onImageSelect }: HeroSideba
               : 'border-border'
           }`}
         >
-          <img
+          <BookImage
             src={thumbnail}
             alt={`Thumbnail ${index + 1}`}
             className="w-full h-full object-cover"
+            priority={index === 0}
           />
         </button>
       ))}

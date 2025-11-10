@@ -266,9 +266,8 @@ export function QACheckpointPanel({
                 : (() => {
                     const currentPage = pages?.find(p => p.page_number === currentQAPage);
                     if (currentPage?.content) {
-                      const letter = String.fromCharCode(64 + currentQAPage - 2); // A=3, B=4, etc.
-                      const mainConcept = currentPage.content.mainConcept || '';
-                      return `${letter} is for ${mainConcept}`;
+                      const textOverlay = (currentPage.content as any)?.textOverlay;
+                      return textOverlay?.text || `Page ${currentQAPage}`;
                     }
                     return `Page ${currentQAPage}`;
                   })()

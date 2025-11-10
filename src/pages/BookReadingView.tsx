@@ -122,9 +122,14 @@ export default function BookReadingView() {
 
   const handleBack = () => {
     endSession('back_button');
-    // If user came from Google Chat, navigate back to chat
+    // If user came from Google Chat, navigate back to that specific session
     if (location.state?.from === 'google-chat') {
-      navigate('/google-chat');
+      const sessionId = location.state?.sessionId;
+      if (sessionId) {
+        navigate(`/google-chat?session=${sessionId}`);
+      } else {
+        navigate('/google-chat');
+      }
     } else {
       navigate('/library');
     }

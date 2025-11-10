@@ -661,11 +661,16 @@ export default function GoogleChat() {
   }, [createSession]);
 
   const handleViewCreatedBook = useCallback(() => {
-    // Navigate to reading view
+    // Navigate to reading view with session context
     if (createdBookId) {
-      navigate(`/books/${createdBookId}/read`, { state: { from: 'google-chat' } });
+      navigate(`/books/${createdBookId}/read`, { 
+        state: { 
+          from: 'google-chat',
+          sessionId: currentSessionId 
+        } 
+      });
     }
-  }, [createdBookId, navigate]);
+  }, [createdBookId, currentSessionId, navigate]);
 
   const handleOpenQAPanel = useCallback(() => {
     // Reset mutation state to allow panel to open after book creation

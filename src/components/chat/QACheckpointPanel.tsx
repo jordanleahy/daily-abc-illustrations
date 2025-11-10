@@ -325,7 +325,6 @@ export function QACheckpointPanel({
                           onSave={async (newText) => {
                             onUpdatePageText(currentQAPage, newText);
                             setIsEditingText(false);
-                            toast.success('Text updated!');
                             
                             // Generate word metadata
                             const currentPage = pages?.find(p => p.page_number === currentQAPage);

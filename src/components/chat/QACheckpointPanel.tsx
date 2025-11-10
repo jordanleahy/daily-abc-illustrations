@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
 import { Shimmer } from '@/components/ui/shimmer';
-import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX } from 'lucide-react';
+import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
@@ -72,6 +73,7 @@ export function QACheckpointPanel({
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
   const [hiddenOverlayPages, setHiddenOverlayPages] = useState<Set<number>>(new Set());
+  const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
   const { generateMetadata, isGenerating } = useWordMetadata();
   
   // Word Learning Helper state
@@ -522,48 +524,63 @@ export function QACheckpointPanel({
       <div className="sticky bottom-0 bg-background border-t px-4 py-3 space-y-3 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         {/* Thumbnail Image Upload - Show only when all page images are uploaded */}
         {allImagesUploaded && onCoverUpload && (
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Book Thumbnail (Optional)</p>
-            <div className="h-48 rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
-              {thumbnailUrl ? (
-                <div className="relative w-full h-full group">
-                  <BookImage 
-                    src={thumbnailUrl} 
-                    alt="Book thumbnail preview"
-                    className="w-full h-full object-cover rounded-lg"
-                    priority={false}
-                  />
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      // Trigger file picker to replace
-                      const input = document.createElement('input');
-                      input.type = 'file';
-                      input.accept = 'image/png,image/jpeg,image/jpg,image/webp';
-                      input.onchange = (e) => {
-                        const file = (e.target as HTMLInputElement).files?.[0];
-                        if (file) onCoverUpload(file);
-                      };
-                      input.click();
-                    }}
-                    className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
-                  >
-                    Replace
-                  </Button>
-                </div>
-              ) : (
-                <ImageUpload 
-                  onImageSelect={(file) => {
-                    onCoverUpload(file);
-                  }}
-                  disabled={createBookMutation.isPending}
-                  className="h-full"
-                  requireSquare={false}
+          <Collapsible open={isThumbnailOpen} onOpenChange={setIsThumbnailOpen}>
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="w-full flex items-center justify-between p-2 h-auto hover:bg-muted/50"
+              >
+                <p className="text-xs font-medium text-muted-foreground">Book Thumbnail (Optional)</p>
+                <ChevronDown 
+                  className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
+                    isThumbnailOpen ? 'transform rotate-180' : ''
+                  }`}
                 />
-              )}
-            </div>
-          </div>
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="space-y-2 pt-2">
+              <div className="h-48 rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
+                {thumbnailUrl ? (
+                  <div className="relative w-full h-full group">
+                    <BookImage 
+                      src={thumbnailUrl} 
+                      alt="Book thumbnail preview"
+                      className="w-full h-full object-cover rounded-lg"
+                      priority={false}
+                    />
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        // Trigger file picker to replace
+                        const input = document.createElement('input');
+                        input.type = 'file';
+                        input.accept = 'image/png,image/jpeg,image/jpg,image/webp';
+                        input.onchange = (e) => {
+                          const file = (e.target as HTMLInputElement).files?.[0];
+                          if (file) onCoverUpload(file);
+                        };
+                        input.click();
+                      }}
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
+                    >
+                      Replace
+                    </Button>
+                  </div>
+                ) : (
+                  <ImageUpload 
+                    onImageSelect={(file) => {
+                      onCoverUpload(file);
+                    }}
+                    disabled={createBookMutation.isPending}
+                    className="h-full"
+                    requireSquare={false}
+                  />
+                )}
+              </div>
+            </CollapsibleContent>
+          </Collapsible>
         )}
         
         {/* Publish/Unpublish Toggle - Show when all images are uploaded */}

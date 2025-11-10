@@ -664,7 +664,7 @@ export default function GoogleChat() {
   const handleViewCreatedBook = useCallback(() => {
     // Navigate to reading view
     if (createdBookId) {
-      navigate(`/books/${createdBookId}`);
+      navigate(`/books/${createdBookId}/read`);
     }
   }, [createdBookId, navigate]);
 

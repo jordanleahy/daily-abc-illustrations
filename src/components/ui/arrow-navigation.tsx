@@ -53,15 +53,15 @@ export function ArrowNavigation({
         onClick={onPrevious}
         disabled={disablePrevious || !onPrevious}
         className={cn(
-          "flex items-center justify-center h-full w-16 rounded-l-full transition-colors",
-          "active:scale-95 transition-transform",
+          "flex items-center justify-center h-full rounded-l-full transition-all",
+          "active:scale-[0.98] transition-transform",
           disablePrevious || !onPrevious
-            ? "opacity-30 cursor-not-allowed"
-            : "hover:bg-muted/50 cursor-pointer"
+            ? "opacity-30 cursor-not-allowed w-16"
+            : "hover:opacity-90 cursor-pointer w-[48%] bg-[hsl(220,40%,15%)]"
         )}
         aria-label="Previous page"
       >
-        <ChevronLeft className="w-6 h-6 text-foreground" />
+        <ChevronLeft className="w-6 h-6 text-white" />
       </button>
 
       {/* Center spacer */}

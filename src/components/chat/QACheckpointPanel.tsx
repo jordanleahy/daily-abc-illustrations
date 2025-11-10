@@ -263,7 +263,15 @@ export function QACheckpointPanel({
                 ? 'Page 1: Cover' 
                 : currentQAPage === 2
                 ? 'Page 2: Focus'
-                : `Page ${currentQAPage}`
+                : (() => {
+                    const currentPage = pages?.find(p => p.page_number === currentQAPage);
+                    if (currentPage?.content) {
+                      const letter = String.fromCharCode(64 + currentQAPage - 2); // A=3, B=4, etc.
+                      const mainConcept = currentPage.content.mainConcept || '';
+                      return `${letter} is for ${mainConcept}`;
+                    }
+                    return `Page ${currentQAPage}`;
+                  })()
               }
             </h3>
             <p className="text-xs text-muted-foreground line-clamp-1">

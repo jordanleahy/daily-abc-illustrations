@@ -40,10 +40,11 @@ export const InlineEditInput = ({
     }
   }, [isEditing]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.preventDefault(); // Prevent form submission
-      onSave(editValue);
+      // Wait for save to complete before closing
+      await Promise.resolve(onSave(editValue));
       setIsEditing(false);
     }
     if (e.key === 'Escape') {
@@ -53,8 +54,9 @@ export const InlineEditInput = ({
     }
   };
 
-  const handleBlur = () => {
-    onSave(editValue);
+  const handleBlur = async () => {
+    // Wait for save to complete before closing
+    await Promise.resolve(onSave(editValue));
     setIsEditing(false);
   };
 

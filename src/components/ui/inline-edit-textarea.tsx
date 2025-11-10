@@ -40,7 +40,7 @@ export const InlineEditTextarea = ({
     }
   }, [isEditing]);
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
+  const handleKeyDown = async (e: React.KeyboardEvent) => {
     if (e.key === 'Escape') {
       e.preventDefault();
       setEditValue(value);
@@ -49,13 +49,15 @@ export const InlineEditTextarea = ({
     // Allow Ctrl+Enter or Cmd+Enter to save
     if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
       e.preventDefault(); // Prevent form submission or new line
-      onSave(editValue);
+      // Wait for save to complete before closing
+      await Promise.resolve(onSave(editValue));
       setIsEditing(false);
     }
   };
 
-  const handleBlur = () => {
-    onSave(editValue);
+  const handleBlur = async () => {
+    // Wait for save to complete before closing
+    await Promise.resolve(onSave(editValue));
     setIsEditing(false);
   };
 

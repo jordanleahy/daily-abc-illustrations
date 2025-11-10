@@ -330,22 +330,31 @@ export function QACheckpointPanel({
                         <InlineEditInput
                           value={currentPageText}
                           onSave={async (newText) => {
-                            onUpdatePageText(currentQAPage, newText);
-                            setIsEditingText(false);
-                            
-                            // Generate word metadata
-                            const currentPage = pages?.find(p => p.page_number === currentQAPage);
-                            if (currentPage && bookId && newText.trim()) {
-                              try {
-                                await generateMetadata({
-                                  pageId: currentPage.id,
-                                  bookId,
-                                  title: newText,
-                                  currentContent: currentPage.content
-                                });
-                              } catch (error) {
-                                console.error('Failed to generate word metadata:', error);
+                            try {
+                              // FIXED: Await the database save operation
+                              await onUpdatePageText(currentQAPage, newText);
+                              
+                              // Only close editing mode after successful save
+                              setIsEditingText(false);
+                              
+                              // Generate word metadata
+                              const currentPage = pages?.find(p => p.page_number === currentQAPage);
+                              if (currentPage && bookId && newText.trim()) {
+                                try {
+                                  await generateMetadata({
+                                    pageId: currentPage.id,
+                                    bookId,
+                                    title: newText,
+                                    currentContent: currentPage.content
+                                  });
+                                } catch (error) {
+                                  console.error('Failed to generate word metadata:', error);
+                                  // Don't fail the whole operation if word metadata fails
+                                }
                               }
+                            } catch (error) {
+                              console.error('Failed to save text:', error);
+                              // Keep editing mode open so user can try again
                             }
                           }}
                           className="text-white text-center font-semibold text-lg bg-transparent border-white/30"

@@ -181,7 +181,6 @@ export function ReadingPageDisplay({
                       onClick={(e) => {
                         e.stopPropagation();
                         onToggleOverlayVisibility(pageId);
-                        toast.success('Text overlay hidden');
                       }}
                       className="h-6 w-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
                       title="Hide text overlay"

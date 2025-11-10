@@ -369,7 +369,6 @@ export function QACheckpointPanel({
                             onClick={(e) => {
                               e.stopPropagation();
                               setHiddenOverlayPages(prev => new Set(prev).add(currentQAPage));
-                              toast.success('Text overlay hidden for this page');
                             }}
                             className="h-6 w-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
                             title="Hide text overlay"

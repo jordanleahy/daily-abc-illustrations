@@ -61,22 +61,37 @@ Deno.serve(async (req) => {
       targetBookId = dpData.book_id;
     }
 
-    // Fetch images directly by book_id with page data in a single optimized query
-    // Use a join to get page metadata without separate queries
-    const { data: imageData, error: imagesError } = await supabase
-      .from('page_image_urls')
-      .select(`
-        page_id,
-        image_url,
-        pages!inner(
-          letter,
-          page_number
-        )
-      `)
+    // Fetch pages for the book
+    const { data: pages, error: pagesError } = await supabase
+      .from('pages')
+      .select('id, letter, page_number')
       .eq('book_id', targetBookId)
+      .order('page_number', { ascending: true });
+
+    if (pagesError) {
+      console.error('Error fetching pages:', pagesError);
+      return new Response(
+        JSON.stringify({ error: 'Failed to fetch pages' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!pages || pages.length === 0) {
+      console.log('No pages found for book');
+      return new Response(
+        JSON.stringify({ error: 'No pages found', images: [] }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Fetch all latest complete images for these pages in one query
+    const pageIds = pages.map(p => p.id);
+    const { data: imageUrls, error: imagesError } = await supabase
+      .from('page_image_urls')
+      .select('page_id, image_url')
+      .in('page_id', pageIds)
       .eq('is_latest', true)
-      .not('image_url', 'is', null)
-      .order('pages(page_number)', { ascending: true });
+      .not('image_url', 'is', null);
 
     if (imagesError) {
       console.error('Error fetching images:', imagesError);
@@ -86,28 +101,21 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!imageData || imageData.length === 0) {
-      console.log('No images found for book');
-      return new Response(
-        JSON.stringify({ 
-          bookId: targetBookId,
-          dailyPublishedId: dailyPublishedId || null,
-          totalPages: 0,
-          imagesFound: 0,
-          images: [],
-          cachedAt: new Date().toISOString(),
-        }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Create a map for quick image lookup
+    const imageMap = new Map(imageUrls?.map(img => [img.page_id, img]) || []);
 
-    // Transform to PageImage format
-    const pageImages: PageImage[] = imageData.map((item: any) => ({
-      page_id: item.page_id,
-      letter: item.pages?.letter || '',
-      page_number: item.pages?.page_number || 0,
-      image_url: item.image_url || '',
-    }));
+    // Build response with page metadata, only include pages that have images
+    const pageImages: PageImage[] = pages
+      .filter(page => imageMap.has(page.id))
+      .map(page => {
+        const imageData = imageMap.get(page.id);
+        return {
+          page_id: page.id,
+          letter: page.letter,
+          page_number: page.page_number,
+          image_url: imageData?.image_url || '',
+        };
+      });
 
     // Add aggressive caching headers (1 hour for active content)
     const cacheHeaders = {

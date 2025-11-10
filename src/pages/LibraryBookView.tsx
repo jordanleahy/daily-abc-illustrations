@@ -27,7 +27,6 @@ import { RoleDebugger } from '@/components/RoleDebugger';
 import { Calendar, Clock } from 'lucide-react';
 import { SITE_CONFIG } from '@/config/site';
 import { isValidUUID } from '@/utils/uuid';
-import { supabase } from '@/integrations/supabase/client';
 
 export default function LibraryBookView() {
   const { id } = useParams<{ id: string }>();
@@ -348,37 +347,6 @@ export default function LibraryBookView() {
     }
   };
 
-  // Handle updating page text overlay
-  const handleUpdatePageText = async (newText: string) => {
-    if (!currentPage) return;
-    
-    try {
-      const updatedContent = {
-        ...currentPage.content,
-        textOverlay: {
-          ...currentPage.content?.textOverlay,
-          enabled: true,
-          text: newText,
-          position: currentPage.content?.textOverlay?.position || 'bottom-center',
-          createdAt: currentPage.content?.textOverlay?.createdAt || new Date().toISOString()
-        }
-      };
-      
-      const { error } = await supabase
-        .from('pages')
-        .update({ 
-          content: updatedContent,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentPage.id);
-      
-      if (error) throw error;
-    } catch (error) {
-      console.error('Failed to update page text:', error);
-      toast.error('Failed to update text');
-    }
-  };
-
   return (
     <div className="min-h-screen bg-background">
       {/* Dynamic meta tags for social sharing */}
@@ -412,7 +380,6 @@ export default function LibraryBookView() {
                   isWordEnlarged={readingState.isWordEnlarged}
                   hiddenOverlayPages={readingState.hiddenOverlayPages}
                   onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
-                  onUpdatePageText={handleUpdatePageText}
                   imageComponent={
                     <PublicPageImage 
                       pageId={currentPage.id}

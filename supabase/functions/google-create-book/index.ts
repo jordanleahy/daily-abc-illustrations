@@ -463,7 +463,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         funFact: sanitizeText(page.content?.funFact || '', 500),
         activity: sanitizeText(page.content?.activity || '', 500),
         textOverlay: {
-          enabled: new Date() >= new Date('2024-11-07T00:00:00Z'), // Enable for books created after Nov 7, 2024
+          enabled: false, // Regular pages: NO text overlay by default
           text: sanitizeText(page.title, 100),
           position: 'bottom-center' as const,
           createdAt: new Date().toISOString()

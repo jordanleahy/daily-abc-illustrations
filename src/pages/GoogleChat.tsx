@@ -932,8 +932,6 @@ export default function GoogleChat() {
       
       // Invalidate queries to refresh
       await queryClient.invalidateQueries({ queryKey: ['book-pages', createdBookId] });
-      
-      toast.success('Text updated!');
     } catch (error) {
       console.error('Error updating text:', error);
       toast.error('Failed to update text');

@@ -61,25 +61,41 @@ export const InputArea = memo(({
   return (
     <div className="border-t bg-background p-4">
       <div className="mx-auto flex max-w-4xl gap-2">
-        {shouldShowReviewButton && (
+        {shouldShowReviewButton && !createdBookId && (
           <Button
-            onClick={createdBookId ? onViewBook : onOpenReview}
+            onClick={onOpenReview}
             variant="outline"
             className="shrink-0"
             size={isMobile ? "sm" : "default"}
+            title="View Outline"
           >
-            {createdBookId ? (
-              <>
-                <Book className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">Read Book</span>
-              </>
-            ) : (
-              <>
-                <BookOpen className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">View Outline</span>
-              </>
-            )}
+            <BookOpen className="h-4 w-4 mr-1" />
+            <span className="hidden sm:inline">View Outline</span>
           </Button>
+        )}
+        {shouldShowReviewButton && createdBookId && (
+          <>
+            <Button
+              onClick={onViewBook}
+              variant="outline"
+              className="shrink-0"
+              size={isMobile ? "sm" : "default"}
+              title="Read Book"
+            >
+              <Book className={cn("h-4 w-4", !isMobile && "mr-1")} />
+              <span className="hidden sm:inline">Read Book</span>
+            </Button>
+            <Button
+              onClick={onOpenReview}
+              variant="outline"
+              className="shrink-0"
+              size={isMobile ? "sm" : "default"}
+              title="View Outline"
+            >
+              <BookOpen className={cn("h-4 w-4", !isMobile && "mr-1")} />
+              <span className="hidden sm:inline">View Outline</span>
+            </Button>
+          </>
         )}
         <Input
           value={input}

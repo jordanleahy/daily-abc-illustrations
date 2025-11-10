@@ -22,7 +22,7 @@ const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: numbe
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
       <CardContent className="p-0">
-        <AspectRatio ratio={16/9} className="relative bg-muted">
+        <AspectRatio ratio={1/1} className="relative bg-muted">
           <BookImage
             src={imageData?.image_url}
             alt={`Letter ${page.letter} - ${page.title}`}

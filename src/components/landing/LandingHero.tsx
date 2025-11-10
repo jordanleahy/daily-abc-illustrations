@@ -65,7 +65,7 @@ export const LandingHero = ({
                   <Shimmer className="h-6 w-32 mx-auto mb-2" />
                   <Shimmer className="h-4 w-48 mx-auto" />
                 </div>
-                <AspectRatio ratio={16/9}>
+                <AspectRatio ratio={1/1}>
                   <Shimmer className="w-full h-full rounded-lg" />
                 </AspectRatio>
                 <div className="flex items-center justify-between">
@@ -83,13 +83,13 @@ export const LandingHero = ({
                   </p>
                 </div>
 
-                <AspectRatio ratio={16/9} className="bg-background rounded-lg overflow-hidden">
+                <AspectRatio ratio={1/1} className="bg-background rounded-lg overflow-hidden">
                   <OptimizedImage 
                     src={currentPage.image_url} 
                     alt={`${currentPage.letter} - ${currentPage.title}`} 
                     priority={currentPageIndex === 0} 
                     width={800} 
-                    height={450}
+                    height={800}
                     srcSetSizes={[400, 600, 800, 1200]} 
                     sizes="(max-width: 640px) 90vw, (max-width: 768px) 50vw, (max-width: 1024px) 40vw, 600px" 
                     fallback={<div className="w-full h-full flex items-center justify-center">
@@ -122,7 +122,7 @@ export const LandingHero = ({
                   </Button>
                 </div>
 
-              </div> : <AspectRatio ratio={16/9} className="bg-muted rounded-lg flex items-center justify-center">
+              </div> : <AspectRatio ratio={1/1} className="bg-muted rounded-lg flex items-center justify-center">
                 <p className="text-muted-foreground">Loading today's book...</p>
               </AspectRatio>}
           </div>

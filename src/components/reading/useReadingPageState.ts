@@ -1,11 +1,14 @@
 import { useState, useCallback } from 'react';
+import { useReadingPreferences } from '@/hooks/useReadingPreferences';
 
 export function useReadingPageState() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [isWordEnlarged, setIsWordEnlarged] = useState(false);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
   const [isEditingText, setIsEditingText] = useState(false);
-  const [hiddenOverlayPages, setHiddenOverlayPages] = useState<Set<string>>(new Set());
+  
+  // Use database-backed preferences for cross-device sync
+  const { hiddenOverlayPages, toggleOverlay: toggleOverlayDB } = useReadingPreferences();
 
   const handleToggleEnlarge = useCallback(() => {
     setIsWordEnlarged(prev => !prev);
@@ -42,16 +45,8 @@ export function useReadingPageState() {
   }, []);
 
   const toggleOverlayVisibility = useCallback((pageId: string) => {
-    setHiddenOverlayPages(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(pageId)) {
-        newSet.delete(pageId);
-      } else {
-        newSet.add(pageId);
-      }
-      return newSet;
-    });
-  }, []);
+    toggleOverlayDB(pageId);
+  }, [toggleOverlayDB]);
 
   return {
     currentWordIndex,

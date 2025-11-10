@@ -879,13 +879,28 @@ export default function GoogleChat() {
 
   // Update page text overlay
   const handleUpdatePageText = useCallback(async (pageNumber: number, newText: string) => {
-    if (!createdBookId || !dbPages) return;
+    console.log('handleUpdatePageText called', { pageNumber, newText, createdBookId, dbPagesLength: dbPages?.length });
+    
+    if (!createdBookId) {
+      console.error('Cannot save: No book ID');
+      toast.error('Please create the book first');
+      return;
+    }
+    
+    if (!dbPages) {
+      console.error('Cannot save: Pages data not loaded');
+      toast.error('Loading book data, please try again');
+      return;
+    }
     
     const page = dbPages.find(p => p.page_number === pageNumber);
     if (!page) {
+      console.error('Page not found:', pageNumber, 'Available pages:', dbPages.map(p => p.page_number));
       toast.error('Page not found');
       return;
     }
+    
+    console.log('Updating page:', page.id, 'with text:', newText);
     
     try {
       // Update the page content with new text overlay
@@ -899,6 +914,8 @@ export default function GoogleChat() {
         }
       } as any;
       
+      console.log('Saving updated content:', updatedContent);
+      
       const { error } = await supabase
         .from('pages')
         .update({ 
@@ -907,10 +924,17 @@ export default function GoogleChat() {
         })
         .eq('id', page.id);
       
-      if (error) throw error;
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Text saved successfully');
       
       // Invalidate queries to refresh
       await queryClient.invalidateQueries({ queryKey: ['book-pages', createdBookId] });
+      
+      toast.success('Text updated!');
     } catch (error) {
       console.error('Error updating text:', error);
       toast.error('Failed to update text');

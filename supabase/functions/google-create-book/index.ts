@@ -509,7 +509,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         funFact: sanitizeText(page.content?.funFact || '', 500),
         activity: sanitizeText(page.content?.activity || '', 500),
         textOverlay: {
-          enabled: false, // Regular pages: NO text overlay by default
+          enabled: showTextOverlay, // Use user preference
           text: sanitizeText(page.title, 100),
           position: 'bottom-center' as const,
           createdAt: new Date().toISOString()

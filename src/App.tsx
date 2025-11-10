@@ -44,6 +44,7 @@ import { scheduleCacheCleanup } from "./utils/cacheCleanup";
 import { initializeCacheWarming } from "./utils/cacheWarming";
 import { initializePerformanceMonitoring } from "./utils/performanceMonitoring";
 import { PerformanceDashboard } from "./components/dev/PerformanceDashboard";
+import { detectPlainImageTags, assertPerformanceTargets } from "./utils/imageOptimizationGuards";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +69,21 @@ const App = () => {
     scheduleCacheCleanup();
     initializeCacheWarming();
     initializePerformanceMonitoring();
+    
+    // PHASE 6: Development checks for image optimization system
+    if (process.env.NODE_ENV === 'development') {
+      detectPlainImageTags();
+      
+      // Run performance assertions after page settles
+      setTimeout(async () => {
+        const result = await assertPerformanceTargets();
+        if (!result.passed) {
+          console.warn('[Image Optimization] Performance targets not met:');
+          result.failures.forEach(failure => console.warn('  -', failure));
+          console.warn('See: docs/IMAGE_OPTIMIZATION_ARCHITECTURE.md');
+        }
+      }, 5000);
+    }
   }, []);
 
   return (

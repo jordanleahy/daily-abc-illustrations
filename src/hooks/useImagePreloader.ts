@@ -1,3 +1,17 @@
+/**
+ * ⚠️ CRITICAL HOOK - DO NOT CREATE DUPLICATE PRELOADING LOGIC
+ * 
+ * Unified image preloader for consistent caching across the app.
+ * Uses service worker for instant repeat loads (cache hit rate >80%).
+ * 
+ * When adding new image features:
+ * 1. Create a specialized hook that wraps this one (see use*ImagePreloader.ts files)
+ * 2. DO NOT create custom preloading logic
+ * 3. Follow the pattern in existing specialized hooks
+ * 
+ * See: docs/IMAGE_OPTIMIZATION_ARCHITECTURE.md
+ */
+
 import { useEffect } from 'react';
 import { optimizeImageUrl } from '@/utils/imageOptimization';
 import { prefetchImagesToCache } from '@/utils/imageCaching';

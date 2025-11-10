@@ -1,6 +1,13 @@
 /**
+ * ⚠️ CRITICAL UTILITY - DO NOT BYPASS THESE FUNCTIONS
+ * 
  * Image optimization utilities for Supabase Storage
- * Applies transformations for performance and responsive images
+ * Provides 75-85% bandwidth savings through format conversion and quality optimization
+ * 
+ * ALWAYS use these functions when handling Supabase storage images.
+ * DO NOT construct image URLs manually without optimization.
+ * 
+ * See: docs/IMAGE_OPTIMIZATION_ARCHITECTURE.md
  */
 
 export interface ImageOptimizationOptions {

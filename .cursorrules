@@ -1,0 +1,47 @@
+# Cursor AI Rules for Daily ABC Illustrations
+
+## Critical Systems - DO NOT MODIFY
+
+### Image Optimization System
+- **NEVER** replace `BookImage` component with plain `<img>` tags
+- **ALWAYS** read `docs/IMAGE_OPTIMIZATION_ARCHITECTURE.md` before modifying image code
+- **DO NOT** create duplicate image components or preloading logic
+- **MUST** use `optimizeImageUrl()` for all Supabase storage images
+- **REQUIRED**: Test with Performance Dashboard (Ctrl+Shift+P) after changes
+
+### When Adding Images
+1. Use `<BookImage>` component from `src/components/ui/book-image.tsx`
+2. Create specialized preloader hook following pattern in `src/hooks/use*ImagePreloader.ts`
+3. Verify optimization parameters are included in URLs
+4. Test cache hit rates remain >80%
+
+### Performance Requirements
+- Image load time: <1s
+- LCP (Largest Contentful Paint): <2.5s
+- Cache hit rate: >80%
+- Bandwidth savings: 75-85%
+
+## Design System
+- Use semantic tokens from `src/index.css` (e.g., `bg-background`, `text-foreground`)
+- NO direct colors: `text-white`, `bg-black`, etc.
+- Customize shadcn components with variants, not inline styles
+- All colors MUST be HSL format
+
+## Code Patterns
+- Functional components with TypeScript
+- Custom hooks for reusable logic
+- Keep components <200 lines
+- Use Zod for input validation
+- Prefer composition over inheritance
+
+## Security
+- Validate ALL user inputs
+- Use RLS policies for database access
+- Encode data for external APIs
+- No sensitive data in console.logs
+
+## Before Committing
+- Check browser console for warnings
+- Verify no TypeScript errors
+- Test responsive design
+- Run performance checks for image changes

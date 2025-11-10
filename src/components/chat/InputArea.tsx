@@ -71,12 +71,12 @@ export const InputArea = memo(({
             {createdBookId ? (
               <>
                 <Book className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">View Book</span>
+                <span className="hidden sm:inline">Read Book</span>
               </>
             ) : (
               <>
                 <BookOpen className="h-4 w-4 mr-1" />
-                <span className="hidden sm:inline">View Pages</span>
+                <span className="hidden sm:inline">View Outline</span>
               </>
             )}
           </Button>
@@ -99,16 +99,6 @@ export const InputArea = memo(({
         >
           <ImageIcon className="h-4 w-4" />
         </Button>
-        {!isMobile && createdBookId && (
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={onViewBook}
-            title="View Book"
-          >
-            <BookOpen className="h-4 w-4" />
-          </Button>
-        )}
         <Button
           onClick={onSend}
           disabled={!input.trim() || isLoading}

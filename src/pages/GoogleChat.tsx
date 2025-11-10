@@ -662,16 +662,11 @@ export default function GoogleChat() {
   }, [createSession]);
 
   const handleViewCreatedBook = useCallback(() => {
-    // Open QA panel to view the book
+    // Navigate to reading view
     if (createdBookId) {
-      // Load QA images from current session
-      if (selectedSession?.qa_page_images) {
-        setQAPageImages(selectedSession.qa_page_images);
-      }
-      setShowQACheckpoint(true);
-      setCurrentQAPage(1);
+      navigate(`/books/${createdBookId}`);
     }
-  }, [createdBookId, selectedSession]);
+  }, [createdBookId, navigate]);
 
   const handleOpenQAPanel = useCallback(() => {
     // Reset mutation state to allow panel to open after book creation

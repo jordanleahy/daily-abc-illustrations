@@ -42,10 +42,12 @@ export const InlineEditInput = ({
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent form submission
       onSave(editValue);
       setIsEditing(false);
     }
     if (e.key === 'Escape') {
+      e.preventDefault();
       setEditValue(value);
       setIsEditing(false);
     }

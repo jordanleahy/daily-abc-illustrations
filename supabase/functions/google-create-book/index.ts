@@ -153,13 +153,21 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
       // User provided structured page details - AI must use them
       console.log(`Using ${pageDetails.length} pre-defined page details from chat`);
       
-      systemPrompt = `You are creating a children's book. The user has already designed specific pages in our conversation.
+      systemPrompt = `You are an expert at creating children's educational cover images and page content. The user has already designed specific pages in our conversation.
 
 CRITICAL INSTRUCTIONS: 
 - You MUST use the exact page titles and descriptions provided below. Do NOT change them.
 - Do NOT include aspect ratio specifications (like "1:1", "16:9", etc.) in any titles or descriptions
 - Aspect ratios are handled separately by the image generation tool
-- EXTRACT metadata from the conversation (book type, page count, character theme, etc.)
+- EXTRACT metadata from the conversation (content type, page count, character theme, etc.)
+
+COVER PAGE GUIDELINES:
+If pageNumber 0 is included (the cover), ensure the description follows this title-focused format:
+- Title should be described as "large, bold, centered" taking up "50-60% of the space"
+- Background should be described as "vibrant [color] background" or "gentle [color]-to-[color] gradient"
+- Decorative elements should be described as "small [items] around edges and corners"
+- Use "cover image" NOT "book cover"
+- Overall composition should be "clean, simple, and optimized for thumbnail visibility"
 
 PROVIDED PAGE STRUCTURE:
 ${pageDetails.map(p => `Page ${p.pageNumber}: "${p.title}"\n${p.description}`).join('\n\n')}
@@ -167,10 +175,10 @@ ${pageDetails.map(p => `Page ${p.pageNumber}: "${p.title}"\n${p.description}`).j
 Your task:
 1. Create a bookName (creative title that encompasses all pages)
 2. Choose a category (alphabet, numbers, emotions, animals, etc.)
-3. Write a bookDescription (2-3 sentences about the whole book)
+3. Write a bookDescription (2-3 sentences about the complete content)
 4. For each page, maintain the exact title and description provided
 5. Add content fields (mainConcept, funFact, activity) for each page
-6. Assign appropriate letters for alphabet books (A-Z pattern)
+6. Assign appropriate letters for alphabet content (A-Z pattern)
 7. Extract and return metadata from conversation
 
 Return ONLY valid JSON with this structure:
@@ -181,9 +189,9 @@ Return ONLY valid JSON with this structure:
   "metadata": {
     "bookType": "abc|numbers|shapes|colors|animals|etc",
     "pageCount": ${pageDetails.length},
-    "letterCase": "lowercase|uppercase|both (for ABC books)",
-    "numberRange": "1-10 (for Numbers books)",
-    "countingStyle": "simple|skip-counting (for Numbers books)",
+    "letterCase": "lowercase|uppercase|both (for ABC content)",
+    "numberRange": "1-10 (for Numbers content)",
+    "countingStyle": "simple|skip-counting (for Numbers content)",
     "characterTheme": "paw-patrol|dinosaurs|space|etc (if mentioned)",
     "targetAge": "toddler|preschool|early-reader"
   },
@@ -196,45 +204,83 @@ Return ONLY valid JSON with this structure:
       "content": {
         "mainConcept": "string",
         "funFact": "string",
-        "activity": "string"${bookType === 'colors' ? ',\n        "color": "string (extracted color name for color books)"' : ''}
+        "activity": "string"${bookType === 'colors' ? ',\n        "color": "string (extracted color name for color content)"' : ''}
       }
     }
   ]
 }`;
     } else {
       // No structured details - use original full AI generation prompt
-      systemPrompt = `You are an expert at creating children's books of all types.
-Based on the conversation, determine the most appropriate book format and create a complete book structure.
+      systemPrompt = `You are an expert at creating children's educational content and cover images.
+Based on the conversation, determine the most appropriate format and create a complete content structure.
 
-Book Types:
-- "alphabet": ABC learning books with 26 pages (A-Z), each page teaching a letter
-  * For alphabet books, check if user specified letter case:
+Content Types:
+- "alphabet": ABC learning content with 26 pages (A-Z), each page teaching a letter
+  * For alphabet content, check if user specified letter case:
     - "lowercase" or "lowercase letters": use a, b, c... format
     - "uppercase" or "uppercase letters": use A, B, C... format
     - "both" or "both cases": use Aa, Bb, Cc... format
     - Default to uppercase (A, B, C...) if not specified
-- "story": Narrative story books with 8-16 pages telling a cohesive story
-- "educational": Topic-based learning books with 10-20 pages covering different aspects
-- "chapter": Longer books with 15-26 pages divided into chapters
+- "story": Narrative story content with 8-16 pages telling a cohesive story
+- "educational": Topic-based learning content with 10-20 pages covering different aspects
+- "chapter": Longer content with 15-26 pages divided into chapters
 
 IMPORTANT: 
 - Do NOT include aspect ratio specifications (like "1:1", "16:9", etc.) in page titles or descriptions
 - Aspect ratios are handled separately by the image generation tool
-- For NON-alphabet books, do NOT include "letter" fields
-- For alphabet books, include "letter" field with values matching the specified case format
-- Adjust page count based on book type and complexity
+- For NON-alphabet content, do NOT include "letter" fields
+- For alphabet content, include "letter" field with values matching the specified case format
+- Adjust page count based on content type and complexity
 - Make content age-appropriate and engaging
-- EXTRACT and RETURN metadata from the conversation (book type, page count preferences, themes, etc.)
+- EXTRACT and RETURN metadata from the conversation (content type, page count preferences, themes, etc.)
+
+COVER PAGE DESIGN GUIDELINES:
+When creating the cover description (pageNumber: 0), use this format for thumbnail-optimized, title-focused covers:
+
+"A vibrant educational cover image with [TITLE] displayed in large, bold, centered letters taking up 50-60% of the space. The background features [simple solid color or gentle gradient]. Around the edges and corners are [4-8 small themed decorative elements]. The design is clean, simple, and optimized for thumbnail visibility."
+
+Cover Description Rules:
+1. Title Placement: Always mention "large, bold, centered" and "taking up 50-60% of the space"
+2. Background: Describe as "vibrant [color] background" or "gentle [color]-to-[color] gradient" - keep it SIMPLE
+   - Good: "sunny yellow-to-turquoise gradient background"
+   - Good: "bright coral solid background"
+   - Bad: "detailed park scene with trees and playground equipment"
+3. Decorative Elements: Describe 4-8 SMALL items "around the edges and corners"
+   - Should relate to the theme (ABC letters, numbers, themed icons, character elements)
+   - Place around borders/corners ONLY, not competing with center title space
+4. Character Theme Integration: If character theme mentioned (Paw Patrol, Peppa Pig, etc.):
+   - Include small character icons or themed elements around edges
+   - Do NOT make characters the main focal point
+   - Example: "small Paw Patrol character faces in the corners"
+5. Overall Composition: Always describe as "clean, simple, and optimized for thumbnail visibility"
+
+Cover Examples:
+
+ABC Content Cover:
+"A vibrant educational cover image with 'ABC ADVENTURE' displayed in large, bold, centered white letters with colorful outlines, taking up the center 60% of the space. The background features a cheerful yellow-to-turquoise gradient. Around the edges and corners are small alphabet blocks, letter tiles, and simple A, B, C graphics scattered playfully. The design is clean, simple, and optimized for thumbnail visibility."
+
+Character Theme (Paw Patrol) Cover:
+"A vibrant educational cover image with 'PAW PATROL LEARNING FUN' displayed in large, bold, centered white letters with blue outlines, taking up the center 50% of the space. The background features a bright sky blue gradient. Around the edges and corners are small Paw Patrol character faces, paw prints, and badge icons scattered playfully. The design is clean, simple, and optimized for thumbnail visibility."
+
+Kitchen/Food Theme Cover:
+"A vibrant educational cover image with 'KITCHEN ABCS' displayed in large, bold, centered white letters with colored outlines, taking up the center 55% of the space. The background features a warm peach-to-cream gradient. Around the edges and corners are small cooking utensils, fruit icons, and kitchen items scattered playfully. The design is clean, simple, and optimized for thumbnail visibility."
+
+What NOT to Do for Covers:
+- Do NOT describe detailed scenes (no "park with swings and slides")
+- Do NOT describe characters as the main focus
+- Do NOT describe complex backgrounds
+- Do NOT place decorative elements in the center competing with title
+- Do NOT describe layouts that won't read well as thumbnails
 
 METADATA EXTRACTION:
 Analyze the conversation for:
-1. Book type selected (ABC, Numbers, Shapes, Animals, Sight Words, etc.)
+1. Content type selected (ABC, Numbers, Shapes, Animals, Sight Words, etc.)
 2. Number of pages requested (5, 10, 15, 20, custom, or "let agent decide")
-3. Letter case preference (for ABC books: lowercase, uppercase, both)
-4. Number range and counting style (for Numbers books: 1-10, 1-20, simple, skip-counting)
-5. Shape complexity and theme (for Shapes books)
-6. Animal category and focus (for Animals books)
-7. Reading level (for Sight Words books)
+3. Letter case preference (for ABC content: lowercase, uppercase, both)
+4. Number range and counting style (for Numbers content: 1-10, 1-20, simple, skip-counting)
+5. Shape complexity and theme (for Shapes content)
+6. Animal category and focus (for Animals content)
+7. Reading level (for Sight Words content)
 8. Character/theme mentions (Paw Patrol, dinosaurs, space, etc.)
 9. Target age group (toddler, preschool, early-reader)
 
@@ -244,31 +290,31 @@ Return ONLY a JSON object with this structure (no markdown, no code blocks):
   "category": "string",
   "bookDescription": "string",
   "bookType": "story|alphabet|educational|chapter",
-  "letterCase": "lowercase|uppercase|both (only for alphabet books)",
+  "letterCase": "lowercase|uppercase|both (only for alphabet content)",
   "metadata": {
     "bookType": "abc|numbers|shapes|colors|animals|sight-words|etc",
     "pageCount": <number or null>,
     "targetAge": "toddler|preschool|early-reader",
-    "letterCase": "lowercase|uppercase|both (for ABC books)",
-    "numberRange": "1-10|1-20|1-100 (for Numbers books)",
-    "countingStyle": "simple|skip-counting|number-families (for Numbers books)",
-    "shapeComplexity": "basic|2d-and-3d|advanced (for Shapes books)",
-    "shapeTheme": "nature|everyday-objects (for Shapes books)",
-    "animalCategory": "farm|zoo|ocean|pets|mixed (for Animals books)",
-    "animalFocus": "sounds|habitats|characteristics (for Animals books)",
-    "readingLevel": "pre-k|grade-1|grade-2 (for Sight Words books)",
+    "letterCase": "lowercase|uppercase|both (for ABC content)",
+    "numberRange": "1-10|1-20|1-100 (for Numbers content)",
+    "countingStyle": "simple|skip-counting|number-families (for Numbers content)",
+    "shapeComplexity": "basic|2d-and-3d|advanced (for Shapes content)",
+    "shapeTheme": "nature|everyday-objects (for Shapes content)",
+    "animalCategory": "farm|zoo|ocean|pets|mixed (for Animals content)",
+    "animalFocus": "sounds|habitats|characteristics (for Animals content)",
+    "readingLevel": "pre-k|grade-1|grade-2 (for Sight Words content)",
     "characterTheme": "paw-patrol|dinosaurs|space|etc (if mentioned)"
   },
   "pages": [
     {
-      "letter": "required for alphabet books - use format matching letterCase",
+      "letter": "required for alphabet content - use format matching letterCase",
       "pageNumber": 1,
       "title": "string",
       "description": "string",
       "content": {
         "mainConcept": "string",
         "funFact": "string (optional for non-educational)",
-        "activity": "string (optional for non-educational)"${bookType === 'colors' ? ',\n        "color": "string (extracted color name for color books)"' : ''}
+        "activity": "string (optional for non-educational)"${bookType === 'colors' ? ',\n        "color": "string (extracted color name for color content)"' : ''}
       }
     }
   ]
@@ -279,8 +325,8 @@ Return ONLY a JSON object with this structure (no markdown, no code blocks):
     if (bookType === 'colors') {
       systemPrompt += `
 
-IMPORTANT - COLOR BOOK INSTRUCTIONS:
-- This is a COLOR BOOK. Each page teaches ONE specific color.
+IMPORTANT - COLOR CONTENT INSTRUCTIONS:
+- This is COLOR CONTENT. Each page teaches ONE specific color.
 - Extract the color name from each page title and include it in the page metadata.
 - Page titles should follow the pattern: "**ColorName:** Description"
   Example: "**Red:** Marshall with a big red fire truck"
@@ -293,7 +339,7 @@ IMPORTANT - COLOR BOOK INSTRUCTIONS:
   }
 - Normalize color names to lowercase (Red → red, BLUE → blue)
 - Common colors: red, orange, yellow, green, blue, purple, pink, brown, black, white, gray
-- Also populate metadata.colorsList (array of unique colors) and metadata.colorsCount at the book level
+- Also populate metadata.colorsList (array of unique colors) and metadata.colorsCount at the content level
 `;
     }
 

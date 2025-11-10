@@ -124,7 +124,7 @@ export function ReadingHeader({
       {/* Left section: Optional back navigation */}
       <div className="flex items-center gap-3">
         {onBack && (
-          <Button variant="ghost" size="sm" onClick={onBack} className="p-2 h-8 rounded border border-border hover:bg-muted">
+          <Button variant="ghost" size="sm" onClick={onBack} className="px-3 py-2 h-auto rounded border border-border hover:bg-muted">
             <span className="text-xs">← {backLabel}</span>
           </Button>
         )}

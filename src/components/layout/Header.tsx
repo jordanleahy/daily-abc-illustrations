@@ -161,7 +161,7 @@ export function Header({
     { name: 'Google Chat', href: '/google-chat' },
     { name: 'Rewards', href: '/rewards' },
     { name: 'Manage Habits', href: '/habits/manage' },
-    { name: 'Editor', href: '/editor' },
+    { name: 'All Books', href: '/all-books' },
     { name: 'Agents', href: '/agents' },
     { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },
     { name: 'Reddit', href: '/reddit' },

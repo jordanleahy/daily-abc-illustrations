@@ -52,7 +52,7 @@ export function DailyPublishedQueueCard({
   const handleCardClick = () => {
     // Admins and teachers can view any content
     if (hasFullAccess) {
-      navigate(`/editor/${item.book_id}`);
+      navigate(`/all-books/${item.book_id}`);
       return;
     }
 
@@ -64,7 +64,7 @@ export function DailyPublishedQueueCard({
 
     // Only allow viewing active content
     if (effectiveStatus === 'active') {
-      navigate(`/editor/${item.book_id}`);
+      navigate(`/all-books/${item.book_id}`);
     }
   };
 

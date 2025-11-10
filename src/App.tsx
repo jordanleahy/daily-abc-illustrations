@@ -108,9 +108,9 @@ const App = () => {
                {/* User book routes - Own books only */}
                <Route path="/books" element={<ProtectedRoute><Books /></ProtectedRoute>} />
                <Route path="/books/:id" element={<ProtectedRoute><BookDetail /></ProtectedRoute>} />
-               {/* Admin book routes */}
-               <Route path="/editor" element={<ProtectedRoute requireRole="admin"><Books /></ProtectedRoute>} />
-               <Route path="/editor/:id" element={<ProtectedRoute requireRole="admin"><BookDetail /></ProtectedRoute>} />
+                {/* Admin book routes - All books in system */}
+                <Route path="/all-books" element={<ProtectedRoute requireRole="admin"><Books /></ProtectedRoute>} />
+                <Route path="/all-books/:id" element={<ProtectedRoute requireRole="admin"><BookDetail /></ProtectedRoute>} />
                 {/* Library routes - All subscription tiers */}
                 <Route path="/library" element={<ProtectedRoute requireSubscription={false}><Library key="library" /></ProtectedRoute>} />
                 <Route path="/library/:id" element={<ProtectedRoute requireSubscription={false}><LibraryBookView /></ProtectedRoute>} />

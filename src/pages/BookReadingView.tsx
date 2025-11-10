@@ -76,6 +76,12 @@ export default function BookReadingView() {
   const isLastPage = currentPageIndex === reorderedPages.length - 1;
   const isLoading = isLoadingBook || isLoadingPages;
   
+  // Get current page words for word learning (MUST be before early returns)
+  const currentPageWords = useMemo(() => {
+    const page = pages?.find(p => p.id === currentPage?.id);
+    return page?.content?.words || [];
+  }, [pages, currentPage]);
+  
   // Reset word learning state when page changes
   useEffect(() => {
     readingState.resetState();
@@ -175,12 +181,6 @@ export default function BookReadingView() {
 
   // FIX: Access pageImages by page_number instead of page.id
   const currentImageUrl = currentPage ? pageImages[currentPage.page_number] : undefined;
-  
-  // Get current page words for word learning
-  const currentPageWords = useMemo(() => {
-    const page = pages?.find(p => p.id === currentPage?.id);
-    return page?.content?.words || [];
-  }, [pages, currentPage]);
 
   const handleNext = async () => {
     if (isLastPage) {

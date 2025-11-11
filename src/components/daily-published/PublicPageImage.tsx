@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { usePublicPageImage } from '@/hooks/usePublicPageImage';
 import { BookImage } from '@/components/ui/book-image';
 import { Button } from '@/components/ui/button';
-import { Shimmer } from '@/components/ui/shimmer';
+import { ReadingPageSkeleton } from '@/components/ui/reading-page-skeleton';
 import { Camera } from 'lucide-react';
 
 interface PublicPageImageProps {
@@ -31,19 +31,16 @@ export function PublicPageImage({
   // Full-screen loading guard for first image
   if (isFirstImage && (!imageLoaded || isLoading)) {
     return (
-      <div className="fixed inset-0 z-50 bg-background flex items-center justify-center">
-        <Shimmer 
-          isShimmering={true} 
-          className="w-full h-full max-w-2xl max-h-[80vh] rounded-lg"
-        >
-          <BookImage
-            src={imageData?.image_url}
-            alt="Page illustration"
-            priority={true}
-            className="w-full h-full object-cover object-top opacity-0"
-            onLoad={() => setImageLoaded(true)}
-          />
-        </Shimmer>
+      <div className="fixed inset-0 z-50 bg-background">
+        <ReadingPageSkeleton />
+        {/* Hidden image for preloading */}
+        <BookImage
+          src={imageData?.image_url}
+          alt="Page illustration"
+          priority={true}
+          className="hidden"
+          onLoad={() => setImageLoaded(true)}
+        />
       </div>
     );
   }

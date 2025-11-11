@@ -150,7 +150,7 @@ export function QACheckpointPanel({
     }
   }, [currentQAPage, currentPageText, currentPageWords, pages, bookId, generateMetadata]);
 
-  // Reset states when page changes
+  // Reset states when page changes (not when copiedPages changes on same page)
   useEffect(() => {
     setShowConfirmation(false);
     setIsEditingText(false);
@@ -161,7 +161,7 @@ export function QACheckpointPanel({
     setCurrentWordIndex(0);
     setIsWordEnlarged(false);
     setWordStatuses({});
-  }, [currentQAPage, copiedPages]);
+  }, [currentQAPage]); // Removed copiedPages to prevent immediate trigger
   
   // Word Learning Helper handlers
   const handleToggleEnlarge = () => setIsWordEnlarged(!isWordEnlarged);

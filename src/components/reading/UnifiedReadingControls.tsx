@@ -1,11 +1,9 @@
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MinusCircle, ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface UnifiedReadingControlsProps {
   // Word learning props
   hasWords?: boolean;
-  isEnlarged?: boolean;
-  onToggleEnlarge?: () => void;
   onMarkDifficult?: () => void;
   onMarkUnderstood?: () => void;
   currentWordIndex?: number;
@@ -22,8 +20,6 @@ interface UnifiedReadingControlsProps {
 
 export function UnifiedReadingControls({
   hasWords = false,
-  isEnlarged = false,
-  onToggleEnlarge,
   onMarkDifficult,
   onMarkUnderstood,
   currentWordIndex = 0,
@@ -45,21 +41,6 @@ export function UnifiedReadingControls({
         <div className="flex items-center justify-between mb-2">
           {/* Left: Word Learning Buttons */}
           <div className="flex items-center gap-3">
-            {/* Plus/Minus Toggle */}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={onToggleEnlarge}
-              className="h-12 w-12 rounded-full"
-              title={isEnlarged ? "Shrink word" : "Enlarge word"}
-            >
-              {isEnlarged ? (
-                <MinusCircle className="h-6 w-6" />
-              ) : (
-                <PlusCircle className="h-6 w-6" />
-              )}
-            </Button>
-
             {/* Red Button - Mark Difficult */}
             <Button
               variant="outline"

@@ -458,8 +458,6 @@ export default function BookReadingView() {
         <UnifiedReadingControls
           showWordControls={currentPageIndex > 1}
           hasWords={currentPageWords.length > 0}
-          isEnlarged={readingState.isWordEnlarged}
-          onToggleEnlarge={readingState.handleToggleEnlarge}
           onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
           onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
           currentWordIndex={readingState.currentWordIndex}

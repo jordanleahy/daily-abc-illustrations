@@ -10,9 +10,6 @@ export function useReadingPageState() {
   // Use database-backed preferences for cross-device sync
   const { hiddenOverlayPages, toggleOverlay: toggleOverlayDB } = useReadingPreferences();
 
-  const handleToggleEnlarge = useCallback(() => {
-    setIsWordEnlarged(prev => !prev);
-  }, []);
 
   const handleNavigateWord = useCallback((direction: 'prev' | 'next', totalWords: number) => {
     setCurrentWordIndex(prev => {
@@ -25,6 +22,7 @@ export function useReadingPageState() {
   }, []);
 
   const handleMarkDifficult = useCallback((totalWords: number) => {
+    setIsWordEnlarged(true);
     setWordStatuses(prev => ({ ...prev, [currentWordIndex]: 'difficult' }));
     if (currentWordIndex < totalWords - 1) {
       setCurrentWordIndex(prev => prev + 1);
@@ -32,6 +30,7 @@ export function useReadingPageState() {
   }, [currentWordIndex]);
 
   const handleMarkUnderstood = useCallback((totalWords: number) => {
+    setIsWordEnlarged(true);
     setWordStatuses(prev => ({ ...prev, [currentWordIndex]: 'understood' }));
     if (currentWordIndex < totalWords - 1) {
       setCurrentWordIndex(prev => prev + 1);
@@ -55,7 +54,6 @@ export function useReadingPageState() {
     isEditingText,
     hiddenOverlayPages,
     setIsEditingText,
-    handleToggleEnlarge,
     handleNavigateWord,
     handleMarkDifficult,
     handleMarkUnderstood,

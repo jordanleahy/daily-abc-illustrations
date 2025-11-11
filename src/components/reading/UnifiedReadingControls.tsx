@@ -96,11 +96,19 @@ export function UnifiedReadingControls({
       <div className="flex items-center h-14 rounded-full bg-muted/30 overflow-hidden">
         {/* Previous/Left Arrow */}
         <button
-          onClick={onPreviousPage}
-          disabled={disablePreviousPage || !onPreviousPage}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (disablePreviousPage || !onPreviousPage) {
+              console.log('Previous button disabled or no handler');
+              return;
+            }
+            console.log('Previous page clicked');
+            onPreviousPage();
+          }}
           className={`flex items-center justify-center h-full rounded-l-full transition-all active:scale-[0.98] shrink-0 ${
             disablePreviousPage || !onPreviousPage
-              ? 'opacity-30 cursor-not-allowed pointer-events-none w-[48%]'
+              ? 'opacity-30 cursor-not-allowed w-[48%]'
               : 'hover:bg-muted/50 cursor-pointer w-[48%]'
           }`}
           aria-label="Previous page"
@@ -113,11 +121,19 @@ export function UnifiedReadingControls({
 
         {/* Next/Right Arrow - Wide button with dark background */}
         <button
-          onClick={onNextPage}
-          disabled={disableNextPage || !onNextPage}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            if (disableNextPage || !onNextPage) {
+              console.log('Next button disabled or no handler');
+              return;
+            }
+            console.log('Next page clicked');
+            onNextPage();
+          }}
           className={`flex items-center justify-center h-full rounded-r-full transition-all active:scale-[0.98] shrink-0 ${
             disableNextPage || !onNextPage
-              ? 'opacity-30 cursor-not-allowed pointer-events-none w-[48%]'
+              ? 'opacity-30 cursor-not-allowed w-[48%]'
               : 'hover:opacity-90 cursor-pointer w-[48%] bg-[hsl(220,40%,15%)]'
           }`}
           aria-label="Next page"

@@ -74,20 +74,20 @@ export function UnifiedReadingControls({
                 size="icon"
                 onClick={() => onNavigateWord('prev')}
                 disabled={currentWordIndex === 0}
-                className="h-14 w-14 rounded-full"
+                className="h-10 w-10 rounded-full"
                 title="Previous word"
               >
-                <ChevronLeft className="h-7 w-7" />
+                <ChevronLeft className="h-5 w-5" />
               </Button>
               <Button
                 variant="outline"
                 size="icon"
                 onClick={() => onNavigateWord('next')}
                 disabled={currentWordIndex >= totalWords - 1}
-                className="h-14 w-14 rounded-full"
+                className="h-10 w-10 rounded-full"
                 title="Next word"
               >
-                <ChevronRight className="h-7 w-7" />
+                <ChevronRight className="h-5 w-5" />
               </Button>
             </div>
           )}

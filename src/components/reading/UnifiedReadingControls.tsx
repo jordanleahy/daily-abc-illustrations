@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { PlusCircle, MinusCircle, XCircle, CheckCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { PlusCircle, MinusCircle, ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface UnifiedReadingControlsProps {
   // Word learning props
@@ -67,7 +67,7 @@ export function UnifiedReadingControls({
               title="Mark as difficult"
               disabled={currentWordIndex >= totalWords - 1}
             >
-              <XCircle className="h-6 w-6" />
+              <ThumbsDown className="h-6 w-6" />
             </Button>
 
             {/* Green Button - Mark Understood */}
@@ -79,7 +79,7 @@ export function UnifiedReadingControls({
               title="Mark as understood"
               disabled={currentWordIndex >= totalWords - 1}
             >
-              <CheckCircle className="h-6 w-6" />
+              <ThumbsUp className="h-6 w-6" />
             </Button>
           </div>
 

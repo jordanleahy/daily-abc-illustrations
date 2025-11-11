@@ -407,7 +407,7 @@ export default function LibraryBookView() {
           onPreviousPage={handlePrevious}
           onNextPage={handleNext}
           disablePreviousPage={currentPageIndex === 0}
-          disableNextPage={isAddingCoins || isLastPage}
+          disableNextPage={isAddingCoins}
         />
       
       {/* Hidden file input for direct upload */}

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, ReactNode } from 'react';
+import { useState, useEffect, useMemo, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { reorderPagesFromStartingLetter } from '@/utils/pageNavigation';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
@@ -7,14 +7,11 @@ import { useKidCoins } from '@/hooks/useKidCoins';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { useBookPages } from '@/hooks/useBookPages';
-import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { toast } from 'sonner';
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
-import { Card } from '@/components/ui/card';
 import { ReadingPageDisplay, useReadingPageState, UnifiedReadingControls } from '@/components/reading';
 import { RewardContainer } from '@/components/ui/reward-container';
-import { processImage } from '@/utils/imageProcessor';
 import type { Page } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
 
@@ -110,10 +107,7 @@ export function UnifiedReadingView({
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [earnedRewards, setEarnedRewards] = useState(0);
   const [sessionStarted, setSessionStarted] = useState(false);
-  const [uploadingForPageId, setUploadingForPageId] = useState<string | null>(null);
   const [initialPageTracked, setInitialPageTracked] = useState(false);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Word learning state
   const readingState = useReadingPageState();
@@ -125,9 +119,6 @@ export function UnifiedReadingView({
   // Get current page and related data
   const currentPage = reorderedPages[currentPageIndex];
   const isLastPage = currentPageIndex === reorderedPages.length - 1;
-  
-  // Get upload function for current page (if enabled)
-  const { uploadImage } = usePageImageUrls(showUploadButton ? (currentPage?.id || '') : '');
   
   // Get current page words for word learning
   const { pages: bookPages } = useBookPages(book.book_id || book.id);
@@ -245,95 +236,6 @@ export function UnifiedReadingView({
     onBack();
   };
 
-  // Image upload handlers
-  const validateImage = async (file: File): Promise<{ valid: boolean; error?: string }> => {
-    if (!file.type.startsWith('image/')) {
-      return { valid: false, error: 'Please select an image file' };
-    }
-    
-    const supportedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-    if (!supportedTypes.includes(file.type)) {
-      return { valid: false, error: 'Supported formats: PNG, JPG, WEBP' };
-    }
-    
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return { valid: false, error: 'Image must be smaller than 5MB' };
-    }
-    
-    const isSquare = await checkAspectRatio(file);
-    if (!isSquare) {
-      return { valid: false, error: 'Image must have a 1:1 aspect ratio (square)' };
-    }
-    
-    return { valid: true };
-  };
-
-  const checkAspectRatio = (file: File): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const aspectRatio = img.width / img.height;
-        const isSquare = Math.abs(aspectRatio - 1) < 0.1;
-        URL.revokeObjectURL(img.src);
-        resolve(isSquare);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(img.src);
-        resolve(false);
-      };
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file || !currentPage || !book) return;
-    
-    const validation = await validateImage(file);
-    if (!validation.valid) {
-      toast.error(validation.error || 'Invalid image');
-      setUploadingForPageId(null);
-      return;
-    }
-    
-    const toastId = toast.loading('Uploading image...');
-    
-    try {
-      const processed = await processImage(file, {
-        maxWidth: 1024,
-        maxHeight: 1024,
-        targetSizeBytes: 500 * 1024,
-        quality: 0.85,
-      });
-
-      const compressedFile = new File(
-        [processed.blob],
-        file.name.replace(/\.[^.]+$/, '.webp'),
-        { type: processed.blob.type }
-      );
-
-      await uploadImage(compressedFile, book.book_id || book.id);
-      
-      toast.success('Image uploaded successfully!', { id: toastId });
-    } catch (error) {
-      console.error('Upload error:', error);
-      toast.error('Failed to upload image. Please try again.', { id: toastId });
-    } finally {
-      setUploadingForPageId(null);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
-
-  const handleUploadClick = () => {
-    if (currentPage) {
-      setUploadingForPageId(currentPage.id);
-      fileInputRef.current?.click();
-    }
-  };
-
   // Tap-to-advance handler for daily published
   const handleTapToAdvance = onTapToAdvance ? (e: React.MouseEvent) => {
     // Allow context menu to work on image
@@ -416,17 +318,6 @@ export function UnifiedReadingView({
         disablePreviousPage={currentPageIndex === 0}
         disableNextPage={isAddingCoins}
       />
-      
-      {/* Hidden file input for uploads */}
-      {showUploadButton && (
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/png,image/jpeg,image/jpg,image/webp"
-          onChange={handleFileSelect}
-          className="hidden"
-        />
-      )}
     </div>
   );
 }

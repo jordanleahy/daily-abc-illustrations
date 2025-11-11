@@ -1,3 +1,61 @@
+/**
+ * ============================================================================
+ * UNIFIED READING VIEW - SHARED COMPONENT
+ * ============================================================================
+ * 
+ * ⚠️ CRITICAL: This component is used by ALL THREE reading views:
+ * 1. BookReadingView (src/pages/BookReadingView.tsx) - User's personal books
+ * 2. LibraryBookView (src/pages/LibraryBookView.tsx) - Library books
+ * 3. DailyPublishedPageView (src/components/daily-published/DailyPublishedPageView.tsx) - Daily content
+ * 
+ * ANY CHANGES TO THIS COMPONENT WILL AFFECT ALL THREE VIEWS!
+ * 
+ * ============================================================================
+ * COMPONENT PURPOSE
+ * ============================================================================
+ * Provides a consistent, read-only reading experience across the entire app with:
+ * - Page navigation (swipe/button controls)
+ * - Word learning features (highlight, mark difficult/understood)
+ * - Analytics tracking (sessions, page views)
+ * - Rewards system (coins for reading progress)
+ * - Text overlay support (for ABC books)
+ * - Custom headers (timer for daily published)
+ * - Tap-to-advance (daily published only)
+ * - Content expiration (daily published only)
+ * 
+ * ============================================================================
+ * DESIGN DECISIONS
+ * ============================================================================
+ * - All views are READ-ONLY (no upload buttons, no editing)
+ * - No dismiss button on text overlays (editor-only feature)
+ * - No swipe drawer (kept minimal for consistent UX)
+ * - Shared navigation, word learning, and analytics logic
+ * 
+ * ============================================================================
+ * BEFORE MAKING CHANGES
+ * ============================================================================
+ * 1. Test changes in ALL THREE views:
+ *    - /books/:id (BookReadingView)
+ *    - /library/:id (LibraryBookView)
+ *    - / (DailyPublishedPageView - homepage daily content)
+ * 
+ * 2. Consider if your change should apply to all views or just one:
+ *    - If ONE view only: Add a new prop with conditional logic
+ *    - If ALL views: Make the change directly
+ * 
+ * 3. Check these features still work:
+ *    - Navigation (previous/next page)
+ *    - Word learning (enlarge, mark difficult/understood)
+ *    - Analytics (session tracking)
+ *    - Rewards (coins display)
+ *    - Text overlays (show/hide, no dismiss button)
+ *    - Custom headers (especially timer for daily published)
+ *    - Expiration (daily published auto-redirect)
+ *    - Tap-to-advance (daily published)
+ * 
+ * ============================================================================
+ */
+
 import { useState, useEffect, useMemo, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { reorderPagesFromStartingLetter } from '@/utils/pageNavigation';
@@ -15,11 +73,17 @@ import { RewardContainer } from '@/components/ui/reward-container';
 import type { Page } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
 
+/**
+ * Configuration interface for UnifiedReadingView
+ * 
+ * This interface defines all possible configuration options for the reading view.
+ * Different views use different subsets of these props to customize behavior.
+ */
 export interface UnifiedReadingViewConfig {
-  // Content type for analytics
+  /** Analytics identifier for tracking different content types */
   contentType: 'library_book' | 'user_book' | 'daily_published';
   
-  // Book and page data
+  /** Book metadata for display and analytics */
   book: {
     id: string;
     book_id?: string;
@@ -27,38 +91,80 @@ export interface UnifiedReadingViewConfig {
     title?: string;
     book_description?: string;
   };
+  
+  /** Array of pages to display. Daily published passes single page, others pass full book */
   pages: Page[];
   
-  // Navigation
+  // ========== Navigation ==========
+  /** Which page to start on (0-indexed). Default: 0 */
   startingPageIndex?: number;
-  onBack: () => void;
-  backLabel?: string;
-  onNext?: () => void;  // Custom next handler (for daily published)
-  onPrevious?: () => void;  // Custom previous handler (for daily published)
   
-  // Features
+  /** Called when user presses back button */
+  onBack: () => void;
+  
+  /** Custom label for back button. Default: "Back" */
+  backLabel?: string;
+  
+  /** Custom next page handler. If provided, overrides default navigation (used by DailyPublishedPageView) */
+  onNext?: () => void;
+  
+  /** Custom previous page handler. If provided, overrides default navigation (used by DailyPublishedPageView) */
+  onPrevious?: () => void;
+  
+  // ========== Features (Currently Disabled) ==========
+  /** Upload button visibility. Currently always false (all views are read-only) */
   showUploadButton?: boolean;
+  
+  /** Swipe drawer visibility. Currently always false for consistent UX */
   showSwipeDrawer?: boolean;
   
-  // Custom components
+  // ========== Custom Components ==========
+  /** Custom header component. Used by DailyPublishedPageView for timer header */
   customHeader?: ReactNode;
+  
+  /** Custom image renderer. All views pass PublicPageImage component */
   imageComponent?: (page: Page, pageIndex: number) => ReactNode;
+  
+  /** Custom drawer content. Currently unused (showSwipeDrawer is false) */
   drawerContent?: (page: Page) => ReactNode;
   
-  // Analytics
+  // ========== Analytics ==========
+  /** How user accessed this content (for analytics tracking) */
   entryPoint?: 'direct_link' | 'homepage_redirect' | 'library_card' | 'reading_view_button';
   
-  // Metadata
+  // ========== SEO & Metadata ==========
+  /** OpenGraph metadata for social sharing */
   openGraphMetadata?: SEOMetadata;
   
-  // Session rewards (for non-authenticated users)
+  // ========== Rewards ==========
+  /** Display session coins for non-authenticated users (daily published) */
   sessionCoins?: number;
   
-  // Daily published features
+  // ========== Daily Published Features ==========
+  /** Expiration timestamp. When reached, redirects to homepage (daily published only) */
   expiresAt?: string;
+  
+  /** Enable tap-to-advance on page image (daily published only) */
   onTapToAdvance?: boolean;
+  
+  /** Daily published content ID for tracking (daily published only) */
   contentId?: string;
 }
+
+/**
+ * UnifiedReadingView - The shared reading component
+ * 
+ * ⚠️ Used by BookReadingView, LibraryBookView, and DailyPublishedPageView
+ * 
+ * Handles all reading logic including:
+ * - Page navigation with circular reordering
+ * - Word learning features (enlarge, mark status)
+ * - Analytics session tracking
+ * - Rewards system (coins for progress)
+ * - Text overlay display (no dismiss button in reader mode)
+ * - Content expiration (daily published)
+ * - Custom navigation handlers (daily published)
+ */
 
 export function UnifiedReadingView({
   contentType,

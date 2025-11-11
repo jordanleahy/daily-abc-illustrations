@@ -1,3 +1,17 @@
+/**
+ * BookReadingView - User's Personal Books
+ * 
+ * ⚠️ Uses UnifiedReadingView (shared component)
+ * Changes to UnifiedReadingView will affect this view
+ * 
+ * Displays user-created books from /books/:id route
+ * Configuration:
+ * - contentType: 'user_book'
+ * - showUploadButton: false (read-only)
+ * - showSwipeDrawer: false
+ * - Uses PublicPageImage component
+ */
+
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';

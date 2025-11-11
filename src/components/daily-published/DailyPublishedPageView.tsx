@@ -1,3 +1,22 @@
+/**
+ * DailyPublishedPageView - Daily Content (Homepage)
+ * 
+ * ⚠️ Uses UnifiedReadingView (shared component)
+ * Changes to UnifiedReadingView will affect this view
+ * 
+ * Displays daily published content on homepage
+ * Configuration:
+ * - contentType: 'daily_published'
+ * - showUploadButton: false (read-only)
+ * - showSwipeDrawer: false
+ * - Uses PublicPageImage component
+ * - Custom features:
+ *   - FreemiumHeader with countdown timer
+ *   - Content expiration handling
+ *   - Tap-to-advance enabled
+ *   - Custom navigation handlers (onNext, onPrevious)
+ */
+
 import { UnifiedReadingView } from '@/components/reading';
 import { FreemiumHeader } from './FreemiumHeader';
 import { formatTimeRemaining } from '@/utils/timeUtils';

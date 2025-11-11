@@ -1,3 +1,17 @@
+/**
+ * LibraryBookView - Library Books
+ * 
+ * ⚠️ Uses UnifiedReadingView (shared component)
+ * Changes to UnifiedReadingView will affect this view
+ * 
+ * Displays books from the library at /library/:id route
+ * Configuration:
+ * - contentType: 'library_book'
+ * - showUploadButton: false (read-only)
+ * - showSwipeDrawer: false
+ * - Uses PublicPageImage component
+ */
+
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';

@@ -134,6 +134,7 @@ export function DailyPublishedPageView({
             hiddenOverlayPages={readingState.hiddenOverlayPages}
             onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
             isPreferencesLoading={readingState.isPreferencesLoading}
+            showDismissButton={false}
             imageComponent={
               <PublicPageImage pageId={page.id} bookId={bookId} />
             }

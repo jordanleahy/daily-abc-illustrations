@@ -22,6 +22,7 @@ interface ReadingPageDisplayProps {
   onToggleOverlayVisibility?: (pageId: string) => void;
   wordStatuses?: Record<number, 'difficult' | 'understood'>;
   isPreferencesLoading?: boolean;
+  showDismissButton?: boolean;
 }
 
 export function ReadingPageDisplay({
@@ -39,6 +40,7 @@ export function ReadingPageDisplay({
   onToggleOverlayVisibility,
   wordStatuses,
   isPreferencesLoading = false,
+  showDismissButton = true,
 }: ReadingPageDisplayProps) {
   const { generateMetadata } = useWordMetadata();
   const { pages } = useBookPages(bookId);
@@ -218,7 +220,7 @@ export function ReadingPageDisplay({
                       <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />
                     )}
                   </div>
-                  {onToggleOverlayVisibility && (
+                  {onToggleOverlayVisibility && showDismissButton && (
                     <button
                       onClick={(e) => {
                         e.stopPropagation();

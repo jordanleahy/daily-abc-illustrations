@@ -228,8 +228,8 @@ export default function GoogleChat() {
       const page = dbPages.find(p => p.page_number === pageNum);
       if (!page) return null;
       
-      // For educational focus page (page 2), check if it's the FOCUS page
-      if (page.letter === 'FOCUS' && qaPagePrompts[2]) {
+      // For educational focus page, check if it's the educational page
+      if (page.page_type === 'educational' && qaPagePrompts[2]) {
         return qaPagePrompts[2];
       }
       
@@ -978,7 +978,7 @@ export default function GoogleChat() {
         .from('pages')
         .select('id')
         .eq('book_id', createdBookId)
-        .eq('page_number', 1)
+        .eq('page_type', 'cover')
         .single();
       
       if (!error && data) {

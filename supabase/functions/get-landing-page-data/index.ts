@@ -234,7 +234,7 @@ Deno.serve(async (req) => {
               .from('pages')
               .select('id, book_id, page_number')
               .in('book_id', booksNeedingFallback)
-              .eq('page_number', 1);
+              .eq('page_type', 'cover');
             
             if (pagesResult.data && pagesResult.data.length > 0) {
               const pageIds = pagesResult.data.map(p => p.id);
@@ -333,7 +333,7 @@ Deno.serve(async (req) => {
           .from('pages')
           .select('id, book_id, page_number')
           .in('book_id', booksNeedingFallback)
-          .eq('page_number', 1);
+          .eq('page_type', 'cover');
         
         if (pagesResult.data && pagesResult.data.length > 0) {
           const pageIds = pagesResult.data.map(p => p.id);

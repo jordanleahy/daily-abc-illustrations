@@ -761,8 +761,8 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
 
     if (!fetchCreatedPagesError && createdPagesForPrompts) {
       for (const page of createdPagesForPrompts) {
-        const isCover = page.page_number === 1;
-        const isFocusPage = page.page_number === 2 && page.letter === 'FOCUS';
+        const isCover = page.page_type === 'cover';
+        const isFocusPage = page.page_type === 'educational';
         
         // Use AI-generated prompt if available, otherwise create a basic fallback
         let promptContent = aiPrompts.get(page.page_number);

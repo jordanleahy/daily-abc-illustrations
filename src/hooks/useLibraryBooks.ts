@@ -143,7 +143,7 @@ export const useLibraryBooks = () => {
             )
           `)
           .in('pages.book_id', bookIdsNeedingImages)
-          .eq('pages.page_number', 1)
+          .eq('pages.page_type', 'cover')
           .eq('is_latest', true)
           .not('image_url', 'is', null)
           .limit(bookIdsNeedingImages.length);

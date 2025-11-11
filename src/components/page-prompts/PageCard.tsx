@@ -352,10 +352,10 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
               </Badge>
             )}
             <span className="text-sm text-muted-foreground">
-              {page.page_number === 1 
+              {page.page_type === 'cover'
                 ? 'Cover' 
-                : page.page_number === 2
-                ? 'Focus'
+                : page.page_type === 'educational'
+                ? 'Educational Focus'
                 : page.letter 
                   ? `Letter ${page.letter}`
                   : `Page ${page.page_number}`

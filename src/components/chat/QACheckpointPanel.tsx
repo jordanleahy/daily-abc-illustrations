@@ -609,27 +609,42 @@ export function QACheckpointPanel({
         
         {/* Publish/Unpublish Toggle - Show when all images are uploaded */}
         {allImagesUploaded && onToggleStatus && (
-          <Button
-            variant={bookStatus === PublicationStatus.DRAFT ? 'default' : 'outline'}
-            size="lg"
-            onClick={onToggleStatus}
-            className={bookStatus === PublicationStatus.DRAFT 
-              ? "w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
-              : "w-full"
-            }
-          >
-            {bookStatus === PublicationStatus.DRAFT ? (
-              <>
-                <FileUp className="h-4 w-4 mr-2" />
-                Publish Book
-              </>
-            ) : (
-              <>
-                <FileX className="h-4 w-4 mr-2" />
-                Unpublish Book
-              </>
+          <div className={bookStatus === PublicationStatus.DRAFT ? "" : "flex gap-2"}>
+            <Button
+              variant={bookStatus === PublicationStatus.DRAFT ? 'default' : 'outline'}
+              size="lg"
+              onClick={onToggleStatus}
+              className={bookStatus === PublicationStatus.DRAFT 
+                ? "w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
+                : "flex-1"
+              }
+            >
+              {bookStatus === PublicationStatus.DRAFT ? (
+                <>
+                  <FileUp className="h-4 w-4 mr-2" />
+                  Publish Book
+                </>
+              ) : (
+                <>
+                  <FileX className="h-4 w-4 mr-2" />
+                  Unpublish Book
+                </>
+              )}
+            </Button>
+            
+            {/* Read Book button - Show when book is published */}
+            {bookStatus !== PublicationStatus.DRAFT && bookId && (
+              <Button
+                variant="default"
+                size="lg"
+                onClick={() => navigate(`/library/${bookId}`)}
+                className="flex-1"
+              >
+                <BookOpen className="h-4 w-4 mr-2" />
+                Read Book
+              </Button>
             )}
-          </Button>
+          </div>
         )}
         
         {/* Navigation */}

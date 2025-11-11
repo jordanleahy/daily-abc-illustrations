@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { QRCodeData, QRCodeDisplayStatus, QRCodeConfig } from '@/types/bookQRCode';
 import { toast } from 'sonner';
+import { copyToClipboard } from '@/utils/clipboardHelpers';
 
 export const useBookQRCode = (bookId: string | undefined) => {
   const { user } = useAuthContext();
@@ -81,7 +82,7 @@ export const useBookQRCode = (bookId: string | undefined) => {
     if (!dailyPublishedData?.qr_code_public_url) return;
 
     try {
-      await navigator.clipboard.writeText(dailyPublishedData.qr_code_public_url);
+      await copyToClipboard(dailyPublishedData.qr_code_public_url);
       toast.success('URL copied to clipboard');
     } catch (error) {
       console.error('Error copying URL:', error);

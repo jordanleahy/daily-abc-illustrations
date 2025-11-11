@@ -35,6 +35,7 @@ import { SITE_CONFIG } from '@/config/site';
 import { DailyPublishedStatus } from '@/types/dailyPublished';
 import { PublicationStatus } from '@/types/shared';
 import { getAppendPublishDate } from '@/utils/publishQueue';
+import { copyToClipboard } from '@/utils/clipboardHelpers';
 
 /**
  * Props for the ExportsSection component
@@ -628,7 +629,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     const postText = getLinkedInPostText();
     
     try {
-      await navigator.clipboard.writeText(postText);
+      await copyToClipboard(postText);
       toast({
         title: "LinkedIn post copied!",
         description: "The LinkedIn post text has been copied to your clipboard."
@@ -735,7 +736,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
    */
   const handleCopyProductDescription = async () => {
     try {
-      await navigator.clipboard.writeText(productDescription);
+      await copyToClipboard(productDescription);
       toast({
         title: "Product description copied!",
         description: "The product description has been copied to your clipboard."
@@ -759,7 +760,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       const dailyPublishedUrl = `${window.location.origin}/daily-published/${existingPublication.id}`;
       
       try {
-        await navigator.clipboard.writeText(dailyPublishedUrl);
+        await copyToClipboard(dailyPublishedUrl);
         toast({
           title: "Link copied!",
           description: "The daily published link has been copied to your clipboard."
@@ -1207,7 +1208,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                   onClick={async () => {
                     const publicBookUrl = `${SITE_CONFIG.productionUrl}/book/${existingPublication.slug}`;
                     try {
-                      await navigator.clipboard.writeText(publicBookUrl);
+                      await copyToClipboard(publicBookUrl);
                       toast({
                         title: "Link copied!",
                         description: "The public book link has been copied to your clipboard."

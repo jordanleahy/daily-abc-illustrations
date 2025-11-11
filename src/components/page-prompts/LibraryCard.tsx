@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageImageSection } from '@/components/PageImageSection';
+import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { useToast } from '@/hooks/use-toast';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import type { Page } from '@/types/book';
@@ -41,7 +42,7 @@ export function LibraryCard({ page, bookId, priority = false }: LibraryCardProps
     }
 
     try {
-      await navigator.clipboard.writeText(currentPrompt.content);
+      await copyToClipboard(currentPrompt.content);
       toast({
         title: "Copied!",
         description: "JSON prompt copied to clipboard",
@@ -77,7 +78,7 @@ export function LibraryCard({ page, bookId, priority = false }: LibraryCardProps
     }
 
     try {
-      await navigator.clipboard.writeText(currentImage.prompt_used);
+      await copyToClipboard(currentImage.prompt_used);
       toast({
         title: "Copied!",
         description: "Full prompt copied to clipboard",

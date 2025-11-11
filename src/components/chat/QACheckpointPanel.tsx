@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
+import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
 import { WordsCard } from './WordsCard';
@@ -236,25 +237,29 @@ export function QACheckpointPanel({
   };
 
   // Handle copy with confirmation and delayed transition
-  const handleCopyPrompt = () => {
+  const handleCopyPrompt = async () => {
     const prompt = getCurrentPagePrompt(currentQAPage);
     if (prompt) {
-      navigator.clipboard.writeText(prompt);
-      setShowConfirmation(true);
+      try {
+        await copyToClipboard(prompt);
+        setShowConfirmation(true);
       
-      // Mark this page as copied
-      setCopiedPages(prev => new Set(prev).add(currentQAPage));
+        // Mark this page as copied
+        setCopiedPages(prev => new Set(prev).add(currentQAPage));
 
-      // Create book immediately if not already created
-      if (!isBookCreated && !createBookMutation.isPending) {
-        onCreateBook();
+        // Create book immediately if not already created
+        if (!isBookCreated && !createBookMutation.isPending) {
+          onCreateBook();
+        }
+
+        // Transition to upload after 5 seconds
+        setTimeout(() => {
+          setShowConfirmation(false);
+          setHasClickedCopy(true);
+        }, 5000);
+      } catch (error) {
+        console.error('Failed to copy prompt:', error);
       }
-
-      // Transition to upload after 5 seconds
-      setTimeout(() => {
-        setShowConfirmation(false);
-        setHasClickedCopy(true);
-      }, 5000);
     }
   };
 
@@ -509,16 +514,20 @@ export function QACheckpointPanel({
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => {
-                  navigator.clipboard.writeText(currentCoverPrompt);
-                  toast.success('Cover prompt copied!', {
-                    description: 'Creating your book...',
-                    duration: 3000
-                  });
-                  
-                  // Create book immediately if not already created
-                  if (!isBookCreated && !createBookMutation.isPending) {
-                    onCreateBook();
+                onClick={async () => {
+                  try {
+                    await copyToClipboard(currentCoverPrompt);
+                    toast.success('Cover prompt copied!', {
+                      description: 'Creating your book...',
+                      duration: 3000
+                    });
+                    
+                    // Create book immediately if not already created
+                    if (!isBookCreated && !createBookMutation.isPending) {
+                      onCreateBook();
+                    }
+                  } catch (error) {
+                    toast.error('Failed to copy prompt');
                   }
                 }}
                 className="w-full"

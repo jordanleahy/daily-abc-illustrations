@@ -21,6 +21,7 @@ const ImageTextOverlayEditor = lazy(() =>
 );
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeletePage } from '@/hooks/useDeletePage';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
@@ -189,13 +190,10 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
   };
 
   const handleCopyDescription = async () => {
-    if (!page.description) {
-      toast.error('No description available');
-      return;
-    }
+    if (!page.description) return;
 
     try {
-      await navigator.clipboard.writeText(page.description);
+      await copyToClipboard(page.description);
       toast.success('Description copied to clipboard');
     } catch (error) {
       console.error('Error copying description to clipboard:', error);
@@ -204,13 +202,10 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
   };
 
   const handleCopyJsonPrompt = async () => {
-    if (!currentPrompt?.content) {
-      toast.error('No JSON prompt available');
-      return;
-    }
+    if (!currentPrompt?.content) return;
 
     try {
-      await navigator.clipboard.writeText(currentPrompt.content);
+      await copyToClipboard(currentPrompt.content);
       toast.success('JSON prompt copied to clipboard');
     } catch (error) {
       console.error('Error copying JSON prompt to clipboard:', error);
@@ -219,10 +214,7 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
   };
 
   const handleCopyFullPrompt = async () => {
-    if (!currentImage?.prompt_used) {
-      toast.error('No full prompt available');
-      return;
-    }
+    if (!currentImage?.prompt_used) return;
 
     // Skip if it's just an upload message
     if (currentImage.prompt_used.startsWith('User uploaded:')) {
@@ -231,7 +223,7 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
     }
 
     try {
-      await navigator.clipboard.writeText(currentImage.prompt_used);
+      await copyToClipboard(currentImage.prompt_used);
       toast.success('Full prompt copied to clipboard');
     } catch (error) {
       console.error('Error copying full prompt to clipboard:', error);

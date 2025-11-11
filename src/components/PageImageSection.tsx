@@ -11,6 +11,7 @@ import { ProcessStatus } from "@/types/shared";
 import { useState, useEffect } from "react";
 import { Loader2, Upload, Clipboard, Copy, ArrowLeft, DollarSign } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
+import { copyToClipboard } from '@/utils/clipboardHelpers';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -231,10 +232,14 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               size="sm"
               variant="outline"
               disabled={!currentPrompt?.content}
-              onClick={() => {
+              onClick={async () => {
                 if (currentPrompt?.content) {
-                  navigator.clipboard.writeText(currentPrompt.content);
-                  toast.success('Prompt copied to clipboard');
+                  try {
+                    await copyToClipboard(currentPrompt.content);
+                    toast.success('Prompt copied to clipboard');
+                  } catch (error) {
+                    toast.error('Failed to copy prompt');
+                  }
                 }
               }}
             >

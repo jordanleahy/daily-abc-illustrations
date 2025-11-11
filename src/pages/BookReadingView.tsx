@@ -4,10 +4,8 @@ import { useBookPages } from '@/hooks/useBookPages';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { useBookEditorImagePreloader } from '@/hooks/useBookEditorImagePreloader';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { BookImage } from '@/components/ui/book-image';
 import { UnifiedReadingView } from '@/components/reading';
-import { SwipeUpDrawer } from '@/components/ui/swipe-up-drawer';
+import { PublicPageImage } from '@/components/daily-published';
 import { RoleDebugger } from '@/components/RoleDebugger';
 import { Calendar } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
@@ -110,68 +108,16 @@ export default function BookReadingView() {
       startingPageIndex={startingPageIndex}
       onBack={handleBack}
       backLabel={backLabel}
-      showUploadButton={true}
-      showSwipeDrawer={true}
+      showUploadButton={false}
+      showSwipeDrawer={false}
       entryPoint={entryPoint}
-      imageComponent={(page, pageIndex) => {
-        const currentImageUrl = pageImages[page.page_number];
-        
-        if (!currentImageUrl) {
-          return (
-            <Card className="shadow-lg">
-              <div className="relative w-full aspect-square rounded-lg overflow-hidden">
-                <div className="w-full h-full bg-gradient-to-b from-muted to-muted/60 flex items-center justify-center">
-                  <div className="text-center px-6">
-                    <p className="text-sm font-semibold">{page?.title || page?.letter || 'Page'}</p>
-                    <p className="text-xs text-muted-foreground mt-1">No image yet. Upload one to start reading.</p>
-                    <Button className="mt-3" size="sm" variant="secondary">
-                      Upload image
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </Card>
-          );
-        }
-        
-        return (
-          <BookImage
-            src={currentImageUrl}
-            alt={page?.content?.mainConcept || page?.title || "Page illustration"}
-            priority={true}
-            className="w-full h-full object-cover object-top rounded-lg"
-          />
-        );
-      }}
-      drawerContent={(page) => (
-        <SwipeUpDrawer>
-          <div className="space-y-6 pb-6">
-            {page?.content && (
-              <div className="space-y-4">
-                {page.content.mainConcept && (
-                  <div>
-                    <h3 className="text-lg font-bold mb-2">Main Concept</h3>
-                    <p className="text-muted-foreground">{page.content.mainConcept}</p>
-                  </div>
-                )}
-                
-                {page.content.funFact && (
-                  <div>
-                    <h3 className="text-lg font-bold mb-2">Fun Fact</h3>
-                    <p className="text-muted-foreground">{page.content.funFact}</p>
-                  </div>
-                )}
-                
-                {page.content.activity && (
-                  <div>
-                    <h3 className="text-lg font-bold mb-2">Activity</h3>
-                    <p className="text-muted-foreground">{page.content.activity}</p>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        </SwipeUpDrawer>
+      imageComponent={(page) => (
+        <PublicPageImage 
+          pageId={page.id}
+          bookId={book.id}
+          className="rounded-lg"
+          showUploadButton={false}
+        />
       )}
     />
   );

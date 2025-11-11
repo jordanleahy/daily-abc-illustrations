@@ -36,6 +36,8 @@ export interface UnifiedReadingViewConfig {
   startingPageIndex?: number;
   onBack: () => void;
   backLabel?: string;
+  onNext?: () => void;  // Custom next handler (for daily published)
+  onPrevious?: () => void;  // Custom previous handler (for daily published)
   
   // Features
   showUploadButton?: boolean;
@@ -54,6 +56,11 @@ export interface UnifiedReadingViewConfig {
   
   // Session rewards (for non-authenticated users)
   sessionCoins?: number;
+  
+  // Daily published features
+  expiresAt?: string;
+  onTapToAdvance?: boolean;
+  contentId?: string;
 }
 
 export function UnifiedReadingView({
@@ -63,6 +70,8 @@ export function UnifiedReadingView({
   startingPageIndex = 0,
   onBack,
   backLabel,
+  onNext: customOnNext,
+  onPrevious: customOnPrevious,
   showUploadButton = false,
   showSwipeDrawer = false,
   customHeader,
@@ -71,12 +80,25 @@ export function UnifiedReadingView({
   entryPoint = 'direct_link',
   openGraphMetadata,
   sessionCoins = 0,
+  expiresAt,
+  onTapToAdvance = false,
+  contentId,
 }: UnifiedReadingViewConfig) {
   const navigate = useNavigate();
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
   const { data: kidProfiles } = useKidProfiles();
   const { completeBookHabit } = useCompleteBookHabit();
   const { hasHabitsRewards } = useFeatureAccess();
+  
+  // Handle expiration for daily published content
+  const isExpired = expiresAt ? new Date() > new Date(expiresAt) : false;
+  
+  useEffect(() => {
+    if (isExpired) {
+      console.log('Content has expired, redirecting to home...');
+      navigate('/', { replace: true });
+    }
+  }, [isExpired, navigate]);
   
   // Reorder pages for circular reading experience
   const reorderedPages = useMemo(() => {
@@ -148,6 +170,13 @@ export function UnifiedReadingView({
   
   // Navigation handlers
   const handleNext = async () => {
+    // Use custom handler if provided (for daily published)
+    if (customOnNext) {
+      customOnNext();
+      return;
+    }
+    
+    // Default navigation logic
     if (isLastPage) {
       // Auto-complete reading habit if exists (only for Plus tier users)
       if (hasHabitsRewards && selectedKidId && (book.book_id || book.id)) {
@@ -193,6 +222,13 @@ export function UnifiedReadingView({
   };
 
   const handlePrevious = () => {
+    // Use custom handler if provided (for daily published)
+    if (customOnPrevious) {
+      customOnPrevious();
+      return;
+    }
+    
+    // Default navigation logic
     if (currentPageIndex > 0) {
       const newIndex = currentPageIndex - 1;
       setCurrentPageIndex(newIndex);
@@ -298,7 +334,14 @@ export function UnifiedReadingView({
     }
   };
 
-  if (!currentPage) {
+  // Tap-to-advance handler for daily published
+  const handleTapToAdvance = onTapToAdvance ? (e: React.MouseEvent) => {
+    // Allow context menu to work on image
+    if (e.button === 2) return;
+    handleNext();
+  } : undefined;
+
+  if (!currentPage || isExpired) {
     return null;
   }
 
@@ -330,7 +373,11 @@ export function UnifiedReadingView({
         {/* Main content area */}
         <div className="flex-1 flex flex-col pb-24">
           <div className="flex-1 flex items-center justify-center p-4">
-            <div className="w-full max-w-sm mx-auto">
+            <div 
+              className="w-full max-w-sm mx-auto"
+              onClick={handleTapToAdvance}
+              style={onTapToAdvance ? { cursor: 'pointer' } : undefined}
+            >
               <ReadingPageDisplay
                 pageId={currentPage.id}
                 bookId={book.book_id || book.id}

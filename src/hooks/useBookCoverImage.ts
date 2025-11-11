@@ -2,8 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 /**
- * Hook to fetch the cover image (page 1) for a book
- * Returns the image URL for the first page or null
+ * Hook to fetch the cover image (first available page) for a book
+ * Returns the image URL for the earliest page image or null
  */
 export const useBookCoverImage = (bookId: string | undefined) => {
   return useQuery({
@@ -20,9 +20,10 @@ export const useBookCoverImage = (bookId: string | undefined) => {
           )
         `)
         .eq('book_id', bookId)
-        .eq('pages.page_number', 1)
         .eq('is_latest', true)
         .not('image_url', 'is', null)
+        .order('pages(page_number)', { ascending: true })
+        .limit(1)
         .maybeSingle();
 
       if (error) {

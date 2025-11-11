@@ -8,6 +8,7 @@ interface CreatePageParams {
   title: string;
   description?: string;
   existingPages: number;
+  pageType?: 'content' | 'cover' | 'educational';
 }
 
 const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
@@ -17,7 +18,7 @@ export const useCreatePage = () => {
   const { user } = useAuthContext();
 
   return useMutation({
-    mutationFn: async ({ bookId, title, description, existingPages }: CreatePageParams) => {
+    mutationFn: async ({ bookId, title, description, existingPages, pageType = 'content' }: CreatePageParams) => {
       if (!user) {
         throw new Error('User must be authenticated to create a page');
       }
@@ -47,6 +48,7 @@ export const useCreatePage = () => {
         .from('pages')
         .insert({
           book_id: bookId,
+          page_type: pageType,
           letter,
           page_number: pageNumber,
           title,

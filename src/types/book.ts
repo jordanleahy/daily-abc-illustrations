@@ -1,4 +1,30 @@
 /**
+ * Page type enum matching database enum
+ */
+export type PageType = 'cover' | 'educational' | 'content';
+
+/**
+ * Type guard to check if a page is a cover page
+ */
+export const isCoverPage = (page: Page): boolean => {
+  return page.page_type === 'cover';
+};
+
+/**
+ * Type guard to check if a page is an educational focus page
+ */
+export const isEducationalPage = (page: Page): boolean => {
+  return page.page_type === 'educational';
+};
+
+/**
+ * Type guard to check if a page is a content page
+ */
+export const isContentPage = (page: Page): boolean => {
+  return page.page_type === 'content';
+};
+
+/**
  * Structured metadata for book filtering and sorting
  * Captured from user choices during book creation
  */
@@ -93,9 +119,11 @@ export interface Page {
   id: string;
   /** ID of the book this page belongs to */
   book_id: string;
-  /** Single letter this page represents (A-Z) */
+  /** Type of page (cover, educational, content) */
+  page_type: PageType;
+  /** Letter for content pages (A-Z), or identifier for cover/educational */
   letter: string;
-  /** Sequential page number (1-26) */
+  /** Sequential page number (1, 2, 3...) */
   page_number: number;
   /** Title or heading for the page */
   title: string;

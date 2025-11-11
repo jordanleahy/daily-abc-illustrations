@@ -87,6 +87,12 @@ export enum PublicationStatus {
 }
 
 /**
+ * Page type enum matching database enum
+ * NOTE: Must stay in sync with src/types/book.ts PageType
+ */
+export type PageType = 'cover' | 'educational' | 'content';
+
+/**
  * AI provider types
  * NOTE: Must stay in sync with src/types/shared/agent.ts
  * Edge functions run in Deno, frontend types run in different environment

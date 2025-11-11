@@ -16,13 +16,14 @@ export const useBookCoverImage = (bookId: string | undefined) => {
         .select(`
           image_url,
           pages!inner(
-            page_number
+            page_number,
+            page_type
           )
         `)
         .eq('book_id', bookId)
+        .eq('pages.page_type', 'cover')
         .eq('is_latest', true)
         .not('image_url', 'is', null)
-        .order('pages(page_number)', { ascending: true })
         .limit(1)
         .maybeSingle();
 

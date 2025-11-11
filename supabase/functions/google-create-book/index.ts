@@ -564,6 +564,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     // CRITICAL: Cover ALWAYS has text overlay enabled
     const coverPage = {
       book_id: book.id,
+      page_type: 'cover' as const,
       letter: 'COVER',
       page_number: 1,
       title: sanitizeText(bookData.bookName, 100),
@@ -581,13 +582,15 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       }
     };
 
-    const pages = [coverPage];
+    const pages = [];
+    pages.push(coverPage);
 
     // Create educational focus page as page 2 if provided
     // CRITICAL: Educational focus page ALWAYS has text overlay enabled
     if (educationalFocus) {
       const eduFocusPage = {
         book_id: book.id,
+        page_type: 'educational' as const,
         letter: 'FOCUS',
         page_number: 2,
         title: 'Educational Focus',
@@ -613,6 +616,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     pages.push(
       ...sanitizedPages.map((page: any, index: number) => ({
         book_id: book.id,
+        page_type: 'content' as const,
         letter: page.letter || `Page ${page.pageNumber}`,
         page_number: startingPageNumber + index,
         title: page.title,

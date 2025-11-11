@@ -9,6 +9,7 @@ interface InsertPageParams {
   insertAfterPageNumber: number; // 0 means insert at beginning
   title: string;
   description?: string;
+  pageType?: 'content'; // Only content pages can be inserted
 }
 
 export const useInsertPage = () => {

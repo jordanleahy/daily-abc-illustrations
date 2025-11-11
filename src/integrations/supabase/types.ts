@@ -1137,6 +1137,7 @@ export type Database = {
           id: string
           letter: string
           page_number: number
+          page_type: Database["public"]["Enums"]["page_type"]
           title: string
           updated_at: string
         }
@@ -1149,6 +1150,7 @@ export type Database = {
           id?: string
           letter: string
           page_number: number
+          page_type?: Database["public"]["Enums"]["page_type"]
           title: string
           updated_at?: string
         }
@@ -1161,6 +1163,7 @@ export type Database = {
           id?: string
           letter?: string
           page_number?: number
+          page_type?: Database["public"]["Enums"]["page_type"]
           title?: string
           updated_at?: string
         }
@@ -1777,6 +1780,7 @@ export type Database = {
           id: string
           letter: string
           page_number: number
+          page_type: Database["public"]["Enums"]["page_type"]
           title: string
           updated_at: string
         }
@@ -1798,6 +1802,7 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "moderator" | "admin" | "teacher"
+      page_type: "cover" | "educational" | "content"
       publication_status: "draft" | "published" | "archived"
     }
     CompositeTypes: {
@@ -1927,6 +1932,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "moderator", "admin", "teacher"],
+      page_type: ["cover", "educational", "content"],
       publication_status: ["draft", "published", "archived"],
     },
   },

@@ -90,8 +90,7 @@ export const useLibraryBooks = () => {
             book_name,
             book_description,
             user_id,
-            created_at,
-            total_pages
+            created_at
           )
         `)
         .neq('status', 'draft');

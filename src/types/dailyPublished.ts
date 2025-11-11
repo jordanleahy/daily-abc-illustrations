@@ -28,7 +28,6 @@ export interface DailyPublishedWithBook extends DailyPublished {
     book_description?: string;
     user_id: string;
     created_at: string;
-    total_pages?: number;
   };
   og_image_url?: string | null;
   seo_title?: string | null;

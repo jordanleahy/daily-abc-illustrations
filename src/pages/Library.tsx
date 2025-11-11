@@ -20,7 +20,6 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
-import { LIBRARY_CONFIG } from '@/config/library';
 
 export default memo(function Library() {
   const navigate = useNavigate();
@@ -223,7 +222,7 @@ const LibraryBookCard = memo(function LibraryBookCard({
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Users className="w-4 h-4" />
-              {item.book?.total_pages || LIBRARY_CONFIG.display.defaultPageCount} pages
+              26 pages
             </div>
             <div className="flex items-center gap-1">
               <Calendar className="w-4 h-4" />

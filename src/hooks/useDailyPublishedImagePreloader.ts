@@ -42,8 +42,7 @@ export function useDailyPublishedImagePreloader(pages: Page[] | undefined, bookI
       }
     },
     enabled: !!bookId,
-    staleTime: 60 * 60 * 1000, // 1 hour - aggressive caching for performance
-    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    // Uses global 7-day staleTime from App.tsx for instant loading
   });
   
   // Progressive batch image preloading with Supabase transformations

@@ -48,7 +48,6 @@ export const useBookSeoMetadata = (bookId?: string) => {
       return data;
     },
     enabled: !!bookId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes
+    // Uses global 7-day staleTime from App.tsx for instant loading
   });
 };

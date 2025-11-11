@@ -32,6 +32,7 @@ export function useLibraryPrefetch() {
         if (error) throw error;
         return data as DailyPublished | null;
       },
+      // NOTE: Prefetch queries intentionally use shorter staleTime for predictive loading freshness
       staleTime: 60 * 60 * 1000, // 1 hour
     });
 
@@ -51,6 +52,7 @@ export function useLibraryPrefetch() {
         if (error) return null;
         return data;
       },
+      // NOTE: Prefetch queries intentionally use shorter staleTime for predictive loading freshness
       staleTime: 60 * 60 * 1000,
     });
   };
@@ -71,6 +73,7 @@ export function useLibraryPrefetch() {
         if (error) throw error;
         return data as Page[] || [];
       },
+      // NOTE: Prefetch queries intentionally use shorter staleTime for predictive loading freshness
       staleTime: 60 * 60 * 1000,
     });
   };

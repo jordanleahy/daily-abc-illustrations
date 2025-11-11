@@ -35,8 +35,7 @@ export const usePublicBook = (bookId: string | undefined) => {
       return bookData as Book | null;
     },
     enabled: !!bookId,
-    staleTime: 60 * 60 * 1000, // 1 hour - instant loading for returning users
-    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache for full day
+    // Uses global 7-day staleTime from App.tsx for instant loading
     refetchOnMount: false, // Use cached data for returning users
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });

@@ -55,7 +55,7 @@ export const useAgent = (agentType: AgentConfig['type']) => {
       } as AgentConfig;
     },
     enabled: !!user,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    // Uses global 7-day staleTime from App.tsx for instant loading
     retry: 2,
   });
 };

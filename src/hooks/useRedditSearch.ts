@@ -79,7 +79,7 @@ export const useRedditSearch = (query: string = 'ABC learning for kids', timeFil
       const response = data as RedditSearchResponse;
       return transformRedditData(response.results || []);
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    // Uses global 7-day staleTime from App.tsx for instant loading
     retry: 2,
   });
 };

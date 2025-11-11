@@ -24,8 +24,7 @@ export const usePublicPageImage = (pageId?: string) => {
       return data as PageImageUrl | null;
     },
     enabled: !!pageId,
-    staleTime: 60 * 60 * 1000, // 1 hour - aggressive caching
-    gcTime: 2 * 60 * 60 * 1000, // 2 hours
+    // Uses global 7-day staleTime from App.tsx for instant loading
   });
 
   // Preload the image as soon as the URL is available

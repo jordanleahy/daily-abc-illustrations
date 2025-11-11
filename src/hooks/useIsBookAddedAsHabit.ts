@@ -45,6 +45,6 @@ export function useIsBookAddedAsHabit(bookId: string | undefined) {
     },
     enabled: !!user?.id && !!bookId,
     refetchOnMount: 'always', // Always refetch to ensure fresh data after habit changes
-    staleTime: 0, // Consider data stale immediately
+    // NOTE: This hook intentionally doesn't use 7-day staleTime - it needs real-time data for today's habits
   });
 }

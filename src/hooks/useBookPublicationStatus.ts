@@ -21,6 +21,6 @@ export const useBookPublicationStatus = (bookId?: string) => {
       return data as DailyPublished | null;
     },
     enabled: !!bookId,
-    staleTime: 30 * 1000, // 30 seconds
+    // Uses global 7-day staleTime from App.tsx for instant loading
   });
 };

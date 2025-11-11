@@ -58,7 +58,6 @@ export const useDailyPublishedQueue = () => {
 
       return (data as DailyPublishedWithBook[]) || [];
     },
-    staleTime: 30 * 1000, // 30 seconds - more frequent updates for queue
-    gcTime: 60 * 1000, // 1 minute
+    // Uses global 7-day staleTime from App.tsx for instant loading
   });
 };

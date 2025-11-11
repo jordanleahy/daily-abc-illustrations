@@ -49,8 +49,8 @@ import { detectPlainImageTags, assertPerformanceTargets } from "./utils/imageOpt
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000, // 5 minutes
-      gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
+      staleTime: 7 * 24 * 60 * 60 * 1000, // 7 days - instant loading for returning users
+      gcTime: 14 * 24 * 60 * 60 * 1000, // 14 days - keep cached data for 2x staleTime
       retry: 2,
       refetchOnWindowFocus: false,
     },

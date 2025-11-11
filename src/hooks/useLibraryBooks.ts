@@ -225,8 +225,7 @@ export const useLibraryBooks = () => {
       return deduplicatedData as DailyPublishedWithBook[];
 
     },
-    staleTime: 30 * 60 * 1000, // 30 minutes - aggressive cache-first for instant load
-    gcTime: 60 * 60 * 1000, // 60 minutes - keep in cache much longer
+    // Uses global 7-day staleTime from App.tsx for instant loading
     refetchOnMount: false, // Don't refetch if data exists
     refetchOnWindowFocus: false, // Don't refetch on focus
   });

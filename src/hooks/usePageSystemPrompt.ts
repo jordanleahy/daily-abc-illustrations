@@ -33,7 +33,7 @@ export function usePageSystemPrompt(pageId: string) {
       return data as PageSystemPrompt | null;
     },
     enabled: !!pageId,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    // Uses global 7-day staleTime from App.tsx for instant loading
   });
 
   // Fetch all versions
@@ -52,7 +52,7 @@ export function usePageSystemPrompt(pageId: string) {
       return data as PageSystemPromptVersion[];
     },
     enabled: !!pageId,
-    staleTime: 2 * 60 * 1000,
+    // Uses global 7-day staleTime from App.tsx for instant loading
   });
 
   // Save mutation with optimized cache updates

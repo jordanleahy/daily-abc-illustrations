@@ -23,8 +23,7 @@ export function useSessionMessages(sessionId: string | undefined) {
       return (data?.messages as unknown as Message[]) || [];
     },
     enabled: !!sessionId,
-    staleTime: 60 * 60 * 1000, // 1 hour - instant loading for returning users
-    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache for full day
+    // Uses global 7-day staleTime from App.tsx for instant loading
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
 }
@@ -49,6 +48,7 @@ export function usePrefetchSession() {
         if (error) throw error;
         return (data?.messages as unknown as Message[]) || [];
       },
+      // NOTE: Prefetch queries intentionally use shorter staleTime for predictive loading freshness
       staleTime: 5 * 60 * 1000,
     });
   };

@@ -91,7 +91,6 @@ export function QACheckpointPanel({
   
   // Word Learning Helper state
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [isWordEnlarged, setIsWordEnlarged] = useState(false);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
 
   const currentCoverPrompt = qaPagePrompts[0] || null;
@@ -159,13 +158,10 @@ export function QACheckpointPanel({
     
     // Reset word learning state
     setCurrentWordIndex(0);
-    setIsWordEnlarged(false);
     setWordStatuses({});
   }, [currentQAPage]); // Removed copiedPages to prevent immediate trigger
   
   // Word Learning Helper handlers
-  const handleToggleEnlarge = () => setIsWordEnlarged(!isWordEnlarged);
-  
   const handleNavigateWord = (direction: 'prev' | 'next') => {
     setCurrentWordIndex(prev => {
       if (direction === 'prev') {
@@ -192,14 +188,13 @@ export function QACheckpointPanel({
     }
   };
 
-  // Helper function to render text with enlarged current word
+  // Helper function to render text with current word always enlarged
   const renderTextWithEnlargedWord = (
     fullText: string, 
-    currentWord: string | undefined,
-    isEnlarged: boolean
+    currentWord: string | undefined
   ) => {
-    // If not enlarged or no current word, return full text normally
-    if (!isEnlarged || !currentWord) {
+    // If no current word, return full text normally
+    if (!currentWord) {
       return <span className="text-lg font-semibold">{fullText}</span>;
     }
 
@@ -222,14 +217,14 @@ export function QACheckpointPanel({
       <>
         <span className="text-lg font-semibold">{before}</span>
         <span 
-          className="text-lg font-semibold text-white inline-block animate-pulse"
+          className="text-lg font-semibold text-white inline-block px-2 py-1 rounded bg-yellow-500/60"
           style={{ 
-            transform: 'scale(2.5)',
+            transform: 'scale(2)',
             transformOrigin: 'center center',
             display: 'inline-block',
-            margin: '0 1.5rem',
+            margin: '0 1rem',
             fontWeight: '800',
-            transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+            transition: 'all 0.6s ease-in-out'
           }}
         >
           {word}
@@ -390,8 +385,7 @@ export function QACheckpointPanel({
                                style={{ lineHeight: '1.2' }}>
                               {renderTextWithEnlargedWord(
                                 currentPageText, 
-                                currentPageWords?.[currentWordIndex]?.word,
-                                isWordEnlarged
+                                currentPageWords?.[currentWordIndex]?.word
                               )}
                             </p>
                             <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />
@@ -504,8 +498,6 @@ export function QACheckpointPanel({
             
             {/* Word Learning Controls */}
             <WordLearningControls
-              isEnlarged={isWordEnlarged}
-              onToggleEnlarge={handleToggleEnlarge}
               onMarkDifficult={handleMarkDifficult}
               onMarkUnderstood={handleMarkUnderstood}
               onNavigateWord={handleNavigateWord}

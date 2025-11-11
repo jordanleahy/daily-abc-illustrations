@@ -17,7 +17,6 @@ interface ReadingPageDisplayProps {
   className?: string;
   // Word learning state passed from parent
   currentWordIndex?: number;
-  isWordEnlarged?: boolean;
   hiddenOverlayPages?: Set<string>;
   onToggleOverlayVisibility?: (pageId: string) => void;
   wordStatuses?: Record<number, 'difficult' | 'understood'>;
@@ -35,7 +34,6 @@ export function ReadingPageDisplay({
   imageComponent,
   className = '',
   currentWordIndex = 0,
-  isWordEnlarged = false,
   hiddenOverlayPages,
   onToggleOverlayVisibility,
   wordStatuses,
@@ -68,15 +66,14 @@ export function ReadingPageDisplay({
   }, [pageId, pageText, currentPageWords, pages, bookId, generateMetadata]);
 
 
-  // Helper function to render text with enlarged current word
+  // Helper function to render text with current word always enlarged
   const renderTextWithEnlargedWord = (
     fullText: string, 
     currentWord: string | undefined,
-    isEnlarged: boolean,
     wordsArray: Array<{ word: string }> | undefined,
     statuses: Record<number, 'difficult' | 'understood'> | undefined
   ) => {
-    if (!isEnlarged || !currentWord) {
+    if (!currentWord) {
       return <span className="text-lg font-semibold">{fullText}</span>;
     }
 
@@ -208,10 +205,9 @@ export function ReadingPageDisplay({
                   >
                     <p className="text-white text-center flex flex-wrap items-center justify-center gap-1 overflow-hidden"
                        style={{ lineHeight: '1.2' }}>
-                      {renderTextWithEnlargedWord(
+                       {renderTextWithEnlargedWord(
                         pageText, 
                         currentPageWords?.[currentWordIndex]?.word,
-                        isWordEnlarged,
                         currentPageWords,
                         wordStatuses
                       )}

@@ -3,7 +3,6 @@ import { useReadingPreferences } from '@/hooks/useReadingPreferences';
 
 export function useReadingPageState() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [isWordEnlarged, setIsWordEnlarged] = useState(false);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
   const [isEditingText, setIsEditingText] = useState(false);
   
@@ -22,7 +21,6 @@ export function useReadingPageState() {
   }, []);
 
   const handleMarkDifficult = useCallback((totalWords: number) => {
-    setIsWordEnlarged(true);
     setWordStatuses(prev => ({ ...prev, [currentWordIndex]: 'difficult' }));
     if (currentWordIndex < totalWords - 1) {
       setCurrentWordIndex(prev => prev + 1);
@@ -30,7 +28,6 @@ export function useReadingPageState() {
   }, [currentWordIndex]);
 
   const handleMarkUnderstood = useCallback((totalWords: number) => {
-    setIsWordEnlarged(true);
     setWordStatuses(prev => ({ ...prev, [currentWordIndex]: 'understood' }));
     if (currentWordIndex < totalWords - 1) {
       setCurrentWordIndex(prev => prev + 1);
@@ -39,7 +36,6 @@ export function useReadingPageState() {
 
   const resetState = useCallback(() => {
     setCurrentWordIndex(0);
-    setIsWordEnlarged(false);
     setWordStatuses({});
   }, []);
 
@@ -49,7 +45,6 @@ export function useReadingPageState() {
 
   return {
     currentWordIndex,
-    isWordEnlarged,
     wordStatuses,
     isEditingText,
     hiddenOverlayPages,

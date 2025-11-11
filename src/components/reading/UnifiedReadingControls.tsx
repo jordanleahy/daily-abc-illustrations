@@ -4,7 +4,6 @@ import { ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight } from 'lucide-react';
 interface UnifiedReadingControlsProps {
   // Word learning props
   hasWords?: boolean;
-  isEnlarged?: boolean;
   onMarkDifficult?: () => void;
   onMarkUnderstood?: () => void;
   currentWordIndex?: number;
@@ -21,7 +20,6 @@ interface UnifiedReadingControlsProps {
 
 export function UnifiedReadingControls({
   hasWords = false,
-  isEnlarged = false,
   onMarkDifficult,
   onMarkUnderstood,
   currentWordIndex = 0,
@@ -66,9 +64,9 @@ export function UnifiedReadingControls({
             </Button>
           </div>
 
-          {/* Right: Word Navigation - Small arrows (only when enlarged) */}
-          {onNavigateWord && isEnlarged && (
-            <div className="flex items-center gap-2 animate-fade-in">
+          {/* Right: Word Navigation - Always visible arrows */}
+          {onNavigateWord && (
+            <div className="flex items-center gap-2">
               <Button
                 variant="outline"
                 size="icon"

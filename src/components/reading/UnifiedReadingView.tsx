@@ -393,7 +393,6 @@ export function UnifiedReadingView({
                 pageText={currentPage.content?.textOverlay?.enabled ? currentPage.content.textOverlay.text : ''}
                 imageUrl=""
                 currentWordIndex={readingState.currentWordIndex}
-                isWordEnlarged={readingState.isWordEnlarged}
                 wordStatuses={readingState.wordStatuses}
                 hiddenOverlayPages={readingState.hiddenOverlayPages}
                 onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
@@ -413,7 +412,6 @@ export function UnifiedReadingView({
       <UnifiedReadingControls
         showWordControls={contentType === 'user_book' ? currentPageIndex > 1 : undefined}
         hasWords={currentPageWords.length > 0}
-        isEnlarged={readingState.isWordEnlarged}
         onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
         onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
         currentWordIndex={readingState.currentWordIndex}

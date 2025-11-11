@@ -337,9 +337,7 @@ export default function GoogleChat() {
     if (outlineJustCompleted && !showQACheckpoint) {
       setCurrentQAPage(1); // Start at cover page
       
-      if (!isMobile) {
-        setShowQACheckpoint(true);
-      }
+      setShowQACheckpoint(true);
       
       // Scroll to bottom to show the banner
       setTimeout(() => {

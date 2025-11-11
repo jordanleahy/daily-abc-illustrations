@@ -146,6 +146,7 @@ export function DailyPublishedPageView({
       {/* Unified Reading Controls */}
       <UnifiedReadingControls
         hasWords={currentPageWords.length > 0}
+        isEnlarged={readingState.isWordEnlarged}
         onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
         onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
         currentWordIndex={readingState.currentWordIndex}

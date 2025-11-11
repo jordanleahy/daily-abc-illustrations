@@ -467,26 +467,41 @@ export function QACheckpointPanel({
                 </p>
               </button>
             ) : (
-              <ImageUpload 
-                onImageSelect={(file) => {
-                  // Store scroll position before processing
-                  const scrollX = window.scrollX || window.pageXOffset;
-                  const scrollY = window.scrollY || window.pageYOffset;
-                  
-                  const reader = new FileReader();
-                  reader.onloadend = () => {
-                    onImageUpload(reader.result as string);
+              <div className="flex flex-col h-full">
+                <ImageUpload 
+                  onImageSelect={(file) => {
+                    // Store scroll position before processing
+                    const scrollX = window.scrollX || window.pageXOffset;
+                    const scrollY = window.scrollY || window.pageYOffset;
                     
-                    // Restore scroll position after upload
-                    requestAnimationFrame(() => {
-                      window.scrollTo(scrollX, scrollY);
-                    });
-                  };
-                  reader.readAsDataURL(file);
-                }}
-                disabled={createBookMutation.isPending}
-                className="h-full"
-              />
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      onImageUpload(reader.result as string);
+                      
+                      // Restore scroll position after upload
+                      requestAnimationFrame(() => {
+                        window.scrollTo(scrollX, scrollY);
+                      });
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                  disabled={createBookMutation.isPending}
+                  className="flex-1"
+                />
+                
+                {/* Copy Prompt Button - positioned below paste button */}
+                <div className="px-4 pb-4">
+                  <Button
+                    variant="secondary"
+                    size="lg"
+                    onClick={handleCopyPrompt}
+                    className="w-full"
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy Image Prompt Again
+                  </Button>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -551,18 +566,6 @@ export function QACheckpointPanel({
           </div>
         )}
 
-        {/* Copy Prompt Button - Show when upload area is visible */}
-        {hasClickedCopy && !displayImages[currentQAPage] && (
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={handleCopyPrompt}
-            className="w-full"
-          >
-            <Copy className="h-4 w-4 mr-2" />
-            Copy Image Prompt Again
-          </Button>
-        )}
       </div>
 
       {/* Sticky Footer with Actions */}

@@ -106,8 +106,8 @@ export function ReadingPageDisplay({
               <span
                 key={index}
                 className={`text-lg font-semibold text-yellow-300 inline-block px-2 py-1 rounded ${
-                  isUnderstood ? 'bg-emerald-500/30' : 
-                  isDifficult ? 'bg-red-500/30' : ''
+                  isUnderstood ? 'bg-emerald-500/50' : 
+                  isDifficult ? 'bg-red-500/50' : ''
                 }`}
                 style={{ 
                   transform: 'scale(2.5)',
@@ -126,8 +126,8 @@ export function ReadingPageDisplay({
             <span
               key={index}
               className={`text-lg font-semibold inline-block px-1.5 py-0.5 rounded ${
-                isUnderstood ? 'bg-emerald-500/20' : 
-                isDifficult ? 'bg-red-500/20' : ''
+                isUnderstood ? 'bg-emerald-500/40' : 
+                isDifficult ? 'bg-red-500/40' : ''
               }`}
               style={{ 
                 margin: '0 0.5rem',

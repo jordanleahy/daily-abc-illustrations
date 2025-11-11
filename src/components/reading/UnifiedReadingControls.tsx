@@ -65,7 +65,6 @@ export function UnifiedReadingControls({
               onClick={onMarkDifficult}
               className="h-12 w-12 rounded-full border-red-500/50 bg-red-500/10 hover:bg-red-500/20 text-red-600 hover:text-red-700"
               title="Mark as difficult"
-              disabled={currentWordIndex >= totalWords - 1}
             >
               <ThumbsDown className="h-6 w-6" />
             </Button>
@@ -77,7 +76,6 @@ export function UnifiedReadingControls({
               onClick={onMarkUnderstood}
               className="h-12 w-12 rounded-full border-green-500/50 bg-green-500/10 hover:bg-green-500/20 text-green-600 hover:text-green-700"
               title="Mark as understood"
-              disabled={currentWordIndex >= totalWords - 1}
             >
               <ThumbsUp className="h-6 w-6" />
             </Button>

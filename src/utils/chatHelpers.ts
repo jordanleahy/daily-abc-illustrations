@@ -9,6 +9,15 @@ export interface PageDetail {
 }
 
 /**
+ * Sanitize title by removing all quotes and apostrophes
+ */
+const sanitizeTitle = (title: string): string => {
+  return title
+    .replace(/["'`'''""]/g, '') // Remove all types of quotes and apostrophes
+    .trim();
+};
+
+/**
  * Parse page details from chat messages containing book outline
  */
 export const parsePageDetailsFromMessages = (messages: any[]): PageDetail[] | null => {
@@ -47,7 +56,7 @@ export const parsePageDetailsFromMessages = (messages: any[]): PageDetail[] | nu
     
     pages.push({
       pageNumber: parseInt(pageNum, 10),
-      title,
+      title: sanitizeTitle(title), // Remove all quotes and apostrophes
       description
     });
   }

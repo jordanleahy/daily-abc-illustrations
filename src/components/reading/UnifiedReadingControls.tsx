@@ -119,7 +119,7 @@ export function UnifiedReadingControls({
           disabled={disablePreviousPage || !onPreviousPage}
           className={`flex items-center justify-center h-full rounded-l-full transition-all active:scale-[0.98] shrink-0 ${
             disablePreviousPage || !onPreviousPage
-              ? 'opacity-30 cursor-not-allowed w-16'
+              ? 'opacity-30 cursor-not-allowed pointer-events-none w-[48%]'
               : 'hover:bg-muted/50 cursor-pointer w-[48%]'
           }`}
           aria-label="Previous page"
@@ -136,7 +136,7 @@ export function UnifiedReadingControls({
           disabled={disableNextPage || !onNextPage}
           className={`flex items-center justify-center h-full rounded-r-full transition-all active:scale-[0.98] shrink-0 ${
             disableNextPage || !onNextPage
-              ? 'opacity-30 cursor-not-allowed w-16'
+              ? 'opacity-30 cursor-not-allowed pointer-events-none w-[48%]'
               : 'hover:opacity-90 cursor-pointer w-[48%] bg-[hsl(220,40%,15%)]'
           }`}
           aria-label="Next page"

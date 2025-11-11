@@ -20,6 +20,7 @@ interface ReadingPageDisplayProps {
   isWordEnlarged?: boolean;
   hiddenOverlayPages?: Set<string>;
   onToggleOverlayVisibility?: (pageId: string) => void;
+  wordStatuses?: Record<number, 'difficult' | 'understood'>;
 }
 
 export function ReadingPageDisplay({
@@ -35,6 +36,7 @@ export function ReadingPageDisplay({
   isWordEnlarged = false,
   hiddenOverlayPages,
   onToggleOverlayVisibility,
+  wordStatuses,
 }: ReadingPageDisplayProps) {
   const { generateMetadata } = useWordMetadata();
   const { pages } = useBookPages(bookId);
@@ -66,7 +68,9 @@ export function ReadingPageDisplay({
   const renderTextWithEnlargedWord = (
     fullText: string, 
     currentWord: string | undefined,
-    isEnlarged: boolean
+    isEnlarged: boolean,
+    wordsArray: Array<{ word: string }> | undefined,
+    statuses: Record<number, 'difficult' | 'understood'> | undefined
   ) => {
     if (!isEnlarged || !currentWord) {
       return <span className="text-lg font-semibold">{fullText}</span>;
@@ -86,6 +90,12 @@ export function ReadingPageDisplay({
 
           // Check if this word matches the current highlighted word
           const isHighlighted = word.toLowerCase() === lowerCurrentWord;
+          
+          // Find word index in wordsArray to check status
+          const wordIndex = wordsArray?.findIndex(
+            w => w.word.toLowerCase() === word.toLowerCase()
+          );
+          const isUnderstood = wordIndex !== undefined && wordIndex >= 0 && statuses?.[wordIndex] === 'understood';
 
           if (isHighlighted) {
             return (
@@ -101,6 +111,7 @@ export function ReadingPageDisplay({
                 }}
               >
                 {word}
+                {isUnderstood && <span className="text-emerald-400 text-sm ml-1">●</span>}
               </span>
             );
           }
@@ -115,6 +126,7 @@ export function ReadingPageDisplay({
               }}
             >
               {word}
+              {isUnderstood && <span className="text-emerald-400 text-xs ml-0.5">●</span>}
             </span>
           );
         })}
@@ -186,7 +198,9 @@ export function ReadingPageDisplay({
                       {renderTextWithEnlargedWord(
                         pageText, 
                         currentPageWords?.[currentWordIndex]?.word,
-                        isWordEnlarged
+                        isWordEnlarged,
+                        currentPageWords,
+                        wordStatuses
                       )}
                     </p>
                     {onUpdatePageText && (

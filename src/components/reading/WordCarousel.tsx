@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Carousel,
   CarouselContent,
@@ -21,9 +21,12 @@ export function WordCarousel({
   onCarouselApiReady,
   onWordChange,
 }: WordCarouselProps) {
+  const [api, setApi] = useState<CarouselApi>();
+
   const handleSetApi = (api: CarouselApi) => {
     if (!api) return;
     
+    setApi(api);
     onCarouselApiReady?.(api);
     
     // Listen to carousel selection changes
@@ -33,12 +36,22 @@ export function WordCarousel({
     });
   };
 
+  // Center first word on mount
+  useEffect(() => {
+    if (api && words.length > 0) {
+      // Small delay to ensure carousel is fully initialized
+      setTimeout(() => {
+        api.scrollTo(0);
+      }, 10);
+    }
+  }, [api, words.length]);
+
   return (
     <div className="w-full py-8">
       <Carousel
         opts={{
           align: 'center',
-          loop: false,
+          loop: true,
           skipSnaps: false,
         }}
         setApi={handleSetApi}
@@ -54,7 +67,7 @@ export function WordCarousel({
             return (
               <CarouselItem
                 key={index}
-                className="pl-2 basis-1/3 flex items-center justify-center"
+                className="pl-2 basis-1/2 flex items-center justify-center"
               >
                 <div
                   className={`

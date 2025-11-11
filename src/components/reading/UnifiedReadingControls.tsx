@@ -17,6 +17,7 @@ interface UnifiedReadingControlsProps {
   onNextPage?: () => void;
   disablePreviousPage?: boolean;
   disableNextPage?: boolean;
+  showWordControls?: boolean;
 }
 
 export function UnifiedReadingControls({
@@ -32,6 +33,7 @@ export function UnifiedReadingControls({
   onNextPage,
   disablePreviousPage = false,
   disableNextPage = false,
+  showWordControls = true,
 }: UnifiedReadingControlsProps) {
   return (
     <div 
@@ -39,7 +41,7 @@ export function UnifiedReadingControls({
       style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
       {/* Row 1: Word Learning Controls */}
-      {hasWords && totalWords > 0 && (
+      {showWordControls && hasWords && totalWords > 0 && (
         <div className="flex items-center justify-between mb-2">
           {/* Left: Word Learning Buttons */}
           <div className="flex items-center gap-3">

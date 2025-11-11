@@ -456,6 +456,7 @@ export default function BookReadingView() {
         
         {/* Unified Reading Controls */}
         <UnifiedReadingControls
+          showWordControls={currentPageIndex > 1}
           hasWords={currentPageWords.length > 0}
           isEnlarged={readingState.isWordEnlarged}
           onToggleEnlarge={readingState.handleToggleEnlarge}

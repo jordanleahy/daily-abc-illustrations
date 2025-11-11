@@ -117,10 +117,10 @@ export function UnifiedReadingControls({
         <button
           onClick={onPreviousPage}
           disabled={disablePreviousPage || !onPreviousPage}
-          className={`flex items-center justify-center h-full w-16 rounded-l-full transition-all active:scale-95 ${
+          className={`flex items-center justify-center h-full rounded-l-full transition-all active:scale-[0.98] ${
             disablePreviousPage || !onPreviousPage
-              ? 'opacity-30 cursor-not-allowed'
-              : 'hover:bg-muted/50 cursor-pointer'
+              ? 'opacity-30 cursor-not-allowed w-16'
+              : 'hover:bg-muted/50 cursor-pointer w-[48%]'
           }`}
           aria-label="Previous page"
         >

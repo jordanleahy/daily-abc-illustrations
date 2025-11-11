@@ -17,6 +17,7 @@ import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { useBookPages } from '@/hooks/useBookPages';
 import { useReadingPreferences } from '@/hooks/useReadingPreferences';
 import { BookImage } from '@/components/ui/book-image';
+import { useBookPublicationStatus } from '@/hooks/useBookPublicationStatus';
 
 interface QACheckpointPanelProps {
   showQACheckpoint: boolean;
@@ -81,8 +82,9 @@ export function QACheckpointPanel({
   const { generateMetadata, isGenerating } = useWordMetadata();
   const { isOverlayHidden, toggleOverlay, isToggling, isLoading: isPreferencesLoading } = useReadingPreferences();
   
-  // Fetch pages data
+  // Fetch pages data and publication status
   const { pages } = useBookPages(bookId || undefined);
+  const { data: publicationData } = useBookPublicationStatus(bookId || undefined);
   
   // Get current page ID for overlay toggle
   const currentPageId = useMemo(() => {
@@ -663,11 +665,11 @@ export function QACheckpointPanel({
             </Button>
             
             {/* Read Book button - Show when book is published */}
-            {bookStatus !== PublicationStatus.DRAFT && bookId && (
+            {bookStatus !== PublicationStatus.DRAFT && publicationData?.id && (
               <Button
                 variant="default"
                 size="lg"
-                onClick={() => navigate(`/library/${bookId}`)}
+                onClick={() => navigate(`/library/${publicationData.id}`)}
                 className="flex-1"
               >
                 <BookOpen className="h-4 w-4 mr-2" />

@@ -466,9 +466,18 @@ export function QACheckpointPanel({
             ) : (
               <ImageUpload 
                 onImageSelect={(file) => {
+                  // Store scroll position before processing
+                  const scrollX = window.scrollX || window.pageXOffset;
+                  const scrollY = window.scrollY || window.pageYOffset;
+                  
                   const reader = new FileReader();
                   reader.onloadend = () => {
                     onImageUpload(reader.result as string);
+                    
+                    // Restore scroll position after upload
+                    requestAnimationFrame(() => {
+                      window.scrollTo(scrollX, scrollY);
+                    });
                   };
                   reader.readAsDataURL(file);
                 }}
@@ -604,7 +613,16 @@ export function QACheckpointPanel({
                 ) : (
                   <ImageUpload 
                     onImageSelect={(file) => {
+                      // Store scroll position before processing
+                      const scrollX = window.scrollX || window.pageXOffset;
+                      const scrollY = window.scrollY || window.pageYOffset;
+                      
                       onCoverUpload(file);
+                      
+                      // Restore scroll position after upload
+                      requestAnimationFrame(() => {
+                        window.scrollTo(scrollX, scrollY);
+                      });
                     }}
                     disabled={createBookMutation.isPending}
                     className="h-full"

@@ -353,33 +353,6 @@ export default function BookReadingView() {
     }
   };
 
-  // Handle updating page text overlay
-  const handleUpdatePageText = async (newText: string) => {
-    if (!currentPage) return;
-    
-    try {
-      const updatedContent = {
-        ...currentPage.content,
-        textOverlay: {
-          enabled: true,
-          text: newText
-        }
-      };
-      
-      const { error } = await supabase
-        .from('pages')
-        .update({ 
-          content: updatedContent,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentPage.id);
-      
-      if (error) throw error;
-    } catch (error) {
-      console.error('Failed to update page text:', error);
-      toast.error('Failed to update text');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -421,7 +394,6 @@ export default function BookReadingView() {
                     isWordEnlarged={readingState.isWordEnlarged}
                     hiddenOverlayPages={readingState.hiddenOverlayPages}
                     onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
-                    onUpdatePageText={handleUpdatePageText}
                     imageComponent={
                       <BookImage
                         src={currentImageUrl}

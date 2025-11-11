@@ -153,35 +153,43 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
       // User provided structured page details - AI must use them
       console.log(`Using ${pageDetails.length} pre-defined page details from chat`);
       
-      systemPrompt = `You are an expert at creating children's educational cover images and page content. The user has already designed specific pages in our conversation.
+      systemPrompt = `You are an expert at creating children's educational books with structured page types. The user has already designed specific pages in our conversation.
+
+BOOK STRUCTURE - THREE PAGE TYPES:
+Books have three distinct page types that MUST be returned in this exact order:
+
+1. COVER PAGE (pageType: "cover", pageNumber: 0)
+   - Always the first page
+   - Contains the book title and visual theme
+   - Title should be "large, bold, centered" taking up "50-60% of the space"
+   - Background: "vibrant [color] background" or "gentle gradient"
+   - Decorative elements: "small [items] around edges and corners"
+   - Composition: "clean, simple, and optimized for thumbnail visibility"
+
+2. EDUCATIONAL FOCUS PAGE (pageType: "educational", pageNumber: 1) - OPTIONAL
+   - Only if the user specified learning objectives, target age, or educational goals
+   - Contains metadata about the educational approach
+   - Title is usually "Educational Focus"
+   - Description includes age range, learning type, specific skills
+
+3. CONTENT PAGES (pageType: "content", pageNumber: 2+)
+   - The main learning content
+   - For ABC books: one page per letter (A-Z)
+   - For Numbers: one page per number
+   - For other types: topic-based pages
 
 CRITICAL INSTRUCTIONS: 
-- You MUST use the exact page titles and descriptions provided below. Do NOT change them.
-- Do NOT include aspect ratio specifications (like "1:1", "16:9", etc.) in any titles or descriptions
-- Aspect ratios are handled separately by the image generation tool
-- NEVER use quotes, apostrophes, or any quotation marks in titles - write titles as plain text only (e.g., "a is for adventure" NOT '"a" is for adventure' or "a's adventure")
-- Remove ALL quotes, apostrophes, and quotation marks from any title text
-- EXTRACT metadata from the conversation (content type, page count, character theme, etc.)
-
-COVER PAGE GUIDELINES:
-If pageNumber 0 is included (the cover), ensure the description follows this title-focused format:
-- Title should be described as "large, bold, centered" taking up "50-60% of the space"
-- Background should be described as "vibrant [color] background" or "gentle [color]-to-[color] gradient"
-- Decorative elements should be described as "small [items] around edges and corners"
-- Use "cover image" NOT "book cover"
-- Overall composition should be "clean, simple, and optimized for thumbnail visibility"
+- You MUST include pageType field for EVERY page
+- You MUST use the exact page titles and descriptions provided below
+- Cover page is ALWAYS pageNumber: 0, pageType: "cover"
+- Educational focus (if present) is ALWAYS pageNumber: 1, pageType: "educational"
+- Content pages start at pageNumber: 2, pageType: "content"
+- Do NOT include aspect ratio specs in titles/descriptions
+- NEVER use quotes or apostrophes in titles (plain text only)
+- EXTRACT metadata from the conversation
 
 PROVIDED PAGE STRUCTURE:
 ${pageDetails.map(p => `Page ${p.pageNumber}: "${p.title}"\n${p.description}`).join('\n\n')}
-
-Your task:
-1. Create a bookName (creative title that encompasses all pages)
-2. Choose a category (alphabet, numbers, emotions, animals, etc.)
-3. Write a bookDescription (2-3 sentences about the complete content)
-4. For each page, maintain the exact title and description provided
-5. Add content fields (mainConcept, funFact, activity) for each page
-6. Assign appropriate letters for alphabet content (A-Z pattern)
-7. Extract and return metadata from conversation
 
 Return ONLY valid JSON with this structure:
 {
@@ -199,22 +207,68 @@ Return ONLY valid JSON with this structure:
   },
   "pages": [
     {
-      "pageNumber": number,
-      "letter": "string",
+      "pageNumber": 0,
+      "pageType": "cover",
+      "letter": "COVER",
+      "title": "Book Title",
+      "description": "Cover description with title-focused layout",
+      "content": {
+        "mainConcept": "Book title",
+        "funFact": "Book description",
+        "activity": ""
+      }
+    },
+    {
+      "pageNumber": 1,
+      "pageType": "educational",
+      "letter": "FOCUS",
+      "title": "Educational Focus",
+      "description": "Age and learning objectives",
+      "content": {
+        "mainConcept": "Target age",
+        "funFact": "Learning approach",
+        "activity": "Specific skills"
+      }
+    },
+    {
+      "pageNumber": 2,
+      "pageType": "content",
+      "letter": "A (or appropriate)",
       "title": "EXACT TITLE FROM PROVIDED LIST",
       "description": "EXACT DESCRIPTION FROM PROVIDED LIST",
       "content": {
         "mainConcept": "string",
         "funFact": "string",
-        "activity": "string"${bookType === 'colors' ? ',\n        "color": "string (extracted color name for color content)"' : ''}
+        "activity": "string"${bookType === 'colors' ? ',\n        "color": "string"' : ''}
       }
     }
   ]
 }`;
     } else {
       // No structured details - use original full AI generation prompt
-      systemPrompt = `You are an expert at creating children's educational content and cover images.
-Based on the conversation, determine the most appropriate format and create a complete content structure.
+      systemPrompt = `You are an expert at creating children's educational books with structured page types.
+
+BOOK STRUCTURE - THREE PAGE TYPES:
+Every book must have pages organized by type:
+
+1. COVER PAGE (pageType: "cover", pageNumber: 0)
+   - REQUIRED: Always the first page
+   - Contains the book title as the main visual element
+   - Use "large, bold, centered" title taking up "50-60% of the space"
+   - Background: Simple solid color or gentle gradient
+   - Decorative elements: 4-8 small items around edges/corners only
+   - Must be "clean, simple, and optimized for thumbnail visibility"
+
+2. EDUCATIONAL FOCUS PAGE (pageType: "educational", pageNumber: 1)
+   - OPTIONAL: Only if educational goals/objectives are mentioned in conversation
+   - Title: "Educational Focus"
+   - Description format: "Age: [age] | [learning type]"
+   - Content: Target age, learning approach, specific skills
+   - Skip this page if no educational objectives are specified
+
+3. CONTENT PAGES (pageType: "content", pageNumber: 2+)
+   - REQUIRED: The main learning/story content
+   - Number and structure depend on content type (see below)
 
 Content Types:
 - "alphabet": ABC learning content with 26 pages (A-Z), each page teaching a letter
@@ -311,8 +365,33 @@ Return ONLY a JSON object with this structure (no markdown, no code blocks):
   },
   "pages": [
     {
-      "letter": "required for alphabet content - use format matching letterCase",
+      "pageNumber": 0,
+      "pageType": "cover",
+      "letter": "COVER",
+      "title": "Book Title",
+      "description": "Cover description following the title-focused format",
+      "content": {
+        "mainConcept": "Book title",
+        "funFact": "Book description",
+        "activity": ""
+      }
+    },
+    {
       "pageNumber": 1,
+      "pageType": "educational",
+      "letter": "FOCUS",
+      "title": "Educational Focus",
+      "description": "Age: [age] | [learning type]",
+      "content": {
+        "mainConcept": "Target age",
+        "funFact": "Learning approach",
+        "activity": "Specific skills"
+      }
+    },
+    {
+      "pageNumber": 2,
+      "pageType": "content",
+      "letter": "A (use format matching letterCase for alphabet)",
       "title": "string",
       "description": "string",
       "content": {
@@ -560,70 +639,44 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       }
     }
 
-    // Create cover page as page 1
-    // CRITICAL: Cover ALWAYS has text overlay enabled
-    const coverPage = {
-      book_id: book.id,
-      page_type: 'cover' as const,
-      letter: 'COVER',
-      page_number: 1,
-      title: sanitizeText(bookData.bookName, 100),
-      description: sanitizeText(bookData.bookDescription || '', 500),
-      content: {
-        mainConcept: sanitizeText(bookData.bookName, 500),
-        funFact: sanitizeText(bookData.bookDescription || '', 500),
-        activity: '',
-        textOverlay: {
-          enabled: true, // Cover: ALWAYS has text
-          text: sanitizeText(bookData.bookName, 100),
-          position: 'bottom-center' as const,
-          createdAt: new Date().toISOString()
-        }
+    // Process pages from AI response with explicit page types
+    // AI returns: pageNumber 0=cover, 1=educational (optional), 2+=content
+    // We store as: page_number 1, 2, 3... but preserve the page_type
+    
+    const pages = sanitizedPages.map((page: any, index: number) => {
+      const pageType = page.pageType || 'content'; // Default to content if not specified
+      const actualPageNumber = index + 1; // Database page numbers start at 1
+      
+      // Determine text overlay behavior based on page type
+      let textOverlayEnabled = false;
+      if (pageType === 'cover' || pageType === 'educational') {
+        textOverlayEnabled = true; // Cover and educational pages ALWAYS have text
+      } else {
+        textOverlayEnabled = showTextOverlay; // Content pages use user preference
       }
-    };
-
-    const pages = [];
-    pages.push(coverPage);
-
-    // Create educational focus page as page 2 if provided
-    // CRITICAL: Educational focus page ALWAYS has text overlay enabled
-    if (educationalFocus) {
-      const eduFocusPage = {
+      
+      return {
         book_id: book.id,
-        page_type: 'educational' as const,
-        letter: 'FOCUS',
-        page_number: 2,
-        title: 'Educational Focus',
-        description: `Age: ${sanitizeText(educationalFocus.targetAge, 50)} | ${sanitizeText(educationalFocus.learningType, 100)}`,
+        page_type: pageType,
+        letter: sanitizeText(page.letter || `Page ${actualPageNumber}`, 10),
+        page_number: actualPageNumber,
+        title: sanitizeText(page.title, 100),
+        description: sanitizeText(page.description || '', 500),
         content: {
-          mainConcept: sanitizeText(educationalFocus.targetAge, 200),
-          funFact: sanitizeText(educationalFocus.learningType, 200),
-          activity: sanitizeText(educationalFocus.specificSkill, 200),
+          mainConcept: sanitizeText(page.content?.mainConcept || '', 500),
+          funFact: sanitizeText(page.content?.funFact || '', 500),
+          activity: sanitizeText(page.content?.activity || '', 500),
           textOverlay: {
-            enabled: true, // Educational focus: ALWAYS has text
-            text: 'Educational Focus',
+            enabled: textOverlayEnabled,
+            text: sanitizeText(page.title, 100),
             position: 'bottom-center' as const,
             createdAt: new Date().toISOString()
           }
         }
       };
-      pages.push(eduFocusPage);
-      console.log('Educational focus page created');
-    }
+    });
 
-    // Add content pages (starting from page 3 if edu focus exists, else page 2)
-    const startingPageNumber = educationalFocus ? 3 : 2;
-    pages.push(
-      ...sanitizedPages.map((page: any, index: number) => ({
-        book_id: book.id,
-        page_type: 'content' as const,
-        letter: page.letter || `Page ${page.pageNumber}`,
-        page_number: startingPageNumber + index,
-        title: page.title,
-        description: page.description || '',
-        content: page.content
-      }))
-    );
+    console.log(`Inserting ${pages.length} pages: ${pages.filter((p: any) => p.page_type === 'cover').length} cover, ${pages.filter((p: any) => p.page_type === 'educational').length} educational, ${pages.filter((p: any) => p.page_type === 'content').length} content`);
 
     const { error: pagesError } = await supabase
       .from('pages')
@@ -636,7 +689,10 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       throw new Error('Failed to create pages');
     }
 
-    console.log(`${pages.length} total pages created (cover${educationalFocus ? ' + edu focus' : ''} + ${sanitizedPages.length} content pages)`);
+    const coverCount = pages.filter((p: any) => p.page_type === 'cover').length;
+    const eduCount = pages.filter((p: any) => p.page_type === 'educational').length;
+    const contentCount = pages.filter((p: any) => p.page_type === 'content').length;
+    console.log(`Successfully created ${pages.length} pages: ${coverCount} cover, ${eduCount} educational, ${contentCount} content`);
 
     // Extract AI-generated prompts from conversation history and store them
     console.log('Extracting AI-generated prompts from conversation...');

@@ -378,6 +378,7 @@ export default function LibraryBookView() {
                   imageUrl=""
                   currentWordIndex={readingState.currentWordIndex}
                   isWordEnlarged={readingState.isWordEnlarged}
+                  wordStatuses={readingState.wordStatuses}
                   hiddenOverlayPages={readingState.hiddenOverlayPages}
                   onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
                   imageComponent={

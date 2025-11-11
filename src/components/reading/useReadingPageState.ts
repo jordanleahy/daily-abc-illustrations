@@ -1,36 +1,49 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useReadingPreferences } from '@/hooks/useReadingPreferences';
+import type { CarouselApi } from '@/components/ui/carousel';
 
 export function useReadingPageState() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
   const [isEditingText, setIsEditingText] = useState(false);
+  const carouselApiRef = useRef<CarouselApi | null>(null);
   
   // Use database-backed preferences for cross-device sync
   const { hiddenOverlayPages, toggleOverlay: toggleOverlayDB, isLoading: isPreferencesLoading } = useReadingPreferences();
 
 
+  const setCarouselApi = useCallback((api: CarouselApi) => {
+    carouselApiRef.current = api;
+  }, []);
+
   const handleNavigateWord = useCallback((direction: 'prev' | 'next', totalWords: number) => {
-    setCurrentWordIndex(prev => {
-      if (direction === 'prev') {
-        return Math.max(0, prev - 1);
-      } else {
-        return Math.min(totalWords - 1, prev + 1);
-      }
-    });
+    const api = carouselApiRef.current;
+    if (!api) return;
+
+    if (direction === 'prev') {
+      api.scrollPrev();
+    } else {
+      api.scrollNext();
+    }
   }, []);
 
   const handleMarkDifficult = useCallback((totalWords: number) => {
     setWordStatuses(prev => ({ ...prev, [currentWordIndex]: 'difficult' }));
     if (currentWordIndex < totalWords - 1) {
-      setCurrentWordIndex(prev => prev + 1);
+      const api = carouselApiRef.current;
+      if (api) {
+        api.scrollNext();
+      }
     }
   }, [currentWordIndex]);
 
   const handleMarkUnderstood = useCallback((totalWords: number) => {
     setWordStatuses(prev => ({ ...prev, [currentWordIndex]: 'understood' }));
     if (currentWordIndex < totalWords - 1) {
-      setCurrentWordIndex(prev => prev + 1);
+      const api = carouselApiRef.current;
+      if (api) {
+        api.scrollNext();
+      }
     }
   }, [currentWordIndex]);
 
@@ -50,10 +63,12 @@ export function useReadingPageState() {
     hiddenOverlayPages,
     isPreferencesLoading,
     setIsEditingText,
+    setCarouselApi,
     handleNavigateWord,
     handleMarkDifficult,
     handleMarkUnderstood,
     resetState,
     toggleOverlayVisibility,
+    setCurrentWordIndex,
   };
 }

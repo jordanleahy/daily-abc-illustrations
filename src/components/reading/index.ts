@@ -10,4 +10,5 @@ export { ReadingPageDisplay } from './ReadingPageDisplay';
 export { useReadingPageState } from './useReadingPageState';
 export { UnifiedReadingControls } from './UnifiedReadingControls';
 export { UnifiedReadingView } from './UnifiedReadingView';
+export { WordCarousel } from './WordCarousel';
 export type { UnifiedReadingViewConfig } from './UnifiedReadingView';

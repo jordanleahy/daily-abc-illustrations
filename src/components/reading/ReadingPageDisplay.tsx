@@ -5,6 +5,8 @@ import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { useBookPages } from '@/hooks/useBookPages';
 import { toast } from 'sonner';
 import { Pencil, X } from 'lucide-react';
+import { WordCarousel } from './WordCarousel';
+import type { CarouselApi } from '@/components/ui/carousel';
 
 interface ReadingPageDisplayProps {
   pageId: string;
@@ -22,6 +24,8 @@ interface ReadingPageDisplayProps {
   wordStatuses?: Record<number, 'difficult' | 'understood'>;
   isPreferencesLoading?: boolean;
   showDismissButton?: boolean;
+  onCarouselApiReady?: (api: CarouselApi) => void;
+  onWordChange?: (index: number) => void;
 }
 
 export function ReadingPageDisplay({
@@ -39,6 +43,8 @@ export function ReadingPageDisplay({
   wordStatuses,
   isPreferencesLoading = false,
   showDismissButton = true,
+  onCarouselApiReady,
+  onWordChange,
 }: ReadingPageDisplayProps) {
   const { generateMetadata } = useWordMetadata();
   const { pages } = useBookPages(bookId);
@@ -64,85 +70,6 @@ export function ReadingPageDisplay({
       });
     }
   }, [pageId, pageText, currentPageWords, pages, bookId, generateMetadata]);
-
-
-  // Helper function to render text with current word always enlarged
-  const renderTextWithEnlargedWord = (
-    fullText: string, 
-    currentWord: string | undefined,
-    wordsArray: Array<{ word: string }> | undefined,
-    statuses: Record<number, 'difficult' | 'understood'> | undefined
-  ) => {
-    if (!currentWord) {
-      return <span className="text-lg font-semibold">{fullText}</span>;
-    }
-
-    // Split text into words, preserving spaces
-    const words = fullText.split(/(\s+)/);
-    const lowerCurrentWord = currentWord.toLowerCase();
-
-    return (
-      <>
-        {words.map((word, index) => {
-          // Skip empty strings and spaces
-          if (!word.trim()) {
-            return <span key={index}> </span>;
-          }
-
-          // Check if this word matches the current highlighted word
-          const isHighlighted = word.toLowerCase() === lowerCurrentWord;
-          
-          // Find word index in wordsArray to check status
-          const wordIndex = wordsArray?.findIndex(
-            w => w.word.toLowerCase() === word.toLowerCase()
-          );
-          const wordStatus = wordIndex !== undefined && wordIndex >= 0 
-            ? statuses?.[wordIndex] 
-            : undefined;
-          const isUnderstood = wordStatus === 'understood';
-          const isDifficult = wordStatus === 'difficult';
-
-          if (isHighlighted) {
-            return (
-              <span
-                key={index}
-                className={`text-lg font-semibold text-white inline-block px-2 py-1 rounded ${
-                  isUnderstood ? 'bg-emerald-500/50' : 
-                  isDifficult ? 'bg-red-500/50' : 
-                  'bg-yellow-500/60'
-                }`}
-                style={{ 
-                  transform: 'scale(2)',
-                  transformOrigin: 'center center',
-                  margin: '0 1rem',
-                  fontWeight: '800',
-                  transition: 'all 0.6s ease-in-out'
-                }}
-              >
-                {word}
-              </span>
-            );
-          }
-
-          return (
-            <span
-              key={index}
-              className={`text-lg font-semibold inline-block px-1.5 py-0.5 rounded ${
-                isUnderstood ? 'bg-emerald-500/40' : 
-                isDifficult ? 'bg-red-500/40' : ''
-              }`}
-              style={{ 
-                margin: '0 0.5rem',
-                transition: 'all 0.6s ease-in-out'
-              }}
-            >
-              {word}
-            </span>
-          );
-        })}
-      </>
-    );
-  };
 
   const handleSaveText = async (newText: string) => {
     if (onUpdatePageText) {
@@ -192,6 +119,41 @@ export function ReadingPageDisplay({
                   isEditing={true}
                 />
               </div>
+            ) : currentPageWords && currentPageWords.length > 0 ? (
+              <div 
+                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm group"
+              >
+                <div className="relative">
+                  <WordCarousel
+                    words={currentPageWords}
+                    currentWordIndex={currentWordIndex}
+                    wordStatuses={wordStatuses}
+                    onCarouselApiReady={onCarouselApiReady}
+                    onWordChange={onWordChange}
+                  />
+                  {onUpdatePageText && (
+                    <button
+                      onClick={() => setIsEditingText(true)}
+                      className="absolute top-2 right-2 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                      title="Edit text"
+                    >
+                      <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors" />
+                    </button>
+                  )}
+                  {onToggleOverlayVisibility && showDismissButton && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onToggleOverlayVisibility(pageId);
+                      }}
+                      className="absolute top-2 left-2 h-6 w-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors"
+                      title="Hide text overlay"
+                    >
+                      <X className="h-3.5 w-3.5 text-white/70" />
+                    </button>
+                  )}
+                </div>
+              </div>
             ) : (
               <div 
                 className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3 group overflow-hidden"
@@ -203,14 +165,8 @@ export function ReadingPageDisplay({
                     className={`flex items-center justify-center gap-2 flex-1 ${onUpdatePageText ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
                     title={onUpdatePageText ? "Click to edit text" : undefined}
                   >
-                    <p className="text-white text-center flex flex-wrap items-center justify-center gap-1 overflow-hidden"
-                       style={{ lineHeight: '1.2' }}>
-                       {renderTextWithEnlargedWord(
-                        pageText, 
-                        currentPageWords?.[currentWordIndex]?.word,
-                        currentPageWords,
-                        wordStatuses
-                      )}
+                    <p className="text-white text-center font-semibold text-lg">
+                      {pageText}
                     </p>
                     {onUpdatePageText && (
                       <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />

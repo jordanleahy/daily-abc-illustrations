@@ -192,7 +192,7 @@ export function ReadingPageDisplay({
               </div>
             ) : (
               <div 
-                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3 group"
+                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3 group overflow-hidden"
                 style={{ minHeight: '60px' }}
               >
                 <div className="flex items-center justify-center gap-2 h-full relative">
@@ -201,7 +201,7 @@ export function ReadingPageDisplay({
                     className={`flex items-center justify-center gap-2 flex-1 ${onUpdatePageText ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
                     title={onUpdatePageText ? "Click to edit text" : undefined}
                   >
-                    <p className="text-white text-center flex flex-wrap items-center justify-center gap-1"
+                    <p className="text-white text-center flex flex-wrap items-center justify-center gap-1 overflow-hidden"
                        style={{ lineHeight: '1.2' }}>
                       {renderTextWithEnlargedWord(
                         pageText, 

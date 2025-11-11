@@ -91,13 +91,13 @@ export function ReadingPageDisplay({
             return (
               <span
                 key={index}
-                className="text-lg font-semibold text-yellow-300 inline-block animate-pulse"
+                className="text-lg font-semibold text-yellow-300 inline-block"
                 style={{ 
                   transform: 'scale(2.5)',
                   transformOrigin: 'center center',
                   margin: '0 1rem',
                   fontWeight: '800',
-                  transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                  transition: 'all 0.6s ease-in-out'
                 }}
               >
                 {word}
@@ -108,8 +108,11 @@ export function ReadingPageDisplay({
           return (
             <span
               key={index}
-              className="text-lg font-semibold inline-block transition-all duration-300"
-              style={{ margin: '0 0.1rem' }}
+              className="text-lg font-semibold inline-block"
+              style={{ 
+                margin: '0 0.1rem',
+                transition: 'all 0.6s ease-in-out'
+              }}
             >
               {word}
             </span>

@@ -110,7 +110,7 @@ export function ReadingPageDisplay({
                   isDifficult ? 'bg-red-500/50' : ''
                 }`}
                 style={{ 
-                  transform: 'scale(2.5)',
+                  transform: 'scale(2)',
                   transformOrigin: 'center center',
                   margin: '0 1rem',
                   fontWeight: '800',

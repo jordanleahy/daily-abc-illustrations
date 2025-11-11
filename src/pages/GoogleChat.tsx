@@ -337,10 +337,7 @@ export default function GoogleChat() {
     if (outlineJustCompleted && !showQACheckpoint) {
       setCurrentQAPage(1); // Start at cover page
       
-      if (isMobile) {
-        // Don't auto-open on mobile — keep the brand chat experience visible
-        toast.info('Outline is ready. Tap Review to open the panel.');
-      } else {
+      if (!isMobile) {
         setShowQACheckpoint(true);
       }
       

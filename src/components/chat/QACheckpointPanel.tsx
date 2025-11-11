@@ -75,67 +75,15 @@ export function QACheckpointPanel({
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
   const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
   const { generateMetadata, isGenerating } = useWordMetadata();
-  const { setHiddenPages } = useReadingPreferences();
-  const [hasMigrated, setHasMigrated] = useState(false);
+  const { isOverlayHidden, toggleOverlay, isToggling } = useReadingPreferences();
   
-  // Fetch pages data (needed before migration effect)
+  // Fetch pages data
   const { pages } = useBookPages(bookId || undefined);
   
-  // Load hidden overlays from localStorage on mount (for QA panel persistence)
-  const [hiddenOverlayPages, setHiddenOverlayPages] = useState<Set<number>>(() => {
-    try {
-      const stored = localStorage.getItem(`qa-hidden-overlays-${bookId || 'temp'}`);
-      return stored ? new Set(JSON.parse(stored)) : new Set();
-    } catch {
-      return new Set();
-    }
-  });
-
-  // Save hidden overlays to localStorage whenever they change
-  useEffect(() => {
-    try {
-      localStorage.setItem(
-        `qa-hidden-overlays-${bookId || 'temp'}`,
-        JSON.stringify(Array.from(hiddenOverlayPages))
-      );
-    } catch (error) {
-      console.error('Failed to save hidden overlays:', error);
-    }
-  }, [hiddenOverlayPages, bookId]);
-
-  // Migrate localStorage preferences to database once book is created
-  useEffect(() => {
-    if (!isBookCreated || !pages || pages.length === 0 || hasMigrated) return;
-
-    const localStorageKey = `qa-hidden-overlays-${bookId || 'temp'}`;
-    const stored = localStorage.getItem(localStorageKey);
-    if (!stored) {
-      setHasMigrated(true);
-      return;
-    }
-
-    try {
-      const hiddenPageNumbers = JSON.parse(stored) as number[];
-      if (hiddenPageNumbers.length === 0) {
-        setHasMigrated(true);
-        return;
-      }
-
-      const hiddenPageIds = hiddenPageNumbers
-        .map(pageNum => pages.find(p => p.page_number === pageNum)?.id)
-        .filter(Boolean) as string[];
-
-      if (hiddenPageIds.length > 0) {
-        setHiddenPages(hiddenPageIds);
-        localStorage.removeItem(localStorageKey);
-      }
-
-      setHasMigrated(true);
-    } catch (error) {
-      console.error('Failed to migrate overlay preferences:', error);
-      setHasMigrated(true);
-    }
-  }, [isBookCreated, pages, bookId, setHiddenPages, hasMigrated]);
+  // Get current page ID for overlay toggle
+  const currentPageId = useMemo(() => {
+    return pages?.find(p => p.page_number === currentQAPage)?.id;
+  }, [pages, currentQAPage]);
   
   // Word Learning Helper state
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
@@ -381,7 +329,7 @@ export function QACheckpointPanel({
                 />
                 
                 {/* Text Overlay with Editing and Word Learning */}
-                {currentPageText && !hiddenOverlayPages.has(currentQAPage) && (
+                {currentPageText && currentPageId && !isOverlayHidden(currentPageId) && (
                   <>
                     {isEditingText && onUpdatePageText ? (
                       <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">
@@ -443,10 +391,14 @@ export function QACheckpointPanel({
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
-                              setHiddenOverlayPages(prev => new Set(prev).add(currentQAPage));
+                              if (currentPageId && !isToggling) {
+                                toggleOverlay(currentPageId);
+                                toast.success('Text overlay hidden');
+                              }
                             }}
                             className="h-6 w-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
                             title="Hide text overlay"
+                            disabled={isToggling}
                           >
                             <X className="h-3.5 w-3.5 text-white/70" />
                           </button>
@@ -466,18 +418,17 @@ export function QACheckpointPanel({
                 </Button>
                 
                 {/* Show Overlay button when overlay is hidden */}
-                {hiddenOverlayPages.has(currentQAPage) && (
+                {currentPageId && isOverlayHidden(currentPageId) && (
                   <Button
                     variant="secondary"
                     size="sm"
                     onClick={() => {
-                      setHiddenOverlayPages(prev => {
-                        const newSet = new Set(prev);
-                        newSet.delete(currentQAPage);
-                        return newSet;
-                      });
-                      toast.success('Text overlay shown');
+                      if (!isToggling) {
+                        toggleOverlay(currentPageId);
+                        toast.success('Text overlay shown');
+                      }
                     }}
+                    disabled={isToggling}
                     className="absolute top-11 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
                   >
                     Show Overlay

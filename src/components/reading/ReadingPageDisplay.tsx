@@ -72,35 +72,49 @@ export function ReadingPageDisplay({
       return <span className="text-lg font-semibold">{fullText}</span>;
     }
 
-    const lowerText = fullText.toLowerCase();
-    const lowerWord = currentWord.toLowerCase();
-    const wordIndex = lowerText.indexOf(lowerWord);
-
-    if (wordIndex === -1) {
-      return <span className="text-lg font-semibold">{fullText}</span>;
-    }
-
-    const before = fullText.slice(0, wordIndex);
-    const word = fullText.slice(wordIndex, wordIndex + currentWord.length);
-    const after = fullText.slice(wordIndex + currentWord.length);
+    // Split text into words, preserving spaces
+    const words = fullText.split(/(\s+)/);
+    const lowerCurrentWord = currentWord.toLowerCase();
 
     return (
       <>
-        <span className="text-lg font-semibold">{before}</span>
-        <span 
-          className="text-lg font-semibold text-yellow-300 inline-block animate-pulse"
-          style={{ 
-            transform: 'scale(2.5)',
-            transformOrigin: 'center center',
-            display: 'inline-block',
-            margin: '0 1.5rem',
-            fontWeight: '800',
-            transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
-          }}
-        >
-          {word}
-        </span>
-        <span className="text-lg font-semibold">{after}</span>
+        {words.map((word, index) => {
+          // Skip empty strings and spaces
+          if (!word.trim()) {
+            return <span key={index}> </span>;
+          }
+
+          // Check if this word matches the current highlighted word
+          const isHighlighted = word.toLowerCase() === lowerCurrentWord;
+
+          if (isHighlighted) {
+            return (
+              <span
+                key={index}
+                className="text-lg font-semibold text-yellow-300 inline-block animate-pulse"
+                style={{ 
+                  transform: 'scale(2.5)',
+                  transformOrigin: 'center center',
+                  margin: '0 1rem',
+                  fontWeight: '800',
+                  transition: 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)'
+                }}
+              >
+                {word}
+              </span>
+            );
+          }
+
+          return (
+            <span
+              key={index}
+              className="text-lg font-semibold inline-block transition-all duration-300"
+              style={{ margin: '0 0.1rem' }}
+            >
+              {word}
+            </span>
+          );
+        })}
       </>
     );
   };

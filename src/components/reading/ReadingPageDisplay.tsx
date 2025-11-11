@@ -110,7 +110,7 @@ export function ReadingPageDisplay({
               key={index}
               className="text-lg font-semibold inline-block"
               style={{ 
-                margin: '0 0.1rem',
+                margin: '0 0.5rem',
                 transition: 'all 0.6s ease-in-out'
               }}
             >

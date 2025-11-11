@@ -365,6 +365,13 @@ After the Educational Focus section, continue with numbered page prompts (Page 1
 GENERATING DETAILED PAGE DESCRIPTIONS (CRITICAL):
 After the user approves the page concepts AND selects their text preference ("With Text" or "Without Text"), generate detailed image prompts. Start with the cover page prompt, then the Educational Focus section, then continue with numbered page prompts for each page.
 
+TITLE FORMATTING RULES (CRITICAL):
+- DO NOT wrap letters or numbers in quotes, apostrophes, or quotation marks within page titles
+- CORRECT: **Page 3: A is for Apple** or **Page 3: a is for adventure**
+- INCORRECT: **Page 3: "A" is for Apple** or **Page 3: "a" is for adventure**
+- The title itself should not contain quotes around individual letters/numbers
+- Format titles naturally without punctuation around letters
+
 BENJI DAVIES STYLE GUIDANCE (when selected):
 If the user selected "Benji Davies Style", ALL page prompts (cover, educational focus, and content pages) must incorporate these distinctive characteristics inspired by "Grandad's Island":
 - Watercolor aesthetic with visible brushstrokes, soft edges, and hand-painted texture

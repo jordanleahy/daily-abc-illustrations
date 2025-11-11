@@ -159,6 +159,7 @@ CRITICAL INSTRUCTIONS:
 - You MUST use the exact page titles and descriptions provided below. Do NOT change them.
 - Do NOT include aspect ratio specifications (like "1:1", "16:9", etc.) in any titles or descriptions
 - Aspect ratios are handled separately by the image generation tool
+- Do NOT wrap letters or numbers in quotes, apostrophes, or quotation marks in titles (e.g., use "a is for adventure" not '"a" is for adventure')
 - EXTRACT metadata from the conversation (content type, page count, character theme, etc.)
 
 COVER PAGE GUIDELINES:
@@ -228,6 +229,7 @@ Content Types:
 IMPORTANT: 
 - Do NOT include aspect ratio specifications (like "1:1", "16:9", etc.) in page titles or descriptions
 - Aspect ratios are handled separately by the image generation tool
+- Do NOT wrap letters or numbers in quotes, apostrophes, or quotation marks in titles (e.g., use "a is for adventure" not '"a" is for adventure')
 - For NON-alphabet content, do NOT include "letter" fields
 - For alphabet content, include "letter" field with values matching the specified case format
 - Adjust page count based on content type and complexity

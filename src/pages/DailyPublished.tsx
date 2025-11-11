@@ -89,15 +89,14 @@ export default function DailyPublished() {
         }
       } else if (event.key === 'ArrowLeft') {
         event.preventDefault();
-        // Handle previous page
-        if (currentPageIndex > 0) {
-          const newIndex = currentPageIndex - 1;
-          setCurrentPageIndex(newIndex);
-          
-          // Track page view
-          if (sessionStarted && reorderedPages[newIndex]) {
-            trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'keyboard_previous');
-          }
+        // Handle previous page with wrap-around
+        const newIndex = currentPageIndex > 0 ? currentPageIndex - 1 : reorderedPages.length - 1;
+        setCurrentPageIndex(newIndex);
+        
+        // Track page view
+        if (sessionStarted && reorderedPages[newIndex]) {
+          const interactionType = currentPageIndex === 0 ? 'keyboard_wrap' : 'keyboard_previous';
+          trackPageView(newIndex + 1, reorderedPages[newIndex].letter, interactionType);
         }
       }
     };
@@ -196,14 +195,14 @@ export default function DailyPublished() {
   };
 
   const handlePrevious = () => {
-    if (currentPageIndex > 0) {
-      const newIndex = currentPageIndex - 1;
-      setCurrentPageIndex(newIndex);
-      
-      // Track page view
-      if (sessionStarted && reorderedPages[newIndex]) {
-        trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'previous_swipe');
-      }
+    // Wrap around to last page if at the beginning
+    const newIndex = currentPageIndex > 0 ? currentPageIndex - 1 : reorderedPages.length - 1;
+    setCurrentPageIndex(newIndex);
+    
+    // Track page view
+    if (sessionStarted && reorderedPages[newIndex]) {
+      const interactionType = currentPageIndex === 0 ? 'previous_wrap' : 'previous_swipe';
+      trackPageView(newIndex + 1, reorderedPages[newIndex].letter, interactionType);
     }
   };
 
@@ -220,7 +219,7 @@ export default function DailyPublished() {
         previousPage={previousPage}
         expiresAt={dailyContent.expires_at}
         onNext={handleNext}
-        onPrevious={currentPageIndex > 0 ? handlePrevious : undefined}
+        onPrevious={handlePrevious}
         openGraphMetadata={openGraphMetadata}
         contentId={dailyContent.id}
         sessionCoins={sessionCoins}

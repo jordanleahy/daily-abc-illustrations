@@ -421,7 +421,7 @@ export function UnifiedReadingView({
         onNavigateWord={(dir) => readingState.handleNavigateWord(dir, currentPageWords.length)}
         onPreviousPage={handlePrevious}
         onNextPage={handleNext}
-        disablePreviousPage={currentPageIndex === 0}
+        disablePreviousPage={!customOnPrevious && currentPageIndex === 0}
         disableNextPage={isAddingCoins}
       />
     </div>

@@ -125,6 +125,7 @@ export default function BookReadingView() {
           bookId={book.id}
           className="rounded-lg"
           showUploadButton={false}
+          isFirstImage={page.id === pages[startingPageIndex]?.id}
         />
       )}
     />

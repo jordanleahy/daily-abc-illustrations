@@ -129,6 +129,7 @@ export default function LibraryBookView() {
           bookId={dailyContent.book_id}
           className="rounded-lg"
           showUploadButton={false}
+          isFirstImage={page.id === pages[startingPageIndex]?.id}
         />
       )}
     />

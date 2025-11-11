@@ -66,7 +66,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
     });
   };
 
-  const handleFile = async (file: File) => {
+  const handleFile = async (file: File, isPasted: boolean = false) => {
     const validationError = validateImage(file);
     if (validationError) {
       toast.error(validationError);
@@ -84,18 +84,24 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
     // Process and compress the image
     setIsProcessing(true);
     try {
-      const processed = await processImage(file, {
-        maxWidth: 400,
-        maxHeight: 400,
-        targetSizeBytes: 80 * 1024, // 80KB target
-        quality: 0.90,
-      });
+      // Different processing options based on source
+      const processingOptions = isPasted
+        ? {
+            // Pasted images: minimal compression, preserve quality
+            maxWidth: 2000,
+            maxHeight: 2000,
+            quality: 0.95,
+            // No targetSizeBytes - don't force compression
+          }
+        : {
+            // Uploaded images: moderate compression
+            maxWidth: 1600,
+            maxHeight: 1600,
+            quality: 0.92,
+            // No targetSizeBytes - let Supabase handle optimization
+          };
 
-      // Show compression results (toast disabled)
-      const savedPercentage = Math.round((1 - processed.compressionRatio) * 100);
-      // toast.success(
-      //   `Image optimized: ${formatFileSize(processed.originalSize)} → ${formatFileSize(processed.compressedSize)} (${savedPercentage}% smaller)`
-      // );
+      const processed = await processImage(file, processingOptions);
 
       // Set preview from processed image
       setPreview(processed.dataUrl);
@@ -158,7 +164,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
       if (items[i].type.startsWith('image/')) {
         const file = items[i].getAsFile();
         if (file) {
-          await handleFile(file);
+          await handleFile(file, true); // Mark as pasted
           return;
         }
       }
@@ -179,7 +185,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
           if (type.startsWith('image/')) {
             const blob = await clipboardItem.getType(type);
             const file = new File([blob], `clipboard-image.${type.split('/')[1]}`, { type });
-            await handleFile(file);
+            await handleFile(file, true); // Mark as pasted
             return;
           }
         }

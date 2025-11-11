@@ -50,7 +50,7 @@ function BookCard({ book, onClick, index }: { book: any; onClick: () => void; in
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Book Thumbnail */}
-        <AspectRatio ratio={16/9} className="bg-muted rounded-lg overflow-hidden">
+        <AspectRatio ratio={1} className="bg-muted rounded-lg overflow-hidden">
           {shouldRender ? (
             book.thumbnail_url || seoMetadata?.og_image_url ? (
               <BookImage

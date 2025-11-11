@@ -155,12 +155,8 @@ export function ReadingPageDisplay({
               </div>
             ) : (
               <div 
-                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 group"
-                style={{ 
-                  minHeight: isWordEnlarged ? '120px' : '60px',
-                  paddingTop: isWordEnlarged ? '1.5rem' : '0.75rem',
-                  paddingBottom: isWordEnlarged ? '1.5rem' : '0.75rem'
-                }}
+                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3 group"
+                style={{ minHeight: '60px' }}
               >
                 <div className="flex items-center justify-center gap-2 h-full relative">
                   <div 
@@ -168,11 +164,8 @@ export function ReadingPageDisplay({
                     className={`flex items-center justify-center gap-2 flex-1 ${onUpdatePageText ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
                     title={onUpdatePageText ? "Click to edit text" : undefined}
                   >
-                    <p className="text-white text-center flex flex-wrap items-center justify-center gap-2"
-                       style={{ 
-                         lineHeight: isWordEnlarged ? '2.5' : '1.4',
-                         minHeight: isWordEnlarged ? '80px' : 'auto'
-                       }}>
+                    <p className="text-white text-center flex flex-wrap items-center justify-center gap-1"
+                       style={{ lineHeight: '1.2' }}>
                       {renderTextWithEnlargedWord(
                         pageText, 
                         currentPageWords?.[currentWordIndex]?.word,
@@ -189,7 +182,7 @@ export function ReadingPageDisplay({
                         e.stopPropagation();
                         onToggleOverlayVisibility(pageId);
                       }}
-                      className="h-6 w-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0 absolute top-2 right-2"
+                      className="h-6 w-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
                       title="Hide text overlay"
                     >
                       <X className="h-3.5 w-3.5 text-white/70" />

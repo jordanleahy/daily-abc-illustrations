@@ -117,14 +117,14 @@ export function UnifiedReadingControls({
         <button
           onClick={onPreviousPage}
           disabled={disablePreviousPage || !onPreviousPage}
-          className={`flex items-center justify-center h-full rounded-l-full transition-all active:scale-[0.98] ${
+          className={`flex items-center justify-center h-full rounded-l-full transition-all active:scale-[0.98] shrink-0 ${
             disablePreviousPage || !onPreviousPage
               ? 'opacity-30 cursor-not-allowed w-16'
               : 'hover:bg-muted/50 cursor-pointer w-[48%]'
           }`}
           aria-label="Previous page"
         >
-          <ChevronLeft className="w-6 h-6 text-foreground" />
+          <ChevronLeft className="w-6 h-6 text-foreground flex-shrink-0" />
         </button>
 
         {/* Center spacer */}
@@ -134,14 +134,14 @@ export function UnifiedReadingControls({
         <button
           onClick={onNextPage}
           disabled={disableNextPage || !onNextPage}
-          className={`flex items-center justify-center h-full rounded-r-full transition-all active:scale-[0.98] ${
+          className={`flex items-center justify-center h-full rounded-r-full transition-all active:scale-[0.98] shrink-0 ${
             disableNextPage || !onNextPage
               ? 'opacity-30 cursor-not-allowed w-16'
               : 'hover:opacity-90 cursor-pointer w-[48%] bg-[hsl(220,40%,15%)]'
           }`}
           aria-label="Next page"
         >
-          <ChevronRight className="w-6 h-6 text-white" />
+          <ChevronRight className="w-6 h-6 text-white flex-shrink-0" />
         </button>
       </div>
     </div>

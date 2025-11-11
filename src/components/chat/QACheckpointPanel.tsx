@@ -44,6 +44,9 @@ interface QACheckpointPanelProps {
   bookStatus?: PublicationStatus;
 }
 
+// Feature flag to show/hide the Words learning section
+const SHOW_WORDS_SECTION = false;
+
 export function QACheckpointPanel({
   showQACheckpoint,
   isBookCreated,
@@ -489,7 +492,7 @@ export function QACheckpointPanel({
         </div>
 
         {/* Words Analysis Card */}
-        {currentPageWords && currentPageWords.length > 0 && (
+        {SHOW_WORDS_SECTION && currentPageWords && currentPageWords.length > 0 && (
           <>
             <WordsCard 
               words={currentPageWords}

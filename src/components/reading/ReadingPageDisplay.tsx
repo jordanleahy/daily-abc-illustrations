@@ -95,13 +95,20 @@ export function ReadingPageDisplay({
           const wordIndex = wordsArray?.findIndex(
             w => w.word.toLowerCase() === word.toLowerCase()
           );
-          const isUnderstood = wordIndex !== undefined && wordIndex >= 0 && statuses?.[wordIndex] === 'understood';
+          const wordStatus = wordIndex !== undefined && wordIndex >= 0 
+            ? statuses?.[wordIndex] 
+            : undefined;
+          const isUnderstood = wordStatus === 'understood';
+          const isDifficult = wordStatus === 'difficult';
 
           if (isHighlighted) {
             return (
               <span
                 key={index}
-                className="text-lg font-semibold text-yellow-300 inline-block"
+                className={`text-lg font-semibold text-yellow-300 inline-block px-2 py-1 rounded ${
+                  isUnderstood ? 'bg-emerald-500/30' : 
+                  isDifficult ? 'bg-red-500/30' : ''
+                }`}
                 style={{ 
                   transform: 'scale(2.5)',
                   transformOrigin: 'center center',
@@ -111,7 +118,6 @@ export function ReadingPageDisplay({
                 }}
               >
                 {word}
-                {isUnderstood && <span className="text-emerald-400 text-sm ml-1">●</span>}
               </span>
             );
           }
@@ -119,14 +125,16 @@ export function ReadingPageDisplay({
           return (
             <span
               key={index}
-              className="text-lg font-semibold inline-block"
+              className={`text-lg font-semibold inline-block px-1.5 py-0.5 rounded ${
+                isUnderstood ? 'bg-emerald-500/20' : 
+                isDifficult ? 'bg-red-500/20' : ''
+              }`}
               style={{ 
                 margin: '0 0.5rem',
                 transition: 'all 0.6s ease-in-out'
               }}
             >
               {word}
-              {isUnderstood && <span className="text-emerald-400 text-xs ml-0.5">●</span>}
             </span>
           );
         })}

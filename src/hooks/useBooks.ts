@@ -101,22 +101,8 @@ export const useBooks = () => {
         };
       });
 
-      // Sort by: highlighted first, then by recent activity, then by creation date
+      // Sort by created_at only (newest first)
       return booksWithActivity.sort((a, b) => {
-        // First, sort by is_highlighted
-        if (a.is_highlighted !== b.is_highlighted) {
-          return b.is_highlighted ? 1 : -1;
-        }
-
-        // Then sort by last_viewed_at (most recently viewed first)
-        const aLastViewed = a.last_viewed_at ? new Date(a.last_viewed_at).getTime() : 0;
-        const bLastViewed = b.last_viewed_at ? new Date(b.last_viewed_at).getTime() : 0;
-        
-        if (aLastViewed !== bLastViewed) {
-          return bLastViewed - aLastViewed;
-        }
-
-        // Finally, sort by created_at (most recent first) as fallback
         return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
       });
     },

@@ -222,7 +222,7 @@ export function QACheckpointPanel({
       <>
         <span className="text-lg font-semibold">{before}</span>
         <span 
-          className="text-lg font-semibold text-yellow-300 inline-block animate-pulse"
+          className="text-lg font-semibold text-white inline-block animate-pulse"
           style={{ 
             transform: 'scale(2.5)',
             transformOrigin: 'center center',

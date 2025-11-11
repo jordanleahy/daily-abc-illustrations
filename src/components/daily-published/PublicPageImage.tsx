@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { usePublicPageImage } from '@/hooks/usePublicPageImage';
 import { BookImage } from '@/components/ui/book-image';
 import { Button } from '@/components/ui/button';
+import { Shimmer } from '@/components/ui/shimmer';
 import { Camera } from 'lucide-react';
 
 interface PublicPageImageProps {
@@ -12,6 +13,8 @@ interface PublicPageImageProps {
   showUploadButton?: boolean;
   /** Handler when upload button is clicked */
   onUploadClick?: () => void;
+  /** If true, shows full-screen loading guard (for first image only) */
+  isFirstImage?: boolean;
 }
 
 export function PublicPageImage({ 
@@ -19,11 +22,33 @@ export function PublicPageImage({
   bookId, 
   className = "",
   showUploadButton = false,
-  onUploadClick
+  onUploadClick,
+  isFirstImage = false
 }: PublicPageImageProps) {
   const { data: imageData, isLoading } = usePublicPageImage(pageId);
   const [imageLoaded, setImageLoaded] = useState(false);
 
+  // Full-screen loading guard for first image
+  if (isFirstImage && (!imageLoaded || isLoading)) {
+    return (
+      <div className="fixed inset-0 z-50 bg-background flex items-center justify-center">
+        <Shimmer 
+          isShimmering={true} 
+          className="w-full h-full max-w-2xl max-h-[80vh] rounded-lg"
+        >
+          <BookImage
+            src={imageData?.image_url}
+            alt="Page illustration"
+            priority={true}
+            className="w-full h-full object-cover object-top opacity-0"
+            onLoad={() => setImageLoaded(true)}
+          />
+        </Shimmer>
+      </div>
+    );
+  }
+
+  // Normal loading state for subsequent images
   if (isLoading) {
     return (
       <div className={`w-full h-full ${className}`}>
@@ -37,7 +62,7 @@ export function PublicPageImage({
       <BookImage
         src={imageData?.image_url}
         alt="Page illustration"
-        priority={true}
+        priority={isFirstImage}
         className={`w-full h-full object-cover object-top ${className}`}
         onLoad={() => setImageLoaded(true)}
       />

@@ -112,7 +112,11 @@ export function DailyPublishedPageView({
       onTapToAdvance={true}
       contentId={contentId}
       imageComponent={(currentPage) => (
-        <PublicPageImage pageId={currentPage.id} bookId={bookId} />
+        <PublicPageImage 
+          pageId={currentPage.id} 
+          bookId={bookId}
+          isFirstImage={pageNumber === 1}
+        />
       )}
     />
   );

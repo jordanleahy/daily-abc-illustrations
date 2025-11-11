@@ -10,6 +10,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { MetaHead } from '@/components/common';
 import { useNavigate } from 'react-router-dom';
 import { useBookPages } from '@/hooks/useBookPages';
+
 interface DailyPublishedPageViewProps {
   page: Page;
   bookId: string;
@@ -26,6 +27,7 @@ interface DailyPublishedPageViewProps {
   /** Session coins accumulated (not saved for non-auth users) */
   sessionCoins?: number;
 }
+
 export function DailyPublishedPageView({
   page,
   bookId,
@@ -75,10 +77,7 @@ export function DailyPublishedPageView({
   useEffect(() => {
     if (isExpired) {
       console.log('Content has expired, redirecting to home...');
-      // Note: Session end tracking is handled by the parent component's cleanup
-      navigate('/', {
-        replace: true
-      });
+      navigate('/', { replace: true });
       return;
     }
   }, [isExpired, navigate]);
@@ -89,25 +88,22 @@ export function DailyPublishedPageView({
       const remaining = formatTimeRemaining(expiresAt);
       setTimeRemaining(remaining);
 
-      // Check if content has expired during countdown
       if (new Date() > new Date(expiresAt)) {
         clearInterval(interval);
-        navigate('/', {
-          replace: true
-        });
+        navigate('/', { replace: true });
       }
-    }, 100); // Update every 100ms for smoother countdown
+    }, 100);
 
     return () => clearInterval(interval);
   }, [expiresAt, navigate]);
 
-  // Don't render anything if expired (navigation will happen)
+  // Don't render anything if expired
   if (isExpired) {
     return null;
   }
-  return <div className="h-screen bg-background flex flex-col overflow-hidden" style={{
-    touchAction: 'none'
-  }}>
+
+  return (
+    <div className="h-screen bg-background flex flex-col overflow-hidden" style={{ touchAction: 'none' }}>
       <FreemiumHeader
         timeRemaining={timeRemaining}
         previousPage={previousPage}
@@ -122,7 +118,7 @@ export function DailyPublishedPageView({
         </div>
       )}
 
-      {/* Focused page card - Fixed height to prevent scrolling */}
+      {/* Focused page card */}
       <div className="h-[calc(100vh-12rem)] mt-4 px-4 flex items-center justify-center pb-24">
         <div className="max-w-md w-full cursor-pointer" onClick={handleTapToAdvance}>
           <ReadingPageDisplay
@@ -134,6 +130,7 @@ export function DailyPublishedPageView({
             imageUrl=""
             currentWordIndex={readingState.currentWordIndex}
             isWordEnlarged={readingState.isWordEnlarged}
+            wordStatuses={readingState.wordStatuses}
             hiddenOverlayPages={readingState.hiddenOverlayPages}
             onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
             imageComponent={
@@ -157,5 +154,6 @@ export function DailyPublishedPageView({
         disablePreviousPage={pageNumber <= 1}
         disableNextPage={isLastPage}
       />
-    </div>;
+    </div>
+  );
 }

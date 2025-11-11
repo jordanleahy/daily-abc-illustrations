@@ -8,7 +8,7 @@ export function useReadingPageState() {
   const [isEditingText, setIsEditingText] = useState(false);
   
   // Use database-backed preferences for cross-device sync
-  const { hiddenOverlayPages, toggleOverlay: toggleOverlayDB } = useReadingPreferences();
+  const { hiddenOverlayPages, toggleOverlay: toggleOverlayDB, isLoading: isPreferencesLoading } = useReadingPreferences();
 
 
   const handleNavigateWord = useCallback((direction: 'prev' | 'next', totalWords: number) => {
@@ -53,6 +53,7 @@ export function useReadingPageState() {
     wordStatuses,
     isEditingText,
     hiddenOverlayPages,
+    isPreferencesLoading,
     setIsEditingText,
     handleNavigateWord,
     handleMarkDifficult,

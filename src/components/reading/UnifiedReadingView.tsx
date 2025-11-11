@@ -342,6 +342,7 @@ export function UnifiedReadingView({
                 wordStatuses={readingState.wordStatuses}
                 hiddenOverlayPages={readingState.hiddenOverlayPages}
                 onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
+                isPreferencesLoading={readingState.isPreferencesLoading}
                 imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex) : undefined}
               />
             </div>

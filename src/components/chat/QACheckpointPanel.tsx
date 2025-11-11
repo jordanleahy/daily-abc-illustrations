@@ -75,7 +75,7 @@ export function QACheckpointPanel({
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
   const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
   const { generateMetadata, isGenerating } = useWordMetadata();
-  const { isOverlayHidden, toggleOverlay, isToggling } = useReadingPreferences();
+  const { isOverlayHidden, toggleOverlay, isToggling, isLoading: isPreferencesLoading } = useReadingPreferences();
   
   // Fetch pages data
   const { pages } = useBookPages(bookId || undefined);
@@ -329,7 +329,7 @@ export function QACheckpointPanel({
                 />
                 
                 {/* Text Overlay with Editing and Word Learning */}
-                {currentPageText && currentPageId && !isOverlayHidden(currentPageId) && (
+                {currentPageText && currentPageId && !isPreferencesLoading && !isOverlayHidden(currentPageId) && bookId && (
                   <>
                     {isEditingText && onUpdatePageText ? (
                       <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">

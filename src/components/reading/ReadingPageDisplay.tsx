@@ -21,6 +21,7 @@ interface ReadingPageDisplayProps {
   hiddenOverlayPages?: Set<string>;
   onToggleOverlayVisibility?: (pageId: string) => void;
   wordStatuses?: Record<number, 'difficult' | 'understood'>;
+  isPreferencesLoading?: boolean;
 }
 
 export function ReadingPageDisplay({
@@ -37,6 +38,7 @@ export function ReadingPageDisplay({
   hiddenOverlayPages,
   onToggleOverlayVisibility,
   wordStatuses,
+  isPreferencesLoading = false,
 }: ReadingPageDisplayProps) {
   const { generateMetadata } = useWordMetadata();
   const { pages } = useBookPages(bookId);
@@ -180,7 +182,7 @@ export function ReadingPageDisplay({
         )}
         
         {/* Text Overlay with Editing and Word Learning */}
-        {pageText && !isOverlayHidden && (
+        {pageText && !isPreferencesLoading && !isOverlayHidden && (
           <>
             {isEditingText && onUpdatePageText ? (
               <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">

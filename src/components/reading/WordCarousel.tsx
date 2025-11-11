@@ -67,7 +67,7 @@ export function WordCarousel({
             return (
               <CarouselItem
                 key={index}
-                className="pl-2 basis-1/2 flex items-center justify-center"
+                className="pl-2 basis-1/5 md:basis-1/6 flex items-center justify-center"
               >
                 <div
                   className={`

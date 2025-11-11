@@ -393,7 +393,6 @@ export default function BookReadingView() {
                     currentWordIndex={readingState.currentWordIndex}
                     isWordEnlarged={readingState.isWordEnlarged}
                     hiddenOverlayPages={readingState.hiddenOverlayPages}
-                    onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
                     imageComponent={
                       <BookImage
                         src={currentImageUrl}

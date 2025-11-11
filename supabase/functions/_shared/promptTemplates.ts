@@ -3,6 +3,22 @@
  * Used to generate rich, context-aware image generation prompts
  */
 
+/**
+ * Generate critical center-focus composition instructions
+ */
+function getCenterFocusInstructions(): string {
+  return `
+
+--- CRITICAL CENTER-FOCUS REQUIREMENTS ---
+- Position the main subject/object at the EXACT CENTER of the image
+- Use center point as the primary visual anchor
+- Equal negative space on all sides (top, bottom, left, right)
+- Background elements should complement but not compete with centered subject
+- Avoid asymmetric compositions - maintain center balance
+- The viewer's eye should be immediately drawn to the center
+- Use rule of thirds with primary subject at center intersection point`;
+}
+
 interface BookContext {
   bookName: string;
   category: string;
@@ -129,10 +145,15 @@ ${isFirstPage ? '4. Establish the visual style that will continue throughout the
 6. Keep the composition simple and uncluttered
 
 COMPOSITION:
-- Single clear focal point representing the main subject
-- Simple, supportive background that doesn't distract
+- Main subject/focus object MUST be positioned at the CENTER of the image
+- Single clear focal point representing the main subject at center
+- Center-weighted composition with the focal point as the visual anchor
+- Background elements should radiate outward from the centered subject
+- Ensure equal spacing/breathing room on all sides of the main subject
+- Simple, supportive background that doesn't distract from the centered focus
 - Square format (1:1) optimized for viewing
 - High contrast for visual clarity
+${getCenterFocusInstructions()}
 
 VISUAL STYLE:
 - Bright, bold colors with clear outlines
@@ -280,9 +301,11 @@ ALPHABET PAGE REQUIREMENTS:
 5. Include visual elements that reinforce the letter sound and word
 
 COMPOSITION:
-- Main subject representing "${page.title}" as the focal point
-- Supporting elements that enhance the learning connection
+- Main subject "${page.title}" MUST be positioned at the CENTER as the focal point
+- Center-weighted layout with equal spacing on all sides
+- Supporting elements that enhance the learning connection, arranged around center
 - Square format (1:1) with clear, uncluttered design
+${getCenterFocusInstructions()}
 
 ${textOverlayEnabled ? `TEXT INCLUSION:
 - Display the letter "${page.letter}" prominently in large, bold text
@@ -316,9 +339,11 @@ COUNTING PAGE REQUIREMENTS:
 5. Create a scene that makes counting fun and interactive
 
 COMPOSITION:
-- ${page.letter} clearly identifiable items as main subjects
-- Arrangement that guides counting (left to right, top to bottom)
+- ${page.letter} clearly identifiable items arranged at CENTER
+- Center the countable items with balanced arrangement radiating outward
+- Arrangement that guides counting from center (balanced pattern)
 - Square format (1:1) with organized, countable layout
+${getCenterFocusInstructions()}
 
 ${textOverlayEnabled ? `TEXT INCLUSION:
 - Display the number "${page.letter}" prominently in large, bold text
@@ -356,10 +381,12 @@ COLOR LEARNING REQUIREMENTS:
 5. Create a vibrant, engaging scene that celebrates the color ${color}
 
 COMPOSITION:
-- Main subject(s) in prominent ${color} color
-- Background and supporting elements primarily in ${color}
+- Main subject(s) in prominent ${color} color positioned at CENTER
+- Center-focused layout with ${color} items as visual anchor
+- Background and supporting elements primarily in ${color}, radiating from center
 - High saturation to make the color memorable
 - Square format (1:1) with bold, clear ${color} presence
+${getCenterFocusInstructions()}
 
 ${textOverlayEnabled ? `TEXT INCLUSION:
 - Display the color name "${color}" prominently in the illustration
@@ -393,10 +420,12 @@ EMOTION LEARNING REQUIREMENTS:
 5. Create a supportive, understanding atmosphere
 
 COMPOSITION:
-- Character's face showing clear emotion as focal point
-- Scene that contextualizes why they feel ${page.letter}
+- Character's face showing clear emotion MUST be positioned at CENTER as focal point
+- Center the emotional expression with equal spacing on all sides
+- Scene elements that contextualize the emotion, arranged around centered character
 - Warm, empathetic visual tone
-- Square format (1:1) with emphasis on emotional expression
+- Square format (1:1) with emphasis on centered emotional expression
+${getCenterFocusInstructions()}
 
 ${textOverlayEnabled ? `TEXT INCLUSION:
 - Display the emotion word "${page.letter}" prominently

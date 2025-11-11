@@ -107,7 +107,8 @@ export function ReadingPageDisplay({
                 key={index}
                 className={`text-lg font-semibold text-yellow-300 inline-block px-2 py-1 rounded ${
                   isUnderstood ? 'bg-emerald-500/50' : 
-                  isDifficult ? 'bg-red-500/50' : ''
+                  isDifficult ? 'bg-red-500/50' : 
+                  'bg-yellow-500/60'
                 }`}
                 style={{ 
                   transform: 'scale(2)',

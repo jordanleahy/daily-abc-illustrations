@@ -46,7 +46,7 @@ serve(async (req) => {
       return text
         .replace(/<[^>]*>/g, '') // Remove HTML tags
         .replace(/<script[^>]*>.*?<\/script>/gi, '') // Remove scripts
-        .replace(/[^\w\s.,!?'"-]/g, '') // Only safe characters
+        .replace(/[^\w\s.,!?'"#-]/g, '') // Allow # for hex codes
         .substring(0, maxLength)
         .trim();
     };
@@ -593,7 +593,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       ...page,
       letter: sanitizeText(page.letter || '', 10),
       title: sanitizeText(page.title, 100),
-      description: sanitizeText(page.description || '', 500),
+      description: sanitizeText(page.description || '', 2000), // Increased for detailed Bear Stories prompts
       content: {
         mainConcept: sanitizeText(page.content?.mainConcept || '', 500),
         funFact: sanitizeText(page.content?.funFact || '', 500),
@@ -819,7 +819,7 @@ Create an educational illustration that brings this concept to life with bright,
               book_id: book.id,
               user_id: userId,
               version_number: pageVersionNumber,
-              content: promptContent,
+              content: promptContent, // IMPORTANT: Store raw prompt without sanitization for image generation
               is_latest: true,
               is_deployed: true,
               deployed_at: new Date().toISOString(),

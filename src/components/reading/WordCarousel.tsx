@@ -67,7 +67,7 @@ export function WordCarousel({
             return (
               <CarouselItem
                 key={index}
-                className="basis-1/2 flex items-center justify-center"
+                className="basis-auto flex items-center justify-center"
               >
                 <div
                   className={`

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
@@ -26,6 +26,7 @@ import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { usePageImageUrlsSubscription } from '@/hooks/usePageImageUrlsSubscription';
 import { useBookEditorImagePreloader } from '@/hooks/useBookEditorImagePreloader';
 import { useHasRole } from '@/hooks/useUserRole';
+import { useRole } from '@/contexts/RoleContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { supabase } from '@/integrations/supabase/client';
 import { ProgressConsole, type ProgressMessage } from '@/components/ProgressConsole';
@@ -39,6 +40,7 @@ import { useBookPublicationStatus } from '@/hooks/useBookPublicationStatus';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 import { LoadingState } from '@/components/ui/loading-state';
+import { LoadingProgress } from '@/components/ui/loading-progress';
 import {
   Select,
   SelectContent,
@@ -67,6 +69,7 @@ export default function BookDetail() {
   const { pages } = useBookPages(id);
   const { data: book, isLoading: bookLoading, error: bookError, isFetched: bookFetched } = useBook(id);
   const { data: pageImages = {}, isLoading: imagesLoading } = useBookPageImages(id);
+  const { isLoading: rolesLoading } = useRole();
   
   // Subscribe to real-time page image updates
   usePageImageUrlsSubscription(id);
@@ -101,6 +104,25 @@ export default function BookDetail() {
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
   const schedulePublication = useScheduleBookPublication();
   const { data: publicationStatus } = useBookPublicationStatus(book?.id);
+  
+  // Calculate loading steps for progress indicator
+  const loadingSteps = useMemo(() => {
+    const steps: Array<{ label: string; status: 'pending' | 'loading' | 'complete' | 'error' }> = [
+      {
+        label: 'Verifying permissions',
+        status: rolesLoading ? 'loading' : 'complete'
+      },
+      {
+        label: 'Loading book data',
+        status: rolesLoading ? 'pending' : bookLoading ? 'loading' : bookFetched ? 'complete' : 'pending'
+      },
+      {
+        label: 'Loading page images',
+        status: !bookFetched || bookLoading ? 'pending' : imagesLoading ? 'loading' : 'complete'
+      }
+    ];
+    return steps;
+  }, [rolesLoading, bookLoading, bookFetched, imagesLoading]);
   
 
   useEffect(() => {
@@ -377,7 +399,9 @@ export default function BookDetail() {
   if (authLoading || (user && !bookFetched)) {
     return (
       <StandardPageLayout>
-        <LoadingState text="Loading book..." />
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <LoadingProgress steps={loadingSteps} />
+        </div>
       </StandardPageLayout>
     );
   }

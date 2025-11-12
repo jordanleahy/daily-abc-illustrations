@@ -107,13 +107,13 @@ These characters must appear EXACTLY as described on every page. Include ALL det
    - Sitting: Legs spread, leaning forward, engaged and present
    - Emotional range: Hearty laugh (default), concentrated focus, gentle concern
 
-3. **Big Sister Bear:**
+3. **Big Sister Bear (Ruby - 7 years old):**
    
    PHYSICAL PROPORTIONS:
-   - Height: 4 feet tall (pre-teen/young adolescent bear)
-   - Build: Lean, athletic, energetic, long limbs
-   - Size ratio: 0.6x Mama's height, 1.5x larger than Little Brother
-   - Snout: Shorter, youthful, still growing into adult proportions
+   - Height: 4 feet tall (7-year-old child bear, early elementary age)
+   - Build: Lean, energetic, developing coordination, still has some child softness
+   - Size ratio: 0.6x Mama's height, 1.6x larger than Little Brother (noticeable age gap)
+   - Snout: Short, child-like, distinctly younger than parents but more defined than toddler
    
    FUR DETAILS:
    - Color: Light honey brown #E8C59C with golden #F5D5A8 highlights
@@ -145,18 +145,19 @@ These characters must appear EXACTLY as described on every page. Include ALL det
    - Always in motion - running, jumping, reaching, pointing
    
    BODY LANGUAGE DEFAULTS:
-   - Standing: Weight on one leg, ready to spring into action
-   - Walking: Bounce in step, often ahead of family, exploring
-   - Sitting: Rarely still, perched on edge, leaning forward eagerly
-   - Emotional range: Excited discovery (default), determined focus, pouty disappointment
+   - Standing: Confident 7-year-old stance, hands on hips or pointing excitedly
+   - Walking: Energetic skip or run, leading Little Brother, showing things to him
+   - Sitting: Active listening, cross-legged with good posture, engaged
+   - Interactions: Acts as "big kid" helper, protective of Little Brother, proud and responsible
+   - Emotional range: Excited discovery (default), focused determination, proud achievement, occasional 7-year-old frustration
 
-4. **Little Brother Bear:**
+4. **Little Brother Bear (Max - 3 years old):**
    
    PHYSICAL PROPORTIONS:
-   - Height: 2.5 feet tall (young cub, 4-6 years equivalent)
-   - Build: Round, chubby cub body, short limbs, big head proportion
-   - Size ratio: 0.4x Mama's height, head is 1/3 of body height (child proportion)
-   - Snout: Very short, button-like, distinctly cub-proportioned
+   - Height: 2.5 feet tall (3-year-old toddler bear, preschool age)
+   - Build: Round, chubby toddler body, short limbs, large head proportion (toddler: head is 1/3.5 of body)
+   - Size ratio: 0.4x Mama's height, 0.6x Big Sister's height (significant younger sibling difference)
+   - Snout: Tiny button-like, baby-faced, distinctly toddler-proportioned
    
    FUR DETAILS:
    - Color: Fluffy light golden #F5D5A8 with creamy white #FFF8E7 on belly
@@ -189,10 +190,13 @@ These characters must appear EXACTLY as described on every page. Include ALL det
    - Walks with slight waddle due to cub proportions
    
    BODY LANGUAGE DEFAULTS:
-   - Standing: Often holding something, one paw reaching for Mama or Papa
-   - Walking: Toddle-like gait, sometimes on all fours when tired or playing
-   - Sitting: Cross-legged, objects spread around, deeply focused on play
-   - Emotional range: Quiet wonder (default), delighted giggles, shy hide-behind-Mama
+   - Standing: Wobbly toddler stance, often holding parent's paw or Big Sister's paw for support
+   - Walking: Unsteady toddler waddle, sometimes stumbles, needs help with stairs
+   - Sitting: Plops down heavily, legs splayed, surrounded by toys
+   - Interactions: Constantly seeks comfort from Mama/Papa, follows Big Sister everywhere, tries to copy her
+   - Toddler behaviors: Reaches up to be held, grabs objects with both paws, intense focused stare
+   - Speech indicators: Points at things, tugs on clothing to get attention, limited vocabulary implied
+   - Emotional range: Wide-eyed wonder (default), delighted toddler giggles, sudden tears, clingy when uncertain
 `,
 
   visualStyle: `

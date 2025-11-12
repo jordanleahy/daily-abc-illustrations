@@ -121,9 +121,9 @@ export function ReadingPageDisplay({
               </div>
             ) : currentPageWords && currentPageWords.length > 0 ? (
               <div 
-                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm group"
+                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm group h-[40px]"
               >
-                <div className="relative">
+                <div className="relative h-full">
                   <WordCarousel
                     words={currentPageWords}
                     currentWordIndex={currentWordIndex}
@@ -156,8 +156,7 @@ export function ReadingPageDisplay({
               </div>
             ) : (
               <div 
-                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3 group overflow-hidden"
-                style={{ minHeight: '60px' }}
+                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 group overflow-hidden h-[40px]"
               >
                 <div className="flex items-center justify-center gap-2 h-full relative">
                   <div 

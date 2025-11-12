@@ -398,9 +398,8 @@ export function UnifiedReadingView({
                 onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
                 isPreferencesLoading={readingState.isPreferencesLoading}
                 showDismissButton={false}
-                onCarouselApiReady={readingState.setCarouselApi}
                 onWordChange={readingState.setCurrentWordIndex}
-                 imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex) : undefined}
+                imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex) : undefined}
               />
             </div>
           </div>

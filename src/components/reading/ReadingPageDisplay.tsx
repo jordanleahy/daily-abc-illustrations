@@ -6,7 +6,6 @@ import { useBookPages } from '@/hooks/useBookPages';
 import { toast } from 'sonner';
 import { Pencil, X } from 'lucide-react';
 import { WordCarousel } from './WordCarousel';
-import type { CarouselApi } from '@/components/ui/carousel';
 
 interface ReadingPageDisplayProps {
   pageId: string;
@@ -25,7 +24,6 @@ interface ReadingPageDisplayProps {
   wordStatuses?: Record<number, 'difficult' | 'understood'>;
   isPreferencesLoading?: boolean;
   showDismissButton?: boolean;
-  onCarouselApiReady?: (api: CarouselApi) => void;
   onWordChange?: (index: number) => void;
 }
 
@@ -45,7 +43,6 @@ export function ReadingPageDisplay({
   wordStatuses,
   isPreferencesLoading = false,
   showDismissButton = true,
-  onCarouselApiReady,
   onWordChange,
 }: ReadingPageDisplayProps) {
   const { generateMetadata } = useWordMetadata();
@@ -132,7 +129,6 @@ export function ReadingPageDisplay({
                     words={currentPageWords}
                     currentWordIndex={currentWordIndex}
                     wordStatuses={wordStatuses}
-                    onCarouselApiReady={onCarouselApiReady}
                     onWordChange={onWordChange}
                   />
                   {onUpdatePageText && (

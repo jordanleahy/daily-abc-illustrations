@@ -1,49 +1,37 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback } from 'react';
 import { useReadingPreferences } from '@/hooks/useReadingPreferences';
-import type { CarouselApi } from '@/components/ui/carousel';
 
 export function useReadingPageState() {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
   const [isEditingText, setIsEditingText] = useState(false);
-  const carouselApiRef = useRef<CarouselApi | null>(null);
   
   // Use database-backed preferences for cross-device sync
   const { hiddenOverlayPages, toggleOverlay: toggleOverlayDB, isLoading: isPreferencesLoading } = useReadingPreferences();
 
-
-  const setCarouselApi = useCallback((api: CarouselApi) => {
-    carouselApiRef.current = api;
-  }, []);
-
   const handleNavigateWord = useCallback((direction: 'prev' | 'next', totalWords: number) => {
-    const api = carouselApiRef.current;
-    if (!api) return;
-
-    if (direction === 'prev') {
-      api.scrollPrev();
-    } else {
-      api.scrollNext();
-    }
+    setCurrentWordIndex(prev => {
+      if (direction === 'prev') {
+        return prev > 0 ? prev - 1 : totalWords - 1; // Loop to end
+      } else {
+        return prev < totalWords - 1 ? prev + 1 : 0; // Loop to start
+      }
+    });
   }, []);
 
   const handleMarkDifficult = useCallback((totalWords: number) => {
     setWordStatuses(prev => ({ ...prev, [currentWordIndex]: 'difficult' }));
+    // Auto-advance to next word
     if (currentWordIndex < totalWords - 1) {
-      const api = carouselApiRef.current;
-      if (api) {
-        api.scrollNext();
-      }
+      setCurrentWordIndex(prev => prev + 1);
     }
   }, [currentWordIndex]);
 
   const handleMarkUnderstood = useCallback((totalWords: number) => {
     setWordStatuses(prev => ({ ...prev, [currentWordIndex]: 'understood' }));
+    // Auto-advance to next word
     if (currentWordIndex < totalWords - 1) {
-      const api = carouselApiRef.current;
-      if (api) {
-        api.scrollNext();
-      }
+      setCurrentWordIndex(prev => prev + 1);
     }
   }, [currentWordIndex]);
 
@@ -63,7 +51,6 @@ export function useReadingPageState() {
     hiddenOverlayPages,
     isPreferencesLoading,
     setIsEditingText,
-    setCarouselApi,
     handleNavigateWord,
     handleMarkDifficult,
     handleMarkUnderstood,

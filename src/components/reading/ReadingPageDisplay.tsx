@@ -111,18 +111,7 @@ export function ReadingPageDisplay({
           />
         )}
         
-        {/* Letter Display (Top) - Show large letter if first word exists */}
-        {pageText && !isPreferencesLoading && !isOverlayHidden && mode === 'read' && currentPageWords && currentPageWords.length > 0 && (
-          <div className="absolute top-4 left-0 right-0 z-10 flex justify-center">
-            <div className="px-6 py-3 rounded-xl bg-white/90 backdrop-blur-sm shadow-lg">
-              <span className="text-6xl font-black text-gray-900">
-                {currentPageWords[0].word}
-              </span>
-            </div>
-          </div>
-        )}
-
-        {/* Vocabulary Words Carousel (Bottom) - Show remaining words if any */}
+        {/* Text Overlay with Editing and Word Learning */}
         {pageText && !isPreferencesLoading && !isOverlayHidden && (
           <>
             {isEditingText && onUpdatePageText ? (
@@ -134,13 +123,13 @@ export function ReadingPageDisplay({
                   isEditing={true}
                 />
               </div>
-            ) : mode === 'read' && currentPageWords && currentPageWords.length > 1 ? (
+            ) : mode === 'read' && currentPageWords && currentPageWords.length > 0 ? (
               <div 
-                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm group h-[60px] flex items-center"
+                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm group h-[40px] flex items-center"
               >
                 <div className="relative h-full w-full flex items-center">
                   <WordCarousel
-                    words={currentPageWords.slice(1)}
+                    words={currentPageWords}
                     currentWordIndex={currentWordIndex}
                     wordStatuses={wordStatuses}
                     onCarouselApiReady={onCarouselApiReady}
@@ -169,7 +158,7 @@ export function ReadingPageDisplay({
                   )}
                 </div>
               </div>
-            ) : pageText && (
+            ) : (
               <div 
                 className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 group overflow-hidden h-[40px]"
               >

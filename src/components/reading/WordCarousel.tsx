@@ -67,23 +67,26 @@ export function WordCarousel({
             return (
               <CarouselItem
                 key={index}
-                className="basis-auto flex items-center justify-center"
+                className="basis-1/2 flex items-center justify-center"
               >
                 <div
                   className={`
-                    inline-block px-4 py-3 rounded-xl font-bold transition-all duration-500 ease-in-out text-2xl
+                    inline-block px-3 py-2 rounded-lg font-semibold transition-all duration-500 ease-in-out text-xl
                     ${isCurrent 
-                      ? 'text-white scale-110' 
-                      : 'text-white/40 scale-90'
+                      ? 'text-white' 
+                      : 'text-white/50'
                     }
-                    ${isCurrent && isUnderstood ? 'bg-emerald-500/70' : ''}
-                    ${isCurrent && isDifficult ? 'bg-red-500/70' : ''}
-                    ${isCurrent && !isUnderstood && !isDifficult ? 'bg-yellow-500/70' : ''}
-                    ${!isCurrent && isUnderstood ? 'bg-emerald-500/20' : ''}
-                    ${!isCurrent && isDifficult ? 'bg-red-500/20' : ''}
+                    ${isCurrent && isUnderstood ? 'bg-emerald-500/60' : ''}
+                    ${isCurrent && isDifficult ? 'bg-red-500/60' : ''}
+                    ${isCurrent && !isUnderstood && !isDifficult ? 'bg-yellow-500/60' : ''}
+                    ${!isCurrent && isUnderstood ? 'bg-emerald-500/30' : ''}
+                    ${!isCurrent && isDifficult ? 'bg-red-500/30' : ''}
                   `}
+                  style={{
+                    fontWeight: isCurrent ? '800' : '600',
+                  }}
                 >
-                  {wordObj.word}
+                  {index === 0 ? `"${wordObj.word}"` : wordObj.word}
                 </div>
               </CarouselItem>
             );

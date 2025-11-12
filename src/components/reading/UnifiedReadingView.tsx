@@ -226,13 +226,11 @@ export function UnifiedReadingView({
   const currentPage = reorderedPages[currentPageIndex];
   const isLastPage = currentPageIndex === reorderedPages.length - 1;
   
-  // Get current page words for word learning (exclude first word which is the letter)
+  // Get current page words for word learning
   const { pages: bookPages } = useBookPages(book.book_id || book.id);
   const currentPageWords = useMemo(() => {
     const page = bookPages?.find(p => p.id === currentPage?.id);
-    const allWords = page?.content?.words || [];
-    // Return all words except the first one (the letter)
-    return allWords.length > 1 ? allWords.slice(1) : [];
+    return page?.content?.words || [];
   }, [bookPages, currentPage]);
   
   // Reset word learning state when page changes
@@ -414,7 +412,7 @@ export function UnifiedReadingView({
       
       {/* Unified Reading Controls */}
       <UnifiedReadingControls
-        showWordControls={true}
+        showWordControls={contentType === 'user_book' ? currentPageIndex > 1 : undefined}
         hasWords={currentPageWords.length > 0}
         onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
         onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}

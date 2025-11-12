@@ -55,13 +55,13 @@ import { toast } from 'sonner';
  * );
  * ```
  */
-export const useBooks = () => {
+export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
   const { user } = useAuthContext();
   const { isAdmin, isTeacher } = useRole();
   const queryClient = useQueryClient();
 
   const { data: books = [], isLoading, error } = useQuery({
-    queryKey: ['books', user?.id, isAdmin, isTeacher],
+    queryKey: ['books', user?.id, isAdmin, isTeacher, viewMode],
     queryFn: async () => {
       if (!user?.id) return [];
       
@@ -78,10 +78,12 @@ export const useBooks = () => {
           )
         `);
       
-      // Only filter by user_id if not admin or teacher
-      const finalQuery = (isAdmin || isTeacher)
-        ? query.neq('status', 'archived')
-        : query.eq('user_id', user.id).neq('status', 'archived');
+      // Determine if we should show all books
+      const showAllBooks = viewMode === 'all-books' && (isAdmin || isTeacher);
+      
+      const finalQuery = showAllBooks
+        ? query.neq('status', 'archived')  // All books for admins on /all-books
+        : query.eq('user_id', user.id).neq('status', 'archived');  // User's books
       
       const { data: booksData, error: booksError } = await finalQuery;
 
@@ -120,14 +122,16 @@ export const useBooks = () => {
   useEffect(() => {
     if (!user?.id) return;
 
+    const showAllBooks = viewMode === 'all-books' && (isAdmin || isTeacher);
+
     const insertConfig: any = {
       event: 'INSERT',
       schema: 'public',
       table: 'books',
     };
     
-    // Only filter by user_id if not admin or teacher
-    if (!isAdmin && !isTeacher) {
+    // Only filter by user_id if not showing all books
+    if (!showAllBooks) {
       insertConfig.filter = `user_id=eq.${user.id}`;
     }
 
@@ -148,7 +152,7 @@ export const useBooks = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'books',
-          ...((!isAdmin && !isTeacher) && { filter: `user_id=eq.${user.id}` })
+          ...(!showAllBooks && { filter: `user_id=eq.${user.id}` })
         },
         (payload) => {
           console.log('Book updated:', payload.new);
@@ -162,7 +166,7 @@ export const useBooks = () => {
           event: 'DELETE',
           schema: 'public',
           table: 'books',
-          ...((!isAdmin && !isTeacher) && { filter: `user_id=eq.${user.id}` })
+          ...(!showAllBooks && { filter: `user_id=eq.${user.id}` })
         },
         (payload) => {
           console.log('Book deleted:', payload.old);
@@ -189,7 +193,7 @@ export const useBooks = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, isAdmin, isTeacher, queryClient]);
+  }, [user?.id, isAdmin, isTeacher, viewMode, queryClient]);
 
   return {
     books,

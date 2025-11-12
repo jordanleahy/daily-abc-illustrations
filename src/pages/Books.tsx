@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useRole } from '@/contexts/RoleContext';
 import { useBooks } from '@/hooks/useBooks';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { useBookCoverImage } from '@/hooks/useBookCoverImage';
@@ -130,19 +131,24 @@ function BookCard({ book, onClick, index }: { book: any; onClick: () => void; in
 
 export default function Books() {
   const { user, loading: authLoading } = useAuthContext();
-  const { books, loading } = useBooks();
+  const { isAdmin, isTeacher } = useRole();
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  
+  // Determine view mode based on route
   const isAllBooksView = location.pathname.startsWith('/all-books');
+  const viewMode = isAllBooksView ? 'all-books' : 'my-books';
+  
+  const { books, loading } = useBooks(viewMode);
 
   // Preload book images for instant display on return visits
   useEditorImagePreloader(books);
 
-  // Invalidate books query when component mounts to refresh sort order
+  // Invalidate books query when route changes to ensure fresh data
   useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
-  }, [queryClient, user?.id]);
+    queryClient.invalidateQueries({ queryKey: ['books'] });
+  }, [location.pathname, queryClient]);
 
   const handleViewBook = async (bookId: string) => {
     // Track the user book activity (writes to user_book_activity table with book_id)

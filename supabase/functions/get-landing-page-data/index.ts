@@ -368,8 +368,18 @@ Deno.serve(async (req) => {
           metadata: lb.books?.metadata || null
         };
       });
+
+      // Deduplicate by book_id (keep most recent entry per book)
+      const seenBookIds = new Set();
+      libraryBooksWithImages = libraryBooksWithImages.filter(lb => {
+        if (seenBookIds.has(lb.book_id)) {
+          return false;
+        }
+        seenBookIds.add(lb.book_id);
+        return true;
+      });
       
-      console.log(`🖼️ Library books with images: ${libraryBooksWithImages.filter(b => b.og_image_url).length}/${libraryBooks.length}`);
+      console.log(`🖼️ Library books with images: ${libraryBooksWithImages.filter(b => b.og_image_url).length}/${libraryBooksWithImages.length} (after deduplication)`);
     }
 
     const endTime = Date.now();

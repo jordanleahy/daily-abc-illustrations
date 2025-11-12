@@ -47,7 +47,7 @@ export function WordCarousel({
   }, [api, words.length]);
 
   return (
-    <div className="w-full h-full flex items-center">
+    <div className="w-full h-full flex items-center justify-center">
       <Carousel
         opts={{
           align: 'center',
@@ -58,7 +58,7 @@ export function WordCarousel({
         setApi={handleSetApi}
         className="w-full"
       >
-        <CarouselContent className="gap-1.5">
+        <CarouselContent className="gap-1.5 flex items-center">
           {words.map((wordObj, index) => {
             const isCurrent = index === currentWordIndex;
             const wordStatus = wordStatuses?.[index];

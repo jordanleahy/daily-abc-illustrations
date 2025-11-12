@@ -163,10 +163,15 @@ export default function Books() {
     navigate('/google-chat'); // Redirect to GoogleChat page for book creation
   };
 
+  const pageTitle = isAllBooksView ? "All Books" : "My Books";
+  const pageDescription = isAllBooksView 
+    ? "View and manage all ABC books in the system" 
+    : "Create and manage your ABC books";
+
   // Show loading while auth is being checked
   if (authLoading) {
     return (
-      <StandardPageLayout title="My Books" containerClassName="py-8">
+      <StandardPageLayout title={pageTitle} containerClassName="py-8">
         <LoadingState />
       </StandardPageLayout>
     );
@@ -178,21 +183,21 @@ export default function Books() {
 
   if (loading) {
     return (
-      <StandardPageLayout title="My Books" containerClassName="py-8">
+      <StandardPageLayout title={pageTitle} containerClassName="py-8">
         <LoadingState text="Loading your books..." />
       </StandardPageLayout>
     );
   }
 
   return (
-    <StandardPageLayout title="My Books" containerClassName="py-8">
+    <StandardPageLayout title={pageTitle} containerClassName="py-8">
       <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">My Books</h1>
+            <h1 className="text-3xl font-bold tracking-tight">{pageTitle}</h1>
             <p className="text-muted-foreground">
-              Create and manage your ABC books
+              {pageDescription}
             </p>
           </div>
           <Button onClick={handleCreateNewBook}>

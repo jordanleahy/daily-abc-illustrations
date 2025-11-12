@@ -149,7 +149,7 @@ export default function Books() {
     // Invalidate query to refresh sort order with new activity
     queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
     
-    navigate(`/all-books/${bookId}/read`);
+    navigate(`/books/${bookId}/read`);
   };
 
   const handleCreateNewBook = () => {

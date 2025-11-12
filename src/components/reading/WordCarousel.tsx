@@ -53,11 +53,12 @@ export function WordCarousel({
           align: 'center',
           loop: true,
           skipSnaps: false,
+          containScroll: 'trimSnaps',
         }}
         setApi={handleSetApi}
         className="w-full"
       >
-        <CarouselContent className="gap-3">
+        <CarouselContent className="gap-1.5">
           {words.map((wordObj, index) => {
             const isCurrent = index === currentWordIndex;
             const wordStatus = wordStatuses?.[index];

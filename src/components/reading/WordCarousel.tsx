@@ -57,7 +57,7 @@ export function WordCarousel({
         setApi={handleSetApi}
         className="w-full"
       >
-        <CarouselContent className="-ml-2">
+        <CarouselContent className="">
           {words.map((wordObj, index) => {
             const isCurrent = index === currentWordIndex;
             const wordStatus = wordStatuses?.[index];
@@ -67,7 +67,7 @@ export function WordCarousel({
             return (
               <CarouselItem
                 key={index}
-                className="pl-2 basis-1/2 flex items-center justify-center"
+                className="basis-1/2 flex items-center justify-center"
               >
                 <div
                   className={`

@@ -71,10 +71,10 @@ export function WordCarousel({
               >
                 <div
                   className={`
-                    inline-block px-3 py-2 rounded-lg font-semibold transition-all duration-500 ease-in-out
+                    inline-block px-3 py-2 rounded-lg font-semibold transition-all duration-500 ease-in-out text-xl
                     ${isCurrent 
-                      ? 'text-white text-2xl transform scale-150' 
-                      : 'text-white/50 text-base'
+                      ? 'text-white' 
+                      : 'text-white/50'
                     }
                     ${isCurrent && isUnderstood ? 'bg-emerald-500/60' : ''}
                     ${isCurrent && isDifficult ? 'bg-red-500/60' : ''}

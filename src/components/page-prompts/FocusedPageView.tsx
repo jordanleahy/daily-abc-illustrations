@@ -1,7 +1,9 @@
-import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BottomSlideNavigation } from '@/components/ui/bottom-slide-navigation';
 import { PageImageSection } from '@/components/PageImageSection';
+import { ReadingPageDisplay } from '@/components/reading/ReadingPageDisplay';
+import { useReadingPreferences } from '@/hooks/useReadingPreferences';
+import { useRealTimeInlineEdit } from '@/hooks/useRealTimeInlineEdit';
 import { ArrowLeft } from 'lucide-react';
 import type { Page } from '@/types/book';
 
@@ -31,6 +33,14 @@ export function FocusedPageView({
   onExit 
 }: FocusedPageViewProps) {
   const isLastPage = pageNumber >= totalPages;
+  const { hiddenOverlayPages, toggleOverlay, isLoading: isPreferencesLoading } = useReadingPreferences();
+  
+  const { updateValue: updatePageTitle } = useRealTimeInlineEdit({
+    tableName: 'pages',
+    recordId: page.id,
+    initialValue: page.title || '',
+    fieldName: 'title',
+  });
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden" style={{ touchAction: 'none' }}>
@@ -63,18 +73,20 @@ export function FocusedPageView({
       {/* Focused page card - Fixed height to prevent scrolling */}
       <div className="h-[calc(100vh-8rem)] mt-16 px-4 flex items-center justify-center">
         <div className="max-w-md w-full">
-          <Card className="overflow-hidden shadow-lg">
-            <CardContent className="p-0">
-              {/* Large illustration area */}
-              <div className="aspect-square bg-gradient-to-br from-background to-muted/50">
-                <PageImageSection 
-                  pageId={page.id}
-                  bookId={bookId}
-                  preloadedImageUrl={preloadedImageUrl}
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <ReadingPageDisplay
+            pageId={page.id}
+            bookId={bookId}
+            pageNumber={pageNumber}
+            pageText={page.title || ''}
+            imageUrl={preloadedImageUrl || ''}
+            mode="edit"
+            onUpdatePageText={updatePageTitle}
+            hiddenOverlayPages={hiddenOverlayPages}
+            onToggleOverlayVisibility={toggleOverlay}
+            isPreferencesLoading={isPreferencesLoading}
+            showDismissButton={true}
+            className="shadow-lg"
+          />
         </div>
       </div>
 

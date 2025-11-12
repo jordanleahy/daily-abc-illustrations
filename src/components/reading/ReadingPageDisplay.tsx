@@ -17,6 +17,7 @@ interface ReadingPageDisplayProps {
   onUpdatePageText?: (newText: string) => void;
   imageComponent?: React.ReactNode;
   className?: string;
+  mode?: 'read' | 'edit'; // 'read' shows word carousel, 'edit' shows simple text
   // Word learning state passed from parent
   currentWordIndex?: number;
   hiddenOverlayPages?: Set<string>;
@@ -37,6 +38,7 @@ export function ReadingPageDisplay({
   onUpdatePageText,
   imageComponent,
   className = '',
+  mode = 'read',
   currentWordIndex = 0,
   hiddenOverlayPages,
   onToggleOverlayVisibility,
@@ -56,8 +58,10 @@ export function ReadingPageDisplay({
     return currentPage?.content?.words;
   }, [pages, pageId]);
 
-  // Auto-generate word metadata if page has text but no words
+  // Auto-generate word metadata if page has text but no words (only in read mode)
   useEffect(() => {
+    if (mode === 'edit') return; // Skip word generation in edit mode
+    
     const currentPage = pages?.find(p => p.id === pageId);
     if (currentPage && pageText && !currentPageWords && bookId) {
       generateMetadata({
@@ -69,7 +73,7 @@ export function ReadingPageDisplay({
         console.error('Failed to auto-generate word metadata:', error);
       });
     }
-  }, [pageId, pageText, currentPageWords, pages, bookId, generateMetadata]);
+  }, [pageId, pageText, currentPageWords, pages, bookId, generateMetadata, mode]);
 
   const handleSaveText = async (newText: string) => {
     if (onUpdatePageText) {
@@ -119,7 +123,7 @@ export function ReadingPageDisplay({
                   isEditing={true}
                 />
               </div>
-            ) : currentPageWords && currentPageWords.length > 0 ? (
+            ) : mode === 'read' && currentPageWords && currentPageWords.length > 0 ? (
               <div 
                 className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm group h-[40px] flex items-center"
               >

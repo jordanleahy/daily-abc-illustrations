@@ -29,11 +29,11 @@ export const BOOK_TYPES: BookType[] = [
     id: 'abc',
     label: 'ABC Book',
     icon: Sparkles,
-    description: 'Alphabet learning with letter recognition',
-    prompt: 'I want to create an educational ABC book for toddlers. Each page should focus on one letter with engaging illustrations and simple activities for letter recognition.',
+    description: 'Alphabet learning with letter recognition (26 pages A-Z)',
+    prompt: 'I want to create an educational ABC book with 26 pages (A-Z). Each page should focus on one letter with engaging illustrations and simple activities for letter recognition. Page titles should use parentheses around the letter, like "(a) is for apple" to help readers say the letter name instead of the sound.',
     color: 'text-blue-500',
     needsClarification: true,
-    clarificationContext: 'Ask about letter case preference: lowercase (a,b,c for toddlers), uppercase (A,B,C for preschoolers), or both cases (Aa,Bb,Cc for early readers). Provide these 3 specific options plus custom.'
+    clarificationContext: 'Ask about letter case preference: lowercase like (a), (b), (c) for toddlers, uppercase like (A), (B), (C) for preschoolers, or both cases like (Aa), (Bb), (Cc) for early readers. Explain that the book will have 26 pages (one for each letter) and parentheses help readers say the letter NAME instead of the sound. Provide these 3 specific options plus custom.'
   },
   {
     id: 'numbers',

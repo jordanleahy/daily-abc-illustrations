@@ -174,7 +174,9 @@ Books have three distinct page types that MUST be returned in this exact order:
 
 3. CONTENT PAGES (pageType: "content", pageNumber: 2+)
    - The main learning content
-   - For ABC books: one page per letter (A-Z)
+   - For ABC books: EXACTLY 26 pages (A-Z), one page per letter
+     * CRITICAL: Page titles MUST use format "(a) is for apple" with parentheses around the letter
+     * This helps readers say the letter NAME instead of the sound
    - For Numbers: one page per number
    - For other types: topic-based pages
 
@@ -233,8 +235,8 @@ Return ONLY valid JSON with this structure:
     {
       "pageNumber": 2,
       "pageType": "content",
-      "letter": "A (or appropriate)",
-      "title": "EXACT TITLE FROM PROVIDED LIST",
+      "letter": "a (or appropriate - WITHOUT parentheses in this field)",
+      "title": "EXACT TITLE FROM PROVIDED LIST - FOR ABC: use format '(a) is for apple'",
       "description": "EXACT DESCRIPTION FROM PROVIDED LIST",
       "content": {
         "mainConcept": "string",
@@ -271,12 +273,15 @@ Every book must have pages organized by type:
    - Number and structure depend on content type (see below)
 
 Content Types:
-- "alphabet": ABC learning content with 26 pages (A-Z), each page teaching a letter
+- "alphabet": ABC learning content with EXACTLY 26 pages (A-Z), each page teaching a letter
+  * CRITICAL: ABC books MUST have 26 content pages (one for each letter A-Z)
+  * Page titles MUST use parentheses around the letter: "(a) is for apple" NOT "a is for apple"
+  * Parentheses help readers understand to say the letter NAME, not the sound
   * For alphabet content, check if user specified letter case:
-    - "lowercase" or "lowercase letters": use a, b, c... format
-    - "uppercase" or "uppercase letters": use A, B, C... format
-    - "both" or "both cases": use Aa, Bb, Cc... format
-    - Default to uppercase (A, B, C...) if not specified
+    - "lowercase" or "lowercase letters": use (a), (b), (c)... format
+    - "uppercase" or "uppercase letters": use (A), (B), (C)... format
+    - "both" or "both cases": use (Aa), (Bb), (Cc)... format
+    - Default to lowercase with parentheses: (a), (b), (c)... if not specified
 - "story": Narrative story content with 8-16 pages telling a cohesive story
 - "educational": Topic-based learning content with 10-20 pages covering different aspects
 - "chapter": Longer content with 15-26 pages divided into chapters
@@ -284,11 +289,12 @@ Content Types:
 IMPORTANT: 
 - Do NOT include aspect ratio specifications (like "1:1", "16:9", etc.) in page titles or descriptions
 - Aspect ratios are handled separately by the image generation tool
-- NEVER use quotes, apostrophes, or any quotation marks in titles - write titles as plain text only (e.g., "a is for adventure" NOT '"a" is for adventure' or "a's adventure")
-- Remove ALL quotes, apostrophes, and quotation marks from any title text
+- FOR ABC BOOKS: Page titles MUST use format "(a) is for apple" with parentheses around the letter
+- For NON-ABC books: NEVER use quotes, apostrophes, or any quotation marks in titles
 - For NON-alphabet content, do NOT include "letter" fields
-- For alphabet content, include "letter" field with values matching the specified case format
-- Adjust page count based on content type and complexity
+- For alphabet content, include "letter" field with values matching the specified case format (WITHOUT parentheses)
+- ABC books MUST have EXACTLY 26 content pages (A-Z)
+- For other content types, adjust page count based on content type and complexity
 - Make content age-appropriate and engaging
 - EXTRACT and RETURN metadata from the conversation (content type, page count preferences, themes, etc.)
 
@@ -391,8 +397,8 @@ Return ONLY a JSON object with this structure (no markdown, no code blocks):
     {
       "pageNumber": 2,
       "pageType": "content",
-      "letter": "A (use format matching letterCase for alphabet)",
-      "title": "string",
+      "letter": "a (use format matching letterCase for alphabet, WITHOUT parentheses in this field)",
+      "title": "string - FOR ABC BOOKS: MUST use format '(a) is for apple' with parentheses around letter",
       "description": "string",
       "content": {
         "mainConcept": "string",

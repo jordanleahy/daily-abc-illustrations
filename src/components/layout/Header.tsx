@@ -307,10 +307,19 @@ export function Header({
                     (item.href === '/all-books' && location.pathname.startsWith('/all-books')) ||
                     (item.href === '/books' && location.pathname.startsWith('/books') && !location.pathname.startsWith('/all-books'));
                   
+                  const handleAdminNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+                    // Force navigation when switching between Books tabs to avoid any stale state quirks
+                    if ((item.href === '/books' || item.href === '/all-books') && location.pathname !== item.href) {
+                      e.preventDefault();
+                      navigate(item.href);
+                    }
+                  };
+                  
                   return (
                     <Link
                       key={item.name}
                       to={item.href}
+                      onClick={handleAdminNavClick}
                       className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
                         isActive
                           ? 'bg-primary/10 text-primary'

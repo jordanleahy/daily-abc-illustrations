@@ -20,6 +20,7 @@ import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useRole } from '@/contexts/RoleContext';
 import { Book } from '@/types/book';
 import { toast } from 'sonner';
 
@@ -56,15 +57,16 @@ import { toast } from 'sonner';
  */
 export const useBooks = () => {
   const { user } = useAuthContext();
+  const { isAdmin, isTeacher } = useRole();
   const queryClient = useQueryClient();
 
   const { data: books = [], isLoading, error } = useQuery({
-    queryKey: ['books', user?.id],
+    queryKey: ['books', user?.id, isAdmin, isTeacher],
     queryFn: async () => {
       if (!user?.id) return [];
       
       // ⚡ OPTIMIZED: Single query with JOIN instead of 2 separate queries
-      const { data: booksData, error: booksError } = await supabase
+      const query = supabase
         .from('books')
         .select(`
           *,
@@ -74,9 +76,14 @@ export const useBooks = () => {
             view_count,
             user_id
           )
-        `)
-        .eq('user_id', user.id)
-        .neq('status', 'archived');
+        `);
+      
+      // Only filter by user_id if not admin or teacher
+      const finalQuery = (isAdmin || isTeacher)
+        ? query.neq('status', 'archived')
+        : query.eq('user_id', user.id).neq('status', 'archived');
+      
+      const { data: booksData, error: booksError } = await finalQuery;
 
       if (booksError) {
         console.error('Error fetching books:', booksError);
@@ -113,16 +120,22 @@ export const useBooks = () => {
   useEffect(() => {
     if (!user?.id) return;
 
+    const insertConfig: any = {
+      event: 'INSERT',
+      schema: 'public',
+      table: 'books',
+    };
+    
+    // Only filter by user_id if not admin or teacher
+    if (!isAdmin && !isTeacher) {
+      insertConfig.filter = `user_id=eq.${user.id}`;
+    }
+
     const channel = supabase
       .channel('books-changes')
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'books',
-          filter: `user_id=eq.${user.id}`
-        },
+        insertConfig,
         (payload) => {
           console.log('Book inserted:', payload.new);
           // Refetch to get the full data with daily_published status
@@ -135,7 +148,7 @@ export const useBooks = () => {
           event: 'UPDATE',
           schema: 'public',
           table: 'books',
-          filter: `user_id=eq.${user.id}`
+          ...((!isAdmin && !isTeacher) && { filter: `user_id=eq.${user.id}` })
         },
         (payload) => {
           console.log('Book updated:', payload.new);
@@ -149,7 +162,7 @@ export const useBooks = () => {
           event: 'DELETE',
           schema: 'public',
           table: 'books',
-          filter: `user_id=eq.${user.id}`
+          ...((!isAdmin && !isTeacher) && { filter: `user_id=eq.${user.id}` })
         },
         (payload) => {
           console.log('Book deleted:', payload.old);
@@ -176,7 +189,7 @@ export const useBooks = () => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id]);
+  }, [user?.id, isAdmin, isTeacher, queryClient]);
 
   return {
     books,

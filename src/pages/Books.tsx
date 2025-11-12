@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -132,7 +132,9 @@ export default function Books() {
   const { user, loading: authLoading } = useAuthContext();
   const { books, loading } = useBooks();
   const navigate = useNavigate();
+  const location = useLocation();
   const queryClient = useQueryClient();
+  const isAllBooksView = location.pathname.startsWith('/all-books');
 
   // Preload book images for instant display on return visits
   useEditorImagePreloader(books);
@@ -149,7 +151,12 @@ export default function Books() {
     // Invalidate query to refresh sort order with new activity
     queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
     
-    navigate(`/books/${bookId}/read`);
+    // Navigate based on context
+    if (isAllBooksView) {
+      navigate(`/all-books/${bookId}`); // Admin editor
+    } else {
+      navigate(`/books/${bookId}/read`); // Reading view
+    }
   };
 
   const handleCreateNewBook = () => {

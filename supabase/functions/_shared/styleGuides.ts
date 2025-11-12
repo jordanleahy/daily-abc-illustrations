@@ -180,7 +180,33 @@ Emotional Anchor:
 `,
 
   specialInstructions: `
-⚠️ CRITICAL CONSISTENCY REQUIREMENTS:
+🎯 TOP 3 QUALITY CONTROL BEST PRACTICES (FOLLOW EXACTLY):
+
+**BEST PRACTICE #1: MANDATORY HEX COLOR CODES**
+❌ NEVER write: "natural earth tones", "warm colors", "bright colors"
+✅ ALWAYS write: "red #E43F3F", "ice blue #B5D5EE", "golden glow #FFDFA4"
+
+Every single color mentioned in a prompt MUST include its exact hex code from the palette above.
+This is the #1 reason for style inconsistency - vague color descriptions allow AI to improvise.
+
+**BEST PRACTICE #2: CHARACTER IDENTIFICATION FIRST**
+Every prompt MUST start by explicitly identifying which bears appear:
+✅ "Papa Bear (chocolate-brown fur, red-black plaid flannel shirt) is pulling..."
+✅ "Little Brother Bear (fluffy golden fur, blue pom-pom hat) reaches..."
+✅ "Mama Bear (caramel fur, cream sweater) and Big Sister Bear (light brown fur, teal jacket)..."
+
+Never write generic "a bear" or "the bears" - always specify WHICH bear with their signature features.
+
+**BEST PRACTICE #3: STYLE ANCHOR IN EVERY PROMPT**
+Every prompt must include at least ONE of these anchors:
+- "Gondola House visible in background with amber-glowing windows"
+- "Red gondola cabins #E43F3F on cables in background"
+- "Alpine village with warm wood tones #D9A066 behind them"
+- "Frozen-inspired cinematic lighting with soft golden rim light"
+
+These anchors force the AI to maintain the Bear Stories world consistency.
+
+⚠️ ADDITIONAL CRITICAL CONSISTENCY REQUIREMENTS:
 
 1. CHARACTER APPEARANCE: Bears must look identical across all pages
    - Same fur colors, clothing, body proportions

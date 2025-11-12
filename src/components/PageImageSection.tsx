@@ -219,7 +219,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             width={800}
             quality={85}
             srcSetSizes={[400, 800, 1200]}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
             containerClassName="w-full h-full"
           />
         </div>

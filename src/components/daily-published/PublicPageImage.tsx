@@ -40,7 +40,7 @@ export function PublicPageImage({
             src={imageData?.image_url}
             alt="Page illustration"
             priority={true}
-            className="w-full h-full object-cover object-top opacity-0"
+            className="w-full h-full object-contain opacity-0"
             onLoad={() => setImageLoaded(true)}
           />
         </Shimmer>
@@ -63,7 +63,7 @@ export function PublicPageImage({
         src={imageData?.image_url}
         alt="Page illustration"
         priority={isFirstImage}
-        className={`w-full h-full object-cover object-top ${className}`}
+        className={`w-full h-full object-contain ${className}`}
         onLoad={() => setImageLoaded(true)}
       />
       

@@ -161,6 +161,13 @@ export function QACheckpointPanel({
     setWordStatuses({});
   }, [currentQAPage]); // Removed copiedPages to prevent immediate trigger
   
+  // Hide confirmation immediately when image is pasted/uploaded
+  useEffect(() => {
+    if (displayImages[currentQAPage]) {
+      setShowConfirmation(false);
+    }
+  }, [displayImages, currentQAPage]);
+  
   // Word Learning Helper handlers
   const handleNavigateWord = (direction: 'prev' | 'next') => {
     setCurrentWordIndex(prev => {

@@ -1,6 +1,7 @@
 import { MessageSquare, Plus, Trash2, Edit2, BookOpen, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
@@ -22,7 +23,7 @@ interface ChatSessionSidebarProps {
   currentSessionId: string | null;
   onSelectSession: (sessionId: string) => void;
   onCreateSession: () => void;
-  onDeleteSession: (sessionId: string) => void;
+  onDeleteSession: (sessionId: string, deleteBook: boolean) => void;
   onRenameSession: (sessionId: string, name: string) => void;
   onPrefetchSession?: (sessionId: string) => void;
   hasMore?: boolean;
@@ -43,6 +44,7 @@ export function ChatSessionSidebar({
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
   const [deleteDialogId, setDeleteDialogId] = useState<string | null>(null);
+  const [deleteBookToo, setDeleteBookToo] = useState(false);
 
   // Filter out empty sessions (sessions with no user messages)
   const sessionsWithMessages = sessions.filter((session) => {
@@ -193,21 +195,45 @@ export function ChatSessionSidebar({
       </ScrollArea>
 
       {/* Delete Confirmation Dialog */}
-      <AlertDialog open={deleteDialogId !== null} onOpenChange={() => setDeleteDialogId(null)}>
+      <AlertDialog open={deleteDialogId !== null} onOpenChange={(open) => {
+        if (!open) {
+          setDeleteDialogId(null);
+          setDeleteBookToo(false);
+        }
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Conversation?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete this conversation and any books created from it. This action cannot be undone.
+              This will permanently delete this conversation.
             </AlertDialogDescription>
           </AlertDialogHeader>
+          
+          {/* Show checkbox only if this session has a created book */}
+          {sessions.find(s => s.id === deleteDialogId)?.created_book_id && (
+            <div className="flex items-center space-x-2 px-6">
+              <Checkbox 
+                id="delete-book" 
+                checked={deleteBookToo}
+                onCheckedChange={(checked) => setDeleteBookToo(checked === true)}
+              />
+              <label 
+                htmlFor="delete-book" 
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Also delete the book created from this conversation
+              </label>
+            </div>
+          )}
+          
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
                 if (deleteDialogId) {
-                  onDeleteSession(deleteDialogId);
+                  onDeleteSession(deleteDialogId, deleteBookToo);
                   setDeleteDialogId(null);
+                  setDeleteBookToo(false);
                 }
               }}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"

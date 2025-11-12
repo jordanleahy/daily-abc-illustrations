@@ -708,8 +708,8 @@ export default function GoogleChat() {
     }
   }, [currentSessionId, sessions]);
 
-  const handleDeleteSession = useCallback(async (sessionId: string) => {
-    await deleteSession(sessionId);
+  const handleDeleteSession = useCallback(async (sessionId: string, deleteBook: boolean) => {
+    await deleteSession({ sessionId, deleteBook });
     
     // If we deleted the current session, always create a new one immediately
     if (sessionId === currentSessionId) {

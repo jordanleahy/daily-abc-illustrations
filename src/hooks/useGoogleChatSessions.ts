@@ -152,9 +152,9 @@ export function useGoogleChatSessions() {
     },
   });
 
-  // Delete session and associated book
+  // Delete session and optionally delete associated book
   const deleteSession = useMutation({
-    mutationFn: async (sessionId: string) => {
+    mutationFn: async ({ sessionId, deleteBook }: { sessionId: string; deleteBook: boolean }) => {
       // First, get the session to find the associated book
       const { data: session, error: fetchError } = await supabase
         .from('gemini_chat_sessions')
@@ -164,8 +164,8 @@ export function useGoogleChatSessions() {
 
       if (fetchError) throw fetchError;
 
-      // If there's an associated book, delete it first
-      if (session?.created_book_id) {
+      // Only delete book if user chose to AND book exists
+      if (deleteBook && session?.created_book_id) {
         const { error: bookError } = await supabase
           .from('books')
           .delete()
@@ -174,18 +174,25 @@ export function useGoogleChatSessions() {
         if (bookError) throw bookError;
       }
 
-      // Then soft delete the session
+      // Always soft delete the session
       const { error } = await supabase
         .from('gemini_chat_sessions')
         .update({ is_active: false })
         .eq('id', sessionId);
 
       if (error) throw error;
+      
+      return { deletedBook: deleteBook && !!session?.created_book_id };
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['books'] });
-      toast.success('Conversation and associated book deleted');
+      
+      if (data.deletedBook) {
+        toast.success('Conversation and book deleted');
+      } else {
+        toast.success('Conversation deleted. Book moved to your library.');
+      }
     },
     onError: () => {
       toast.error('Failed to delete conversation');

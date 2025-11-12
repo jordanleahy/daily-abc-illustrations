@@ -1,6 +1,5 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Shimmer } from "@/components/ui/shimmer";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { usePageImageUrls } from "@/hooks/usePageImageUrls";
 import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
@@ -154,9 +153,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
 
   if (isLoading) {
     return (
-      <div className="w-full aspect-square bg-muted rounded-lg flex items-center justify-center">
-        <Shimmer className="w-full h-full" />
-      </div>
+      <div className="w-full aspect-square bg-gradient-to-br from-muted via-muted/50 to-muted rounded-lg" />
     );
   }
 

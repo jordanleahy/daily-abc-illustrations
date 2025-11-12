@@ -8,6 +8,8 @@ export const IMAGE_ASPECTS = {
   'book-cover': 'aspect-[3/4]',
   'thumbnail': 'aspect-video',
   'hero': 'aspect-[16/9]',
+  'card': 'aspect-square',
+  'library': 'aspect-video',
 } as const;
 
 export type ImageAspectType = keyof typeof IMAGE_ASPECTS;

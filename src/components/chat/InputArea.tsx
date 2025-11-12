@@ -60,43 +60,30 @@ export const InputArea = memo(({
 
   return (
     <div className="border-t bg-background p-4">
-      <div className="mx-auto flex max-w-4xl gap-2">
-        {shouldShowReviewButton && !createdBookId && (
-          <Button
-            onClick={onOpenReview}
-            variant="outline"
-            className="shrink-0"
-            size={isMobile ? "sm" : "default"}
-            title="View Outline"
-          >
-            <BookOpen className="h-4 w-4 mr-1" />
-            <span className="hidden sm:inline">View Outline</span>
-          </Button>
-        )}
-        {shouldShowReviewButton && createdBookId && (
-          <>
+      {shouldShowReviewButton && (
+        <div className="mx-auto max-w-4xl mb-3">
+          <div className="grid grid-cols-2 gap-2">
             <Button
               onClick={onViewBook}
-              variant="outline"
-              className="shrink-0"
-              size={isMobile ? "sm" : "default"}
-              title="Read Book"
+              variant={createdBookId ? "default" : "outline"}
+              disabled={!createdBookId}
+              className="w-full"
             >
-              <Book className={cn("h-4 w-4", !isMobile && "mr-1")} />
-              <span className="hidden sm:inline">Read Book</span>
+              <Book className="h-4 w-4 mr-2" />
+              Read
             </Button>
             <Button
               onClick={onOpenReview}
               variant="outline"
-              className="shrink-0"
-              size={isMobile ? "sm" : "default"}
-              title="View Outline"
+              className="w-full"
             >
-              <BookOpen className={cn("h-4 w-4", !isMobile && "mr-1")} />
-              <span className="hidden sm:inline">View Outline</span>
+              <BookOpen className="h-4 w-4 mr-2" />
+              Outline
             </Button>
-          </>
-        )}
+          </div>
+        </div>
+      )}
+      <div className="mx-auto flex max-w-4xl gap-2">
         <Input
           value={input}
           onChange={(e) => onInputChange(e.target.value)}

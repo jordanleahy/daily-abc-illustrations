@@ -15,22 +15,18 @@ export function WordCarousel({
   const containerRef = useRef<HTMLDivElement>(null);
   const currentWordRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to align current word's left edge to fixed anchor point
+  // Auto-scroll to center current word
   useEffect(() => {
     if (currentWordRef.current && containerRef.current) {
-      const ANCHOR_POSITION_PERCENT = 0.32; // Fixed reading line at 32% from left
-      
       const container = containerRef.current;
       const word = currentWordRef.current;
       
       const containerWidth = container.offsetWidth;
       const wordLeft = word.offsetLeft;
+      const wordWidth = word.offsetWidth;
       
-      // Calculate anchor position (fixed reading line)
-      const anchorPosition = containerWidth * ANCHOR_POSITION_PERCENT;
-      
-      // Scroll so word's left edge aligns with anchor position
-      const scrollPosition = wordLeft - anchorPosition;
+      // Calculate scroll position to center the word
+      const scrollPosition = wordLeft - (containerWidth / 2) + (wordWidth / 2);
       
       container.scrollTo({
         left: scrollPosition,
@@ -45,7 +41,7 @@ export function WordCarousel({
       className="w-full h-full flex items-center overflow-x-auto scrollbar-hide"
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
-      <div className="flex items-center gap-1.5 pl-4 pr-[70%]">
+      <div className="flex items-center gap-1.5 pl-[50%] pr-[50%]">
         {words.map((wordObj, index) => {
           const isCurrent = index === currentWordIndex;
           const wordStatus = wordStatuses?.[index];

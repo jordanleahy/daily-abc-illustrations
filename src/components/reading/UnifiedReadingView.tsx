@@ -71,6 +71,7 @@ import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { ReadingPageDisplay, useReadingPageState, UnifiedReadingControls } from '@/components/reading';
 import { RewardContainer } from '@/components/ui/reward-container';
 import type { Page } from '@/types/book';
+import { isContentPage } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
 
 /**
@@ -409,20 +410,22 @@ export function UnifiedReadingView({
         </div>
       </div>
       
-      {/* Unified Reading Controls */}
-      <UnifiedReadingControls
-        showWordControls={true}
-        hasWords={currentPageWords.length > 0}
-        onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
-        onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
-        currentWordIndex={readingState.currentWordIndex}
-        totalWords={currentPageWords.length}
-        onNavigateWord={(dir) => readingState.handleNavigateWord(dir, currentPageWords.length)}
-        onPreviousPage={handlePrevious}
-        onNextPage={handleNext}
-        disablePreviousPage={currentPageIndex === 0}
-        disableNextPage={isAddingCoins}
-      />
+      {/* Unified Reading Controls - Only show on content pages (not cover or educational) */}
+      {isContentPage(currentPage) && (
+        <UnifiedReadingControls
+          showWordControls={true}
+          hasWords={currentPageWords.length > 0}
+          onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
+          onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
+          currentWordIndex={readingState.currentWordIndex}
+          totalWords={currentPageWords.length}
+          onNavigateWord={(dir) => readingState.handleNavigateWord(dir, currentPageWords.length)}
+          onPreviousPage={handlePrevious}
+          onNextPage={handleNext}
+          disablePreviousPage={currentPageIndex === 0}
+          disableNextPage={isAddingCoins}
+        />
+      )}
     </div>
   );
 }

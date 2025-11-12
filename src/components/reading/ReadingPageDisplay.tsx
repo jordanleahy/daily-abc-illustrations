@@ -168,7 +168,7 @@ export function ReadingPageDisplay({
                     className={`flex items-center justify-center gap-2 flex-1 ${onUpdatePageText ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
                     title={onUpdatePageText ? "Click to edit text" : undefined}
                   >
-                    <p className="text-white text-center font-semibold text-lg">
+                    <p className={`text-white text-center ${mode === 'edit' ? 'font-normal text-sm' : 'font-semibold text-lg'}`}>
                       {pageText}
                     </p>
                     {onUpdatePageText && (

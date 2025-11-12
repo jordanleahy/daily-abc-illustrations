@@ -536,7 +536,9 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       console.log(`Extracted ${extractedColors.length} colors for color book:`, bookData.metadata.colorsList);
     }
 
-    // Determine showTextOverlay flag (default to true for backwards compatibility)
+    // Determine showTextOverlay flag
+    // CRITICAL: Content pages should never have text overlays
+    // Only cover pages can have title text overlays
     const showTextOverlay = textOverlayPreference !== 'without-text';
 
     // Extract and validate metadata

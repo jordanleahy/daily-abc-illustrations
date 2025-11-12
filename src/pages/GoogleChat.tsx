@@ -512,18 +512,14 @@ export default function GoogleChat() {
     }
 
     // Extract text overlay and style reference
-    let textOverlayPreference: 'with-text' | 'without-text' | undefined;
+    // Text overlay logic: 
+    // - Cover pages can have title text overlays
+    // - Content pages (A-Z) never have text overlays (enforced at AI prompt and book creation level)
+    const textOverlayPreference = 'without-text'; // Default for content pages
     let referenceBookId: string | undefined;
     
     for (const msg of messages) {
       if (msg.role === 'user' && typeof msg.content === 'string') {
-        const content = msg.content.toLowerCase();
-        if (content === 'with text' || content.includes('with text')) {
-          textOverlayPreference = 'with-text';
-        } else if (content === 'without text' || content.includes('without text')) {
-          textOverlayPreference = 'without-text';
-        }
-        
         const styleMatch = msg.content.match(/style-([a-f0-9-]{36})/i);
         if (styleMatch) {
           referenceBookId = styleMatch[1];

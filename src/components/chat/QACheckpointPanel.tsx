@@ -381,12 +381,8 @@ export function QACheckpointPanel({
                             className="flex items-center justify-center gap-2 flex-1 cursor-pointer hover:opacity-80 transition-opacity"
                             title="Click to edit text"
                           >
-                            <p className="text-white text-center flex flex-wrap items-center justify-center gap-1"
-                               style={{ lineHeight: '1.2' }}>
-                              {renderTextWithEnlargedWord(
-                                currentPageText, 
-                                currentPageWords?.[currentWordIndex]?.word
-                              )}
+                            <p className="text-white text-center text-sm font-normal">
+                              {currentPageText}
                             </p>
                             <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />
                           </div>

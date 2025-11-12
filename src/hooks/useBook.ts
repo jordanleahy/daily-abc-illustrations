@@ -7,12 +7,14 @@ import { toast } from 'sonner';
 
 export const useBook = (bookId: string | undefined) => {
   const { user } = useAuthContext();
-  const { isAdmin, isTeacher } = useRole();
+  const { isAdmin, isTeacher, isLoading: rolesLoading } = useRole();
 
   return useQuery({
     queryKey: ['book', bookId, isAdmin, isTeacher],
     queryFn: async () => {
       if (!bookId) return null;
+      
+      console.log('[useBook] Fetching book:', bookId);
       
       let query = supabase
         .from('books')
@@ -35,6 +37,8 @@ export const useBook = (bookId: string | undefined) => {
 
       return bookData as Book | null;
     },
-    enabled: !!bookId && (isAdmin || isTeacher || !!user?.id),
+    // Enable query immediately if bookId exists and user is authenticated
+    // Don't wait for roles to load since admins/teachers can access any book
+    enabled: !!bookId && !!user?.id && !rolesLoading,
   });
 };

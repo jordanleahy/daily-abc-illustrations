@@ -20,6 +20,7 @@ export const useBookSeoMetadata = (bookId?: string) => {
       console.log('🔍 [useBookSeoMetadata] Fetching SEO metadata for book_id:', bookId);
 
       // ✅ Phase 0.4: Direct query using book_id column
+      // Use .limit(1) + .single() to handle duplicate entries gracefully
       const { data, error } = await supabase
         .from('seo_metadata')
         .select('*')
@@ -27,6 +28,8 @@ export const useBookSeoMetadata = (bookId?: string) => {
         .eq('is_latest', true)
         .eq('is_active', true)
         .eq('optimization_status', 'complete')
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) {

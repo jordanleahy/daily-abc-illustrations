@@ -5,7 +5,6 @@ import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Book } from 'lucide-react';
 import { LandingDailyPublished } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
-import { Shimmer } from '@/components/ui/shimmer';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useLazyCarouselImages } from '@/hooks/useLazyCarouselImages';
 interface LandingHeroProps {
@@ -61,17 +60,17 @@ export const LandingHero = ({
           {/* Right Column - Daily Swiper */}
           <div className="relative bg-card rounded-lg shadow-xl p-6 border">
             {!dailyPublished ? <div className="space-y-4">
-                <div className="text-center">
-                  <Shimmer className="h-6 w-32 mx-auto mb-2" />
-                  <Shimmer className="h-4 w-48 mx-auto" />
+                <div className="text-center space-y-2">
+                  <div className="h-6 w-32 mx-auto bg-gradient-to-br from-muted via-muted/50 to-muted rounded" />
+                  <div className="h-4 w-48 mx-auto bg-gradient-to-br from-muted via-muted/50 to-muted rounded" />
                 </div>
                 <AspectRatio ratio={1/1}>
-                  <Shimmer className="w-full h-full rounded-lg" />
+                  <div className="w-full h-full bg-gradient-to-br from-muted via-muted/50 to-muted rounded-lg" />
                 </AspectRatio>
-                <div className="flex items-center justify-between">
-                  <Shimmer className="h-10 w-10 rounded-md" />
-                  <Shimmer className="h-12 w-16" />
-                  <Shimmer className="h-10 w-10 rounded-md" />
+                <div className="flex items-center justify-between gap-2">
+                  <div className="h-10 w-10 bg-gradient-to-br from-muted via-muted/50 to-muted rounded-md" />
+                  <div className="h-12 w-16 bg-gradient-to-br from-muted via-muted/50 to-muted rounded-md" />
+                  <div className="h-10 w-10 bg-gradient-to-br from-muted via-muted/50 to-muted rounded-md" />
                 </div>
               </div> : dailyPublished && currentPage ? <div className="space-y-4">
                 <div className="text-center">

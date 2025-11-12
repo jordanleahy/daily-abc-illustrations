@@ -5,7 +5,7 @@
  * - Automatic image optimization (WebP/AVIF conversion)
  * - Service worker caching for instant repeat loads
  * - Responsive srcSet generation
- * - Professional shimmer loading effect
+ * - Skeleton-first loading with gradient placeholders
  * - Performance monitoring integration
  * 
  * See: docs/IMAGE_OPTIMIZATION_ARCHITECTURE.md
@@ -15,7 +15,6 @@
  */
 
 import { useState } from 'react';
-import { Shimmer } from '@/components/ui/shimmer';
 import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 import { createImageLoadTracker } from '@/utils/performanceMonitoring';
 
@@ -32,7 +31,7 @@ interface BookImageProps {
 
 /**
  * Unified image component for all book images across the app
- * Handles optimization, responsive srcSet, loading states, shimmer effect, and performance tracking
+ * Handles optimization, responsive srcSet, loading states, gradient placeholder, and performance tracking
  */
 export function BookImage({
   src,
@@ -55,7 +54,7 @@ export function BookImage({
   
   if (!src) {
     return (
-      <Shimmer className={className} isShimmering={true} />
+      <div className={`bg-gradient-to-br from-muted via-muted/50 to-muted ${className}`} />
     );
   }
 
@@ -74,36 +73,51 @@ export function BookImage({
 
   return (
     <div className="relative w-full h-full">
-      {!imageLoaded && <Shimmer className="absolute inset-0" isShimmering={true} />}
-      <img
-        src={optimizedUrl || src}
-        srcSet={srcSet}
-        sizes={sizes}
-        alt={alt}
-        loading={priority ? "eager" : "lazy"}
-        fetchPriority={priority ? "high" : "auto"}
-        crossOrigin="anonymous"
-        data-optimized="true"
-        className={`transition-opacity duration-200 ${className} ${
-          imageLoaded ? 'opacity-100' : 'opacity-0'
-        }`}
-        style={enableMobileSave ? { 
-          touchAction: 'auto', 
-          WebkitTouchCallout: 'default' 
-        } : undefined}
-        onLoad={() => {
-          setImageLoaded(true);
-          performanceTracker.onLoad(); // Track performance
-          onLoad?.();
+      {/* Gradient placeholder - prevents layout shift, fades out when image loads */}
+      <div 
+        className="absolute inset-0 bg-gradient-to-br from-muted via-muted/50 to-muted"
+        style={{ 
+          opacity: imageLoaded ? 0 : 1,
+          transition: 'opacity 300ms ease-out'
         }}
-        onError={() => {
-          performanceTracker.onError(); // Track errors
-          onError?.();
-        }}
-        onContextMenu={enableMobileSave ? (e) => {
-          // Allow default context menu for mobile save
-        } : undefined}
       />
+      
+      {/* Main image with crossfade */}
+      <div
+        className="absolute inset-0"
+        style={{
+          opacity: imageLoaded ? 1 : 0,
+          transition: 'opacity 300ms ease-out'
+        }}
+      >
+        <img
+          src={optimizedUrl || src}
+          srcSet={srcSet}
+          sizes={sizes}
+          alt={alt}
+          loading={priority ? "eager" : "lazy"}
+          fetchPriority={priority ? "high" : "auto"}
+          crossOrigin="anonymous"
+          data-optimized="true"
+          className={className}
+          style={enableMobileSave ? { 
+            touchAction: 'auto', 
+            WebkitTouchCallout: 'default' 
+          } : undefined}
+          onLoad={() => {
+            setImageLoaded(true);
+            performanceTracker.onLoad(); // Track performance
+            onLoad?.();
+          }}
+          onError={() => {
+            performanceTracker.onError(); // Track errors
+            onError?.();
+          }}
+          onContextMenu={enableMobileSave ? (e) => {
+            // Allow default context menu for mobile save
+          } : undefined}
+        />
+      </div>
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { optimizeImageUrl, generateSrcSet, generateBlurPlaceholder } from '@/utils/imageOptimization';
+import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string | null | undefined;

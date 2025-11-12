@@ -193,13 +193,15 @@ toy-story: Toy Story
 pokemon: Pokémon
 mario: Mario
 benji-davies: Benji Davies Style (original art)
-black-and-white: Black & White Classic${customStylesList}skip: Plain/Simple
+black-and-white: Black & White Classic
+bear-stories: Bear Stories${customStylesList}skip: Plain/Simple
 [/SUGGEST]"
 
 IMPORTANT: 
 - Always make this step skippable with "Plain/Simple" option
 - If user selects "benji-davies", use warm watercolor style with muted colors for ALL images
 - If user selects "black-and-white", use classic line art with high contrast for ALL images
+- If user selects "bear-stories", use the complete Bear Memories style guide with consistent characters, Gondola House setting, and exact color palette for ALL images
 - If user selects a character theme, remember it and weave it into ALL subsequent questions
 - If user selects a character or style (not "skip"), DO NOT ask about art style - automatically use that style
 - If user skips, continue with plain/simple content and DO ask about art style later
@@ -406,6 +408,39 @@ If the user selected "Black & White Classic", ALL page prompts (cover, education
 Example Page with Black and White Style:
 **Page 3: "A is for Apple"**
 A classic black and white line art illustration showing a cheerful child reaching toward an apple tree. The child is rendered with bold, clean outlines and simple facial features drawn in black ink. The apple tree has a thick trunk with vertical line patterns suggesting bark texture, and branches extend with decorative curls and swirls. Three large apples hang from the branches, each drawn with solid black outlines and filled with cross-hatching patterns to create dimension. The apples have small highlight circles left white to show shine. The background features simple grass indicated by short vertical lines at the bottom, and a few puffy clouds drawn with curved outlines and minimal internal lines. The child's clothing uses different hatching patterns (horizontal lines on the shirt, diagonal on pants) to distinguish garments. The overall composition is clean, bold, and educational, reminiscent of classic Dick and Jane readers or vintage Highlights magazine illustrations. Strong black and white contrast ensures clarity for young readers. Include text overlay displaying 'APPLE' in large, clear, child-friendly letters.
+
+BEAR STORIES STYLE GUIDANCE (when selected):
+If the user selected "Bear Stories", ALL page prompts (cover, educational focus, and content pages) must incorporate the complete Bear Memories style guide. This style is cinematic, Frozen-inspired, and focused on family warmth in a snowy mountain setting:
+
+CHARACTERS - Must appear consistently:
+- Mama Bear: Medium brown bear, caramel fur, cream knitted sweater, gentle eyes
+- Papa Bear: Large brown bear, chocolate fur, plaid flannel shirt, warm smile
+- Big Sister Bear: Young bear, light brown fur, bright winter jacket (pink/purple/teal)
+- Little Brother Bear: Small cub, fluffy golden fur, colorful pom-pom hat and scarf
+
+SETTING:
+- The Gondola House: Tree-fort style wooden building on gondola terminal
+- Alpine village with rustic lodges in background
+- Snowtop Mountain with gondola cables
+- Red gondola cabins visible on cables
+
+COLOR PALETTE (exact hex codes):
+- Ice Blues: #E9F4FB, #B5D5EE, #7EB9E2
+- Sky: #A7C8E3 (day), #F7B7A3 (sunrise)
+- Wood: #6B4A2C (dark), #D9A066 (warm)
+- Warm Light: #FFDFA4 (golden), #FBCB8B (amber)
+- Accents: #E43F3F (red), #3E6E5C (forest green), #406C9F (mountain blue)
+
+VISUAL STYLE:
+- Semi-stylized 3D with painterly quality
+- Soft textures like watercolor with visible brush strokes
+- Magical realism - real but enchanted
+- Cinematic Frozen-inspired lighting
+- Warm hearts in a cold world atmosphere
+
+Example Page with Bear Stories Style:
+**Page 3: "A is for Apple"**
+The Fun Bear Family stands at the center of a snowy orchard near their cozy Gondola House. Little Brother Bear, the small cub with fluffy golden fur wearing his red pom-pom hat, reaches excitedly toward a snow-dusted apple tree with bright red apples hanging from frosted branches. Big Sister Bear, in her teal winter jacket, steadies him while Mama Bear watches warmly in her cream sweater, holding a wicker basket. Papa Bear in his red plaid flannel points to the ripest apple. Behind them, the wooden Gondola House glows with amber light (#FBCB8B) from its windows, smoke curling from the stone chimney. The alpine village spreads below with snow-covered lodge roofs. Red gondola cabins (#406C9F accents) hang on cables stretching up the mountain. The morning sky transitions from ice blue (#E9F4FB) to warm sunrise tones (#F7B7A3) with soft golden rim light on the bears' fur. Snow sparkles with subtle highlights. The composition is cinematic and wide, showing the family grouped together with the Gondola House prominent in the mid-ground and mountain peaks rising behind. The color palette uses the exact tones specified: ice blues for snow, warm wood tones for the house, golden lighting, and accent red for the apples matching Little Brother's hat. The mood is cozy, magical, and family-centered with visible painterly brush strokes in the snow and sky. Include text overlay displaying 'APPLE' in large, clear, child-friendly letters.
 
 CRITICAL TEXT OVERLAY INSTRUCTIONS:
 - If user selected "With Text": END each prompt with "Include text overlay displaying '[THE WORD]' in large, clear, child-friendly letters."

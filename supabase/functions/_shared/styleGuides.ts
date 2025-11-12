@@ -21,36 +21,178 @@ export const BEAR_STORIES_STYLE: StyleGuide = {
   
   characterDescriptions: `
 CHARACTER CONSISTENCY - THE FUN BEAR FAMILY:
-These characters must appear EXACTLY as described on every page:
+These characters must appear EXACTLY as described on every page. Include ALL details in every image prompt.
 
 1. **Mama Bear:**
-   - Medium-sized brown bear with warm caramel-toned fur
-   - Wears a cozy cream-colored knitted sweater
-   - Gentle, kind eyes with soft expression
-   - Often holds a mug of cocoa or a basket
-   - Body language: warm, nurturing, welcoming
+   
+   PHYSICAL PROPORTIONS:
+   - Height: 5.5 feet tall (medium-sized adult bear)
+   - Build: Gentle, soft, rounded maternal figure
+   - Size ratio: 1.2x larger than Big Sister, slightly smaller than Papa
+   - Snout: Medium length, gentle curve, black nose
+   
+   FUR DETAILS:
+   - Color: Warm caramel brown #D9A066 with lighter cream #F5E6D3 on muzzle and inner ears
+   - Texture: Soft, medium-length fur with slight wave
+   - Fur pattern: Slightly lighter around chest and belly
+   - Shading: Warm honey tones in sunlight, deeper caramel in shadow
+   
+   FACIAL FEATURES (CRITICAL - MUST BE IDENTICAL EVERY TIME):
+   - Eyes: Large, almond-shaped, warm brown #6B4A2C with gentle sparkle
+   - Eye placement: Wide-set, conveying warmth and approachability
+   - Eyebrows: Soft, slightly arched, conveying kindness
+   - Muzzle: Rounded, not elongated, with gentle smile lines
+   - Ears: Medium rounded ears, slightly forward-facing, cream interior
+   - Expression default: Gentle closed-mouth smile, eyes crinkled with warmth
+   
+   CLOTHING (EXACT SPECIFICATION):
+   - Main garment: Cream-colored #F5E6D3 cable-knit sweater
+   - Sweater details: Chunky knit pattern, rolled collar, extends to mid-thigh
+   - Texture: Visible knit texture with ribbed cuffs and hem
+   - Fit: Cozy, slightly oversized, comfortable
+   - Optional accessories: Sometimes wears apron #FFDFA4 or scarf
+   
+   UNIQUE IDENTIFYING FEATURES:
+   - Always holds objects with both paws (mug, basket, book)
+   - Small beauty mark on left cheek
+   - Slightly rounded ear tips (never pointed)
+   - Paw pads visible when holding items: soft pink #FFB3BA
+   
+   BODY LANGUAGE DEFAULTS:
+   - Standing: Weight on both legs, paws clasped or holding something
+   - Walking: Gentle forward lean, purposeful but unhurried
+   - Sitting: Upright with good posture, paws in lap or holding object
+   - Emotional range: Warm smile (default), concerned frown, proud beam
 
 2. **Papa Bear:**
-   - Large brown bear with darker chocolate-brown fur
-   - Wears a plaid flannel shirt (red/black or blue/green patterns)
-   - Strong but friendly appearance with warm smile
-   - Often shown building, fixing, or playing
-   - Body language: protective, playful, encouraging
+   
+   PHYSICAL PROPORTIONS:
+   - Height: 6.5 feet tall (largest family member)
+   - Build: Broad-shouldered, strong but not intimidating, barrel-chested
+   - Size ratio: 1.5x larger than Mama, 2x larger than Big Sister
+   - Snout: Slightly longer than Mama's, square masculine jaw
+   
+   FUR DETAILS:
+   - Color: Deep chocolate brown #6B4A2C with darker #4A3520 on back and arms
+   - Texture: Thick, slightly shaggy medium-length fur
+   - Fur pattern: Darker "saddle" across shoulders and back
+   - Shading: Rich warm brown in light, deep cocoa in shadow
+   
+   FACIAL FEATURES (CRITICAL - MUST BE IDENTICAL EVERY TIME):
+   - Eyes: Round, friendly, medium brown #8B6F47 with laugh lines at corners
+   - Eye placement: Set slightly closer than Mama's, conveying focus
+   - Eyebrows: Thick, expressive, often raised in playful surprise
+   - Muzzle: Square, masculine, with broad smile showing warmth
+   - Ears: Large rounded ears, slightly back-facing when listening
+   - Expression default: Wide warm smile showing teeth, eyes twinkling
+   
+   CLOTHING (EXACT SPECIFICATION):
+   - Main garment: Plaid flannel shirt, always red #E43F3F and black pattern
+   - Shirt details: Button-down, rolled sleeves to forearms, chest pocket
+   - Pattern: Classic buffalo plaid - large squares, not small checks
+   - Fit: Fitted at shoulders, slightly loose at waist, tucked or untucked
+   - Undershirt: White or cream thermal visible at neck
+   - Optional: Suspenders #6B4A2C or tool belt when working
+   
+   UNIQUE IDENTIFYING FEATURES:
+   - Characteristic head tilt when listening or playing
+   - Right ear has small notch at tip (old skiing injury)
+   - Broader snout than other bears, more square-shaped
+   - Paw pads: Darker brown #4A3520, work-worn texture
+   - Often shown mid-action (building, lifting, gesturing)
+   
+   BODY LANGUAGE DEFAULTS:
+   - Standing: Confident stance, hands on hips or holding tools
+   - Walking: Purposeful stride, long steps, leading the way
+   - Sitting: Legs spread, leaning forward, engaged and present
+   - Emotional range: Hearty laugh (default), concentrated focus, gentle concern
 
 3. **Big Sister Bear:**
-   - Young bear, slightly smaller than parents
-   - Light brown fur with a playful energy
-   - Wears bright colored winter gear (pink, purple, or teal jacket)
-   - Adventurous expression, eyes full of curiosity
-   - Often shown exploring or leading activities
-   - Body language: confident, excited, discovering
+   
+   PHYSICAL PROPORTIONS:
+   - Height: 4 feet tall (pre-teen/young adolescent bear)
+   - Build: Lean, athletic, energetic, long limbs
+   - Size ratio: 0.6x Mama's height, 1.5x larger than Little Brother
+   - Snout: Shorter, youthful, still growing into adult proportions
+   
+   FUR DETAILS:
+   - Color: Light honey brown #E8C59C with golden #F5D5A8 highlights
+   - Texture: Soft, fluffy, slightly shorter than parents' fur
+   - Fur pattern: Lighter on face and chest, golden tips on ears
+   - Shading: Bright honey in sunlight, warm tan in shadow
+   
+   FACIAL FEATURES (CRITICAL - MUST BE IDENTICAL EVERY TIME):
+   - Eyes: Large, bright, hazel #9B7653 with constant sparkle of excitement
+   - Eye placement: Wide-set, conveying wonder and alertness
+   - Eyebrows: Thin, often raised in curiosity or excitement
+   - Muzzle: Small, rounded, youth proportion with animated expressions
+   - Ears: Perky, forward-facing, always attentive, fluffy ear tufts
+   - Expression default: Wide excited smile, eyes wide with discovery
+   
+   CLOTHING (EXACT SPECIFICATION):
+   - Main garment: Bright teal #40B5AD puffer jacket (winter) or hoodie (other seasons)
+   - Jacket details: Puffy quilted texture, hood with fur trim, zippered
+   - Color variations: Teal (primary), purple #9B6B9E (alternate), pink #FFB3D9 (rare)
+   - Fit: Slightly oversized for growing room, sleeves pushed up or cuffed
+   - Accessories: Colorful knit hat with stripes, mittens on string, backpack
+   - Pants: Denim jeans or snow pants, practical for adventure
+   
+   UNIQUE IDENTIFYING FEATURES:
+   - Distinctive white patch on chest in shape of small star
+   - Left ear often perks higher than right when listening
+   - Freckles across bridge of nose (3 on each side)
+   - Paw pads: Soft pink #FFB3BA, still kitten-like
+   - Always in motion - running, jumping, reaching, pointing
+   
+   BODY LANGUAGE DEFAULTS:
+   - Standing: Weight on one leg, ready to spring into action
+   - Walking: Bounce in step, often ahead of family, exploring
+   - Sitting: Rarely still, perched on edge, leaning forward eagerly
+   - Emotional range: Excited discovery (default), determined focus, pouty disappointment
 
 4. **Little Brother Bear:**
-   - Small cub with fluffy light brown/golden fur
-   - Wears colorful winter hat with pom-pom and matching scarf
-   - Wide curious eyes, innocent expression
-   - Often collecting snowflakes, tickets, or treasures
-   - Body language: curious, gentle, observant
+   
+   PHYSICAL PROPORTIONS:
+   - Height: 2.5 feet tall (young cub, 4-6 years equivalent)
+   - Build: Round, chubby cub body, short limbs, big head proportion
+   - Size ratio: 0.4x Mama's height, head is 1/3 of body height (child proportion)
+   - Snout: Very short, button-like, distinctly cub-proportioned
+   
+   FUR DETAILS:
+   - Color: Fluffy light golden #F5D5A8 with creamy white #FFF8E7 on belly
+   - Texture: Extra fluffy, downy soft cub fur, longest of all bears
+   - Fur pattern: Lighter "bib" on chest, cream inside ears, golden highlights
+   - Shading: Glowing pale gold in light, soft honey in shadow
+   
+   FACIAL FEATURES (CRITICAL - MUST BE IDENTICAL EVERY TIME):
+   - Eyes: Oversized, round, deep brown #6B4A2C with constant wonder
+   - Eye placement: Large in proportion to face, conveying innocence
+   - Eyebrows: Thin, barely visible, express surprise easily
+   - Muzzle: Tiny button nose, rounded baby-like features
+   - Ears: Small rounded, often hidden by hat, fluffy inner fur
+   - Expression default: Gentle wonder, mouth slightly open in awe
+   
+   CLOTHING (EXACT SPECIFICATION):
+   - Main garment: Oversized knit sweater in bright colors (red #E43F3F, blue #7EB9E2, yellow #FFDFA4)
+   - Sweater details: Chunky knit, too-long sleeves covering paws, cozy fit
+   - Hat: Knit pom-pom beanie, blue #7EB9E2 with red #E43F3F pom-pom and stripes
+   - Hat details: Slouchy fit, covers ears, pom-pom bounces when moving
+   - Scarf: Matching striped scarf, often trailing behind or wrapped multiple times
+   - Pants: Corduroy overalls or snow pants with suspenders
+   
+   UNIQUE IDENTIFYING FEATURES:
+   - Signature blue pom-pom hat - NEVER without it (wear it even inside)
+   - Right paw has small brown freckle on pad
+   - Slightly cross-eyed when concentrating hard
+   - Paw pads: Baby pink #FFCCD5, small and soft
+   - Often clutches comfort items: stuffed toy, blanket corner, Mama's paw
+   - Walks with slight waddle due to cub proportions
+   
+   BODY LANGUAGE DEFAULTS:
+   - Standing: Often holding something, one paw reaching for Mama or Papa
+   - Walking: Toddle-like gait, sometimes on all fours when tired or playing
+   - Sitting: Cross-legged, objects spread around, deeply focused on play
+   - Emotional range: Quiet wonder (default), delighted giggles, shy hide-behind-Mama
 `,
 
   visualStyle: `

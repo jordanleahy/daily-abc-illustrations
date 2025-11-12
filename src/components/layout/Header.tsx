@@ -302,19 +302,25 @@ export function Header({
           <nav className="hidden md:flex items-center space-x-1">
             {isAdmin ? (
               <>
-                {adminNavigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      location.pathname === item.href
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
+                {adminNavigation.map((item) => {
+                  const isActive = location.pathname === item.href || 
+                    (item.href === '/all-books' && location.pathname.startsWith('/all-books')) ||
+                    (item.href === '/books' && location.pathname.startsWith('/books') && !location.pathname.startsWith('/all-books'));
+                  
+                  return (
+                    <Link
+                      key={item.name}
+                      to={item.href}
+                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                        isActive
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                    >
+                      {item.name}
+                    </Link>
+                  );
+                })}
               </>
             ) : (
               <>
@@ -377,16 +383,26 @@ export function Header({
                 </div>
                 <div className="mt-6 space-y-2">
                   {/* Navigation Links - show admin nav for admins, regular nav for others */}
-                  {(isAdmin ? adminNavigation : regularNavigation).map((item) => (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      onClick={() => setIsSheetOpen(false)}
-                      className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 active:scale-[0.98] active:bg-muted/80"
-                    >
-                      {item.name}
-                    </Link>
-                  ))}
+                  {(isAdmin ? adminNavigation : regularNavigation).map((item) => {
+                    const isActive = location.pathname === item.href || 
+                      (item.href === '/all-books' && location.pathname.startsWith('/all-books')) ||
+                      (item.href === '/books' && location.pathname.startsWith('/books') && !location.pathname.startsWith('/all-books'));
+                    
+                    return (
+                      <Link
+                        key={item.name}
+                        to={item.href}
+                        onClick={() => setIsSheetOpen(false)}
+                        className={`flex items-center rounded-md px-3 py-2 text-base font-medium transition-all duration-150 active:scale-[0.98] ${
+                          isActive
+                            ? 'bg-primary/10 text-primary'
+                            : 'text-muted-foreground hover:text-foreground hover:bg-muted active:bg-muted/80'
+                        }`}
+                      >
+                        {item.name}
+                      </Link>
+                    );
+                  })}
                   
                   {/* User Section */}
                   <button

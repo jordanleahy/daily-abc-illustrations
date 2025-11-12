@@ -412,7 +412,7 @@ export function UnifiedReadingView({
       
       {/* Unified Reading Controls */}
       <UnifiedReadingControls
-        showWordControls={contentType === 'user_book' ? currentPageIndex > 1 : undefined}
+        showWordControls={true}
         hasWords={currentPageWords.length > 0}
         onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
         onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}

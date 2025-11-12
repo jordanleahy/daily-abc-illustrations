@@ -107,7 +107,7 @@ These characters must appear EXACTLY as described on every page. Include ALL det
    - Sitting: Legs spread, leaning forward, engaged and present
    - Emotional range: Hearty laugh (default), concentrated focus, gentle concern
 
-3. **Big Sister Bear (Ruby - 7 years old):**
+3. **Big Sister Bear (DanDan - 7 years old):**
    
    PHYSICAL PROPORTIONS:
    - Height: 4 feet tall (7-year-old child bear, early elementary age)
@@ -151,7 +151,7 @@ These characters must appear EXACTLY as described on every page. Include ALL det
    - Interactions: Acts as "big kid" helper, protective of Little Brother, proud and responsible
    - Emotional range: Excited discovery (default), focused determination, proud achievement, occasional 7-year-old frustration
 
-4. **Little Brother Bear (Max - 3 years old):**
+4. **Little Brother Bear (Chelson - 3 years old):**
    
    PHYSICAL PROPORTIONS:
    - Height: 2.5 feet tall (3-year-old toddler bear, preschool age)

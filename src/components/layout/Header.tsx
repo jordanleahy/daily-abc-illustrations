@@ -17,9 +17,8 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useIsAdmin, useIsTeacher } from '@/contexts/RoleContext';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
-import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { useNavigation } from '@/hooks/useNavigation';
 import { useProfile } from '@/hooks/useProfile';
 import { useParentTotalCoins } from '@/hooks/useParentTotalCoins';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
@@ -27,6 +26,7 @@ import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
 import { UserProfileModal } from '@/components/profile/UserProfileModal';
 import { CoinCounter } from '@/components/ui/coin-counter';
+import { getDefaultRouteForRole } from '@/config/routes';
 
 /**
  * Header Component
@@ -98,10 +98,8 @@ export function Header({
   reviewButtonVariant
 }: HeaderProps) {
   const { isAuthenticated, user, signOut } = useAuthContext();
-  const isAdmin = useIsAdmin();
-  const isTeacher = useIsTeacher();
+  const { routes, isRouteActive, navigateToRoute, isAdmin } = useNavigation();
   const { qrCodeData } = useBookQRCode(bookId || '');
-  const { hasHabitsRewards } = useFeatureAccess();
   const { data: profile } = useProfile();
   const { totalCoins } = useParentTotalCoins();
   const { data: kidProfiles } = useKidProfiles();
@@ -132,40 +130,8 @@ export function Header({
    * Routes to role-appropriate default routes
    */
   const handleTitleClick = () => {
-    if (isAdmin) {
-      navigate('/agents'); // Admin default route
-    } else if (isAuthenticated) {
-      navigate('/library');
-    } else {
-      navigate('/');
-    }
+    navigate(getDefaultRouteForRole(isAdmin, isAuthenticated));
   };
-
-  /** Navigation configuration for regular authenticated users */
-  const regularNavigation = [
-    { name: 'Home', href: '/home' },
-    { name: 'Library', href: '/library' },
-    { name: 'My Books', href: '/books' },
-    { name: 'Google Chat', href: '/google-chat' },
-    ...(hasHabitsRewards ? [
-      { name: 'Rewards', href: '/rewards' },
-      { name: 'Manage Habits', href: '/habits/manage' }
-    ] : []),
-  ];
-
-  /** Extended navigation menu for admin users with full system access */
-  const adminNavigation = [
-    { name: 'Home', href: '/home' },
-    { name: 'Library', href: '/library' },
-    { name: 'My Books', href: '/books' },
-    { name: 'Google Chat', href: '/google-chat' },
-    { name: 'Rewards', href: '/rewards' },
-    { name: 'Manage Habits', href: '/habits/manage' },
-    { name: 'All Books', href: '/all-books' },
-    { name: 'Agents', href: '/agents' },
-    { name: 'Daily Pub Schedule', href: '/daily-published-schedule' },
-    { name: 'Reddit', href: '/reddit' },
-  ];
 
 
   // UNAUTHENTICATED STATE: Public header with authentication prompts
@@ -300,54 +266,24 @@ export function Header({
           
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            {isAdmin ? (
-              <>
-                {adminNavigation.map((item) => {
-                  const isActive = location.pathname === item.href || 
-                    (item.href === '/all-books' && location.pathname.startsWith('/all-books')) ||
-                    (item.href === '/books' && location.pathname.startsWith('/books') && !location.pathname.startsWith('/all-books'));
-                  
-                  const handleAdminNavClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-                    // Force navigation when switching between Books tabs to avoid any stale state quirks
-                    if ((item.href === '/books' || item.href === '/all-books') && location.pathname !== item.href) {
-                      e.preventDefault();
-                      navigate(item.href);
-                    }
-                  };
-                  
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      onClick={handleAdminNavClick}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                        isActive
-                          ? 'bg-primary/10 text-primary'
-                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                      }`}
-                    >
-                      {item.name}
-                    </Link>
-                  );
-                })}
-              </>
-            ) : (
-              <>
-                {regularNavigation.map((item) => (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
-                      location.pathname === item.href
-                        ? 'bg-primary/10 text-primary'
-                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {item.name}
-                  </Link>
-                ))}
-              </>
-            )}
+            {routes.map((route) => {
+              const isActive = isRouteActive(route);
+              
+              return (
+                <Link
+                  key={route.name}
+                  to={route.path}
+                  onClick={(e) => navigateToRoute(route, e)}
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    isActive
+                      ? 'bg-primary/10 text-primary'
+                      : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                  }`}
+                >
+                  {route.name}
+                </Link>
+              );
+            })}
           </nav>
           
           {/* Right section: Review button + Admin controls + QR button */}
@@ -391,24 +327,26 @@ export function Header({
                   <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
                 </div>
                 <div className="mt-6 space-y-2">
-                  {/* Navigation Links - show admin nav for admins, regular nav for others */}
-                  {(isAdmin ? adminNavigation : regularNavigation).map((item) => {
-                    const isActive = location.pathname === item.href || 
-                      (item.href === '/all-books' && location.pathname.startsWith('/all-books')) ||
-                      (item.href === '/books' && location.pathname.startsWith('/books') && !location.pathname.startsWith('/all-books'));
+                  {/* Navigation Links */}
+                  {routes.map((route) => {
+                    const isActive = isRouteActive(route);
                     
                     return (
                       <Link
-                        key={item.name}
-                        to={item.href}
-                        onClick={() => setIsSheetOpen(false)}
+                        key={route.name}
+                        to={route.path}
+                        onClick={(e) => {
+                          setIsSheetOpen(false);
+                          navigateToRoute(route, e);
+                        }}
                         className={`flex items-center rounded-md px-3 py-2 text-base font-medium transition-all duration-150 active:scale-[0.98] ${
                           isActive
                             ? 'bg-primary/10 text-primary'
                             : 'text-muted-foreground hover:text-foreground hover:bg-muted active:bg-muted/80'
                         }`}
                       >
-                        {item.name}
+                        {route.icon && <route.icon className="mr-2 h-4 w-4" />}
+                        {route.name}
                       </Link>
                     );
                   })}

@@ -1,0 +1,163 @@
+import { LucideIcon, Home, BookOpen, Book, MessageSquare, Gift, Calendar, Users, Search } from 'lucide-react';
+import { NavigateFunction } from 'react-router-dom';
+
+/**
+ * Route permission requirements
+ */
+export type RoutePermission = {
+  role?: 'admin' | 'teacher';
+  feature?: 'habits_rewards';
+  subscription?: boolean;
+};
+
+/**
+ * Custom active state matching rule
+ */
+export type ActiveMatchRule = {
+  exact?: boolean;
+  startsWith?: boolean;
+  pattern?: RegExp;
+  exclude?: string[];
+};
+
+/**
+ * Route configuration type
+ */
+export type RouteConfig = {
+  path: string;
+  name: string;
+  icon?: LucideIcon;
+  permission?: RoutePermission;
+  activeMatch?: ActiveMatchRule;
+  customClickHandler?: (navigate: NavigateFunction, currentPath: string) => boolean;
+  group?: 'main' | 'admin' | 'rewards' | 'tools';
+};
+
+/**
+ * Route paths as constants for type-safe navigation
+ */
+export const ROUTES = {
+  HOME: '/home',
+  LIBRARY: '/library',
+  MY_BOOKS: '/books',
+  ALL_BOOKS: '/all-books',
+  GOOGLE_CHAT: '/google-chat',
+  REWARDS: '/rewards',
+  MANAGE_HABITS: '/habits/manage',
+  AGENTS: '/agents',
+  DAILY_PUB_SCHEDULE: '/daily-published-schedule',
+  REDDIT: '/reddit',
+  AUTH: '/auth',
+  PROFILE: '/profile',
+  LANDING: '/',
+} as const;
+
+/**
+ * Main navigation configuration
+ */
+export const navigationConfig: RouteConfig[] = [
+  {
+    path: ROUTES.HOME,
+    name: 'Home',
+    icon: Home,
+    group: 'main',
+    activeMatch: { exact: true },
+  },
+  {
+    path: ROUTES.LIBRARY,
+    name: 'Library',
+    icon: BookOpen,
+    group: 'main',
+    activeMatch: { 
+      startsWith: true,
+    },
+  },
+  {
+    path: ROUTES.MY_BOOKS,
+    name: 'My Books',
+    icon: Book,
+    group: 'main',
+    activeMatch: {
+      startsWith: true,
+      exclude: ['/all-books'],
+    },
+    customClickHandler: (navigate, currentPath) => {
+      if (currentPath.startsWith('/all-books')) {
+        navigate(ROUTES.MY_BOOKS);
+        return true;
+      }
+      return false;
+    },
+  },
+  {
+    path: ROUTES.GOOGLE_CHAT,
+    name: 'Google Chat',
+    icon: MessageSquare,
+    group: 'main',
+    activeMatch: { exact: true },
+  },
+  {
+    path: ROUTES.REWARDS,
+    name: 'Rewards',
+    icon: Gift,
+    group: 'rewards',
+    permission: { feature: 'habits_rewards' },
+    activeMatch: { exact: true },
+  },
+  {
+    path: ROUTES.MANAGE_HABITS,
+    name: 'Manage Habits',
+    icon: Calendar,
+    group: 'rewards',
+    permission: { feature: 'habits_rewards' },
+    activeMatch: { startsWith: true },
+  },
+  {
+    path: ROUTES.ALL_BOOKS,
+    name: 'All Books',
+    icon: Book,
+    group: 'admin',
+    permission: { role: 'admin' },
+    activeMatch: { startsWith: true },
+    customClickHandler: (navigate, currentPath) => {
+      if (currentPath.startsWith('/books') && !currentPath.startsWith('/all-books')) {
+        navigate(ROUTES.ALL_BOOKS);
+        return true;
+      }
+      return false;
+    },
+  },
+  {
+    path: ROUTES.AGENTS,
+    name: 'Agents',
+    icon: Users,
+    group: 'admin',
+    permission: { role: 'admin' },
+    activeMatch: { exact: true },
+  },
+  {
+    path: ROUTES.DAILY_PUB_SCHEDULE,
+    name: 'Daily Pub Schedule',
+    icon: Calendar,
+    group: 'admin',
+    permission: { role: 'admin' },
+    activeMatch: { startsWith: true },
+  },
+  {
+    path: ROUTES.REDDIT,
+    name: 'Reddit',
+    icon: Search,
+    group: 'admin',
+    permission: { role: 'admin' },
+    activeMatch: { exact: true },
+  },
+];
+
+/**
+ * Default routes based on user role
+ */
+export const getDefaultRouteForRole = (isAdmin: boolean, isAuthenticated: boolean): string => {
+  if (isAdmin) return ROUTES.AGENTS;
+  if (isAuthenticated) return ROUTES.LIBRARY;
+  return ROUTES.LANDING;
+};

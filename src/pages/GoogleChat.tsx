@@ -60,6 +60,8 @@ export default function GoogleChat() {
   const {
     sessions,
     isLoading: sessionsLoading,
+    hasMore,
+    loadMore,
     createSession,
     updateSessionMessages,
     updateSessionName,
@@ -1083,6 +1085,8 @@ export default function GoogleChat() {
             onCreateSession={handleCreateNewSession}
             onDeleteSession={handleDeleteSession}
             onRenameSession={handleRenameSession}
+            hasMore={hasMore}
+            onLoadMore={loadMore}
           />
         </div>
 
@@ -1097,6 +1101,8 @@ export default function GoogleChat() {
                 onCreateSession={handleCreateNewSession}
                 onDeleteSession={handleDeleteSession}
                 onRenameSession={handleRenameSession}
+                hasMore={hasMore}
+                onLoadMore={loadMore}
               />
             </SheetContent>
           </Sheet>

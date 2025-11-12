@@ -25,6 +25,8 @@ interface ChatSessionSidebarProps {
   onDeleteSession: (sessionId: string) => void;
   onRenameSession: (sessionId: string, name: string) => void;
   onPrefetchSession?: (sessionId: string) => void;
+  hasMore?: boolean;
+  onLoadMore?: () => void;
 }
 
 export function ChatSessionSidebar({
@@ -35,6 +37,8 @@ export function ChatSessionSidebar({
   onDeleteSession,
   onRenameSession,
   onPrefetchSession,
+  hasMore = false,
+  onLoadMore,
 }: ChatSessionSidebarProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
@@ -171,6 +175,20 @@ export function ChatSessionSidebar({
               </div>
             </div>
           ))}
+          
+          {/* Load More Button */}
+          {hasMore && onLoadMore && (
+            <div className="px-2 pb-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onLoadMore}
+                className="w-full"
+              >
+                Load More
+              </Button>
+            </div>
+          )}
         </div>
       </ScrollArea>
 

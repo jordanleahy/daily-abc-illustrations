@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { useState } from 'react';
 
 export interface ChatSession {
   id: string;
@@ -19,19 +20,23 @@ export interface ChatSession {
   qa_page_prompts: Record<number, string> | null;
 }
 
+const INITIAL_LIMIT = 15;
+
 export function useGoogleChatSessions() {
   const queryClient = useQueryClient();
+  const [limit, setLimit] = useState(INITIAL_LIMIT);
 
-  // Fetch all sessions for the current user with optimized caching
+  // Fetch sessions with pagination
   const { data: sessions = [], isLoading } = useQuery({
-    queryKey: ['gemini-chat-sessions'],
+    queryKey: ['gemini-chat-sessions', limit],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('gemini_chat_sessions')
         .select('*')
         .eq('is_active', true)
         .order('last_message_at', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .limit(limit);
 
       if (error) throw error;
       return data as ChatSession[];
@@ -40,6 +45,9 @@ export function useGoogleChatSessions() {
     refetchOnWindowFocus: false, // Prevent unnecessary refetches
     refetchOnMount: false, // Use cached data for returning users
   });
+
+  // Check if there might be more sessions
+  const hasMore = sessions.length === limit;
 
   // Create new session
   const createSession = useMutation({
@@ -238,9 +246,16 @@ export function useGoogleChatSessions() {
     },
   });
 
+  // Load more sessions
+  const loadMore = () => {
+    setLimit(prev => prev + INITIAL_LIMIT);
+  };
+
   return {
     sessions,
     isLoading,
+    hasMore,
+    loadMore,
     createSession: createSession.mutateAsync,
     updateSessionMessages: updateSessionMessages.mutateAsync,
     updateSessionName: updateSessionName.mutateAsync,

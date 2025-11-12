@@ -554,6 +554,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       animalFocus: metadata.animalFocus,
       readingLevel: metadata.readingLevel,
       characterTheme: metadata.characterTheme,
+      styleGuideKey: metadata.characterTheme === 'bear-stories' ? 'bear-stories' : undefined,
       colorsList: metadata.colorsList,
       colorsCount: metadata.colorsCount,
       showTextOverlay: showTextOverlay,

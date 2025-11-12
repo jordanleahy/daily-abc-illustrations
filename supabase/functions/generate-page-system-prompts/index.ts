@@ -66,6 +66,10 @@ serve(async (req) => {
       bookType: book.metadata?.bookType
     };
 
+    // Extract style guide key from metadata or character theme
+    const styleGuideKey = book.metadata?.styleGuideKey || 
+      (book.metadata?.characterTheme === 'bear-stories' ? 'bear-stories' : undefined);
+
     let promptsCreated = 0;
 
     // Generate prompts for each page
@@ -80,8 +84,14 @@ serve(async (req) => {
         mainConcept: page.content?.mainConcept
       };
 
-      // Generate specialized prompt
-      const promptContent = generateSpecializedPrompt(bookContext, pageContext, isCover);
+      // Generate specialized prompt with style guide if available
+      const promptContent = generateSpecializedPrompt(
+        bookContext, 
+        pageContext, 
+        isCover, 
+        true, // textOverlayEnabled
+        styleGuideKey
+      );
 
       // Get version number for this page
       const { data: versionData, error: versionError } = await supabase

@@ -59,6 +59,10 @@ export const characterThemes: Record<string, CharacterTheme> = {
   'black-and-white': {
     thumbnail: '/themes/black-and-white.png',
     altText: 'Black and white classic illustration style'
+  },
+  'bear-stories': {
+    thumbnail: '/themes/bear-stories.png',
+    altText: 'Bear Memories - A cinematic winter adventure at Snowtop Mountain'
   }
 };
 

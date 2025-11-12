@@ -3,6 +3,8 @@
  * Used to generate rich, context-aware image generation prompts
  */
 
+import { getStyleGuide } from './styleGuides.ts';
+
 /**
  * Generate critical center-focus composition instructions
  */
@@ -254,32 +256,71 @@ export function generateSpecializedPrompt(
   page: PageContext, 
   isCover: boolean, 
   textOverlayEnabled: boolean = true,
-  styleGuide?: string
+  styleGuideKey?: string
 ): string {
+  // Generate base prompt based on book type
+  let prompt = '';
+  
   if (isCover) {
-    return generateCoverPrompt(book, textOverlayEnabled);
+    prompt = generateCoverPrompt(book, textOverlayEnabled);
+  } else {
+    // Check for specialized book types
+    const bookType = (book.bookType || book.category).toLowerCase();
+    
+    switch (bookType) {
+      case 'abc':
+      case 'alphabet':
+        prompt = generateAlphabetPagePrompt(book, page, textOverlayEnabled);
+        break;
+      
+      case 'numbers':
+        prompt = generateNumbersPagePrompt(book, page, textOverlayEnabled);
+        break;
+      
+      case 'colors':
+        prompt = generateColorsPagePrompt(book, page, textOverlayEnabled);
+        break;
+      
+      case 'emotions':
+        prompt = generateEmotionsPagePrompt(book, page, textOverlayEnabled);
+        break;
+      
+      default:
+        prompt = generatePagePrompt(book, page, textOverlayEnabled);
+    }
   }
   
-  // Check for specialized book types
-  const bookType = (book.bookType || book.category).toLowerCase();
-  
-  switch (bookType) {
-    case 'abc':
-    case 'alphabet':
-      return generateAlphabetPagePrompt(book, page, textOverlayEnabled);
+  // INJECT STYLE GUIDE if styleGuideKey is provided
+  if (styleGuideKey) {
+    const styleGuide = getStyleGuide(styleGuideKey);
     
-    case 'numbers':
-      return generateNumbersPagePrompt(book, page, textOverlayEnabled);
-    
-    case 'colors':
-      return generateColorsPagePrompt(book, page, textOverlayEnabled);
-    
-    case 'emotions':
-      return generateEmotionsPagePrompt(book, page, textOverlayEnabled);
-    
-    default:
-      return generatePagePrompt(book, page, textOverlayEnabled);
+    if (styleGuide) {
+      prompt += `
+
+===========================================
+🎨 MANDATORY STYLE GUIDE - ${styleGuide.name.toUpperCase()}
+===========================================
+
+${styleGuide.characterDescriptions}
+
+${styleGuide.visualStyle}
+
+${styleGuide.colorPalette}
+
+${styleGuide.lightingRules}
+
+${styleGuide.compositionRules}
+
+${styleGuide.settingDetails || ''}
+
+${styleGuide.specialInstructions || ''}
+
+⚠️ CRITICAL: You MUST reference the character descriptions above and use ONLY the specified color palette. Consistency across all pages is mandatory.
+`;
+    }
   }
+  
+  return prompt;
 }
 
 /**

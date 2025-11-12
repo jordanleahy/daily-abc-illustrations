@@ -116,10 +116,24 @@ export default function DailyPublished() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-2">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="text-sm text-muted-foreground">Loading daily content...</p>
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Header skeleton */}
+        <div className="w-full bg-muted/30 p-4 border-b border-border">
+          <div className="h-8 w-48 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-md animate-pulse" />
+        </div>
+        
+        {/* Image skeleton - matches final layout */}
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="w-full max-w-2xl aspect-square bg-gradient-to-br from-muted via-muted/50 to-muted rounded-lg animate-pulse" />
+        </div>
+        
+        {/* Bottom controls skeleton */}
+        <div className="w-full bg-muted/30 p-4 border-t border-border">
+          <div className="flex items-center justify-between gap-4 max-w-2xl mx-auto">
+            <div className="h-10 w-24 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-md animate-pulse" />
+            <div className="h-6 w-32 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-md animate-pulse" />
+            <div className="h-10 w-24 bg-gradient-to-r from-muted via-muted/50 to-muted rounded-md animate-pulse" />
+          </div>
         </div>
       </div>
     );

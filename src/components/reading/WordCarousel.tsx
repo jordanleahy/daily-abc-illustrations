@@ -50,7 +50,7 @@ export function WordCarousel({
     <div className="w-full h-full flex items-center">
       <Carousel
         opts={{
-          align: 'center',
+          align: 'start',
           loop: true,
           skipSnaps: false,
         }}

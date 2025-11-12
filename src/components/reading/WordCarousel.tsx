@@ -47,7 +47,7 @@ export function WordCarousel({
   }, [api, words.length]);
 
   return (
-    <div className="w-full py-8">
+    <div className="w-full h-full flex items-center">
       <Carousel
         opts={{
           align: 'center',

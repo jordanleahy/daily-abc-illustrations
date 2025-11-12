@@ -121,9 +121,9 @@ export function ReadingPageDisplay({
               </div>
             ) : currentPageWords && currentPageWords.length > 0 ? (
               <div 
-                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm group h-[40px]"
+                className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm group h-[40px] flex items-center"
               >
-                <div className="relative h-full">
+                <div className="relative h-full w-full flex items-center">
                   <WordCarousel
                     words={currentPageWords}
                     currentWordIndex={currentWordIndex}

@@ -390,7 +390,7 @@ export function UnifiedReadingView({
                 pageId={currentPage.id}
                 bookId={book.book_id || book.id}
                 pageNumber={currentPage.page_number}
-                pageText={currentPage.content?.textOverlay?.enabled ? currentPage.content.textOverlay.text : ''}
+                pageText={currentPage.content?.textOverlay?.text || ''}
                 imageUrl=""
                 currentWordIndex={readingState.currentWordIndex}
                 wordStatuses={readingState.wordStatuses}

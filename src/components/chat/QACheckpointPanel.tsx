@@ -563,7 +563,20 @@ export function QACheckpointPanel({
           </div>
         )}
 
-        {/* Copy Prompt Button - Show when upload area is visible */}
+        {/* Copy Prompt Button - Primary action */}
+        {hasClickedCopy && !displayImages[currentQAPage] && (
+          <Button
+            variant="outline"
+            size="lg"
+            onClick={handleCopyPrompt}
+            className="w-full"
+          >
+            <Copy className="h-4 w-4 mr-2" />
+            Copy Prompt
+          </Button>
+        )}
+
+        {/* Copy Image Prompt Again - Secondary action */}
         {hasClickedCopy && !displayImages[currentQAPage] && (
           <Button
             variant="secondary"

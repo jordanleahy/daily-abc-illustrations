@@ -17,9 +17,22 @@ import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
 import { BookImage } from '@/components/ui/book-image';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
+import { useDeleteBook } from '@/hooks/useDeleteBook';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileBookEditor } from '@/components/book/MobileBookEditor';
 import { AdminOnly } from '@/components/AdminOnly';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+import { Trash2 } from 'lucide-react';
 import type { DailyPublished } from '@/types/dailyPublished';
 
 /**
@@ -44,8 +57,10 @@ interface UserBookCardProps {
   publicationStatus?: Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null;
   onPublish?: (bookId: string, title: string, description?: string) => void;
   onUnpublish?: (dailyPublishedId: string) => void;
+  onDelete?: (bookId: string, bookName: string) => void;
   isPublishing?: boolean;
   isUnpublishing?: boolean;
+  isDeleting?: boolean;
 }
 
 function UserBookCard({ 
@@ -56,8 +71,10 @@ function UserBookCard({
   publicationStatus,
   onPublish,
   onUnpublish,
+  onDelete,
   isPublishing,
-  isUnpublishing
+  isUnpublishing,
+  isDeleting
 }: UserBookCardProps) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
   
@@ -161,6 +178,65 @@ function UserBookCard({
           Edit
         </Button>
 
+        {/* Delete Book Button - Visible to All Users */}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="w-full border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+              onClick={(e) => e.stopPropagation()}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>Deleting...</>
+              ) : (
+                <>
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  Delete Book
+                </>
+              )}
+            </Button>
+          </AlertDialogTrigger>
+          
+          <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete "{book.book_name}"?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This action cannot be undone. This will permanently delete:
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>All {book.total_pages || 0} pages</li>
+                  <li>All page images and content</li>
+                  <li>AI prompts and system configurations</li>
+                  <li>Publication records and QR codes</li>
+                  <li>SEO metadata and analytics</li>
+                </ul>
+                {publicationStatus && (
+                  <p className="mt-3 font-medium text-destructive">
+                    ⚠️ This book is currently {publicationStatus.status === 'active' ? 'live in' : 'scheduled for'} the library!
+                  </p>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onDelete) {
+                    onDelete(book.id, book.book_name);
+                  }
+                }}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                Delete Permanently
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
         {/* Admin-Only Actions Section */}
         <AdminOnly fallback={null}>
           <div className="space-y-2 pt-3 mt-3 border-t border-border/50">
@@ -247,6 +323,7 @@ export default function Books() {
   const queryClient = useQueryClient();
   const schedulePublication = useScheduleBookPublication();
   const deletePublication = useDeleteDailyPublished();
+  const deleteBook = useDeleteBook();
   
   // Mobile editor state
   const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
@@ -302,6 +379,10 @@ export default function Books() {
 
   const handleUnpublish = (dailyPublishedId: string) => {
     deletePublication.mutate(dailyPublishedId);
+  };
+
+  const handleDeleteBook = (bookId: string, bookName: string) => {
+    deleteBook.mutate(bookId);
   };
 
   const pageTitle = isAllBooksView ? "All Books" : "My Books";
@@ -379,8 +460,10 @@ export default function Books() {
                 } : null}
                 onPublish={handlePublish}
                 onUnpublish={handleUnpublish}
+                onDelete={handleDeleteBook}
                 isPublishing={schedulePublication.isPending}
                 isUnpublishing={deletePublication.isPending}
+                isDeleting={deleteBook.isPending}
               />
             ))}
           </div>

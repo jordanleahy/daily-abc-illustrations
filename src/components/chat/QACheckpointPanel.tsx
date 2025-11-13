@@ -1,9 +1,9 @@
-import { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
 import { Shimmer } from '@/components/ui/shimmer';
-import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX, ChevronDown, Type } from 'lucide-react';
+import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useNavigate } from 'react-router-dom';
@@ -20,12 +20,6 @@ import { BookImage } from '@/components/ui/book-image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { isContentPage } from '@/types/book';
 
-// Lazy load ImageTextOverlayEditor (same pattern as PageCard)
-const ImageTextOverlayEditor = lazy(() =>
-  import('@/components/page-prompts/ImageTextOverlayEditor').then((module) => ({
-    default: module.ImageTextOverlayEditor,
-  }))
-);
 
 interface QACheckpointPanelProps {
   showQACheckpoint: boolean;
@@ -87,7 +81,7 @@ export function QACheckpointPanel({
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
   const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
-  const [showTextOverlayEditor, setShowTextOverlayEditor] = useState(false);
+  
   const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
   const { generateMetadata, isGenerating } = useWordMetadata();
   const { isOverlayHidden, toggleOverlay, isToggling, isLoading: isPreferencesLoading } = useReadingPreferences();
@@ -426,19 +420,6 @@ export function QACheckpointPanel({
                   Replace
                 </Button>
                 
-                {/* Text Overlay Editor button - only for content pages */}
-                {shouldShowTextOverlay && displayImages[currentQAPage] && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setShowTextOverlayEditor(true)}
-                    className="absolute top-2 right-20 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
-                    title="Edit text overlay"
-                  >
-                    <Type className="w-3 h-3 mr-1" />
-                    Text
-                  </Button>
-                )}
                 
                 {/* Show/Hide Overlay buttons - only for content pages */}
                 {shouldShowTextOverlay && currentPageId && isOverlayHidden(currentPageId) && (
@@ -744,26 +725,6 @@ export function QACheckpointPanel({
 
       </div>
 
-      {/* Text Overlay Editor - Same component as desktop */}
-      {user && currentPage && shouldShowTextOverlay && displayImages[currentQAPage] && showTextOverlayEditor && (
-        <Suspense fallback={null}>
-          <ImageTextOverlayEditor
-            open={showTextOverlayEditor}
-            onOpenChange={setShowTextOverlayEditor}
-            imageUrl={displayImages[currentQAPage]}
-            defaultText={currentPageText}
-            onTextChange={(newText) => {
-              if (onUpdatePageText) {
-                onUpdatePageText(currentQAPage, newText);
-              }
-            }}
-            mode="page"
-            pageId={currentPage.id}
-            bookId={bookId || ''}
-            userId={user.id}
-          />
-        </Suspense>
-      )}
     </div>
   );
 }

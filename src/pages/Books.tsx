@@ -22,6 +22,7 @@ import { useDeleteBook } from '@/hooks/useDeleteBook';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileBookEditor } from '@/components/book/MobileBookEditor';
 import { AdminOnly } from '@/components/AdminOnly';
+import { PublicationStatus } from '@/types/shared/status';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -422,7 +423,7 @@ export default function Books() {
         bookId={selectedBookId}
         open={mobileEditorOpen}
         onOpenChange={setMobileEditorOpen}
-        publicationStatus={selectedBookPublication}
+        publicationStatus={selectedBookPublication?.status as PublicationStatus}
         book={selectedBook}
       />
       

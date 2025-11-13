@@ -654,17 +654,17 @@ export function QACheckpointPanel({
               {bookStatus === PublicationStatus.DRAFT ? (
                 <>
                   <FileUp className="h-4 w-4 mr-2" />
-                  Publish Book
+                  Publish
                 </>
               ) : (
                 <>
                   <FileX className="h-4 w-4 mr-2" />
-                  Unpublish Book
+                  Unpublish
                 </>
               )}
             </Button>
             
-            {/* Read Book button - Show when book is published */}
+            {/* Read button - Show when book is published */}
             {bookStatus !== PublicationStatus.DRAFT && bookId && (
               <Button
                 variant="default"
@@ -673,7 +673,7 @@ export function QACheckpointPanel({
                 className="flex-1"
               >
                 <BookOpen className="h-4 w-4 mr-2" />
-                Read Book
+                Read
               </Button>
             )}
           </div>

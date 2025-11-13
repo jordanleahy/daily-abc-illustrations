@@ -15,6 +15,9 @@ import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
 import { BookImage } from '@/components/ui/book-image';
+import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
+import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
+import type { DailyPublished } from '@/types/dailyPublished';
 
 /**
  * UserBookCard - Displays a book authored by the current user in "My Books" section
@@ -29,12 +32,30 @@ import { BookImage } from '@/components/ui/book-image';
  * @features Status badge, metadata badges (book type, pages, themes), edit access,
  * thumbnail display with fallback, viewport-based lazy loading
  */
-function UserBookCard({ book, onClick, index, onEditClick }: { 
-  book: any; 
-  onClick: () => void; 
+
+interface UserBookCardProps {
+  book: any;
+  onClick: () => void;
   index: number;
   onEditClick?: (bookId: string) => void;
-}) {
+  publicationStatus?: Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null;
+  onPublish?: (bookId: string, title: string, description?: string) => void;
+  onUnpublish?: (dailyPublishedId: string) => void;
+  isPublishing?: boolean;
+  isUnpublishing?: boolean;
+}
+
+function UserBookCard({ 
+  book, 
+  onClick, 
+  index, 
+  onEditClick,
+  publicationStatus,
+  onPublish,
+  onUnpublish,
+  isPublishing,
+  isUnpublishing
+}: UserBookCardProps) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
   
   // Viewport-based lazy loading
@@ -137,6 +158,50 @@ function UserBookCard({ book, onClick, index, onEditClick }: {
           Edit
         </Button>
 
+        {/* Publish/Unpublish Button */}
+        <Button 
+          variant={publicationStatus ? "destructive" : "default"}
+          size="sm"
+          className="w-full"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (publicationStatus && onUnpublish) {
+              onUnpublish(publicationStatus.id);
+            } else if (onPublish) {
+              onPublish(book.id, book.book_name, book.book_description);
+            }
+          }}
+          disabled={isPublishing || isUnpublishing}
+        >
+          {isPublishing || isUnpublishing ? (
+            <>Loading...</>
+          ) : publicationStatus ? (
+            <>Unpublish from Library</>
+          ) : (
+            <>Publish to Library</>
+          )}
+        </Button>
+
+        {/* Publication Status Badge */}
+        {publicationStatus && (
+          <div className="text-xs text-center text-muted-foreground mt-1">
+            {publicationStatus.status === 'active' && (
+              <span className="text-green-600 font-medium">🟢 Live in Library</span>
+            )}
+            {publicationStatus.status === 'queued' && (
+              <span className="text-blue-600 font-medium">
+                📅 Scheduled for {new Date(publicationStatus.publish_date).toLocaleDateString('en-US', {
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </span>
+            )}
+            {publicationStatus.status === 'expired' && (
+              <span className="text-gray-600 font-medium">⏸️ Expired</span>
+            )}
+          </div>
+        )}
+
         {/* Book Info */}
         <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
           <div className="flex items-center gap-4">
@@ -164,6 +229,8 @@ export default function Books() {
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
+  const schedulePublication = useScheduleBookPublication();
+  const deletePublication = useDeleteDailyPublished();
   
   // Determine view mode based on route
   const isAllBooksView = location.pathname.startsWith('/all-books');
@@ -196,6 +263,14 @@ export default function Books() {
 
   const handleCreateNewBook = () => {
     navigate('/google-chat'); // Redirect to GoogleChat page for book creation
+  };
+
+  const handlePublish = (bookId: string, title: string, description?: string) => {
+    schedulePublication.mutate({ bookId, title, description });
+  };
+
+  const handleUnpublish = (dailyPublishedId: string) => {
+    deletePublication.mutate(dailyPublishedId);
   };
 
   const pageTitle = isAllBooksView ? "All Books" : "My Books";
@@ -251,6 +326,15 @@ export default function Books() {
                 index={index}
                 onClick={() => handleViewBook(book.id)}
                 onEditClick={(bookId) => navigate('/chat', { state: { editBookId: bookId } })}
+                publicationStatus={book.daily_published?.[0] ? {
+                  id: book.daily_published[0].id,
+                  status: book.daily_published[0].status as 'draft' | 'queued' | 'active' | 'expired',
+                  publish_date: book.daily_published[0].publish_date
+                } : null}
+                onPublish={handlePublish}
+                onUnpublish={handleUnpublish}
+                isPublishing={schedulePublication.isPending}
+                isUnpublishing={deletePublication.isPending}
               />
             ))}
           </div>

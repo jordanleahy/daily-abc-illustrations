@@ -75,6 +75,7 @@ export const useScheduleBookPublication = () => {
       });
       queryClient.invalidateQueries({ queryKey: ['book'] });
       queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['book-publication-status'] });
       queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
     },
     onError: (error) => {

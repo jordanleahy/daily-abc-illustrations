@@ -70,7 +70,7 @@ export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
         .from('books')
         .select(`
           *,
-          daily_published!left(status),
+          daily_published!left(id, status, publish_date, is_active),
           activity:user_book_activity!left(
             last_viewed_at,
             view_count,

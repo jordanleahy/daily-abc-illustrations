@@ -12,7 +12,7 @@ const conversationMessageSchema = z.object({
 const pageDetailSchema = z.object({
   pageNumber: z.number().int().positive().max(100),
   title: z.string().min(1).max(100),
-  description: z.string().min(1).max(1000)
+  description: z.string().min(1).max(2000)
 });
 
 const requestSchema = z.object({

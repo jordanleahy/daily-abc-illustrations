@@ -88,12 +88,22 @@ export function QACheckpointPanel({
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
   const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
   const [showTextOverlayEditor, setShowTextOverlayEditor] = useState(false);
+  const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
   const { generateMetadata, isGenerating } = useWordMetadata();
   const { isOverlayHidden, toggleOverlay, isToggling, isLoading: isPreferencesLoading } = useReadingPreferences();
   const { user } = useAuthContext();
   
   // Fetch pages data
   const { pages } = useBookPages(bookId || undefined);
+  
+  // Handle saving overlay text
+  const handleSaveOverlayText = async (newText: string) => {
+    if (onUpdatePageText) {
+      onUpdatePageText(currentQAPage, newText);
+    }
+    setIsEditingOverlayText(false);
+    toast.success('Text updated!');
+  };
   
   // Get current page ID for overlay toggle
   const currentPageId = useMemo(() => {
@@ -360,9 +370,51 @@ export function QACheckpointPanel({
                   enableMobileSave={true}
                 />
                 
-                {/* Text Overlay - only show for content pages when not hidden */}
+                {/* Interactive Text Overlay - only show for content pages when not hidden */}
                 {shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && currentPageText && (
-                  <TextOverlay text={currentPageText} />
+                  <>
+                    {isEditingOverlayText && onUpdatePageText ? (
+                      <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">
+                        <InlineEditInput
+                          value={currentPageText}
+                          onSave={handleSaveOverlayText}
+                          isEditing={true}
+                        />
+                      </div>
+                    ) : (
+                      <div 
+                        className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 group overflow-hidden h-[40px]"
+                      >
+                        <div className="flex items-center justify-center gap-2 h-full relative">
+                          <div 
+                            onClick={() => onUpdatePageText && setIsEditingOverlayText(true)}
+                            className={`flex items-center justify-center gap-2 flex-1 ${onUpdatePageText ? 'cursor-pointer hover:opacity-80' : ''} transition-opacity`}
+                            title={onUpdatePageText ? "Click to edit text" : undefined}
+                          >
+                            <p className="text-white text-center font-semibold text-lg line-clamp-2">
+                              {currentPageText}
+                            </p>
+                            {onUpdatePageText && (
+                              <Pencil className="h-4 w-4 text-white/60 group-hover:text-white/90 transition-colors flex-shrink-0" />
+                            )}
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (currentPageId) {
+                                toggleOverlay(currentPageId);
+                                toast.success('Text overlay hidden');
+                              }
+                            }}
+                            className="h-6 w-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
+                            title="Hide text overlay"
+                          >
+                            <X className="h-3.5 w-3.5 text-white/70" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
                 
                 <Button

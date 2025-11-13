@@ -1,10 +1,14 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { WireframePricing } from '@/components/subscription/WireframePricing';
 import { MetaHead } from '@/components/common/MetaHead';
 import { getSiteTitle } from '@/config/site';
+import { useRole } from '@/contexts/RoleContext';
 
 export default function Pricing() {
+  const navigate = useNavigate();
+  const { hasRole } = useRole();
   const pageTitle = 'Pricing';
   const seoMetadata = {
     title: getSiteTitle(pageTitle),
@@ -26,7 +30,12 @@ export default function Pricing() {
 
   useEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
-  }, []);
+    
+    // Redirect admins/teachers away from pricing page
+    if (hasRole('admin') || hasRole('teacher')) {
+      navigate('/');
+    }
+  }, [hasRole, navigate]);
 
   return (
     <>

@@ -29,7 +29,12 @@ import { BookImage } from '@/components/ui/book-image';
  * @features Status badge, metadata badges (book type, pages, themes), edit access,
  * thumbnail display with fallback, viewport-based lazy loading
  */
-function UserBookCard({ book, onClick, index }: { book: any; onClick: () => void; index: number }) {
+function UserBookCard({ book, onClick, index, onEditClick }: { 
+  book: any; 
+  onClick: () => void; 
+  index: number;
+  onEditClick?: (bookId: string) => void;
+}) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
   
   // Viewport-based lazy loading
@@ -117,6 +122,20 @@ function UserBookCard({ book, onClick, index }: { book: any; onClick: () => void
             </Badge>
           )}
         </div>
+
+        {/* Edit Button */}
+        <Button 
+          variant="outline" 
+          className="w-full"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (onEditClick) {
+              onEditClick(book.id);
+            }
+          }}
+        >
+          Edit
+        </Button>
 
         {/* Book Info */}
         <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
@@ -231,6 +250,7 @@ export default function Books() {
                 book={book}
                 index={index}
                 onClick={() => handleViewBook(book.id)}
+                onEditClick={(bookId) => navigate('/chat', { state: { editBookId: bookId } })}
               />
             ))}
           </div>

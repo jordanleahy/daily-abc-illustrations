@@ -44,6 +44,7 @@ export default function GoogleChat() {
   const locationState = window.history.state?.usr || {};
   const initialPrompt = locationState.initialPrompt || '';
   const targetWords = locationState.targetWords || [];
+  const editBookId = locationState.editBookId || null;
 
   // Preload all theme images for instant display
   useThemeImagePreloader();
@@ -472,6 +473,41 @@ export default function GoogleChat() {
       }, 500);
     }
   }, [initialPrompt, currentSessionId, messages.length, isLoading, sendMessage]);
+
+  // Handle edit mode from My Books
+  useEffect(() => {
+    if (editBookId && sessions && sessions.length > 0 && !currentSessionId) {
+      console.log('[GoogleChat] Edit mode triggered for book:', editBookId);
+      
+      // Find the session linked to this book
+      const bookSession = sessions.find(s => s.created_book_id === editBookId);
+      
+      if (bookSession) {
+        console.log('[GoogleChat] Found session for book:', bookSession.id);
+        
+        // Select the session
+        startTransition(() => {
+          setCurrentSessionId(bookSession.id);
+          setLocalCreatedBookId(editBookId);
+          
+          // Load QA images and prompts from the session
+          if (bookSession.qa_page_images) {
+            setQAPageImages(bookSession.qa_page_images);
+          }
+          if (bookSession.qa_page_prompts) {
+            setQAPagePrompts(bookSession.qa_page_prompts);
+          }
+          
+          // Open the QA panel
+          setShowQACheckpoint(true);
+          setCurrentQAPage(1);
+        });
+      } else {
+        console.warn('[GoogleChat] No session found for book:', editBookId);
+        toast.info('No editing session found for this book');
+      }
+    }
+  }, [editBookId, sessions, currentSessionId]);
 
   const handleSend = async () => {
     const raw = input.trim();

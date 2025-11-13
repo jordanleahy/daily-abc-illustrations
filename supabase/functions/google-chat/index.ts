@@ -413,28 +413,37 @@ CHARACTERS - Must appear consistently:
 - Little Brother Bear: Small cub, fluffy golden fur, colorful pom-pom hat and scarf
 
 SETTING:
-- The Gondola House: Tree-fort style wooden building on gondola terminal
+- The Gondola House: Tree-fort style wooden building on gondola terminal (NO TEXT OR SIGNS ON BUILDING)
 - Alpine village with rustic lodges in background
 - Snowtop Mountain with gondola cables
 - Red gondola cabins visible on cables
 
-COLOR PALETTE (exact hex codes):
-- Ice Blues: #E9F4FB, #B5D5EE, #7EB9E2
-- Sky: #A7C8E3 (day), #F7B7A3 (sunrise)
-- Wood: #6B4A2C (dark), #D9A066 (warm)
-- Warm Light: #FFDFA4 (golden), #FBCB8B (amber)
-- Accents: #E43F3F (red), #3E6E5C (forest green), #406C9F (mountain blue)
+COLOR PALETTE (describe without hex codes in prompts):
+- Ice blues for snow and sky
+- Warm wood tones for buildings and trees
+- Golden and amber lighting
+- Red, forest green, and mountain blue accents
 
-VISUAL STYLE:
+VISUAL STYLE - CRITICAL:
 - Semi-stylized 3D with painterly quality
 - Soft textures like watercolor with visible brush strokes
+- Cinematic Frozen-inspired lighting with soft edges
 - Magical realism - real but enchanted
-- Cinematic Frozen-inspired lighting
 - Warm hearts in a cold world atmosphere
+- NOT comic book style, NOT cartoon with thick black outlines
+- NO harsh borders or heavy line work
+- Painterly and atmospheric, NOT graphic or flat
+
+TEXT IN IMAGES - ABSOLUTELY FORBIDDEN:
+- NO text on buildings, signs, labels, or anywhere in the scene
+- NO visible writing of any kind
+- The Gondola House and other buildings must have NO readable text
+- All text will be added as overlays in post-processing
+
 
 Example Page with Bear Stories Style:
-**Page 3: "A is for Apple"**
-The Fun Bear Family stands at the center of a snowy orchard near their cozy Gondola House. Little Brother Bear, the small cub with fluffy golden fur wearing his red pom-pom hat, reaches excitedly toward a snow-dusted apple tree with bright red apples hanging from frosted branches. Big Sister Bear, in her teal winter jacket, steadies him while Mama Bear watches warmly in her cream sweater, holding a wicker basket. Papa Bear in his red plaid flannel points to the ripest apple. Behind them, the wooden Gondola House glows with amber light (#FBCB8B) from its windows, smoke curling from the stone chimney. The alpine village spreads below with snow-covered lodge roofs. Red gondola cabins (#406C9F accents) hang on cables stretching up the mountain. The morning sky transitions from ice blue (#E9F4FB) to warm sunrise tones (#F7B7A3) with soft golden rim light on the bears' fur. Snow sparkles with subtle highlights. The composition is cinematic and wide, showing the family grouped together with the Gondola House prominent in the mid-ground and mountain peaks rising behind. The color palette uses the exact tones specified: ice blues for snow, warm wood tones for the house, golden lighting, and accent red for the apples matching Little Brother's hat. The mood is cozy, magical, and family-centered with visible painterly brush strokes in the snow and sky. Include text overlay displaying 'APPLE' in large, clear, child-friendly letters.
+**Page 3: (a) is for apple**
+The Fun Bear Family stands at the center of a snowy orchard near their cozy Gondola House. Little Brother Bear, the small cub with fluffy golden fur wearing his red pom-pom hat, reaches excitedly toward a snow-dusted apple tree with bright red apples hanging from frosted branches. Big Sister Bear, in her teal winter jacket, steadies him while Mama Bear watches warmly in her cream sweater, holding a wicker basket. Papa Bear in his red plaid flannel points to the ripest apple. Behind them, the wooden Gondola House glows with amber light from its windows, smoke curling from the stone chimney. The alpine village spreads below with snow-covered lodge roofs. Red gondola cabins hang on cables stretching up the mountain. The morning sky transitions from ice blue to warm sunrise tones with soft golden rim light on the bears' fur. Snow sparkles with subtle highlights. The composition is cinematic and wide, showing the family grouped together with the Gondola House prominent in the mid-ground and mountain peaks rising behind. The color palette uses warm wood tones for the house, golden lighting, and accent red for the apples matching Little Brother's hat. The mood is cozy, magical, and family-centered. CRITICAL STYLE: Semi-stylized 3D painterly quality with visible brush strokes, soft edges, NOT comic book style, NOT cartoon outlines, NO thick black borders. Cinematic Frozen-inspired lighting with magical realism. ABSOLUTELY NO TEXT IN IMAGE: No signs, no labels, no writing of any kind anywhere in the scene. The Gondola House building should have NO visible text or signage. No text overlays. Clean illustration only.
 
 CRITICAL TEXT OVERLAY INSTRUCTIONS:
 - **Cover page**: END with "Include text overlay displaying '[BOOK TITLE]' in large, clear, child-friendly letters."

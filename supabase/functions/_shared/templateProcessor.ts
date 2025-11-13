@@ -8,16 +8,24 @@
 /**
  * Strip hex color codes from text while preserving natural color names
  * Example: "red #E43F3F badge" becomes "red badge"
+ * Example: "ice blue (#E9F4FB)" becomes "ice blue"
+ * Example: "warm wood tones #D9A066 behind them" becomes "warm wood tones behind them"
  */
 export function stripHexCodes(text: string): string {
   if (!text || typeof text !== 'string') return text;
   
-  // Match hex codes: #XXXXXX or #XXX (where X is a hex digit)
-  // Pattern captures both 6-digit and 3-digit hex codes
-  return text.replace(/#[0-9A-Fa-f]{6}(?!\w)/g, '')  // 6-digit hex
-             .replace(/#[0-9A-Fa-f]{3}(?!\w)/g, '')   // 3-digit hex
-             .replace(/\s+/g, ' ')                      // Normalize whitespace
-             .trim();
+  // Remove hex codes with optional surrounding parentheses
+  // Matches: #XXXXXX, (#XXXXXX), #XXX, (#XXX)
+  let result = text
+    .replace(/\(#[0-9A-Fa-f]{6}\)/g, '')           // Remove (#XXXXXX)
+    .replace(/\(#[0-9A-Fa-f]{3}\)/g, '')            // Remove (#XXX)
+    .replace(/#[0-9A-Fa-f]{6}(?!\w)/g, '')          // Remove standalone #XXXXXX
+    .replace(/#[0-9A-Fa-f]{3}(?!\w)/g, '')          // Remove standalone #XXX
+    .replace(/\(\s*\)/g, '')                        // Remove empty parentheses ()
+    .replace(/\s+/g, ' ')                           // Normalize whitespace
+    .trim();
+  
+  return result;
 }
 
 /**

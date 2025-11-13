@@ -342,7 +342,7 @@ ${styleGuide.specialInstructions || ''}
   
   // For Bear Stories, inject snowboarding context
   if (styleGuideKey === 'bear-stories') {
-    const snowboardingContext = "\n\nIMPORTANT: This scene is set in a snowboarding context. Characters should be snowboarding, preparing to snowboard, or in a snowboarding environment (mountain slopes, ski lodge, gondola). Show snowboards, snowboarding gear, and winter mountain settings. NEVER include skiing, skis, or ski poles.";
+    const snowboardingContext = "\n\nIMPORTANT: This scene is set in a snowboarding context. Characters should be snowboarding, preparing to snowboard, or in a snowboarding environment (mountain slopes, ski lodge, gondola). Show snowboards (Burton brand style), snowboarding gear, and winter mountain settings. NEVER include skiing, skis, or ski poles.";
     finalPrompt = finalPrompt + snowboardingContext;
     
     // Apply validation to strip any skiing terms that might have appeared

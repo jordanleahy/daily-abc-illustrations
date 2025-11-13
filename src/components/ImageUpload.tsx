@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Upload, AlertCircle, Clipboard } from "lucide-react";
+import { Upload, AlertCircle, Clipboard, Copy } from "lucide-react";
 import { toast } from "sonner";
 import { processImage, formatFileSize } from "@/utils/imageProcessor";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -11,9 +11,11 @@ interface ImageUploadProps {
   className?: string;
   autoTrigger?: boolean;
   requireSquare?: boolean;
+  showCopyPrompt?: boolean;
+  onCopyPrompt?: () => void;
 }
 
-export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false, requireSquare = true }: ImageUploadProps) {
+export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false, requireSquare = true, showCopyPrompt = false, onCopyPrompt }: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -293,6 +295,22 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                   <Clipboard className="h-5 w-5 mr-2" />
                   Paste from Clipboard
                 </Button>
+                
+                {showCopyPrompt && onCopyPrompt && (
+                  <Button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCopyPrompt();
+                    }}
+                    variant="outline"
+                    size="lg"
+                    className="w-full mx-auto mt-2"
+                    disabled={disabled || isProcessing}
+                  >
+                    <Copy className="h-5 w-5 mr-2" />
+                    Copy Prompt
+                  </Button>
+                )}
               </div>
             )}
           </div>

@@ -214,8 +214,9 @@ export default function GoogleChat() {
       return false;
     }
     
-    const hasPages = parsedPageDetails !== null && parsedPageDetails.length >= 5;
-    console.log('[Outline Button Debug] hasPages:', hasPages, '(need >= 5 pages)');
+    // Show as soon as we have ANY pages parsed (changed from >= 5 to > 0)
+    const hasPages = parsedPageDetails !== null && parsedPageDetails.length > 0;
+    console.log('[Outline Button Debug] hasPages:', hasPages, '(need > 0 pages)');
     
     // Always show button if we have pages, even after book creation
     return hasPages;

@@ -45,6 +45,8 @@ export default function BookReadingView() {
       } else {
         navigate('/google-chat');
       }
+    } else if (location.state?.from === 'my-books') {
+      navigate('/books');
     } else {
       navigate('/library');
     }

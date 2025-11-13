@@ -190,7 +190,7 @@ export default function Books() {
     if (isAllBooksView) {
       navigate(`/all-books/${bookId}`); // Admin editor
     } else {
-      navigate(`/books/${bookId}/read`); // Reading view
+      navigate(`/books/${bookId}/read`, { state: { from: 'my-books' } }); // Reading view with back navigation
     }
   };
 

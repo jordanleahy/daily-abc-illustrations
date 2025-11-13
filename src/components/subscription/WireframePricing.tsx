@@ -5,12 +5,35 @@ import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { ActiveSubscriptionView } from "./ActiveSubscriptionView";
+import { useRole } from "@/contexts/RoleContext";
 
 export const WireframePricing = () => {
   const { createCheckoutSession, hasActiveSubscription, getSubscriptionTier, loading, openCustomerPortal } = useSubscription();
   const { user } = useAuthContext();
+  const { hasRole } = useRole();
   const navigate = useNavigate();
   const currentTier = getSubscriptionTier();
+  
+  // Admins and teachers don't need subscriptions - redirect them
+  if (hasRole('admin') || hasRole('teacher')) {
+    return (
+      <div className="max-w-2xl mx-auto p-8">
+        <Card className="border-primary border-2">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl">Admin/Teacher Access</CardTitle>
+            <p className="text-muted-foreground mt-4">
+              You have full access to all features as a privileged user. No subscription needed!
+            </p>
+          </CardHeader>
+          <CardContent className="text-center">
+            <Button onClick={() => navigate('/')}>
+              Return to Home
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   
   // If user has active subscription, show active subscription view
   if (hasActiveSubscription && currentTier) {

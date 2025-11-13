@@ -207,8 +207,8 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
           </Button>
         </div>
       ) : hasImage && displayImageUrl ? (
-        // Show image
-        <div className="relative w-full h-full">
+        // Show image with action buttons
+        <div className="relative w-full h-full group">
           <OptimizedImage
             src={displayImageUrl}
             alt={isUserUploaded ? "Uploaded page image" : "Generated page image"}
@@ -219,6 +219,31 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             className="w-full h-full object-contain"
             containerClassName="w-full h-full"
           />
+          
+          {/* Action buttons - always visible on mobile, hover on desktop */}
+          <div className="absolute top-2 right-2 flex gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity z-20">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={() => setInternalShowUpload(true)}
+              className="h-8 text-xs shadow-lg"
+            >
+              <Upload className="w-3 h-3 mr-1" />
+              Replace
+            </Button>
+            
+            {hasDeployedPrompt && (
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={() => setShowPromptViewer(true)}
+                className="h-8 text-xs shadow-lg"
+              >
+                <Copy className="w-3 h-3 mr-1" />
+                Prompt
+              </Button>
+            )}
+          </div>
         </div>
       ) : showPromptViewer && currentPrompt?.content ? (
         // Show prompt viewer
@@ -256,7 +281,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             className="w-full"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Upload
+            Back to Image
           </Button>
         </div>
       ) : (

@@ -65,7 +65,7 @@ export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
     queryFn: async () => {
       if (!user?.id) return [];
       
-      // ⚡ OPTIMIZED: Single query with JOIN instead of 2 separate queries
+      // ⚡ OPTIMIZED: Single query with JOIN including cover images
       const query = supabase
         .from('books')
         .select(`
@@ -75,6 +75,9 @@ export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
             last_viewed_at,
             view_count,
             user_id
+          ),
+          coverImage:page_image_urls!left(
+            image_url
           )
         `);
       
@@ -97,16 +100,21 @@ export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
         return [];
       }
 
-      // Map activity data directly from JOIN, filtering for current user
+      // Map activity and cover image data directly from JOIN
       const booksWithActivity = booksData.map(book => {
         const activityArr = Array.isArray(book.activity) ? book.activity : [book.activity].filter(Boolean);
         const userActivity = activityArr.find((a: any) => a?.user_id === user.id);
+        
+        // Extract cover image from the JOIN (first is_latest cover page image)
+        const coverImageArr = Array.isArray(book.coverImage) ? book.coverImage : [book.coverImage].filter(Boolean);
+        const coverImageUrl = coverImageArr[0]?.image_url || null;
         
         return {
           ...book,
           dailyPublishedStatus: book.daily_published?.[0]?.status || undefined,
           last_viewed_at: userActivity?.last_viewed_at,
           view_count: userActivity?.view_count || 0,
+          coverImageUrl,
         };
       });
 

@@ -9,7 +9,6 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
-import { useBookCoverImage } from '@/hooks/useBookCoverImage';
 import { BookOpen, Calendar, Users } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
@@ -18,7 +17,6 @@ import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
 import { BookImage } from '@/components/ui/book-image';
 
 function BookCard({ book, onClick, index }: { book: any; onClick: () => void; index: number }) {
-  const { data: coverImageUrl } = useBookCoverImage(book.id);
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
   
   // Viewport-based lazy loading
@@ -54,9 +52,9 @@ function BookCard({ book, onClick, index }: { book: any; onClick: () => void; in
         {/* Book Thumbnail */}
         <AspectRatio ratio={1} className="bg-muted rounded-lg overflow-hidden">
           {shouldRender ? (
-            coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url ? (
+            book.coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url ? (
               <BookImage
-                src={coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url}
+                src={book.coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url}
                 alt={book.book_name}
                 priority={index < 6}
                 className="w-full h-full object-cover object-center"

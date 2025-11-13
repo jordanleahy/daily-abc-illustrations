@@ -23,6 +23,7 @@ const requestSchema = z.object({
   bookType: z.string().optional(),
   textOverlayPreference: z.enum(['with-text', 'without-text']).optional(),
   referenceBookId: z.string().uuid().optional(),
+  fullPrompts: z.record(z.string()).optional(), // Full image prompts by page number
   educationalFocus: z.object({
     targetAge: z.string(),
     learningType: z.string(),
@@ -39,7 +40,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference, referenceBookId, educationalFocus } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts } = validatedData;
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -675,6 +676,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
           mainConcept: sanitizeText(page.content?.mainConcept || '', 500),
           funFact: sanitizeText(page.content?.funFact || '', 500),
           activity: sanitizeText(page.content?.activity || '', 500),
+          imagePrompt: fullPrompts?.[actualPageNumber] || page.description || '', // Store full prompt
           textOverlay: {
             enabled: textOverlayEnabled,
             text: sanitizeText(page.title, 100),

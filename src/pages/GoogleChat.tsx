@@ -240,7 +240,13 @@ export default function GoogleChat() {
         return qaPagePrompts[pageNum];
       }
       
-      // Fallback to page description
+      // Try to get full prompt from content.imagePrompt (stores unlimited text)
+      const fullPrompt = (page.content as any)?.imagePrompt;
+      if (fullPrompt) {
+        return fullPrompt;
+      }
+      
+      // Fallback to page description (may be truncated)
       return page.description || null;
     }
     

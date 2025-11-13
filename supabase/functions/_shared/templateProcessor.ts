@@ -6,6 +6,21 @@
  */
 
 /**
+ * Strip hex color codes from text while preserving natural color names
+ * Example: "red #E43F3F badge" becomes "red badge"
+ */
+export function stripHexCodes(text: string): string {
+  if (!text || typeof text !== 'string') return text;
+  
+  // Match hex codes: #XXXXXX or #XXX (where X is a hex digit)
+  // Pattern captures both 6-digit and 3-digit hex codes
+  return text.replace(/#[0-9A-Fa-f]{6}(?!\w)/g, '')  // 6-digit hex
+             .replace(/#[0-9A-Fa-f]{3}(?!\w)/g, '')   // 3-digit hex
+             .replace(/\s+/g, ' ')                      // Normalize whitespace
+             .trim();
+}
+
+/**
  * Safely processes agent template by substituting variables with book-specific data
  */
 export function processAgentTemplate(

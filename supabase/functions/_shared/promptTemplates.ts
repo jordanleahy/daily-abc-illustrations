@@ -4,6 +4,7 @@
  */
 
 import { getStyleGuide } from './styleGuides.ts';
+import { stripHexCodes } from './templateProcessor.ts';
 
 /**
  * Generate critical center-focus composition instructions
@@ -320,7 +321,8 @@ ${styleGuide.specialInstructions || ''}
     }
   }
   
-  return prompt;
+  // Strip hex codes from final prompt to prevent AI from displaying them as text
+  return stripHexCodes(prompt);
 }
 
 /**

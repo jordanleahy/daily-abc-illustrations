@@ -17,6 +17,8 @@ import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
 import { BookImage } from '@/components/ui/book-image';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { MobileBookEditor } from '@/components/book/MobileBookEditor';
 import type { DailyPublished } from '@/types/dailyPublished';
 
 /**
@@ -225,12 +227,18 @@ function UserBookCard({
 
 export default function Books() {
   const { user, loading: authLoading } = useAuthContext();
+  const isMobile = useIsMobile();
   
   const navigate = useNavigate();
   const location = useLocation();
   const queryClient = useQueryClient();
   const schedulePublication = useScheduleBookPublication();
   const deletePublication = useDeleteDailyPublished();
+  
+  // Mobile editor state
+  const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  const [selectedBookPublication, setSelectedBookPublication] = useState<Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null>(null);
   
   // Determine view mode based on route
   const isAllBooksView = location.pathname.startsWith('/all-books');
@@ -258,6 +266,16 @@ export default function Books() {
       navigate(`/all-books/${bookId}`); // Admin editor
     } else {
       navigate(`/books/${bookId}/read`, { state: { from: 'my-books' } }); // Reading view with back navigation
+    }
+  };
+
+  const handleEditBook = (bookId: string, publicationStatus?: Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null) => {
+    if (isMobile) {
+      setSelectedBookId(bookId);
+      setSelectedBookPublication(publicationStatus || null);
+      setMobileEditorOpen(true);
+    } else {
+      navigate('/google-chat', { state: { editBookId: bookId } });
     }
   };
 
@@ -300,8 +318,16 @@ export default function Books() {
   }
 
   return (
-    <StandardPageLayout title={pageTitle} containerClassName="py-8">
-      <div className="space-y-6">
+    <>
+      <MobileBookEditor 
+        bookId={selectedBookId}
+        open={mobileEditorOpen}
+        onOpenChange={setMobileEditorOpen}
+        publicationStatus={selectedBookPublication}
+      />
+      
+      <StandardPageLayout title={pageTitle} containerClassName="py-8">
+        <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -325,7 +351,14 @@ export default function Books() {
                 book={book}
                 index={index}
                 onClick={() => handleViewBook(book.id)}
-                onEditClick={(bookId) => navigate('/google-chat', { state: { editBookId: bookId } })}
+                onEditClick={(bookId) => {
+                  const publicationStatus = book.daily_published?.[0] ? {
+                    id: book.daily_published[0].id,
+                    status: book.daily_published[0].status as 'draft' | 'queued' | 'active' | 'expired',
+                    publish_date: book.daily_published[0].publish_date
+                  } : null;
+                  handleEditBook(bookId, publicationStatus);
+                }}
                 publicationStatus={book.daily_published?.[0] ? {
                   id: book.daily_published[0].id,
                   status: book.daily_published[0].status as 'draft' | 'queued' | 'active' | 'expired',
@@ -355,5 +388,6 @@ export default function Books() {
         )}
       </div>
     </StandardPageLayout>
+    </>
   );
 }

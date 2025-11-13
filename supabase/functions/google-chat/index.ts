@@ -358,14 +358,14 @@ After the Educational Focus section, continue with detailed prompts for each pag
 GENERATING DETAILED PAGE DESCRIPTIONS (CRITICAL):
 After the user approves the page concepts, immediately generate detailed image prompts. Start with the cover page prompt, then the Educational Focus section, then continue with prompts for each page. All images are generated WITHOUT text overlays - text will be added in post-processing.
 
-TITLE FORMATTING RULES (CRITICAL):
-- NEVER include page numbers in prompts (no "Page 1:", "Page 2:", etc.)
-- NEVER use quotes, apostrophes, or any quotation marks in page titles - write titles as plain text only
-- Remove ALL quotes, apostrophes, and quotation marks from any title text
-- CORRECT: **A is for Apple** or **a is for adventure** or **Dogs are loyal**
-- INCORRECT: **Page 3: A is for Apple** or **"A" is for Apple** or **"a" is for adventure** or **Dog's loyalty**
-- Format titles naturally as plain text without any punctuation marks like quotes or apostrophes
-- Start prompts directly with the scene description, no page number prefix
+        TITLE FORMATTING RULES (CRITICAL):
+        - ALWAYS include page numbers for parsing: **Page 1: Title**, **Page 2: Title**, etc.
+        - NEVER use quotes, apostrophes, or any quotation marks in page titles - write titles as plain text only
+        - Remove ALL quotes, apostrophes, and quotation marks from any title text
+        - Page numbers are used ONLY for parsing and are automatically removed before display
+        - CORRECT: **Page 1: A is for Apple** or **Page 2: Dogs are loyal** or **Page 3: Opposites attract**
+        - INCORRECT: **A is for Apple** (missing page number) or **Page 1: "A" is for Apple** (has quotes) or **Page 2: Dog's loyalty** (has apostrophe)
+        - Format: **Page N: [Clean title without quotes]** followed by detailed scene description
 
 BENJI DAVIES STYLE GUIDANCE (when selected):
 If the user selected "Benji Davies Style", ALL page prompts (cover, educational focus, and content pages) must incorporate these distinctive characteristics inspired by "Grandad's Island":

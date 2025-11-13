@@ -429,3 +429,87 @@ export const STYLE_GUIDES: Record<string, StyleGuide> = {
 export function getStyleGuide(styleGuideKey: string): StyleGuide | null {
   return STYLE_GUIDES[styleGuideKey] || null;
 }
+
+/**
+ * Extract character details for specific characters from style guide
+ * Returns formatted character specifications ready for layered prompt injection
+ */
+export function getCharacterDetails(
+  styleGuideKey: string,
+  characterNames: string[]
+): Array<{ name: string; details: string }> {
+  const guide = getStyleGuide(styleGuideKey);
+  if (!guide) return [];
+
+  const characterMap: Record<string, string> = {
+    'mama': 'Mama Bear: 5.5 feet tall (2.5x Little Brother\'s height), warm caramel brown fur, gentle amber-brown eyes, small beauty mark on left cheek, wearing cream cable-knit sweater. AGE-ACCURATE SIZING: She towers over Little Brother.',
+    'mama bear': 'Mama Bear: 5.5 feet tall (2.5x Little Brother\'s height), warm caramel brown fur, gentle amber-brown eyes, small beauty mark on left cheek, wearing cream cable-knit sweater. AGE-ACCURATE SIZING: She towers over Little Brother.',
+    'papa': 'Papa Bear: 6.5 feet tall (largest family member), deep chocolate brown fur, medium brown eyes with laugh lines, wearing red and black plaid flannel shirt. Right ear has small notch at tip. Broader, square-shaped snout.',
+    'papa bear': 'Papa Bear: 6.5 feet tall (largest family member), deep chocolate brown fur, medium brown eyes with laugh lines, wearing red and black plaid flannel shirt. Right ear has small notch at tip. Broader, square-shaped snout.',
+    'dandan': 'Big Sister Bear (DanDan, 7 years old): 4 feet tall, light honey brown fur with golden highlights, bright hazel eyes, wearing bright teal puffer jacket. CRITICAL SIZE: 1.6x TALLER than Chelson - her eyes are at the same height as the top of his head. White star patch on chest, freckles on nose.',
+    'big sister': 'Big Sister Bear (DanDan, 7 years old): 4 feet tall, light honey brown fur with golden highlights, bright hazel eyes, wearing bright teal puffer jacket. CRITICAL SIZE: 1.6x TALLER than Chelson - her eyes are at the same height as the top of his head. White star patch on chest, freckles on nose.',
+    'big sister bear': 'Big Sister Bear (DanDan, 7 years old): 4 feet tall, light honey brown fur with golden highlights, bright hazel eyes, wearing bright teal puffer jacket. CRITICAL SIZE: 1.6x TALLER than Chelson - her eyes are at the same height as the top of his head. White star patch on chest, freckles on nose.',
+    'chelson': 'Little Brother Bear (Chelson, 3 years old): TODDLER size at 2.5 feet tall (only 0.6x DanDan\'s height - 62.5% of her height), fluffy golden fur with creamy white belly, oversized brown eyes, wearing his SIGNATURE bright blue pom-pom beanie (most recognizable feature), cozy sweater. Round chubby toddler body, short stubby limbs. His head reaches only to DanDan\'s chest/shoulder.',
+    'little brother': 'Little Brother Bear (Chelson, 3 years old): TODDLER size at 2.5 feet tall (only 0.6x DanDan\'s height - 62.5% of her height), fluffy golden fur with creamy white belly, oversized brown eyes, wearing his SIGNATURE bright blue pom-pom beanie (most recognizable feature), cozy sweater. Round chubby toddler body, short stubby limbs. His head reaches only to DanDan\'s chest/shoulder.',
+    'little brother bear': 'Little Brother Bear (Chelson, 3 years old): TODDLER size at 2.5 feet tall (only 0.6x DanDan\'s height - 62.5% of her height), fluffy golden fur with creamy white belly, oversized brown eyes, wearing his SIGNATURE bright blue pom-pom beanie (most recognizable feature), cozy sweater. Round chubby toddler body, short stubby limbs. His head reaches only to DanDan\'s chest/shoulder.',
+  };
+
+  const results: Array<{ name: string; details: string }> = [];
+  
+  for (const name of characterNames) {
+    const normalized = name.toLowerCase().trim();
+    const details = characterMap[normalized];
+    if (details) {
+      results.push({ name, details });
+    }
+  }
+
+  return results;
+}
+
+/**
+ * Get setting and atmosphere details from style guide
+ */
+export function getSettingDetails(styleGuideKey: string): string {
+  const guide = getStyleGuide(styleGuideKey);
+  if (!guide) return '';
+
+  if (styleGuideKey === 'bear-stories') {
+    return 'The Gondola House visible in background: warm amber-glowing windows, rich wood tones, stone chimney with gentle smoke. Soft ice blue sky, purple-tinted mountain peaks in distance. Golden afternoon light creating warm rim lighting on characters. Red gondola cabins on cables add pops of color. Cozy, magical, family-centered warmth.';
+  }
+
+  return guide.settingDetails || '';
+}
+
+/**
+ * Get visual style summary for prompt injection
+ */
+export function getVisualStyleSummary(styleGuideKey: string): string {
+  const guide = getStyleGuide(styleGuideKey);
+  if (!guide) return '';
+
+  if (styleGuideKey === 'bear-stories') {
+    return 'Semi-stylized 3D with painterly quality (like Frozen/Pixar). Soft blended textures with visible brush strokes. Hand-painted watercolor feel on snow and sky. NOT comic book style - NO thick black borders or heavy line work. Cinematic lighting with soft golden rim light on fur.';
+  }
+
+  return guide.visualStyle || '';
+}
+
+/**
+ * Get critical constraints for prompt enforcement
+ */
+export function getCriticalConstraints(styleGuideKey: string): string[] {
+  const guide = getStyleGuide(styleGuideKey);
+  if (!guide) return [];
+
+  if (styleGuideKey === 'bear-stories') {
+    return [
+      '🚫 ABSOLUTELY NO TEXT OR SIGNS anywhere in the image (Gondola House has NO readable text)',
+      '❄️ Snowboarding equipment ONLY - NEVER skiing (Burton brand style snowboards)',
+      '📏 AGE-ACCURATE SIZING: Little Brother (Chelson) is TODDLER-sized, significantly smaller than adults. DanDan is 1.6x taller than Chelson.',
+      '🎨 Maintain exact color palette: ice blue sky, warm amber lighting, rich wood tones'
+    ];
+  }
+
+  return [];
+}

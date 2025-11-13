@@ -1,25 +1,76 @@
 /**
  * Specialized prompt templates for different book types and pages
- * Used to generate rich, context-aware image generation prompts
+ * Uses layered prompt architecture for strategic information organization
  */
 
-import { getStyleGuide } from './styleGuides.ts';
+import { 
+  getStyleGuide, 
+  getCharacterDetails, 
+  getSettingDetails, 
+  getVisualStyleSummary, 
+  getCriticalConstraints 
+} from './styleGuides.ts';
 import { stripHexCodes, enforceBearStoriesSnowboarding } from './templateProcessor.ts';
 
 /**
- * Generate critical center-focus composition instructions
+ * LAYERED PROMPT ARCHITECTURE
+ * Strategically organizes prompt information into 5 layers for maximum AI effectiveness
  */
-function getCenterFocusInstructions(): string {
-  return `
+export function generateLayeredPrompt(
+  sceneDescription: string,
+  characters: Array<{ name: string; details: string }>,
+  setting: string,
+  visualStyle: string,
+  constraints: string[]
+): string {
+  let prompt = '';
 
---- CRITICAL CENTER-FOCUS REQUIREMENTS ---
-- Position the main subject/object at the EXACT CENTER of the image
-- Use center point as the primary visual anchor
-- Equal negative space on all sides (top, bottom, left, right)
-- Background elements should complement but not compete with centered subject
-- Avoid asymmetric compositions - maintain center balance
-- The viewer's eye should be immediately drawn to the center
-- Use rule of thirds with primary subject at center intersection point`;
+  // LAYER 1: Scene Description (What's happening)
+  prompt += `[SCENE]: ${sceneDescription}\n\n`;
+
+  // LAYER 2: Character Details (Who with specific identifiers)
+  if (characters.length > 0) {
+    prompt += `[CHARACTER SPECIFICATIONS]:\n`;
+    for (const char of characters) {
+      prompt += `- ${char.details}\n`;
+    }
+    prompt += '\n';
+  }
+
+  // LAYER 3: Setting & Atmosphere (Where with color/mood)
+  if (setting) {
+    prompt += `[SETTING & ATMOSPHERE]: ${setting}\n\n`;
+  }
+
+  // LAYER 4: Visual Style & Quality (How it should look)
+  if (visualStyle) {
+    prompt += `[VISUAL STYLE]: ${visualStyle}\n\n`;
+  }
+
+  // LAYER 5: Critical Constraints (Final enforcement)
+  if (constraints.length > 0) {
+    prompt += `[CRITICAL REQUIREMENTS - NON-NEGOTIABLE]:\n`;
+    for (const constraint of constraints) {
+      prompt += `${constraint}\n`;
+    }
+  }
+
+  return prompt.trim();
+}
+
+/**
+ * Extract character names from scene description
+ */
+function extractCharacterNames(sceneText: string): string[] {
+  const names: string[] = [];
+  const text = sceneText.toLowerCase();
+  
+  if (text.includes('mama bear') || text.includes('mama')) names.push('Mama Bear');
+  if (text.includes('papa bear') || text.includes('papa')) names.push('Papa Bear');
+  if (text.includes('dandan') || text.includes('big sister')) names.push('Big Sister Bear');
+  if (text.includes('chelson') || text.includes('little brother')) names.push('Little Brother Bear');
+  
+  return names;
 }
 
 interface BookContext {
@@ -267,6 +318,7 @@ function getLearningDetails(bookType: string): { learningType: string; specificS
 
 /**
  * Generate template-based prompt for specific book types
+ * Now uses layered architecture when styleGuideKey is provided
  */
 export function generateSpecializedPrompt(
   book: BookContext, 
@@ -275,11 +327,11 @@ export function generateSpecializedPrompt(
   textOverlayEnabled: boolean = true,
   styleGuideKey?: string
 ): string {
-  // Generate base prompt based on book type
+  // Generate base prompt based on book type - NOW passing styleGuideKey
   let prompt = '';
   
   if (isCover) {
-    prompt = generateCoverPrompt(book, textOverlayEnabled);
+    prompt = generateCoverPromptLayered(book, textOverlayEnabled, styleGuideKey);
   } else {
     // Check for specialized book types
     const bookType = (book.bookType || book.category).toLowerCase();
@@ -287,69 +339,232 @@ export function generateSpecializedPrompt(
     switch (bookType) {
       case 'abc':
       case 'alphabet':
-        prompt = generateAlphabetPagePrompt(book, page, textOverlayEnabled);
+        prompt = generateAlphabetPagePromptLayered(book, page, textOverlayEnabled, styleGuideKey);
         break;
       
       case 'numbers':
-        prompt = generateNumbersPagePrompt(book, page, textOverlayEnabled);
+        prompt = generateNumbersPagePromptLayered(book, page, textOverlayEnabled, styleGuideKey);
         break;
       
       case 'colors':
-        prompt = generateColorsPagePrompt(book, page, textOverlayEnabled);
+        prompt = generateColorsPagePromptLayered(book, page, textOverlayEnabled, styleGuideKey);
         break;
       
       case 'emotions':
-        prompt = generateEmotionsPagePrompt(book, page, textOverlayEnabled);
+        prompt = generateEmotionsPagePromptLayered(book, page, textOverlayEnabled, styleGuideKey);
         break;
       
       default:
-        prompt = generatePagePrompt(book, page, textOverlayEnabled);
+        prompt = generatePagePromptLayered(book, page, textOverlayEnabled, styleGuideKey);
     }
   }
   
-  // INJECT STYLE GUIDE if styleGuideKey is provided
-  if (styleGuideKey) {
-    const styleGuide = getStyleGuide(styleGuideKey);
-    
-    if (styleGuide) {
-      prompt += `
-
-===========================================
-🎨 MANDATORY STYLE GUIDE - ${styleGuide.name.toUpperCase()}
-===========================================
-
-${styleGuide.characterDescriptions}
-
-${styleGuide.visualStyle}
-
-${styleGuide.colorPalette}
-
-${styleGuide.lightingRules}
-
-${styleGuide.compositionRules}
-
-${styleGuide.settingDetails || ''}
-
-${styleGuide.specialInstructions || ''}
-
-⚠️ CRITICAL: You MUST reference the character descriptions above and use ONLY the specified color palette. Consistency across all pages is mandatory.
-`;
-    }
-  }
-  
-  // Strip hex codes from final prompt to prevent AI from displaying them as text
+  // Strip hex codes from final prompt
   let finalPrompt = stripHexCodes(prompt);
   
-  // For Bear Stories, inject snowboarding context
+  // For Bear Stories, enforce snowboarding context
   if (styleGuideKey === 'bear-stories') {
-    const snowboardingContext = "\n\nIMPORTANT: This scene is set in a snowboarding context. Characters should be snowboarding, preparing to snowboard, or in a snowboarding environment (mountain slopes, ski lodge, gondola). Show snowboards (Burton brand style), snowboarding gear, and winter mountain settings. NEVER include skiing, skis, or ski poles.";
-    finalPrompt = finalPrompt + snowboardingContext;
-    
-    // Apply validation to strip any skiing terms that might have appeared
     finalPrompt = enforceBearStoriesSnowboarding(finalPrompt, styleGuideKey);
   }
   
   return finalPrompt;
+}
+
+/**
+ * Generate cover prompt with layered architecture
+ */
+function generateCoverPromptLayered(
+  book: BookContext,
+  textOverlayEnabled: boolean = true,
+  styleGuideKey?: string
+): string {
+  // LAYER 1: Scene Description
+  let sceneDescription = `Book cover design for: "${book.bookName}". Category: ${book.category}. Theme: ${book.bookDescription}. Design a vibrant, eye-catching cover that clearly represents the book's theme, uses bold engaging colors, features main characters or key learning elements, and creates excitement and curiosity.`;
+  
+  if (!textOverlayEnabled) {
+    sceneDescription += ' CRITICAL: Generate cover illustration WITHOUT the book title text. No visible text of any kind - pure visual cover design. Title will be added as overlay later.';
+  } else {
+    sceneDescription += ` Include the title "${book.bookName}" prominently displayed with large, clear, child-friendly lettering.`;
+  }
+  
+  // Use layered architecture if style guide provided
+  if (styleGuideKey) {
+    const characterNames = extractCharacterNames(book.bookDescription || '');
+    const characters = getCharacterDetails(styleGuideKey, characterNames);
+    const setting = getSettingDetails(styleGuideKey);
+    const visualStyle = getVisualStyleSummary(styleGuideKey);
+    const constraints = getCriticalConstraints(styleGuideKey);
+    
+    return generateLayeredPrompt(sceneDescription, characters, setting, visualStyle, constraints);
+  }
+  
+  // Fallback to the original cover prompt function
+  return generateCoverPrompt(book, textOverlayEnabled);
+}
+
+/**
+ * Generate page prompt with layered architecture
+ */
+function generatePagePromptLayered(
+  book: BookContext,
+  page: PageContext,
+  textOverlayEnabled: boolean = true,
+  styleGuideKey?: string
+): string {
+  // LAYER 1: Scene Description
+  let sceneDescription = `Illustration for: ${page.title}. ${page.description}. Style: Maintain consistent visual style from book: "${book.bookName}" (${book.category})`;
+  
+  if (!textOverlayEnabled) {
+    sceneDescription += '. CRITICAL: Generate illustration WITHOUT any text overlays. No visible text of any kind - pure visual illustration. Text will be added as overlay later.';
+  }
+  
+  // Use layered architecture if style guide provided
+  if (styleGuideKey) {
+    const characterNames = extractCharacterNames(page.description);
+    const characters = getCharacterDetails(styleGuideKey, characterNames);
+    const setting = getSettingDetails(styleGuideKey);
+    const visualStyle = getVisualStyleSummary(styleGuideKey);
+    const constraints = getCriticalConstraints(styleGuideKey);
+    
+    return generateLayeredPrompt(sceneDescription, characters, setting, visualStyle, constraints);
+  }
+  
+  // Fallback to original function
+  return generatePagePrompt(book, page, textOverlayEnabled);
+}
+
+/**
+ * Generate alphabet page prompt with layered architecture
+ */
+function generateAlphabetPagePromptLayered(
+  book: BookContext,
+  page: PageContext,
+  textOverlayEnabled: boolean = true,
+  styleGuideKey?: string
+): string {
+  const letter = page.letter?.toUpperCase() || 'A';
+  const word = page.title?.replace(/^\([a-zA-Z]\)\s*is for\s*/i, '') || 'word';
+  
+  // LAYER 1: Scene Description
+  let sceneDescription = `Educational illustration for letter ${letter}: ${word}. ${page.description}. Focus on the word "${word}" with clear visual representation.`;
+  
+  if (!textOverlayEnabled) {
+    sceneDescription += ' CRITICAL: Generate illustration WITHOUT any text, letters, or words. No visible text of any kind - pure visual storytelling only. Text will be added as overlay later.';
+  }
+  
+  // Use layered architecture if style guide provided
+  if (styleGuideKey) {
+    const characterNames = extractCharacterNames(page.description);
+    const characters = getCharacterDetails(styleGuideKey, characterNames);
+    const setting = getSettingDetails(styleGuideKey);
+    const visualStyle = getVisualStyleSummary(styleGuideKey);
+    const constraints = getCriticalConstraints(styleGuideKey);
+    
+    return generateLayeredPrompt(sceneDescription, characters, setting, visualStyle, constraints);
+  }
+  
+  // Fallback to original function
+  return generateAlphabetPagePrompt(book, page, textOverlayEnabled);
+}
+
+/**
+ * Generate numbers page prompt with layered architecture
+ */
+function generateNumbersPagePromptLayered(
+  book: BookContext,
+  page: PageContext,
+  textOverlayEnabled: boolean = true,
+  styleGuideKey?: string
+): string {
+  const numberMatch = page.title?.match(/\d+/) || page.description?.match(/\d+/);
+  const number = numberMatch ? numberMatch[0] : '1';
+  
+  // LAYER 1: Scene Description
+  let sceneDescription = `Educational illustration for number ${number}. ${page.description}. CRITICAL: Show exactly ${number} items/objects clearly visible and countable. Arrange items in a pattern that makes counting easy and obvious.`;
+  
+  if (!textOverlayEnabled) {
+    sceneDescription += ' CRITICAL: Generate illustration WITHOUT any text, numbers, or numerals. No visible text of any kind - pure visual counting exercise. Text will be added as overlay later.';
+  }
+  
+  // Use layered architecture if style guide provided
+  if (styleGuideKey) {
+    const characterNames = extractCharacterNames(page.description);
+    const characters = getCharacterDetails(styleGuideKey, characterNames);
+    const setting = getSettingDetails(styleGuideKey);
+    const visualStyle = getVisualStyleSummary(styleGuideKey);
+    const constraints = getCriticalConstraints(styleGuideKey);
+    
+    return generateLayeredPrompt(sceneDescription, characters, setting, visualStyle, constraints);
+  }
+  
+  // Fallback to original function
+  return generateNumbersPagePrompt(book, page, textOverlayEnabled);
+}
+
+/**
+ * Generate colors page prompt with layered architecture
+ */
+function generateColorsPagePromptLayered(
+  book: BookContext,
+  page: PageContext,
+  textOverlayEnabled: boolean = true,
+  styleGuideKey?: string
+): string {
+  const color = page.content?.color || 'color';
+  
+  // LAYER 1: Scene Description
+  let sceneDescription = `Educational illustration focused on the color ${color}. ${page.description}. CRITICAL: The color ${color} should be the DOMINANT color throughout. Use various shades and tones of ${color} to create visual interest.`;
+  
+  if (!textOverlayEnabled) {
+    sceneDescription += ' CRITICAL: Generate illustration WITHOUT any text or color names visible. No visible text of any kind - pure visual color demonstration. Text will be added as overlay later.';
+  }
+  
+  // Use layered architecture if style guide provided
+  if (styleGuideKey) {
+    const characterNames = extractCharacterNames(page.description);
+    const characters = getCharacterDetails(styleGuideKey, characterNames);
+    const setting = getSettingDetails(styleGuideKey);
+    const visualStyle = getVisualStyleSummary(styleGuideKey);
+    const constraints = getCriticalConstraints(styleGuideKey);
+    
+    return generateLayeredPrompt(sceneDescription, characters, setting, visualStyle, constraints);
+  }
+  
+  // Fallback to original function
+  return generateColorsPagePrompt(book, page, textOverlayEnabled);
+}
+
+/**
+ * Generate emotions page prompt with layered architecture
+ */
+function generateEmotionsPagePromptLayered(
+  book: BookContext,
+  page: PageContext,
+  textOverlayEnabled: boolean = true,
+  styleGuideKey?: string
+): string {
+  const emotion = page.title?.toLowerCase() || 'emotion';
+  
+  // LAYER 1: Scene Description
+  let sceneDescription = `Educational illustration demonstrating the emotion: ${emotion}. ${page.description}. CRITICAL: Focus on clear facial expressions and body language. The character(s) should clearly convey ${emotion} through facial expression, body posture, and environmental cues.`;
+  
+  if (!textOverlayEnabled) {
+    sceneDescription += ' CRITICAL: Generate illustration WITHOUT any text or emotion labels. No visible text of any kind - pure visual emotional expression. Text will be added as overlay later.';
+  }
+  
+  // Use layered architecture if style guide provided
+  if (styleGuideKey) {
+    const characterNames = extractCharacterNames(page.description);
+    const characters = getCharacterDetails(styleGuideKey, characterNames);
+    const setting = getSettingDetails(styleGuideKey);
+    const visualStyle = getVisualStyleSummary(styleGuideKey);
+    const constraints = getCriticalConstraints(styleGuideKey);
+    
+    return generateLayeredPrompt(sceneDescription, characters, setting, visualStyle, constraints);
+  }
+  
+  // Fallback to original function
+  return generateEmotionsPagePrompt(book, page, textOverlayEnabled);
 }
 
 /**

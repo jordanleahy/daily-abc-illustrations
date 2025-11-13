@@ -29,18 +29,22 @@ interface MobileBookEditorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   publicationStatus?: Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null;
+  book?: any; // Pass book data directly for instant display
 }
 
 export function MobileBookEditor({ 
   bookId, 
   open, 
   onOpenChange,
-  publicationStatus 
+  publicationStatus,
+  book: bookProp
 }: MobileBookEditorProps) {
   const navigate = useNavigate();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
-  const { data: book } = useBook(bookId || undefined);
+  // Use passed book data for instant display, fallback to fetch if not provided
+  const { data: fetchedBook } = useBook(bookId || undefined);
+  const book = bookProp || fetchedBook;
   const { pages } = useBookPages(bookId || undefined);
   const schedulePublication = useScheduleBookPublication();
   const deletePublication = useDeleteDailyPublished();
@@ -88,8 +92,33 @@ export function MobileBookEditor({
     }
   };
 
-  if (!bookId || !book || !currentPage) {
+  if (!bookId || !book) {
     return null;
+  }
+
+  // Show loading state while pages are loading
+  if (!currentPage) {
+    return (
+      <Drawer open={open} onOpenChange={onOpenChange}>
+        <DrawerContent className="h-[90vh] flex flex-col">
+          <DrawerHeader className="relative border-b pb-4">
+            <DrawerClose asChild>
+              <Button variant="ghost" size="icon" className="absolute right-4 top-4">
+                <X className="h-4 w-4" />
+              </Button>
+            </DrawerClose>
+            <DrawerTitle className="text-left pr-12">{book.book_name}</DrawerTitle>
+            <DrawerDescription className="text-left">Loading pages...</DrawerDescription>
+          </DrawerHeader>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <BookOpen className="h-12 w-12 mx-auto mb-4 animate-pulse" />
+              <p>Loading book pages...</p>
+            </div>
+          </div>
+        </DrawerContent>
+      </Drawer>
+    );
   }
 
   return (

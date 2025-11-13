@@ -39,6 +39,11 @@ export default function GoogleChat() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedBookType, setSelectedBookType] = useState<string | null>(null);
+  
+  // Get location state for pre-filled prompts and target words from recommendations
+  const locationState = window.history.state?.usr || {};
+  const initialPrompt = locationState.initialPrompt || '';
+  const targetWords = locationState.targetWords || [];
 
   // Preload all theme images for instant display
   useThemeImagePreloader();
@@ -400,6 +405,21 @@ export default function GoogleChat() {
     }
   }, [messages.length, isLoading]);
 
+  // Send initial prompt from recommendations if provided
+  useEffect(() => {
+    if (initialPrompt && currentSessionId && messages.length === 0 && !isLoading) {
+      console.log('[GoogleChat] Sending initial prompt from recommendations:', initialPrompt);
+      setInput(initialPrompt);
+      // Small delay to ensure component is fully mounted
+      setTimeout(() => {
+        sendMessage(initialPrompt, undefined, [], {
+          outlineReady: false,
+          bookCreated: false
+        });
+      }, 500);
+    }
+  }, [initialPrompt, currentSessionId, messages.length, isLoading, sendMessage]);
+
   const handleSend = async () => {
     const raw = input.trim();
     if (!raw) return;
@@ -552,7 +572,8 @@ export default function GoogleChat() {
         qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined,
         bookType: selectedBookType || undefined,
         textOverlayPreference,
-        referenceBookId
+        referenceBookId,
+        targetWords: targetWords.length > 0 ? targetWords : undefined
       });
       
       // Set local book ID immediately for UI responsiveness

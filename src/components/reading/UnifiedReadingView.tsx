@@ -216,9 +216,6 @@ export function UnifiedReadingView({
   const [sessionStarted, setSessionStarted] = useState(false);
   const [initialPageTracked, setInitialPageTracked] = useState(false);
   
-  // Word learning state
-  const readingState = useReadingPageState();
-  
   // Auto-select kid if only one exists
   const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
   const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
@@ -233,6 +230,15 @@ export function UnifiedReadingView({
     const page = bookPages?.find(p => p.id === currentPage?.id);
     return page?.content?.words || [];
   }, [bookPages, currentPage]);
+  
+  // Word learning state with tracking config
+  const readingState = useReadingPageState({
+    kidProfileId: selectedKidId,
+    bookId: book.book_id || book.id,
+    pageId: currentPage?.id,
+    pageTitle: currentPage?.title,
+    words: currentPageWords,
+  });
   
   // Reset word learning state when page changes
   useEffect(() => {

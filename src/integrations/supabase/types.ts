@@ -1560,6 +1560,76 @@ export type Database = {
           },
         ]
       }
+      word_learning_progress: {
+        Row: {
+          book_id: string | null
+          created_at: string | null
+          id: string
+          kid_profile_id: string
+          marked_at: string
+          page_id: string | null
+          parent_user_id: string
+          sentence_context: string | null
+          session_context: Json | null
+          status: string
+          updated_at: string | null
+          word_metadata: Json | null
+          word_text: string
+        }
+        Insert: {
+          book_id?: string | null
+          created_at?: string | null
+          id?: string
+          kid_profile_id: string
+          marked_at?: string
+          page_id?: string | null
+          parent_user_id: string
+          sentence_context?: string | null
+          session_context?: Json | null
+          status: string
+          updated_at?: string | null
+          word_metadata?: Json | null
+          word_text: string
+        }
+        Update: {
+          book_id?: string | null
+          created_at?: string | null
+          id?: string
+          kid_profile_id?: string
+          marked_at?: string
+          page_id?: string | null
+          parent_user_id?: string
+          sentence_context?: string | null
+          session_context?: Json | null
+          status?: string
+          updated_at?: string | null
+          word_metadata?: Json | null
+          word_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "word_learning_progress_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_learning_progress_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_learning_progress_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       active_daily_published: {

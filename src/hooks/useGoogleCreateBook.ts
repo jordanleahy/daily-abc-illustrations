@@ -23,6 +23,7 @@ export interface CreateBookParams {
   textOverlayPreference?: 'with-text' | 'without-text';
   referenceBookId?: string;
   qaImages?: Record<string, string>;
+  targetWords?: string[]; // Target words for vocabulary practice (from recommendations)
 }
 
 interface CreateBookResponse {
@@ -82,6 +83,7 @@ export const useGoogleCreateBook = () => {
           referenceBookId: params.referenceBookId || undefined,
           educationalFocus: educationalFocus || undefined,
           fullPrompts: fullPrompts,
+          targetWords: params.targetWords || undefined,
         },
       });
 

@@ -25,6 +25,7 @@ const requestSchema = z.object({
   textOverlayPreference: z.enum(['with-text', 'without-text']).optional(),
   referenceBookId: z.string().uuid().optional(),
   fullPrompts: z.record(z.string()).optional(), // Full image prompts by page number
+  targetWords: z.array(z.string()).optional(), // Target words for word learning recommendations
   educationalFocus: z.object({
     targetAge: z.string(),
     learningType: z.string(),
@@ -41,7 +42,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords } = validatedData;
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -432,6 +433,21 @@ IMPORTANT - COLOR CONTENT INSTRUCTIONS:
 - Common colors: red, orange, yellow, green, blue, purple, pink, brown, black, white, gray
 - Also populate metadata.colorsList (array of unique colors) and metadata.colorsCount at the content level
 `;
+    }
+
+    // Add targetWords instructions if provided (from word learning recommendations)
+    if (targetWords && targetWords.length > 0) {
+      systemPrompt += `
+
+IMPORTANT - WORD LEARNING FOCUS:
+- This book is being created to help practice specific challenging words: ${targetWords.join(', ')}
+- Naturally incorporate these words throughout the appropriate pages
+- For ABC books: Use target words that start with each letter when possible
+- Make the book engaging and fun while focusing on vocabulary practice
+- Examples should highlight these words in meaningful contexts
+- Target words: [${targetWords.join(', ')}]
+`;
+      console.log(`Target words for vocabulary practice: ${targetWords.join(', ')}`);
     }
 
     const prompt = `Based on this conversation, create a complete children's book:

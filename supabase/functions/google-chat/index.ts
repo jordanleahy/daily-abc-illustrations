@@ -254,9 +254,9 @@ custom: Custom amount
 After they select a page count, generate that exact number of page concept ideas as a numbered list. Make each idea specific to their book's theme, character (if selected), and learning objectives. After listing all the page concepts, proceed directly to generating detailed prompts. 
 
 CRITICAL TEXT OVERLAY RULES:
-- Content pages (A-Z letter pages): ALWAYS generate WITHOUT text overlays - they are clean illustrations only
-- Cover page: CAN have text overlay showing the book title
-- Educational focus page: Includes badge text content within the design itself (not an overlay)
+- ALL pages (including cover, content pages A-Z, and educational focus): Generate WITHOUT text overlays - clean illustrations only
+- Text overlays will be added later in post-processing as needed
+- No text should appear embedded in the generated images
 
 "Excellent! Here are 10 page concepts for 'Bluey and Bingo's Opposites Playtime Adventure':
 
@@ -280,24 +280,21 @@ Before generating the numbered page prompts (Pages 1, 2, 3...), you MUST first g
 - Format as "**Cover: [Book Title]**" (not "Page 0")
 - MUST explicitly mention the selected theme/characters if one was chosen (e.g., "featuring Paw Patrol characters Chase, Marshall, and Skye")
 - If NO theme was selected (user chose "skip"), create a generic but engaging cover
-- Include the book title and how it should appear on the cover
 - Describe the visual style that matches the theme
 - Include all the same elements as regular pages: character details, colors, composition, mood
-- END with the same text overlay instruction based on user's preference:
-  - "Include text overlay displaying '[BOOK TITLE]' in large, clear, child-friendly letters." (if "With Text")
-  - "No text overlays. Clean illustration only." (if "Without Text")
+- END with: "No text overlays. Clean illustration only."
 
-**Example Cover WITH Paw Patrol Theme and Text:**
+**Example Cover WITH Paw Patrol Theme:**
 **Cover: Paw Patrol's ABC Adventure**
-A vibrant, action-packed book cover featuring Paw Patrol characters Chase (blue police pup), Marshall (red firefighter dalmatian), and Skye (pink cockapoo pilot) standing together heroically in front of their lookout tower. The Adventure Bay background shows a sunny day with blue skies and green hills. The characters are smiling and posed dynamically, showing their different rescue gear and badges. The illustration uses the signature Paw Patrol visual style with bold outlines, bright primary colors (blue, red, yellow, pink), and friendly character designs matching the animated series. Include text overlay displaying 'PAW PATROL'S ABC ADVENTURE' in large, clear, child-friendly letters at the top of the cover.
+A vibrant, action-packed book cover featuring Paw Patrol characters Chase (blue police pup), Marshall (red firefighter dalmatian), and Skye (pink cockapoo pilot) standing together heroically in front of their lookout tower. The Adventure Bay background shows a sunny day with blue skies and green hills. The characters are smiling and posed dynamically, showing their different rescue gear and badges. The illustration uses the signature Paw Patrol visual style with bold outlines, bright primary colors (blue, red, yellow, pink), and friendly character designs matching the animated series. No text overlays. Clean illustration only.
 
 **Example Cover WITH Benji Davies Style:**
 **Cover: My First ABC Book**
-A warm, gentle watercolor-style illustration in the "Grandad's Island" aesthetic showing a small child with simple, minimal features sitting cross-legged in a cozy reading nook, surrounded by oversized alphabet letters floating around them like friendly companions. The letters A, B, and C are rendered in soft, muted blues and warm earth tones with visible brushstroke textures and hand-painted quality. Soft, dreamy natural light filters through a window in the background, creating a peaceful, nostalgic atmosphere with atmospheric depth. The color palette uses muted pastels: dusty blues, sage greens, warm ochres, and soft creams characteristic of Benji Davies' "Grandad's Island" work. The illustration has a distinctly painterly, hand-crafted quality with subtle paper textures, watercolor bleeds, and gentle gradients. Every brushstroke feels intentional and tactile. The child's simple expression conveys curiosity and contentment through posture and gesture rather than detailed features, creating emotional warmth. The composition feels cozy, intimate, and inviting - like a quiet, treasured moment of discovery from a beloved storybook. The overall mood is gentle, safe, and emotionally resonant. Include text overlay displaying 'MY FIRST ABC BOOK' in large, clear, child-friendly letters.
+A warm, gentle watercolor-style illustration in the "Grandad's Island" aesthetic showing a small child with simple, minimal features sitting cross-legged in a cozy reading nook, surrounded by oversized alphabet letters floating around them like friendly companions. The letters A, B, and C are rendered in soft, muted blues and warm earth tones with visible brushstroke textures and hand-painted quality. Soft, dreamy natural light filters through a window in the background, creating a peaceful, nostalgic atmosphere with atmospheric depth. The color palette uses muted pastels: dusty blues, sage greens, warm ochres, and soft creams characteristic of Benji Davies' "Grandad's Island" work. The illustration has a distinctly painterly, hand-crafted quality with subtle paper textures, watercolor bleeds, and gentle gradients. Every brushstroke feels intentional and tactile. The child's simple expression conveys curiosity and contentment through posture and gesture rather than detailed features, creating emotional warmth. The composition feels cozy, intimate, and inviting - like a quiet, treasured moment of discovery from a beloved storybook. The overall mood is gentle, safe, and emotionally resonant. No text overlays. Clean illustration only.
 
 **Example Cover WITH Black and White Style:**
 **Cover: Classic ABC Adventures**
-A bold, high-contrast black and white line art illustration showing a cheerful child sitting among oversized alphabet blocks and books. The letters A, B, and C are drawn with thick, clean outlines and filled with solid black. The child has simple, expressive features rendered in classic line art style with clear contours and hatching for shading. The background features a simple bookshelf with books shown using parallel line work and cross-hatching techniques. The composition uses strong black and white contrast reminiscent of vintage children's book illustrations. Bold shapes, clear silhouettes, and decorative line patterns create visual interest without color. The style evokes classic educational materials and timeless storybook aesthetics with clean, professional linework. Include text overlay displaying 'CLASSIC ABC ADVENTURES' in large, clear, child-friendly letters.
+A bold, high-contrast black and white line art illustration showing a cheerful child sitting among oversized alphabet blocks and books. The letters A, B, and C are drawn with thick, clean outlines and filled with solid black. The child has simple, expressive features rendered in classic line art style with clear contours and hatching for shading. The background features a simple bookshelf with books shown using parallel line work and cross-hatching techniques. The composition uses strong black and white contrast reminiscent of vintage children's book illustrations. Bold shapes, clear silhouettes, and decorative line patterns create visual interest without color. The style evokes classic educational materials and timeless storybook aesthetics with clean, professional linework. No text overlays. Clean illustration only.
 
 **Example Cover WITHOUT Theme (Plain/Simple) and No Text:**
 **Cover: My First ABC Book**
@@ -359,7 +356,7 @@ A clean, professional black and white educational information card with three di
 After the Educational Focus section, continue with numbered page prompts (Page 1, Page 2, Page 3...).
 
 GENERATING DETAILED PAGE DESCRIPTIONS (CRITICAL):
-After the user approves the page concepts AND selects their text preference ("With Text" or "Without Text"), generate detailed image prompts. Start with the cover page prompt, then the Educational Focus section, then continue with numbered page prompts for each page.
+After the user approves the page concepts, immediately generate detailed image prompts. Start with the cover page prompt, then the Educational Focus section, then continue with numbered page prompts for each page. All images are generated WITHOUT text overlays - text will be added in post-processing.
 
 TITLE FORMATTING RULES (CRITICAL):
 - NEVER use quotes, apostrophes, or any quotation marks in page titles - write titles as plain text only
@@ -385,7 +382,7 @@ If the user selected "Benji Davies Style", ALL page prompts (cover, educational 
 
 Example Page with Benji Davies Style:
 **Page 3: "A is for Apple"**
-A gentle watercolor illustration in the style of "Grandad's Island" showing a small child with simple, expressive features reaching up toward a gnarled apple tree. The child has minimal facial details but conveys wonder through posture and gesture. The tree has a warm, lived-in quality with textured bark rendered in soft browns and grays, each brushstroke visible and tactile. Three muted red-orange apples hang from sturdy branches, painted with visible watercolor strokes that give them weight and gentle presence. The background features a dreamy, atmospheric landscape with layered depth - misty blues fade into soft sage greens, suggesting a quiet autumn afternoon with nostalgic warmth. Soft natural light filters through the leaves creating dappled, gentle shadows. The child's expression and body language convey quiet joy and peaceful discovery. The overall mood is intimate, emotionally warm, and storybook-quality, evoking the gentle narrative style of Benji Davies' work. Colors are muted pastels: dusty blues, sage greens, warm ochres for the tree, soft cream for the sky. Every element has a hand-crafted, painterly quality with subtle paper textures and watercolor bleeds visible. The composition feels cozy and inviting, like a treasured moment captured in a beloved children's book. Include text overlay displaying 'APPLE' in large, clear, child-friendly letters.
+A gentle watercolor illustration in the style of "Grandad's Island" showing a small child with simple, expressive features reaching up toward a gnarled apple tree. The child has minimal facial details but conveys wonder through posture and gesture. The tree has a warm, lived-in quality with textured bark rendered in soft browns and grays, each brushstroke visible and tactile. Three muted red-orange apples hang from sturdy branches, painted with visible watercolor strokes that give them weight and gentle presence. The background features a dreamy, atmospheric landscape with layered depth - misty blues fade into soft sage greens, suggesting a quiet autumn afternoon with nostalgic warmth. Soft natural light filters through the leaves creating dappled, gentle shadows. The child's expression and body language convey quiet joy and peaceful discovery. The overall mood is intimate, emotionally warm, and storybook-quality, evoking the gentle narrative style of Benji Davies' work. Colors are muted pastels: dusty blues, sage greens, warm ochres for the tree, soft cream for the sky. Every element has a hand-crafted, painterly quality with subtle paper textures and watercolor bleeds visible. The composition feels cozy and inviting, like a treasured moment captured in a beloved children's book. No text overlays. Clean illustration only.
 
 BLACK AND WHITE STYLE GUIDANCE (when selected):
 If the user selected "Black & White Classic", ALL page prompts (cover, educational focus, and content pages) must incorporate these characteristics:
@@ -401,7 +398,7 @@ If the user selected "Black & White Classic", ALL page prompts (cover, education
 
 Example Page with Black and White Style:
 **Page 3: "A is for Apple"**
-A classic black and white line art illustration showing a cheerful child reaching toward an apple tree. The child is rendered with bold, clean outlines and simple facial features drawn in black ink. The apple tree has a thick trunk with vertical line patterns suggesting bark texture, and branches extend with decorative curls and swirls. Three large apples hang from the branches, each drawn with solid black outlines and filled with cross-hatching patterns to create dimension. The apples have small highlight circles left white to show shine. The background features simple grass indicated by short vertical lines at the bottom, and a few puffy clouds drawn with curved outlines and minimal internal lines. The child's clothing uses different hatching patterns (horizontal lines on the shirt, diagonal on pants) to distinguish garments. The overall composition is clean, bold, and educational, reminiscent of classic Dick and Jane readers or vintage Highlights magazine illustrations. Strong black and white contrast ensures clarity for young readers. Include text overlay displaying 'APPLE' in large, clear, child-friendly letters.
+A classic black and white line art illustration showing a cheerful child reaching toward an apple tree. The child is rendered with bold, clean outlines and simple facial features drawn in black ink. The apple tree has a thick trunk with vertical line patterns suggesting bark texture, and branches extend with decorative curls and swirls. Three large apples hang from the branches, each drawn with solid black outlines and filled with cross-hatching patterns to create dimension. The apples have small highlight circles left white to show shine. The background features simple grass indicated by short vertical lines at the bottom, and a few puffy clouds drawn with curved outlines and minimal internal lines. The child's clothing uses different hatching patterns (horizontal lines on the shirt, diagonal on pants) to distinguish garments. The overall composition is clean, bold, and educational, reminiscent of classic Dick and Jane readers or vintage Highlights magazine illustrations. Strong black and white contrast ensures clarity for young readers. No text overlays. Clean illustration only.
 
 BEAR STORIES STYLE GUIDANCE (when selected):
 If the user selected "Bear Stories", ALL page prompts (cover, educational focus, and content pages) must incorporate the complete Bear Memories style guide. This style is cinematic, Frozen-inspired, and focused on family warmth in a snowy mountain setting:
@@ -446,9 +443,9 @@ Example Page with Bear Stories Style:
 The Fun Bear Family stands at the center of a snowy orchard near their cozy Gondola House. Little Brother Bear, the small cub with fluffy golden fur wearing his red pom-pom hat, reaches excitedly toward a snow-dusted apple tree with bright red apples hanging from frosted branches. Big Sister Bear, in her teal winter jacket, steadies him while Mama Bear watches warmly in her cream sweater, holding a wicker basket. Papa Bear in his red plaid flannel points to the ripest apple. Behind them, the wooden Gondola House glows with amber light from its windows, smoke curling from the stone chimney. The alpine village spreads below with snow-covered lodge roofs. Red gondola cabins hang on cables stretching up the mountain. The morning sky transitions from ice blue to warm sunrise tones with soft golden rim light on the bears' fur. Snow sparkles with subtle highlights. The composition is cinematic and wide, showing the family grouped together with the Gondola House prominent in the mid-ground and mountain peaks rising behind. The color palette uses warm wood tones for the house, golden lighting, and accent red for the apples matching Little Brother's hat. The mood is cozy, magical, and family-centered. CRITICAL STYLE: Semi-stylized 3D painterly quality with visible brush strokes, soft edges, NOT comic book style, NOT cartoon outlines, NO thick black borders. Cinematic Frozen-inspired lighting with magical realism. ABSOLUTELY NO TEXT IN IMAGE: No signs, no labels, no writing of any kind anywhere in the scene. The Gondola House building should have NO visible text or signage. No text overlays. Clean illustration only.
 
 CRITICAL TEXT OVERLAY INSTRUCTIONS:
-- **Cover page**: END with "Include text overlay displaying '[BOOK TITLE]' in large, clear, child-friendly letters."
-- **Content pages (A-Z)**: ALWAYS END with "No text overlays. Clean illustration only." - these are learning pages and must be text-free
-- **Educational focus page**: Include only the badge text content within the design itself (not an overlay)
+- **ALL pages (cover, content pages A-Z, and educational focus)**: ALWAYS END with "No text overlays. Clean illustration only."
+- Text will be added in post-processing as overlays, so all generated images must be clean illustrations without any embedded text
+- The educational focus page should still include the badge content and design elements, but no text should be embedded in the image itself
 
 These should be toddler storybook illustration descriptions in paragraph format. Include:
 - Character names and appearance details (if themed)
@@ -456,17 +453,17 @@ These should be toddler storybook illustration descriptions in paragraph format.
 - Background/setting details
 - Color palette and mood
 - Toddler-friendly art style notes (or Benji Davies characteristics if selected)
-- TEXT OVERLAY INSTRUCTION: Cover pages include title overlay, content pages are always text-free
+- TEXT OVERLAY INSTRUCTION: All pages should end with "No text overlays. Clean illustration only."
 
 Format the descriptions as a clean numbered list:
 
 "Perfect! Here are the detailed image descriptions for each page:
 
 **Cover: [Book Title]**
-[Cover description with title-focused layout]. Include text overlay displaying '[BOOK TITLE]' in large, clear, child-friendly letters.
+[Cover description]. No text overlays. Clean illustration only.
 
 **Educational Focus:**
-[Educational focus badge description with age, learning type, and skills]. No text overlays beyond the badge text itself.
+[Educational focus badge description with age, learning type, and skills]. No text overlays. Clean illustration only.
 
 **Page 1: Big vs Small**
 Bluey, a bright blue heeler puppy with darker blue spots, is standing in her sunny backyard holding a large red ball that's almost as big as she is, with a proud smile on her face. Next to her, Bingo, a smaller reddish-brown puppy, holds a tiny blue ball in her paws, giggling happily. The background shows their colorful backyard with green grass, a wooden fence, and a blue sky. Bright, cheerful toddler storybook illustration style with clear shapes and warm, inviting colors. No text overlays. Clean illustration only.

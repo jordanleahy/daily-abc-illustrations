@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
+import { stripHexCodes } from '../_shared/templateProcessor.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -780,8 +781,8 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         
         // Check if this is the educational focus page and use its dedicated image prompt
         if (isFocusPage && educationalFocus && educationalFocus.imagePrompt) {
-          promptContent = educationalFocus.imagePrompt;
-          console.log('Using educational focus image prompt for page 2 (FOCUS page)');
+          promptContent = stripHexCodes(educationalFocus.imagePrompt);
+          console.log('Using educational focus image prompt for page 2 (FOCUS page) - hex codes stripped');
         } else if (!promptContent) {
           // Fallback: Create a simple prompt from page data
           if (isCover) {

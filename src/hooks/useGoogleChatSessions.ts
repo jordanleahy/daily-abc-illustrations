@@ -20,7 +20,7 @@ export interface ChatSession {
   qa_page_prompts: Record<number, string> | null;
 }
 
-const INITIAL_LIMIT = 15;
+const INITIAL_LIMIT = 1000;
 
 export function useGoogleChatSessions() {
   const queryClient = useQueryClient();

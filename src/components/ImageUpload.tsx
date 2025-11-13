@@ -210,9 +210,19 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
   return (
     <div 
       ref={containerRef}
-      className={`w-full h-full ${className}`}
+      className={`
+        w-full h-full border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer
+        ${dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
+        ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/5 ring-2 ring-primary/20'}
+        ${preview ? 'p-0' : 'p-6'}
+        ${className}
+      `}
       onPaste={handlePaste}
       onMouseEnter={() => containerRef.current?.focus()}
+      onDragEnter={handleDrag}
+      onDragLeave={handleDrag}
+      onDragOver={handleDrag}
+      onDrop={handleDrop}
       tabIndex={0}
     >
       <input
@@ -223,19 +233,6 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
         className="hidden"
         disabled={disabled}
       />
-      
-      <div
-        className={`
-          w-full h-full border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer
-          ${dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
-          ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/5 ring-2 ring-primary/20'}
-          ${preview ? 'p-0' : 'p-6'}
-        `}
-        onDragEnter={handleDrag}
-        onDragLeave={handleDrag}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
-      >
         {isProcessing ? (
           <div className="flex flex-col items-center justify-center text-center space-y-3">
             <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -315,7 +312,6 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
             )}
           </div>
         )}
-      </div>
     </div>
   );
 }

@@ -16,7 +16,20 @@ import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
 import { BookImage } from '@/components/ui/book-image';
 
-function BookCard({ book, onClick, index }: { book: any; onClick: () => void; index: number }) {
+/**
+ * UserBookCard - Displays a book authored by the current user in "My Books" section
+ * 
+ * @description Shows user-created books with edit capabilities, status badges,
+ * and metadata including book type, character themes, and page counts.
+ * Used exclusively in the user's personal book management interface.
+ * 
+ * @data-source useBooks() - Fetches from books table filtered by user_id
+ * @navigation Routes to /books/:id for detailed editing view
+ * @user-context Book authors managing their own created content
+ * @features Status badge, metadata badges (book type, pages, themes), edit access,
+ * thumbnail display with fallback, viewport-based lazy loading
+ */
+function UserBookCard({ book, onClick, index }: { book: any; onClick: () => void; index: number }) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
   
   // Viewport-based lazy loading
@@ -213,7 +226,7 @@ export default function Books() {
         {books && books.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {books.map((book, index) => (
-              <BookCard
+              <UserBookCard
                 key={book.id}
                 book={book}
                 index={index}

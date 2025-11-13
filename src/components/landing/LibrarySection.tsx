@@ -11,7 +11,20 @@ interface LibrarySectionProps {
   books: LandingLibraryBook[] | undefined;
 }
 
-function LibraryBookCard({ item }: { item: LandingLibraryBook }) {
+/**
+ * LandingLibraryCard - Displays a public book on the landing page for marketing
+ * 
+ * @description Showcases published books to unauthenticated visitors with
+ * attractive hover effects and "Active Now" badges. Used exclusively on the
+ * public landing page to drive signups and showcase platform content.
+ * 
+ * @data-source useLandingPageData() - Fetches from public API endpoint
+ * @navigation Routes to /book/:slug for public preview or /pricing if no slug
+ * @user-context Unauthenticated visitors exploring the platform
+ * @features "Active Now" badge for current daily book, SEO-optimized titles,
+ * target age display, hover effects with lift animation, optimized images with lazy loading
+ */
+function LandingLibraryCard({ item }: { item: LandingLibraryBook }) {
   const navigate = useNavigate();
   const { ref, inView } = useIntersectionObserver({
     rootMargin: '100px', // Start loading 100px before entering viewport
@@ -111,7 +124,7 @@ export const LibrarySection = ({ books }: LibrarySectionProps) => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {books.map((item) => (
-              <LibraryBookCard key={item.id} item={item} />
+              <LandingLibraryCard key={item.id} item={item} />
             ))}
           </div>
         )}

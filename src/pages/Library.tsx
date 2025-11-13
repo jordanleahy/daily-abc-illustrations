@@ -151,6 +151,19 @@ interface LibraryBookCardProps {
   onHover?: () => void;
 }
 
+/**
+ * LibraryBookCard - Displays a daily published book in the authenticated user's library
+ * 
+ * @description Shows official daily published ABC books with favorite toggle,
+ * publication date, page count, and "Published Today" badge. Used exclusively
+ * in the authenticated library view for browsing and accessing official content.
+ * 
+ * @data-source useLibraryBooks() - Fetches from daily_published table with book details
+ * @navigation Routes to /library/:id/detail for detailed reading view with page selection
+ * @user-context Authenticated users (free or subscribed) browsing official published content
+ * @features Favorite toggle with heart icon, publish date display, page count badge,
+ * "Published Today" badge for active books, predictive prefetching, viewport-based lazy loading
+ */
 const LibraryBookCard = memo(function LibraryBookCard({ 
   item, 
   index, 

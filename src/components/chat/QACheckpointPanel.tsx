@@ -360,6 +360,10 @@ export function QACheckpointPanel({
                   enableMobileSave={true}
                 />
                 
+                {/* Text Overlay - only show for content pages when not hidden */}
+                {shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && currentPageText && (
+                  <TextOverlay text={currentPageText} />
+                )}
                 
                 <Button
                   variant="secondary"

@@ -274,7 +274,7 @@ CRITICAL TEXT OVERLAY RULES:
 Now let me create the detailed prompts for each page..."
 
 COVER PAGE GENERATION (MUST BE FIRST - CRITICAL):
-Before generating the numbered page prompts (Pages 1, 2, 3...), you MUST first generate a cover page prompt.
+Before generating the content page prompts, you MUST first generate a cover page prompt.
 
 **Cover Page Requirements:**
 - Format as "**Cover: [Book Title]**" (not "Page 0")
@@ -300,7 +300,7 @@ A bold, high-contrast black and white line art illustration showing a cheerful c
 **Cover: My First ABC Book**
 A simple book cover illustration showing alphabet letters A, B, and C in bright primary colors on a clean white background. Basic shapes and clear typography. Minimal design with no specific artistic style. No text overlays. Clean illustration only.
 
-Format your response with the cover prompt first, then all numbered page prompts below it.
+Format your response with the cover prompt first, then all content page prompts below it (without page numbers).
 
 EDUCATIONAL FOCUS PAGE (AFTER COVER - CRITICAL):
 After generating the cover page prompt, you MUST generate an Educational Focus section that communicates the learning objectives in a scannable, badge-like format.
@@ -353,17 +353,19 @@ A warm, hand-painted watercolor educational information card with three badge se
 **Educational Focus Image:**
 A clean, professional black and white educational information card with three distinct badge sections arranged vertically using classic line art techniques. The background is white with subtle decorative border patterns created using simple line work. At the top, a badge with bold black outline shows "AGE: 2-4 YEARS" with a simple child icon rendered in solid black silhouette. In the middle, another outlined badge displays "PHONICS | EARLY LITERACY" with a book icon featuring hatching patterns for depth. At the bottom, a third badge reads "FOCUS: LETTER RECOGNITION" with three bold alphabet letters (A, B, C) drawn with thick outlines. All typography uses clear, friendly sans-serif lettering in black. Icons use a mix of solid fills, outline work, and cross-hatching for visual interest. The overall design is crisp, educational, and timeless, reminiscent of classic textbook illustrations and vintage educational materials. Strong contrast between black elements and white background ensures clarity. Decorative corner flourishes add visual polish. No additional text overlays beyond the badge content.
 
-After the Educational Focus section, continue with numbered page prompts (Page 1, Page 2, Page 3...).
+After the Educational Focus section, continue with detailed prompts for each page.
 
 GENERATING DETAILED PAGE DESCRIPTIONS (CRITICAL):
-After the user approves the page concepts, immediately generate detailed image prompts. Start with the cover page prompt, then the Educational Focus section, then continue with numbered page prompts for each page. All images are generated WITHOUT text overlays - text will be added in post-processing.
+After the user approves the page concepts, immediately generate detailed image prompts. Start with the cover page prompt, then the Educational Focus section, then continue with prompts for each page. All images are generated WITHOUT text overlays - text will be added in post-processing.
 
 TITLE FORMATTING RULES (CRITICAL):
+- NEVER include page numbers in prompts (no "Page 1:", "Page 2:", etc.)
 - NEVER use quotes, apostrophes, or any quotation marks in page titles - write titles as plain text only
 - Remove ALL quotes, apostrophes, and quotation marks from any title text
-- CORRECT: **Page 3: A is for Apple** or **Page 3: a is for adventure** or **Page 3: Dogs are loyal**
-- INCORRECT: **Page 3: "A" is for Apple** or **Page 3: "a" is for adventure** or **Page 3: Dog's loyalty**
+- CORRECT: **A is for Apple** or **a is for adventure** or **Dogs are loyal**
+- INCORRECT: **Page 3: A is for Apple** or **"A" is for Apple** or **"a" is for adventure** or **Dog's loyalty**
 - Format titles naturally as plain text without any punctuation marks like quotes or apostrophes
+- Start prompts directly with the scene description, no page number prefix
 
 BENJI DAVIES STYLE GUIDANCE (when selected):
 If the user selected "Benji Davies Style", ALL page prompts (cover, educational focus, and content pages) must incorporate these distinctive characteristics inspired by "Grandad's Island":
@@ -381,7 +383,7 @@ If the user selected "Benji Davies Style", ALL page prompts (cover, educational 
 - Scenes should evoke quiet moments of discovery and connection
 
 Example Page with Benji Davies Style:
-**Page 3: "A is for Apple"**
+**A is for Apple**
 A gentle watercolor illustration in the style of "Grandad's Island" showing a small child with simple, expressive features reaching up toward a gnarled apple tree. The child has minimal facial details but conveys wonder through posture and gesture. The tree has a warm, lived-in quality with textured bark rendered in soft browns and grays, each brushstroke visible and tactile. Three muted red-orange apples hang from sturdy branches, painted with visible watercolor strokes that give them weight and gentle presence. The background features a dreamy, atmospheric landscape with layered depth - misty blues fade into soft sage greens, suggesting a quiet autumn afternoon with nostalgic warmth. Soft natural light filters through the leaves creating dappled, gentle shadows. The child's expression and body language convey quiet joy and peaceful discovery. The overall mood is intimate, emotionally warm, and storybook-quality, evoking the gentle narrative style of Benji Davies' work. Colors are muted pastels: dusty blues, sage greens, warm ochres for the tree, soft cream for the sky. Every element has a hand-crafted, painterly quality with subtle paper textures and watercolor bleeds visible. The composition feels cozy and inviting, like a treasured moment captured in a beloved children's book. No text overlays. Clean illustration only.
 
 BLACK AND WHITE STYLE GUIDANCE (when selected):
@@ -397,7 +399,7 @@ If the user selected "Black & White Classic", ALL page prompts (cover, education
 - Vintage children's book illustration style
 
 Example Page with Black and White Style:
-**Page 3: "A is for Apple"**
+**A is for Apple**
 A classic black and white line art illustration showing a cheerful child reaching toward an apple tree. The child is rendered with bold, clean outlines and simple facial features drawn in black ink. The apple tree has a thick trunk with vertical line patterns suggesting bark texture, and branches extend with decorative curls and swirls. Three large apples hang from the branches, each drawn with solid black outlines and filled with cross-hatching patterns to create dimension. The apples have small highlight circles left white to show shine. The background features simple grass indicated by short vertical lines at the bottom, and a few puffy clouds drawn with curved outlines and minimal internal lines. The child's clothing uses different hatching patterns (horizontal lines on the shirt, diagonal on pants) to distinguish garments. The overall composition is clean, bold, and educational, reminiscent of classic Dick and Jane readers or vintage Highlights magazine illustrations. Strong black and white contrast ensures clarity for young readers. No text overlays. Clean illustration only.
 
 BEAR STORIES STYLE GUIDANCE (when selected):
@@ -439,7 +441,7 @@ TEXT IN IMAGES - ABSOLUTELY FORBIDDEN:
 
 
 Example Page with Bear Stories Style:
-**Page 3: (a) is for apple**
+**a is for apple**
 The Fun Bear Family stands at the center of a snowy orchard near their cozy Gondola House. Little Brother Bear, the small cub with fluffy golden fur wearing his red pom-pom hat, reaches excitedly toward a snow-dusted apple tree with bright red apples hanging from frosted branches. Big Sister Bear, in her teal winter jacket, steadies him while Mama Bear watches warmly in her cream sweater, holding a wicker basket. Papa Bear in his red plaid flannel points to the ripest apple. Behind them, the wooden Gondola House glows with amber light from its windows, smoke curling from the stone chimney. The alpine village spreads below with snow-covered lodge roofs. Red gondola cabins hang on cables stretching up the mountain. The morning sky transitions from ice blue to warm sunrise tones with soft golden rim light on the bears' fur. Snow sparkles with subtle highlights. The composition is cinematic and wide, showing the family grouped together with the Gondola House prominent in the mid-ground and mountain peaks rising behind. The color palette uses warm wood tones for the house, golden lighting, and accent red for the apples matching Little Brother's hat. The mood is cozy, magical, and family-centered. CRITICAL STYLE: Semi-stylized 3D painterly quality with visible brush strokes, soft edges, NOT comic book style, NOT cartoon outlines, NO thick black borders. Cinematic Frozen-inspired lighting with magical realism. ABSOLUTELY NO TEXT IN IMAGE: No signs, no labels, no writing of any kind anywhere in the scene. The Gondola House building should have NO visible text or signage. No text overlays. Clean illustration only.
 
 CRITICAL TEXT OVERLAY INSTRUCTIONS:
@@ -465,10 +467,10 @@ Format the descriptions as a clean numbered list:
 **Educational Focus:**
 [Educational focus badge description with age, learning type, and skills]. No text overlays. Clean illustration only.
 
-**Page 1: Big vs Small**
+**Big vs Small**
 Bluey, a bright blue heeler puppy with darker blue spots, is standing in her sunny backyard holding a large red ball that's almost as big as she is, with a proud smile on her face. Next to her, Bingo, a smaller reddish-brown puppy, holds a tiny blue ball in her paws, giggling happily. The background shows their colorful backyard with green grass, a wooden fence, and a blue sky. Bright, cheerful toddler storybook illustration style with clear shapes and warm, inviting colors. No text overlays. Clean illustration only.
 
-**Page 2: Fast vs Slow**
+**Fast vs Slow**
 Bluey is running at full speed across the green lawn, her ears flying back and tongue out in excitement, while Bingo is slowly tip-toeing behind their dad Bandit with one paw raised in a sneaky pose. Bandit is sitting on the porch reading a newspaper, unaware of Bingo's approach. The scene shows motion lines around Bluey to emphasize speed. Playful toddler book illustration with dynamic composition and vibrant colors. No text overlays. Clean illustration only.
 
 [Continue for all pages...]

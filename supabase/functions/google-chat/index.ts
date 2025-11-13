@@ -367,6 +367,43 @@ After the user approves the page concepts, immediately generate detailed image p
         - INCORRECT: **A is for Apple** (missing page number) or **Page 1: "A" is for Apple** (has quotes) or **Page 2: Dog's loyalty** (has apostrophe)
         - Format: **Page N: [Clean title without quotes]** followed by detailed scene description
 
+NUMBER BOOK COUNTING ACCURACY (CRITICAL FOR NUMBER BOOKS):
+When creating NUMBER BOOKS (1-10, 1-20, or any counting book), counting accuracy is ABSOLUTELY CRITICAL for educational value.
+
+MANDATORY COUNTING RULES:
+1. **EXACT COUNT REQUIRED**: If the page teaches "5", there MUST be EXACTLY 5 countable objects - no more, no fewer
+2. **CLEARLY VISIBLE**: All objects must be clearly visible and individually distinguishable for counting
+3. **EXPLICIT IN PROMPT**: ALWAYS state the exact count in the image prompt using phrases like:
+   - "EXACTLY 5 red apples arranged in a clear row"
+   - "precisely 7 colorful balloons, each one clearly visible"
+   - "8 books stacked in groups of 2 and 3 (total 8)"
+4. **AVOID AMBIGUITY**: Never use vague terms like "several", "some", "a few", or "many"
+5. **VERIFICATION**: After writing each number page prompt, mentally verify the count matches the page number
+
+CORRECT NUMBER BOOK EXAMPLES:
+**Page 1: One Sun**
+A single bright yellow sun in a clear blue sky with three small white clouds. The sun is centered and prominent with radiating rays. Simple, clean composition with EXACTLY 1 sun clearly visible. [rest of style guidance]. No text overlays. Clean illustration only.
+
+**Page 5: Five Flowers**
+EXACTLY 5 colorful flowers arranged in a garden scene - 2 red tulips on the left, 2 yellow daisies in the middle, and 1 purple lily on the right. Each flower is clearly distinct and individually countable with visible stems. A small bee hovers above. The 5 flowers are the clear focus of the composition. [rest of style guidance]. No text overlays. Clean illustration only.
+
+**Page 8: Eight Butterflies**
+Precisely 8 butterflies flying in a sunny meadow - 3 orange monarchs on the left side, 2 blue morphos in the center, and 3 yellow swallowtails on the right. Each butterfly is clearly visible with distinct wing patterns, making them easy to count individually. The composition guides the eye to count all 8 butterflies. [rest of style guidance]. No text overlays. Clean illustration only.
+
+INCORRECT NUMBER BOOK EXAMPLES (NEVER DO THIS):
+❌ "Colorful flowers in a garden" - No count specified!
+❌ "Several birds flying in the sky" - Vague, not exact!
+❌ "A bunch of balloons" - Count unclear!
+❌ "Many toys scattered on the floor" - Not countable!
+
+COUNTING VERIFICATION CHECKLIST FOR EVERY NUMBER PAGE:
+- [ ] Does the prompt explicitly state "EXACTLY [N]" or "precisely [N]"?
+- [ ] Are all [N] objects clearly described and positioned?
+- [ ] Can a parent easily verify the count when reading to a child?
+- [ ] Is the count the PRIMARY focus of the image composition?
+
+This accuracy is ESSENTIAL because parents and educators rely on these books to teach accurate counting skills to young learners.
+
 BENJI DAVIES STYLE GUIDANCE (when selected):
 If the user selected "Benji Davies Style", ALL page prompts (cover, educational focus, and content pages) must incorporate these distinctive characteristics inspired by "Grandad's Island":
 - Watercolor aesthetic with visible brushstrokes, soft edges, and hand-painted texture

@@ -173,22 +173,58 @@ export default function GoogleChat() {
   const parsedPageDetails = useMemo(() => {
     const result = parsePageDetailsFromMessages(messages);
     console.log('[QA Debug] Parsed pages:', result?.length || 0, 'pages');
+    console.log('[QA Debug] Parsed page details:', result);
+    console.log('[QA Debug] Total messages:', messages.length);
+    console.log('[QA Debug] Last 2 messages:', messages.slice(-2).map(m => ({
+      role: m.role,
+      contentPreview: typeof m.content === 'string' 
+        ? m.content.substring(0, 200) 
+        : 'non-string content'
+    })));
     return result;
   }, [messages]);
 
   // Detect when book outline is ready for QA checkpoint
   const shouldShowQACheckpoint = useMemo(() => {
-    if (isLoading || messages.length === 0) return false;
+    console.log('[Outline Button Debug] Computing shouldShowQACheckpoint:', {
+      isLoading,
+      messagesLength: messages.length,
+      parsedPageDetailsLength: parsedPageDetails?.length || 0,
+      parsedPageDetailsNull: parsedPageDetails === null
+    });
+    
+    if (isLoading || messages.length === 0) {
+      console.log('[Outline Button Debug] Early return: isLoading or no messages');
+      return false;
+    }
+    
     const hasPages = parsedPageDetails !== null && parsedPageDetails.length >= 5;
+    console.log('[Outline Button Debug] hasPages:', hasPages, '(need >= 5 pages)');
+    
     // Always show button if we have pages, even after book creation
     return hasPages;
   }, [messages, isLoading, parsedPageDetails]);
 
   // Parse educational focus from messages
-  const educationalFocus = useMemo(() => 
-    parseEducationalFocus(messages), 
-    [messages]
-  );
+  const educationalFocus = useMemo(() => {
+    const result = parseEducationalFocus(messages);
+    console.log('[Outline Button Debug] Educational focus:', result ? 'found' : 'not found');
+    return result;
+  }, [messages]);
+
+  // Debug: Log when key values change for outline button visibility
+  useEffect(() => {
+    console.log('[Outline Button Debug] State changed:', {
+      shouldShowQACheckpoint,
+      isBookPublished,
+      shouldShowReviewButton: shouldShowQACheckpoint || isBookPublished,
+      parsedPagesCount: parsedPageDetails?.length || 0,
+      isLoading,
+      messagesCount: messages.length,
+      hasEducationalFocus: !!educationalFocus,
+      createdBookId: createdBookId || 'none'
+    });
+  }, [shouldShowQACheckpoint, isBookPublished, parsedPageDetails, isLoading, messages.length, educationalFocus, createdBookId]);
 
   // Clear cached prompts when new outline is detected (for regeneration support)
   useEffect(() => {

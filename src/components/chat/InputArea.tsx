@@ -36,6 +36,11 @@ export const InputArea = memo(({
   onViewBook,
   onOpenReview
 }: InputAreaProps) => {
+  console.log('[InputArea Debug] Render with:', {
+    shouldShowReviewButton,
+    createdBookId: createdBookId || 'none',
+    isLoading
+  });
 
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
     const items = e.clipboardData?.items;

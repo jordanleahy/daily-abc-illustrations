@@ -14,7 +14,6 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
-import { useBookCoverImage } from '@/hooks/useBookCoverImage';
 import { BookImage } from '@/components/ui/book-image';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
@@ -79,7 +78,8 @@ function UserBookCard({
   isDeleting
 }: UserBookCardProps) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
-  const { data: coverImageUrl } = useBookCoverImage(book.id);
+  // Use cover image from book object (already fetched by useBooks)
+  const coverImageUrl = book.coverImageUrl;
   
   // Viewport-based lazy loading
   const { ref, inView } = useIntersectionObserver({

@@ -274,13 +274,13 @@ export default function GoogleChat() {
       // Replace "book cover" with "square card cover" to ensure 1:1 aspect ratio
       description = description.replace(/\bbook cover\b/gi, 'square card cover');
       
-      // Format with title and text overlay instruction
-      return `**Cover: ${bookTitle}**\nSquare card cover (1:1 aspect ratio). ${description}\n\nInclude text overlay displaying '${bookTitle.toUpperCase()}' in large, clear, child-friendly letters.`;
+      // Format with title (but no text overlay instruction for image generation)
+      return `${description}`;
     }
     
     if (pageNum === 2 && educationalFocus) {
-      // Educational focus page (Page 2)
-      return `Educational Focus\n${educationalFocus.imagePrompt}`;
+      // Educational focus page (Page 2) - return just the image prompt without title
+      return educationalFocus.imagePrompt;
     }
     
     // Regular content pages (Page 3+)

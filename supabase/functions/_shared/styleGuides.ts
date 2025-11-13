@@ -94,10 +94,10 @@ These characters must appear EXACTLY as described on every page. Include ALL det
    - Undershirt: White or cream thermal visible at neck
    - Optional: Suspenders #6B4A2C or tool belt when working
    
-   UNIQUE IDENTIFYING FEATURES:
-   - Characteristic head tilt when listening or playing
-   - Right ear has small notch at tip (old skiing injury)
-   - Broader snout than other bears, more square-shaped
+    UNIQUE IDENTIFYING FEATURES:
+    - Characteristic head tilt when listening or playing
+    - Right ear has small notch at tip (old snowboarding injury)
+    - Broader snout than other bears, more square-shaped
    - Paw pads: Darker brown #4A3520, work-worn texture
    - Often shown mid-action (building, lifting, gesturing)
    
@@ -304,7 +304,7 @@ When DanDan and Chelson appear together in ANY scene:
 - Age visual cues: Chelson looks like a toddler next to elementary-age DanDan
 
 Environmental Storytelling:
-- Snow activity (falling, playing, skiing)
+- Snow activity (falling, playing, snowboarding - NEVER skiing)
 - Families in background creating life and energy
 - Gondola cabins visible on cables (red, moving)
 - Smoke from chimneys suggesting warmth within
@@ -340,6 +340,14 @@ Emotional Anchor:
 `,
 
   specialInstructions: `
+🎿 SNOWBOARDING ONLY - NEVER SKIING:
+ALL winter sports activities in Bear Stories MUST be snowboarding, NOT skiing.
+- Characters always use snowboards (single board, both feet attached)
+- NEVER show ski poles, skis (two separate boards), or ski equipment
+- Snowboarding stance: sideways on board, knees bent, arms out for balance
+- Family teaches snowboarding fundamentals, not skiing
+- Papa Bear's ear notch is from an old snowboarding injury, not skiing
+
 🚨 CRITICAL AGE-ACCURATE SIZING (HIGHEST PRIORITY):
 The age gap between DanDan (7 years) and Chelson (3 years) MUST be visually unmistakable:
 - DanDan stands 60% TALLER than Chelson (1.6x his height)

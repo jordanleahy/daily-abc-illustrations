@@ -127,7 +127,20 @@ export function generatePagePrompt(book: BookContext, page: PageContext, textOve
     ? `featuring ${book.characterTheme}` 
     : '';
   
-  return `You are creating PAGE ${page.pageNumber} for "${book.bookName}", a ${book.category} book ${characterInfo}.
+  const noTextWarning = !textOverlayEnabled ? `
+🚫🚫🚫 ABSOLUTELY NO TEXT IN THIS IMAGE 🚫🚫🚫
+========================================
+CRITICAL REQUIREMENT: This image must be 100% TEXT-FREE.
+- NO letters, words, numbers, or any written characters
+- NO text on signs, books, labels, clothing, walls, or anywhere
+- NO visible writing of any kind whatsoever
+- If you include ANY text, this image will be rejected
+- Text overlays will be added separately in post-processing
+- Your job is ONLY to create the visual scene without any text
+========================================
+` : '';
+  
+  return `${noTextWarning}You are creating PAGE ${page.pageNumber} for "${book.bookName}", a ${book.category} book ${characterInfo}.
 
 PAGE DETAILS:
 - Letter/Number: ${page.letter}
@@ -169,15 +182,18 @@ ${textOverlayEnabled ? `TEXT INCLUSION:
 - Include the page text "${page.title}" prominently in the illustration
 - Make the text clear, bold, and easy to read for young children
 - Use playful, child-friendly typography appropriate for learning
-- Integrate the text naturally into the scene` : `CRITICAL - NO TEXT REQUIREMENT:
+- Integrate the text naturally into the scene` : `🚫 CRITICAL - ABSOLUTELY NO TEXT ALLOWED 🚫
+===============================================
 - DO NOT include ANY text, words, letters, or numbers in the illustration
 - NO visible text of any kind - not on signs, books, labels, clothing, or anywhere else
 - This is a CLEAN ILLUSTRATION ONLY - all text will be added separately as an overlay
 - If the concept involves text elements (like books, signs, or labels), show them as blank objects
 - The image must be 100% text-free - this is absolutely mandatory
-- Focus purely on visual storytelling without any written words`}
+- Focus purely on visual storytelling without any written words
+- If there is ANY text in your image, it will be rejected
+===============================================`}
 
-Create an illustration that brings "${page.title}" to life in an engaging, educational way!`;
+Create an illustration that brings "${page.title}" to life in an engaging, educational way!${!textOverlayEnabled ? '\n\n🚫 FINAL REMINDER: NO TEXT OF ANY KIND IN THIS IMAGE 🚫' : ''}`;
 }
 
 /**
@@ -340,7 +356,20 @@ ${styleGuide.specialInstructions || ''}
  * Specialized prompt for alphabet books
  */
 function generateAlphabetPagePrompt(book: BookContext, page: PageContext, textOverlayEnabled: boolean = true): string {
-  return `You are creating an ALPHABET PAGE for "${book.bookName}".
+  const noTextWarning = !textOverlayEnabled ? `
+🚫🚫🚫 ABSOLUTELY NO TEXT IN THIS IMAGE 🚫🚫🚫
+========================================
+CRITICAL REQUIREMENT: This image must be 100% TEXT-FREE.
+- NO letters, words, alphabet, numbers, or any written characters
+- NO text on signs, books, labels, clothing, walls, or anywhere
+- NO visible writing of any kind whatsoever
+- If you include ANY text, this image will be rejected
+- Text overlays will be added separately in post-processing
+- Your job is ONLY to create the visual scene without any text
+========================================
+` : '';
+
+  return `${noTextWarning}You are creating an ALPHABET PAGE for "${book.bookName}".
 
 LETTER PAGE DETAILS:
 - Letter: ${page.letter}
@@ -364,21 +393,36 @@ ${getCenterFocusInstructions()}
 ${textOverlayEnabled ? `TEXT INCLUSION:
 - Display the letter "${page.letter}" prominently in large, bold text
 - Include the word "${page.title}" clearly in the illustration
-- Use playful, educational typography suitable for early learners` : `CRITICAL - NO TEXT REQUIREMENT:
+- Use playful, educational typography suitable for early learners` : `🚫 CRITICAL - ABSOLUTELY NO TEXT ALLOWED 🚫
+===============================================
 - DO NOT include the letter "${page.letter}" as text anywhere in the image
-- DO NOT show any words, letters, or alphabet characters
+- DO NOT show any words, letters, numbers, or alphabet characters
+- DO NOT add labels, captions, or any written text
 - Focus purely on the visual concept - show only the object/scene
 - All text (letter and word) will be added separately as an overlay
-- The illustration must be completely text-free`}
+- The illustration must be completely text-free
+- If there is ANY text in your image, it will be rejected
+===============================================`}
 
-Create an engaging illustration that makes learning the letter "${page.letter}" fun and memorable!`;
+Create an engaging illustration that makes learning the letter "${page.letter}" fun and memorable!${!textOverlayEnabled ? '\n\n🚫 FINAL REMINDER: NO TEXT OF ANY KIND IN THIS IMAGE 🚫' : ''}`;
 }
 
 /**
  * Specialized prompt for numbers books
  */
 function generateNumbersPagePrompt(book: BookContext, page: PageContext, textOverlayEnabled: boolean = true): string {
-  return `You are creating a NUMBERS PAGE for "${book.bookName}".
+  const noTextWarning = !textOverlayEnabled ? `
+🚫🚫🚫 ABSOLUTELY NO TEXT IN THIS IMAGE 🚫🚫🚫
+========================================
+CRITICAL REQUIREMENT: This image must be 100% TEXT-FREE.
+- NO letters, words, numbers, or any written characters
+- NO text on signs, books, labels, clothing, walls, or anywhere
+- NO visible writing of any kind whatsoever
+- If you include ANY text, this image will be rejected
+========================================
+` : '';
+
+  return `${noTextWarning}You are creating a NUMBERS PAGE for "${book.bookName}".
 
 NUMBER PAGE DETAILS:
 - Number: ${page.letter}
@@ -402,14 +446,17 @@ ${getCenterFocusInstructions()}
 ${textOverlayEnabled ? `TEXT INCLUSION:
 - Display the number "${page.letter}" prominently in large, bold text
 - Include the word "${page.title}" clearly in the illustration
-- Use playful numerals that children can easily recognize` : `CRITICAL - NO TEXT REQUIREMENT:
+- Use playful numerals that children can easily recognize` : `🚫 CRITICAL - ABSOLUTELY NO TEXT ALLOWED 🚫
+===============================================
 - DO NOT include the number "${page.letter}" as text anywhere
-- DO NOT show any numerals, words, or counting labels
+- DO NOT show any numerals, words, numbers, or counting labels
 - Show only the countable objects visually
 - All numbers and text will be added separately as an overlay
-- The illustration must be 100% text-free`}
+- The illustration must be 100% text-free
+- If there is ANY text in your image, it will be rejected
+===============================================`}
 
-Create an illustration that makes learning to count ${page.letter} fun and clear!`;
+Create an illustration that makes learning to count ${page.letter} fun and clear!${!textOverlayEnabled ? '\n\n🚫 FINAL REMINDER: NO TEXT OF ANY KIND IN THIS IMAGE 🚫' : ''}`;
 }
 
 /**
@@ -420,7 +467,18 @@ function generateColorsPagePrompt(book: BookContext, page: PageContext, textOver
   const colorMatch = page.title.match(/\*\*([A-Za-z]+):\*\*/);
   const color = colorMatch ? colorMatch[1] : page.letter;
   
-  return `You are creating a COLOR PAGE for "${book.bookName}".
+  const noTextWarning = !textOverlayEnabled ? `
+🚫🚫🚫 ABSOLUTELY NO TEXT IN THIS IMAGE 🚫🚫🚫
+========================================
+CRITICAL REQUIREMENT: This image must be 100% TEXT-FREE.
+- NO letters, words, color names, or any written characters
+- NO text on signs, books, labels, clothing, walls, or anywhere
+- NO visible writing of any kind whatsoever
+- If you include ANY text, this image will be rejected
+========================================
+` : '';
+  
+  return `${noTextWarning}You are creating a COLOR PAGE for "${book.bookName}".
 
 COLOR PAGE DETAILS:
 - Featured Color: ${color}
@@ -445,12 +503,15 @@ ${getCenterFocusInstructions()}
 ${textOverlayEnabled ? `TEXT INCLUSION:
 - Display the color name "${color}" prominently in the illustration
 - Use the actual color for the text to reinforce learning
-- Make the text bold, clear, and playful` : `CRITICAL - NO TEXT REQUIREMENT:
+- Make the text bold, clear, and playful` : `🚫 CRITICAL - ABSOLUTELY NO TEXT ALLOWED 🚫
+===============================================
 - DO NOT include the color name or any text in the illustration
-- DO NOT show any words or labels
+- DO NOT show any words, labels, or written characters
 - Focus purely on showing vibrant examples of the color
 - All color names and text will be added separately as an overlay
-- The illustration must be text-free`}
+- The illustration must be text-free
+- If there is ANY text in your image, it will be rejected
+===============================================`}
 
 Create a stunning ${color}-focused illustration that helps children learn and love the color ${color}!`;
 }
@@ -459,7 +520,18 @@ Create a stunning ${color}-focused illustration that helps children learn and lo
  * Specialized prompt for emotions books
  */
 function generateEmotionsPagePrompt(book: BookContext, page: PageContext, textOverlayEnabled: boolean = true): string {
-  return `You are creating an EMOTIONS PAGE for "${book.bookName}".
+  const noTextWarning = !textOverlayEnabled ? `
+🚫🚫🚫 ABSOLUTELY NO TEXT IN THIS IMAGE 🚫🚫🚫
+========================================
+CRITICAL REQUIREMENT: This image must be 100% TEXT-FREE.
+- NO letters, words, emotion names, or any written characters
+- NO text on signs, books, labels, clothing, walls, or anywhere
+- NO visible writing of any kind whatsoever
+- If you include ANY text, this image will be rejected
+========================================
+` : '';
+  
+  return `${noTextWarning}You are creating an EMOTIONS PAGE for "${book.bookName}".
 
 EMOTION PAGE DETAILS:
 - Emotion: ${page.letter}
@@ -484,12 +556,14 @@ ${getCenterFocusInstructions()}
 ${textOverlayEnabled ? `TEXT INCLUSION:
 - Display the emotion word "${page.letter}" prominently
 - Use text styling that reflects the emotion (bold for anger, flowing for calm, etc.)
-- Make it clear and readable for young learners` : `CRITICAL - NO TEXT REQUIREMENT:
+- Make it clear and readable for young learners` : `🚫 CRITICAL - ABSOLUTELY NO TEXT ALLOWED 🚫
+===============================================
 - DO NOT include the emotion name or any text in the illustration
-- DO NOT show any words, labels, or written content
+- DO NOT show any words, labels, or written characters
 - Focus purely on visual emotional expression through faces and body language
 - All emotion names and text will be added separately as an overlay
-- The illustration must be completely text-free`}
+- The illustration must be text-free
+- If there is ANY text in your image, it will be rejected
+===============================================`}
 
-Create an illustration that helps children recognize and understand the emotion of ${page.letter}!`;
-}
+Create an illustration that helps children recognize and understand the emotion of ${page.letter}!${!textOverlayEnabled ? '\n\n🚫 FINAL REMINDER: NO TEXT OF ANY KIND IN THIS IMAGE 🚫' : ''}`;

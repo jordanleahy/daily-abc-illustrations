@@ -325,7 +325,7 @@ export default function Books() {
                 book={book}
                 index={index}
                 onClick={() => handleViewBook(book.id)}
-                onEditClick={(bookId) => navigate('/chat', { state: { editBookId: bookId } })}
+                onEditClick={(bookId) => navigate('/google-chat', { state: { editBookId: bookId } })}
                 publicationStatus={book.daily_published?.[0] ? {
                   id: book.daily_published[0].id,
                   status: book.daily_published[0].status as 'draft' | 'queued' | 'active' | 'expired',

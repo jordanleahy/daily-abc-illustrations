@@ -565,18 +565,6 @@ export function QACheckpointPanel({
           </div>
         )}
 
-        {/* Copy Image Prompt Again - Secondary action */}
-        {hasClickedCopy && !displayImages[currentQAPage] && (
-          <Button
-            variant="secondary"
-            size="lg"
-            onClick={handleCopyPrompt}
-            className="w-full"
-          >
-            <Copy className="h-4 w-4 mr-2" />
-            Copy Image Prompt Again
-          </Button>
-        )}
       </div>
 
       {/* Sticky Footer with Actions */}

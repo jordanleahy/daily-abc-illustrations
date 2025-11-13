@@ -1,8 +1,8 @@
-import { useState, useRef, lazy, Suspense } from 'react';
+import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Copy, Trash2, Upload, Download, Type } from 'lucide-react';
+import { Copy, Trash2, Upload, Download } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,12 +13,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageImageSection } from '@/components/PageImageSection';
-
-const ImageTextOverlayEditor = lazy(() =>
-  import('./ImageTextOverlayEditor').then((module) => ({
-    default: module.ImageTextOverlayEditor,
-  }))
-);
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
@@ -59,7 +53,6 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showTextOverlayEditor, setShowTextOverlayEditor] = useState(false);
 
   // Optimistic inline editing for title
   const titleEdit = useOptimisticInlineEdit({
@@ -326,17 +319,6 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
               variant="ghost"
               size="icon"
               className="w-6 h-6"
-              onClick={() => setShowTextOverlayEditor(true)}
-              disabled={!currentImage?.image_url}
-              title={currentImage?.text_overlay_config ? "Edit text overlay" : "Add text overlay"}
-              aria-label={currentImage?.text_overlay_config ? "Edit text overlay" : "Add text overlay"}
-            >
-              <Type className="w-3 h-3" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-6 h-6"
               onClick={handleDeletePage}
               disabled={deletePage.isPending}
               title="Delete page"
@@ -449,23 +431,6 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
-      {/* Text Overlay Editor */}
-      {user && currentImage?.image_url && showTextOverlayEditor && (
-        <Suspense fallback={null}>
-          <ImageTextOverlayEditor
-            open={showTextOverlayEditor}
-            onOpenChange={setShowTextOverlayEditor}
-            imageUrl={currentImage.image_url}
-            defaultText={titleEdit.value}
-            onTextChange={titleEdit.updateValue}
-            pageId={page.id}
-            bookId={bookId}
-            userId={user.id}
-            existingConfig={currentImage.text_overlay_config}
-          />
-        </Suspense>
-      )}
     </Card>
   );
 }

@@ -68,13 +68,6 @@ export function useWordLearningProgress(kidProfileId?: string) {
       return data;
     },
     onSuccess: (_, variables) => {
-      // Show subtle success feedback
-      if (variables.status === 'difficult') {
-        toast.success('Word marked for practice');
-      } else if (variables.status === 'understood') {
-        toast.success('Great job! 🎉');
-      }
-      
       // Invalidate queries to refresh recommendations
       queryClient.invalidateQueries({ 
         queryKey: ['word-progress', variables.kidProfileId] 

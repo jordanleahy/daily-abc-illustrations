@@ -111,8 +111,11 @@ These characters must appear EXACTLY as described on every page. Include ALL det
    
    PHYSICAL PROPORTIONS:
    - Height: 4 feet tall (7-year-old child bear, early elementary age)
+   - **CRITICAL SIZE RATIO: DanDan is 1.6x TALLER than Chelson (her head reaches 60% higher than his)**
    - Build: Lean, energetic, developing coordination, still has some child softness
-   - Size ratio: 0.6x Mama's height, 1.6x larger than Little Brother (noticeable age gap)
+   - Size comparison: When standing together, DanDan's eyes are at the same height as the top of Chelson's head
+   - Relative to parents: 0.6x Mama's height (shoulder height to Mama)
+   - **VISUAL CUE: DanDan can easily see over Chelson's head and often rests her paw on his shoulder**
    - Snout: Short, child-like, distinctly younger than parents but more defined than toddler
    
    FUR DETAILS:
@@ -155,8 +158,11 @@ These characters must appear EXACTLY as described on every page. Include ALL det
    
    PHYSICAL PROPORTIONS:
    - Height: 2.5 feet tall (3-year-old toddler bear, preschool age)
-   - Build: Round, chubby toddler body, short limbs, large head proportion (toddler: head is 1/3.5 of body)
-   - Size ratio: 0.4x Mama's height, 0.6x Big Sister's height (significant younger sibling difference)
+   - **CRITICAL SIZE RATIO: Chelson is MUCH SMALLER than DanDan - only 0.6x her height (62.5% of her height)**
+   - Build: Round, chubby toddler body, short stubby limbs, large head proportion (toddler: head is 1/3.5 of body)
+   - Size comparison: When standing beside DanDan, the top of Chelson's head barely reaches her chest/shoulder
+   - Relative to parents: 0.4x Mama's height (waist height to Mama)
+   - **VISUAL CUE: Chelson often has to look UP to see DanDan's face; DanDan often leans DOWN to hold his paw**
    - Snout: Tiny button-like, baby-faced, distinctly toddler-proportioned
    
    FUR DETAILS:
@@ -289,6 +295,14 @@ Character Framing:
 - Expressions clear and readable from distance
 - Body language tells the emotional story
 
+**MANDATORY SIZE RATIO ENFORCEMENT:**
+When DanDan and Chelson appear together in ANY scene:
+- DanDan's height MUST be 1.6x Chelson's height (160% taller)
+- Chelson's head should reach DanDan's mid-chest/shoulder area
+- Use visual anchors: If DanDan is 8 body units tall, Chelson is 5 body units tall
+- Perspective: When side-by-side, the height difference should be immediately obvious
+- Age visual cues: Chelson looks like a toddler next to elementary-age DanDan
+
 Environmental Storytelling:
 - Snow activity (falling, playing, skiing)
 - Families in background creating life and energy
@@ -326,6 +340,15 @@ Emotional Anchor:
 `,
 
   specialInstructions: `
+🚨 CRITICAL AGE-ACCURATE SIZING (HIGHEST PRIORITY):
+The age gap between DanDan (7 years) and Chelson (3 years) MUST be visually unmistakable:
+- DanDan stands 60% TALLER than Chelson (1.6x his height)
+- Chelson is a TODDLER with chubby proportions and unsteady stance
+- DanDan is an ELEMENTARY CHILD with longer limbs and confident posture
+- Side-by-side comparison: Think 2nd grader next to preschooler
+- If they're holding paws, DanDan's arm extends DOWN to reach Chelson's raised arm
+- Chelson's head reaches DanDan's chest/shoulder when standing side-by-side
+
 🎯 TOP 3 QUALITY CONTROL BEST PRACTICES (FOLLOW EXACTLY):
 
 **BEST PRACTICE #1: MANDATORY HEX COLOR CODES**

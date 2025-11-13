@@ -19,6 +19,9 @@ export const useDeleteDailyPublished = () => {
       queryClient.invalidateQueries({ queryKey: ['library-books'] });
       queryClient.invalidateQueries({ queryKey: ['daily-published-queue'] });
       queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['book-publication-status'] });
+      queryClient.invalidateQueries({ queryKey: ['books'] });
+      queryClient.invalidateQueries({ queryKey: ['book'] });
       
       toast({
         title: 'Deleted',

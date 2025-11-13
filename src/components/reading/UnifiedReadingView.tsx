@@ -410,22 +410,20 @@ export function UnifiedReadingView({
         </div>
       </div>
       
-      {/* Unified Reading Controls - Only show on content pages (not cover or educational) */}
-      {isContentPage(currentPage) && (
-        <UnifiedReadingControls
-          showWordControls={true}
-          hasWords={currentPageWords.length > 0}
-          onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
-          onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
-          currentWordIndex={readingState.currentWordIndex}
-          totalWords={currentPageWords.length}
-          onNavigateWord={(dir) => readingState.handleNavigateWord(dir, currentPageWords.length)}
-          onPreviousPage={handlePrevious}
-          onNextPage={handleNext}
-          disablePreviousPage={currentPageIndex === 0}
-          disableNextPage={isAddingCoins}
-        />
-      )}
+      {/* Unified Reading Controls - Always show navigation, word controls only on content pages */}
+      <UnifiedReadingControls
+        showWordControls={isContentPage(currentPage)}
+        hasWords={currentPageWords.length > 0}
+        onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
+        onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
+        currentWordIndex={readingState.currentWordIndex}
+        totalWords={currentPageWords.length}
+        onNavigateWord={(dir) => readingState.handleNavigateWord(dir, currentPageWords.length)}
+        onPreviousPage={handlePrevious}
+        onNextPage={handleNext}
+        disablePreviousPage={currentPageIndex === 0}
+        disableNextPage={isAddingCoins}
+      />
     </div>
   );
 }

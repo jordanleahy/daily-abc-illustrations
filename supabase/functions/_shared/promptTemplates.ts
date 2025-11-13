@@ -4,7 +4,7 @@
  */
 
 import { getStyleGuide } from './styleGuides.ts';
-import { stripHexCodes } from './templateProcessor.ts';
+import { stripHexCodes, enforceBearStoriesSnowboarding } from './templateProcessor.ts';
 
 /**
  * Generate critical center-focus composition instructions
@@ -322,7 +322,12 @@ ${styleGuide.specialInstructions || ''}
   }
   
   // Strip hex codes from final prompt to prevent AI from displaying them as text
-  return stripHexCodes(prompt);
+  let finalPrompt = stripHexCodes(prompt);
+  
+  // Enforce Bear Stories snowboarding-only rule (no skiing)
+  finalPrompt = enforceBearStoriesSnowboarding(finalPrompt, styleGuideKey);
+  
+  return finalPrompt;
 }
 
 /**

@@ -21,6 +21,51 @@ export function stripHexCodes(text: string): string {
 }
 
 /**
+ * Validate and replace skiing-related keywords with snowboarding terms for Bear Stories theme
+ * Ensures style guide compliance: Bear Stories is ALWAYS about snowboarding, NEVER skiing
+ */
+export function enforceBearStoriesSnowboarding(text: string, styleGuideKey?: string): string {
+  // Only apply to Bear Stories theme
+  if (styleGuideKey !== 'bear-stories') {
+    return text;
+  }
+  
+  // Define skiing -> snowboarding replacements
+  const replacements: Array<[RegExp, string]> = [
+    // Standalone "ski" word (not part of other words like "skills")
+    [/\bski\b/gi, 'snowboard'],
+    [/\bskis\b/gi, 'snowboards'],
+    [/\bskiing\b/gi, 'snowboarding'],
+    [/\bskier\b/gi, 'snowboarder'],
+    [/\bskiers\b/gi, 'snowboarders'],
+    [/\bski poles?\b/gi, 'snowboard'],
+    [/\bcross-country ski(?:ing)?\b/gi, 'snowboarding'],
+    [/\bdownhill ski(?:ing)?\b/gi, 'snowboarding'],
+    [/\balpine ski(?:ing)?\b/gi, 'snowboarding'],
+  ];
+  
+  let modifiedText = text;
+  let wasModified = false;
+  
+  // Apply each replacement
+  for (const [pattern, replacement] of replacements) {
+    if (pattern.test(modifiedText)) {
+      modifiedText = modifiedText.replace(pattern, replacement);
+      wasModified = true;
+    }
+  }
+  
+  // Log warning if modifications were made
+  if (wasModified) {
+    console.warn('⚠️ Bear Stories Validation: Skiing terms detected and auto-corrected to snowboarding');
+    console.warn('🎿 Original prompt contained skiing references');
+    console.warn('🏂 Modified to enforce snowboarding-only rule');
+  }
+  
+  return modifiedText;
+}
+
+/**
  * Safely processes agent template by substituting variables with book-specific data
  */
 export function processAgentTemplate(

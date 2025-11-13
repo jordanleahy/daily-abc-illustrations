@@ -21,12 +21,23 @@ const sanitizeTitle = (title: string): string => {
  * Parse page details from chat messages containing book outline
  */
 export const parsePageDetailsFromMessages = (messages: any[]): PageDetail[] | null => {
+  console.log('[Parse Debug] parsePageDetailsFromMessages called with', messages.length, 'messages');
+  
   // Find the last message (assistant or user) containing the book outline
   const lastMsgWithPages = [...messages].reverse().find(
     (msg) => typeof msg.content === 'string' && /\*\*Page\s+\d+/i.test(msg.content)
   );
   
+  console.log('[Parse Debug] Last message with pages pattern found:', !!lastMsgWithPages);
+  if (lastMsgWithPages) {
+    const contentPreview = typeof lastMsgWithPages.content === 'string' 
+      ? lastMsgWithPages.content.substring(0, 300)
+      : 'non-string content';
+    console.log('[Parse Debug] Content preview:', contentPreview);
+  }
+  
   if (!lastMsgWithPages || typeof lastMsgWithPages.content !== 'string') {
+    console.log('[Parse Debug] Returning null - no valid message found');
     return null;
   }
   
@@ -59,6 +70,12 @@ export const parsePageDetailsFromMessages = (messages: any[]): PageDetail[] | nu
       title: sanitizeTitle(title), // Remove all quotes and apostrophes
       description
     });
+  }
+  
+  console.log('[Parse Debug] Parsed', pages.length, 'pages total');
+  if (pages.length > 0) {
+    console.log('[Parse Debug] First page:', pages[0]);
+    console.log('[Parse Debug] Last page:', pages[pages.length - 1]);
   }
   
   return pages.length > 0 ? pages : null;

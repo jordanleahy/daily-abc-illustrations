@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
-import { Loader2, Upload, Eye, Wand2, X, MessageSquare, ImagePlus, Copy, Type } from 'lucide-react';
+import { Loader2, Upload, Eye, Wand2, X, MessageSquare, ImagePlus, Copy } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
@@ -15,7 +15,6 @@ import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { getBookCoverUploadInfo } from '@/utils/storagePaths';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
-import { ImageTextOverlayEditor } from '@/components/page-prompts/ImageTextOverlayEditor';
 import { processImageForOpenGraph, formatFileSize } from '@/utils/imageProcessor';
 import { useQuery } from '@tanstack/react-query';
 
@@ -65,7 +64,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
-  const [showTextOverlayEditor, setShowTextOverlayEditor] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentTitle = seoMetadata?.seo_title || bookTitle;
@@ -602,14 +600,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                   />
                   <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                     <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => setShowTextOverlayEditor(true)}
-                    >
-                      <Type className="w-4 h-4 mr-2" />
-                      {seoMetadata?.text_overlay_config ? 'Edit Text Overlay' : 'Add Text Overlay'}
-                    </Button>
-                    <Button
                       variant="destructive"
                       size="sm"
                       onClick={handleRemoveImage}
@@ -694,21 +684,6 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
         </div>
       </CardContent>
     </Card>
-    
-    {currentImage && seoMetadata && user?.id && (
-      <ImageTextOverlayEditor
-        open={showTextOverlayEditor}
-        onOpenChange={setShowTextOverlayEditor}
-        imageUrl={currentImage}
-        defaultText={currentTitle}
-        mode="thumbnail"
-        bookId={bookId}
-        dailyPublishedId={seoMetadata.daily_published_id}
-        seoMetadataId={seoMetadata.id}
-        userId={user.id}
-        existingConfig={seoMetadata.text_overlay_config as any}
-      />
-    )}
     </>
   );
 };

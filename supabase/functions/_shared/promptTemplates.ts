@@ -567,3 +567,4 @@ ${textOverlayEnabled ? `TEXT INCLUSION:
 ===============================================`}
 
 Create an illustration that helps children recognize and understand the emotion of ${page.letter}!${!textOverlayEnabled ? '\n\n🚫 FINAL REMINDER: NO TEXT OF ANY KIND IN THIS IMAGE 🚫' : ''}`;
+}

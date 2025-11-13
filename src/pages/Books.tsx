@@ -14,6 +14,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
+import { useBookCoverImage } from '@/hooks/useBookCoverImage';
 import { BookImage } from '@/components/ui/book-image';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
@@ -77,6 +78,7 @@ function UserBookCard({
   isDeleting
 }: UserBookCardProps) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
+  const { data: coverImageUrl } = useBookCoverImage(book.id);
   
   // Viewport-based lazy loading
   const { ref, inView } = useIntersectionObserver({
@@ -108,12 +110,12 @@ function UserBookCard({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Book Thumbnail */}
+        {/* Book Thumbnail - Priority: cover page image → thumbnail_url → seo image → placeholder */}
         <AspectRatio ratio={1} className="bg-muted rounded-lg overflow-hidden">
           {shouldRender ? (
-            book.coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url ? (
+            coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url ? (
               <BookImage
-                src={book.coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url}
+                src={coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url}
                 alt={book.book_name}
                 priority={index < 6}
                 className="w-full h-full object-cover object-center"

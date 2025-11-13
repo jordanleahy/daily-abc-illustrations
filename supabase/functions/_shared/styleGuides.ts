@@ -327,15 +327,24 @@ Surroundings:
 - Alpine village behind with rustic lodges
 - Snow-covered roofs on all buildings
 - Amber-lit windows throughout village
-- Mountain peaks rising beyond village
-- Gondola cables stretching up mountain
+- Mountain peaks rising beyond village with visible snowboarding slopes
+- Gondola cables stretching up mountain to snowboarding terrain
 - Red gondola cabins on cables
-- Children playing in snow at base
-- Families approaching gondola station
+- Children playing in snow and snowboarding at base
+- Families with snowboards approaching gondola station
+- Snowboarding activity visible on mountain slopes
+
+Snowboarding Environment Details:
+- Snowboards leaning against walls and racks
+- Snowboarding gear displayed prominently (boots, helmets, goggles)
+- Snowboard wax and maintenance tools visible
+- Trail maps showing snowboarding runs
+- Family members often shown preparing for or returning from snowboarding
+- Mountain terrain designed for snowboarding (half-pipes, jumps, groomed runs)
 
 Emotional Anchor:
 - First thing kids see = warmth and welcome
-- Symbol of fun, safety, and memories
+- Symbol of fun, safety, and snowboarding memories
 - Visual representation: "The mountain is big. The memories are bigger."
 `,
 

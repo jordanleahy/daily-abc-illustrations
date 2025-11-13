@@ -331,6 +331,7 @@ export default function Books() {
   // Mobile editor state
   const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  const [selectedBook, setSelectedBook] = useState<any>(null);
   const [selectedBookPublication, setSelectedBookPublication] = useState<Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null>(null);
   
   // Determine view mode based on route
@@ -362,9 +363,10 @@ export default function Books() {
     }
   };
 
-  const handleEditBook = (bookId: string, publicationStatus?: Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null) => {
+  const handleEditBook = (bookId: string, book: any, publicationStatus?: Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null) => {
     if (isMobile) {
       setSelectedBookId(bookId);
+      setSelectedBook(book); // Store book data for instant display
       setSelectedBookPublication(publicationStatus || null);
       setMobileEditorOpen(true);
     } else {
@@ -421,6 +423,7 @@ export default function Books() {
         open={mobileEditorOpen}
         onOpenChange={setMobileEditorOpen}
         publicationStatus={selectedBookPublication}
+        book={selectedBook}
       />
       
       <StandardPageLayout title={pageTitle} containerClassName="py-8">
@@ -454,7 +457,7 @@ export default function Books() {
                     status: book.daily_published[0].status as 'draft' | 'queued' | 'active' | 'expired',
                     publish_date: book.daily_published[0].publish_date
                   } : null;
-                  handleEditBook(bookId, publicationStatus);
+                  handleEditBook(bookId, book, publicationStatus);
                 }}
                 publicationStatus={book.daily_published?.[0] ? {
                   id: book.daily_published[0].id,

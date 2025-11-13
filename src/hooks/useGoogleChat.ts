@@ -36,6 +36,13 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
     currentMessages: Message[] = [],
     context?: { outlineReady?: boolean; bookCreated?: boolean }
   ) => {
+    console.log('[useGoogleChat Debug] sendMessage called:', {
+      sessionId,
+      currentMessageCount: currentMessages.length,
+      hasContext: !!context,
+      context
+    });
+
     if (!user?.id) {
       toast.error('Please sign in to use Google chat');
       return;
@@ -214,13 +221,21 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
           }
         ];
         
+        console.log('[useGoogleChat Debug] Message streaming complete:', {
+          sessionId,
+          totalMessages: messagesWithResponse.length,
+          lastMessagePreview: cleanContent.substring(0, 100)
+        });
+        
         // Update React Query cache
         if (sessionId) {
           queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
+          console.log('[useGoogleChat Debug] Updated React Query cache for session:', sessionId);
         }
         
         // Notify parent component to persist to database
         if (onMessagesUpdate && sessionId) {
+          console.log('[useGoogleChat Debug] Calling onMessagesUpdate callback');
           onMessagesUpdate(messagesWithResponse, sessionId);
         }
       }

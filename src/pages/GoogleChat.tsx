@@ -79,12 +79,22 @@ export default function GoogleChat() {
   // Load messages for current session via React Query cache
   const { data: messages = [], isLoading: isLoadingMessages } = useSessionMessages(currentSessionId || undefined);
   
+  console.log('[Session Debug] Current session ID:', currentSessionId);
+  console.log('[Session Debug] Messages loaded:', messages.length);
+  console.log('[Session Debug] Is loading messages:', isLoadingMessages);
+  
   // Prefetch hook for hover optimization
   const { prefetchSession } = usePrefetchSession();
 
   // Debounce message updates to avoid excessive database writes
   const updateTimeoutRef = useRef<NodeJS.Timeout>();
   const handleMessagesUpdate = useCallback((messages: any[], sessionId: string) => {
+    console.log('[Message Persist Debug] Scheduling message update:', {
+      sessionId,
+      messageCount: messages.length,
+      willPersistIn: '1 second'
+    });
+    
     // Clear any existing timeout
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
@@ -92,6 +102,10 @@ export default function GoogleChat() {
     
     // Set new timeout to update after 1 second of inactivity
     updateTimeoutRef.current = setTimeout(() => {
+      console.log('[Message Persist Debug] Persisting messages to database:', {
+        sessionId,
+        messageCount: messages.length
+      });
       updateSessionMessages({ sessionId, messages });
     }, 1000);
   }, [updateSessionMessages]);
@@ -100,6 +114,8 @@ export default function GoogleChat() {
     currentSessionId || undefined,
     handleMessagesUpdate
   );
+  
+  console.log('[Chat Hook Debug] useGoogleChat initialized with session:', currentSessionId);
 
   const createBookMutation = useGoogleCreateBook();
 
@@ -460,6 +476,12 @@ export default function GoogleChat() {
     const raw = input.trim();
     if (!raw) return;
 
+    console.log('[Handle Send Debug] Sending message:', {
+      sessionId: currentSessionId,
+      currentMessageCount: messages.length,
+      messageText: raw.substring(0, 50)
+    });
+
     // If the user is asking for the Review/View Outline button, surface a clickable option in chat
     const lower = raw.toLowerCase();
     const asksForOutline = (
@@ -492,6 +514,11 @@ export default function GoogleChat() {
       setInput('');
       return;
     }
+
+    console.log('[Handle Send Debug] Calling sendMessage with context:', {
+      outlineReady: shouldShowQACheckpoint && !createdBookId,
+      bookCreated: !!createdBookId
+    });
 
     await sendMessage(raw, undefined, messages, {
       outlineReady: shouldShowQACheckpoint && !createdBookId,

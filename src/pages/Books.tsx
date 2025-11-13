@@ -19,6 +19,7 @@ import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileBookEditor } from '@/components/book/MobileBookEditor';
+import { AdminOnly } from '@/components/AdminOnly';
 import type { DailyPublished } from '@/types/dailyPublished';
 
 /**
@@ -160,49 +161,61 @@ function UserBookCard({
           Edit
         </Button>
 
-        {/* Publish/Unpublish Button */}
-        <Button 
-          variant={publicationStatus ? "destructive" : "default"}
-          size="sm"
-          className="w-full"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (publicationStatus && onUnpublish) {
-              onUnpublish(publicationStatus.id);
-            } else if (onPublish) {
-              onPublish(book.id, book.book_name, book.book_description);
-            }
-          }}
-          disabled={isPublishing || isUnpublishing}
-        >
-          {isPublishing || isUnpublishing ? (
-            <>Loading...</>
-          ) : publicationStatus ? (
-            <>Unpublish from Library</>
-          ) : (
-            <>Publish to Library</>
-          )}
-        </Button>
+        {/* Admin-Only Actions Section */}
+        <AdminOnly fallback={null}>
+          <div className="space-y-2 pt-3 mt-3 border-t border-border/50">
+            {/* Section Label */}
+            <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Admin Actions
+            </div>
+            
+            {/* Publish/Unpublish Button */}
+            <Button 
+              variant={publicationStatus ? "destructive" : "default"}
+              size="sm"
+              className="w-full"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (publicationStatus && onUnpublish) {
+                  onUnpublish(publicationStatus.id);
+                } else if (onPublish) {
+                  onPublish(book.id, book.book_name, book.book_description);
+                }
+              }}
+              disabled={isPublishing || isUnpublishing}
+            >
+              {isPublishing || isUnpublishing ? (
+                <>Loading...</>
+              ) : publicationStatus ? (
+                <>Unpublish from Library</>
+              ) : (
+                <>Publish to Daily Library</>
+              )}
+            </Button>
 
-        {/* Publication Status Badge */}
-        {publicationStatus && (
-          <div className="text-xs text-center text-muted-foreground mt-1">
-            {publicationStatus.status === 'active' && (
-              <span className="text-green-600 font-medium">🟢 Live in Library</span>
+            {/* Publication Status Badge */}
+            {publicationStatus && (
+              <div className="text-xs text-center text-muted-foreground">
+                {publicationStatus.status === 'active' && (
+                  <span className="text-green-600 font-medium">🟢 Live in Library</span>
+                )}
+                {publicationStatus.status === 'queued' && (
+                  <span className="text-blue-600 font-medium">
+                    📅 Scheduled for {new Date(publicationStatus.publish_date).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </span>
+                )}
+                {publicationStatus.status === 'expired' && (
+                  <span className="text-gray-600 font-medium">⏸️ Expired</span>
+                )}
+              </div>
             )}
-            {publicationStatus.status === 'queued' && (
-              <span className="text-blue-600 font-medium">
-                📅 Scheduled for {new Date(publicationStatus.publish_date).toLocaleDateString('en-US', {
-                  month: 'short',
-                  day: 'numeric'
-                })}
-              </span>
-            )}
-            {publicationStatus.status === 'expired' && (
-              <span className="text-gray-600 font-medium">⏸️ Expired</span>
-            )}
+            
+            {/* Future: Additional admin buttons will go here */}
           </div>
-        )}
+        </AdminOnly>
 
         {/* Book Info */}
         <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">

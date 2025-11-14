@@ -211,9 +211,9 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
     <div 
       ref={containerRef}
       className={`
-        w-full h-full border-2 border-dashed rounded-lg transition-all duration-200 cursor-pointer
-        ${dragActive ? 'border-primary bg-primary/5' : 'border-muted-foreground/25'}
-        ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary hover:bg-primary/5 ring-2 ring-primary/20'}
+        w-full h-full rounded-lg transition-all duration-200 cursor-pointer
+        ${dragActive ? 'bg-primary/10' : 'bg-muted/50'}
+        ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/80 hover:ring-1 hover:ring-primary/20'}
         ${preview ? 'p-0' : 'p-6'}
         ${className}
       `}

@@ -387,7 +387,7 @@ export function UnifiedReadingView({
         
         {/* Main content area */}
         <div className="flex-1 flex flex-col">
-          <div className="flex-1 flex items-center justify-center p-4">
+          <div className="flex-1 flex items-end justify-center p-4 max-h-[calc(100vh-12rem)] pb-2">
             <div 
               className="w-full max-w-sm mx-auto"
               onClick={handleTapToAdvance}

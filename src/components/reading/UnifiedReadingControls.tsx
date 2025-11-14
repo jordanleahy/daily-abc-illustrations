@@ -48,7 +48,7 @@ export function UnifiedReadingControls({
 }: UnifiedReadingControlsProps) {
   return (
     <div 
-      className="bg-background border-t py-3 px-4"
+      className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t z-50 py-3 px-4"
       style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
       {/* Text Overlay Section - Above all controls */}

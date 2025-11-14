@@ -8,12 +8,21 @@ import {
   DrawerDescription,
   DrawerClose
 } from '@/components/ui/drawer';
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+  SheetClose
+} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useBookPages } from '@/hooks/useBookPages';
 import { useBook } from '@/hooks/useBook';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { 
   X, 
   ChevronLeft, 
@@ -40,6 +49,7 @@ export function MobileBookEditor({
   book: bookProp
 }: MobileBookEditorProps) {
   const navigate = useNavigate();
+  const isMobile = useIsMobile();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
   // Use passed book data for instant display, fallback to fetch if not provided
@@ -95,22 +105,138 @@ export function MobileBookEditor({
 
   // Show loading state while pages are loading
   if (!currentPage) {
+    if (isMobile) {
+      return (
+        <Drawer open={open} onOpenChange={onOpenChange}>
+          <DrawerContent className="h-[90vh] flex flex-col">
+            <DrawerHeader className="relative border-b pb-4">
+              <DrawerClose asChild>
+                <Button variant="ghost" size="icon" className="absolute right-4 top-4">
+                  <X className="h-4 w-4" />
+                </Button>
+              </DrawerClose>
+              <DrawerTitle className="text-left pr-12">{book.book_name}</DrawerTitle>
+              <DrawerDescription className="text-left">Loading pages...</DrawerDescription>
+            </DrawerHeader>
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center text-muted-foreground">
+                <BookOpen className="h-12 w-12 mx-auto mb-4 animate-pulse" />
+                <p>Loading book pages...</p>
+              </div>
+            </div>
+          </DrawerContent>
+        </Drawer>
+      );
+    }
+
+    return (
+      <Sheet open={open} onOpenChange={onOpenChange}>
+        <SheetContent side="right" className="w-full sm:max-w-2xl flex flex-col p-0">
+          <SheetHeader className="relative border-b px-6 py-4">
+            <SheetTitle className="text-left">{book.book_name}</SheetTitle>
+            <SheetDescription className="text-left">Loading pages...</SheetDescription>
+          </SheetHeader>
+          <div className="flex-1 flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <BookOpen className="h-12 w-12 mx-auto mb-4 animate-pulse" />
+              <p>Loading book pages...</p>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
+  // Mobile: Use Drawer (bottom sheet)
+  if (isMobile) {
     return (
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="h-[90vh] flex flex-col">
           <DrawerHeader className="relative border-b pb-4">
             <DrawerClose asChild>
-              <Button variant="ghost" size="icon" className="absolute right-4 top-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-4 top-4"
+              >
                 <X className="h-4 w-4" />
               </Button>
             </DrawerClose>
-            <DrawerTitle className="text-left pr-12">{book.book_name}</DrawerTitle>
-            <DrawerDescription className="text-left">Loading pages...</DrawerDescription>
+            
+            <DrawerTitle className="text-left pr-12">
+              Page {currentPage.page_number}: {currentPage.title}
+            </DrawerTitle>
+            <DrawerDescription className="text-left">
+              {book.book_name}
+            </DrawerDescription>
           </DrawerHeader>
-          <div className="flex-1 flex items-center justify-center">
-            <div className="text-center text-muted-foreground">
-              <BookOpen className="h-12 w-12 mx-auto mb-4 animate-pulse" />
-              <p>Loading book pages...</p>
+
+          {/* Scrollable content */}
+          <div className="flex-1 overflow-y-auto px-4 pt-6 pb-4 space-y-6">
+            {/* Page Image */}
+            <div>
+              <div className="aspect-square bg-muted rounded-lg overflow-hidden border-2 border-dashed border-border">
+                <PageImageSection 
+                  pageId={currentPage.id}
+                  bookId={bookId}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Fixed Footer Actions */}
+          <div className="border-t bg-background p-4 space-y-3">
+            {/* Primary Actions */}
+            <div className="grid grid-cols-2 gap-3">
+              {isPublished ? (
+                <Button 
+                  variant="outline" 
+                  onClick={handlePublishToggle}
+                  disabled={deletePublication.isPending}
+                >
+                  <FileX className="mr-2 h-4 w-4" />
+                  Unpublish
+                </Button>
+              ) : (
+                <Button 
+                  variant="outline" 
+                  onClick={handlePublishToggle}
+                  disabled={schedulePublication.isPending}
+                >
+                  <BookOpen className="mr-2 h-4 w-4" />
+                  Publish
+                </Button>
+              )}
+              <Button onClick={handleReadBook}>
+                <BookOpen className="mr-2 h-4 w-4" />
+                Read
+              </Button>
+            </div>
+
+            {/* Navigation */}
+            <div className="grid grid-cols-3 gap-2">
+              <Button 
+                variant="outline" 
+                onClick={handlePrevious}
+                disabled={currentPageIndex === 0}
+              >
+                <ChevronLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={handleImageGenerator}
+              >
+                <FileImage className="mr-2 h-4 w-4" />
+                Images
+              </Button>
+              <Button 
+                onClick={handleNext}
+                disabled={currentPageIndex === pages.length - 1}
+              >
+                Next
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
             </div>
           </div>
         </DrawerContent>
@@ -118,27 +244,18 @@ export function MobileBookEditor({
     );
   }
 
+  // Desktop: Use Sheet (side panel)
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent className="h-[90vh] flex flex-col">
-        <DrawerHeader className="relative border-b pb-4">
-          <DrawerClose asChild>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute right-4 top-4"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </DrawerClose>
-          
-          <DrawerTitle className="text-left pr-12">
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="w-full sm:max-w-2xl flex flex-col p-0">
+        <SheetHeader className="relative border-b px-6 py-4">
+          <SheetTitle className="text-left">
             Page {currentPage.page_number}: {currentPage.title}
-          </DrawerTitle>
-          <DrawerDescription className="text-left">
+          </SheetTitle>
+          <SheetDescription className="text-left">
             {book.book_name}
-          </DrawerDescription>
-        </DrawerHeader>
+          </SheetDescription>
+        </SheetHeader>
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-4 pt-6 pb-4 space-y-6">
@@ -151,7 +268,6 @@ export function MobileBookEditor({
               />
             </div>
           </div>
-
         </div>
 
         {/* Fixed Footer Actions */}
@@ -209,7 +325,7 @@ export function MobileBookEditor({
             </Button>
           </div>
         </div>
-      </DrawerContent>
-    </Drawer>
+      </SheetContent>
+    </Sheet>
   );
 }

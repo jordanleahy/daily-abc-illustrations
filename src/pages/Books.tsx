@@ -96,7 +96,7 @@ function UserBookCard({
       className="cursor-pointer hover:shadow-lg transition-shadow group overflow-hidden"
       onClick={onClick}
     >
-      <CardHeader className="space-y-3">
+      <CardHeader className="space-y-2">
         <CardTitle className="text-lg group-hover:text-primary transition-colors">
           {book.book_name}
         </CardTitle>

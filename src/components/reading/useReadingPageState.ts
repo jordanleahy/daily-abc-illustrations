@@ -16,6 +16,7 @@ export function useReadingPageState(config?: ReadingPageStateConfig) {
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
   const [isEditingText, setIsEditingText] = useState(false);
   const [isReadMode, setIsReadMode] = useState(false);
+  const [hasReachedLastWord, setHasReachedLastWord] = useState(false);
   
   // Use database-backed preferences for cross-device sync
   const { hiddenOverlayPages, toggleOverlay: toggleOverlayDB, isLoading: isPreferencesLoading } = useReadingPreferences();
@@ -25,11 +26,16 @@ export function useReadingPageState(config?: ReadingPageStateConfig) {
 
   const handleNavigateWord = useCallback((direction: 'prev' | 'next', totalWords: number) => {
     setCurrentWordIndex(prev => {
-      if (direction === 'prev') {
-        return prev > 0 ? prev - 1 : totalWords - 1; // Loop to end
-      } else {
-        return prev < totalWords - 1 ? prev + 1 : 0; // Loop to start
+      const newIndex = direction === 'prev' 
+        ? (prev > 0 ? prev - 1 : totalWords - 1)
+        : (prev < totalWords - 1 ? prev + 1 : 0);
+      
+      // Track if user has reached the last word
+      if (newIndex === totalWords - 1) {
+        setHasReachedLastWord(true);
       }
+      
+      return newIndex;
     });
   }, []);
 
@@ -85,6 +91,7 @@ export function useReadingPageState(config?: ReadingPageStateConfig) {
     setCurrentWordIndex(0);
     setWordStatuses({});
     setIsReadMode(false);
+    setHasReachedLastWord(false);
   }, []);
 
   const toggleOverlayVisibility = useCallback((pageId: string) => {
@@ -110,5 +117,6 @@ export function useReadingPageState(config?: ReadingPageStateConfig) {
     setCurrentWordIndex,
     isReadMode,
     toggleReadMode,
+    hasReachedLastWord,
   };
 }

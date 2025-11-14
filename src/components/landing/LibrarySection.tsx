@@ -1,5 +1,6 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Library } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { LandingLibraryBook } from '@/hooks/useLandingPageData';
@@ -45,47 +46,50 @@ function LandingLibraryCard({ item }: { item: LandingLibraryBook }) {
       onClick={handleCardClick}
       className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2"
     >
-      <div className="relative aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
-        {inView ? (
-          <OptimizedImage
-            src={item.og_image_url}
-            alt={item.title}
-            width={600}
-            quality={80}
-            srcSetSizes={[400, 600, 800, 1200]}
-            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 400px"
-            className="absolute inset-0"
-            fallback={
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="text-6xl font-bold text-primary/20">
-                  {item.title.charAt(0)}
-                </div>
-              </div>
-            }
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted">
-            <div className="text-6xl font-bold text-primary/20">
-              {item.title.charAt(0)}
-            </div>
-          </div>
-        )}
+      <CardContent className="p-6">
         {item.status === 'active' && item.is_active && (
-          <Badge className="absolute top-3 left-3 bg-green-600 text-white z-10">
+          <Badge className="absolute top-4 right-4 bg-green-600 text-white z-10">
             Active Now
           </Badge>
         )}
-      </div>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-xl line-clamp-2">
-          {item.seo_title || item.title}
-        </CardTitle>
-        {item.metadata?.targetAge && (
-          <p className="text-sm text-muted-foreground mt-1">
-            {item.metadata.targetAge}
-          </p>
-        )}
-      </CardHeader>
+        
+        <AspectRatio ratio={1/1} className="bg-muted rounded-lg overflow-hidden mb-4">
+          {inView ? (
+            <OptimizedImage
+              src={item.og_image_url}
+              alt={item.title}
+              width={600}
+              quality={80}
+              srcSetSizes={[400, 600, 800, 1200]}
+              sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, 400px"
+              fallback={
+                <div className="w-full h-full flex items-center justify-center">
+                  <div className="text-6xl font-bold text-primary/20">
+                    {item.title.charAt(0)}
+                  </div>
+                </div>
+              }
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-muted">
+              <div className="text-6xl font-bold text-primary/20">
+                {item.title.charAt(0)}
+              </div>
+            </div>
+          )}
+        </AspectRatio>
+
+        <div className="space-y-1">
+          <h3 className="font-semibold text-lg line-clamp-2">
+            {item.seo_title || item.title}
+          </h3>
+          {item.metadata?.targetAge && (
+            <p className="text-sm text-muted-foreground">
+              {item.metadata.targetAge}
+            </p>
+          )}
+        </div>
+      </CardContent>
     </Card>
   );
 }

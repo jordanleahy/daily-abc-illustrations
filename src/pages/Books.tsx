@@ -97,13 +97,13 @@ function UserBookCard({
       onClick={onClick}
     >
       <CardHeader>
-        <div className="flex items-start justify-between">
+        <div className="flex flex-col gap-2">
+          <Badge variant={book.status === 'published' ? 'default' : 'secondary'} className="w-fit">
+            {book.status}
+          </Badge>
           <CardTitle className="text-lg group-hover:text-primary transition-colors">
             {book.book_name}
           </CardTitle>
-          <Badge variant={book.status === 'published' ? 'default' : 'secondary'}>
-            {book.status}
-          </Badge>
         </div>
         <CardDescription className="line-clamp-2">
           {book.book_description || "No description provided"}

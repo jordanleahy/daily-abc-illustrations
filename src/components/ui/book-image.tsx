@@ -99,7 +99,7 @@ export function BookImage({
           fetchPriority={priority ? "high" : "auto"}
           crossOrigin="anonymous"
           data-optimized="true"
-          className={`transition-transform duration-300 ease-out hover:scale-110 ${className}`}
+          className={`transition-all duration-300 ease-out hover:scale-110 hover:rotate-2 ${className}`}
           style={enableMobileSave ? { 
             touchAction: 'auto', 
             WebkitTouchCallout: 'default' 

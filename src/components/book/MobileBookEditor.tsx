@@ -72,10 +72,7 @@ export function MobileBookEditor({
   };
 
   const handleImageGenerator = () => {
-    if (bookId && currentPage) {
-      navigate(`/books/${bookId}`, { state: { focusedPageId: currentPage.id } });
-      onOpenChange(false);
-    }
+    window.open('https://aistudio.google.com/prompts/new_chat', '_blank');
   };
 
   const handlePublishToggle = async () => {

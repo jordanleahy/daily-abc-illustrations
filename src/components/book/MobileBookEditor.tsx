@@ -155,17 +155,6 @@ export function MobileBookEditor({
             </div>
           </div>
 
-          {/* Page Description */}
-          {currentPage.description && (
-            <div>
-              <h3 className="text-sm font-medium text-muted-foreground mb-2">
-                Description
-              </h3>
-              <p className="text-sm text-foreground">
-                {currentPage.description}
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Fixed Footer Actions */}

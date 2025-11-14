@@ -340,14 +340,10 @@ export default function Books() {
   };
 
   const handleEditBook = (bookId: string, book: any, publicationStatus?: Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null) => {
-    if (isMobile) {
-      setSelectedBookId(bookId);
-      setSelectedBook(book); // Store book data for instant display
-      setSelectedBookPublication(publicationStatus || null);
-      setMobileEditorOpen(true);
-    } else {
-      navigate('/google-chat', { state: { editBookId: bookId } });
-    }
+    setSelectedBookId(bookId);
+    setSelectedBook(book); // Store book data for instant display
+    setSelectedBookPublication(publicationStatus || null);
+    setMobileEditorOpen(true);
   };
 
   const handleCreateNewBook = () => {

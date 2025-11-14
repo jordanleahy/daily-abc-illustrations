@@ -120,7 +120,7 @@ const LibraryBookCard = memo(({ book }: LibraryBookCardProps) => {
       onClick={handleCardClick}
       className="group relative bg-card hover:bg-accent/50 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
     >
-      <div className="aspect-[4/3] relative overflow-hidden bg-muted">
+      <div className="aspect-square relative overflow-hidden bg-muted">
         {book.cover_image ? (
           <BookImage
             src={book.cover_image}

@@ -25,6 +25,7 @@ interface ReadingPageDisplayProps {
   isPreferencesLoading?: boolean;
   showDismissButton?: boolean;
   onWordChange?: (index: number) => void;
+  hideBottomOverlay?: boolean; // Phase 3: Disable old overlay
 }
 
 export function ReadingPageDisplay({
@@ -44,6 +45,7 @@ export function ReadingPageDisplay({
   isPreferencesLoading = false,
   showDismissButton = true,
   onWordChange,
+  hideBottomOverlay = false,
 }: ReadingPageDisplayProps) {
   const { generateMetadata } = useWordMetadata();
   const { pages } = useBookPages(bookId);
@@ -109,7 +111,7 @@ export function ReadingPageDisplay({
         )}
         
         {/* Text Overlay with Editing and Word Learning */}
-        {pageText && !isPreferencesLoading && !isOverlayHidden && (
+        {!hideBottomOverlay && pageText && !isPreferencesLoading && !isOverlayHidden && (
           <>
             {isEditingText && onUpdatePageText ? (
               <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">

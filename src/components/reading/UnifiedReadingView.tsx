@@ -407,6 +407,7 @@ export function UnifiedReadingView({
                 showDismissButton={false}
                 onWordChange={readingState.setCurrentWordIndex}
                 imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex) : undefined}
+                hideBottomOverlay={true}
               />
             </div>
           </div>
@@ -429,6 +430,12 @@ export function UnifiedReadingView({
         onNextPage={handleNext}
         disablePreviousPage={currentPageIndex === 0}
         disableNextPage={isAddingCoins}
+        overlayText={currentPage.content?.textOverlay?.text || ''}
+        overlayWords={currentPageWords}
+        overlayCurrentWordIndex={readingState.currentWordIndex}
+        overlayWordStatuses={readingState.wordStatuses}
+        onOverlayWordChange={readingState.setCurrentWordIndex}
+        showOverlay={!readingState.hiddenOverlayPages?.has(currentPage.id)}
       />
     </div>
   );

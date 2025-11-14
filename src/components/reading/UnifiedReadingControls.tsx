@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { WordCarousel } from './WordCarousel';
 
 interface UnifiedReadingControlsProps {
   // Word learning props
@@ -16,6 +17,14 @@ interface UnifiedReadingControlsProps {
   disablePreviousPage?: boolean;
   disableNextPage?: boolean;
   showWordControls?: boolean;
+  
+  // Text overlay props (Phase 1)
+  overlayText?: string;
+  overlayWords?: Array<{ word: string }>;
+  overlayCurrentWordIndex?: number;
+  overlayWordStatuses?: Record<number, 'difficult' | 'understood'>;
+  onOverlayWordChange?: (index: number) => void;
+  showOverlay?: boolean;
 }
 
 export function UnifiedReadingControls({
@@ -30,12 +39,38 @@ export function UnifiedReadingControls({
   disablePreviousPage = false,
   disableNextPage = false,
   showWordControls = true,
+  overlayText,
+  overlayWords,
+  overlayCurrentWordIndex = 0,
+  overlayWordStatuses,
+  onOverlayWordChange,
+  showOverlay = true,
 }: UnifiedReadingControlsProps) {
   return (
     <div 
       className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t z-50 py-3 px-4"
       style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
+      {/* Text Overlay Section - Above all controls */}
+      {showOverlay && overlayText && (
+        <div className="mb-3 bg-muted/30 rounded-lg px-4 py-2 min-h-[48px] flex items-center justify-center">
+          {overlayWords && overlayWords.length > 0 ? (
+            <div className="w-full h-[40px]">
+              <WordCarousel
+                words={overlayWords}
+                currentWordIndex={overlayCurrentWordIndex}
+                wordStatuses={overlayWordStatuses}
+                onWordChange={onOverlayWordChange}
+              />
+            </div>
+          ) : (
+            <p className="text-center font-semibold text-lg text-foreground line-clamp-2">
+              {overlayText}
+            </p>
+          )}
+        </div>
+      )}
+      
       {/* Row 1: Word Learning Controls */}
       {showWordControls && hasWords && totalWords > 0 && (
         <div className="flex items-center justify-between mb-2">

@@ -55,8 +55,8 @@ export function WordCarousel({
               className={`
                 inline-block px-3 py-2 rounded-lg font-semibold transition-all duration-300 ease-in-out text-xl flex-shrink-0
                 ${isCurrent 
-                  ? 'text-white scale-110' 
-                  : 'text-white/50 scale-90'
+                  ? 'text-gray-900 scale-110' 
+                  : 'text-gray-900/50 scale-90'
                 }
                 ${isCurrent && isUnderstood ? 'bg-emerald-500/70' : ''}
                 ${isCurrent && isDifficult ? 'bg-red-500/70' : ''}

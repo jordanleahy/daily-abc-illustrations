@@ -45,7 +45,7 @@ function LandingLibraryCard({ item }: { item: LandingLibraryBook }) {
       onClick={handleCardClick}
       className="overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-1 cursor-pointer border-2"
     >
-      <div className="relative aspect-video bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
+      <div className="relative aspect-square bg-gradient-to-br from-primary/20 to-secondary/20 overflow-hidden">
         {inView ? (
           <OptimizedImage
             src={item.og_image_url}

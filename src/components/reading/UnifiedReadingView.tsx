@@ -416,25 +416,28 @@ export function UnifiedReadingView({
         </div>
       
       {/* Unified Reading Controls - Always show navigation, word controls only on content pages */}
-      <UnifiedReadingControls
-        showWordControls={isContentPage(currentPage)}
-        hasWords={currentPageWords.length > 0}
-        onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
-        onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
-        currentWordIndex={readingState.currentWordIndex}
-        totalWords={currentPageWords.length}
-        onNavigateWord={(dir) => readingState.handleNavigateWord(dir, currentPageWords.length)}
-        onPreviousPage={handlePrevious}
-        onNextPage={handleNext}
-        disablePreviousPage={currentPageIndex === 0}
-        disableNextPage={isAddingCoins}
-        overlayText={currentPage.content?.textOverlay?.text || ''}
-        overlayWords={currentPageWords}
-        overlayCurrentWordIndex={readingState.currentWordIndex}
-        overlayWordStatuses={readingState.wordStatuses}
-        onOverlayWordChange={readingState.setCurrentWordIndex}
-        showOverlay={!readingState.hiddenOverlayPages?.has(currentPage.id)}
-      />
+        <UnifiedReadingControls
+          showWordControls={isContentPage(currentPage)}
+          hasWords={currentPageWords.length > 0}
+          onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}
+          onMarkUnderstood={() => readingState.handleMarkUnderstood(currentPageWords.length)}
+          currentWordIndex={readingState.currentWordIndex}
+          totalWords={currentPageWords.length}
+          onNavigateWord={(dir) => readingState.handleNavigateWord(dir, currentPageWords.length)}
+          onPreviousPage={handlePrevious}
+          onNextPage={handleNext}
+          disablePreviousPage={currentPageIndex === 0}
+          disableNextPage={isAddingCoins}
+          overlayText={currentPage.content?.textOverlay?.text || ''}
+          overlayWords={currentPageWords}
+          overlayCurrentWordIndex={readingState.currentWordIndex}
+          overlayWordStatuses={readingState.wordStatuses}
+          onOverlayWordChange={readingState.setCurrentWordIndex}
+          showOverlay={!readingState.hiddenOverlayPages?.has(currentPage.id)}
+          isReadMode={readingState.isReadMode}
+          onToggleReadMode={readingState.toggleReadMode}
+          isLastWord={readingState.currentWordIndex === currentPageWords.length - 1}
+        />
     </div>
   );
 }

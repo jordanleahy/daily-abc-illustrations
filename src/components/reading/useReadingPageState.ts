@@ -15,6 +15,7 @@ export function useReadingPageState(config?: ReadingPageStateConfig) {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
   const [isEditingText, setIsEditingText] = useState(false);
+  const [isReadMode, setIsReadMode] = useState(false);
   
   // Use database-backed preferences for cross-device sync
   const { hiddenOverlayPages, toggleOverlay: toggleOverlayDB, isLoading: isPreferencesLoading } = useReadingPreferences();
@@ -83,11 +84,16 @@ export function useReadingPageState(config?: ReadingPageStateConfig) {
   const resetState = useCallback(() => {
     setCurrentWordIndex(0);
     setWordStatuses({});
+    setIsReadMode(false);
   }, []);
 
   const toggleOverlayVisibility = useCallback((pageId: string) => {
     toggleOverlayDB(pageId);
   }, [toggleOverlayDB]);
+
+  const toggleReadMode = useCallback(() => {
+    setIsReadMode(prev => !prev);
+  }, []);
 
   return {
     currentWordIndex,
@@ -102,5 +108,7 @@ export function useReadingPageState(config?: ReadingPageStateConfig) {
     resetState,
     toggleOverlayVisibility,
     setCurrentWordIndex,
+    isReadMode,
+    toggleReadMode,
   };
 }

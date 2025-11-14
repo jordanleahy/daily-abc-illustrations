@@ -25,6 +25,11 @@ interface UnifiedReadingControlsProps {
   overlayWordStatuses?: Record<number, 'difficult' | 'understood'>;
   onOverlayWordChange?: (index: number) => void;
   showOverlay?: boolean;
+  
+  // Read/Focus toggle props
+  isReadMode?: boolean;
+  onToggleReadMode?: () => void;
+  isLastWord?: boolean;
 }
 
 export function UnifiedReadingControls({
@@ -45,6 +50,9 @@ export function UnifiedReadingControls({
   overlayWordStatuses,
   onOverlayWordChange,
   showOverlay = true,
+  isReadMode = false,
+  onToggleReadMode,
+  isLastWord = false,
 }: UnifiedReadingControlsProps) {
   return (
     <div 
@@ -53,21 +61,45 @@ export function UnifiedReadingControls({
     >
       {/* Text Overlay Section - Above all controls */}
       {showOverlay && overlayText && (
-        <div className="mb-3 bg-muted/30 rounded-lg px-4 py-2 min-h-[48px] flex items-center justify-center">
-          {overlayWords && overlayWords.length > 0 ? (
-            <div className="w-full h-[40px]">
-              <WordCarousel
-                words={overlayWords}
-                currentWordIndex={overlayCurrentWordIndex}
-                wordStatuses={overlayWordStatuses}
-                onWordChange={onOverlayWordChange}
-              />
+        <div className="mb-3 bg-muted/30 rounded-lg px-4 py-2 min-h-[48px] flex flex-col gap-2">
+          {/* Toggle Button - Only show when on last word and has words */}
+          {overlayWords && overlayWords.length > 0 && isLastWord && onToggleReadMode && (
+            <div className="flex justify-center">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={onToggleReadMode}
+                className="bg-background/50 hover:bg-background/80"
+              >
+                {isReadMode ? 'Focus' : 'Read'}
+              </Button>
             </div>
-          ) : (
-            <p className="text-center font-semibold text-lg text-gray-900 dark:text-gray-100 line-clamp-2">
-              {overlayText}
-            </p>
           )}
+          
+          {/* Content Display - Either carousel or sentence */}
+          <div className="w-full h-[40px] flex items-center justify-center">
+            {overlayWords && overlayWords.length > 0 ? (
+              isReadMode ? (
+                // Read Mode: Show full sentence
+                <p className="text-center font-semibold text-lg text-gray-900 dark:text-gray-100">
+                  {overlayText}
+                </p>
+              ) : (
+                // Focus Mode: Show word carousel
+                <WordCarousel
+                  words={overlayWords}
+                  currentWordIndex={overlayCurrentWordIndex}
+                  wordStatuses={overlayWordStatuses}
+                  onWordChange={onOverlayWordChange}
+                />
+              )
+            ) : (
+              // Fallback for non-word content
+              <p className="text-center font-semibold text-lg text-gray-900 dark:text-gray-100 line-clamp-2">
+                {overlayText}
+              </p>
+            )}
+          </div>
         </div>
       )}
       

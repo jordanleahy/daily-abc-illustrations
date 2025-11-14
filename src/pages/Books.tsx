@@ -96,35 +96,11 @@ function UserBookCard({
       className="cursor-pointer hover:shadow-lg transition-shadow group overflow-hidden"
       onClick={onClick}
     >
-      <CardHeader>
+      <CardHeader className="space-y-3">
         <CardTitle className="text-lg group-hover:text-primary transition-colors">
           {book.book_name}
         </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Book Thumbnail - Priority: cover page image → thumbnail_url → seo image → placeholder */}
-        <AspectRatio ratio={1} className="bg-muted rounded-lg overflow-hidden relative group">
-          {shouldRender ? (
-            coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url ? (
-              <BookImage
-                src={coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url}
-                alt={book.book_name}
-                priority={index < 6}
-                className="w-full h-full object-cover object-center"
-                enableMobileSave={true}
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <BookOpen className="h-12 w-12 text-muted-foreground" />
-              </div>
-            )
-          ) : (
-            <div className="w-full h-full bg-muted flex items-center justify-center">
-              <BookOpen className="h-12 w-12 text-muted-foreground/30" />
-            </div>
-          )}
-        </AspectRatio>
-
+        
         {/* Book Metadata Badges */}
         <div className="flex flex-wrap gap-2">
           {book.metadata?.bookType && (
@@ -158,6 +134,30 @@ function UserBookCard({
             </Badge>
           )}
         </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Book Thumbnail - Priority: cover page image → thumbnail_url → seo image → placeholder */}
+        <AspectRatio ratio={1} className="bg-muted rounded-lg overflow-hidden relative group">
+          {shouldRender ? (
+            coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url ? (
+              <BookImage
+                src={coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url}
+                alt={book.book_name}
+                priority={index < 6}
+                className="w-full h-full object-cover object-center"
+                enableMobileSave={true}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center">
+                <BookOpen className="h-12 w-12 text-muted-foreground" />
+              </div>
+            )
+          ) : (
+            <div className="w-full h-full bg-muted flex items-center justify-center">
+              <BookOpen className="h-12 w-12 text-muted-foreground/30" />
+            </div>
+          )}
+        </AspectRatio>
 
         {/* Edit Button */}
         <Button 

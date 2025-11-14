@@ -14,6 +14,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
+import { useBookCoverImage } from '@/hooks/useBookCoverImage';
 import { BookImage } from '@/components/ui/book-image';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
@@ -21,7 +22,6 @@ import { useDeleteBook } from '@/hooks/useDeleteBook';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileBookEditor } from '@/components/book/MobileBookEditor';
 import { AdminOnly } from '@/components/AdminOnly';
-import { PublicationStatus } from '@/types/shared/status';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -78,8 +78,7 @@ function UserBookCard({
   isDeleting
 }: UserBookCardProps) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
-  // Use cover image from book object (already fetched by useBooks)
-  const coverImageUrl = book.coverImageUrl;
+  const { data: coverImageUrl } = useBookCoverImage(book.id);
   
   // Viewport-based lazy loading
   const { ref, inView } = useIntersectionObserver({
@@ -423,7 +422,7 @@ export default function Books() {
         bookId={selectedBookId}
         open={mobileEditorOpen}
         onOpenChange={setMobileEditorOpen}
-        publicationStatus={selectedBookPublication?.status as PublicationStatus}
+        publicationStatus={selectedBookPublication}
         book={selectedBook}
       />
       

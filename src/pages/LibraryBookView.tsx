@@ -15,16 +15,17 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useLibraryBookByIdDecoupled } from '@/hooks/useLibraryBookByIdDecoupled';
 import { useLibraryBookPagesDecoupled } from '@/hooks/useLibraryBookPagesDecoupled';
-import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImagePreloader';
+import { useBookPageImages } from '@/hooks/useBookPageImages';
+import { useLibraryBookImagePreloader } from '@/hooks/useLibraryBookImagePreloader';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { trackBookView } from '@/utils/bookViewTracking';
 import { Card } from '@/components/ui/card';
-import { PublicPageImage } from '@/components/daily-published';
+import { BookImage } from '@/components/ui/book-image';
 import { UnifiedReadingView } from '@/components/reading';
 import { RoleDebugger } from '@/components/RoleDebugger';
 import { Calendar } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
-import { useEffect, useMemo } from 'react';
+import { useEffect } from 'react';
 
 export default function LibraryBookView() {
   const { bookId } = useParams<{ bookId: string }>();
@@ -35,6 +36,10 @@ export default function LibraryBookView() {
   
   const { data: book, isLoading: isLoadingBook, error: bookError } = useLibraryBookByIdDecoupled(safeBookId);
   const { data: pages = [], isLoading: isLoadingPages } = useLibraryBookPagesDecoupled(safeBookId);
+  const { data: imageMap = {} } = useBookPageImages(safeBookId);
+  
+  // Preload library images with optimization and caching
+  useLibraryBookImagePreloader(safeBookId, pages);
   
   // Track book view when page loads
   useEffect(() => {
@@ -45,8 +50,6 @@ export default function LibraryBookView() {
   
   // Get starting page index from location state
   const startingPageIndex = location.state?.startingPageIndex ?? 0;
-  
-  // Prefetch disabled for decoupled library
   
   const isLoading = isLoadingBook || isLoadingPages;
 
@@ -120,12 +123,11 @@ export default function LibraryBookView() {
       showUploadButton={false}
       entryPoint={entryPoint}
       imageComponent={(page) => (
-        <PublicPageImage 
-          pageId={page.id}
-          bookId={book.id}
-          className="rounded-lg"
-          showUploadButton={false}
-          isFirstImage={page.id === pages[startingPageIndex]?.id}
+        <BookImage
+          src={imageMap[page.page_number]}
+          alt={`Letter ${page.letter} - ${page.title}`}
+          priority={page.id === pages[startingPageIndex]?.id}
+          className="rounded-lg w-full h-full object-contain"
         />
       )}
     />

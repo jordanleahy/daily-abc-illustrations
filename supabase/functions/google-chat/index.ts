@@ -278,27 +278,33 @@ Before generating the content page prompts, you MUST first generate a cover page
 
 **Cover Page Requirements:**
 - Format as "**Cover: [Book Title]**" (not "Page 0")
-- MUST explicitly mention the selected theme/characters if one was chosen (e.g., "featuring Paw Patrol characters Chase, Marshall, and Skye")
+- MUST follow this exact structure for all cover prompts:
+  1. Start with "A full-frame [style]-style illustration of [main subject/character]."
+  2. Add "Accurate character design." on next line if characters are involved
+  3. Describe character positioning and expressions (forward-facing, centered, specific poses)
+  4. Detail the environment/background setting
+  5. Add specific visual elements (props, decorations, thematic objects)
+  6. END with "Fill the entire frame with characters and environment, no borders or empty areas."
+  7. FINAL LINE: "Add the title '[Book Title]' centered in the middle of the cover in clean, bold text."
+- MUST explicitly mention the selected theme/characters if one was chosen
 - If NO theme was selected (user chose "skip"), create a generic but engaging cover
-- Describe the visual style that matches the theme
-- Include all the same elements as regular pages: character details, colors, composition, mood
-- END with: "No text overlays. Clean illustration only."
+- Title should be embedded in the image, not added as overlay later
 
 **Example Cover WITH Paw Patrol Theme:**
 **Cover: Paw Patrol's ABC Adventure**
-A vibrant, action-packed book cover featuring Paw Patrol characters Chase (blue police pup), Marshall (red firefighter dalmatian), and Skye (pink cockapoo pilot) standing together heroically in front of their lookout tower. The Adventure Bay background shows a sunny day with blue skies and green hills. The characters are smiling and posed dynamically, showing their different rescue gear and badges. The illustration uses the signature Paw Patrol visual style with bold outlines, bright primary colors (blue, red, yellow, pink), and friendly character designs matching the animated series. No text overlays. Clean illustration only.
+A full-frame Paw Patrol-style illustration of Chase, Marshall, and Skye standing together heroically. Accurate character design. Chase (blue police pup) is centered with a confident pose, Marshall (red firefighter dalmatian) stands on the left with a friendly smile, and Skye (pink cockapoo pilot) hovers slightly behind on the right. Place them in front of the iconic Lookout Tower with Adventure Bay in the background showing blue skies, green hills, and the ocean. Add colorful rescue badges floating around them and their signature vehicles visible in the distance. The illustration uses bold outlines, bright primary colors (blue, red, yellow, pink), and friendly character designs matching the animated series. Fill the entire frame with characters and environment, no borders or empty areas. Add the title "Paw Patrol's ABC Adventure" centered in the middle of the cover in clean, bold text.
 
 **Example Cover WITH Benji Davies Style:**
 **Cover: My First ABC Book**
-A warm, gentle watercolor-style illustration in the "Grandad's Island" aesthetic showing a small child with simple, minimal features sitting cross-legged in a cozy reading nook, surrounded by oversized alphabet letters floating around them like friendly companions. The letters A, B, and C are rendered in soft, muted blues and warm earth tones with visible brushstroke textures and hand-painted quality. Soft, dreamy natural light filters through a window in the background, creating a peaceful, nostalgic atmosphere with atmospheric depth. The color palette uses muted pastels: dusty blues, sage greens, warm ochres, and soft creams characteristic of Benji Davies' "Grandad's Island" work. The illustration has a distinctly painterly, hand-crafted quality with subtle paper textures, watercolor bleeds, and gentle gradients. Every brushstroke feels intentional and tactile. The child's simple expression conveys curiosity and contentment through posture and gesture rather than detailed features, creating emotional warmth. The composition feels cozy, intimate, and inviting - like a quiet, treasured moment of discovery from a beloved storybook. The overall mood is gentle, safe, and emotionally resonant. No text overlays. Clean illustration only.
+A full-frame Benji Davies-style watercolor illustration in the "Grandad's Island" aesthetic of a small child sitting cross-legged in a cozy reading nook. Accurate character design with simple, minimal features. The child is centered with a gentle smile, surrounded by oversized alphabet letters A, B, and C floating around them like friendly companions. Add a window in the background with soft natural light filtering through, creating a peaceful atmosphere. Include a small stuffed toy beside the child and a stack of books nearby. The letters are rendered in soft, muted blues and warm earth tones with visible brushstroke textures and hand-painted quality. Use the characteristic color palette: dusty blues, sage greens, warm ochres, and soft creams. The illustration has a distinctly painterly, hand-crafted quality with subtle paper textures, watercolor bleeds, and gentle gradients creating emotional warmth. Fill the entire frame with characters and environment, no borders or empty areas. Add the title "My First ABC Book" centered in the middle of the cover in clean, bold text.
 
 **Example Cover WITH Black and White Style:**
 **Cover: Classic ABC Adventures**
-A bold, high-contrast black and white line art illustration showing a cheerful child sitting among oversized alphabet blocks and books. The letters A, B, and C are drawn with thick, clean outlines and filled with solid black. The child has simple, expressive features rendered in classic line art style with clear contours and hatching for shading. The background features a simple bookshelf with books shown using parallel line work and cross-hatching techniques. The composition uses strong black and white contrast reminiscent of vintage children's book illustrations. Bold shapes, clear silhouettes, and decorative line patterns create visual interest without color. The style evokes classic educational materials and timeless storybook aesthetics with clean, professional linework. No text overlays. Clean illustration only.
+A full-frame classic black-and-white line art illustration of a cheerful child sitting among oversized alphabet blocks. Accurate character design with simple, expressive features. The child is centered with a warm smile, holding the letter A. Place large alphabet blocks B and C on either side, with more blocks stacked in the background. Add a simple bookshelf behind them with books shown using parallel line work and cross-hatching techniques. The composition uses strong black and white contrast reminiscent of vintage children's book illustrations with bold shapes, clear silhouettes, and decorative line patterns. Bold outlines and hatching create depth and visual interest. Fill the entire frame with characters and environment, no borders or empty areas. Add the title "Classic ABC Adventures" centered in the middle of the cover in clean, bold text.
 
-**Example Cover WITHOUT Theme (Plain/Simple) and No Text:**
+**Example Cover WITHOUT Theme (Plain/Simple):**
 **Cover: My First ABC Book**
-A simple book cover illustration showing alphabet letters A, B, and C in bright primary colors on a clean white background. Basic shapes and clear typography. Minimal design with no specific artistic style. No text overlays. Clean illustration only.
+A full-frame simple illustration showing a friendly cartoon child standing among colorful alphabet letters. The child is centered with a happy expression, arms outstretched welcomingly. Place large letters A, B, and C around them in bright primary colors (red, blue, yellow). Add simple decorative elements like stars, balloons, or basic shapes in the background. Use a clean white or soft pastel background with the letters and elements filling the space. Simple, clear design with bright colors and friendly shapes suitable for young children. Fill the entire frame with characters and elements, no borders or empty areas. Add the title "My First ABC Book" centered in the middle of the cover in clean, bold text.
 
 Format your response with the cover prompt first, then all content page prompts below it (without page numbers).
 

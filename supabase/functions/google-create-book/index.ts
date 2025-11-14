@@ -693,7 +693,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
           mainConcept: sanitizeText(page.content?.mainConcept || '', 500),
           funFact: sanitizeText(page.content?.funFact || '', 500),
           activity: sanitizeText(page.content?.activity || '', 500),
-          imagePrompt: fullPrompts?.[actualPageNumber] || page.description || '', // Store full prompt
+          imagePrompt: '', // Prompts are now generated via generate-page-system-prompts
           textOverlay: {
             enabled: textOverlayEnabled,
             text: sanitizeText(page.title, 100),

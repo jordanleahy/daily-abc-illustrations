@@ -137,12 +137,12 @@ function UserBookCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        {/* Book Thumbnail - Priority: cover page image → thumbnail_url → seo image → placeholder */}
+        {/* Book Cover - Shows cover page type image or placeholder */}
         <AspectRatio ratio={1} className="bg-muted rounded-lg overflow-hidden relative group/thumbnail shadow-md hover:shadow-xl transition-shadow duration-300">
           {shouldRender ? (
-            coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url ? (
+            coverImageUrl ? (
               <BookImage
-                src={coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url}
+                src={coverImageUrl}
                 alt={book.book_name}
                 priority={index < 6}
                 className="w-full h-full object-cover object-center"

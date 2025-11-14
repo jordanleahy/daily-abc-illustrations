@@ -114,7 +114,7 @@ const App = () => {
                 <Route path="/all-books/:id" element={<ProtectedRoute requireRole="admin"><BookDetail /></ProtectedRoute>} />
                 {/* Library routes - All subscription tiers */}
                 <Route path="/library" element={<ProtectedRoute requireSubscription={false}><Library key="library" /></ProtectedRoute>} />
-                <Route path="/library/:id" element={<ProtectedRoute requireSubscription={false}><LibraryBookView /></ProtectedRoute>} />
+                <Route path="/library/:bookId" element={<ProtectedRoute requireSubscription={false}><LibraryBookView /></ProtectedRoute>} />
                 <Route path="/library/:id/detail" element={<ProtectedRoute requireSubscription={false}><UserLibraryDetail /></ProtectedRoute>} />
                 <Route path="/admin/library/:id" element={<ProtectedRoute requireRole="admin"><LibraryDetail /></ProtectedRoute>} />
                 

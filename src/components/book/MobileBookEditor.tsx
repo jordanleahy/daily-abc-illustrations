@@ -8,15 +8,8 @@ import {
   DrawerDescription,
   DrawerClose
 } from '@/components/ui/drawer';
-import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetDescription,
-  SheetClose
-} from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useBookPages } from '@/hooks/useBookPages';
 import { useBook } from '@/hooks/useBook';
@@ -130,21 +123,35 @@ export function MobileBookEditor({
     }
 
     return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent side="right" className="w-full sm:max-w-2xl flex flex-col p-0">
-          <SheetHeader className="relative border-b px-6 py-4">
-            <SheetTitle className="text-left">{book.book_name}</SheetTitle>
-            <SheetDescription className="text-left">Loading pages...</SheetDescription>
-          </SheetHeader>
+      <div
+          className={cn(
+            "fixed right-0 top-0 bottom-0 w-[400px]",
+            "bg-background border-l shadow-lg z-[100]",
+            "transition-transform duration-300 ease-out",
+            "overflow-y-auto flex flex-col",
+            open ? "translate-x-0" : "translate-x-full"
+          )}
+        >
+          <div className="relative border-b px-6 py-4">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="absolute right-4 top-4"
+              onClick={() => onOpenChange(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+            <h2 className="text-lg font-semibold pr-12">{book.book_name}</h2>
+            <p className="text-sm text-muted-foreground">Loading pages...</p>
+          </div>
           <div className="flex-1 flex items-center justify-center">
             <div className="text-center text-muted-foreground">
               <BookOpen className="h-12 w-12 mx-auto mb-4 animate-pulse" />
               <p>Loading book pages...</p>
             </div>
           </div>
-        </SheetContent>
-      </Sheet>
-    );
+        </div>
+      );
   }
 
   // Mobile: Use Drawer (bottom sheet)
@@ -244,18 +251,33 @@ export function MobileBookEditor({
     );
   }
 
-  // Desktop: Use Sheet (side panel)
+  // Desktop: Use plain div (side panel like Outline)
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full sm:max-w-2xl flex flex-col p-0">
-        <SheetHeader className="relative border-b px-6 py-4">
-          <SheetTitle className="text-left">
+    <div
+        className={cn(
+          "fixed right-0 top-0 bottom-0 w-[400px]",
+          "bg-background border-l shadow-lg z-[100]",
+          "transition-transform duration-300 ease-out",
+          "overflow-y-auto flex flex-col",
+          open ? "translate-x-0" : "translate-x-full"
+        )}
+      >
+        <div className="relative border-b px-6 py-4">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute right-4 top-4"
+            onClick={() => onOpenChange(false)}
+          >
+            <X className="h-4 w-4" />
+          </Button>
+          <h2 className="text-lg font-semibold pr-12">
             Page {currentPage.page_number}: {currentPage.title}
-          </SheetTitle>
-          <SheetDescription className="text-left">
+          </h2>
+          <p className="text-sm text-muted-foreground">
             {book.book_name}
-          </SheetDescription>
-        </SheetHeader>
+          </p>
+        </div>
 
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto px-4 pt-6 pb-4 space-y-6">
@@ -325,7 +347,6 @@ export function MobileBookEditor({
             </Button>
           </div>
         </div>
-      </SheetContent>
-    </Sheet>
-  );
+      </div>
+    );
 }

@@ -6,6 +6,7 @@ import { useBookPages } from '@/hooks/useBookPages';
 import { toast } from 'sonner';
 import { Pencil, X } from 'lucide-react';
 import { WordCarousel } from './WordCarousel';
+import type { PageType } from '@/types/book';
 
 interface ReadingPageDisplayProps {
   pageId: string;
@@ -17,6 +18,7 @@ interface ReadingPageDisplayProps {
   imageComponent?: React.ReactNode;
   className?: string;
   mode?: 'read' | 'edit'; // 'read' shows word carousel, 'edit' shows simple text
+  pageType?: PageType;
   // Word learning state passed from parent
   currentWordIndex?: number;
   hiddenOverlayPages?: Set<string>;
@@ -38,6 +40,7 @@ export function ReadingPageDisplay({
   imageComponent,
   className = '',
   mode = 'read',
+  pageType,
   currentWordIndex = 0,
   hiddenOverlayPages,
   onToggleOverlayVisibility,
@@ -122,7 +125,7 @@ export function ReadingPageDisplay({
                   isEditing={true}
                 />
               </div>
-            ) : mode === 'read' && currentPageWords && currentPageWords.length > 0 ? (
+            ) : mode === 'read' && currentPageWords && currentPageWords.length > 0 && pageType !== 'cover' && pageType !== 'educational' ? (
               <div 
                 className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm group h-[40px] flex items-center"
               >

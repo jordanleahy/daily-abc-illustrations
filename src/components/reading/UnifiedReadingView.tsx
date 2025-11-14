@@ -392,22 +392,23 @@ export function UnifiedReadingView({
             onClick={handleTapToAdvance}
             style={onTapToAdvance ? { cursor: 'pointer' } : undefined}
           >
-              <ReadingPageDisplay
-                pageId={currentPage.id}
-                bookId={book.book_id || book.id}
-                pageNumber={currentPage.page_number}
-                pageText={currentPage.content?.textOverlay?.text || ''}
-                imageUrl=""
-                currentWordIndex={readingState.currentWordIndex}
-                wordStatuses={readingState.wordStatuses}
-                hiddenOverlayPages={readingState.hiddenOverlayPages}
-                onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
-                isPreferencesLoading={readingState.isPreferencesLoading}
-                showDismissButton={false}
-                onWordChange={readingState.setCurrentWordIndex}
-                imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex) : undefined}
-                hideBottomOverlay={true}
-              />
+            <ReadingPageDisplay
+              pageId={currentPage.id}
+              bookId={book.book_id || book.id}
+              pageNumber={currentPage.page_number}
+              pageText={currentPage.content?.textOverlay?.text || ''}
+              imageUrl=""
+              pageType={currentPage.page_type}
+              currentWordIndex={readingState.currentWordIndex}
+              wordStatuses={readingState.wordStatuses}
+              hiddenOverlayPages={readingState.hiddenOverlayPages}
+              onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
+              isPreferencesLoading={readingState.isPreferencesLoading}
+              showDismissButton={false}
+              onWordChange={readingState.setCurrentWordIndex}
+              imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex) : undefined}
+              hideBottomOverlay={true}
+            />
             </div>
           </div>
           

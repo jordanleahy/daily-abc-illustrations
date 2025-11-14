@@ -2,7 +2,6 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImagePreloader';
-import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useAddBookAsHabit } from '@/hooks/useAddBookAsHabit';
 import { useIsBookAddedAsHabit } from '@/hooks/useIsBookAddedAsHabit';
@@ -30,7 +29,6 @@ export default function UserLibraryDetail() {
   
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
   const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
-  const { openGraphMetadata } = useDailyPublishedOpenGraph(safeId, 0);
   const { data: kidProfiles = [] } = useKidProfiles();
   const addBookAsHabit = useAddBookAsHabit();
   const { data: isBookAdded = false } = useIsBookAddedAsHabit(dailyContent?.book_id);
@@ -179,9 +177,15 @@ export default function UserLibraryDetail() {
     );
   }
 
+  // Generate basic metadata for browser tab/bookmarks (no expensive OpenGraph needed for library pages)
+  const basicMetadata = dailyContent ? {
+    title: `${dailyContent.title} | Library`,
+    description: dailyContent.description || undefined,
+  } : undefined;
+
   return (
     <>
-      {openGraphMetadata && <MetaHead metadata={openGraphMetadata} />}
+      {basicMetadata && <MetaHead metadata={basicMetadata} />}
       
       <StandardPageLayout>
         {/* Header Section */}

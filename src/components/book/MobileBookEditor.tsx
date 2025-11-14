@@ -141,7 +141,7 @@ export function MobileBookEditor({
         </DrawerHeader>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto px-4 py-6 space-y-6">
+        <div className="flex-1 overflow-y-auto px-4 pt-6 pb-4 space-y-6">
           {/* Page Image */}
           <div>
             <div className="aspect-square bg-muted rounded-lg overflow-hidden border-2 border-dashed border-border">

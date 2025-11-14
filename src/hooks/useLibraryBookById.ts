@@ -36,7 +36,7 @@ export const useLibraryBookById = (id: string | undefined) => {
       if (!dailyData) return null;
 
       // Then fetch pages with images for this book (one query, uses index)
-      // LEFT JOIN: Return all pages even if they don't have images yet
+      // LEFT JOIN without filters: Return all pages, let RLS handle image visibility
       const { data: pagesData, error: pagesError } = await supabase
         .from('pages')
         .select(`
@@ -54,11 +54,11 @@ export const useLibraryBookById = (id: string | undefined) => {
           page_images:page_image_urls(
             id,
             image_url,
-            version_number
+            version_number,
+            is_latest
           )
         `)
         .eq('book_id', dailyData.book_id)
-        .eq('page_images.is_latest', true)
         .order('page_number', { ascending: true });
 
       if (pagesError) {
@@ -69,7 +69,13 @@ export const useLibraryBookById = (id: string | undefined) => {
 
       console.log('useLibraryBookById: Query result:', { dailyData, pagesData });
 
-      return { ...dailyData, pages: pagesData || [] };
+      // Filter to latest images only (client-side, since filtering joined tables in Supabase acts like INNER JOIN)
+      const pagesWithLatestImages = pagesData?.map(page => ({
+        ...page,
+        page_images: page.page_images?.filter((img: any) => img.is_latest) || []
+      })) || [];
+
+      return { ...dailyData, pages: pagesWithLatestImages };
     },
     enabled: !!id && isValidUUID(id),
     // Uses global 7-day staleTime from App.tsx for instant loading

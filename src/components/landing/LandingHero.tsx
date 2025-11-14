@@ -16,29 +16,17 @@ export const LandingHero = ({
   const navigate = useNavigate();
   const pages = dailyPublished?.pages || [];
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
-  const [lastClickedIndex, setLastClickedIndex] = useState<number | null>(null);
   
   // Lazy load carousel images on-demand
   useLazyCarouselImages(pages, currentPageIndex);
+  
   const handleNextPage = () => {
-    // Check if this is a second click on the same position
-    if (lastClickedIndex === currentPageIndex && dailyPublished) {
-      // Second click - open in new tab
+    if (dailyPublished) {
       window.open(`/daily-published/${dailyPublished.id}`, '_blank');
-      return;
-    }
-    
-    // First click - advance carousel
-    if (currentPageIndex < pages.length - 1) {
-      setLastClickedIndex(currentPageIndex);
-      setCurrentPageIndex(currentPageIndex + 1);
-    } else if (currentPageIndex === pages.length - 1) {
-      // At last page, track as potential second click
-      setLastClickedIndex(currentPageIndex);
     }
   };
+  
   const handlePrevPage = () => {
-    setLastClickedIndex(null); // Reset on direction change
     if (currentPageIndex > 0) {
       setCurrentPageIndex(currentPageIndex - 1);
     }
@@ -111,11 +99,7 @@ export const LandingHero = ({
                     variant="default" 
                     className="flex-1 h-16" 
                     onClick={handleNextPage}
-                    title={lastClickedIndex === currentPageIndex 
-                      ? "Click again to open book" 
-                      : currentPageIndex === pages.length - 1 
-                        ? "Open full book" 
-                        : "Next page"}
+                    title="Open full book"
                   >
                     <ChevronRight className="h-8 w-8" />
                   </Button>

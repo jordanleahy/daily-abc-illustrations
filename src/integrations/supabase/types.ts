@@ -163,6 +163,7 @@ export type Database = {
           educational_focus: Json | null
           id: string
           is_highlighted: boolean
+          is_library_book: boolean | null
           is_style_template: boolean | null
           last_activity_at: string | null
           metadata: Json | null
@@ -186,6 +187,7 @@ export type Database = {
           educational_focus?: Json | null
           id?: string
           is_highlighted?: boolean
+          is_library_book?: boolean | null
           is_style_template?: boolean | null
           last_activity_at?: string | null
           metadata?: Json | null
@@ -209,6 +211,7 @@ export type Database = {
           educational_focus?: Json | null
           id?: string
           is_highlighted?: boolean
+          is_library_book?: boolean | null
           is_style_template?: boolean | null
           last_activity_at?: string | null
           metadata?: Json | null

@@ -13,9 +13,8 @@
  */
 
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { useLibraryBookById } from '@/hooks/useLibraryBookById';
-import { useDailyPublishedOpenGraph } from '@/hooks/useDailyPublishedOpenGraph';
-import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
+import { useLibraryBookByIdDecoupled } from '@/hooks/useLibraryBookByIdDecoupled';
+import { useLibraryBookPagesDecoupled } from '@/hooks/useLibraryBookPagesDecoupled';
 import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImagePreloader';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { trackBookView } from '@/utils/bookViewTracking';
@@ -28,30 +27,28 @@ import { isValidUUID } from '@/utils/uuid';
 import { useEffect, useMemo } from 'react';
 
 export default function LibraryBookView() {
-  const { id } = useParams<{ id: string }>();
+  const { bookId } = useParams<{ bookId: string }>();
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthContext();
-  const safeId = id && isValidUUID(id) ? id : undefined;
+  const safeBookId = bookId && isValidUUID(bookId) ? bookId : undefined;
   
-  const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
-  const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
-  const { openGraphMetadata } = useDailyPublishedOpenGraph(safeId, 0);
+  const { data: book, isLoading: isLoadingBook, error: bookError } = useLibraryBookByIdDecoupled(safeBookId);
+  const { data: pages = [], isLoading: isLoadingPages } = useLibraryBookPagesDecoupled(safeBookId);
   
   // Track book view when page loads
   useEffect(() => {
-    if (dailyContent?.id && user) {
-      trackBookView(dailyContent.id);
+    if (book?.id && user) {
+      trackBookView(book.id);
     }
-  }, [dailyContent?.id, user]);
+  }, [book?.id, user]);
   
   // Get starting page index from location state
   const startingPageIndex = location.state?.startingPageIndex ?? 0;
   
-  // Prefetch all page images in the background for instant navigation
-  useDailyPublishedImagePreloader(pages, dailyContent?.book_id);
+  // Prefetch disabled for decoupled library
   
-  const isLoading = isLoadingDaily || isLoadingPages;
+  const isLoading = isLoadingBook || isLoadingPages;
 
   const handleBack = () => {
     navigate('/library');
@@ -68,7 +65,7 @@ export default function LibraryBookView() {
     );
   }
 
-  if (dailyError || !dailyContent) {
+  if (bookError || !book) {
     return (
       <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 gap-4">
         <Card className="max-w-md w-full mt-20">
@@ -80,9 +77,9 @@ export default function LibraryBookView() {
             <p className="text-sm text-muted-foreground">
               This book could not be found in your library.
             </p>
-            {dailyError && (
+            {bookError && (
               <p className="text-sm text-destructive">
-                Error: {dailyError.message}
+                Error: {bookError.message}
               </p>
             )}
           </div>
@@ -97,9 +94,9 @@ export default function LibraryBookView() {
       <div className="min-h-screen bg-background flex items-center justify-center p-4">
         <Card className="max-w-md w-full mt-20">
           <div className="p-6 text-center space-y-4">
-            <h2 className="text-lg font-semibold">{dailyContent.title}</h2>
+            <h2 className="text-lg font-semibold">{book.book_name}</h2>
             <p className="text-sm text-muted-foreground">
-              This publication doesn't have any pages to display.
+              This book doesn't have any pages to display.
             </p>
           </div>
         </Card>
@@ -107,26 +104,25 @@ export default function LibraryBookView() {
     );
   }
 
-  const entryPoint = location.state?.from === 'user-library-detail' ? 'reading_view_button' : 'library_card';
+  const entryPoint = location.state?.from === 'library-detail' ? 'reading_view_button' : 'library_card';
 
   return (
     <UnifiedReadingView
       contentType="library_book"
       book={{
-        id: dailyContent.id,
-        book_id: dailyContent.book_id,
-        title: dailyContent.title,
+        id: book.id,
+        book_id: book.id,
+        title: book.book_name,
       }}
       pages={pages}
       startingPageIndex={startingPageIndex}
       onBack={handleBack}
       showUploadButton={false}
       entryPoint={entryPoint}
-      openGraphMetadata={openGraphMetadata}
       imageComponent={(page) => (
         <PublicPageImage 
           pageId={page.id}
-          bookId={dailyContent.book_id}
+          bookId={book.id}
           className="rounded-lg"
           showUploadButton={false}
           isFirstImage={page.id === pages[startingPageIndex]?.id}

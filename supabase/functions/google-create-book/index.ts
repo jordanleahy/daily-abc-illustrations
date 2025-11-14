@@ -194,7 +194,7 @@ CRITICAL INSTRUCTIONS:
 - EXTRACT metadata from the conversation
 
 PROVIDED PAGE STRUCTURE:
-${pageDetails.map(p => `Page ${p.pageNumber}: "${p.title}"\n${p.description}`).join('\n\n')}
+${pageDetails.map(p => `Page ${p.pageNumber}: ${p.title}\n${p.description}`).join('\n\n')}
 
 Return ONLY valid JSON with this structure:
 {

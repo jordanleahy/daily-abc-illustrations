@@ -16,9 +16,8 @@ export const useLibraryBookById = (id: string | undefined) => {
         return null;
       }
       
-      // For authenticated users, get any daily published content they own (regardless of status)
-      // RLS policies will ensure users can only see their own content
-      const { data, error } = await supabase
+      // First fetch daily_published with book info
+      const { data: dailyData, error: dailyError } = await supabase
         .from('daily_published')
         .select(`
           *,
@@ -29,14 +28,47 @@ export const useLibraryBookById = (id: string | undefined) => {
         .eq('id', id)
         .maybeSingle();
 
-      console.log('useLibraryBookById: Query result:', { data, error });
-
-      if (error) {
-        console.error('Error fetching library book by id:', error);
-        throw error;
+      if (dailyError) {
+        console.error('Error fetching library book by id:', dailyError);
+        throw dailyError;
       }
 
-      return data as DailyPublished | null;
+      if (!dailyData) return null;
+
+      // Then fetch pages with images for this book (one query, uses index)
+      const { data: pagesData, error: pagesError } = await supabase
+        .from('pages')
+        .select(`
+          id,
+          book_id,
+          letter,
+          page_number,
+          page_type,
+          title,
+          description,
+          content,
+          current_system_prompt_id,
+          created_at,
+          updated_at,
+          page_images:page_image_urls!inner(
+            id,
+            image_url,
+            version_number
+          )
+        `)
+        .eq('book_id', dailyData.book_id)
+        .eq('page_images.is_latest', true)
+        .order('page_number', { ascending: true });
+
+      if (pagesError) {
+        console.warn('Error fetching pages:', pagesError);
+        // Don't throw, return daily data without pages
+        return { ...dailyData, pages: [] };
+      }
+
+      console.log('useLibraryBookById: Query result:', { dailyData, pagesData });
+
+      return { ...dailyData, pages: pagesData || [] };
     },
     enabled: !!id && isValidUUID(id),
     // Uses global 7-day staleTime from App.tsx for instant loading

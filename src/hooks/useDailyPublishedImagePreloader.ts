@@ -16,10 +16,17 @@ interface PageImage {
 
 /**
  * Hook to prefetch and preload all page images for daily published content
- * Uses optimized edge function for batch fetching
+ * Accepts pre-fetched images to avoid additional queries
  */
-export function useDailyPublishedImagePreloader(pages: Page[] | undefined, bookId: string | undefined) {
-  // Prefetch all image URLs using optimized edge function
+export function useDailyPublishedImagePreloader(
+  pages: Page[] | undefined, 
+  bookId: string | undefined,
+  pageImagesMap?: Record<number, string>
+) {
+  // Use provided images if available (from joined query), otherwise fetch via edge function
+  const shouldFetch = !!bookId && !pageImagesMap;
+  
+  // Prefetch all image URLs using optimized edge function (only if not provided)
   const { data: imageUrls } = useQuery<PageImage[]>({
     queryKey: ['daily-published-images-batch', bookId],
     queryFn: async () => {
@@ -41,16 +48,32 @@ export function useDailyPublishedImagePreloader(pages: Page[] | undefined, bookI
         return [];
       }
     },
-    enabled: !!bookId,
+    enabled: shouldFetch,
     // Uses global 7-day staleTime from App.tsx for instant loading
   });
   
   // Progressive batch image preloading with Supabase transformations
   useEffect(() => {
-    if (!imageUrls || imageUrls.length === 0 || !pages) return;
+    if (!pages) return;
     
-    // Create a map for quick lookup
-    const imageUrlMap = new Map(imageUrls.map(img => [img.page_id, img.image_url]));
+    // Use provided images map or fetch from query
+    let imageUrlMap: Map<string, string>;
+    
+    if (pageImagesMap) {
+      // Convert Record<number, string> to Map<page_id, image_url>
+      imageUrlMap = new Map();
+      pages.forEach((page: any) => {
+        const imageUrl = pageImagesMap[page.page_number];
+        if (imageUrl) {
+          imageUrlMap.set(page.id, imageUrl);
+        }
+      });
+    } else if (imageUrls && imageUrls.length > 0) {
+      // Use fetched images
+      imageUrlMap = new Map(imageUrls.map(img => [img.page_id, img.image_url]));
+    } else {
+      return;
+    }
     
     // Helper to add Supabase image transformations
     const optimizeImageUrl = (url: string): string => {
@@ -114,7 +137,7 @@ export function useDailyPublishedImagePreloader(pages: Page[] | undefined, bookI
     }
     
     return () => timeouts.forEach(clearTimeout);
-  }, [imageUrls, pages]);
+  }, [imageUrls, pages, pageImagesMap]);
   
   return imageUrls;
 }

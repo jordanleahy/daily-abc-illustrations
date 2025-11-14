@@ -138,7 +138,7 @@ function UserBookCard({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Book Thumbnail - Priority: cover page image → thumbnail_url → seo image → placeholder */}
-        <AspectRatio ratio={1} className="bg-muted rounded-lg overflow-hidden relative group shadow-md hover:shadow-xl transition-shadow duration-300">
+        <AspectRatio ratio={1} className="bg-muted rounded-lg overflow-hidden relative group/thumbnail shadow-md hover:shadow-xl transition-shadow duration-300">
           {shouldRender ? (
             coverImageUrl || book.thumbnail_url || seoMetadata?.og_image_url ? (
               <BookImage
@@ -158,6 +158,13 @@ function UserBookCard({
               <BookOpen className="h-12 w-12 text-muted-foreground/30" />
             </div>
           )}
+          {/* Hover overlay to indicate clickability */}
+          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/thumbnail:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
+            <div className="text-white flex flex-col items-center gap-2">
+              <BookOpen className="h-8 w-8" />
+              <span className="text-sm font-medium">Read Book</span>
+            </div>
+          </div>
         </AspectRatio>
 
         {/* Edit Button */}

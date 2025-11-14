@@ -274,42 +274,40 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                 Browse Files
               </Button>
             </div>
-            {isMobile && (
-              <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t">
-                <p className="text-xs text-muted-foreground text-center mb-3">
-                  Or use clipboard
-                </p>
+            <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t">
+              <p className="text-xs text-muted-foreground text-center mb-3">
+                Or use clipboard
+              </p>
+              <Button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handlePasteFromClipboard();
+                }}
+                variant="outline"
+                size="lg"
+                className="w-full mx-auto"
+                disabled={disabled || isProcessing}
+              >
+                <Clipboard className="h-5 w-5 mr-2" />
+                Paste from Clipboard
+              </Button>
+              
+              {showCopyPrompt && onCopyPrompt && (
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handlePasteFromClipboard();
+                    onCopyPrompt();
                   }}
                   variant="outline"
                   size="lg"
-                  className="w-full mx-auto"
+                  className="w-full mx-auto mt-2"
                   disabled={disabled || isProcessing}
                 >
-                  <Clipboard className="h-5 w-5 mr-2" />
-                  Paste from Clipboard
+                  <Copy className="h-5 w-5 mr-2" />
+                  Copy Prompt
                 </Button>
-                
-                {showCopyPrompt && onCopyPrompt && (
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCopyPrompt();
-                    }}
-                    variant="outline"
-                    size="lg"
-                    className="w-full mx-auto mt-2"
-                    disabled={disabled || isProcessing}
-                  >
-                    <Copy className="h-5 w-5 mr-2" />
-                    Copy Prompt
-                  </Button>
-                )}
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
     </div>

@@ -1,8 +1,11 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export const useLibraryBooksDecoupled = () => {
-  return useQuery({
+  const queryClient = useQueryClient();
+  
+  const query = useQuery({
     queryKey: ['library-books-decoupled'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -61,4 +64,31 @@ export const useLibraryBooksDecoupled = () => {
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  // Real-time subscription for library books updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('library-books-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'books',
+          filter: 'is_library_book=eq.true'
+        },
+        (payload) => {
+          console.log('Library book changed:', payload);
+          // Invalidate and refetch when any library book changes
+          queryClient.invalidateQueries({ queryKey: ['library-books-decoupled'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return query;
 };

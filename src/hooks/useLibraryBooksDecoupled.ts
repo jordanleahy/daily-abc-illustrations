@@ -21,22 +21,43 @@ export const useLibraryBooksDecoupled = () => {
 
       if (error) throw error;
       
-      // Get page counts for each book
-      const booksWithCounts = await Promise.all(
+      // Get page counts and first page image for each book
+      const booksWithData = await Promise.all(
         (data || []).map(async (book) => {
+          // Get page count
           const { count } = await supabase
             .from('pages')
             .select('*', { count: 'exact', head: true })
             .eq('book_id', book.id);
           
+          // Get first page image (page_number = 0)
+          const { data: firstPageData } = await supabase
+            .from('pages')
+            .select(`
+              id,
+              page_image_urls!inner(
+                image_url,
+                is_latest
+              )
+            `)
+            .eq('book_id', book.id)
+            .eq('page_number', 0)
+            .eq('page_image_urls.is_latest', true)
+            .single();
+          
+          // Extract first page image URL
+          const firstPageImage = firstPageData?.page_image_urls?.[0]?.image_url;
+          
           return {
             ...book,
-            total_pages: count || 0
+            total_pages: count || 0,
+            // Use first page image if thumbnail_url is missing
+            cover_image: book.thumbnail_url || firstPageImage || null
           };
         })
       );
 
-      return booksWithCounts;
+      return booksWithData;
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

@@ -8,6 +8,7 @@ import { StandardPageLayout } from '@/components/layout';
 import { LoadingState } from '@/components/ui/loading-state';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
 import { Card } from '@/components/ui/card';
+import { BookImage } from '@/components/ui/book-image';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { usePageImageUrls } from '@/hooks/usePageImageUrls';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
@@ -97,6 +98,7 @@ interface LibraryBookCardProps {
     created_at: string;
     total_pages?: number;
     thumbnail_url?: string;
+    cover_image?: string | null;
     is_highlighted?: boolean;
   };
 }
@@ -119,9 +121,18 @@ const LibraryBookCard = memo(({ book }: LibraryBookCardProps) => {
       className="group relative bg-card hover:bg-accent/50 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
     >
       <div className="aspect-[4/3] relative overflow-hidden bg-muted">
-        <div className="w-full h-full flex items-center justify-center">
-          <BookOpen className="h-12 w-12 text-muted-foreground" />
-        </div>
+        {book.cover_image ? (
+          <BookImage
+            src={book.cover_image}
+            alt={book.book_name}
+            className="w-full h-full object-cover"
+            priority={false}
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <BookOpen className="h-12 w-12 text-muted-foreground" />
+          </div>
+        )}
       </div>
       
       <div className="p-4">

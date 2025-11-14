@@ -59,7 +59,13 @@ export function useReadingPageState(config?: ReadingPageStateConfig) {
     
     // Auto-advance to next word
     if (currentWordIndex < totalWords - 1) {
-      setCurrentWordIndex(prev => prev + 1);
+      const newIndex = currentWordIndex + 1;
+      setCurrentWordIndex(newIndex);
+      
+      // Check if we've reached the last word
+      if (newIndex === totalWords - 1) {
+        setHasReachedLastWord(true);
+      }
     }
   }, [currentWordIndex, config, saveWordMark]);
 
@@ -83,7 +89,13 @@ export function useReadingPageState(config?: ReadingPageStateConfig) {
     
     // Auto-advance to next word
     if (currentWordIndex < totalWords - 1) {
-      setCurrentWordIndex(prev => prev + 1);
+      const newIndex = currentWordIndex + 1;
+      setCurrentWordIndex(newIndex);
+      
+      // Check if we've reached the last word
+      if (newIndex === totalWords - 1) {
+        setHasReachedLastWord(true);
+      }
     }
   }, [currentWordIndex, config, saveWordMark]);
 

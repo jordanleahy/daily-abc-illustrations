@@ -2,8 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { SafeLocalStorage } from '@/utils/storage';
 
 type AppRole = 'user' | 'teacher' | 'moderator' | 'admin';
+
+const ROLE_CACHE_KEY = 'user_roles_cache';
+const ROLE_CACHE_DAYS = 90;
 
 export const useUserRole = () => {
   const { user } = useAuthContext();
@@ -22,6 +26,24 @@ export const useUserRole = () => {
     queryFn: async () => {
       if (!user?.id) throw new Error('No authenticated user');
       
+      // Check cache first
+      const cached = SafeLocalStorage.get<{
+        userId: string;
+        data: {
+          roles: AppRole[];
+          primaryRole: AppRole;
+          isAdmin: boolean;
+          isModerator: boolean;
+          isTeacher: boolean;
+          isUser: boolean;
+        };
+      }>(ROLE_CACHE_KEY);
+      
+      if (cached && cached.userId === user.id) {
+        return cached.data;
+      }
+      
+      // Fetch from database
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -36,7 +58,7 @@ export const useUserRole = () => {
                          roles.includes('moderator') ? 'moderator' as AppRole :
                          roles.includes('teacher') ? 'teacher' as AppRole : 'user' as AppRole;
       
-      return {
+      const roleData = {
         roles,
         primaryRole,
         isAdmin: roles.includes('admin'),
@@ -44,8 +66,21 @@ export const useUserRole = () => {
         isTeacher: roles.includes('teacher'),
         isUser: roles.includes('user')
       };
+      
+      // Cache for 90 days
+      SafeLocalStorage.set(ROLE_CACHE_KEY, {
+        userId: user.id,
+        data: roleData
+      }, ROLE_CACHE_DAYS * 24);
+      
+      return roleData;
     },
     enabled: !!user?.id,
+    staleTime: 90 * 24 * 60 * 60 * 1000, // 90 days - serve cache immediately
+    gcTime: 90 * 24 * 60 * 60 * 1000,    // Keep in memory for 90 days
+    refetchOnMount: false,                 // Don't refetch on every mount
+    refetchOnWindowFocus: false,           // Don't refetch on tab focus
+    refetchOnReconnect: false,             // Don't refetch on reconnect
   });
 
   // Set initial data when query succeeds

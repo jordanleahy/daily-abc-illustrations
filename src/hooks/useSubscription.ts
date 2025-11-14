@@ -110,11 +110,11 @@ export const useSubscription = () => {
           loading: false,
         };
 
-        // Cache for 30 days (720 hours)
+        // Cache for 90 days - instant loads for game app users
         SafeLocalStorage.set(
           SUBSCRIPTION_CACHE_KEY,
           subscriptionData,
-          SUBSCRIPTION_CACHE_DAYS * 24
+          90 * 24
         );
 
         return subscriptionData;

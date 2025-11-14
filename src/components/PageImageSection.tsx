@@ -151,6 +151,21 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     }
   };
 
+  const handleCopyPrompt = async () => {
+    if (!currentPrompt?.content) {
+      toast.error('No prompt available to copy');
+      return;
+    }
+
+    try {
+      await copyToClipboard(currentPrompt.content);
+      toast.success('Prompt copied to clipboard!');
+    } catch (error) {
+      console.error('Error copying prompt:', error);
+      toast.error('Failed to copy prompt');
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full aspect-square bg-gradient-to-br from-muted via-muted/50 to-muted rounded-lg" />
@@ -181,6 +196,8 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             onImageSelect={handleImageUpload}
             disabled={isUploading}
             className="w-full h-full"
+            showCopyPrompt={true}
+            onCopyPrompt={handleCopyPrompt}
           />
           {isUploading && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">

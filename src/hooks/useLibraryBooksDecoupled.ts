@@ -33,29 +33,55 @@ export const useLibraryBooksDecoupled = () => {
             .select('*', { count: 'exact', head: true })
             .eq('book_id', book.id);
           
-          // Get first page image (page_number = 0)
-          const { data: firstPageData } = await supabase
-            .from('pages')
-            .select(`
-              id,
-              page_image_urls!inner(
-                image_url,
-                is_latest
-              )
-            `)
-            .eq('book_id', book.id)
-            .eq('page_number', 0)
-            .eq('page_image_urls.is_latest', true)
-            .single();
+          let coverImage = null;
           
-          // Extract first page image URL
-          const firstPageImage = firstPageData?.page_image_urls?.[0]?.image_url;
+          // Priority 1: Use explicit thumbnail_url if set
+          if (book.thumbnail_url) {
+            coverImage = book.thumbnail_url;
+          } else {
+            // Priority 2: Look for a page with page_type = 'cover'
+            const { data: coverPageData } = await supabase
+              .from('pages')
+              .select(`
+                id,
+                page_image_urls!inner(
+                  image_url,
+                  is_latest
+                )
+              `)
+              .eq('book_id', book.id)
+              .eq('page_type', 'cover')
+              .eq('page_image_urls.is_latest', true)
+              .maybeSingle();
+            
+            if (coverPageData?.page_image_urls?.[0]?.image_url) {
+              coverImage = coverPageData.page_image_urls[0].image_url;
+            } else {
+              // Priority 3: Fall back to page_number = 0 if no cover type exists
+              const { data: firstPageData } = await supabase
+                .from('pages')
+                .select(`
+                  id,
+                  page_image_urls!inner(
+                    image_url,
+                    is_latest
+                  )
+                `)
+                .eq('book_id', book.id)
+                .eq('page_number', 0)
+                .eq('page_image_urls.is_latest', true)
+                .maybeSingle();
+              
+              if (firstPageData?.page_image_urls?.[0]?.image_url) {
+                coverImage = firstPageData.page_image_urls[0].image_url;
+              }
+            }
+          }
           
           return {
             ...book,
             total_pages: count || 0,
-            // Use first page image if thumbnail_url is missing
-            cover_image: book.thumbnail_url || firstPageImage || null
+            cover_image: coverImage
           };
         })
       );

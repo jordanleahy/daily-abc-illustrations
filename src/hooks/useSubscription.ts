@@ -73,7 +73,7 @@ export const useSubscription = () => {
   const { user } = useAuthContext();
   const { toast } = useToast();
 
-  // Use React Query with 30-day localStorage caching + strict deduplication
+  // Use React Query with 90-day localStorage caching + strict deduplication
   const query = useQuery<SubscriptionStatus>({
     queryKey: ['subscription', user?.id],
     // CRITICAL: Ensure only ONE request happens across all components
@@ -87,10 +87,10 @@ export const useSubscription = () => {
         return { subscribed: false, loading: false };
       }
 
-      // Check 30-day cache first
+      // Check 90-day cache first
       const cached = SafeLocalStorage.get<SubscriptionStatus>(SUBSCRIPTION_CACHE_KEY);
       if (cached) {
-        console.log('[SUBSCRIPTION] Using 30-day cached data');
+        console.log('[SUBSCRIPTION] Using 90-day cached data');
         return { ...cached, loading: false };
       }
 

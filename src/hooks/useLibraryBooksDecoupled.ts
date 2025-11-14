@@ -1,6 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { LibraryBook } from '@/types/library';
 
 export const useLibraryBooksDecoupled = () => {
   const queryClient = useQueryClient();
@@ -23,8 +24,11 @@ export const useLibraryBooksDecoupled = () => {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
+
+      // Get current user for activity data
+      const { data: { user } } = await supabase.auth.getUser();
       
-      // Get page counts and cover images for each book
+      // Get page counts, cover images, and user activity for each book
       const booksWithData = await Promise.all(
         (data || []).map(async (book) => {
           // Get page count
@@ -56,12 +60,27 @@ export const useLibraryBooksDecoupled = () => {
             // Priority 2: Use book's thumbnail_url if no cover page exists
             coverImage = book.thumbnail_url;
           }
+
+          // Get user activity data if user is logged in
+          let userActivity = null;
+          if (user) {
+            const { data: activityData } = await supabase
+              .from('user_book_activity')
+              .select('last_viewed_at, view_count')
+              .eq('book_id', book.id)
+              .eq('user_id', user.id)
+              .maybeSingle();
+            
+            userActivity = activityData;
+          }
           
           return {
             ...book,
             total_pages: count || 0,
-            cover_image: coverImage
-          };
+            cover_image: coverImage,
+            last_viewed_at: userActivity?.last_viewed_at || null,
+            view_count: userActivity?.view_count || 0
+          } as LibraryBook;
         })
       );
 

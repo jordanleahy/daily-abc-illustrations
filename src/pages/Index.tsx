@@ -2,7 +2,7 @@ import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { useLibraryBooks } from '@/hooks/useLibraryBooks';
+import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
 import { useHomeImagePreloader } from '@/hooks/useHomeImagePreloader';
 import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -37,8 +37,8 @@ const Index = () => {
   // Fetch today's habits for the first kid
   const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
   
-  // Fetch library books with reduced staleTime for real-time updates
-  const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooks();
+  // Fetch library books using decoupled architecture
+  const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooksDecoupled();
   
   // Preload book images for instant display on return visits
   useHomeImagePreloader(libraryItems);
@@ -157,10 +157,10 @@ const Index = () => {
                   onClick={() => navigate(`/library/${book.id}/detail`)}
                 >
                   <div className="aspect-square rounded-t-lg flex items-center justify-center overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
-                    {book.og_image_url ? (
+                    {book.cover_image || book.thumbnail_url ? (
                       <BookImage
-                        src={book.og_image_url}
-                        alt={book.seo_title || book.title}
+                        src={book.cover_image || book.thumbnail_url || ''}
+                        alt={book.book_name}
                         className="w-full h-full object-cover"
                         sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
@@ -169,7 +169,7 @@ const Index = () => {
                     )}
                   </div>
                   <CardHeader>
-                    <CardTitle className="text-lg line-clamp-2">{book.seo_title || book.title}</CardTitle>
+                    <CardTitle className="text-lg line-clamp-2">{book.book_name}</CardTitle>
                     {book.last_viewed_at && (
                       <CardDescription className="text-xs">
                         {formatDistanceToNow(new Date(book.last_viewed_at), { addSuffix: true })}

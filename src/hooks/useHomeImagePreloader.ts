@@ -1,13 +1,13 @@
 import { useImagePreloader } from './useImagePreloader';
-import type { DailyPublishedWithBook } from '@/types/dailyPublished';
+import type { LibraryBook } from '@/types/library';
 
 /**
  * Hook to preload and cache home page book images for instant display
  * Uses unified image preloader with service worker caching
  * Prioritizes first 3 visible books for immediate display
  */
-export function useHomeImagePreloader(books: DailyPublishedWithBook[] | undefined) {
-  const imageUrls = books?.map(book => book.og_image_url).filter(Boolean) || [];
+export function useHomeImagePreloader(books: LibraryBook[] | undefined) {
+  const imageUrls = books?.map(book => book.cover_image || book.thumbnail_url).filter(Boolean) || [];
   
   // Split into priority (first 3 visible in carousel) and remaining batches
   const priorityUrls = imageUrls.slice(0, 3);

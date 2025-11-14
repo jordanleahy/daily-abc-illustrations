@@ -7,7 +7,7 @@
 import { useEffect, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { prefetchImagesToCache } from '@/utils/imageCaching';
-import type { DailyPublishedWithBook } from '@/types/dailyPublished';
+import type { LibraryBook } from '@/types/library';
 
 interface PrefetchProgress {
   total: number;
@@ -20,7 +20,7 @@ interface PrefetchProgress {
  * Designed for mobile with progressive loading and network awareness
  */
 export function useAggressiveLibraryPrefetch(
-  books: DailyPublishedWithBook[] | undefined,
+  books: LibraryBook[] | undefined,
   enabled: boolean = true
 ) {
   const prefetchedRef = useRef(new Set<string>());
@@ -37,7 +37,7 @@ export function useAggressiveLibraryPrefetch(
     return () => clearTimeout(initialDelay);
   }, [books, enabled]);
 
-  async function startAggressivePrefetch(books: DailyPublishedWithBook[]) {
+  async function startAggressivePrefetch(books: LibraryBook[]) {
     console.log('[Aggressive Prefetch] Starting for', books.length, 'books');
     
     // Split books into 3 batches for progressive loading
@@ -68,7 +68,7 @@ export function useAggressiveLibraryPrefetch(
   }
 
   async function prefetchBookBatch(
-    books: DailyPublishedWithBook[],
+    books: LibraryBook[],
     batchName: string
   ) {
     console.log(`[Aggressive Prefetch] ${batchName} batch: ${books.length} books`);
@@ -99,13 +99,13 @@ export function useAggressiveLibraryPrefetch(
     }
   }
 
-  async function prefetchBookPages(book: DailyPublishedWithBook) {
+  async function prefetchBookPages(book: LibraryBook) {
     try {
       // Fetch all page images for this book
       const { data: pageImages, error } = await supabase
         .from('page_image_urls')
         .select('image_url, pages!inner(page_number)')
-        .eq('book_id', book.book_id)
+        .eq('book_id', book.id)
         .eq('is_latest', true)
         .not('image_url', 'is', null)
         .order('pages(page_number)', { ascending: true });
@@ -134,7 +134,7 @@ export function useAggressiveLibraryPrefetch(
       progressRef.current.prefetched += imageUrls.length;
 
       console.log(
-        `[Aggressive Prefetch] Book ${book.book?.book_name || book.title}: ${imageUrls.length} images cached ` +
+        `[Aggressive Prefetch] Book ${book.book_name}: ${imageUrls.length} images cached ` +
         `(${progressRef.current.prefetched}/${progressRef.current.total})`
       );
     } catch (error) {

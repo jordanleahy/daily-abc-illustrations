@@ -2,8 +2,8 @@ import { useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useFavorites } from './useFavorites';
-import { useLibraryBooks } from './useLibraryBooks';
-import { DailyPublishedWithBook } from '@/types/dailyPublished';
+import { useLibraryBooksDecoupled } from './useLibraryBooksDecoupled';
+import { LibraryBook } from '@/types/library';
 import { Page } from '@/types/book';
 
 /**
@@ -13,7 +13,7 @@ import { Page } from '@/types/book';
 export function usePredictivePrefetch(currentBookId?: string) {
   const queryClient = useQueryClient();
   const { favorites, favoriteIds } = useFavorites();
-  const { data: libraryBooks = [] } = useLibraryBooks();
+  const { data: libraryBooks = [] } = useLibraryBooksDecoupled();
 
   // Calculate the top 3 most likely books the user will view next
   const predictedBooks = useMemo(() => {
@@ -61,8 +61,8 @@ export function usePredictivePrefetch(currentBookId?: string) {
         }
 
         // Signal 4: Recency of publication (users like new content)
-        if (book.book?.created_at) {
-          const daysSinceCreated = (Date.now() - new Date(book.book.created_at).getTime()) / (1000 * 60 * 60 * 24);
+        if (book.created_at) {
+          const daysSinceCreated = (Date.now() - new Date(book.created_at).getTime()) / (1000 * 60 * 60 * 24);
           if (daysSinceCreated < 7) {
             score += 25; // Published in last week
           } else if (daysSinceCreated < 30) {
@@ -70,8 +70,8 @@ export function usePredictivePrefetch(currentBookId?: string) {
           }
         }
 
-        // Signal 5: Currently active daily published (users gravitate to active content)
-        if (book.status === 'active') {
+        // Signal 5: Highlighted books (featured content)
+        if (book.is_highlighted) {
           score += 30;
         }
 
@@ -85,7 +85,7 @@ export function usePredictivePrefetch(currentBookId?: string) {
 
     console.log('[PredictivePrefetch] Top 3 predicted books:', 
       scoredBooks.map(item => ({ 
-        title: item.book.seo_title || item.book.title, 
+        title: item.book.book_name, 
         score: item.score,
         isFavorite: favoriteIds.has(item.book.id),
         lastViewed: item.book.last_viewed_at,
@@ -113,72 +113,44 @@ export function usePredictivePrefetch(currentBookId?: string) {
     return () => clearTimeout(prefetchTimer);
   }, [predictedBooks]);
 
-  const prefetchBook = async (book: DailyPublishedWithBook) => {
+  const prefetchBook = async (book: LibraryBook) => {
     try {
-      console.log('[PredictivePrefetch] Prefetching:', book.seo_title || book.title);
+      console.log('[PredictivePrefetch] Prefetching:', book.book_name);
 
-      // Prefetch library book metadata
+      // Prefetch library book metadata (already cached by useLibraryBooksDecoupled)
       await queryClient.prefetchQuery({
-        queryKey: ['library-book', book.id],
+        queryKey: ['library-book-decoupled', book.id],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from('daily_published')
-            .select(`
-              *,
-              book:books(
-                total_pages
-              )
-            `)
+            .from('books')
+            .select('*')
             .eq('id', book.id)
+            .eq('is_library_book', true)
             .maybeSingle();
 
           if (error) throw error;
           return data;
         },
-        // NOTE: Prefetch queries intentionally use shorter staleTime for predictive loading freshness
         staleTime: 60 * 60 * 1000,
       });
 
       // Prefetch pages data
-      if (book.book_id) {
-        await queryClient.prefetchQuery({
-          queryKey: ['daily-published-pages', book.book_id],
-          queryFn: async () => {
-            const { data, error } = await supabase
-              .from('pages')
-              .select('*')
-              .eq('book_id', book.book_id)
-              .order('page_number', { ascending: true });
-
-            if (error) throw error;
-            return data as Page[] || [];
-          },
-          // NOTE: Prefetch queries intentionally use shorter staleTime for predictive loading freshness
-          staleTime: 60 * 60 * 1000,
-        });
-      }
-
-      // Prefetch SEO metadata
       await queryClient.prefetchQuery({
-        queryKey: ['seo-metadata', book.id],
+        queryKey: ['library-book-pages', book.id],
         queryFn: async () => {
           const { data, error } = await supabase
-            .from('seo_metadata')
+            .from('pages')
             .select('*')
-            .eq('daily_published_id', book.id)
-            .eq('is_latest', true)
-            .eq('is_active', true)
-            .eq('optimization_status', 'complete')
-            .maybeSingle();
+            .eq('book_id', book.id)
+            .order('page_number', { ascending: true });
 
-          if (error) return null;
-          return data;
+          if (error) throw error;
+          return data as Page[] || [];
         },
-        // NOTE: Prefetch queries intentionally use shorter staleTime for predictive loading freshness
         staleTime: 60 * 60 * 1000,
       });
 
-      console.log('[PredictivePrefetch] ✅ Prefetched:', book.seo_title || book.title);
+      console.log('[PredictivePrefetch] ✅ Prefetched:', book.book_name);
     } catch (error) {
       console.error('[PredictivePrefetch] Error prefetching book:', error);
     }

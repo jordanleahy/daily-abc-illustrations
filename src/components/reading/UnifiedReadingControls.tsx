@@ -128,11 +128,24 @@ export function UnifiedReadingControls({
               title="Mark as understood"
             >
               <ThumbsUp className="h-6 w-6" />
-            </Button>
-          </div>
+          </Button>
+        </div>
 
-          {/* Right: Word Navigation - Always visible arrows */}
-          {onNavigateWord && (
+        {/* Center: Read/Focus Toggle Button */}
+        {onToggleReadMode && overlayWords && overlayWords.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onToggleReadMode}
+            className="h-10 px-4 bg-background/50 hover:bg-background/80"
+            title={isReadMode ? 'Switch to Focus mode' : 'Switch to Read mode'}
+          >
+            {isReadMode ? 'Focus' : 'Read'}
+          </Button>
+        )}
+
+        {/* Right: Word Navigation - Always visible arrows */}
+        {onNavigateWord && (
             <div className="flex items-center gap-2">
               <Button
                 variant="outline"

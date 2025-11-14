@@ -97,14 +97,9 @@ function UserBookCard({
       onClick={onClick}
     >
       <CardHeader>
-        <div className="flex flex-col gap-2">
-          <Badge variant={book.status === 'published' ? 'default' : 'secondary'} className="w-fit">
-            {book.status}
-          </Badge>
-          <CardTitle className="text-lg group-hover:text-primary transition-colors">
-            {book.book_name}
-          </CardTitle>
-        </div>
+        <CardTitle className="text-lg group-hover:text-primary transition-colors">
+          {book.book_name}
+        </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Book Thumbnail - Priority: cover page image → thumbnail_url → seo image → placeholder */}

@@ -1,4 +1,4 @@
-import React, { memo, useMemo, useState, useRef } from 'react';
+import React, { memo, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
 import { useFavorites } from '@/hooks/useFavorites';
@@ -103,10 +103,7 @@ interface LibraryBookCardProps {
 
 const LibraryBookCard = memo(({ book }: LibraryBookCardProps) => {
   const navigate = useNavigate();
-  const [isInView, setIsInView] = useState(false);
-  const cardRef = useRef<HTMLDivElement>(null);
-
-  useIntersectionObserver(cardRef, setIsInView, { threshold: 0.1 });
+  const { ref: cardRef, inView: isInView } = useIntersectionObserver({ threshold: 0.1 });
 
   const handleCardClick = () => {
     trackBookView(book.id);

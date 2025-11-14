@@ -77,7 +77,11 @@ export class SafeLocalStorage {
 
 // Subscription caching constants
 export const SUBSCRIPTION_CACHE_KEY = 'subscription_status';
-export const SUBSCRIPTION_CACHE_DAYS = 30;
+export const SUBSCRIPTION_CACHE_DAYS = 90; // 90-day cache for game app
+
+// Role caching constants  
+export const ROLE_CACHE_KEY = 'user_roles_cache';
+export const ROLE_CACHE_DAYS = 90;
 
 // Visitor tracking for non-authenticated users
 const VISITOR_ID_KEY = 'visitor_id';

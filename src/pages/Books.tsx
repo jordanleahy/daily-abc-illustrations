@@ -415,14 +415,17 @@ export default function Books() {
         <StandardPageLayout title={pageTitle} containerClassName="py-8">
           <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
+        <div className="space-y-4">
+          <div className="text-center md:text-left">
             <h1 className="text-3xl font-bold tracking-tight">{pageTitle}</h1>
             <p className="text-muted-foreground">
               {pageDescription}
             </p>
           </div>
-          <Button onClick={handleCreateNewBook}>
+          <Button 
+            onClick={handleCreateNewBook}
+            className="w-full md:w-auto md:mx-auto md:block"
+          >
             <BookOpen className="mr-2 h-4 w-4" />
             Create New Book
           </Button>

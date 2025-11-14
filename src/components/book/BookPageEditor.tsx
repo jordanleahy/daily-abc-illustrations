@@ -369,6 +369,8 @@ export function BookPageEditor({
                         onCoverUpload(file);
                       }
                     }}
+                    showCopyPrompt={true}
+                    onCopyPrompt={handleCopyPrompt}
                   />
                 )}
               </CollapsibleContent>

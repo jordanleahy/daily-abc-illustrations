@@ -91,7 +91,7 @@ export default function LibraryDetail() {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
   const { data: book, isLoading: bookLoading, error: bookError } = useLibraryBookById(id);
-  const { data: pages = [], isLoading: pagesLoading } = useDailyPublishedPages(id);
+  const { data: pages = [], isLoading: pagesLoading } = useDailyPublishedPages(book?.book_id);
   const { data: seoMetadata } = useSeoMetadata(id);
   const { data: bookSeoMetadata } = useSeoMetadataByBook(book?.book_id || undefined);
   

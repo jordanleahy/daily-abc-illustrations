@@ -156,7 +156,7 @@ const Index = () => {
                   className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
                   onClick={() => navigate(`/library/${book.id}/detail`)}
                 >
-                  <div className="aspect-square rounded-t-lg flex items-center justify-center overflow-hidden">
+                  <div className="aspect-square rounded-t-lg flex items-center justify-center overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
                     {book.og_image_url ? (
                       <BookImage
                         src={book.og_image_url}

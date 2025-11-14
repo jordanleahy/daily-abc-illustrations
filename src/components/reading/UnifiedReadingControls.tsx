@@ -30,6 +30,7 @@ interface UnifiedReadingControlsProps {
   isReadMode?: boolean;
   onToggleReadMode?: () => void;
   isLastWord?: boolean;
+  hasReachedLastWord?: boolean;
 }
 
 export function UnifiedReadingControls({
@@ -53,6 +54,7 @@ export function UnifiedReadingControls({
   isReadMode = false,
   onToggleReadMode,
   isLastWord = false,
+  hasReachedLastWord = false,
 }: UnifiedReadingControlsProps) {
   return (
     <div 
@@ -116,8 +118,8 @@ export function UnifiedReadingControls({
           </Button>
         </div>
 
-        {/* Center: Read/Focus Toggle Button - Only show on last word */}
-        {onToggleReadMode && overlayWords && overlayWords.length > 0 && isLastWord && (
+        {/* Center: Read/Focus Toggle Button - Shows once user reaches last word */}
+        {onToggleReadMode && overlayWords && overlayWords.length > 0 && hasReachedLastWord && (
           <Button
             variant="outline"
             size="sm"

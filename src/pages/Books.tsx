@@ -296,22 +296,6 @@ function UserBookCard({
           </div>
         </AdminOnly>
 
-        {/* Book Info */}
-        <div className="flex items-center justify-between text-sm text-muted-foreground pt-2 border-t">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              {new Date(book.created_at).toLocaleDateString()}
-            </div>
-            <div className="flex items-center gap-1">
-              <Users className="w-4 h-4" />
-              {book.category || 'General'}
-            </div>
-          </div>
-          <div className="text-xs bg-muted px-2 py-1 rounded">
-            {book.total_pages || 0} pages
-          </div>
-        </div>
       </CardContent>
     </Card>
   );

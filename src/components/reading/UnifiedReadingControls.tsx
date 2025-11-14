@@ -116,8 +116,8 @@ export function UnifiedReadingControls({
           </Button>
         </div>
 
-        {/* Center: Read/Focus Toggle Button */}
-        {onToggleReadMode && overlayWords && overlayWords.length > 0 && (
+        {/* Center: Read/Focus Toggle Button - Only show on last word */}
+        {onToggleReadMode && overlayWords && overlayWords.length > 0 && isLastWord && (
           <Button
             variant="outline"
             size="sm"

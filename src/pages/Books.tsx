@@ -105,9 +105,6 @@ function UserBookCard({
             {book.book_name}
           </CardTitle>
         </div>
-        <CardDescription className="line-clamp-2">
-          {book.book_description || "No description provided"}
-        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Book Thumbnail - Priority: cover page image → thumbnail_url → seo image → placeholder */}

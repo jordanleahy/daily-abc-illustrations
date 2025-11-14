@@ -7,6 +7,7 @@ import { LandingLibraryBook } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { LibraryBookSkeleton } from '@/components/ui/book-card-skeleton';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 interface LibrarySectionProps {
   books: LandingLibraryBook[] | undefined;
@@ -27,13 +28,18 @@ interface LibrarySectionProps {
  */
 function LandingLibraryCard({ item }: { item: LandingLibraryBook }) {
   const navigate = useNavigate();
+  const { user } = useAuthContext();
   const { ref, inView } = useIntersectionObserver({
     rootMargin: '100px', // Start loading 100px before entering viewport
     triggerOnce: true,
   });
 
   const handleCardClick = () => {
-    if (item.slug) {
+    // If authenticated, navigate to library detail view
+    if (user) {
+      navigate(`/library/${item.id}`);
+    } else if (item.slug) {
+      // If not authenticated, navigate to public book page
       navigate(`/book/${item.slug}`);
     } else {
       navigate('/pricing');

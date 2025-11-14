@@ -61,22 +61,7 @@ export function UnifiedReadingControls({
     >
       {/* Text Overlay Section - Above all controls */}
       {showOverlay && overlayText && (
-        <div className="mb-3 bg-muted/30 rounded-lg px-4 py-2 min-h-[48px] flex flex-col gap-2">
-          {/* Toggle Button - Only show when on last word and has words */}
-          {overlayWords && overlayWords.length > 0 && isLastWord && onToggleReadMode && (
-            <div className="flex justify-center">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onToggleReadMode}
-                className="bg-background/50 hover:bg-background/80"
-              >
-                {isReadMode ? 'Focus' : 'Read'}
-              </Button>
-            </div>
-          )}
-          
-          {/* Content Display - Either carousel or sentence */}
+        <div className="mb-3 bg-muted/30 rounded-lg px-4 py-2 min-h-[48px] flex items-center justify-center">
           <div className="w-full h-[40px] flex items-center justify-center">
             {overlayWords && overlayWords.length > 0 ? (
               isReadMode ? (

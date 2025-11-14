@@ -64,7 +64,7 @@ export function UnifiedReadingControls({
               />
             </div>
           ) : (
-            <p className="text-center font-semibold text-lg text-foreground line-clamp-2">
+            <p className="text-center font-semibold text-lg text-gray-900 dark:text-gray-100 line-clamp-2">
               {overlayText}
             </p>
           )}

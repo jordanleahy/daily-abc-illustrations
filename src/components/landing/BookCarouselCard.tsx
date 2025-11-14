@@ -33,7 +33,7 @@ export const BookCarouselCard = memo(({ book }: BookCarouselCardProps) => {
         onClick={handleClick}
       >
         <CardContent className="p-0">
-          <AspectRatio ratio={1/1}>
+          <AspectRatio ratio={1/1} className="shadow-md hover:shadow-xl transition-shadow duration-300">
             <BookImage
               src={book.og_image_url || undefined}
               alt={bookData?.book_name || 'Book cover'}

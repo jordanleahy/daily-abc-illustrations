@@ -22,6 +22,7 @@ import { useDeleteBook } from '@/hooks/useDeleteBook';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { MobileBookEditor } from '@/components/book/MobileBookEditor';
 import { AdminOnly } from '@/components/AdminOnly';
+import { cn } from '@/lib/utils';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -398,8 +399,14 @@ export default function Books() {
         book={selectedBook}
       />
       
-      <StandardPageLayout title={pageTitle} containerClassName="py-8">
-        <div className="space-y-6">
+      <div 
+        className={cn(
+          "transition-all duration-300 ease-out",
+          mobileEditorOpen && "mr-[400px]"
+        )}
+      >
+        <StandardPageLayout title={pageTitle} containerClassName="py-8">
+          <div className="space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -460,8 +467,9 @@ export default function Books() {
             </CardContent>
           </Card>
         )}
+        </div>
+      </StandardPageLayout>
       </div>
-    </StandardPageLayout>
     </>
   );
 }

@@ -36,6 +36,7 @@ export const useLibraryBookById = (id: string | undefined) => {
       if (!dailyData) return null;
 
       // Then fetch pages with images for this book (one query, uses index)
+      // LEFT JOIN: Return all pages even if they don't have images yet
       const { data: pagesData, error: pagesError } = await supabase
         .from('pages')
         .select(`
@@ -50,7 +51,7 @@ export const useLibraryBookById = (id: string | undefined) => {
           current_system_prompt_id,
           created_at,
           updated_at,
-          page_images:page_image_urls!inner(
+          page_images:page_image_urls(
             id,
             image_url,
             version_number

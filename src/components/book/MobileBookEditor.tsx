@@ -222,11 +222,6 @@ export function MobileBookEditor({
               <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
-
-          {/* Page Counter */}
-          <div className="text-center text-sm text-muted-foreground">
-            Page {currentPageIndex + 1} of {pages.length}
-          </div>
         </div>
       </DrawerContent>
     </Drawer>

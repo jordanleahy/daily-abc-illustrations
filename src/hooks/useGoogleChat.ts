@@ -27,7 +27,7 @@ export interface Message {
 
 export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: Message[], sessionId: string) => void) => {
   const queryClient = useQueryClient();
-  const { user } = useAuthContext();
+  const { user, session } = useAuthContext();
   const [isLoading, setIsLoading] = useState(false);
 
   const sendMessage = async (
@@ -71,10 +71,9 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
     setIsLoading(true);
 
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
-      if (sessionError || !session?.access_token) {
-        console.error('Session error:', sessionError);
+      // Use cached session from AuthContext (0ms instead of 50-100ms)
+      if (!session?.access_token) {
+        console.error('No session token available');
         toast.error('Please refresh the page and try again');
         throw new Error('No auth token');
       }

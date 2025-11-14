@@ -28,7 +28,17 @@ export default function UserLibraryDetail() {
   const safeId = id && isValidUUID(id) ? id : undefined;
   
   const { data: dailyContent, isLoading: isLoadingDaily, error: dailyError } = useLibraryBookById(safeId);
-  const { data: pages = [], isLoading: isLoadingPages } = useDailyPublishedPages(dailyContent?.book_id);
+  
+  // Extract pages and images from single query (no waterfall!)
+  const pages = dailyContent?.pages || [];
+  const pageImages = pages.reduce((acc, page) => {
+    const latestImage = page.page_images?.[0];
+    if (latestImage?.image_url) {
+      acc[page.page_number] = latestImage.image_url;
+    }
+    return acc;
+  }, {} as Record<number, string>);
+  
   const { data: kidProfiles = [] } = useKidProfiles();
   const addBookAsHabit = useAddBookAsHabit();
   const { data: isBookAdded = false } = useIsBookAddedAsHabit(dailyContent?.book_id);
@@ -40,10 +50,10 @@ export default function UserLibraryDetail() {
   
   const [isDownloading, setIsDownloading] = useState(false);
   
-  // Preload all page images for instant display
-  useDailyPublishedImagePreloader(pages, dailyContent?.book_id);
+  // Preload all page images for instant display (using joined data)
+  useDailyPublishedImagePreloader(pages, dailyContent?.book_id, pageImages);
   
-  const isLoading = isLoadingDaily || isLoadingPages;
+  const isLoading = isLoadingDaily;
 
   const handlePageClick = (pageIndex: number) => {
     navigate(`/library/${id}`, { 

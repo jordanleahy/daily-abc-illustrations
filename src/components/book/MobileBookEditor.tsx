@@ -165,7 +165,7 @@ export function MobileBookEditor({
                 disabled={deletePublication.isPending}
               >
                 <FileX className="mr-2 h-4 w-4" />
-                Unpublish Book
+                Unpublish
               </Button>
             ) : (
               <Button 
@@ -174,12 +174,12 @@ export function MobileBookEditor({
                 disabled={schedulePublication.isPending}
               >
                 <BookOpen className="mr-2 h-4 w-4" />
-                Publish Book
+                Publish
               </Button>
             )}
             <Button onClick={handleReadBook}>
               <BookOpen className="mr-2 h-4 w-4" />
-              Read Book
+              Read
             </Button>
           </div>
 

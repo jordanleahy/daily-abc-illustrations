@@ -2,15 +2,13 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { StandardPageLayout } from '@/components/layout';
-import { useLibraryBookById } from '@/hooks/useLibraryBookById';
-import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
+import { useLibraryBookByIdDecoupled } from '@/hooks/useLibraryBookByIdDecoupled';
+import { useLibraryBookPagesDecoupled } from '@/hooks/useLibraryBookPagesDecoupled';
 import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, BookOpen, Calendar, Users } from 'lucide-react';
+import { ArrowLeft, BookOpen } from 'lucide-react';
 import { MetaHead } from '@/components/common/MetaHead';
-import { useSeoMetadata, useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
 import { LibraryCard } from '@/components/page-prompts/LibraryCard';
 import { trackBookViewForCache, trackBookView } from '@/utils/bookViewTracking';
 import { useLibraryDetailImagePreloader } from '@/hooks/useLibraryDetailImagePreloader';
@@ -85,22 +83,19 @@ function LazyLibraryCard({
 }
 
 export default function LibraryDetail() {
-  const { id } = useParams<{ id: string }>();
+  const { bookId } = useParams<{ bookId: string }>();
   const { user } = useAuthContext();
   const navigate = useNavigate();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
-  const { data: book, isLoading: bookLoading, error: bookError } = useLibraryBookById(id);
-  const { data: pages = [], isLoading: pagesLoading } = useDailyPublishedPages(book?.book_id);
-  const { data: seoMetadata } = useSeoMetadata(id);
-  const { data: bookSeoMetadata } = useSeoMetadataByBook(book?.book_id || undefined);
+  const { data: book, isLoading: bookLoading, error: bookError } = useLibraryBookByIdDecoupled(bookId);
+  const { data: pages = [], isLoading: pagesLoading } = useLibraryBookPagesDecoupled(bookId);
   
   // Progressive image preloading - priority images load first
-  const { priorityCount, totalCount } = useLibraryDetailImagePreloader(book?.book_id);
+  const { priorityCount, totalCount } = useLibraryDetailImagePreloader(bookId);
   
   // 🚀 Predictive prefetching: Anticipate which books user will view next
-  // Prefetches the top 3 most likely books based on favorites and viewing history
-  const { predictedBooks } = usePredictivePrefetch(id);
+  const { predictedBooks } = usePredictivePrefetch(bookId);
 
   useEffect(() => {
     if (!user) {
@@ -110,46 +105,31 @@ export default function LibraryDetail() {
 
   // Track book view for cache management and database
   useEffect(() => {
-    if (id) {
-      trackBookViewForCache(id);
-      trackBookView(id); // Update database for Recently Viewed
+    if (book?.id && user) {
+      trackBookView(book.id);
+      trackBookViewForCache(book.id);
     }
-  }, [id]);
+  }, [book?.id, user]);
+
+  const metaTitle = book?.book_name || 'Library Book';
+  const metaDescription = book?.book_description || 'View this educational ABC book';
 
   const handleBack = () => {
     navigate('/library');
   };
 
-  // Only show full loading skeleton on first load with no data
-  const isInitialLoading = (bookLoading || pagesLoading) && !book && pages.length === 0;
+  const isLoading = bookLoading || pagesLoading;
 
-  const pageTitle = seoMetadata?.seo_title || bookSeoMetadata?.seo_title || book?.title || 'ABC Cards Library';
-  const pageDescription =
-    seoMetadata?.seo_description ||
-    bookSeoMetadata?.seo_description ||
-    book?.description ||
-    (book?.title ? `Explore the ABC book "${book.title}" in our educational library.` : undefined);
-  const ogImageUrl = seoMetadata?.og_image_url || bookSeoMetadata?.og_image_url;
-
-
-  if (!user) {
-    return (
-      <StandardPageLayout>
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">Please sign in to view library content.</p>
-        </div>
-      </StandardPageLayout>
-    );
-  }
-
-  if (isInitialLoading) {
+  if (isLoading) {
     return (
       <StandardPageLayout>
         <div className="space-y-6">
-          <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-muted rounded w-1/4"></div>
-            <div className="h-64 bg-muted rounded"></div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="h-10 w-48 bg-muted rounded animate-pulse"></div>
+          <div className="h-32 bg-muted rounded animate-pulse"></div>
+          <div className="h-12 bg-muted rounded animate-pulse"></div>
+          <div>
+            <div className="h-8 w-32 mb-4 bg-muted rounded animate-pulse"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.from({ length: 6 }).map((_, i) => (
                 <div key={i} className="h-40 bg-muted rounded"></div>
               ))}
@@ -180,10 +160,9 @@ export default function LibraryDetail() {
   return (
     <>
       <MetaHead metadata={{
-        title: pageTitle,
-        description: pageDescription,
-        type: "article",
-        image: ogImageUrl ? { url: ogImageUrl } : undefined
+        title: metaTitle,
+        description: metaDescription,
+        type: "article"
       }} />
       
       <StandardPageLayout>
@@ -203,37 +182,35 @@ export default function LibraryDetail() {
           {/* Book Header */}
           <Card>
             <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div className="space-y-2">
-                  <CardTitle className="text-2xl md:text-3xl">
-                    {pageTitle}
-                  </CardTitle>
-                  {pageDescription && (
-                    <p className="text-muted-foreground text-lg">
-                      {pageDescription}
-                    </p>
-                  )}
-                </div>
-                <Badge variant="secondary" className="w-fit">
-                  {book.status}
-                </Badge>
-              </div>
+              <CardTitle className="text-2xl md:text-3xl">
+                {book.book_name}
+              </CardTitle>
+              {book.book_description && (
+                <p className="text-muted-foreground text-lg">
+                  {book.book_description}
+                </p>
+              )}
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Calendar className="w-4 h-4" />
-                  Published {new Date(book.publish_date).toLocaleDateString()}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  General
-                </div>
                 <div className="flex items-center gap-1">
                   <BookOpen className="w-4 h-4" />
                   {pages.length} pages
                 </div>
               </div>
+              
+              <Button 
+                className="mt-4"
+                onClick={() => navigate(`/library/${bookId}/read`, { 
+                  state: { 
+                    startingPageIndex: currentPageIndex,
+                    from: 'library-detail'
+                  } 
+                })}
+              >
+                <BookOpen className="w-4 h-4 mr-2" />
+                Start Reading
+              </Button>
             </CardContent>
           </Card>
 
@@ -263,63 +240,55 @@ export default function LibraryDetail() {
                       Next
                     </Button>
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    Letter: {pages[currentPageIndex]?.letter || 'N/A'}
-                  </div>
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Current Page Display - Priority Load */}
-          {pages.length > 0 && pages[currentPageIndex] && (
-            <LibraryCard
-              page={pages[currentPageIndex]}
-              bookId={book.book_id || book.id}
-              priority={true}
-            />
-          )}
-
-          {/* All Pages Grid - Progressive Loading */}
-          {pages.length > 1 && (
+          {/* Current Page Display */}
+          {pages.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>All Pages</CardTitle>
-                {pagesLoading && (
-                  <p className="text-sm text-muted-foreground">
-                    Loading pages...
-                  </p>
-                )}
+                <CardTitle className="text-lg">
+                  {pages[currentPageIndex].title}
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {pages.map((page, index) => (
-                    <LazyLibraryCard
-                      key={page.id}
-                      page={page}
-                      bookId={book.book_id || book.id}
-                      index={index}
-                      isCurrentPage={currentPageIndex === index}
-                      onClick={() => setCurrentPageIndex(index)}
-                    />
-                  ))}
-                </div>
+                <LazyLibraryCard
+                  page={pages[currentPageIndex]}
+                  bookId={bookId!}
+                  index={currentPageIndex}
+                  isCurrentPage={true}
+                  onClick={() => {}}
+                />
               </CardContent>
             </Card>
           )}
 
-          {/* Empty State */}
-          {pages.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-12">
-                <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No Pages Available</h3>
-                <p className="text-muted-foreground">
-                  This book doesn't have any pages to display yet.
-                </p>
-              </CardContent>
-            </Card>
-          )}
+          {/* All Pages Grid */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold">All Pages</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {pages.map((page, index) => (
+                <LazyLibraryCard
+                  key={page.id}
+                  page={page}
+                  bookId={bookId!}
+                  index={index}
+                  isCurrentPage={index === currentPageIndex}
+                  onClick={() => {
+                    setCurrentPageIndex(index);
+                    navigate(`/library/${bookId}/read`, { 
+                      state: { 
+                        startingPageIndex: index,
+                        from: 'library-detail'
+                      } 
+                    });
+                  }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       </StandardPageLayout>
     </>

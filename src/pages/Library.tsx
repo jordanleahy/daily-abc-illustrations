@@ -1,77 +1,46 @@
-import React, { memo } from 'react';
+import React, { memo, useMemo, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLibraryBooks } from '@/hooks/useLibraryBooks';
-import { useLibraryImagePreloader } from '@/hooks/useLibraryImagePreloader';
-import { useAggressiveLibraryPrefetch } from '@/hooks/useAggressiveLibraryPrefetch';
-import { useDailyPublished } from '@/hooks/useDailyPublished';
-import { useLibraryPrefetch } from '@/hooks/useLibraryPrefetch';
+import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
+import { useFavorites } from '@/hooks/useFavorites';
 import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { MetaHead } from '@/components/common/MetaHead';
 import { StandardPageLayout } from '@/components/layout';
 import { LoadingState } from '@/components/ui/loading-state';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { BookImage } from '@/components/ui/book-image';
-import { Button } from '@/components/ui/button';
-import { BookOpen, Calendar, Users, Heart } from 'lucide-react';
-import { DailyPublishedWithBook } from '@/types/dailyPublished';
-import { trackBookView } from '@/utils/bookViewTracking';
-import { useFavorites } from '@/hooks/useFavorites';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
-import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { Card } from '@/components/ui/card';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { usePageImageUrls } from '@/hooks/usePageImageUrls';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { trackBookView } from '@/utils/bookViewTracking';
+import { format } from 'date-fns';
+import { Calendar, BookOpen } from 'lucide-react';
 
-export default memo(function Library() {
+const Library = memo(() => {
   const navigate = useNavigate();
-  const { data: libraryBooks, isLoading } = useLibraryBooks();
   const { hasLibraryAccess } = useFeatureAccess();
   
-  // Get the current active daily published book
-  const { data: activeDailyPublished } = useDailyPublished();
-  
-  // Get user favorites
-  const { favoriteIds, toggleFavorite, favorites } = useFavorites();
-  
-  // Preload library images for instant display
-  useLibraryImagePreloader(libraryBooks);
-  
-  // PHASE 1: Aggressive prefetch all book pages in background
-  useAggressiveLibraryPrefetch(libraryBooks, true);
-  
-  // Hover prefetch for instant navigation
-  const { prefetchLibraryBook, prefetchLibraryPages } = useLibraryPrefetch();
-  
-  // 🚀 Predictive prefetching: Anticipate which books user will view next
-  // Prefetches the top 3 most likely books based on favorites and viewing history
-  const { predictedBooks } = usePredictivePrefetch();
+  const { data: libraryBooks = [], isLoading: isLoadingLibrary } = useLibraryBooksDecoupled();
+  const { favorites } = useFavorites();
 
-  // Show loading only on first load
-  if (isLoading) {
+  // Prefetch strategies (disabled for now)
+
+  // Sort books: highlighted first, then by created date
+  const sortedBooks = useMemo(() => {
+    return [...libraryBooks].sort((a, b) => {
+      if (a.is_highlighted && !b.is_highlighted) return -1;
+      if (!a.is_highlighted && b.is_highlighted) return 1;
+      
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+  }, [libraryBooks]);
+
+  if (isLoadingLibrary) {
     return (
       <StandardPageLayout>
         <LoadingState text="Loading library..." />
       </StandardPageLayout>
     );
   }
-
-  // Sort library books by favorites, then respect the database order
-  const sortedLibraryBooks = [...(libraryBooks || [])].sort((a, b) => {
-    const aIsFavorite = favoriteIds.has(a.id);
-    const bIsFavorite = favoriteIds.has(b.id);
-    
-    if (aIsFavorite && !bIsFavorite) return -1;
-    if (!aIsFavorite && bIsFavorite) return 1;
-    
-    if (aIsFavorite && bIsFavorite) {
-      const aFavorite = favorites.find(f => f.daily_published_id === a.id);
-      const bFavorite = favorites.find(f => f.daily_published_id === b.id);
-      const aTime = aFavorite ? new Date(aFavorite.created_at).getTime() : 0;
-      const bTime = bFavorite ? new Date(bFavorite.created_at).getTime() : 0;
-      return bTime - aTime;
-    }
-    
-    return 0;
-  });
 
   return (
     <>
@@ -82,187 +51,108 @@ export default memo(function Library() {
       }} />
       
       <StandardPageLayout containerClassName="pb-8">
-        <div className="space-y-12">
-          {/* Official Library Section - Subscription Required */}
-          <section className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight">Official Library</h2>
-              <p className="text-muted-foreground">
-                Daily published ABC books
-              </p>
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-2xl font-bold tracking-tight">Library</h2>
+            <p className="text-muted-foreground">
+              Your collection of ABC books
+            </p>
+          </div>
+
+          {!hasLibraryAccess ? (
+            <PremiumGate>
+              <p className="text-center">Subscribe to access the full library of ABC books</p>
+            </PremiumGate>
+          ) : sortedBooks.length === 0 ? (
+            <Card className="p-8 text-center">
+              <p className="text-muted-foreground">No books in library yet</p>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {sortedBooks.map((book) => (
+              <LibraryBookCard
+                key={book.id}
+                book={book}
+              />
+            ))}
             </div>
-
-            {!hasLibraryAccess ? (
-              <PremiumGate
-                feature="Library Access"
-                description="Subscribe to unlock access to our daily published ABC books"
-                showUpgrade={true}
-              >
-                <div />
-              </PremiumGate>
-            ) : (
-              <>
-                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {sortedLibraryBooks.map((item, index) => (
-                    <LibraryBookCard 
-                      key={item.id} 
-                      item={item} 
-                      index={index}
-                      isNewlyPublished={item.id === activeDailyPublished?.id}
-                      isFavorited={favoriteIds.has(item.id)}
-                      onToggleFavorite={toggleFavorite}
-                      onHover={() => {
-                        prefetchLibraryBook(item.id);
-                        if (item.book_id) {
-                          prefetchLibraryPages(item.book_id);
-                        }
-                      }}
-                    />
-                  ))}
-                </div>
-
-                {sortedLibraryBooks.length === 0 && (
-                  <Card className="text-center py-12">
-                    <CardContent>
-                      <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
-                      <h3 className="text-lg font-semibold mb-2">No books in library yet</h3>
-                      <p className="text-muted-foreground">
-                        Check back soon for new daily illustrations!
-                      </p>
-                    </CardContent>
-                  </Card>
-                )}
-              </>
-            )}
-          </section>
+          )}
         </div>
       </StandardPageLayout>
     </>
   );
 });
 
-// Library Book Card Component
+Library.displayName = 'Library';
+
+export default Library;
+
+// ===== LibraryBookCard Component =====
+
 interface LibraryBookCardProps {
-  item: DailyPublishedWithBook;
-  index: number;
-  isNewlyPublished?: boolean;
-  isFavorited?: boolean;
-  onToggleFavorite: (dailyPublishedId: string) => void;
-  onHover?: () => void;
+  book: {
+    id: string;
+    book_name: string;
+    book_description?: string;
+    created_at: string;
+    total_pages?: number;
+    thumbnail_url?: string;
+    is_highlighted?: boolean;
+  };
 }
 
-/**
- * LibraryBookCard - Displays a daily published book in the authenticated user's library
- * 
- * @description Shows official daily published ABC books with favorite toggle,
- * publication date, page count, and "Published Today" badge. Used exclusively
- * in the authenticated library view for browsing and accessing official content.
- * 
- * @data-source useLibraryBooks() - Fetches from daily_published table with book details
- * @navigation Routes to /library/:id/detail for detailed reading view with page selection
- * @user-context Authenticated users (free or subscribed) browsing official published content
- * @features Favorite toggle with heart icon, publish date display, page count badge,
- * "Published Today" badge for active books, predictive prefetching, viewport-based lazy loading
- */
-const LibraryBookCard = memo(function LibraryBookCard({ 
-  item, 
-  index, 
-  isNewlyPublished, 
-  isFavorited = false,
-  onToggleFavorite,
-  onHover
-}: LibraryBookCardProps) {
+const LibraryBookCard = memo(({ book }: LibraryBookCardProps) => {
   const navigate = useNavigate();
-  
-  // Viewport-based lazy loading
-  const { ref, inView } = useIntersectionObserver({
-    rootMargin: '200px', // Start loading 200px before entering viewport
-    triggerOnce: true, // Once loaded, stay loaded
-  });
-  
-  // Priority loading for first 6 cards (above fold)
-  const shouldLoadImmediately = index < 6;
-  const shouldRender = shouldLoadImmediately || inView;
-  
-  const handleCardClick = () => {
-    // Track the book view for sorting
-    trackBookView(item.id);
-    
-    // Navigate to detail page to choose starting page
-    navigate(`/library/${item.id}/detail`);
-  };
+  const [isInView, setIsInView] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent card click
-    onToggleFavorite(item.id);
+  useIntersectionObserver(cardRef, setIsInView, { threshold: 0.1 });
+
+  const handleCardClick = () => {
+    trackBookView(book.id);
+    navigate(`/library/${book.id}`, {
+      state: { from: 'library-card' }
+    });
   };
 
   return (
-    <Card 
-      ref={ref}
-      className="hover:shadow-lg transition-shadow cursor-pointer relative"
+    <div
+      ref={cardRef}
       onClick={handleCardClick}
-      onMouseEnter={onHover}
+      className="group relative bg-card hover:bg-accent/50 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
     >
-      {/* Favorite Heart Button */}
-      <button
-        onClick={handleFavoriteClick}
-        className="absolute top-4 right-4 z-10 p-2 rounded-full bg-background/80 backdrop-blur-sm hover:bg-background transition-colors"
-        aria-label={isFavorited ? "Remove from favorites" : "Add to favorites"}
-      >
-        <Heart 
-          className={`w-5 h-5 transition-colors ${
-            isFavorited 
-              ? 'fill-red-500 text-red-500' 
-              : 'text-muted-foreground hover:text-red-500'
-          }`}
-        />
-      </button>
-
-        <CardHeader>
-          <div className="flex items-start justify-between gap-2 pr-12">
-            <CardTitle className="text-xl line-clamp-2 flex-1">
-              {item.seo_title || item.title}
-            </CardTitle>
-            {isNewlyPublished && (
-              <Badge variant="default" className="shrink-0">
-                Published Today
-              </Badge>
+      <div className="aspect-[4/3] relative overflow-hidden bg-muted">
+        <div className="w-full h-full flex items-center justify-center">
+          <BookOpen className="h-12 w-12 text-muted-foreground" />
+        </div>
+      </div>
+      
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-2 mb-2">
+          <h3 className="font-semibold text-lg line-clamp-2">{book.book_name}</h3>
+        </div>
+        
+        <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
+          {book.book_description || 'No description available'}
+        </p>
+        
+        <div className="flex items-center justify-between text-xs text-muted-foreground">
+          <div className="flex items-center gap-4">
+            <span className="flex items-center gap-1">
+              <Calendar className="h-3 w-3" />
+              {format(new Date(book.created_at), 'MMM d, yyyy')}
+            </span>
+            {book.total_pages && (
+              <span className="flex items-center gap-1">
+                <BookOpen className="h-3 w-3" />
+                {book.total_pages} pages
+              </span>
             )}
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <div className="flex items-center gap-1">
-              <Users className="w-4 h-4" />
-              26 pages
-            </div>
-            <div className="flex items-center gap-1">
-              <Calendar className="w-4 h-4" />
-              {new Date(item.publish_date).toLocaleDateString()}
-            </div>
-          </div>
-          
-          <div className="aspect-square rounded-lg flex items-center justify-center overflow-hidden relative shadow-md hover:shadow-xl transition-shadow duration-300">
-            {shouldRender ? (
-              item.og_image_url ? (
-                <BookImage
-                  src={item.og_image_url}
-                  alt={`Preview of ${item.seo_title || item.title}`}
-                  priority={index < 6}
-                  className="w-full h-full object-cover object-center"
-                  sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                />
-              ) : (
-                <BookOpen className="w-8 h-8 text-muted-foreground" />
-              )
-            ) : (
-              <div className="w-full h-full bg-muted flex items-center justify-center">
-                <BookOpen className="w-8 h-8 text-muted-foreground/30" />
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+    </div>
   );
 });
+
+LibraryBookCard.displayName = 'LibraryBookCard';

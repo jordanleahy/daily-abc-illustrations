@@ -48,12 +48,12 @@ export function UnifiedReadingControls({
 }: UnifiedReadingControlsProps) {
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t z-50 py-3 px-4"
+      className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t z-50 py-3 px-4 min-h-[212px]"
       style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
       {/* Text Overlay Section - Above all controls */}
       {showOverlay && overlayText && (
-        <div className="mb-3 bg-muted/30 rounded-lg px-4 py-2 min-h-[48px] flex items-center justify-center">
+        <div className="mb-3 bg-muted/30 rounded-lg px-4 py-2 h-[64px] flex items-center justify-center">
           {overlayWords && overlayWords.length > 0 ? (
             <div className="w-full h-[40px]">
               <WordCarousel
@@ -71,9 +71,9 @@ export function UnifiedReadingControls({
         </div>
       )}
       
-      {/* Row 1: Word Learning Controls */}
-      {showWordControls && hasWords && totalWords > 0 && (
-        <div className="flex items-center justify-between mb-2">
+      {/* Row 1: Word Learning Controls - Always reserve space */}
+      {showWordControls && hasWords && totalWords > 0 ? (
+        <div className="flex items-center justify-between mb-2 h-[56px]">
           {/* Left: Word Learning Buttons */}
           <div className="flex items-center gap-3">
             {/* Red Button - Mark Difficult */}
@@ -125,6 +125,8 @@ export function UnifiedReadingControls({
             </div>
           )}
         </div>
+      ) : (
+        <div className="mb-2 h-[56px]" />
       )}
 
       {/* Row 2: Page Navigation */}

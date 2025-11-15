@@ -4,6 +4,7 @@ import { PageImageSection } from '@/components/PageImageSection';
 import { ReadingPageDisplay } from '@/components/reading/ReadingPageDisplay';
 import { useReadingPreferences } from '@/hooks/useReadingPreferences';
 import { useRealTimeInlineEdit } from '@/hooks/useRealTimeInlineEdit';
+import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { ArrowLeft } from 'lucide-react';
 import type { Page } from '@/types/book';
 
@@ -34,12 +35,28 @@ export function FocusedPageView({
 }: FocusedPageViewProps) {
   const isLastPage = pageNumber >= totalPages;
   const { hiddenOverlayPages, toggleOverlay, isLoading: isPreferencesLoading } = useReadingPreferences();
+  const { generateMetadata } = useWordMetadata();
   
   const { updateValue: updatePageTitle } = useRealTimeInlineEdit({
     tableName: 'pages',
     recordId: page.id,
     initialValue: page.title || '',
     fieldName: 'title',
+    onSuccess: async (newTitle) => {
+      // Regenerate word metadata when title is updated
+      if (newTitle.trim()) {
+        try {
+          await generateMetadata({
+            pageId: page.id,
+            bookId,
+            title: newTitle,
+            currentContent: page.content
+          });
+        } catch (error) {
+          console.error('Failed to regenerate word metadata after title update:', error);
+        }
+      }
+    }
   });
 
   return (

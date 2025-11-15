@@ -17,7 +17,7 @@ export function WordCarousel({
       className="w-full h-full flex items-center overflow-x-auto scrollbar-hide"
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
-      <div className="flex items-center gap-1.5 px-4">
+      <div className="flex items-center gap-1.5">
         {words.map((wordObj, index) => {
           const isCurrent = index === currentWordIndex;
           const wordStatus = wordStatuses?.[index];

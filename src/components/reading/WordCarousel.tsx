@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import React from 'react';
 
 interface WordCarouselProps {
   words: Array<{ word: string }>;
@@ -12,36 +12,12 @@ export function WordCarousel({
   currentWordIndex,
   wordStatuses,
 }: WordCarouselProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const currentWordRef = useRef<HTMLDivElement>(null);
-
-  // Auto-scroll to center current word
-  useEffect(() => {
-    if (currentWordRef.current && containerRef.current) {
-      const container = containerRef.current;
-      const word = currentWordRef.current;
-      
-      const containerWidth = container.offsetWidth;
-      const wordLeft = word.offsetLeft;
-      const wordWidth = word.offsetWidth;
-      
-      // Calculate scroll position to center the word
-      const scrollPosition = wordLeft - (containerWidth / 2) + (wordWidth / 2);
-      
-      container.scrollTo({
-        left: scrollPosition,
-        behavior: 'smooth'
-      });
-    }
-  }, [currentWordIndex]);
-
   return (
     <div 
-      ref={containerRef}
       className="w-full h-full flex items-center overflow-x-auto scrollbar-hide"
       style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
     >
-      <div className="flex items-center gap-1.5 pl-[50%] pr-[50%]">
+      <div className="flex items-center gap-1.5 px-4">
         {words.map((wordObj, index) => {
           const isCurrent = index === currentWordIndex;
           const wordStatus = wordStatuses?.[index];
@@ -51,12 +27,11 @@ export function WordCarousel({
           return (
             <div
               key={index}
-              ref={isCurrent ? currentWordRef : null}
               className={`
                 inline-block px-3 py-2 rounded-lg font-semibold transition-all duration-300 ease-in-out text-xl flex-shrink-0
                 ${isCurrent 
-                  ? 'text-gray-900 scale-110' 
-                  : 'text-gray-900/50 scale-90'
+                  ? 'text-gray-900' 
+                  : 'text-gray-900/50'
                 }
                 ${isCurrent && isUnderstood ? 'bg-emerald-500/70' : ''}
                 ${isCurrent && isDifficult ? 'bg-red-500/70' : ''}

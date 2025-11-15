@@ -418,6 +418,7 @@ export function UnifiedReadingView({
       
       {/* Unified Reading Controls - Always show navigation, word controls only on content pages */}
         <UnifiedReadingControls
+          pageType={currentPage.page_type}
           showWordControls={isContentPage(currentPage)}
           hasWords={currentPageWords.length > 0}
           onMarkDifficult={() => readingState.handleMarkDifficult(currentPageWords.length)}

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { WordCarousel } from './WordCarousel';
+import type { PageType } from '@/types/book';
 
 interface UnifiedReadingControlsProps {
   // Word learning props
@@ -31,6 +32,9 @@ interface UnifiedReadingControlsProps {
   onToggleReadMode?: () => void;
   isLastWord?: boolean;
   hasReachedLastWord?: boolean;
+  
+  // Page type filtering
+  pageType?: PageType;
 }
 
 export function UnifiedReadingControls({
@@ -55,6 +59,7 @@ export function UnifiedReadingControls({
   onToggleReadMode,
   isLastWord = false,
   hasReachedLastWord = false,
+  pageType,
 }: UnifiedReadingControlsProps) {
   return (
     <div 
@@ -62,7 +67,7 @@ export function UnifiedReadingControls({
       style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
       {/* Text Overlay Section - Above all controls */}
-      {showOverlay && overlayText && (
+      {showOverlay && overlayText && pageType === 'content' && (
         <div 
           className={`mb-3 bg-muted/30 rounded-lg py-2 min-h-[48px] flex items-center justify-start transition-colors ${
             onToggleReadMode && overlayWords && overlayWords.length > 0 

@@ -58,7 +58,7 @@ export function UnifiedReadingControls({
 }: UnifiedReadingControlsProps) {
   return (
     <div 
-      className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t z-50 py-3"
+      className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t z-50 py-3 px-2"
       style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
     >
       {/* Text Overlay Section - Above all controls */}
@@ -105,7 +105,7 @@ export function UnifiedReadingControls({
       
       {/* Row 1: Word Learning Controls */}
       {showWordControls && hasWords && totalWords > 0 && (
-        <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center justify-between mb-2 px-2">
           {/* Left: Word Learning Buttons */}
           <div className="flex items-center gap-3">
             {/* Red Button - Mark Difficult */}

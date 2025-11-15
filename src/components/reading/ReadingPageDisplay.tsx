@@ -104,7 +104,7 @@ export function ReadingPageDisplay({
 
   return (
     <Card className={`overflow-hidden ${className}`}>
-      <div className="relative aspect-square">
+      <div className="relative aspect-square px-2">
         {imageComponent || (
           <img 
             src={imageUrl}

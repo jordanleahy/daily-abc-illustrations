@@ -131,19 +131,6 @@ export function UnifiedReadingControls({
           </Button>
         </div>
 
-        {/* Center: Read/Focus Toggle Button - Shows once user reaches last word */}
-        {onToggleReadMode && overlayWords && overlayWords.length > 0 && (hasReachedLastWord || isLastWord) && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onToggleReadMode}
-            className="h-10 px-4 bg-background/50 hover:bg-background/80"
-            title={isReadMode ? 'Switch to Focus mode' : 'Switch to Read mode'}
-          >
-            {isReadMode ? 'Focus' : 'Read'}
-          </Button>
-        )}
-
         {/* Right: Word Navigation - Always visible arrows */}
         {onNavigateWord && (
             <div className="flex items-center gap-2">

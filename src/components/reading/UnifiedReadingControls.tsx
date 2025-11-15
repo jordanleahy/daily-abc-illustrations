@@ -63,7 +63,20 @@ export function UnifiedReadingControls({
     >
       {/* Text Overlay Section - Above all controls */}
       {showOverlay && overlayText && (
-        <div className="mb-3 bg-muted/30 rounded-lg px-4 py-2 min-h-[48px] flex items-center justify-center">
+        <div 
+          className={`mb-3 bg-muted/30 rounded-lg px-4 py-2 min-h-[48px] flex items-center justify-center transition-colors ${
+            onToggleReadMode && overlayWords && overlayWords.length > 0 
+              ? 'cursor-pointer hover:bg-muted/40 active:bg-muted/50' 
+              : ''
+          }`}
+          onClick={() => {
+            if (onToggleReadMode && overlayWords && overlayWords.length > 0) {
+              onToggleReadMode();
+            }
+          }}
+          role={onToggleReadMode && overlayWords && overlayWords.length > 0 ? "button" : undefined}
+          aria-label={onToggleReadMode && overlayWords && overlayWords.length > 0 ? (isReadMode ? "Switch to Focus mode" : "Switch to Read mode") : undefined}
+        >
           <div className="w-full h-[40px] flex items-center justify-center">
             {overlayWords && overlayWords.length > 0 ? (
               isReadMode ? (

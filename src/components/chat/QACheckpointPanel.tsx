@@ -18,6 +18,7 @@ import { useReadingPreferences } from '@/hooks/useReadingPreferences';
 import { BookImage } from '@/components/ui/book-image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { isContentPage } from '@/types/book';
+import { useBookCoverImage } from '@/hooks/useBookCoverImage';
 
 
 interface QACheckpointPanelProps {
@@ -89,6 +90,19 @@ export function QACheckpointPanel({
   // Fetch pages data
   const { pages } = useBookPages(bookId || undefined);
   
+  // Fetch cover image using page_type='cover'
+  const { data: coverImageUrl } = useBookCoverImage(bookId || undefined);
+  
+  // Helper function to get image for current page
+  const currentPageImage = useMemo(() => {
+    // For page 1 (cover), use the cover image hook which queries by page_type='cover'
+    if (currentQAPage === 1) {
+      return coverImageUrl || null;
+    }
+    // For all other pages, use the displayImages map by page_number
+    return displayImages[currentQAPage] || null;
+  }, [currentQAPage, coverImageUrl, displayImages]);
+  
   // Handle saving overlay text
   const handleSaveOverlayText = async (newText: string) => {
     if (onUpdatePageText) {
@@ -123,14 +137,18 @@ export function QACheckpointPanel({
   const allImagesUploaded = useMemo(() => {
     if (!isBookCreated) return false;
     
-    // Check pages 1 through pageCount
-    for (let i = 1; i <= pageCount; i++) {
+    // Check cover page separately using cover image hook
+    const hasCoverImage = coverImageUrl !== null && coverImageUrl !== undefined;
+    if (!hasCoverImage) return false;
+    
+    // Check other pages (2 through pageCount)
+    for (let i = 2; i <= pageCount; i++) {
       if (!displayImages[i]) {
         return false;
       }
     }
     return true;
-  }, [isBookCreated, pageCount, displayImages]);
+  }, [isBookCreated, pageCount, displayImages, coverImageUrl]);
   
   // Get current page text from page.title or extract from prompt
   const currentPageText = currentPage?.title || pageTextOverlays[currentQAPage] || (() => {
@@ -186,10 +204,10 @@ export function QACheckpointPanel({
   
   // Hide confirmation immediately when image is pasted/uploaded
   useEffect(() => {
-    if (displayImages[currentQAPage]) {
+    if (currentPageImage) {
       setShowConfirmation(false);
     }
-  }, [displayImages, currentQAPage]);
+  }, [currentPageImage]);
   
   // Word Learning Helper handlers
   const handleNavigateWord = (direction: 'prev' | 'next') => {
@@ -344,10 +362,10 @@ export function QACheckpointPanel({
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Page Image</p>
           <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
-            {displayImages[currentQAPage] ? (
+            {currentPageImage ? (
               <div className="relative w-full h-full group">
                 <BookImage
-                  src={displayImages[currentQAPage]} 
+                  src={currentPageImage} 
                   alt={`Page ${currentQAPage} preview`}
                   className="w-full h-full object-contain"
                   priority={true}

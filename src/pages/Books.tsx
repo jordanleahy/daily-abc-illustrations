@@ -804,7 +804,7 @@ export default function Books() {
       <div 
         className={cn(
           "transition-all duration-300 ease-out",
-          mobileEditorOpen && "mr-[400px]"
+          mobileEditorOpen && !isMobile && "mr-[400px]"
         )}
       >
         <StandardPageLayout title={pageTitle} containerClassName="py-8">

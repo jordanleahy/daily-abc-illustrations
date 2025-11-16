@@ -38,7 +38,9 @@ import { useDuplicateBook } from '@/hooks/useDuplicateBook';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useBookPublicationStatus } from '@/hooks/useBookPublicationStatus';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
+import { UniversalInlineEdit } from '@/components/ui/universal-inline-edit';
 import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
+import { useRealTimeInlineEdit } from '@/hooks/useRealTimeInlineEdit';
 import { LoadingState } from '@/components/ui/loading-state';
 import { LoadingProgress } from '@/components/ui/loading-progress';
 import {
@@ -81,7 +83,6 @@ export default function BookDetail() {
   const isMobile = useIsMobile();
   const [archiveLoading, setArchiveLoading] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
-  const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingCategory, setIsEditingCategory] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isEditingStatus, setIsEditingStatus] = useState(false);
@@ -249,30 +250,21 @@ export default function BookDetail() {
     }
   };
 
-  const handleUpdateBookName = async (newName: string) => {
-    if (!book?.id || newName === book.book_name) {
-      setIsEditingTitle(false);
-      return;
-    }
-    
-    try {
-      const { error } = await supabase
-        .from('books')
-        .update({ book_name: newName })
-        .eq('id', book.id);
-
-      if (error) throw error;
-
-      // Invalidate and refetch the book query
-      queryClient.invalidateQueries({ queryKey: ['book', book.id] });
-      toast.success('Book title updated successfully');
-    } catch (error) {
-      console.error('Error updating book name:', error);
-      toast.error('Failed to update book title');
-    } finally {
-      setIsEditingTitle(false);
-    }
-  };
+  // Real-time auto-save for book title
+  const {
+    value: bookTitle,
+    updateValue: updateBookTitle,
+    isSaving: isSavingTitle,
+    saveStatus: titleSaveStatus,
+    error: titleError,
+    hasChanges: titleHasChanges
+  } = useRealTimeInlineEdit({
+    tableName: 'books',
+    recordId: book?.id || '',
+    initialValue: book?.book_name || '',
+    fieldName: 'book_name',
+    debounceMs: 1000
+  });
 
   const handleUpdateCategory = async (newCategory: string) => {
     if (!book?.id || newCategory === book.category) {
@@ -655,16 +647,20 @@ export default function BookDetail() {
 
                   <div className="flex justify-between items-start">
                     <div className="space-y-2">
-                      <InlineEditInput
-                        value={book.book_name}
-                        onSave={handleUpdateBookName}
-                        isEditing={isEditingTitle}
+                      <UniversalInlineEdit
+                        value={bookTitle}
+                        onSave={async (newValue) => {
+                          updateBookTitle(newValue);
+                        }}
+                        isSaving={isSavingTitle}
+                        saveStatus={titleSaveStatus}
+                        error={titleError}
+                        hasChanges={titleHasChanges}
                         className="text-2xl font-semibold"
                         placeholder="Enter book title"
                         renderDisplay={(value) => (
                           <CardTitle 
-                            className="text-2xl cursor-pointer hover:text-primary transition-colors" 
-                            onClick={() => setIsEditingTitle(true)}
+                            className="text-2xl cursor-pointer hover:text-primary transition-colors"
                           >
                             {value}
                           </CardTitle>

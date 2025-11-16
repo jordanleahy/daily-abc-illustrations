@@ -231,7 +231,7 @@ export function useGoogleChatSessions() {
       queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
     },
     onError: () => {
-      console.error('Failed to update QA images');
+      console.error('Failed to update editor page images');
     },
   });
 
@@ -249,7 +249,7 @@ export function useGoogleChatSessions() {
       queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
     },
     onError: () => {
-      console.error('Failed to update QA prompts');
+      console.error('Failed to update editor page prompts');
     },
   });
 

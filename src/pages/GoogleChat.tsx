@@ -166,7 +166,7 @@ export default function GoogleChat() {
   
   const updateBookStatusMutation = useUpdateBookStatus();
 
-  // Book Editor Panel state
+  // Book Editor Panel state  
   const [currentQAPage, setCurrentQAPage] = useState(1);
   const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
   const [qaPagePrompts, setQAPagePrompts] = useState<Record<number, string>>({});
@@ -1344,14 +1344,14 @@ export default function GoogleChat() {
               className="w-full max-h-[90vh] p-0 overflow-hidden rounded-t-xl z-[100]"
             >
               <BookEditorPanel
-                showQACheckpoint={true}
+                showEditor={true}
                 isBookCreated={isBookCreated}
                 createdBookId={createdBookId}
-                currentQAPage={currentQAPage}
+                currentPageNumber={currentQAPage}
                 pageCount={pageCount}
                 displayImages={displayImages}
-                qaPageImages={qaPageImages}
-                qaPagePrompts={qaPagePrompts}
+                editorPageImages={qaPageImages}
+                editorPagePrompts={qaPagePrompts}
                 getCurrentPagePrompt={getCurrentPagePrompt}
                 createBookMutation={createBookMutation}
                 onClose={() => setShowQACheckpoint(false)}
@@ -1381,14 +1381,14 @@ export default function GoogleChat() {
             )}
           >
             <BookEditorPanel
-              showQACheckpoint={true}
+              showEditor={true}
               isBookCreated={isBookCreated}
               createdBookId={createdBookId}
-              currentQAPage={currentQAPage}
+              currentPageNumber={currentQAPage}
               pageCount={pageCount}
               displayImages={displayImages}
-              qaPageImages={qaPageImages}
-              qaPagePrompts={qaPagePrompts}
+              editorPageImages={qaPageImages}
+              editorPagePrompts={qaPagePrompts}
               getCurrentPagePrompt={getCurrentPagePrompt}
               createBookMutation={createBookMutation}
               onClose={() => setShowQACheckpoint(false)}

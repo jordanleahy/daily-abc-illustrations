@@ -26,6 +26,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useUpdateBookStatus } from '@/hooks/useUpdateBookStatus';
 import { useQuery } from '@tanstack/react-query';
 import { PublicationStatus } from '@/types/shared/status';
+import { useWordMetadata } from '@/hooks/useWordMetadata';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
@@ -118,6 +119,9 @@ export default function GoogleChat() {
   console.log('[Chat Hook Debug] useGoogleChat initialized with session:', currentSessionId);
 
   const createBookMutation = useGoogleCreateBook();
+
+  // Word metadata hook for regenerating word carousel data
+  const { generateMetadata } = useWordMetadata();
 
   // Track locally created book ID (separate from session data for immediate UI updates)
   const [localCreatedBookId, setLocalCreatedBookId] = useState<string | null>(null);
@@ -1033,12 +1037,25 @@ export default function GoogleChat() {
       
       console.log('✅ Text saved successfully');
       
+      // Regenerate word metadata from new title to keep word carousel in sync
+      try {
+        await generateMetadata({
+          pageId: page.id,
+          bookId: createdBookId,
+          title: newText,
+          currentContent: page.content || {}
+        });
+        console.log('✅ Word metadata regenerated');
+      } catch (metadataError) {
+        console.error('Failed to regenerate word metadata:', metadataError);
+      }
+      
       // Invalidate queries to refresh
       await queryClient.invalidateQueries({ queryKey: ['book-pages', createdBookId] });
     } catch (error) {
       console.error('Error updating text:', error);
     }
-  }, [createdBookId, dbPages, queryClient]);
+  }, [createdBookId, dbPages, queryClient, generateMetadata]);
 
   // Toggle book status between draft and published
   const handleToggleBookStatus = useCallback(async () => {

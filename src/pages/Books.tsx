@@ -561,13 +561,6 @@ export default function Books() {
         delete updated[currentEditorPage];
         return updated;
       });
-      
-      // Auto-advance to next page if not the last page
-      if (dbPages && currentEditorPage < dbPages.length) {
-        setTimeout(() => {
-          setCurrentEditorPage(currentEditorPage + 1);
-        }, 500);
-      }
     } catch (error: any) {
       console.error('Image upload error:', error);
     }

@@ -86,7 +86,7 @@ export function processAgentTemplate(
     return { processedTemplate: template || '', variables: {} };
   }
 
-  const sanitizeValue = (value: string | undefined | null, maxLength = 100): string => {
+  const sanitizeValue = (value: string | undefined | null, maxLength = 500): string => {
     if (!value) return '';
     
     let sanitized = String(value).trim()

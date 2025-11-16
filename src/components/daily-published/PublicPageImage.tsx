@@ -15,6 +15,8 @@ interface PublicPageImageProps {
   onUploadClick?: () => void;
   /** If true, prioritizes loading */
   isFirstImage?: boolean;
+  /** Disable hover effects (zoom/rotate) for reading mode */
+  disableHoverEffects?: boolean;
 }
 
 export function PublicPageImage({ 
@@ -23,7 +25,8 @@ export function PublicPageImage({
   className = "",
   showUploadButton = false,
   onUploadClick,
-  isFirstImage = false
+  isFirstImage = false,
+  disableHoverEffects = false
 }: PublicPageImageProps) {
   const { data: imageData, isLoading } = usePublicPageImage(pageId);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -53,6 +56,7 @@ export function PublicPageImage({
           priority={isFirstImage}
           className={`w-full h-full object-contain ${className}`}
           onLoad={() => setImageLoaded(true)}
+          disableHoverEffects={disableHoverEffects}
         />
       </div>
       

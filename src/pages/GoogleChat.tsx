@@ -1027,7 +1027,7 @@ export default function GoogleChat() {
     console.log('Updating page:', page.id, 'with text:', newText);
     
     try {
-      // Update the page content with new text overlay
+      // Update the page content with new text overlay AND sync the title
       const updatedContent = {
         ...(page.content || {}),
         textOverlay: {
@@ -1044,6 +1044,7 @@ export default function GoogleChat() {
         .from('pages')
         .update({ 
           content: updatedContent,
+          title: newText, // Sync title with textOverlay.text
           updated_at: new Date().toISOString()
         })
         .eq('id', page.id);

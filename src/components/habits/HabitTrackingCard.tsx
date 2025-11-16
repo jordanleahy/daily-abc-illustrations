@@ -227,9 +227,9 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                 onClick={() => handleMarkComplete(true)}
                 disabled={markComplete.isPending}
                 className="flex-1"
-                variant="default"
+                variant="success"
               >
-                Complete
+                Right
               </Button>
               
               <Button

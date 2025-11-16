@@ -24,14 +24,19 @@ export function useWordMetadata() {
 
       if (fetchError) throw fetchError;
 
-      // Step 2: Parse words from title
-      const words = parseWordsFromTitle(title);
-      
-      // Step 3: Merge with FRESH content (preserves concurrent updates like textOverlay)
+      // Step 2: Parse fresh content and determine source text for word generation
+      // Priority: textOverlay.text (if enabled) > title (fallback)
       const baseContent = (freshPage?.content && typeof freshPage.content === 'object') 
         ? freshPage.content 
         : {};
       
+      const hasTextOverlay = (baseContent as any).textOverlay?.enabled && (baseContent as any).textOverlay?.text;
+      const sourceText = hasTextOverlay ? (baseContent as any).textOverlay.text : title;
+      
+      // Step 3: Parse words from the source text
+      const words = parseWordsFromTitle(sourceText);
+      
+      // Step 4: Merge with FRESH content (preserves concurrent updates like textOverlay)
       const updatedContent = {
         ...baseContent,
         words

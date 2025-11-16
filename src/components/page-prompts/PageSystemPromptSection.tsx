@@ -3,10 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { History, Edit, Play, Clock } from 'lucide-react';
+import { History, Edit, Play, Clock, Copy } from 'lucide-react';
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageSystemPromptEditor } from './PageSystemPromptEditor';
 import { PageVersionHistoryModal } from './PageVersionHistoryModal';
+import { copyToClipboard } from '@/utils/clipboardHelpers';
+import { useToast } from '@/hooks/use-toast';
 
 interface PageSystemPromptSectionProps {
   pageId: string;
@@ -29,6 +31,26 @@ export function PageSystemPromptSection({ pageId, pageTitle }: PageSystemPromptS
   } = usePageSystemPrompt(pageId);
 
   const [showVersionHistory, setShowVersionHistory] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopyPrompt = async () => {
+    if (!currentPrompt?.content) return;
+
+    try {
+      await copyToClipboard(currentPrompt.content);
+      toast({
+        title: "Copied!",
+        description: "System prompt copied to clipboard",
+      });
+    } catch (error) {
+      console.error('Error copying prompt:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
 
   if (isLoading) {
     return (
@@ -115,20 +137,30 @@ export function PageSystemPromptSection({ pageId, pageTitle }: PageSystemPromptS
           />
         ) : currentPrompt ? (
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">
-                Version {currentPrompt.version_number}
-              </Badge>
-              {currentPrompt.is_deployed && (
-                <Badge variant="default">
-                  <Play className="h-3 w-3 mr-1" />
-                  Deployed
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Badge variant="outline">
+                  Version {currentPrompt.version_number}
                 </Badge>
-              )}
-              <Badge variant="secondary">
-                <Clock className="h-3 w-3 mr-1" />
-                {new Date(currentPrompt.updated_at).toLocaleDateString()}
-              </Badge>
+                {currentPrompt.is_deployed && (
+                  <Badge variant="default">
+                    <Play className="h-3 w-3 mr-1" />
+                    Deployed
+                  </Badge>
+                )}
+                <Badge variant="secondary">
+                  <Clock className="h-3 w-3 mr-1" />
+                  {new Date(currentPrompt.updated_at).toLocaleDateString()}
+                </Badge>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleCopyPrompt}
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copy Prompt
+              </Button>
             </div>
             <div className="bg-muted/50 rounded-lg p-4">
               <pre className="whitespace-pre-wrap text-sm">{currentPrompt.content}</pre>

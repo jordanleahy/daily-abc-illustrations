@@ -27,6 +27,7 @@ interface BookImageProps {
   onLoad?: () => void;
   onError?: () => void;
   enableMobileSave?: boolean;
+  disableHoverEffects?: boolean;
 }
 
 /**
@@ -41,7 +42,8 @@ export function BookImage({
   sizes = "(max-width: 768px) 100vw, 800px",
   onLoad,
   onError,
-  enableMobileSave = false
+  enableMobileSave = false,
+  disableHoverEffects = false
 }: BookImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   
@@ -99,7 +101,7 @@ export function BookImage({
           fetchPriority={priority ? "high" : "auto"}
           crossOrigin="anonymous"
           data-optimized="true"
-          className={`transition-all duration-300 ease-out hover:scale-110 hover:rotate-2 ${className}`}
+          className={`transition-all duration-300 ease-out ${disableHoverEffects ? '' : 'hover:scale-110 hover:rotate-2'} ${className}`}
           style={enableMobileSave ? { 
             touchAction: 'auto', 
             WebkitTouchCallout: 'default' 

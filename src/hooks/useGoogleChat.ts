@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 
@@ -44,7 +43,7 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
     });
 
     if (!user?.id) {
-      toast.error('Please sign in to use Google chat');
+      console.error('Please sign in to use Google chat');
       return;
     }
 
@@ -74,7 +73,6 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
       // Use cached session from AuthContext (0ms instead of 50-100ms)
       if (!session?.access_token) {
         console.error('No session token available');
-        toast.error('Please refresh the page and try again');
         throw new Error('No auth token');
       }
       
@@ -101,19 +99,7 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        if (response.status === 429 || errorData.error?.includes('Rate limit')) {
-          toast.error('Rate Limit Exceeded', {
-            description: 'Too many requests. Please wait a moment and try again.',
-            duration: 5000,
-          });
-        } else if (response.status === 402 || errorData.error?.includes('Payment required')) {
-          toast.error('Lovable AI Credits Exhausted', {
-            description: 'Please add credits to your Lovable AI workspace to continue.',
-            duration: 10000,
-          });
-        } else {
-          toast.error('Failed to send message');
-        }
+        console.error('Request failed:', errorData);
         throw new Error(errorData.error || 'Request failed');
       }
 
@@ -241,7 +227,6 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
 
     } catch (error) {
       console.error('Google chat error:', error);
-      toast.error('Failed to send message');
       // Revert cache on error
       if (sessionId) {
         queryClient.setQueryData(['session-messages', sessionId], currentMessages);

@@ -158,25 +158,8 @@ Deno.serve(async (req) => {
         })()
       : Promise.resolve({ data: null, error: null });
 
-    const seoPromise = libraryDpIds.length > 0
-      ? (async () => {
-          console.log('  🎨 Fetching SEO metadata for', libraryDpIds.length, 'items...');
-          const result = await supabase
-            .from('seo_metadata')
-            .select('daily_published_id, og_image_url, seo_title, is_latest, optimization_status')
-            .eq('is_latest', true)
-            .eq('optimization_status', 'complete')
-            .in('daily_published_id', libraryDpIds);
-
-          if (result.error) {
-            console.error('  ❌ Error fetching SEO metadata:', result.error);
-          } else {
-            console.log(`  ✅ Found ${result.data?.length || 0} SEO metadata items`);
-          }
-
-          return result;
-        })()
-      : Promise.resolve({ data: [], error: null });
+    // No SEO promise needed - library books now fetch images directly from page_image_urls
+    const seoPromise = Promise.resolve({ data: [], error: null });
 
     // Fetch thumbnails for popular books directly (independent of daily_published status)
     const popularBookThumbnailsPromise = popularBookIds.length > 0

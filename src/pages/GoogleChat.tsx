@@ -847,7 +847,7 @@ export default function GoogleChat() {
   const handleQAImageUpload = useCallback(async (imageDataUrl: string) => {
     // If book is created, update actual page image
     if (createdBookId && dbPages) {
-      const currentPage = dbPages.find(p => p.page_number === currentQAPage);
+      const currentPage = dbPages.find(p => p.page_number === currentEditorPage);
       if (!currentPage) {
         console.error('Page not found');
         return;
@@ -859,12 +859,12 @@ export default function GoogleChat() {
         // Convert base64 to blob
         const response = await fetch(imageDataUrl);
         const blob = await response.blob();
-        const file = new File([blob], `page-${currentQAPage}-${Date.now()}.png`, { type: 'image/png' });
+        const file = new File([blob], `page-${currentEditorPage}-${Date.now()}.png`, { type: 'image/png' });
         
         // Upload to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('page-images')
-          .upload(`${user?.id}/${createdBookId}/page-${currentQAPage}-${Date.now()}.png`, file, {
+          .upload(`${user?.id}/${createdBookId}/page-${currentEditorPage}-${Date.now()}.png`, file, {
             cacheControl: '3600',
             upsert: false,
           });
@@ -913,14 +913,14 @@ export default function GoogleChat() {
         // Clear replace mode for this page
         setReplacePageMode(prev => {
           const updated = { ...prev };
-          delete updated[currentQAPage];
+          delete updated[currentEditorPage];
           return updated;
         });
         
         // Auto-advance to next page if not the last page
-        if (currentQAPage < pageCount) {
+        if (currentEditorPage < pageCount) {
           setTimeout(() => {
-            setCurrentQAPage(currentQAPage + 1);
+            setCurrentEditorPage(currentEditorPage + 1);
           }, 500);
         }
       } catch (error: any) {
@@ -929,10 +929,10 @@ export default function GoogleChat() {
     } else {
       // Pre-creation: Store in session editor images
       const updatedImages = {
-        ...qaPageImages,
-        [currentQAPage]: imageDataUrl
+        ...editorPageImages,
+        [currentEditorPage]: imageDataUrl
       };
-      setQAPageImages(updatedImages);
+      setEditorPageImages(updatedImages);
       
       // Persist to database
       if (currentSessionId) {
@@ -944,26 +944,26 @@ export default function GoogleChat() {
       }
       
       // Auto-advance to next page if not the last page
-      if (currentQAPage < pageCount) {
+      if (currentEditorPage < pageCount) {
         setTimeout(() => {
-          setCurrentQAPage(currentQAPage + 1);
+          setCurrentEditorPage(currentEditorPage + 1);
         }, 500);
       } else {
         console.log('All pages reviewed!');
       }
     }
-  }, [qaPageImages, currentQAPage, pageCount, currentSessionId, updateQAPageImages, createdBookId, dbPages, user, queryClient]);
+  }, [editorPageImages, currentEditorPage, pageCount, currentSessionId, updateQAPageImages, createdBookId, dbPages, user, queryClient]);
 
   const handleQAPageNavigation = useCallback((direction: 'next' | 'prev') => {
     // If book is created, use actual page numbers from database
     if (isBookCreated && dbPages && dbPages.length > 0) {
       const sortedPages = [...dbPages].sort((a, b) => a.page_number - b.page_number);
-      const currentIndex = sortedPages.findIndex(p => p.page_number === currentQAPage);
+      const currentIndex = sortedPages.findIndex(p => p.page_number === currentEditorPage);
       
       if (direction === 'next' && currentIndex < sortedPages.length - 1) {
-        setCurrentQAPage(sortedPages[currentIndex + 1].page_number);
+        setCurrentEditorPage(sortedPages[currentIndex + 1].page_number);
       } else if (direction === 'prev' && currentIndex > 0) {
-        setCurrentQAPage(sortedPages[currentIndex - 1].page_number);
+        setCurrentEditorPage(sortedPages[currentIndex - 1].page_number);
       }
       return;
     }
@@ -971,12 +971,12 @@ export default function GoogleChat() {
     // Pre-creation navigation with educational focus
     const maxPage = (parsedPageDetails?.length || 0) + (educationalFocus ? 2 : 1);
     
-    if (direction === 'next' && currentQAPage < maxPage) {
-      setCurrentQAPage(currentQAPage + 1);
-    } else if (direction === 'prev' && currentQAPage > 1) {
-      setCurrentQAPage(Math.max(1, currentQAPage - 1));
+    if (direction === 'next' && currentEditorPage < maxPage) {
+      setCurrentEditorPage(currentEditorPage + 1);
+    } else if (direction === 'prev' && currentEditorPage > 1) {
+      setCurrentEditorPage(Math.max(1, currentEditorPage - 1));
     }
-  }, [parsedPageDetails, currentQAPage, educationalFocus, isBookCreated, dbPages]);
+  }, [parsedPageDetails, currentEditorPage, educationalFocus, isBookCreated, dbPages]);
 
   const handleRemoveQAImage = useCallback(async (pageNumber: number) => {
     if (createdBookId) {
@@ -984,9 +984,9 @@ export default function GoogleChat() {
       setReplacePageMode(prev => ({ ...prev, [pageNumber]: true }));
     } else {
       // For pre-creation, remove from editor images
-      const updatedImages = { ...qaPageImages };
+      const updatedImages = { ...editorPageImages };
       delete updatedImages[pageNumber];
-      setQAPageImages(updatedImages);
+      setEditorPageImages(updatedImages);
       
       if (currentSessionId) {
         try {
@@ -996,7 +996,7 @@ export default function GoogleChat() {
         }
       }
     }
-  }, [qaPageImages, currentSessionId, updateQAPageImages, createdBookId]);
+  }, [editorPageImages, currentSessionId, updateQAPageImages, createdBookId]);
 
   // Update page text overlay
   const handleUpdatePageText = useCallback(async (pageNumber: number, newText: string) => {

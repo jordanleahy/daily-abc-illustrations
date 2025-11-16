@@ -192,10 +192,10 @@ export default function GoogleChat() {
   // Memoize parsed page details to avoid re-parsing on every render
   const parsedPageDetails = useMemo(() => {
     const result = parsePageDetailsFromMessages(messages);
-    console.log('[QA Debug] Parsed pages:', result?.length || 0, 'pages');
-    console.log('[QA Debug] Parsed page details:', result);
-    console.log('[QA Debug] Total messages:', messages.length);
-    console.log('[QA Debug] Last 2 messages:', messages.slice(-2).map(m => ({
+    console.log('[Editor Debug] Parsed pages:', result?.length || 0, 'pages');
+    console.log('[Editor Debug] Parsed page details:', result);
+    console.log('[Editor Debug] Total messages:', messages.length);
+    console.log('[Editor Debug] Last 2 messages:', messages.slice(-2).map(m => ({
       role: m.role,
       contentPreview: typeof m.content === 'string' 
         ? m.content.substring(0, 200) 
@@ -206,7 +206,7 @@ export default function GoogleChat() {
 
   // Detect when book outline is ready for Book Editor Panel
   const shouldShowQACheckpoint = useMemo(() => {
-    console.log('[Outline Button Debug] Computing shouldShowQACheckpoint:', {
+    console.log('[Review Button Debug] Computing shouldShowQACheckpoint:', {
       isLoading,
       messagesLength: messages.length,
       parsedPageDetailsLength: parsedPageDetails?.length || 0,
@@ -214,13 +214,13 @@ export default function GoogleChat() {
     });
     
     if (isLoading || messages.length === 0) {
-      console.log('[Outline Button Debug] Early return: isLoading or no messages');
+      console.log('[Review Button Debug] Early return: isLoading or no messages');
       return false;
     }
     
     // Show as soon as we have ANY pages parsed (changed from >= 5 to > 0)
     const hasPages = parsedPageDetails !== null && parsedPageDetails.length > 0;
-    console.log('[Outline Button Debug] hasPages:', hasPages, '(need > 0 pages)');
+    console.log('[Review Button Debug] hasPages:', hasPages, '(need > 0 pages)');
     
     // Always show button if we have pages, even after book creation
     return hasPages;
@@ -229,13 +229,13 @@ export default function GoogleChat() {
   // Parse educational focus from messages
   const educationalFocus = useMemo(() => {
     const result = parseEducationalFocus(messages);
-    console.log('[Outline Button Debug] Educational focus:', result ? 'found' : 'not found');
+    console.log('[Review Button Debug] Educational focus:', result ? 'found' : 'not found');
     return result;
   }, [messages]);
 
   // Debug: Log when key values change for outline button visibility
   useEffect(() => {
-    console.log('[Outline Button Debug] State changed:', {
+    console.log('[Review Button Debug] State changed:', {
       shouldShowQACheckpoint,
       isBookPublished,
       shouldShowReviewButton: shouldShowQACheckpoint || isBookPublished,
@@ -261,7 +261,7 @@ export default function GoogleChat() {
       
       // If page count changed, or if we have parsed details but empty cache, clear the cache
       if (currentPageCount !== newPageCount || currentPageCount === 0) {
-        console.log('[QA Debug] New outline detected, clearing cached prompts');
+        console.log('[Editor Debug] New outline detected, clearing cached prompts');
         setQAPagePrompts({});
       }
     }

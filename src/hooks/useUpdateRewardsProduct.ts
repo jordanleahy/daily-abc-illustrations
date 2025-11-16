@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { toast } from '@/hooks/use-toast';
+// Toast notifications removed
 import type { UpdateRewardsProductInput } from '@/types/rewardsProduct';
 
 export const useUpdateRewardsProduct = () => {
@@ -20,17 +20,10 @@ export const useUpdateRewardsProduct = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['rewards-products'] });
-      toast({
-        title: 'Success',
-        description: 'Product updated successfully',
-      });
+      console.log('Product updated successfully');
     },
     onError: (error: Error) => {
-      toast({
-        title: 'Error',
-        description: error.message,
-        variant: 'destructive',
-      });
+      console.error(error.message);
     },
   });
 };

@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { Button } from "@/components/ui/button";
 import { Upload, AlertCircle, Video } from "lucide-react";
-import { toast } from "sonner";
+// Toast notifications removed
 import { processVideo, validateVideo, validateVideoDuration, formatFileSize } from "@/utils/videoProcessor";
 
 interface VideoUploadProps {
@@ -19,21 +19,21 @@ export function VideoUpload({ onVideoSelect, disabled = false, className = "" }:
   const handleFile = async (file: File) => {
     const validationError = validateVideo(file);
     if (validationError) {
-      toast.error(validationError);
+      console.error(validationError);
       return;
     }
 
     // Check video duration
     const durationError = await validateVideoDuration(file);
     if (durationError) {
-      toast.error(durationError);
+      console.error(durationError);
       return;
     }
 
     // Process and compress the video
     setIsProcessing(true);
     try {
-      toast.info('Compressing video... This may take a minute', { duration: 5000 });
+      console.log('Compressing video... This may take a minute');
       
       const processed = await processVideo(file, {
         maxWidth: 720,
@@ -45,9 +45,8 @@ export function VideoUpload({ onVideoSelect, disabled = false, className = "" }:
 
       // Show compression results
       const savedPercentage = Math.round((1 - processed.compressionRatio) * 100);
-      toast.success(
-        `Video optimized: ${formatFileSize(processed.originalSize)} → ${formatFileSize(processed.compressedSize)} (${savedPercentage}% smaller)`,
-        { duration: 5000 }
+      console.log(
+        `Video optimized: ${formatFileSize(processed.originalSize)} → ${formatFileSize(processed.compressedSize)} (${savedPercentage}% smaller)`
       );
 
       // Set preview from processed video
@@ -63,7 +62,7 @@ export function VideoUpload({ onVideoSelect, disabled = false, className = "" }:
       onVideoSelect(compressedFile);
     } catch (error) {
       console.error('Video processing error:', error);
-      toast.error('Failed to process video. Please try a different video or reduce the file size.');
+      console.error('Failed to process video. Please try a different video or reduce the file size.');
     } finally {
       setIsProcessing(false);
     }

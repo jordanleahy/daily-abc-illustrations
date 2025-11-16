@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'sonner';
+// Toast notifications removed
 
 interface BookQRCodeSectionProps {
   bookId: string;
@@ -24,9 +24,9 @@ export const BookQRCodeSection = ({ bookId }: BookQRCodeSectionProps) => {
   const handleCopyUrl = async () => {
     try {
       await copyPublicUrl();
-      toast.success('URL copied to clipboard!');
+      console.log('URL copied to clipboard!');
     } catch (error) {
-      toast.error('Failed to copy URL');
+      console.error('Failed to copy URL');
     }
   };
 

@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useToast } from './use-toast';
+// Toast notifications removed
 import { UpdateHabitData } from '@/types/habit';
 
 /**
@@ -10,7 +10,6 @@ import { UpdateHabitData } from '@/types/habit';
 export function useUpdateHabit() {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (data: UpdateHabitData) => {
@@ -39,17 +38,10 @@ export function useUpdateHabit() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['habits'] });
-      toast({
-        title: 'Success',
-        description: 'Habit updated successfully',
-      });
+      console.log('Habit updated successfully');
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to update habit: ${error.message}`,
-        variant: 'destructive',
-      });
+      console.error(`Failed to update habit: ${error.message}`);
     },
   });
 }

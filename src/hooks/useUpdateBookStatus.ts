@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+// Toast notifications removed
 
 import { PublicationStatus } from '@/types/shared';
 
@@ -13,7 +13,6 @@ interface UpdateBookStatusData {
 
 export const useUpdateBookStatus = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   return useMutation({
     mutationFn: async ({ bookId, status }: UpdateBookStatusData) => {
@@ -36,19 +35,11 @@ export const useUpdateBookStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['library-books'] });
       
-      toast({
-        title: 'Status Updated',
-        description: `Book status changed to ${variables.status}`,
-      });
+      console.log(`Book status changed to ${variables.status}`);
     },
     onError: (error: any) => {
       console.error('Failed to update book status:', error);
-      
-      toast({
-        variant: 'destructive',
-        title: 'Update Failed',
-        description: 'Failed to update book status. Please try again.',
-      });
+      console.error('Failed to update book status. Please try again.');
     },
   });
 };

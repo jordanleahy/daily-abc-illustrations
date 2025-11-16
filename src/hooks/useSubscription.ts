@@ -71,7 +71,6 @@ const isSubscriptionActive = (status: SubscriptionStatus): boolean => {
 
 export const useSubscription = () => {
   const { user } = useAuthContext();
-  const { toast } = useToast();
 
   // Use React Query with 90-day localStorage caching + strict deduplication
   const query = useQuery<SubscriptionStatus>({
@@ -158,11 +157,7 @@ export const useSubscription = () => {
 
   const createCheckoutSession = useCallback(async (price_id: string, coupon_code?: string) => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to subscribe",
-        variant: "destructive",
-      });
+      console.error("Please sign in to subscribe");
       return;
     }
 
@@ -179,21 +174,13 @@ export const useSubscription = () => {
       }
     } catch (error) {
       console.error('Error creating checkout session:', error);
-      toast({
-        title: "Checkout Error",
-        description: error instanceof Error ? error.message : 'Failed to create checkout session',
-        variant: "destructive",
-      });
+      console.error(error instanceof Error ? error.message : 'Failed to create checkout session');
     }
-  }, [user, toast]);
+  }, [user]);
 
   const openCustomerPortal = useCallback(async () => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to manage your subscription",
-        variant: "destructive",
-      });
+      console.error("Please sign in to manage your subscription");
       return;
     }
 
@@ -208,13 +195,9 @@ export const useSubscription = () => {
       }
     } catch (error) {
       console.error('Error opening customer portal:', error);
-      toast({
-        title: "Portal Error",
-        description: error instanceof Error ? error.message : 'Failed to open customer portal',
-        variant: "destructive",
-      });
+      console.error(error instanceof Error ? error.message : 'Failed to open customer portal');
     }
-  }, [user, toast]);
+  }, [user]);
 
   // Get subscription tier info
   const getSubscriptionTier = useCallback(() => {
@@ -227,11 +210,7 @@ export const useSubscription = () => {
 
   const updateAutoRenewal = useCallback(async (autoRenew: boolean) => {
     if (!user) {
-      toast({
-        title: "Authentication Required",
-        description: "Please sign in to update your subscription",
-        variant: "destructive",
-      });
+      console.error("Please sign in to update your subscription");
       return { success: false };
     }
 
@@ -246,24 +225,17 @@ export const useSubscription = () => {
       SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
       await query.refetch();
 
-      toast({
-        title: "Subscription Updated",
-        description: autoRenew 
-          ? "Your subscription will now renew automatically" 
-          : "Your subscription will not renew at the end of the current period",
-      });
+      console.log(autoRenew 
+        ? "Your subscription will now renew automatically" 
+        : "Your subscription will not renew at the end of the current period");
 
       return { success: true, data };
     } catch (error) {
       console.error('Error updating subscription renewal:', error);
-      toast({
-        title: "Update Error",
-        description: error instanceof Error ? error.message : 'Failed to update subscription',
-        variant: "destructive",
-      });
+      console.error(error instanceof Error ? error.message : 'Failed to update subscription');
       return { success: false };
     }
-  }, [user, toast, query]);
+  }, [user, query]);
 
   const finalData: SubscriptionStatus = (query.data as SubscriptionStatus) || { subscribed: false, loading: false };
 

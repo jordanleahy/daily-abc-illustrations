@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from './use-toast';
+// Toast notifications removed
 import { useAuthContext } from '@/contexts/AuthContext';
 import { SkipHabitParams } from '@/types/habit';
 import { HabitCompletionWithDetails } from '@/types/habit';
@@ -10,7 +10,6 @@ import { HabitCompletionWithDetails } from '@/types/habit';
  */
 export function useSkipHabit() {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const { user } = useAuthContext();
 
   return useMutation({
@@ -81,11 +80,7 @@ export function useSkipHabit() {
         queryClient.setQueryData(['kid-profiles', user?.id], context.previousKidProfiles);
       }
       
-      toast({
-        title: 'Error',
-        description: `Failed to skip habit: ${error.message}`,
-        variant: 'destructive',
-      });
+      console.error(`Failed to skip habit: ${error.message}`);
     },
     onSuccess: (data, variables) => {
       // Real-time subscription will update the data, but invalidate to ensure consistency
@@ -93,10 +88,7 @@ export function useSkipHabit() {
       queryClient.invalidateQueries({ queryKey: ['kid-profiles', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['my-habits'] });
       
-      toast({
-        title: 'Habit Skipped',
-        description: `"${variables.habitTitle}" removed from today's list. ${data.coins_removed} coins subtracted.`,
-      });
+      console.log(`Habit Skipped - "${variables.habitTitle}" removed from today's list. ${data.coins_removed} coins subtracted.`);
     },
   });
 }

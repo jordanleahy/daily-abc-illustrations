@@ -14,7 +14,7 @@ import {
 import { usePageSystemPrompt } from '@/hooks/usePageSystemPrompt';
 import { PageImageSection } from '@/components/PageImageSection';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
+// Toast notifications removed
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { supabase } from '@/integrations/supabase/client';
 import { useDeletePage } from '@/hooks/useDeletePage';
@@ -137,12 +137,12 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
     
     const validation = await validateImage(file);
     if (!validation.valid) {
-      toast.error(validation.error);
+      console.error(validation.error);
       e.target.value = '';
       return;
     }
     
-    const toastId = toast.loading('Uploading image...');
+    console.log('Uploading image...');
     
     try {
       const processed = await processImage(file, {
@@ -159,10 +159,10 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
       );
 
       await uploadImage(compressedFile, bookId);
-      toast.success('Image uploaded successfully!', { id: toastId });
+      console.log('Image uploaded successfully!');
     } catch (error: any) {
       console.error('Error uploading image:', error);
-      toast.error(error.message || 'Failed to upload image', { id: toastId });
+      console.error(error.message || 'Failed to upload image');
     } finally {
       e.target.value = '';
     }
@@ -170,7 +170,7 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
 
   const handleDeletePage = async () => {
     if (!user) {
-      toast.error('Please log in to delete pages');
+      console.error('Please log in to delete pages');
       return;
     }
 
@@ -187,10 +187,10 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
 
     try {
       await copyToClipboard(page.description);
-      toast.success('Description copied to clipboard');
+      console.log('Description copied to clipboard');
     } catch (error) {
       console.error('Error copying description to clipboard:', error);
-      toast.error('Failed to copy to clipboard');
+      console.error('Failed to copy to clipboard');
     }
   };
 
@@ -199,10 +199,10 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
 
     try {
       await copyToClipboard(currentPrompt.content);
-      toast.success('JSON prompt copied to clipboard');
+      console.log('JSON prompt copied to clipboard');
     } catch (error) {
       console.error('Error copying JSON prompt to clipboard:', error);
-      toast.error('Failed to copy to clipboard');
+      console.error('Failed to copy to clipboard');
     }
   };
 
@@ -211,22 +211,22 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
 
     // Skip if it's just an upload message
     if (currentImage.prompt_used.startsWith('User uploaded:')) {
-      toast.error('This image was uploaded, no AI prompt available');
+      console.error('This image was uploaded, no AI prompt available');
       return;
     }
 
     try {
       await copyToClipboard(currentImage.prompt_used);
-      toast.success('Full prompt copied to clipboard');
+      console.log('Full prompt copied to clipboard');
     } catch (error) {
       console.error('Error copying full prompt to clipboard:', error);
-      toast.error('Failed to copy to clipboard');
+      console.error('Failed to copy to clipboard');
     }
   };
 
   const handleDownloadImage = async () => {
     if (!currentImage?.image_url) {
-      toast.error('No image available to download');
+      console.error('No image available to download');
       return;
     }
 
@@ -242,10 +242,10 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      toast.success('Image downloaded successfully');
+      console.log('Image downloaded successfully');
     } catch (error) {
       console.error('Error downloading image:', error);
-      toast.error('Failed to download image');
+      console.error('Failed to download image');
     }
   };
   

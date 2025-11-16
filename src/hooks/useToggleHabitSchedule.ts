@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useToast } from './use-toast';
+// Toast notifications removed
 import { addDays, format } from 'date-fns';
 
 /**
@@ -21,7 +21,6 @@ import { addDays, format } from 'date-fns';
 export function useToggleHabitSchedule() {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ 
@@ -78,19 +77,10 @@ export function useToggleHabitSchedule() {
       const dateStr = format(addDays(new Date(), 1), 'yyyy-MM-dd');
       queryClient.invalidateQueries({ queryKey: ['habit-schedule', user?.id, dateStr] });
       
-      toast({
-        title: data.isScheduled ? 'Habit Scheduled' : 'Habit Unscheduled',
-        description: data.isScheduled 
-          ? 'This habit will appear tomorrow'
-          : 'This habit will not appear tomorrow',
-      });
+      console.log(data.isScheduled ? 'Habit Scheduled - This habit will appear tomorrow' : 'Habit Unscheduled - This habit will not appear tomorrow');
     },
     onError: (error) => {
-      toast({
-        title: 'Error',
-        description: `Failed to update schedule: ${error.message}`,
-        variant: 'destructive',
-      });
+      console.error(`Failed to update schedule: ${error.message}`);
     },
   });
 }

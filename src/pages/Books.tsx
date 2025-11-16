@@ -549,6 +549,12 @@ export default function Books() {
       // Invalidate queries to refetch images
       await queryClient.invalidateQueries({ queryKey: ['book-page-images', selectedBookId] });
       
+      // If this is the cover page, also invalidate cover-specific queries
+      if (currentPage.page_type === 'cover' || currentEditorPage === 1) {
+        await queryClient.invalidateQueries({ queryKey: ['book-cover-image', selectedBookId] });
+        await queryClient.invalidateQueries({ queryKey: ['book-cover-page', selectedBookId] });
+      }
+      
       // Clear replace mode for this page
       setReplacePageMode(prev => {
         const updated = { ...prev };

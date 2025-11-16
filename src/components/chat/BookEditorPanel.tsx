@@ -81,6 +81,7 @@ export function BookEditorPanel({
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
   const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
+  const [isReplacing, setIsReplacing] = useState(false);
   
   const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
   const { generateMetadata, isGenerating } = useWordMetadata();
@@ -362,7 +363,7 @@ export function BookEditorPanel({
         <div className="space-y-2">
           <p className="text-xs font-medium text-muted-foreground">Page Image</p>
           <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
-            {currentPageImage ? (
+            {currentPageImage && !isReplacing ? (
               <div className="relative w-full h-full group">
                 <BookImage
                   src={currentPageImage} 
@@ -421,8 +422,8 @@ export function BookEditorPanel({
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => onRemoveImage(currentPageNumber)}
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
+                  onClick={() => setIsReplacing(true)}
+                  className="absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-xs h-7"
                 >
                   Replace
                 </Button>
@@ -461,6 +462,36 @@ export function BookEditorPanel({
                     Hide Overlay
                   </Button>
                 )}
+              </div>
+            ) : isReplacing ? (
+              <div className="relative w-full h-full">
+                <ImageUpload 
+                  onImageSelect={(file) => {
+                    const scrollX = window.scrollX || window.pageXOffset;
+                    const scrollY = window.scrollY || window.pageYOffset;
+                    
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                      onImageUpload(reader.result as string);
+                      setIsReplacing(false);
+                      
+                      requestAnimationFrame(() => {
+                        window.scrollTo(scrollX, scrollY);
+                      });
+                    };
+                    reader.readAsDataURL(file);
+                  }}
+                  disabled={createBookMutation.isPending}
+                  className="h-full"
+                />
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => setIsReplacing(false)}
+                  className="absolute top-2 right-2 text-xs h-7"
+                >
+                  Cancel
+                </Button>
               </div>
             ) : showConfirmation ? (
               <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">

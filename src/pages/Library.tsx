@@ -94,7 +94,6 @@ interface LibraryBookCardProps {
     book_description?: string;
     created_at: string;
     total_pages?: number;
-    thumbnail_url?: string;
     cover_image?: string | null;
     is_highlighted?: boolean;
   };

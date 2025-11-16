@@ -44,8 +44,8 @@ export const useBookSeoMetadata = (bookId?: string) => {
 
       console.log('✅ [useBookSeoMetadata] Found SEO metadata:', {
         id: data.id,
-        has_thumbnail: !!data.og_image_url,
-        thumbnail_url: data.og_image_url
+        has_og_image: !!data.og_image_url,
+        og_image_url: data.og_image_url
       });
 
       return data;

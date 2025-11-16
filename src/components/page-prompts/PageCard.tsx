@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Page } from '@/types/book';
+import { useWordMetadata } from '@/hooks/useWordMetadata';
 
 interface PageCardProps {
   page: Page;
@@ -50,6 +51,7 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
   const { user } = useAuthContext();
   const deletePage = useDeletePage();
   const { currentImage, uploadImage } = usePageImageUrls(page.id);
+  const { generateMetadata } = useWordMetadata();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -63,6 +65,18 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
         .update({ title: newTitle.trim() })
         .eq('id', page.id);
       if (error) throw error;
+      
+      // Regenerate word metadata to keep word carousel in sync
+      try {
+        await generateMetadata({
+          pageId: page.id,
+          bookId: bookId,
+          title: newTitle.trim(),
+          currentContent: page.content || {}
+        });
+      } catch (metadataError) {
+        console.error('Failed to regenerate word metadata:', metadataError);
+      }
     },
     debounceMs: 800,
     validateFn: (value: string) => {

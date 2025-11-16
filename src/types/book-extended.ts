@@ -57,19 +57,17 @@ export interface LandingPopularBook {
 }
 
 /**
- * Library book with publication metadata
+ * Library book from books table for landing page
  */
 export interface LandingLibraryBook {
   id: string;
-  book_id: string;
-  title: string;
-  description: string;
+  book_name: string;
+  book_description: string | null;
   status: string;
-  is_active: boolean;
-  published_at: string;
-  slug?: string | null;
-  og_image_url: string | null;
-  seo_title?: string | null;
+  is_highlighted: boolean;
+  created_at: string;
+  updated_at: string;
+  image_url: string | null;
   metadata?: {
     bookType?: string;
     targetAge?: string;

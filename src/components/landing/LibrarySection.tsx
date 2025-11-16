@@ -36,10 +36,8 @@ function LandingLibraryCard({ item }: { item: LandingLibraryBook }) {
     // If authenticated, navigate to library detail view
     if (user) {
       navigate(`/library/${item.id}`);
-    } else if (item.slug) {
-      // If not authenticated, navigate to public book page
-      navigate(`/book/${item.slug}`);
     } else {
+      // For unauthenticated users, direct to pricing
       navigate('/pricing');
     }
   };
@@ -50,17 +48,17 @@ function LandingLibraryCard({ item }: { item: LandingLibraryBook }) {
       onClick={handleCardClick}
       className="group relative bg-card hover:bg-accent/50 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
     >
-      {item.status === 'active' && item.is_active && (
+      {item.is_highlighted && (
         <Badge className="absolute top-4 right-4 bg-green-600 text-white z-10">
-          Active Now
+          Featured
         </Badge>
       )}
       
       <div className="aspect-square relative overflow-hidden bg-muted">
         {inView ? (
           <OptimizedImage
-            src={item.og_image_url}
-            alt={item.title}
+            src={item.image_url}
+            alt={item.book_name}
             width={600}
             quality={80}
             srcSetSizes={[400, 600, 800, 1200]}
@@ -69,7 +67,7 @@ function LandingLibraryCard({ item }: { item: LandingLibraryBook }) {
             fallback={
               <div className="w-full h-full flex items-center justify-center">
                 <div className="text-6xl font-bold text-primary/20">
-                  {item.title.charAt(0)}
+                  {item.book_name.charAt(0)}
                 </div>
               </div>
             }
@@ -77,7 +75,7 @@ function LandingLibraryCard({ item }: { item: LandingLibraryBook }) {
         ) : (
           <div className="w-full h-full flex items-center justify-center bg-muted">
             <div className="text-6xl font-bold text-primary/20">
-              {item.title.charAt(0)}
+              {item.book_name.charAt(0)}
             </div>
           </div>
         )}
@@ -85,7 +83,7 @@ function LandingLibraryCard({ item }: { item: LandingLibraryBook }) {
 
       <div className="p-4">
         <h3 className="font-semibold text-lg line-clamp-2 mb-1">
-          {item.seo_title || item.title}
+          {item.book_name}
         </h3>
         {item.metadata?.targetAge && (
           <p className="text-sm text-muted-foreground">

@@ -25,13 +25,10 @@ const Library = memo(() => {
 
   // Prefetch strategies (disabled for now)
 
-  // Sort books: highlighted first, then by created date
+  // Sort books by most recent updated_at only
   const sortedBooks = useMemo(() => {
     return [...libraryBooks].sort((a, b) => {
-      if (a.is_highlighted && !b.is_highlighted) return -1;
-      if (!a.is_highlighted && b.is_highlighted) return 1;
-      
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
     });
   }, [libraryBooks]);
 

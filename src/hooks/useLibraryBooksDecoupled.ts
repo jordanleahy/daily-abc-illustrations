@@ -17,7 +17,6 @@ export const useLibraryBooksDecoupled = () => {
           book_description,
           created_at,
           updated_at,
-          thumbnail_url,
           is_highlighted
         `)
         .eq('is_library_book', true)
@@ -37,9 +36,7 @@ export const useLibraryBooksDecoupled = () => {
             .select('*', { count: 'exact', head: true })
             .eq('book_id', book.id);
           
-          let coverImage = null;
-          
-          // Priority 1: Look for a page with page_type = 'cover'
+          // Get cover image from page_type = 'cover'
           const { data: coverPageData } = await supabase
             .from('pages')
             .select(`
@@ -54,12 +51,7 @@ export const useLibraryBooksDecoupled = () => {
             .eq('page_image_urls.is_latest', true)
             .maybeSingle();
           
-          if (coverPageData?.page_image_urls?.[0]?.image_url) {
-            coverImage = coverPageData.page_image_urls[0].image_url;
-          } else if (book.thumbnail_url) {
-            // Priority 2: Use book's thumbnail_url if no cover page exists
-            coverImage = book.thumbnail_url;
-          }
+          const coverImage = coverPageData?.page_image_urls?.[0]?.image_url || null;
 
           // Get user activity data if user is logged in
           let userActivity = null;

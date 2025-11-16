@@ -7,7 +7,7 @@ import type { LibraryBook } from '@/types/library';
  * Prioritizes first 6 images for immediate display
  */
 export function useLibraryImagePreloader(books: LibraryBook[] | undefined) {
-  const imageUrls = books?.map(book => book.cover_image || book.thumbnail_url).filter(Boolean) || [];
+  const imageUrls = books?.map(book => book.cover_image).filter(Boolean) || [];
   
   // Split into priority (first 6) and remaining batches
   const priorityUrls = imageUrls.slice(0, 6);

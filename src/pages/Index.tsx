@@ -157,9 +157,9 @@ const Index = () => {
                   className="group relative bg-card hover:bg-accent/50 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
                 >
                   <div className="aspect-square relative overflow-hidden bg-muted">
-                    {book.cover_image || book.thumbnail_url ? (
+                    {book.cover_image ? (
                       <BookImage
-                        src={book.cover_image || book.thumbnail_url || ''}
+                        src={book.cover_image}
                         alt={book.book_name}
                         className="w-full h-full object-cover"
                       />

@@ -7,7 +7,7 @@ import type { LibraryBook } from '@/types/library';
  * Prioritizes first 3 visible books for immediate display
  */
 export function useHomeImagePreloader(books: LibraryBook[] | undefined) {
-  const imageUrls = books?.map(book => book.cover_image || book.thumbnail_url).filter(Boolean) || [];
+  const imageUrls = books?.map(book => book.cover_image).filter(Boolean) || [];
   
   // Split into priority (first 3 visible in carousel) and remaining batches
   const priorityUrls = imageUrls.slice(0, 3);

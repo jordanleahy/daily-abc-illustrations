@@ -32,16 +32,20 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
-  
-  // Fetch book thumbnail from books table
-  const { data: bookData } = useQuery({
-    queryKey: ['book-thumbnail', bookId],
+  // Fetch book cover image from cover page
+  const { data: bookCoverData } = useQuery({
+    queryKey: ['book-cover-image', bookId],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('books')
-        .select('thumbnail_url')
-        .eq('id', bookId)
-        .single();
+        .from('page_image_urls')
+        .select(`
+          image_url,
+          pages!inner(page_type)
+        `)
+        .eq('book_id', bookId)
+        .eq('pages.page_type', 'cover')
+        .eq('is_latest', true)
+        .maybeSingle();
       if (error) throw error;
       return data;
     },
@@ -55,8 +59,8 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     seoMetadata: seoMetadata ? {
       has_title: !!seoMetadata.seo_title,
       has_description: !!seoMetadata.seo_description,
-      has_thumbnail: !!seoMetadata.og_image_url,
-      thumbnail_url: seoMetadata.og_image_url
+      has_og_image: !!seoMetadata.og_image_url,
+      og_image_url: seoMetadata.og_image_url
     } : null,
     isLoading
   });
@@ -69,13 +73,13 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const currentTitle = seoMetadata?.seo_title || bookTitle;
   const currentDescription = seoMetadata?.seo_description || bookDescription || '';
   const currentImage = seoMetadata?.og_image_url;
-  const bookThumbnail = bookData?.thumbnail_url || null;
-  const fallbackImage = bookThumbnail || firstPageImage?.image_url || null;
+  const bookCover = bookCoverData?.image_url || null;
+  const fallbackImage = bookCover || firstPageImage?.image_url || null;
 
   // Debug the current state of images
   console.log('🖼️ [OpenGraphEditor] Image state:', {
     currentImage,
-    bookThumbnail,
+    bookCover,
     fallbackImage,
     firstPageImage: firstPageImage ? {
       url: firstPageImage.image_url

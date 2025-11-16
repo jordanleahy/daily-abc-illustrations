@@ -327,7 +327,7 @@ export default function Books() {
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [selectedBookPublication, setSelectedBookPublication] = useState<Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null>(null);
   
-  // QA Panel state
+  // Book Editor Panel state
   const [currentQAPage, setCurrentQAPage] = useState(1);
   const [qaPageImages] = useState<Record<number, string>>({});
   const [qaPagePrompts] = useState<Record<number, string>>({});
@@ -336,7 +336,7 @@ export default function Books() {
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
   
-  // Hooks for QA Panel
+  // Hooks for Book Editor Panel
   const { pages: dbPages } = useBookPages(selectedBookId || undefined);
   const { data: displayImages = {} } = useBookPageImages(selectedBookId);
   const updateBookStatusMutation = useUpdateBookStatus();

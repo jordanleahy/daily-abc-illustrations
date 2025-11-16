@@ -800,14 +800,14 @@ export default function Books() {
             className="w-full max-h-[90vh] p-0 overflow-hidden rounded-t-xl z-[100]"
           >
             <BookEditorPanel
-              showQACheckpoint={true}
+              showEditor={true}
               isBookCreated={true}
               createdBookId={selectedBookId}
-              currentQAPage={currentQAPage}
+              currentPageNumber={currentQAPage}
               pageCount={dbPages?.length || 0}
               displayImages={displayImages}
-              qaPageImages={qaPageImages}
-              qaPagePrompts={qaPagePrompts}
+              editorPageImages={qaPageImages}
+              editorPagePrompts={qaPagePrompts}
               getCurrentPagePrompt={getCurrentPagePrompt}
               createBookMutation={{ isSuccess: true }}
               onClose={() => setMobileEditorOpen(false)}
@@ -835,14 +835,14 @@ export default function Books() {
           )}
         >
           <BookEditorPanel
-            showQACheckpoint={true}
+            showEditor={true}
             isBookCreated={true}
             createdBookId={selectedBookId}
-            currentQAPage={currentQAPage}
+            currentPageNumber={currentQAPage}
             pageCount={dbPages?.length || 0}
             displayImages={displayImages}
-            qaPageImages={qaPageImages}
-            qaPagePrompts={qaPagePrompts}
+            editorPageImages={qaPageImages}
+            editorPagePrompts={qaPagePrompts}
             getCurrentPagePrompt={getCurrentPagePrompt}
             createBookMutation={{ isSuccess: true }}
             onClose={() => setMobileEditorOpen(false)}

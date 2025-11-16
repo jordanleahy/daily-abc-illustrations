@@ -22,14 +22,14 @@ import { useBookCoverImage } from '@/hooks/useBookCoverImage';
 
 
 interface BookEditorPanelProps {
-  showQACheckpoint: boolean;
+  showEditor: boolean;
   isBookCreated: boolean;
   createdBookId: string | null;
-  currentQAPage: number;
+  currentPageNumber: number;
   pageCount: number;
   displayImages: Record<number, string>;
-  qaPageImages: Record<number, string>;
-  qaPagePrompts: Record<number, string>;
+  editorPageImages: Record<number, string>;
+  editorPagePrompts: Record<number, string>;
   getCurrentPagePrompt: (pageNum: number) => string | null;
   createBookMutation: any;
   onClose: () => void;
@@ -51,14 +51,14 @@ interface BookEditorPanelProps {
 const SHOW_WORDS_SECTION = false;
 
 export function BookEditorPanel({
-  showQACheckpoint,
+  showEditor,
   isBookCreated,
   createdBookId,
-  currentQAPage,
+  currentPageNumber,
   pageCount,
   displayImages,
-  qaPageImages,
-  qaPagePrompts,
+  editorPageImages,
+  editorPagePrompts,
   getCurrentPagePrompt,
   createBookMutation,
   onClose,
@@ -96,30 +96,30 @@ export function BookEditorPanel({
   // Helper function to get image for current page
   const currentPageImage = useMemo(() => {
     // For page 1 (cover), use the cover image hook which queries by page_type='cover'
-    if (currentQAPage === 1) {
+    if (currentPageNumber === 1) {
       return coverImageUrl || null;
     }
     // For all other pages, use the displayImages map by page_number
-    return displayImages[currentQAPage] || null;
-  }, [currentQAPage, coverImageUrl, displayImages]);
+    return displayImages[currentPageNumber] || null;
+  }, [currentPageNumber, coverImageUrl, displayImages]);
   
   // Handle saving overlay text
   const handleSaveOverlayText = async (newText: string) => {
     if (onUpdatePageText) {
-      onUpdatePageText(currentQAPage, newText);
+      onUpdatePageText(currentPageNumber, newText);
     }
     setIsEditingOverlayText(false);
   };
   
   // Get current page ID for overlay toggle
   const currentPageId = useMemo(() => {
-    return pages?.find(p => p.page_number === currentQAPage)?.id;
-  }, [pages, currentQAPage]);
+    return pages?.find(p => p.page_number === currentPageNumber)?.id;
+  }, [pages, currentPageNumber]);
   
   // Determine current page and whether it should have text overlay
   const currentPage = useMemo(() => {
-    return pages?.find(p => p.page_number === currentQAPage);
-  }, [pages, currentQAPage]);
+    return pages?.find(p => p.page_number === currentPageNumber);
+  }, [pages, currentPageNumber]);
 
   const shouldShowTextOverlay = useMemo(() => {
     // Only show text overlay editor for content pages (page 3+)
@@ -131,7 +131,7 @@ export function BookEditorPanel({
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
 
-  const currentCoverPrompt = qaPagePrompts[0] || null;
+  const currentCoverPrompt = editorPagePrompts[0] || null;
   
   // Check if all pages have images uploaded
   const allImagesUploaded = useMemo(() => {
@@ -151,8 +151,8 @@ export function BookEditorPanel({
   }, [isBookCreated, pageCount, displayImages, coverImageUrl]);
   
   // Get current page text from page.title or extract from prompt
-  const currentPageText = currentPage?.title || pageTextOverlays[currentQAPage] || (() => {
-    const prompt = getCurrentPagePrompt(currentQAPage);
+  const currentPageText = currentPage?.title || pageTextOverlays[currentPageNumber] || (() => {
+    const prompt = getCurrentPagePrompt(currentPageNumber);
     if (!prompt) return '';
     
     // Extract title from prompt
@@ -172,11 +172,11 @@ export function BookEditorPanel({
   // Get current page words metadata
   const currentPageWords = useMemo(() => {
     return currentPage?.content?.words;
-  }, [pages, currentQAPage]);
+  }, [pages, currentPageNumber]);
 
   // Auto-generate word metadata if page has text but no words
   useEffect(() => {
-    const currentPage = pages?.find(p => p.page_number === currentQAPage);
+    const currentPage = pages?.find(p => p.page_number === currentPageNumber);
     if (currentPage && currentPageText && !currentPageWords && bookId) {
       // Silently generate word metadata in the background
       generateMetadata({
@@ -188,19 +188,19 @@ export function BookEditorPanel({
         console.error('Failed to auto-generate word metadata:', error);
       });
     }
-  }, [currentQAPage, currentPageText, currentPageWords, pages, bookId, generateMetadata]);
+  }, [currentPageNumber, currentPageText, currentPageWords, pages, bookId, generateMetadata]);
 
   // Reset states when page changes (not when copiedPages changes on same page)
   useEffect(() => {
     setShowConfirmation(false);
     setIsEditingText(false);
     // Check if this page has been copied before
-    setHasClickedCopy(copiedPages.has(currentQAPage));
+    setHasClickedCopy(copiedPages.has(currentPageNumber));
     
     // Reset word learning state
     setCurrentWordIndex(0);
     setWordStatuses({});
-  }, [currentQAPage]); // Removed copiedPages to prevent immediate trigger
+  }, [currentPageNumber]); // Removed copiedPages to prevent immediate trigger
   
   // Hide confirmation immediately when image is pasted/uploaded
   useEffect(() => {
@@ -284,14 +284,14 @@ export function BookEditorPanel({
 
   // Handle copy with confirmation and delayed transition
   const handleCopyPrompt = async () => {
-    const prompt = getCurrentPagePrompt(currentQAPage);
+    const prompt = getCurrentPagePrompt(currentPageNumber);
     if (prompt) {
       try {
         await copyToClipboard(prompt);
         setShowConfirmation(true);
       
         // Mark this page as copied
-        setCopiedPages(prev => new Set(prev).add(currentQAPage));
+        setCopiedPages(prev => new Set(prev).add(currentPageNumber));
 
         // Create book immediately if not already created
         if (!isBookCreated && !createBookMutation.isPending) {
@@ -316,16 +316,16 @@ export function BookEditorPanel({
         <div className="flex items-center gap-2">
           <div>
             <h3 className="font-semibold text-sm">
-              {currentQAPage === 1 
+              {currentPageNumber === 1 
                 ? 'Page 1: Cover' 
-                : currentQAPage === 2
+                : currentPageNumber === 2
                 ? 'Page 2: Focus'
-                : pages?.find(p => p.page_number === currentQAPage)?.title || `Page ${currentQAPage}`
+                : pages?.find(p => p.page_number === currentPageNumber)?.title || `Page ${currentPageNumber}`
               }
             </h3>
             <p className="text-xs text-muted-foreground line-clamp-1">
               {(() => {
-                const prompt = getCurrentPagePrompt(currentQAPage);
+                const prompt = getCurrentPagePrompt(currentPageNumber);
                 if (!prompt) return 'No title available';
                 
                 // Extract and clean the title
@@ -366,7 +366,7 @@ export function BookEditorPanel({
               <div className="relative w-full h-full group">
                 <BookImage
                   src={currentPageImage} 
-                  alt={`Page ${currentQAPage} preview`}
+                  alt={`Page ${currentPageNumber} preview`}
                   className="w-full h-full object-contain"
                   priority={true}
                   enableMobileSave={true}
@@ -421,7 +421,7 @@ export function BookEditorPanel({
                 <Button
                   variant="secondary"
                   size="sm"
-                  onClick={() => onRemoveImage(currentQAPage)}
+                  onClick={() => onRemoveImage(currentPageNumber)}
                   className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
                 >
                   Replace
@@ -535,7 +535,7 @@ export function BookEditorPanel({
         )}
 
         {/* Cover Image Prompt - Show on page 1 (Cover Page) */}
-        {currentQAPage === 1 && currentCoverPrompt && (
+        {currentPageNumber === 1 && currentCoverPrompt && (
           <div className="space-y-2">
             <p className="text-xs font-medium text-muted-foreground">Cover Image Prompt</p>
             <div className="border rounded-lg p-3 bg-muted/30 space-y-2">
@@ -686,7 +686,7 @@ export function BookEditorPanel({
             variant="outline"
             size="sm"
             onClick={() => onNavigate('prev')}
-            disabled={currentQAPage === 1}
+            disabled={currentPageNumber === 1}
             className="flex-1"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
@@ -706,7 +706,7 @@ export function BookEditorPanel({
             variant="default"
             size="sm"
             onClick={() => onNavigate('next')}
-            disabled={currentQAPage === pageCount}
+            disabled={currentPageNumber === pageCount}
             className="flex-1"
           >
             Next

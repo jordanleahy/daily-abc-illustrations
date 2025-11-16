@@ -18,7 +18,6 @@ import { QACheckpointPanel } from '@/components/chat/QACheckpointPanel';
 import { MessageList } from '@/components/chat/MessageList';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { InputArea } from '@/components/chat/InputArea';
-import { toast } from 'sonner';
 import { parsePageDetailsFromMessages, parseEducationalFocus, getBookMetadata } from '@/utils/chatHelpers';
 import { BOOK_TYPES } from '@/config/bookTypes';
 import { supabase } from '@/integrations/supabase/client';
@@ -504,7 +503,6 @@ export default function GoogleChat() {
         });
       } else {
         console.warn('[GoogleChat] No session found for book:', editBookId);
-        toast.info('No editing session found for this book');
       }
     }
   }, [editBookId, sessions, currentSessionId]);
@@ -622,12 +620,12 @@ export default function GoogleChat() {
 
   const handleCreateBook = useCallback(async () => {
     if (!currentSessionId) {
-      toast.error('No active session');
+      console.warn('No active session');
       return;
     }
 
     if (messages.length === 0) {
-      toast.error('Please have a conversation first');
+      console.warn('Please have a conversation first');
       return;
     }
 
@@ -661,9 +659,7 @@ export default function GoogleChat() {
       content: typeof msg.content === 'string' ? msg.content : '[Image uploaded]'
     }));
 
-    toast.success('Creating book in background...', {
-      description: 'You can continue chatting. Check your library shortly.'
-    });
+    console.log('Creating book in background...');
 
     try {
       const result = await createBookMutation.mutateAsync({
@@ -849,12 +845,12 @@ export default function GoogleChat() {
     if (createdBookId && dbPages) {
       const currentPage = dbPages.find(p => p.page_number === currentQAPage);
       if (!currentPage) {
-        toast.error('Page not found');
+        console.error('Page not found');
         return;
       }
 
       try {
-        toast.info('Uploading image...');
+        console.log('Uploading image...');
         
         // Convert base64 to blob
         const response = await fetch(imageDataUrl);
@@ -925,7 +921,6 @@ export default function GoogleChat() {
         }
       } catch (error: any) {
         console.error('Image upload error:', error);
-        toast.error('Failed to upload image: ' + error.message);
       }
     } else {
       // Pre-creation: Store in session QA images
@@ -950,9 +945,7 @@ export default function GoogleChat() {
           setCurrentQAPage(currentQAPage + 1);
         }, 500);
       } else {
-        toast.success('All pages reviewed!', {
-          description: 'Click "Create Book" when ready to finalize.'
-        });
+        console.log('All pages reviewed!');
       }
     }
   }, [qaPageImages, currentQAPage, pageCount, currentSessionId, updateQAPageImages, createdBookId, dbPages, user, queryClient]);
@@ -1007,20 +1000,17 @@ export default function GoogleChat() {
     
     if (!createdBookId) {
       console.error('Cannot save: No book ID');
-      toast.error('Please create the book first');
       return;
     }
-    
+
     if (!dbPages) {
       console.error('Cannot save: Pages data not loaded');
-      toast.error('Loading book data, please try again');
       return;
     }
-    
+
     const page = dbPages.find(p => p.page_number === pageNumber);
     if (!page) {
       console.error('Page not found:', pageNumber, 'Available pages:', dbPages.map(p => p.page_number));
-      toast.error('Page not found');
       return;
     }
     
@@ -1047,14 +1037,13 @@ export default function GoogleChat() {
       await queryClient.invalidateQueries({ queryKey: ['book-pages', createdBookId] });
     } catch (error) {
       console.error('Error updating text:', error);
-      toast.error('Failed to update text');
     }
   }, [createdBookId, dbPages, queryClient]);
 
   // Toggle book status between draft and published
   const handleToggleBookStatus = useCallback(async () => {
     if (!createdBookId) {
-      toast.error('Book not ready');
+      console.error('Book not ready');
       return;
     }
     
@@ -1105,12 +1094,12 @@ export default function GoogleChat() {
   // Handle thumbnail image upload (separate from cover page)
   const handleThumbnailUpload = useCallback(async (file: File) => {
     if (!createdBookId) {
-      toast.error('Book not created yet');
+      console.error('Book not created yet');
       return;
     }
     
     try {
-      toast.info('Uploading thumbnail...');
+      console.log('Uploading thumbnail...');
       
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
@@ -1143,10 +1132,9 @@ export default function GoogleChat() {
       // Also update the local state immediately
       setThumbnailUrl(publicUrl);
       
-      toast.success('Thumbnail uploaded successfully!');
+      console.log('Thumbnail uploaded successfully!');
     } catch (error: any) {
       console.error('Thumbnail upload error:', error);
-      toast.error('Failed to upload thumbnail: ' + error.message);
     }
   }, [createdBookId, user, queryClient]);
 
@@ -1273,9 +1261,6 @@ export default function GoogleChat() {
             open={showQACheckpoint && !createBookMutation.isSuccess} 
             onOpenChange={(open) => {
               setShowQACheckpoint(open);
-              if (!open) {
-                toast.info('Continue chatting to refine prompts');
-              }
             }}
           >
             <SheetContent 

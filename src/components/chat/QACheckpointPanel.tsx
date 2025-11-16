@@ -4,7 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
 import { Shimmer } from '@/components/ui/shimmer';
 import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX, ChevronDown } from 'lucide-react';
-import { toast } from 'sonner';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
@@ -388,7 +387,6 @@ export function QACheckpointPanel({
                               e.stopPropagation();
                               if (currentPageId) {
                                 toggleOverlay(currentPageId);
-                                toast.success('Text overlay hidden');
                               }
                             }}
                             className="h-6 w-6 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 transition-colors flex-shrink-0"
@@ -420,7 +418,6 @@ export function QACheckpointPanel({
                     onClick={() => {
                       if (!isToggling) {
                         toggleOverlay(currentPageId);
-                        toast.success('Text overlay shown');
                       }
                     }}
                     disabled={isToggling}
@@ -438,7 +435,6 @@ export function QACheckpointPanel({
                     onClick={() => {
                       if (!isToggling) {
                         toggleOverlay(currentPageId);
-                        toast.success('Text overlay hidden');
                       }
                     }}
                     disabled={isToggling}
@@ -534,17 +530,13 @@ export function QACheckpointPanel({
                 onClick={async () => {
                   try {
                     await copyToClipboard(currentCoverPrompt);
-                    toast.success('Cover prompt copied!', {
-                      description: 'Creating your book...',
-                      duration: 3000
-                    });
                     
                     // Create book immediately if not already created
                     if (!isBookCreated && !createBookMutation.isPending) {
                       onCreateBook();
                     }
                   } catch (error) {
-                    toast.error('Failed to copy prompt');
+                    console.error('Failed to copy prompt:', error);
                   }
                 }}
                 className="w-full"

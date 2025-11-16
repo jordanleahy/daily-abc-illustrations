@@ -1,7 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
 import { parseEducationalFocus } from '@/utils/chatHelpers';
 
 interface Message {
@@ -116,13 +115,12 @@ export const useGoogleCreateBook = () => {
     },
     onSuccess: (data) => {
       if (data.success) {
-        toast.success(data.message || 'Book created successfully!');
+        console.log('Book created successfully!', data.message);
         queryClient.invalidateQueries({ queryKey: ['books'] });
       }
     },
     onError: (error) => {
       console.error('Create book error:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to create book');
     },
   });
 };

@@ -21,7 +21,7 @@ import { isContentPage } from '@/types/book';
 import { useBookCoverImage } from '@/hooks/useBookCoverImage';
 
 
-interface QACheckpointPanelProps {
+interface BookEditorPanelProps {
   showQACheckpoint: boolean;
   isBookCreated: boolean;
   createdBookId: string | null;
@@ -50,7 +50,7 @@ interface QACheckpointPanelProps {
 // Feature flag to show/hide the Words learning section
 const SHOW_WORDS_SECTION = false;
 
-export function QACheckpointPanel({
+export function BookEditorPanel({
   showQACheckpoint,
   isBookCreated,
   createdBookId,
@@ -74,7 +74,7 @@ export function QACheckpointPanel({
   onUpdatePageText,
   onToggleStatus,
   bookStatus = PublicationStatus.DRAFT,
-}: QACheckpointPanelProps) {
+}: BookEditorPanelProps) {
   const navigate = useNavigate();
   const [hasClickedCopy, setHasClickedCopy] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);

@@ -14,7 +14,7 @@ import { useBookPages } from '@/hooks/useBookPages';
 import { usePageImageUrlsSubscription } from '@/hooks/usePageImageUrlsSubscription';
 import { useThemeImagePreloader } from '@/hooks/useThemeImagePreloader';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
-import { QACheckpointPanel } from '@/components/chat/QACheckpointPanel';
+import { BookEditorPanel } from '@/components/chat/BookEditorPanel';
 import { MessageList } from '@/components/chat/MessageList';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { InputArea } from '@/components/chat/InputArea';
@@ -166,7 +166,7 @@ export default function GoogleChat() {
   
   const updateBookStatusMutation = useUpdateBookStatus();
 
-  // QA Checkpoint state
+  // Book Editor Panel state
   const [currentQAPage, setCurrentQAPage] = useState(1);
   const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
   const [qaPagePrompts, setQAPagePrompts] = useState<Record<number, string>>({});
@@ -175,7 +175,7 @@ export default function GoogleChat() {
   const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
   const previousShouldShow = useRef(false);
 
-  // Priority: Show book images from storage if book exists, otherwise show QA checkpoint images
+  // Priority: Show book images from storage if book exists, otherwise show Book Editor images
   // But hide images for pages in replace mode
   const displayImages = useMemo(() => {
     const baseImages = (createdBookId && bookPageImages) ? bookPageImages : qaPageImages;
@@ -204,7 +204,7 @@ export default function GoogleChat() {
     return result;
   }, [messages]);
 
-  // Detect when book outline is ready for QA checkpoint
+  // Detect when book outline is ready for Book Editor Panel
   const shouldShowQACheckpoint = useMemo(() => {
     console.log('[Outline Button Debug] Computing shouldShowQACheckpoint:', {
       isLoading,
@@ -397,7 +397,7 @@ export default function GoogleChat() {
     previousShouldShow.current = currentShouldShow;
   }, [shouldShowQACheckpoint, createdBookId, bookData?.status]);
 
-  // Auto-show QA checkpoint only when outline is just completed (not on page load)
+  // Auto-show Book Editor Panel only when outline is just completed (not on page load)
   useEffect(() => {
     // Don't auto-show QA for published books
     if (createdBookId && bookData?.status === 'published') {
@@ -1331,7 +1331,7 @@ export default function GoogleChat() {
         </div>
 
 
-        {/* QA Checkpoint Panel - Responsive: Bottom Sheet on Mobile, Sliding Div on Desktop */}
+        {/* Book Editor Panel - Responsive: Bottom Sheet on Mobile, Sliding Div on Desktop */}
         {isMobile ? (
           <Sheet 
             open={showQACheckpoint && !createBookMutation.isSuccess} 
@@ -1343,7 +1343,7 @@ export default function GoogleChat() {
               side="bottom" 
               className="w-full max-h-[90vh] p-0 overflow-hidden rounded-t-xl z-[100]"
             >
-              <QACheckpointPanel
+              <BookEditorPanel
                 showQACheckpoint={true}
                 isBookCreated={isBookCreated}
                 createdBookId={createdBookId}
@@ -1380,7 +1380,7 @@ export default function GoogleChat() {
                 : "translate-x-full"
             )}
           >
-            <QACheckpointPanel
+            <BookEditorPanel
               showQACheckpoint={true}
               isBookCreated={isBookCreated}
               createdBookId={createdBookId}

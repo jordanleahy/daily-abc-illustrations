@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
-import { BookOpen, Calendar, Users } from 'lucide-react';
+import { BookOpen, Calendar } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
@@ -44,7 +44,6 @@ import {
 import { Trash2 } from 'lucide-react';
 import type { DailyPublished } from '@/types/dailyPublished';
 import { PublicationStatus } from '@/types/shared/status';
-import { useQuery } from '@tanstack/react-query';
 
 /**
  * UserBookCard - Displays a book authored by the current user in "My Books" section

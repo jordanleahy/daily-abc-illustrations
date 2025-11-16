@@ -713,7 +713,7 @@ export default function GoogleChat() {
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
     // Handle special actions
     if (action.value === 'open_qa') {
-      handleOpenQAPanel();
+      handleOpenEditorPanel();
       return;
     }
     if (action.value === 'view_book') {
@@ -754,7 +754,7 @@ export default function GoogleChat() {
       }
     }
   }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId]);
-  // Note: handleOpenQAPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
+  // Note: handleOpenEditorPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 
   const handleCreateNewSession = useCallback(async () => {
@@ -792,7 +792,7 @@ export default function GoogleChat() {
     }
   }, [createdBookId, currentSessionId, navigate]);
 
-  const handleOpenQAPanel = useCallback(() => {
+  const handleOpenEditorPanel = useCallback(() => {
     // Reset mutation state to allow panel to open after book creation
     createBookMutation.reset();
     
@@ -1326,7 +1326,7 @@ export default function GoogleChat() {
             onImageUploadToggle={setShowImageUpload}
             onImageSelect={handleImageSelect}
             onViewBook={handleViewCreatedBook}
-            onOpenReview={handleOpenQAPanel}
+            onOpenReview={handleOpenEditorPanel}
           />
         </div>
 

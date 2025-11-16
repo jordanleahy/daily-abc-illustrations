@@ -14,7 +14,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+
 import { BookImage } from '@/components/ui/book-image';
 import { BookOpen } from 'lucide-react';
 
@@ -151,32 +151,34 @@ const Index = () => {
             <h2 className="text-2xl font-bold">Recently Viewed</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {recentBooks.map((book) => (
-                <Card 
-                  key={book.id} 
-                  className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                <div
+                  key={book.id}
                   onClick={() => navigate(`/library/${book.id}/detail`)}
+                  className="group relative bg-card hover:bg-accent/50 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
                 >
-                  <div className="aspect-square rounded-t-lg flex items-center justify-center overflow-hidden shadow-md hover:shadow-xl transition-shadow duration-300">
+                  <div className="aspect-square relative overflow-hidden bg-muted">
                     {book.cover_image || book.thumbnail_url ? (
                       <BookImage
                         src={book.cover_image || book.thumbnail_url || ''}
                         alt={book.book_name}
                         className="w-full h-full object-cover"
-                        sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
                       />
                     ) : (
-                      <BookOpen className="w-8 h-8 text-muted-foreground" />
+                      <div className="w-full h-full flex items-center justify-center">
+                        <BookOpen className="h-12 w-12 text-muted-foreground" />
+                      </div>
                     )}
                   </div>
-                  <CardHeader>
-                    <CardTitle className="text-lg line-clamp-2">{book.book_name}</CardTitle>
+                  
+                  <div className="p-4">
+                    <h3 className="font-semibold text-lg line-clamp-2 mb-2">{book.book_name}</h3>
                     {book.last_viewed_at && (
-                      <CardDescription className="text-xs">
+                      <p className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(book.last_viewed_at), { addSuffix: true })}
-                      </CardDescription>
+                      </p>
                     )}
-                  </CardHeader>
-                </Card>
+                  </div>
+                </div>
               ))}
             </div>
           </div>

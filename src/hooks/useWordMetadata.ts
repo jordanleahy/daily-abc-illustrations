@@ -51,7 +51,10 @@ export function useWordMetadata() {
       return { words, content: updatedContent };
     },
     onSuccess: (_, variables) => {
+      // Invalidate all page queries across different views
       queryClient.invalidateQueries({ queryKey: ['book-pages', variables.bookId] });
+      queryClient.invalidateQueries({ queryKey: ['library-book-pages-decoupled', variables.bookId] });
+      queryClient.invalidateQueries({ queryKey: ['daily-published-pages', variables.bookId] });
       queryClient.invalidateQueries({ queryKey: ['page', variables.pageId] });
     },
     onError: (error) => {

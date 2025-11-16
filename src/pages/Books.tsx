@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { StandardPageLayout } from '@/components/layout';
@@ -20,7 +20,14 @@ import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
 import { useDeleteBook } from '@/hooks/useDeleteBook';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { MobileBookEditor } from '@/components/book/MobileBookEditor';
+import { QACheckpointPanel } from '@/components/chat/QACheckpointPanel';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { useBookPages } from '@/hooks/useBookPages';
+import { useBookPageImages } from '@/hooks/useBookPageImages';
+import { useUpdateBookStatus } from '@/hooks/useUpdateBookStatus';
+import { usePageImageUrlsSubscription } from '@/hooks/usePageImageUrlsSubscription';
+import { useWordMetadata } from '@/hooks/useWordMetadata';
+import { supabase } from '@/integrations/supabase/client';
 import { AdminOnly } from '@/components/AdminOnly';
 import { cn } from '@/lib/utils';
 import {
@@ -36,6 +43,8 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Trash2 } from 'lucide-react';
 import type { DailyPublished } from '@/types/dailyPublished';
+import { PublicationStatus } from '@/types/shared/status';
+import { useQuery } from '@tanstack/react-query';
 
 /**
  * UserBookCard - Displays a book authored by the current user in "My Books" section
@@ -318,6 +327,53 @@ export default function Books() {
   const [selectedBook, setSelectedBook] = useState<any>(null);
   const [selectedBookPublication, setSelectedBookPublication] = useState<Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null>(null);
   
+  // QA Panel state
+  const [currentQAPage, setCurrentQAPage] = useState(1);
+  const [qaPageImages] = useState<Record<number, string>>({});
+  const [qaPagePrompts] = useState<Record<number, string>>({});
+  const [pageTextOverlays, setPageTextOverlays] = useState<Record<number, string>>({});
+  const [coverPageId, setCoverPageId] = useState<string | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
+  
+  // Hooks for QA Panel
+  const { pages: dbPages } = useBookPages(selectedBookId || undefined);
+  const { data: displayImages = {} } = useBookPageImages(selectedBookId);
+  const updateBookStatusMutation = useUpdateBookStatus();
+  const { generateMetadata } = useWordMetadata();
+  
+  // Subscribe to real-time image updates
+  usePageImageUrlsSubscription(selectedBookId);
+  
+  // Fetch book status
+  const { data: bookData } = useQuery({
+    queryKey: ['book', selectedBookId],
+    queryFn: async () => {
+      if (!selectedBookId) return null;
+      const { data, error } = await supabase
+        .from('books')
+        .select('status')
+        .eq('id', selectedBookId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedBookId,
+  });
+  
+  // Convert string status to enum safely
+  const bookStatus = useMemo(() => {
+    if (!bookData?.status) return PublicationStatus.DRAFT;
+    
+    const statusMap: Record<string, PublicationStatus> = {
+      'draft': PublicationStatus.DRAFT,
+      'published': PublicationStatus.PUBLISHED,
+      'archived': PublicationStatus.ARCHIVED,
+    };
+    
+    return statusMap[bookData.status] || PublicationStatus.DRAFT;
+  }, [bookData?.status]);
+  
   // Determine view mode based on route
   const isAllBooksView = location.pathname.startsWith('/all-books');
   const viewMode = isAllBooksView ? 'all-books' : 'my-books';
@@ -349,10 +405,284 @@ export default function Books() {
 
   const handleEditBook = (bookId: string, book: any, publicationStatus?: Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null) => {
     setSelectedBookId(bookId);
-    setSelectedBook(book); // Store book data for instant display
+    setSelectedBook(book);
     setSelectedBookPublication(publicationStatus || null);
+    setCurrentQAPage(1); // Reset to cover page
     setMobileEditorOpen(true);
   };
+
+  // Load cover page ID when book is selected
+  useEffect(() => {
+    if (!selectedBookId) {
+      setCoverPageId(null);
+      return;
+    }
+    
+    const fetchCoverPage = async () => {
+      const { data, error } = await supabase
+        .from('pages')
+        .select('id')
+        .eq('book_id', selectedBookId)
+        .eq('page_type', 'cover')
+        .single();
+      if (!error && data) setCoverPageId(data.id);
+    };
+    fetchCoverPage();
+  }, [selectedBookId]);
+
+  // Load thumbnail URL when book is selected
+  useEffect(() => {
+    if (!selectedBookId) {
+      setThumbnailUrl(null);
+      return;
+    }
+    
+    const fetchThumbnail = async () => {
+      const { data, error } = await supabase
+        .from('books')
+        .select('thumbnail_url')
+        .eq('id', selectedBookId)
+        .single();
+      if (!error && data?.thumbnail_url) {
+        setThumbnailUrl(data.thumbnail_url);
+      }
+    };
+    fetchThumbnail();
+  }, [selectedBookId]);
+
+  // Load page text overlays from database pages (using title as single source)
+  useEffect(() => {
+    if (!dbPages) return;
+    
+    const overlays: Record<number, string> = {};
+    dbPages.forEach(page => {
+      if (page.title) {
+        overlays[page.page_number] = page.title;
+      }
+    });
+    setPageTextOverlays(overlays);
+  }, [dbPages]);
+
+  // QA Panel Handlers
+  const handleQAPageNavigation = useCallback((direction: 'next' | 'prev') => {
+    if (!dbPages || dbPages.length === 0) return;
+    
+    const sortedPages = [...dbPages].sort((a, b) => a.page_number - b.page_number);
+    const currentIndex = sortedPages.findIndex(p => p.page_number === currentQAPage);
+    
+    if (direction === 'next' && currentIndex < sortedPages.length - 1) {
+      setCurrentQAPage(sortedPages[currentIndex + 1].page_number);
+    } else if (direction === 'prev' && currentIndex > 0) {
+      setCurrentQAPage(sortedPages[currentIndex - 1].page_number);
+    }
+  }, [dbPages, currentQAPage]);
+
+  const handleQAImageUpload = useCallback(async (imageDataUrl: string) => {
+    if (!selectedBookId || !dbPages) return;
+    
+    const currentPage = dbPages.find(p => p.page_number === currentQAPage);
+    if (!currentPage) {
+      console.error('Page not found');
+      return;
+    }
+
+    try {
+      console.log('Uploading image...');
+      
+      // Convert base64 to blob
+      const response = await fetch(imageDataUrl);
+      const blob = await response.blob();
+      const file = new File([blob], `page-${currentQAPage}-${Date.now()}.png`, { type: 'image/png' });
+      
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('page-images')
+        .upload(`${user?.id}/${selectedBookId}/page-${currentQAPage}-${Date.now()}.png`, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('page-images')
+        .getPublicUrl(uploadData.path);
+      
+      // Get next version number
+      const { data: existingImages } = await supabase
+        .from('page_image_urls')
+        .select('version_number')
+        .eq('page_id', currentPage.id)
+        .order('version_number', { ascending: false })
+        .limit(1);
+      
+      const nextVersion = (existingImages?.[0]?.version_number || 0) + 1;
+      
+      // Mark all previous versions as not latest
+      await supabase
+        .from('page_image_urls')
+        .update({ is_latest: false })
+        .eq('page_id', currentPage.id);
+      
+      // Insert new image record
+      const { error: insertError } = await supabase
+        .from('page_image_urls')
+        .insert({
+          page_id: currentPage.id,
+          book_id: selectedBookId,
+          user_id: user?.id,
+          version_number: nextVersion,
+          image_url: publicUrl,
+          source_type: 'user_uploaded',
+          is_latest: true,
+        });
+      
+      if (insertError) throw insertError;
+      
+      // Invalidate queries to refetch images
+      await queryClient.invalidateQueries({ queryKey: ['book-page-images', selectedBookId] });
+      
+      // Clear replace mode for this page
+      setReplacePageMode(prev => {
+        const updated = { ...prev };
+        delete updated[currentQAPage];
+        return updated;
+      });
+      
+      // Auto-advance to next page if not the last page
+      if (dbPages && currentQAPage < dbPages.length) {
+        setTimeout(() => {
+          setCurrentQAPage(currentQAPage + 1);
+        }, 500);
+      }
+    } catch (error: any) {
+      console.error('Image upload error:', error);
+    }
+  }, [selectedBookId, dbPages, currentQAPage, user, queryClient]);
+
+  const handleRemoveQAImage = useCallback(async (pageNumber: number) => {
+    // Enable replace mode to show upload UI
+    setReplacePageMode(prev => ({ ...prev, [pageNumber]: true }));
+  }, []);
+
+  const handleUpdatePageText = useCallback(async (pageNumber: number, newText: string) => {
+    if (!selectedBookId || !dbPages) {
+      console.error('Book not ready');
+      return;
+    }
+
+    const page = dbPages.find(p => p.page_number === pageNumber);
+    if (!page) {
+      console.error('Page not found:', pageNumber);
+      return;
+    }
+    
+    console.log('Updating page:', page.id, 'with text:', newText);
+    
+    try {
+      // Update the page title (single source of truth)
+      const { error } = await supabase
+        .from('pages')
+        .update({ 
+          title: newText,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', page.id);
+      
+      if (error) {
+        console.error('Supabase error:', error);
+        throw error;
+      }
+      
+      console.log('✅ Text saved successfully');
+      
+      // Regenerate word metadata from new title
+      try {
+        await generateMetadata({
+          pageId: page.id,
+          bookId: selectedBookId,
+          title: newText,
+          currentContent: page.content || {}
+        });
+        console.log('✅ Word metadata regenerated');
+      } catch (metadataError) {
+        console.error('Failed to regenerate word metadata:', metadataError);
+      }
+      
+      // Invalidate queries to refresh
+      await queryClient.invalidateQueries({ queryKey: ['book-pages', selectedBookId] });
+    } catch (error) {
+      console.error('Error updating text:', error);
+    }
+  }, [selectedBookId, dbPages, queryClient, generateMetadata]);
+
+  const handleThumbnailUpload = useCallback(async (file: File) => {
+    if (!selectedBookId) {
+      console.error('Book not created yet');
+      return;
+    }
+    
+    try {
+      console.log('Uploading thumbnail...');
+      
+      // Upload to Supabase Storage
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('page-images')
+        .upload(`${user?.id}/${selectedBookId}/thumbnail-${Date.now()}.png`, file, {
+          cacheControl: '3600',
+          upsert: false,
+        });
+      
+      if (uploadError) throw uploadError;
+      
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('page-images')
+        .getPublicUrl(uploadData.path);
+      
+      // Update book with thumbnail URL
+      const { error: updateError } = await supabase
+        .from('books')
+        .update({ thumbnail_url: publicUrl })
+        .eq('id', selectedBookId);
+      
+      if (updateError) throw updateError;
+      
+      // Invalidate book query to refetch with new thumbnail
+      await queryClient.invalidateQueries({ queryKey: ['book', selectedBookId] });
+      await queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
+      
+      // Also update the local state immediately
+      setThumbnailUrl(publicUrl);
+      
+      console.log('Thumbnail uploaded successfully!');
+    } catch (error: any) {
+      console.error('Thumbnail upload error:', error);
+    }
+  }, [selectedBookId, user, queryClient]);
+
+  const handleToggleBookStatus = useCallback(async () => {
+    if (!selectedBookId) {
+      console.error('Book not ready');
+      return;
+    }
+    
+    const currentStatus = bookStatus;
+    const newStatus = currentStatus === PublicationStatus.DRAFT 
+      ? PublicationStatus.PUBLISHED 
+      : PublicationStatus.DRAFT;
+    
+    updateBookStatusMutation.mutate({
+      bookId: selectedBookId,
+      status: newStatus,
+    });
+  }, [selectedBookId, bookStatus, updateBookStatusMutation]);
+
+  const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
+    // Not used in Books.tsx context - return null
+    return null;
+  }, []);
 
   const handleCreateNewBook = () => {
     navigate('/google-chat'); // Redirect to GoogleChat page for book creation
@@ -398,13 +728,78 @@ export default function Books() {
 
   return (
     <>
-      <MobileBookEditor 
-        bookId={selectedBookId}
-        open={mobileEditorOpen}
-        onOpenChange={setMobileEditorOpen}
-        publicationStatus={selectedBookPublication}
-        book={selectedBook}
-      />
+      {/* QA Checkpoint Panel for Mobile (Bottom Sheet) and Desktop (Side Panel) */}
+      {isMobile ? (
+        <Sheet 
+          open={mobileEditorOpen} 
+          onOpenChange={setMobileEditorOpen}
+        >
+          <SheetContent 
+            side="bottom" 
+            className="w-full max-h-[90vh] p-0 overflow-hidden rounded-t-xl z-[100]"
+          >
+            <QACheckpointPanel
+              showQACheckpoint={true}
+              isBookCreated={true}
+              createdBookId={selectedBookId}
+              currentQAPage={currentQAPage}
+              pageCount={dbPages?.length || 0}
+              displayImages={displayImages}
+              qaPageImages={qaPageImages}
+              qaPagePrompts={qaPagePrompts}
+              getCurrentPagePrompt={getCurrentPagePrompt}
+              createBookMutation={{ isSuccess: true }}
+              onClose={() => setMobileEditorOpen(false)}
+              onNavigate={handleQAPageNavigation}
+              onImageUpload={handleQAImageUpload}
+              onRemoveImage={handleRemoveQAImage}
+              onCreateBook={() => {}}
+              coverPageId={coverPageId}
+              bookId={selectedBookId}
+              onCoverUpload={handleThumbnailUpload}
+              thumbnailUrl={thumbnailUrl}
+              pageTextOverlays={pageTextOverlays}
+              onUpdatePageText={handleUpdatePageText}
+              onToggleStatus={handleToggleBookStatus}
+              bookStatus={bookStatus}
+            />
+          </SheetContent>
+        </Sheet>
+      ) : (
+        <div
+          className={cn(
+            "fixed right-0 top-[3.5rem] bottom-0 w-[400px] bg-background border-l shadow-lg z-[100]",
+            "transition-transform duration-300 ease-out",
+            mobileEditorOpen ? "translate-x-0" : "translate-x-full"
+          )}
+        >
+          <QACheckpointPanel
+            showQACheckpoint={true}
+            isBookCreated={true}
+            createdBookId={selectedBookId}
+            currentQAPage={currentQAPage}
+            pageCount={dbPages?.length || 0}
+            displayImages={displayImages}
+            qaPageImages={qaPageImages}
+            qaPagePrompts={qaPagePrompts}
+            getCurrentPagePrompt={getCurrentPagePrompt}
+            createBookMutation={{ isSuccess: true }}
+            onClose={() => setMobileEditorOpen(false)}
+            onNavigate={handleQAPageNavigation}
+            onImageUpload={handleQAImageUpload}
+            onRemoveImage={handleRemoveQAImage}
+            onCreateBook={() => {}}
+            coverPageId={coverPageId}
+            bookId={selectedBookId}
+            onCoverUpload={handleThumbnailUpload}
+            thumbnailUrl={thumbnailUrl}
+            pageTextOverlays={pageTextOverlays}
+            onUpdatePageText={handleUpdatePageText}
+            onToggleStatus={handleToggleBookStatus}
+            bookStatus={bookStatus}
+          />
+        </div>
+      )}
       
       <div 
         className={cn(

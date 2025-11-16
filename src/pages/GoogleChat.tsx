@@ -167,10 +167,10 @@ export default function GoogleChat() {
   const updateBookStatusMutation = useUpdateBookStatus();
 
   // Book Editor Panel state  
-  const [currentQAPage, setCurrentQAPage] = useState(1);
-  const [qaPageImages, setQAPageImages] = useState<Record<number, string>>({});
-  const [qaPagePrompts, setQAPagePrompts] = useState<Record<number, string>>({});
-  const [showQACheckpoint, setShowQACheckpoint] = useState(false);
+  const [currentEditorPage, setCurrentEditorPage] = useState(1);
+  const [editorPageImages, setEditorPageImages] = useState<Record<number, string>>({});
+  const [editorPagePrompts, setEditorPagePrompts] = useState<Record<number, string>>({});
+  const [showEditor, setShowEditor] = useState(false);
   const [outlineJustCompleted, setOutlineJustCompleted] = useState(false);
   const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
   const previousShouldShow = useRef(false);
@@ -178,15 +178,15 @@ export default function GoogleChat() {
   // Priority: Show book images from storage if book exists, otherwise show Book Editor images
   // But hide images for pages in replace mode
   const displayImages = useMemo(() => {
-    const baseImages = (createdBookId && bookPageImages) ? bookPageImages : qaPageImages;
+    const baseImages = (createdBookId && bookPageImages) ? bookPageImages : editorPageImages;
     const filtered: Record<number, string> = {};
     Object.entries(baseImages).forEach(([pageNum, imageUrl]) => {
       if (!replacePageMode[Number(pageNum)]) {
-        filtered[Number(pageNum)] = imageUrl;
+        filtered[Number(pageNum)] = imageUrl as string;
       }
     });
     return filtered;
-  }, [createdBookId, bookPageImages, qaPageImages, replacePageMode]);
+  }, [createdBookId, bookPageImages, editorPageImages, replacePageMode]);
   const isBookCreated = !!createdBookId;
 
   // Memoize parsed page details to avoid re-parsing on every render
@@ -205,8 +205,8 @@ export default function GoogleChat() {
   }, [messages]);
 
   // Detect when book outline is ready for Book Editor Panel
-  const shouldShowQACheckpoint = useMemo(() => {
-    console.log('[Review Button Debug] Computing shouldShowQACheckpoint:', {
+  const shouldShowReviewButton = useMemo(() => {
+    console.log('[Review Button Debug] Computing shouldShowReviewButton:', {
       isLoading,
       messagesLength: messages.length,
       parsedPageDetailsLength: parsedPageDetails?.length || 0,
@@ -236,16 +236,16 @@ export default function GoogleChat() {
   // Debug: Log when key values change for outline button visibility
   useEffect(() => {
     console.log('[Review Button Debug] State changed:', {
-      shouldShowQACheckpoint,
+      shouldShowReviewButton,
       isBookPublished,
-      shouldShowReviewButton: shouldShowQACheckpoint || isBookPublished,
+      shouldShowReviewButton: shouldShowReviewButton || isBookPublished,
       parsedPagesCount: parsedPageDetails?.length || 0,
       isLoading,
       messagesCount: messages.length,
       hasEducationalFocus: !!educationalFocus,
       createdBookId: createdBookId || 'none'
     });
-  }, [shouldShowQACheckpoint, isBookPublished, parsedPageDetails, isLoading, messages.length, educationalFocus, createdBookId]);
+  }, [shouldShowReviewButton, isBookPublished, parsedPageDetails, isLoading, messages.length, educationalFocus, createdBookId]);
 
   // Clear cached prompts when new outline is detected (for regeneration support)
   useEffect(() => {
@@ -256,13 +256,13 @@ export default function GoogleChat() {
     
     if (parsedPageDetails && parsedPageDetails.length > 0) {
       // Check if this is a new/different outline by comparing page count
-      const currentPageCount = Object.keys(qaPagePrompts).length;
+      const currentPageCount = Object.keys(editorPagePrompts).length;
       const newPageCount = parsedPageDetails.length + (educationalFocus ? 2 : 1);
       
       // If page count changed, or if we have parsed details but empty cache, clear the cache
       if (currentPageCount !== newPageCount || currentPageCount === 0) {
         console.log('[Editor Debug] New outline detected, clearing cached prompts');
-        setQAPagePrompts({});
+        setEditorPagePrompts({});
       }
     }
   }, [parsedPageDetails, educationalFocus, createdBookId, bookData?.status]);
@@ -293,13 +293,13 @@ export default function GoogleChat() {
       if (!page) return null;
       
       // For educational focus page, check if it's the educational page
-      if (page.page_type === 'educational' && qaPagePrompts[2]) {
-        return qaPagePrompts[2];
+      if (page.page_type === 'educational' && editorPagePrompts[2]) {
+        return editorPagePrompts[2];
       }
       
-      // Try to get from qaPagePrompts first (user-uploaded or edited)
-      if (qaPagePrompts[pageNum]) {
-        return qaPagePrompts[pageNum];
+      // Try to get from editorPagePrompts first (user-uploaded or edited)
+      if (editorPagePrompts[pageNum]) {
+        return editorPagePrompts[pageNum];
       }
       
       // Try to get full prompt from content.imagePrompt (stores unlimited text)
@@ -349,11 +349,11 @@ export default function GoogleChat() {
     if (parsedPageDetails && pageNum > 2) {
       const pageIndex = pageNum - 3; // Page 3 = index 0, Page 4 = index 1, etc.
       const pageDetail = parsedPageDetails[pageIndex];
-      return pageDetail ? qaPagePrompts[pageNum] || pageDetail.description : null;
+      return pageDetail ? editorPagePrompts[pageNum] || pageDetail.description : null;
     }
     
     return null;
-  }, [isBookCreated, dbPages, qaPagePrompts, educationalFocus, parsedPageDetails, messages]);
+  }, [isBookCreated, dbPages, editorPagePrompts, educationalFocus, parsedPageDetails, messages]);
 
   // Create initial session on mount if none exists
   useEffect(() => {
@@ -385,7 +385,7 @@ export default function GoogleChat() {
       return;
     }
     
-    const currentShouldShow = shouldShowQACheckpoint;
+    const currentShouldShow = shouldShowReviewButton;
     
     // If we just transitioned from false → true, the outline was just completed
     if (!previousShouldShow.current && currentShouldShow) {
@@ -395,7 +395,7 @@ export default function GoogleChat() {
     }
     
     previousShouldShow.current = currentShouldShow;
-  }, [shouldShowQACheckpoint, createdBookId, bookData?.status]);
+  }, [shouldShowReviewButton, createdBookId, bookData?.status]);
 
   // Auto-show Book Editor Panel only when outline is just completed (not on page load)
   useEffect(() => {
@@ -404,10 +404,10 @@ export default function GoogleChat() {
       return;
     }
     
-    if (outlineJustCompleted && !showQACheckpoint) {
-      setCurrentQAPage(1); // Start at cover page
+    if (outlineJustCompleted && !showEditor) {
+      setCurrentEditorPage(1); // Start at cover page
       
-      setShowQACheckpoint(true);
+      setShowEditor(true);
       
       // Scroll to bottom to show the banner
       setTimeout(() => {
@@ -417,7 +417,7 @@ export default function GoogleChat() {
       // Reset flag after opening
       setOutlineJustCompleted(false);
     }
-  }, [outlineJustCompleted, showQACheckpoint, isMobile, createdBookId, bookData?.status]);
+  }, [outlineJustCompleted, showEditor, isMobile, createdBookId, bookData?.status]);
 
   // Add quick reply buttons when AI indicates book is ready to create
   const messagesWithCreateOptions = useMemo(() => {

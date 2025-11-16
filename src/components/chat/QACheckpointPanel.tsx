@@ -96,7 +96,6 @@ export function QACheckpointPanel({
       onUpdatePageText(currentQAPage, newText);
     }
     setIsEditingOverlayText(false);
-    toast.success('Text updated!');
   };
   
   // Get current page ID for overlay toggle

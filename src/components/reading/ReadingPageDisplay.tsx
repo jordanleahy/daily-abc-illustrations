@@ -82,7 +82,6 @@ export function ReadingPageDisplay({
       onUpdatePageText(newText);
     }
     setIsEditingText(false);
-    toast.success('Text updated!');
     
     // Generate word metadata
     const currentPage = pages?.find(p => p.id === pageId);

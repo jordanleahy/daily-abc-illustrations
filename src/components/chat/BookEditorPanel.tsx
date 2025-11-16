@@ -371,6 +371,7 @@ export function BookEditorPanel({
                   className="w-full h-full object-contain"
                   priority={true}
                   enableMobileSave={true}
+                  disableHoverEffects={true}
                 />
                 
                 {/* Interactive Text Overlay - only show for content pages when not hidden */}

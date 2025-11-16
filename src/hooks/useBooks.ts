@@ -76,8 +76,13 @@ export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
             view_count,
             user_id
           ),
-          coverImage:page_image_urls!left(
-            image_url
+          pages!left(
+            id,
+            page_type,
+            page_image_urls!left(
+              image_url,
+              is_latest
+            )
           )
         `);
       
@@ -105,12 +110,19 @@ export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
         const activityArr = Array.isArray(book.activity) ? book.activity : [book.activity].filter(Boolean);
         const userActivity = activityArr.find((a: any) => a?.user_id === user.id);
         
-        // Extract cover image from the JOIN (first is_latest cover page image)
-        const coverImageArr = Array.isArray(book.coverImage) ? book.coverImage : [book.coverImage].filter(Boolean);
-        const coverImageUrl = coverImageArr[0]?.image_url || null;
+        // Extract cover image from pages with page_type = 'cover' and is_latest = true
+        const pagesArr = Array.isArray(book.pages) ? book.pages : [book.pages].filter(Boolean);
+        const coverPage = pagesArr.find((p: any) => p?.page_type === 'cover');
+        const coverImageUrls = coverPage?.page_image_urls || [];
+        const coverImageArr = Array.isArray(coverImageUrls) ? coverImageUrls : [coverImageUrls].filter(Boolean);
+        const latestCoverImage = coverImageArr.find((img: any) => img?.is_latest === true);
+        const coverImageUrl = latestCoverImage?.image_url || null;
+        
+        // Remove pages array from response (only used for extraction)
+        const { pages, activity, ...bookData } = book;
         
         return {
-          ...book,
+          ...bookData,
           dailyPublishedStatus: book.daily_published?.[0]?.status || undefined,
           last_viewed_at: userActivity?.last_viewed_at,
           view_count: userActivity?.view_count || 0,

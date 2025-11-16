@@ -66,7 +66,10 @@ export const useScheduleBookPublication = () => {
       // Mark the book as a library book so it appears in the Library view
       const { error: bookUpdateError } = await supabase
         .from('books')
-        .update({ is_library_book: true })
+        .update({ 
+          is_library_book: true,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', bookId);
 
       if (bookUpdateError) {

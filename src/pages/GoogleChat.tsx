@@ -1027,24 +1027,11 @@ export default function GoogleChat() {
     console.log('Updating page:', page.id, 'with text:', newText);
     
     try {
-      // Update the page content with new text overlay AND sync the title
-      const updatedContent = {
-        ...(page.content || {}),
-        textOverlay: {
-          ...((page.content as any)?.textOverlay || {}),
-          enabled: true,
-          text: newText,
-          position: 'bottom-center' as const
-        }
-      } as any;
-      
-      console.log('Saving updated content:', updatedContent);
-      
+      // Update the page title (single source of truth)
       const { error } = await supabase
         .from('pages')
         .update({ 
-          content: updatedContent,
-          title: newText, // Sync title with textOverlay.text
+          title: newText,
           updated_at: new Date().toISOString()
         })
         .eq('id', page.id);
@@ -1082,13 +1069,13 @@ export default function GoogleChat() {
     });
   }, [createdBookId, bookData?.status, updateBookStatusMutation]);
 
-  // Extract page text overlays from database pages
+  // Extract page text overlays from database pages (using title as single source)
   const pageTextOverlays = useMemo(() => {
     if (!dbPages) return {};
     
     return dbPages.reduce((acc, page) => ({
       ...acc,
-      [page.page_number]: (page.content as any)?.textOverlay?.text || page.title
+      [page.page_number]: page.title
     }), {} as Record<number, string>);
   }, [dbPages]);
 

@@ -140,9 +140,9 @@ export interface Page {
     /** CSS text overlay configuration for GoogleChat books */
     textOverlay?: {
       enabled: boolean;
-      text: string;
       position: 'bottom-center';
       createdAt?: string;
+      // text field REMOVED - use page.title instead (single source of truth)
     };
     /** Word-level metadata for educational analysis */
     words?: Array<{

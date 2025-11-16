@@ -134,8 +134,8 @@ export function QACheckpointPanel({
     return true;
   }, [isBookCreated, pageCount, displayImages]);
   
-  // Get current page text from database or extract from prompt
-  const currentPageText = pageTextOverlays[currentQAPage] || (() => {
+  // Get current page text from page.title or extract from prompt
+  const currentPageText = currentPage?.title || pageTextOverlays[currentQAPage] || (() => {
     const prompt = getCurrentPagePrompt(currentQAPage);
     if (!prompt) return '';
     
@@ -155,7 +155,6 @@ export function QACheckpointPanel({
 
   // Get current page words metadata
   const currentPageWords = useMemo(() => {
-    const currentPage = pages?.find(p => p.page_number === currentQAPage);
     return currentPage?.content?.words;
   }, [pages, currentQAPage]);
 
@@ -305,14 +304,7 @@ export function QACheckpointPanel({
                 ? 'Page 1: Cover' 
                 : currentQAPage === 2
                 ? 'Page 2: Focus'
-                : (() => {
-                    const currentPage = pages?.find(p => p.page_number === currentQAPage);
-                    if (currentPage?.content) {
-                      const textOverlay = (currentPage.content as any)?.textOverlay;
-                      return textOverlay?.text || `Page ${currentQAPage}`;
-                    }
-                    return `Page ${currentQAPage}`;
-                  })()
+                : pages?.find(p => p.page_number === currentQAPage)?.title || `Page ${currentQAPage}`
               }
             </h3>
             <p className="text-xs text-muted-foreground line-clamp-1">

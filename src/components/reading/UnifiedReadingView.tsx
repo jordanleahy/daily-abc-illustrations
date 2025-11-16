@@ -396,7 +396,7 @@ export function UnifiedReadingView({
               pageId={currentPage.id}
               bookId={book.book_id || book.id}
               pageNumber={currentPage.page_number}
-              pageText={currentPage.content?.textOverlay?.text || ''}
+              pageText={currentPage.title || ''}
               imageUrl=""
               pageType={currentPage.page_type}
               currentWordIndex={readingState.currentWordIndex}
@@ -430,7 +430,7 @@ export function UnifiedReadingView({
           onNextPage={handleNext}
           disablePreviousPage={currentPageIndex === 0}
           disableNextPage={isAddingCoins}
-          overlayText={currentPage.content?.textOverlay?.text || ''}
+          overlayText={currentPage.title || ''}
           overlayWords={currentPageWords}
           overlayCurrentWordIndex={readingState.currentWordIndex}
           overlayWordStatuses={readingState.wordStatuses}

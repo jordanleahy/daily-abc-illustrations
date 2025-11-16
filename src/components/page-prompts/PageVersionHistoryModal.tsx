@@ -10,9 +10,11 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Play, RotateCcw, Clock, User } from 'lucide-react';
+import { Play, RotateCcw, Clock, User, Copy } from 'lucide-react';
 import { PageSystemPromptVersion } from '@/types/pageSystemPrompt';
 import { ModalProps } from '@/types/shared';
+import { copyToClipboard } from '@/utils/clipboardHelpers';
+import { useToast } from '@/hooks/use-toast';
 
 interface PageVersionHistoryModalProps extends ModalProps {
   versions: PageSystemPromptVersion[];
@@ -34,6 +36,26 @@ export function PageVersionHistoryModal({
   const [selectedVersion, setSelectedVersion] = useState<PageSystemPromptVersion | null>(null);
   const [isReverting, setIsReverting] = useState(false);
   const [isDeploying, setIsDeploying] = useState(false);
+  const { toast } = useToast();
+
+  const handleCopyVersion = async () => {
+    if (!selectedVersion?.content) return;
+
+    try {
+      await copyToClipboard(selectedVersion.content);
+      toast({
+        title: "Copied!",
+        description: "Version content copied to clipboard",
+      });
+    } catch (error) {
+      console.error('Error copying version:', error);
+      toast({
+        title: "Error",
+        description: "Failed to copy to clipboard",
+        variant: "destructive",
+      });
+    }
+  };
 
   const sortedVersions = [...versions].sort((a, b) => 
     new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -131,6 +153,14 @@ export function PageVersionHistoryModal({
                     </p>
                   </div>
                   <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleCopyVersion}
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy
+                    </Button>
                     {!selectedVersion.is_deployed && (
                       <Button
                         size="sm"

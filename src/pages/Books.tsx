@@ -20,7 +20,7 @@ import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
 import { useDeleteBook } from '@/hooks/useDeleteBook';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { QACheckpointPanel } from '@/components/chat/QACheckpointPanel';
+import { BookEditorPanel } from '@/components/chat/BookEditorPanel';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useBookPages } from '@/hooks/useBookPages';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
@@ -789,7 +789,7 @@ export default function Books() {
 
   return (
     <>
-      {/* QA Checkpoint Panel for Mobile (Bottom Sheet) and Desktop (Side Panel) */}
+      {/* Book Editor Panel for Mobile (Bottom Sheet) and Desktop (Side Panel) */}
       {isMobile ? (
         <Sheet 
           open={mobileEditorOpen} 
@@ -799,7 +799,7 @@ export default function Books() {
             side="bottom" 
             className="w-full max-h-[90vh] p-0 overflow-hidden rounded-t-xl z-[100]"
           >
-            <QACheckpointPanel
+            <BookEditorPanel
               showQACheckpoint={true}
               isBookCreated={true}
               createdBookId={selectedBookId}
@@ -834,7 +834,7 @@ export default function Books() {
             mobileEditorOpen ? "translate-x-0" : "translate-x-full"
           )}
         >
-          <QACheckpointPanel
+          <BookEditorPanel
             showQACheckpoint={true}
             isBookCreated={true}
             createdBookId={selectedBookId}

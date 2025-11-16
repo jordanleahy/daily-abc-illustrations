@@ -143,7 +143,7 @@ export default function BookDetail() {
     }
   }, [user, id, navigate, authLoading, location.pathname, book, queryClient]);
 
-  // Handle URL parameter for page navigation from QA checkpoint
+  // Handle URL parameter for page navigation from Book Editor Panel
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const pageParam = params.get('page');

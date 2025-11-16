@@ -874,7 +874,7 @@ Create an illustration that brings the page content to life while maintaining th
                 image_url: publicUrl,
                 generation_status: 'complete',
                 generation_completed_at: new Date().toISOString(),
-                prompt_used: `User uploaded from QA checkpoint for page ${pageNumber}`,
+                prompt_used: `User uploaded from Book Editor Panel for page ${pageNumber}`,
                 is_latest: true,
                 source_type: 'user_uploaded'
               });
@@ -882,7 +882,7 @@ Create an illustration that brings the page content to life while maintaining th
             if (imageUrlError) {
               console.error(`Failed to create image URL record for page ${pageNumber}:`, imageUrlError);
             } else {
-              console.log(`QA image uploaded for page ${pageNumber}`);
+              console.log(`Book Editor image uploaded for page ${pageNumber}`);
             }
             
           } catch (error) {

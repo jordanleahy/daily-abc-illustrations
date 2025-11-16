@@ -1,6 +1,5 @@
 import { PageLayout } from '@/components/layout/PageLayout';
 import { LandingHero } from '@/components/landing/LandingHero';
-import { PopularBooks } from '@/components/landing/PopularBooks';
 import { LibrarySection } from '@/components/landing/LibrarySection';
 import { SignupSection } from '@/components/landing/SignupSection';
 import { useLandingPageData } from '@/hooks/useLandingPageData';
@@ -40,7 +39,6 @@ const Landing = () => {
       <PageLayout showHeader={true} fullHeight={false}>
         <div className="flex flex-col">
           <LandingHero dailyPublished={landingData?.dailyPublished} />
-          <PopularBooks books={landingData?.popularBooks} />
           <LibrarySection books={landingData?.libraryBooks} />
           <SignupSection />
         </div>

@@ -493,7 +493,7 @@ export default function GoogleChat() {
           setCurrentSessionId(bookSession.id);
           setLocalCreatedBookId(editBookId);
           
-          // Load QA images and prompts from the session
+          // Load editor images and prompts from the session
           if (bookSession.qa_page_images) {
             setQAPageImages(bookSession.qa_page_images);
           }
@@ -501,7 +501,7 @@ export default function GoogleChat() {
             setQAPagePrompts(bookSession.qa_page_prompts);
           }
           
-          // Open the QA panel
+          // Open the Book Editor Panel
           setShowQACheckpoint(true);
           setCurrentQAPage(1);
         });
@@ -796,7 +796,7 @@ export default function GoogleChat() {
     // Reset mutation state to allow panel to open after book creation
     createBookMutation.reset();
     
-    // Load QA images and prompts from current session
+    // Load editor images and prompts from current session
     if (selectedSession?.qa_page_images) {
       setQAPageImages(selectedSession.qa_page_images);
     }
@@ -820,7 +820,7 @@ export default function GoogleChat() {
         setSelectedBookType(null);
         setReplacePageMode({});
         
-        // Load QA images from the selected session
+        // Load editor images from the selected session
         const session = sessions.find(s => s.id === sessionId);
         if (session?.qa_page_images) {
           setQAPageImages(session.qa_page_images);
@@ -927,7 +927,7 @@ export default function GoogleChat() {
         console.error('Image upload error:', error);
       }
     } else {
-      // Pre-creation: Store in session QA images
+      // Pre-creation: Store in session editor images
       const updatedImages = {
         ...qaPageImages,
         [currentQAPage]: imageDataUrl
@@ -983,7 +983,7 @@ export default function GoogleChat() {
       // For created books, just enable replace mode to show upload UI
       setReplacePageMode(prev => ({ ...prev, [pageNumber]: true }));
     } else {
-      // For pre-creation, remove from QA images
+      // For pre-creation, remove from editor images
       const updatedImages = { ...qaPageImages };
       delete updatedImages[pageNumber];
       setQAPageImages(updatedImages);

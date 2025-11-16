@@ -23,7 +23,7 @@ export function useLandingPageImagePreloader(landingData: LandingPageData | unde
     // Extract all images in priority order
     const heroImages = landingData.dailyPublished?.pages?.map(p => p.image_url).filter(Boolean) || [];
     const popularImages = landingData.popularBooks?.map(b => b.image_url).filter(Boolean) || [];
-    const libraryImages = landingData.libraryBooks?.map(b => b.og_image_url).filter(Boolean) || [];
+    const libraryImages = landingData.libraryBooks?.map(b => b.image_url).filter(Boolean) || [];
 
     // Priority 1: ONLY first hero carousel image (critical viewport content)
     // Remaining hero images load lazily via useLazyCarouselImages

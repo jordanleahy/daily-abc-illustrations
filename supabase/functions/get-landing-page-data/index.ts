@@ -56,22 +56,23 @@ Deno.serve(async (req) => {
         .order('updated_at', { ascending: false })
         .limit(6),
 
-      // 3. Get all daily published for library section
+      // 3. Get library books directly from books table
       supabase
-        .from('daily_published')
+        .from('books')
         .select(`
           id,
-          book_id,
-          title,
-          description,
+          book_name,
+          book_description,
           status,
-          is_active,
-          published_at,
-          slug,
-          books!inner(id, book_name, book_description, metadata)
+          is_highlighted,
+          created_at,
+          updated_at,
+          metadata
         `)
-        .in('status', ['active', 'queued', 'expired'])
-        .order('published_at', { ascending: false })
+        .eq('is_library_book', true)
+        .eq('status', 'published')
+        .order('updated_at', { ascending: false })
+        .limit(20)
     ]);
 
     console.log('✅ Step 1 complete:', {
@@ -102,7 +103,7 @@ Deno.serve(async (req) => {
     // Fetch pages and SEO metadata in parallel to eliminate waterfalls
     let dailyPublishedWithPages = null;
     const popularBookIds = popularBooks.map(b => b.id);
-    const libraryDpIds = libraryBooks.map(lb => lb.id);
+    const libraryBookIds = libraryBooks.map(lb => lb.id);
 
     // Build promises for parallel execution
     const pagesPromise = dailyPublished?.book_id
@@ -315,72 +316,46 @@ Deno.serve(async (req) => {
 
     console.log(`🎨 Popular books with images: ${popularBooksWithImages.filter(b => b.image_url).length}/${popularBooks.length}`);
 
-    // Map images for library books with fallback to first page images
+    // Fetch cover page images for library books
     let libraryBooksWithImages = libraryBooks;
-    if (libraryDpIds.length > 0) {
-      // Get book_ids that need fallback images
-      const booksNeedingFallback = libraryBooks
-        .filter(lb => !seoMap.get(lb.id)?.og_image_url)
-        .map(lb => lb.book_id);
+    if (libraryBookIds.length > 0) {
+      console.log(`🔄 Fetching cover images for ${libraryBookIds.length} library books`);
       
-      let fallbackImageMap = new Map();
+      const pagesResult = await supabase
+        .from('pages')
+        .select('id, book_id, page_number')
+        .in('book_id', libraryBookIds)
+        .eq('page_type', 'cover');
       
-      // Fetch first page images for books without SEO images
-      if (booksNeedingFallback.length > 0) {
-        console.log(`🔄 Fetching fallback images for ${booksNeedingFallback.length} library books`);
+      if (pagesResult.data && pagesResult.data.length > 0) {
+        const pageIds = pagesResult.data.map(p => p.id);
+        const imagesResult = await supabase
+          .from('page_image_urls')
+          .select('page_id, image_url')
+          .in('page_id', pageIds)
+          .eq('is_latest', true)
+          .not('image_url', 'is', null);
         
-        const pagesResult = await supabase
-          .from('pages')
-          .select('id, book_id, page_number')
-          .in('book_id', booksNeedingFallback)
-          .eq('page_type', 'cover');
-        
-        if (pagesResult.data && pagesResult.data.length > 0) {
-          const pageIds = pagesResult.data.map(p => p.id);
-          const imagesResult = await supabase
-            .from('page_image_urls')
-            .select('page_id, image_url')
-            .in('page_id', pageIds)
-            .eq('is_latest', true)
-            .not('image_url', 'is', null);
+        if (imagesResult.data) {
+          const imageMap = new Map();
+          imagesResult.data.forEach(img => {
+            const page = pagesResult.data.find(p => p.id === img.page_id);
+            if (page) {
+              imageMap.set(page.book_id, img.image_url);
+            }
+          });
           
-          if (imagesResult.data) {
-            imagesResult.data.forEach(img => {
-              const page = pagesResult.data.find(p => p.id === img.page_id);
-              if (page) {
-                fallbackImageMap.set(page.book_id, img.image_url);
-              }
-            });
-          }
+          libraryBooksWithImages = libraryBooks.map(book => ({
+            ...book,
+            image_url: imageMap.get(book.id) || null
+          }));
           
-          console.log(`✅ Found ${fallbackImageMap.size} fallback images`);
+          console.log(`✅ Found ${imageMap.size} cover images for library books`);
         }
       }
-      
-      libraryBooksWithImages = libraryBooks.map(lb => {
-        const seoData = seoMap.get(lb.id);
-        const fallbackImage = fallbackImageMap.get(lb.book_id);
-        
-        return {
-          ...lb,
-          og_image_url: seoData?.og_image_url || fallbackImage || null,
-          seo_title: seoData?.seo_title || null,
-          metadata: lb.books?.metadata || null
-        };
-      });
-
-      // Deduplicate by book_id (keep most recent entry per book)
-      const seenBookIds = new Set();
-      libraryBooksWithImages = libraryBooksWithImages.filter(lb => {
-        if (seenBookIds.has(lb.book_id)) {
-          return false;
-        }
-        seenBookIds.add(lb.book_id);
-        return true;
-      });
-      
-      console.log(`🖼️ Library books with images: ${libraryBooksWithImages.filter(b => b.og_image_url).length}/${libraryBooksWithImages.length} (after deduplication)`);
     }
+
+    console.log(`🖼️ Library books with images: ${libraryBooksWithImages.filter(b => b.image_url).length}/${libraryBooksWithImages.length}`);
 
     const endTime = Date.now();
     const duration = endTime - startTime;

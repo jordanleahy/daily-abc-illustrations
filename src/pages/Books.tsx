@@ -328,9 +328,9 @@ export default function Books() {
   const [selectedBookPublication, setSelectedBookPublication] = useState<Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null>(null);
   
   // Book Editor Panel state
-  const [currentQAPage, setCurrentQAPage] = useState(1);
-  const [qaPageImages] = useState<Record<number, string>>({});
-  const [qaPagePrompts] = useState<Record<number, string>>({});
+  const [currentEditorPage, setCurrentEditorPage] = useState(1);
+  const [editorPageImages] = useState<Record<number, string>>({});
+  const [editorPagePrompts] = useState<Record<number, string>>({});
   const [pageTextOverlays, setPageTextOverlays] = useState<Record<number, string>>({});
   const [coverPageId, setCoverPageId] = useState<string | null>(null);
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
@@ -407,7 +407,7 @@ export default function Books() {
     setSelectedBookId(bookId);
     setSelectedBook(book);
     setSelectedBookPublication(publicationStatus || null);
-    setCurrentQAPage(1); // Reset to cover page
+    setCurrentEditorPage(1); // Reset to cover page
     setMobileEditorOpen(true);
   };
 
@@ -474,19 +474,19 @@ export default function Books() {
     if (!dbPages || dbPages.length === 0) return;
     
     const sortedPages = [...dbPages].sort((a, b) => a.page_number - b.page_number);
-    const currentIndex = sortedPages.findIndex(p => p.page_number === currentQAPage);
+    const currentIndex = sortedPages.findIndex(p => p.page_number === currentEditorPage);
     
     if (direction === 'next' && currentIndex < sortedPages.length - 1) {
-      setCurrentQAPage(sortedPages[currentIndex + 1].page_number);
+      setCurrentEditorPage(sortedPages[currentIndex + 1].page_number);
     } else if (direction === 'prev' && currentIndex > 0) {
-      setCurrentQAPage(sortedPages[currentIndex - 1].page_number);
+      setCurrentEditorPage(sortedPages[currentIndex - 1].page_number);
     }
-  }, [dbPages, currentQAPage]);
+  }, [dbPages, currentEditorPage]);
 
   const handleQAImageUpload = useCallback(async (imageDataUrl: string) => {
     if (!selectedBookId || !dbPages) return;
     
-    const currentPage = dbPages.find(p => p.page_number === currentQAPage);
+    const currentPage = dbPages.find(p => p.page_number === currentEditorPage);
     if (!currentPage) {
       console.error('Page not found');
       return;
@@ -498,12 +498,12 @@ export default function Books() {
       // Convert base64 to blob
       const response = await fetch(imageDataUrl);
       const blob = await response.blob();
-      const file = new File([blob], `page-${currentQAPage}-${Date.now()}.png`, { type: 'image/png' });
+      const file = new File([blob], `page-${currentEditorPage}-${Date.now()}.png`, { type: 'image/png' });
       
       // Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('page-images')
-        .upload(`${user?.id}/${selectedBookId}/page-${currentQAPage}-${Date.now()}.png`, file, {
+        .upload(`${user?.id}/${selectedBookId}/page-${currentEditorPage}-${Date.now()}.png`, file, {
           cacheControl: '3600',
           upsert: false,
         });
@@ -552,20 +552,20 @@ export default function Books() {
       // Clear replace mode for this page
       setReplacePageMode(prev => {
         const updated = { ...prev };
-        delete updated[currentQAPage];
+        delete updated[currentEditorPage];
         return updated;
       });
       
       // Auto-advance to next page if not the last page
-      if (dbPages && currentQAPage < dbPages.length) {
+      if (dbPages && currentEditorPage < dbPages.length) {
         setTimeout(() => {
-          setCurrentQAPage(currentQAPage + 1);
+          setCurrentEditorPage(currentEditorPage + 1);
         }, 500);
       }
     } catch (error: any) {
       console.error('Image upload error:', error);
     }
-  }, [selectedBookId, dbPages, currentQAPage, user, queryClient]);
+  }, [selectedBookId, dbPages, currentEditorPage, user, queryClient]);
 
   const handleRemoveQAImage = useCallback(async (pageNumber: number) => {
     // Enable replace mode to show upload UI
@@ -803,11 +803,11 @@ export default function Books() {
               showEditor={true}
               isBookCreated={true}
               createdBookId={selectedBookId}
-              currentPageNumber={currentQAPage}
+              currentPageNumber={currentEditorPage}
               pageCount={dbPages?.length || 0}
               displayImages={displayImages}
-              editorPageImages={qaPageImages}
-              editorPagePrompts={qaPagePrompts}
+              editorPageImages={editorPageImages}
+              editorPagePrompts={editorPagePrompts}
               getCurrentPagePrompt={getCurrentPagePrompt}
               createBookMutation={{ isSuccess: true }}
               onClose={() => setMobileEditorOpen(false)}
@@ -838,11 +838,11 @@ export default function Books() {
             showEditor={true}
             isBookCreated={true}
             createdBookId={selectedBookId}
-            currentPageNumber={currentQAPage}
+            currentPageNumber={currentEditorPage}
             pageCount={dbPages?.length || 0}
             displayImages={displayImages}
-            editorPageImages={qaPageImages}
-            editorPagePrompts={qaPagePrompts}
+            editorPageImages={editorPageImages}
+            editorPagePrompts={editorPagePrompts}
             getCurrentPagePrompt={getCurrentPagePrompt}
             createBookMutation={{ isSuccess: true }}
             onClose={() => setMobileEditorOpen(false)}

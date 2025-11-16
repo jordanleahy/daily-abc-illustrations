@@ -63,6 +63,17 @@ export const useScheduleBookPublication = () => {
         throw error;
       }
 
+      // Mark the book as a library book so it appears in the Library view
+      const { error: bookUpdateError } = await supabase
+        .from('books')
+        .update({ is_library_book: true })
+        .eq('id', bookId);
+
+      if (bookUpdateError) {
+        console.error('Failed to mark book as library book:', bookUpdateError);
+        // Don't throw - the book is still scheduled, just won't appear in library yet
+      }
+
       return { ...data, publish_date: publishDate };
     },
     onSuccess: (data) => {
@@ -77,6 +88,7 @@ export const useScheduleBookPublication = () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['book-publication-status'] });
       queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
+      queryClient.invalidateQueries({ queryKey: ['library-books-decoupled'] });
     },
     onError: (error) => {
       console.error('Error scheduling book:', error);

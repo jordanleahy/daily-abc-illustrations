@@ -238,7 +238,7 @@ export default function GoogleChat() {
     console.log('[Review Button Debug] State changed:', {
       shouldShowReviewButton,
       isBookPublished,
-      shouldShowReviewButton: shouldShowReviewButton || isBookPublished,
+      combinedReviewButton: shouldShowReviewButton || isBookPublished,
       parsedPagesCount: parsedPageDetails?.length || 0,
       isLoading,
       messagesCount: messages.length,
@@ -495,15 +495,15 @@ export default function GoogleChat() {
           
           // Load editor images and prompts from the session
           if (bookSession.qa_page_images) {
-            setQAPageImages(bookSession.qa_page_images);
+            setEditorPageImages(bookSession.qa_page_images);
           }
           if (bookSession.qa_page_prompts) {
-            setQAPagePrompts(bookSession.qa_page_prompts);
+            setEditorPagePrompts(bookSession.qa_page_prompts);
           }
           
           // Open the Book Editor Panel
-          setShowQACheckpoint(true);
-          setCurrentQAPage(1);
+          setShowEditor(true);
+          setCurrentEditorPage(1);
         });
       } else {
         console.warn('[GoogleChat] No session found for book:', editBookId);
@@ -555,12 +555,12 @@ export default function GoogleChat() {
     }
 
     console.log('[Handle Send Debug] Calling sendMessage with context:', {
-      outlineReady: shouldShowQACheckpoint && !createdBookId,
+      outlineReady: shouldShowReviewButton && !createdBookId,
       bookCreated: !!createdBookId
     });
 
     await sendMessage(raw, undefined, messages, {
-      outlineReady: shouldShowQACheckpoint && !createdBookId,
+      outlineReady: shouldShowReviewButton && !createdBookId,
       bookCreated: !!createdBookId
     });
     setInput('');
@@ -580,12 +580,12 @@ export default function GoogleChat() {
       setInput('');
       setShowImageUpload(false);
       await sendMessageWithImage(message, base64Data, messages, {
-        outlineReady: shouldShowQACheckpoint && !createdBookId,
+        outlineReady: shouldShowReviewButton && !createdBookId,
         bookCreated: !!createdBookId
       });
     };
     reader.readAsDataURL(file);
-  }, [input, sendMessageWithImage, messages, shouldShowQACheckpoint, createdBookId]);
+  }, [input, sendMessageWithImage, messages, shouldShowReviewButton, createdBookId]);
 
   // Auto-generate cover prompt for QA panel
   const handleGenerateCoverPrompt = useCallback(async () => {
@@ -610,17 +610,17 @@ export default function GoogleChat() {
       // Format as natural instruction without internal tags
       const clarificationPrompt = `${bookType.prompt}\n\nBefore we proceed, please ask me about: ${bookType.clarificationContext}`;
       await sendMessage(clarificationPrompt, undefined, messages, {
-        outlineReady: shouldShowQACheckpoint && !createdBookId,
+        outlineReady: shouldShowReviewButton && !createdBookId,
         bookCreated: !!createdBookId
       });
     } else {
       // Send direct prompt
       await sendMessage(bookType.prompt, undefined, messages, {
-        outlineReady: shouldShowQACheckpoint && !createdBookId,
+        outlineReady: shouldShowReviewButton && !createdBookId,
         bookCreated: !!createdBookId
       });
     }
-  }, [currentSessionId, sendMessage, updateSessionName, shouldShowQACheckpoint, createdBookId]);
+  }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId]);
 
   const handleCreateBook = useCallback(async () => {
     if (!currentSessionId) {
@@ -669,7 +669,7 @@ export default function GoogleChat() {
       const result = await createBookMutation.mutateAsync({
         conversationHistory: textMessages,
         pageDetails: pageDetails || undefined,
-        qaImages: Object.keys(qaPageImages).length > 0 ? qaPageImages : undefined,
+        qaImages: Object.keys(editorPageImages).length > 0 ? editorPageImages : undefined,
         bookType: selectedBookType || undefined,
         textOverlayPreference,
         referenceBookId,
@@ -702,13 +702,13 @@ export default function GoogleChat() {
       
       
       // Reset image/prompt state for next book (keep panel open)
-      setQAPageImages({});
-      setQAPagePrompts({});
+      setEditorPageImages({});
+      setEditorPagePrompts({});
     } catch (error) {
       console.error('Book creation error:', error);
       // Error toast is handled by the mutation
     }
-  }, [currentSessionId, messages, parsedPageDetails, qaPageImages, createBookMutation, linkBookToSession]);
+  }, [currentSessionId, messages, parsedPageDetails, editorPageImages, createBookMutation, linkBookToSession]);
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
     // Handle special actions
@@ -743,7 +743,7 @@ export default function GoogleChat() {
     if (action.value) {
       // Send the predefined response
       await sendMessage(action.value, undefined, messages, {
-        outlineReady: shouldShowQACheckpoint && !createdBookId,
+        outlineReady: shouldShowReviewButton && !createdBookId,
         bookCreated: !!createdBookId
       });
     } else {
@@ -753,7 +753,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage, messages, shouldShowQACheckpoint, createdBookId]);
+  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId]);
   // Note: handleOpenQAPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 
@@ -764,10 +764,10 @@ export default function GoogleChat() {
       // Use startTransition for non-urgent state updates
       startTransition(() => {
         setCurrentSessionId(newSession.id);
-        setCurrentQAPage(0);
-        setQAPageImages({});
-        setQAPagePrompts({});
-        setShowQACheckpoint(false);
+        setCurrentEditorPage(0);
+        setEditorPageImages({});
+        setEditorPagePrompts({});
+        setShowEditor(false);
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
         setSelectedBookType(null);
@@ -798,13 +798,13 @@ export default function GoogleChat() {
     
     // Load editor images and prompts from current session
     if (selectedSession?.qa_page_images) {
-      setQAPageImages(selectedSession.qa_page_images);
+      setEditorPageImages(selectedSession.qa_page_images);
     }
     if (selectedSession?.qa_page_prompts) {
-      setQAPagePrompts(selectedSession.qa_page_prompts);
+      setEditorPagePrompts(selectedSession.qa_page_prompts);
     }
-    setShowQACheckpoint(true);
-    setCurrentQAPage(1);
+    setShowEditor(true);
+    setCurrentEditorPage(1);
   }, [selectedSession, createBookMutation]);
 
   const handleSelectSession = useCallback((sessionId: string) => {
@@ -812,8 +812,8 @@ export default function GoogleChat() {
       // Batch state updates using startTransition
       startTransition(() => {
         setCurrentSessionId(sessionId);
-        setCurrentQAPage(0);
-        setShowQACheckpoint(false);
+        setCurrentEditorPage(0);
+        setShowEditor(false);
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
         setIsMobileSidebarOpen(false);
@@ -823,9 +823,9 @@ export default function GoogleChat() {
         // Load editor images from the selected session
         const session = sessions.find(s => s.id === sessionId);
         if (session?.qa_page_images) {
-          setQAPageImages(session.qa_page_images);
+          setEditorPageImages(session.qa_page_images);
         } else {
-          setQAPageImages({});
+          setEditorPageImages({});
         }
       });
     }

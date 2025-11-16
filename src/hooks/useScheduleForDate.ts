@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+// Toast notifications removed
 
 interface ScheduleForDateRequest {
   dailyPublishedId: string;
@@ -9,7 +9,6 @@ interface ScheduleForDateRequest {
 
 export const useScheduleForDate = () => {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async ({ dailyPublishedId, publishDate }: ScheduleForDateRequest) => {
@@ -36,18 +35,11 @@ export const useScheduleForDate = () => {
       queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
       queryClient.invalidateQueries({ queryKey: ['daily-published'] });
       
-      toast({
-        title: "Scheduled successfully",
-        description: `Content scheduled for ${new Date(data.publish_date).toLocaleDateString()}`,
-      });
+      console.log(`Content scheduled for ${new Date(data.publish_date).toLocaleDateString()}`);
     },
     onError: (error) => {
       console.error('Schedule error:', error);
-      toast({
-        title: "Scheduling failed", 
-        description: error.message || "Failed to schedule content. Please try again.",
-        variant: "destructive"
-      });
+      console.error(error.message || "Failed to schedule content. Please try again.");
     }
   });
 };

@@ -5,7 +5,7 @@ import { usePageImageUrls } from "@/hooks/usePageImageUrls";
 import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { toast } from "sonner";
+// Toast notifications removed
 import { ProcessStatus } from "@/types/shared";
 import { useState, useEffect } from "react";
 import { Loader2, Upload, Clipboard, Copy, ArrowLeft, DollarSign } from "lucide-react";
@@ -78,7 +78,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     setIsUploading(true);
     try {
       await uploadImage(file, bookId);
-      toast.success('Image uploaded successfully!');
+      console.log('Image uploaded successfully!');
       if (onCloseUpload) {
         onCloseUpload();
       } else {
@@ -87,7 +87,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
       refreshData();
     } catch (error: any) {
       console.error('Error uploading image:', error);
-      toast.error(error.message || 'Failed to upload image');
+      console.error(error.message || 'Failed to upload image');
     } finally {
       setIsUploading(false);
     }
@@ -111,7 +111,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
       }
     }
 
-    toast.error('No image found in clipboard');
+    console.error('No image found in clipboard');
   };
 
   // Handle paste from clipboard button (mobile-friendly)
@@ -121,7 +121,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     try {
       // Check if Clipboard API is supported
       if (!navigator.clipboard || !navigator.clipboard.read) {
-        toast.error('Clipboard access not supported on this browser');
+        console.error('Clipboard access not supported on this browser');
         return;
       }
 
@@ -140,29 +140,29 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
         }
       }
 
-      toast.error('No image found in clipboard');
+      console.error('No image found in clipboard');
     } catch (error: any) {
       console.error('Error reading clipboard:', error);
       if (error.name === 'NotAllowedError') {
-        toast.error('Clipboard access denied. Please grant permission to paste images.');
+        console.error('Clipboard access denied. Please grant permission to paste images.');
       } else {
-        toast.error('Failed to paste from clipboard');
+        console.error('Failed to paste from clipboard');
       }
     }
   };
 
   const handleCopyPrompt = async () => {
     if (!currentPrompt?.content) {
-      toast.error('No prompt available to copy');
+      console.error('No prompt available to copy');
       return;
     }
 
     try {
       await copyToClipboard(currentPrompt.content);
-      toast.success('Prompt copied to clipboard!');
+      console.log('Prompt copied to clipboard!');
     } catch (error) {
       console.error('Error copying prompt:', error);
-      toast.error('Failed to copy prompt');
+      console.error('Failed to copy prompt');
     }
   };
 
@@ -275,9 +275,9 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
                 if (currentPrompt?.content) {
                   try {
                     await copyToClipboard(currentPrompt.content);
-                    toast.success('Prompt copied to clipboard');
+                    console.log('Prompt copied to clipboard');
                   } catch (error) {
-                    toast.error('Failed to copy prompt');
+                    console.error('Failed to copy prompt');
                   }
                 }
               }}

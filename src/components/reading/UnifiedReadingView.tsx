@@ -65,7 +65,7 @@ import { useKidCoins } from '@/hooks/useKidCoins';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { useBookPages } from '@/hooks/useBookPages';
-import { toast } from 'sonner';
+// Toast notifications removed
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
 import { ReadingPageDisplay, useReadingPageState, UnifiedReadingControls } from '@/components/reading';
@@ -298,15 +298,13 @@ export function UnifiedReadingView({
             coinsToAdd: earnedRewards 
           });
           
-          toast.success(`You earned ${earnedRewards} coins! 🎉`, {
-            description: "Great job reading!",
-          });
+          console.log(`You earned ${earnedRewards} coins! 🎉 - Great job reading!`);
           
           endSession('book_completed');
           onBack();
         } catch (error) {
           console.error('Failed to deposit coins:', error);
-          toast.error("Couldn't save your coins. Try again.");
+          console.error("Couldn't save your coins. Try again.");
         }
       } else {
         // No kid selected or no rewards access - just navigate back

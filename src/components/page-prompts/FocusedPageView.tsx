@@ -5,6 +5,7 @@ import { ReadingPageDisplay } from '@/components/reading/ReadingPageDisplay';
 import { useReadingPreferences } from '@/hooks/useReadingPreferences';
 import { useRealTimeInlineEdit } from '@/hooks/useRealTimeInlineEdit';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
+import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft } from 'lucide-react';
 import type { Page } from '@/types/book';
 
@@ -43,6 +44,26 @@ export function FocusedPageView({
     initialValue: page.title || '',
     fieldName: 'title',
     onSuccess: async (newTitle) => {
+      // Sync textOverlay.text with the updated title
+      const currentContent = page.content || {};
+      const hasTextOverlay = (currentContent as any)?.textOverlay?.enabled;
+      
+      if (hasTextOverlay) {
+        const updatedContent = {
+          ...currentContent,
+          textOverlay: {
+            ...(currentContent as any).textOverlay,
+            text: newTitle
+          }
+        };
+        
+        // Update content field to sync overlay text with title
+        await supabase
+          .from('pages')
+          .update({ content: updatedContent })
+          .eq('id', page.id);
+      }
+      
       // Regenerate word metadata when title is updated
       if (newTitle.trim()) {
         try {
@@ -50,7 +71,13 @@ export function FocusedPageView({
             pageId: page.id,
             bookId,
             title: newTitle,
-            currentContent: page.content
+            currentContent: hasTextOverlay ? {
+              ...currentContent,
+              textOverlay: {
+                ...(currentContent as any).textOverlay,
+                text: newTitle
+              }
+            } : currentContent
           });
         } catch (error) {
           console.error('Failed to regenerate word metadata after title update:', error);

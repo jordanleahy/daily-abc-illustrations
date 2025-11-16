@@ -442,16 +442,16 @@ export function getCharacterDetails(
   if (!guide) return [];
 
   const characterMap: Record<string, string> = {
-    'mama': 'Mama Bear: 5.5 feet tall (2.5x Little Brother\'s height), warm caramel brown #D9A066 fur with cream #F5E6D3 muzzle, gentle amber-brown eyes, small beauty mark on left cheek. CLOTHING: Cream #F5E6D3 cable-knit sweater with chunky knit texture, rolled collar, ribbed cuffs and hem, extends to mid-thigh, cozy oversized fit. AGE-ACCURATE SIZING: She towers over Little Brother.',
-    'mama bear': 'Mama Bear: 5.5 feet tall (2.5x Little Brother\'s height), warm caramel brown #D9A066 fur with cream #F5E6D3 muzzle, gentle amber-brown eyes, small beauty mark on left cheek. CLOTHING: Cream #F5E6D3 cable-knit sweater with chunky knit texture, rolled collar, ribbed cuffs and hem, extends to mid-thigh, cozy oversized fit. AGE-ACCURATE SIZING: She towers over Little Brother.',
-    'papa': 'Papa Bear: 6.5 feet tall (largest family member), deep chocolate brown #6B4A2C fur with darker #4A3520 saddle on back, medium brown eyes with laugh lines, broader square-shaped snout. CLOTHING: Red #E43F3F and black buffalo plaid flannel shirt (large squares pattern), button-down with rolled sleeves to forearms, chest pocket, white/cream thermal visible at neck, fitted shoulders with slightly loose waist. Right ear has small notch at tip.',
-    'papa bear': 'Papa Bear: 6.5 feet tall (largest family member), deep chocolate brown #6B4A2C fur with darker #4A3520 saddle on back, medium brown eyes with laugh lines, broader square-shaped snout. CLOTHING: Red #E43F3F and black buffalo plaid flannel shirt (large squares pattern), button-down with rolled sleeves to forearms, chest pocket, white/cream thermal visible at neck, fitted shoulders with slightly loose waist. Right ear has small notch at tip.',
-    'dandan': 'Big Sister Bear (DanDan, 7 years old): 4 feet tall, light honey brown #E8C59C fur with golden #F5D5A8 highlights, bright hazel #9B7653 eyes, white star patch on chest, 3 freckles on each side of nose. CLOTHING: Bright teal #40B5AD puffer jacket with puffy quilted texture, hood with fur trim, zippered, slightly oversized for growing room. Denim jeans or snow pants. CRITICAL SIZE: 1.6x TALLER than Chelson - her eyes are at the same height as the top of his head.',
-    'big sister': 'Big Sister Bear (DanDan, 7 years old): 4 feet tall, light honey brown #E8C59C fur with golden #F5D5A8 highlights, bright hazel #9B7653 eyes, white star patch on chest, 3 freckles on each side of nose. CLOTHING: Bright teal #40B5AD puffer jacket with puffy quilted texture, hood with fur trim, zippered, slightly oversized for growing room. Denim jeans or snow pants. CRITICAL SIZE: 1.6x TALLER than Chelson - her eyes are at the same height as the top of his head.',
-    'big sister bear': 'Big Sister Bear (DanDan, 7 years old): 4 feet tall, light honey brown #E8C59C fur with golden #F5D5A8 highlights, bright hazel #9B7653 eyes, white star patch on chest, 3 freckles on each side of nose. CLOTHING: Bright teal #40B5AD puffer jacket with puffy quilted texture, hood with fur trim, zippered, slightly oversized for growing room. Denim jeans or snow pants. CRITICAL SIZE: 1.6x TALLER than Chelson - her eyes are at the same height as the top of his head.',
-    'chelson': 'Little Brother Bear (Chelson, 3 years old): TODDLER size at 2.5 feet tall (only 0.6x DanDan\'s height - 62.5% of her height), fluffy golden fur with creamy white belly, oversized brown #6B4A2C eyes, round chubby toddler body with short stubby limbs. CLOTHING: SIGNATURE bright blue #7EB9E2 pom-pom beanie with red #E43F3F pom-pom and stripes (NEVER without it, wears it even inside), oversized chunky knit sweater in bright colors (red/blue/yellow) with too-long sleeves covering paws, matching striped scarf. His head reaches only to DanDan\'s chest/shoulder.',
-    'little brother': 'Little Brother Bear (Chelson, 3 years old): TODDLER size at 2.5 feet tall (only 0.6x DanDan\'s height - 62.5% of her height), fluffy golden fur with creamy white belly, oversized brown #6B4A2C eyes, round chubby toddler body with short stubby limbs. CLOTHING: SIGNATURE bright blue #7EB9E2 pom-pom beanie with red #E43F3F pom-pom and stripes (NEVER without it, wears it even inside), oversized chunky knit sweater in bright colors (red/blue/yellow) with too-long sleeves covering paws, matching striped scarf. His head reaches only to DanDan\'s chest/shoulder.',
-    'little brother bear': 'Little Brother Bear (Chelson, 3 years old): TODDLER size at 2.5 feet tall (only 0.6x DanDan\'s height - 62.5% of her height), fluffy golden fur with creamy white belly, oversized brown #6B4A2C eyes, round chubby toddler body with short stubby limbs. CLOTHING: SIGNATURE bright blue #7EB9E2 pom-pom beanie with red #E43F3F pom-pom and stripes (NEVER without it, wears it even inside), oversized chunky knit sweater in bright colors (red/blue/yellow) with too-long sleeves covering paws, matching striped scarf. His head reaches only to DanDan\'s chest/shoulder.',
+    'mama': 'Mama Bear: 5.5 feet tall (2.5x Little Brother\'s height), warm caramel brown #D9A066 fur with cream #F5E6D3 muzzle. FACE: Large almond-shaped warm brown #6B4A2C eyes (wide-set), soft arched eyebrows, rounded gentle muzzle with closed-mouth smile, medium rounded forward-facing ears with cream interior, small beauty mark on left cheek. PAW PADS: Soft pink #FFB3BA. CLOTHING: Cream #F5E6D3 cable-knit sweater with chunky knit texture, rolled collar, ribbed cuffs and hem, extends to mid-thigh, cozy oversized fit. BODY LANGUAGE: Nurturing posture, paws clasped or holding objects with both paws, gentle forward lean when walking, upright sitting with good posture. AGE-ACCURATE SIZING: She towers over Little Brother.',
+    'mama bear': 'Mama Bear: 5.5 feet tall (2.5x Little Brother\'s height), warm caramel brown #D9A066 fur with cream #F5E6D3 muzzle. FACE: Large almond-shaped warm brown #6B4A2C eyes (wide-set), soft arched eyebrows, rounded gentle muzzle with closed-mouth smile, medium rounded forward-facing ears with cream interior, small beauty mark on left cheek. PAW PADS: Soft pink #FFB3BA. CLOTHING: Cream #F5E6D3 cable-knit sweater with chunky knit texture, rolled collar, ribbed cuffs and hem, extends to mid-thigh, cozy oversized fit. BODY LANGUAGE: Nurturing posture, paws clasped or holding objects with both paws, gentle forward lean when walking, upright sitting with good posture. AGE-ACCURATE SIZING: She towers over Little Brother.',
+    'papa': 'Papa Bear: 6.5 feet tall (largest family member), deep chocolate brown #6B4A2C fur with darker #4A3520 saddle on back. FACE: Round friendly medium brown #8B6F47 eyes with laugh lines, thick expressive eyebrows often raised playfully, square masculine muzzle with broad warm smile, large rounded ears slightly back-facing, right ear has small notch at tip. PAW PADS: Dark chocolate brown #4A3520. CLOTHING: Red #E43F3F and black buffalo plaid flannel shirt (large squares pattern), button-down with rolled sleeves to forearms, chest pocket, white/cream thermal visible at neck, fitted shoulders with slightly loose waist. BODY LANGUAGE: Confident stance with chest out, wide striding gait, hands on hips or gesturing expressively, protective posture near family.',
+    'papa bear': 'Papa Bear: 6.5 feet tall (largest family member), deep chocolate brown #6B4A2C fur with darker #4A3520 saddle on back. FACE: Round friendly medium brown #8B6F47 eyes with laugh lines, thick expressive eyebrows often raised playfully, square masculine muzzle with broad warm smile, large rounded ears slightly back-facing, right ear has small notch at tip. PAW PADS: Dark chocolate brown #4A3520. CLOTHING: Red #E43F3F and black buffalo plaid flannel shirt (large squares pattern), button-down with rolled sleeves to forearms, chest pocket, white/cream thermal visible at neck, fitted shoulders with slightly loose waist. BODY LANGUAGE: Confident stance with chest out, wide striding gait, hands on hips or gesturing expressively, protective posture near family.',
+    'dandan': 'Big Sister Bear (DanDan, 7 years old): 4 feet tall, light honey brown #E8C59C fur with golden #F5D5A8 highlights. FACE: Bright hazel #9B7653 almond-shaped eyes sparkling with curiosity, arched playful eyebrows, small rounded muzzle, upright alert ears, white star patch on chest, 3 small freckles on each side of nose bridge. PAW PADS: Light golden #F5D5A8. CLOTHING: Bright teal #40B5AD puffer jacket with puffy quilted texture, hood with fur trim, zippered, slightly oversized for growing room. Denim jeans or snow pants. BODY LANGUAGE: Energetic bouncy movements, stands on tiptoes when excited, dynamic poses mid-motion, leans forward eagerly, expressive gestures with paws. CRITICAL SIZE: 1.6x TALLER than Chelson - her eyes are at the same height as the top of his head.',
+    'big sister': 'Big Sister Bear (DanDan, 7 years old): 4 feet tall, light honey brown #E8C59C fur with golden #F5D5A8 highlights. FACE: Bright hazel #9B7653 almond-shaped eyes sparkling with curiosity, arched playful eyebrows, small rounded muzzle, upright alert ears, white star patch on chest, 3 small freckles on each side of nose bridge. PAW PADS: Light golden #F5D5A8. CLOTHING: Bright teal #40B5AD puffer jacket with puffy quilted texture, hood with fur trim, zippered, slightly oversized for growing room. Denim jeans or snow pants. BODY LANGUAGE: Energetic bouncy movements, stands on tiptoes when excited, dynamic poses mid-motion, leans forward eagerly, expressive gestures with paws. CRITICAL SIZE: 1.6x TALLER than Chelson - her eyes are at the same height as the top of his head.',
+    'big sister bear': 'Big Sister Bear (DanDan, 7 years old): 4 feet tall, light honey brown #E8C59C fur with golden #F5D5A8 highlights. FACE: Bright hazel #9B7653 almond-shaped eyes sparkling with curiosity, arched playful eyebrows, small rounded muzzle, upright alert ears, white star patch on chest, 3 small freckles on each side of nose bridge. PAW PADS: Light golden #F5D5A8. CLOTHING: Bright teal #40B5AD puffer jacket with puffy quilted texture, hood with fur trim, zippered, slightly oversized for growing room. Denim jeans or snow pants. BODY LANGUAGE: Energetic bouncy movements, stands on tiptoes when excited, dynamic poses mid-motion, leans forward eagerly, expressive gestures with paws. CRITICAL SIZE: 1.6x TALLER than Chelson - her eyes are at the same height as the top of his head.',
+    'chelson': 'Little Brother Bear (Chelson, 3 years old): TODDLER size at 2.5 feet tall (only 0.6x DanDan\'s height - 62.5% of her height), fluffy golden fur with creamy white belly. FACE: Oversized round brown #6B4A2C eyes (huge in proportion to face), tiny button nose, very short rounded muzzle, small rounded ears that stick out, rosy cheeks, sweet innocent expression, tiny whisker dots. PAW PADS: Soft baby pink #FFC4C9. CLOTHING: SIGNATURE bright blue #7EB9E2 pom-pom beanie with red #E43F3F pom-pom and stripes (NEVER without it, wears it even inside), oversized chunky knit sweater in bright colors (red/blue/yellow) with too-long sleeves covering paws, matching striped scarf. BODY LANGUAGE: Toddler waddle with arms out for balance, sits with legs splayed, reaches up toward adults, clutches toys/objects to chest, follows siblings closely. His head reaches only to DanDan\'s chest/shoulder.',
+    'little brother': 'Little Brother Bear (Chelson, 3 years old): TODDLER size at 2.5 feet tall (only 0.6x DanDan\'s height - 62.5% of her height), fluffy golden fur with creamy white belly. FACE: Oversized round brown #6B4A2C eyes (huge in proportion to face), tiny button nose, very short rounded muzzle, small rounded ears that stick out, rosy cheeks, sweet innocent expression, tiny whisker dots. PAW PADS: Soft baby pink #FFC4C9. CLOTHING: SIGNATURE bright blue #7EB9E2 pom-pom beanie with red #E43F3F pom-pom and stripes (NEVER without it, wears it even inside), oversized chunky knit sweater in bright colors (red/blue/yellow) with too-long sleeves covering paws, matching striped scarf. BODY LANGUAGE: Toddler waddle with arms out for balance, sits with legs splayed, reaches up toward adults, clutches toys/objects to chest, follows siblings closely. His head reaches only to DanDan\'s chest/shoulder.',
+    'little brother bear': 'Little Brother Bear (Chelson, 3 years old): TODDLER size at 2.5 feet tall (only 0.6x DanDan\'s height - 62.5% of her height), fluffy golden fur with creamy white belly. FACE: Oversized round brown #6B4A2C eyes (huge in proportion to face), tiny button nose, very short rounded muzzle, small rounded ears that stick out, rosy cheeks, sweet innocent expression, tiny whisker dots. PAW PADS: Soft baby pink #FFC4C9. CLOTHING: SIGNATURE bright blue #7EB9E2 pom-pom beanie with red #E43F3F pom-pom and stripes (NEVER without it, wears it even inside), oversized chunky knit sweater in bright colors (red/blue/yellow) with too-long sleeves covering paws, matching striped scarf. BODY LANGUAGE: Toddler waddle with arms out for balance, sits with legs splayed, reaches up toward adults, clutches toys/objects to chest, follows siblings closely. His head reaches only to DanDan\'s chest/shoulder.',
   };
 
   const results: Array<{ name: string; details: string }> = [];
@@ -475,7 +475,7 @@ export function getSettingDetails(styleGuideKey: string): string {
   if (!guide) return '';
 
   if (styleGuideKey === 'bear-stories') {
-    return 'The Gondola House visible in background: warm amber-glowing windows, rich wood tones, stone chimney with gentle smoke. Soft ice blue sky, purple-tinted mountain peaks in distance. Golden afternoon light creating warm rim lighting on characters. Red gondola cabins on cables add pops of color. Cozy, magical, family-centered warmth.';
+    return `THE GONDOLA HOUSE ARCHITECTURE: Charming alpine timber structure with rich walnut brown #6B4423 wood beams and warm honey brown #D9A066 planked walls. Large panoramic windows with warm amber #FFB366 glow from interior lighting. Wraparound wooden deck with carved railings. Gray stone #8B8680 chimney with gentle white smoke curling upward. Red-painted door. SETTING: The house straddles a gondola cable line - the cable runs directly through an open tunnel/archway in the house structure. Red #E43F3F gondola cabins visible on cables passing through. Snow-covered alpine environment with pristine white #FFFFFF snow (blue #E3F2FD shadows). Distant purple-tinted #B8B5D6 mountain peaks against soft ice blue #E3F2FD sky. Snow textures: Smooth powder in undisturbed areas, sculpted drifts near house, crystalline sparkle #F0F8FF in sunlight. Evergreen trees with snow-laden branches frame the scene.`;
   }
 
   return guide.settingDetails || '';
@@ -504,12 +504,79 @@ export function getCriticalConstraints(styleGuideKey: string): string[] {
 
   if (styleGuideKey === 'bear-stories') {
     return [
+      'Chelson (Little Brother) MUST wear his blue #7EB9E2 pom-pom beanie with red #E43F3F pom-pom in EVERY image - even indoors',
+      'Character size ratios must be exact: Papa 6.5ft, Mama 5.5ft, DanDan 4ft, Chelson 2.5ft',
+      'Use ONLY the specified hex color codes - no variations or approximations',
+      'Snowboarding ONLY - never skiing (no ski poles, no skis, no ski equipment)',
+      'All four bears must maintain their exact facial features, fur colors, and identifying marks',
+      'Mama Bear always has beauty mark on left cheek, Papa has notch in right ear, DanDan has white star chest patch and 6 freckles',
+      'COMPOSITION: Characters should interact naturally - eye contact, physical proximity, engaged body language',
+      'FRAMING: Family scenes show all characters at appropriate size ratios, background includes Gondola House when contextually appropriate',
+      'CHARACTER INTERACTION: Chelson often looks up at siblings/parents, DanDan protective/guiding toward Chelson, parents display nurturing body language',
+      'CONTINUITY: Each character\'s clothing remains consistent across all pages unless explicitly changed for story reason',
       '🚫 ABSOLUTELY NO TEXT OR SIGNS anywhere in the image (Gondola House has NO readable text)',
-      '❄️ Snowboarding equipment ONLY - NEVER skiing (Burton brand style snowboards)',
-      '📏 AGE-ACCURATE SIZING: Little Brother (Chelson) is TODDLER-sized, significantly smaller than adults. DanDan is 1.6x taller than Chelson.',
-      '🎨 Maintain exact color palette: ice blue sky, warm amber lighting, rich wood tones'
     ];
   }
 
   return [];
 }
+
+/**
+ * Get time-of-day specific lighting details for atmospheric consistency
+ */
+export function getTimeOfDayLighting(styleGuideKey: string, timeOfDay: 'morning' | 'midday' | 'afternoon' | 'sunset' | 'evening' | 'interior'): string {
+  if (styleGuideKey !== 'bear-stories') return '';
+
+  const lightingMap: Record<string, string> = {
+    'morning': 'Soft golden morning light with long shadows. Cool blue #E3F2FD undertones in snow shadows. Warm peachy #FFDAB9 rim lighting on fur. Sky transitions from soft pink #FFE4E1 at horizon to ice blue #E3F2FD above. Fresh, crisp atmosphere.',
+    'midday': 'Bright overhead sunlight creating short shadows. Brilliant white #FFFFFF snow with subtle blue #E3F2FD shadows. Strong contrast between light and shadow. Clear ice blue #E3F2FD sky. High-key lighting with natural brightness.',
+    'afternoon': 'Warm golden light #FFD700 angled from side. Rich amber #FFB366 highlights on fur and wood. Longer shadows stretching across snow. Sky deepens to rich blue #87CEEB. Cozy, inviting warmth.',
+    'sunset': 'MAGICAL golden hour with intense warm light. Orange #FF8C42 and pink #FFB3D9 sky gradients. Purple #B8B5D6 mountain silhouettes. Long dramatic shadows in deep blue #4A5F8C. Amber #FFB366 rim lighting creates glowing fur edges. Romantic, dreamy atmosphere.',
+    'evening': 'Soft twilight with purple-blue #8B9DC3 ambient light. Cool color temperature overall. Warm amber #FFB366 glow from Gondola House windows providing contrast. First stars visible. Peaceful, calm mood.',
+    'interior': 'Warm amber #FFB366 interior lighting from lamps and fireplace. Soft glowing quality. Cozy orange #FF8C42 highlights. Cool blue #E3F2FD light streaming through windows provides contrast. Intimate, homey atmosphere with soft shadows.',
+  };
+
+  return lightingMap[timeOfDay] || lightingMap['afternoon'];
+}
+
+/**
+ * Get complete color palette with hex codes for exact color matching
+ */
+export function getColorPaletteDetails(styleGuideKey: string): string {
+  if (styleGuideKey !== 'bear-stories') return '';
+
+  return `COLOR PALETTE (use exact hex codes):
+  
+SNOW & ICE:
+- Fresh powder snow: #FFFFFF
+- Snow shadows: #E3F2FD (soft ice blue)
+- Snow highlights/sparkle: #F0F8FF (crystalline)
+- Ice formations: #D6EAF8 (pale blue-white)
+
+SKY & ATMOSPHERE:
+- Clear daytime sky: #E3F2FD to #87CEEB gradient
+- Sunrise/sunset sky: #FFE4E1 (peachy) to #FFB3D9 (pink) to #FF8C42 (orange)
+- Mountain distance tint: #B8B5D6 (purple-gray)
+- Evening twilight: #8B9DC3 (purple-blue)
+
+GONDOLA HOUSE:
+- Wood beams: #6B4423 (walnut brown)
+- Wood planks: #D9A066 (honey brown)
+- Stone chimney: #8B8680 (gray)
+- Window glow: #FFB366 (warm amber)
+- Red door: #E43F3F
+
+LIGHTING:
+- Golden sunlight: #FFD700
+- Warm interior light: #FFB366 (amber) to #FF8C42 (orange)
+- Rim lighting: #FFDAB9 (peachy-gold)
+- Fire glow: #FF8C42 (orange)
+
+CHARACTER CLOTHING:
+- Mama's sweater: #F5E6D3 (cream)
+- Papa's shirt red: #E43F3F
+- DanDan's jacket: #40B5AD (teal)
+- Chelson's beanie: #7EB9E2 (blue) with #E43F3F pom-pom
+- Gondola cabins: #E43F3F (red)`;
+}
+

@@ -844,7 +844,7 @@ export default function GoogleChat() {
     await updateSessionName({ sessionId, name });
   }, [updateSessionName]);
 
-  const handleQAImageUpload = useCallback(async (imageDataUrl: string) => {
+  const handleEditorImageUpload = useCallback(async (imageDataUrl: string) => {
     // If book is created, update actual page image
     if (createdBookId && dbPages) {
       const currentPage = dbPages.find(p => p.page_number === currentEditorPage);
@@ -939,7 +939,7 @@ export default function GoogleChat() {
         try {
           await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
         } catch (error) {
-          console.error('Failed to save QA image:', error);
+          console.error('Failed to save editor image:', error);
         }
       }
       
@@ -954,7 +954,7 @@ export default function GoogleChat() {
     }
   }, [editorPageImages, currentEditorPage, pageCount, currentSessionId, updateQAPageImages, createdBookId, dbPages, user, queryClient]);
 
-  const handleQAPageNavigation = useCallback((direction: 'next' | 'prev') => {
+  const handleEditorPageNavigation = useCallback((direction: 'next' | 'prev') => {
     // If book is created, use actual page numbers from database
     if (isBookCreated && dbPages && dbPages.length > 0) {
       const sortedPages = [...dbPages].sort((a, b) => a.page_number - b.page_number);
@@ -978,7 +978,7 @@ export default function GoogleChat() {
     }
   }, [parsedPageDetails, currentEditorPage, educationalFocus, isBookCreated, dbPages]);
 
-  const handleRemoveQAImage = useCallback(async (pageNumber: number) => {
+  const handleRemoveEditorImage = useCallback(async (pageNumber: number) => {
     if (createdBookId) {
       // For created books, just enable replace mode to show upload UI
       setReplacePageMode(prev => ({ ...prev, [pageNumber]: true }));
@@ -992,7 +992,7 @@ export default function GoogleChat() {
         try {
           await updateQAPageImages({ sessionId: currentSessionId, qaPageImages: updatedImages });
         } catch (error) {
-          console.error('Failed to remove QA image:', error);
+          console.error('Failed to remove editor image:', error);
         }
       }
     }
@@ -1355,9 +1355,9 @@ export default function GoogleChat() {
                 getCurrentPagePrompt={getCurrentPagePrompt}
                 createBookMutation={createBookMutation}
                 onClose={() => setShowEditor(false)}
-                onNavigate={handleQAPageNavigation}
-                onImageUpload={handleQAImageUpload}
-                onRemoveImage={handleRemoveQAImage}
+                onNavigate={handleEditorPageNavigation}
+                onImageUpload={handleEditorImageUpload}
+                onRemoveImage={handleRemoveEditorImage}
                 onCreateBook={handleCreateBook}
                 coverPageId={coverPageId}
                 bookId={createdBookId}
@@ -1392,9 +1392,9 @@ export default function GoogleChat() {
               getCurrentPagePrompt={getCurrentPagePrompt}
               createBookMutation={createBookMutation}
               onClose={() => setShowEditor(false)}
-              onNavigate={handleQAPageNavigation}
-              onImageUpload={handleQAImageUpload}
-              onRemoveImage={handleRemoveQAImage}
+              onNavigate={handleEditorPageNavigation}
+              onImageUpload={handleEditorImageUpload}
+              onRemoveImage={handleRemoveEditorImage}
               onCreateBook={handleCreateBook}
               coverPageId={coverPageId}
               bookId={createdBookId}

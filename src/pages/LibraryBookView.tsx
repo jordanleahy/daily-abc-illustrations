@@ -128,6 +128,7 @@ export default function LibraryBookView() {
           alt={`Letter ${page.letter} - ${page.title}`}
           priority={page.id === pages[startingPageIndex]?.id}
           className="rounded-lg w-full h-full object-contain"
+          disableHoverEffects={true}
         />
       )}
     />

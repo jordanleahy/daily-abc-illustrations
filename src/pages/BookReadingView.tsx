@@ -128,6 +128,7 @@ export default function BookReadingView() {
           className="rounded-lg"
           showUploadButton={false}
           isFirstImage={page.id === pages[startingPageIndex]?.id}
+          disableHoverEffects={true}
         />
       )}
     />

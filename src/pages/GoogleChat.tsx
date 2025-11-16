@@ -1108,7 +1108,7 @@ export default function GoogleChat() {
     fetchCoverPage();
   }, [createdBookId]);
 
-  // Handle thumbnail image upload (separate from cover page)
+  // Handle thumbnail image upload (uploads to cover page)
   const handleThumbnailUpload = useCallback(async (file: File) => {
     if (!createdBookId) {
       console.error('Book not created yet');
@@ -1116,46 +1116,100 @@ export default function GoogleChat() {
     }
     
     try {
-      console.log('Uploading thumbnail...');
+      console.log('Uploading cover image...');
       
-      // Upload to Supabase Storage
+      // 1. Ensure cover page exists
+      const { data: existingPage } = await supabase
+        .from('pages')
+        .select('*')
+        .eq('book_id', createdBookId)
+        .eq('page_type', 'cover')
+        .maybeSingle();
+      
+      let coverPageId: string;
+      
+      if (!existingPage) {
+        // Create cover page if it doesn't exist
+        const { data: newPage, error: createError } = await supabase
+          .from('pages')
+          .insert({
+            book_id: createdBookId,
+            page_number: 0,
+            letter: 'Cover',
+            title: 'Cover',
+            page_type: 'cover',
+            content: {}
+          })
+          .select()
+          .single();
+        
+        if (createError || !newPage) throw createError || new Error('Failed to create cover page');
+        coverPageId = newPage.id;
+      } else {
+        coverPageId = existingPage.id;
+      }
+      
+      // 2. Upload to Supabase Storage
       const { data: uploadData, error: uploadError } = await supabase.storage
         .from('page-images')
-        .upload(`${user?.id}/${createdBookId}/thumbnail-${Date.now()}.png`, file, {
+        .upload(`${user?.id}/${createdBookId}/cover-${Date.now()}.png`, file, {
           cacheControl: '3600',
           upsert: false,
         });
       
       if (uploadError) throw uploadError;
       
-      // Get public URL
+      // 3. Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('page-images')
         .getPublicUrl(uploadData.path);
       
-      // Update book with thumbnail URL
-      const { error: updateError } = await supabase
-        .from('books')
-        .update({ thumbnail_url: publicUrl })
-        .eq('id', createdBookId);
+      // 4. Get next version number
+      const { data: existingImages } = await supabase
+        .from('page_image_urls')
+        .select('version_number')
+        .eq('page_id', coverPageId)
+        .order('version_number', { ascending: false })
+        .limit(1);
       
-      if (updateError) throw updateError;
+      const nextVersion = (existingImages?.[0]?.version_number || 0) + 1;
       
-      // Invalidate book query to refetch with new thumbnail
-      await queryClient.invalidateQueries({ queryKey: ['book', createdBookId] });
-      await queryClient.invalidateQueries({ queryKey: ['book-thumbnail', createdBookId] });
+      // 5. Mark all previous versions as not latest
+      await supabase
+        .from('page_image_urls')
+        .update({ is_latest: false })
+        .eq('page_id', coverPageId);
+      
+      // 6. Insert new image record
+      const { error: insertError } = await supabase
+        .from('page_image_urls')
+        .insert({
+          page_id: coverPageId,
+          book_id: createdBookId,
+          user_id: user?.id,
+          version_number: nextVersion,
+          image_url: publicUrl,
+          source_type: 'user_uploaded',
+          is_latest: true,
+        });
+      
+      if (insertError) throw insertError;
+      
+      // 7. Invalidate queries
+      await queryClient.invalidateQueries({ queryKey: ['book-cover-image', createdBookId] });
+      await queryClient.invalidateQueries({ queryKey: ['book-cover-page', createdBookId] });
+      await queryClient.invalidateQueries({ queryKey: ['book-page-images', createdBookId] });
       await queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
       
-      // Also update the local state immediately
       setThumbnailUrl(publicUrl);
       
-      console.log('Thumbnail uploaded successfully!');
+      console.log('Cover image uploaded successfully!');
     } catch (error: any) {
-      console.error('Thumbnail upload error:', error);
+      console.error('Cover upload error:', error);
     }
   }, [createdBookId, user, queryClient]);
 
-  // Fetch current thumbnail URL
+  // Fetch thumbnail URL from cover page
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   
   useEffect(() => {
@@ -1164,19 +1218,24 @@ export default function GoogleChat() {
       return;
     }
     
-    const fetchThumbnail = async () => {
+    const fetchCoverImage = async () => {
       const { data, error } = await supabase
-        .from('books')
-        .select('thumbnail_url')
-        .eq('id', createdBookId)
-        .single();
+        .from('page_image_urls')
+        .select(`
+          image_url,
+          pages!inner(page_type)
+        `)
+        .eq('book_id', createdBookId)
+        .eq('pages.page_type', 'cover')
+        .eq('is_latest', true)
+        .maybeSingle();
       
-      if (!error && data?.thumbnail_url) {
-        setThumbnailUrl(data.thumbnail_url);
+      if (!error && data?.image_url) {
+        setThumbnailUrl(data.image_url);
       }
     };
     
-    fetchThumbnail();
+    fetchCoverImage();
   }, [createdBookId]);
 
   return (

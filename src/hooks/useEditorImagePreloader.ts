@@ -6,9 +6,9 @@ import { useImagePreloader } from './useImagePreloader';
  * Prioritizes first 6 images for immediate display
  */
 export function useEditorImagePreloader(books: any[] | undefined) {
-  // Extract image URLs from books (coverImageUrl, thumbnail_url, or firstPageImageUrl)
+  // Extract image URLs from books (coverImageUrl or firstPageImageUrl)
   const imageUrls = books?.map(book => 
-    book.coverImageUrl || book.thumbnail_url || book.firstPageImageUrl
+    book.coverImageUrl || book.firstPageImageUrl
   ).filter(Boolean) || [];
   
   // Split into priority (first 6) and remaining batches

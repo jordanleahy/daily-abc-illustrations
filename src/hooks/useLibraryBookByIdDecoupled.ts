@@ -16,8 +16,7 @@ export const useLibraryBookByIdDecoupled = (bookId: string | undefined) => {
           book_description,
           total_pages,
           created_at,
-          updated_at,
-          thumbnail_url
+          updated_at
         `)
         .eq('id', bookId)
         .eq('is_library_book', true)

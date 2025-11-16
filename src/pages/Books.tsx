@@ -469,8 +469,8 @@ export default function Books() {
     setPageTextOverlays(overlays);
   }, [dbPages]);
 
-  // QA Panel Handlers
-  const handleQAPageNavigation = useCallback((direction: 'next' | 'prev') => {
+  // Editor Panel Handlers
+  const handleEditorPageNavigation = useCallback((direction: 'next' | 'prev') => {
     if (!dbPages || dbPages.length === 0) return;
     
     const sortedPages = [...dbPages].sort((a, b) => a.page_number - b.page_number);
@@ -483,7 +483,7 @@ export default function Books() {
     }
   }, [dbPages, currentEditorPage]);
 
-  const handleQAImageUpload = useCallback(async (imageDataUrl: string) => {
+  const handleEditorImageUpload = useCallback(async (imageDataUrl: string) => {
     if (!selectedBookId || !dbPages) return;
     
     const currentPage = dbPages.find(p => p.page_number === currentEditorPage);
@@ -567,7 +567,7 @@ export default function Books() {
     }
   }, [selectedBookId, dbPages, currentEditorPage, user, queryClient]);
 
-  const handleRemoveQAImage = useCallback(async (pageNumber: number) => {
+  const handleRemoveEditorImage = useCallback(async (pageNumber: number) => {
     // Enable replace mode to show upload UI
     setReplacePageMode(prev => ({ ...prev, [pageNumber]: true }));
   }, []);
@@ -811,9 +811,9 @@ export default function Books() {
               getCurrentPagePrompt={getCurrentPagePrompt}
               createBookMutation={{ isSuccess: true }}
               onClose={() => setMobileEditorOpen(false)}
-              onNavigate={handleQAPageNavigation}
-              onImageUpload={handleQAImageUpload}
-              onRemoveImage={handleRemoveQAImage}
+              onNavigate={handleEditorPageNavigation}
+              onImageUpload={handleEditorImageUpload}
+              onRemoveImage={handleRemoveEditorImage}
               onCreateBook={() => {}}
               coverPageId={coverPageId}
               bookId={selectedBookId}
@@ -846,9 +846,9 @@ export default function Books() {
             getCurrentPagePrompt={getCurrentPagePrompt}
             createBookMutation={{ isSuccess: true }}
             onClose={() => setMobileEditorOpen(false)}
-            onNavigate={handleQAPageNavigation}
-            onImageUpload={handleQAImageUpload}
-            onRemoveImage={handleRemoveQAImage}
+            onNavigate={handleEditorPageNavigation}
+            onImageUpload={handleEditorImageUpload}
+            onRemoveImage={handleRemoveEditorImage}
             onCreateBook={() => {}}
             coverPageId={coverPageId}
             bookId={selectedBookId}

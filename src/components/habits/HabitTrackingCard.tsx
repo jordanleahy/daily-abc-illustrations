@@ -218,7 +218,7 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                 className="flex-1"
                 variant="destructive"
               >
-                Not Done (-{habit.coin_amount})
+                Wrong
               </Button>
             </div>
           ) : (
@@ -238,7 +238,7 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                 className="flex-1"
                 variant="destructive"
               >
-                Not Done (-{habit.coin_amount})
+                Wrong
               </Button>
             </div>
           )

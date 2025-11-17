@@ -82,9 +82,12 @@ export const useLibraryBooksDecoupled = () => {
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
-  // Real-time subscription for library books updates
+  // Real-time subscriptions for library books updates
   useEffect(() => {
-    const channel = supabase
+    console.log('📡 Setting up library books real-time subscriptions');
+
+    // Subscribe to books table changes
+    const booksChannel = supabase
       .channel('library-books-changes')
       .on(
         'postgres_changes',
@@ -95,15 +98,51 @@ export const useLibraryBooksDecoupled = () => {
           filter: 'is_library_book=eq.true'
         },
         (payload) => {
-          console.log('Library book changed:', payload);
-          // Invalidate and refetch when any library book changes
+          console.log('📚 Library book changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ['library-books-decoupled'] });
+        }
+      )
+      .subscribe();
+
+    // Subscribe to daily_published changes (when books are published/unpublished)
+    const dailyPublishedChannel = supabase
+      .channel('library-daily-published-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'daily_published'
+        },
+        (payload) => {
+          console.log('📅 Daily published changed:', payload);
+          queryClient.invalidateQueries({ queryKey: ['library-books-decoupled'] });
+        }
+      )
+      .subscribe();
+
+    // Subscribe to seo_metadata changes (for cover images)
+    const seoMetadataChannel = supabase
+      .channel('library-seo-metadata-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'seo_metadata'
+        },
+        (payload) => {
+          console.log('🖼️ SEO metadata changed:', payload);
           queryClient.invalidateQueries({ queryKey: ['library-books-decoupled'] });
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      console.log('🔌 Cleaning up library books subscriptions');
+      supabase.removeChannel(booksChannel);
+      supabase.removeChannel(dailyPublishedChannel);
+      supabase.removeChannel(seoMetadataChannel);
     };
   }, [queryClient]);
 

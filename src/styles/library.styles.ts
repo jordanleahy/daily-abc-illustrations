@@ -22,7 +22,7 @@ export const LIBRARY_STYLES = {
     chevron: 'w-4 h-4',
     wrapper: 'w-full touch-pan-x pl-4 md:pl-6',
     content: '-ml-4 md:-ml-6',
-    item: 'pl-4 md:pl-6 basis-[75vw] sm:basis-[65vw] md:basis-[45vw] lg:basis-[30vw]',
+    item: 'pl-4 md:pl-6 basis-[50vw] sm:basis-[45vw] md:basis-[35vw] lg:basis-[22vw]',
   },
   
   emptyState: {

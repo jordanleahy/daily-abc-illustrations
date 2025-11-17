@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { BOOK_TYPES } from '@/config/bookTypes';
 import { cn } from '@/lib/utils';
 import abcBookCover from '@/assets/book-covers/abc-cover.png';
+import numbersBookCover from '@/assets/book-covers/numbers-cover.png';
 import colorsBookCover from '@/assets/book-covers/colors-cover.png';
 import shapesBookCover from '@/assets/book-covers/shapes-cover.png';
 import emotionsBookCover from '@/assets/book-covers/emotions-cover.png';
@@ -30,6 +31,7 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
           const IconComponent = bookType.icon;
           const coverImages: Record<string, string> = {
             abc: abcBookCover,
+            numbers: numbersBookCover,
             colors: colorsBookCover,
             shapes: shapesBookCover,
             emotions: emotionsBookCover,

@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { isValidUUID } from '@/utils/uuid';
+import { queryKeys } from '@/hooks/queryKeys';
 
 export const useLibraryBookByIdDecoupled = (bookId: string | undefined) => {
   return useQuery({
-    queryKey: ['library-book-decoupled', bookId],
+    queryKey: queryKeys.library.bookById(bookId || ''),
     queryFn: async () => {
       if (!bookId || !isValidUUID(bookId)) return null;
 

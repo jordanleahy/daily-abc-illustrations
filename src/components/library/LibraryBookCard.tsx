@@ -7,6 +7,10 @@ import { trackBookView } from '@/utils/bookViewTracking';
 import { useAuthContext } from '@/contexts/AuthContext';
 import type { LibraryBook } from '@/types/library';
 import type { LandingLibraryBook } from '@/types/book-extended';
+import { LIBRARY_ROUTES } from '@/config/routes';
+import { LIBRARY_TEXT } from '@/config/libraryText';
+import { LIBRARY_CONFIG } from '@/config/library';
+import { LIBRARY_STYLES } from '@/styles/library.styles';
 
 interface LibraryBookCardProps {
   book: LibraryBook | LandingLibraryBook;
@@ -18,8 +22,8 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const { ref: cardRef, inView: isInView } = useIntersectionObserver({
-    threshold: 0.1,
-    rootMargin: '100px',
+    threshold: LIBRARY_CONFIG.INTERSECTION_THRESHOLD,
+    rootMargin: LIBRARY_CONFIG.INTERSECTION_ROOT_MARGIN,
     triggerOnce: true,
   });
 
@@ -28,7 +32,7 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
   const handleCardClick = () => {
     if (user) {
       trackBookView(book.id);
-      navigate(`/library/${book.id}`);
+      navigate(LIBRARY_ROUTES.BOOK_DETAIL(book.id));
     } else {
       navigate('/pricing');
     }
@@ -44,8 +48,8 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
     const deltaX = Math.abs(e.clientX - dragStart.x);
     const deltaY = Math.abs(e.clientY - dragStart.y);
     
-    // If movement < 10px, treat as click
-    if (deltaX < 10 && deltaY < 10) {
+    // If movement is below threshold, treat as click
+    if (deltaX < LIBRARY_CONFIG.DRAG_THRESHOLD_PX && deltaY < LIBRARY_CONFIG.DRAG_THRESHOLD_PX) {
       handleCardClick();
     }
     
@@ -64,38 +68,38 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
       ref={cardRef}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
-      className="group relative bg-card hover:bg-accent/50 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 md:hover:scale-[1.02] md:hover:shadow-lg active:scale-[0.98] select-none"
+      className={LIBRARY_STYLES.bookCard.container}
     >
       {book.is_highlighted && (
-        <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground z-10 text-xs">
-          Featured
+        <Badge className={LIBRARY_STYLES.bookCard.badge}>
+          {LIBRARY_TEXT.BADGES.FEATURED}
         </Badge>
       )}
       
-      <div className="aspect-square relative overflow-hidden bg-muted">
+      <div className={LIBRARY_STYLES.bookCard.imageContainer}>
         {isInView && coverImage ? (
           <BookImage
             src={coverImage}
             alt={book.book_name}
             priority={priority}
-            className="w-full h-full object-cover"
+            className={LIBRARY_STYLES.bookCard.image}
             enableMobileSave={true}
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <div className="text-6xl font-bold text-primary/20">
+          <div className={LIBRARY_STYLES.bookCard.placeholder.container}>
+            <div className={LIBRARY_STYLES.bookCard.placeholder.text}>
               {book.book_name.charAt(0)}
             </div>
           </div>
         )}
       </div>
 
-      <div className="p-3">
-        <h3 className="font-semibold text-sm line-clamp-2 mb-1">
+      <div className={LIBRARY_STYLES.bookCard.content}>
+        <h3 className={LIBRARY_STYLES.bookCard.title}>
           {book.book_name}
         </h3>
         {targetAge && (
-          <p className="text-xs text-muted-foreground">
+          <p className={LIBRARY_STYLES.bookCard.targetAge}>
             {targetAge}
           </p>
         )}

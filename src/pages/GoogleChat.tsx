@@ -285,34 +285,36 @@ export default function GoogleChat() {
     return pageCount;
   }, [isBookCreated, dbPages, pageCount]);
 
-  // Helper to get current page prompt - uses database if book is created, otherwise parses messages
+  // Helper to get current page prompt - ALWAYS prioritizes stored prompts from qa_page_prompts
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
-    // If book is created, get from database
+    // PRIORITY 1: Always check stored prompts from "View Outline" first
+    if (editorPagePrompts[pageNum]) {
+      console.log(`[Prompt Source] Using stored session prompt for page ${pageNum} (length: ${editorPagePrompts[pageNum].length})`);
+      return editorPagePrompts[pageNum];
+    }
+
+    // PRIORITY 2: If book is created, get from database
     if (isBookCreated && dbPages && dbPages.length > 0) {
       const page = dbPages.find(p => p.page_number === pageNum);
       if (!page) return null;
       
-      // For educational focus page, check if it's the educational page
-      if (page.page_type === 'educational' && editorPagePrompts[2]) {
-        return editorPagePrompts[2];
-      }
-      
-      // Try to get from editorPagePrompts first (user-uploaded or edited)
-      if (editorPagePrompts[pageNum]) {
-        return editorPagePrompts[pageNum];
-      }
-      
       // Try to get full prompt from content.imagePrompt (stores unlimited text)
       const fullPrompt = (page.content as any)?.imagePrompt;
       if (fullPrompt) {
+        console.log(`[Prompt Source] Using database prompt for page ${pageNum} (length: ${fullPrompt.length})`);
         return fullPrompt;
       }
       
       // Fallback to page description (may be truncated)
-      return page.description || null;
+      if (page.description) {
+        console.log(`[Prompt Source] Using database description for page ${pageNum} (length: ${page.description.length})`);
+        return page.description;
+      }
+      
+      return null;
     }
     
-    // Pre-creation: parse from messages
+    // PRIORITY 3: Pre-creation - parse from messages
     if (pageNum === 1) {
       // Cover page (Page 1)
       const lastCoverMsg = [...messages].reverse().find(
@@ -336,12 +338,13 @@ export default function GoogleChat() {
       // Replace "book cover" with "square card cover" to ensure 1:1 aspect ratio
       description = description.replace(/\bbook cover\b/gi, 'square card cover');
       
-      // Format with title (but no text overlay instruction for image generation)
+      console.log(`[Prompt Source] Using parsed cover prompt for page ${pageNum} (length: ${description.length})`);
       return `${description}`;
     }
     
     if (pageNum === 2 && educationalFocus) {
       // Educational focus page (Page 2) - return just the image prompt without title
+      console.log(`[Prompt Source] Using educational focus prompt for page ${pageNum} (length: ${educationalFocus.imagePrompt.length})`);
       return educationalFocus.imagePrompt;
     }
     
@@ -349,9 +352,13 @@ export default function GoogleChat() {
     if (parsedPageDetails && pageNum > 2) {
       const pageIndex = pageNum - 3; // Page 3 = index 0, Page 4 = index 1, etc.
       const pageDetail = parsedPageDetails[pageIndex];
-      return pageDetail ? editorPagePrompts[pageNum] || pageDetail.description : null;
+      if (pageDetail?.description) {
+        console.log(`[Prompt Source] Using parsed prompt for page ${pageNum} (length: ${pageDetail.description.length})`);
+        return pageDetail.description;
+      }
     }
     
+    console.warn(`[Prompt Source] No prompt found for page ${pageNum}`);
     return null;
   }, [isBookCreated, dbPages, editorPagePrompts, educationalFocus, parsedPageDetails, messages]);
 
@@ -705,9 +712,10 @@ export default function GoogleChat() {
       }
       
       
-      // Reset image/prompt state for next book (keep panel open)
+      // Keep prompts available for copying after book creation
+      // Only clear images (prompts preserved from qa_page_prompts for traceability)
       setEditorPageImages({});
-      setEditorPagePrompts({});
+      // NOTE: editorPagePrompts intentionally NOT cleared to preserve original prompts
     } catch (error) {
       console.error('Book creation error:', error);
       // Error toast is handled by the mutation

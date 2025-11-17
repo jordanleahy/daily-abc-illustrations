@@ -289,10 +289,6 @@ export function BookEditorPanel({
     if (prompt) {
       try {
         await copyToClipboard(prompt);
-        
-        // Open AI Studio in new tab immediately after copying
-        window.open('https://aistudio.google.com/prompts/new_chat', '_blank');
-        
         setShowConfirmation(true);
       
         // Mark this page as copied

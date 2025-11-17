@@ -722,26 +722,88 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     const contentCount = pages.filter((p: any) => p.page_type === 'content').length;
     console.log(`Successfully created ${pages.length} pages: ${coverCount} cover, ${eduCount} educational, ${contentCount} content`);
 
-    // Generate system prompts for all pages using existing infrastructure
-    console.log('Generating page system prompts using page data...');
-
-    try {
-      const { data: promptsData, error: promptsError } = await supabase.functions.invoke(
-        'generate-page-system-prompts',
-        {
-          body: { bookId: book.id }
-        }
-      );
-
-      if (promptsError) {
-        console.error('Error generating page prompts:', promptsError);
-        // Don't fail book creation - prompts can be generated later
+    // Generate system prompts for all pages
+    // Use fullPrompts from chat if provided, otherwise generate new ones
+    if (fullPrompts && Object.keys(fullPrompts).length > 0) {
+      console.log(`Using ${Object.keys(fullPrompts).length} full prompts from chat session...`);
+      
+      // Get created pages with their IDs
+      const { data: createdPages, error: fetchPagesError } = await supabase
+        .from('pages')
+        .select('id, page_number')
+        .eq('book_id', book.id);
+      
+      if (fetchPagesError || !createdPages) {
+        console.error('Error fetching pages for prompts:', fetchPagesError);
       } else {
-        console.log(`Generated ${promptsData.promptsCreated} system prompts for ${promptsData.totalPages} pages`);
+        let promptsCreated = 0;
+        
+        for (const [pageNumStr, promptContent] of Object.entries(fullPrompts)) {
+          const pageNumber = parseInt(pageNumStr, 10);
+          const page = createdPages.find((p: any) => p.page_number === pageNumber);
+          
+          if (!page) {
+            console.warn(`Page ${pageNumber} not found for full prompt`);
+            continue;
+          }
+          
+          try {
+            // Get version number
+            const { data: versionData } = await supabase
+              .rpc('get_next_page_prompt_version_number', { p_page_id: page.id });
+            
+            const versionNumber = versionData || 1;
+            
+            // Insert the full prompt from chat - NO TRUNCATION
+            const { error: insertError } = await supabase
+              .from('page_system_prompts')
+              .insert({
+                page_id: page.id,
+                book_id: book.id,
+                user_id: userId,
+                version_number: versionNumber,
+                content: promptContent, // Use full prompt exactly as provided
+                is_latest: true,
+                is_deployed: true,
+                deployed_at: new Date().toISOString(),
+                source_type: 'chat_generated',
+                prompt_status: 'complete'
+              });
+            
+            if (insertError) {
+              console.error(`Failed to insert prompt for page ${pageNumber}:`, insertError);
+            } else {
+              promptsCreated++;
+            }
+          } catch (error) {
+            console.error(`Error processing prompt for page ${pageNumber}:`, error);
+          }
+        }
+        
+        console.log(`Created ${promptsCreated} page system prompts from chat session`);
       }
-    } catch (error) {
-      console.error('Failed to generate page prompts:', error);
-      // Continue - book is created, prompts can be regenerated later
+    } else {
+      // No full prompts provided - generate new ones
+      console.log('Generating page system prompts using page data...');
+
+      try {
+        const { data: promptsData, error: promptsError } = await supabase.functions.invoke(
+          'generate-page-system-prompts',
+          {
+            body: { bookId: book.id }
+          }
+        );
+
+        if (promptsError) {
+          console.error('Error generating page prompts:', promptsError);
+          // Don't fail book creation - prompts can be generated later
+        } else {
+          console.log(`Generated ${promptsData.promptsCreated} system prompts for ${promptsData.totalPages} pages`);
+        }
+      } catch (error) {
+        console.error('Failed to generate page prompts:', error);
+        // Continue - book is created, prompts can be regenerated later
+      }
     }
 
     // Create default style guide for the book

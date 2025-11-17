@@ -129,7 +129,7 @@ All colors MUST be HSL.
   }
   
   .touch-pan-x {
-    touch-action: pan-x pinch-zoom;
+    touch-action: pan-y pan-x pinch-zoom;
     overscroll-behavior-x: contain;
     -webkit-overflow-scrolling: touch;
   }

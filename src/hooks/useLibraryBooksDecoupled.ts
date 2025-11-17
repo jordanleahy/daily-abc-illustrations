@@ -17,7 +17,8 @@ export const useLibraryBooksDecoupled = () => {
           book_description,
           created_at,
           updated_at,
-          is_highlighted
+          is_highlighted,
+          metadata
         `)
         .eq('is_library_book', true)
         .order('created_at', { ascending: false });

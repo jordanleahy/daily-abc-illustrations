@@ -1,12 +1,12 @@
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
+import { CategorizedBookSections } from '@/components/library';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
 import { useHomeImagePreloader } from '@/hooks/useHomeImagePreloader';
 import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { LoadingState } from '@/components/ui/loading-state';
-import { format, formatDistanceToNow } from 'date-fns';
 import { CoinCounter } from '@/components/ui/coin-counter';
 import { getTimeBasedGreeting } from '@/utils/timeUtils';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -14,9 +14,7 @@ import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-
-import { BookImage } from '@/components/ui/book-image';
-import { BookOpen } from 'lucide-react';
+import { format } from 'date-fns';
 
 const Index = () => {
   const { isAuthenticated } = useAuthContext();
@@ -70,10 +68,8 @@ const Index = () => {
       return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
     });
   
-  // Get recently viewed books (books with activity, already sorted by most recent)
-  const recentBooks = libraryItems
-    .filter(book => book.last_viewed_at) // Only books that have been viewed
-    .slice(0, 10); // Take top 10 most recently viewed
+  // Limit books to top 5 per category for performance
+  const limitedLibraryItems = libraryItems.slice(0, 30);
   
   const isLoading = isLoadingKids || isLoadingHabits;
   const timeOfDay = getTimeBasedGreeting();
@@ -145,43 +141,13 @@ const Index = () => {
           </div>
         )}
 
-        {/* Recently Viewed Books */}
-        {recentBooks.length > 0 && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold">Recently Viewed</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {recentBooks.map((book) => (
-                <div
-                  key={book.id}
-                  onClick={() => navigate(`/library/${book.id}/detail`)}
-                  className="group relative bg-card hover:bg-accent/50 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
-                >
-                  <div className="aspect-square relative overflow-hidden bg-muted">
-                    {book.cover_image ? (
-                      <BookImage
-                        src={book.cover_image}
-                        alt={book.book_name}
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <BookOpen className="h-12 w-12 text-muted-foreground" />
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="p-4">
-                    <h3 className="font-semibold text-lg line-clamp-2 mb-2">{book.book_name}</h3>
-                    {book.last_viewed_at && (
-                      <p className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(book.last_viewed_at), { addSuffix: true })}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* Categorized Book Sections */}
+        {libraryItems.length > 0 && (
+          <CategorizedBookSections
+            books={limitedLibraryItems}
+            maxBooksPerCategory={5}
+            showViewAllLinks={true}
+          />
         )}
       </div>
     </StandardPageLayout>

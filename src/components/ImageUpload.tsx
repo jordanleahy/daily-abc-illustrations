@@ -286,7 +286,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                 variant="outline"
                 size="lg"
                 className="w-full mx-auto"
-                disabled={disabled || isProcessing}
+                disabled={isProcessing}
               >
                 <Clipboard className="h-5 w-5 mr-2" />
                 Paste from Clipboard
@@ -301,7 +301,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                   variant="outline"
                   size="lg"
                   className="w-full mx-auto mt-2"
-                  disabled={disabled || isProcessing}
+                  disabled={isProcessing}
                 >
                   <Copy className="h-5 w-5 mr-2" />
                   Copy Prompt

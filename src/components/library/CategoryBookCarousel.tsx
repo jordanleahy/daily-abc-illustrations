@@ -67,10 +67,11 @@ export const CategoryBookCarousel = memo(({
           containScroll: 'trimSnaps',
           skipSnaps: false,
           inViewThreshold: 0.7,
+          startIndex: 0,
         }}
         className="w-full touch-pan-x"
       >
-        <CarouselContent className="-ml-4">
+        <CarouselContent className="-ml-2">
           {displayBooks.map((book, index) => (
             <CarouselItem
               key={book.id}

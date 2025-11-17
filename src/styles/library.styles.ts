@@ -15,7 +15,7 @@ export const LIBRARY_STYLES = {
   
   carousel: {
     section: 'py-8 -mx-4 md:-mx-6',
-    header: 'px-4 md:px-6 mb-4 flex items-center justify-center md:justify-start',
+    header: 'px-4 md:px-6 mb-4 flex items-center justify-center',
     title: 'text-2xl font-bold flex items-center gap-2',
     icon: 'w-6 h-6',
     viewAllButton: 'flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors',

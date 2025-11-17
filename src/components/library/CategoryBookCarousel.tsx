@@ -62,12 +62,11 @@ export const CategoryBookCarousel = memo(({
       {/* Carousel - edge to edge */}
       <Carousel
         opts={{
-          align: 'start',
+          align: 'center',
           dragFree: true,
-          containScroll: 'trimSnaps',
+          containScroll: false,
           skipSnaps: false,
           inViewThreshold: 0.7,
-          startIndex: 0,
         }}
         className="w-full touch-pan-x"
       >
@@ -75,7 +74,7 @@ export const CategoryBookCarousel = memo(({
           {displayBooks.map((book, index) => (
             <CarouselItem
               key={book.id}
-              className="pl-4 basis-[82vw] sm:basis-[70vw] md:basis-[45vw] lg:basis-[30vw]"
+              className="pl-2 basis-[75vw] sm:basis-[65vw] md:basis-[45vw] lg:basis-[30vw]"
             >
               <LibraryBookCard
                 book={book}

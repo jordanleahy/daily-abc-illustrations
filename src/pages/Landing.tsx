@@ -4,7 +4,7 @@ import { CategorizedBookSections } from '@/components/library';
 import { SignupSection } from '@/components/landing/SignupSection';
 import { useLandingPageData } from '@/hooks/useLandingPageData';
 import { useLandingPageImagePreloader } from '@/hooks/useLandingPageImagePreloader';
-import { useDailyPublishedSubscription } from '@/hooks/useDailyPublishedSubscription';
+import { useLandingPageSubscription } from '@/hooks/useLandingPageSubscription';
 import { useGA4 } from '@/hooks/useGA4';
 import { useEffect } from 'react';
 import { MetaHead } from '@/components/common/MetaHead';
@@ -14,8 +14,8 @@ const Landing = () => {
   const { trackEvent } = useGA4();
   const { data: landingData } = useLandingPageData();
   
-  // Enable real-time updates for daily published content
-  useDailyPublishedSubscription();
+  // Enable real-time updates for all landing page content
+  useLandingPageSubscription();
   
   // Preload images progressively
   useLandingPageImagePreloader(landingData);

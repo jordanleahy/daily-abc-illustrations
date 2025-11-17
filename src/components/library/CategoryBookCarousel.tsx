@@ -41,7 +41,7 @@ export const CategoryBookCarousel = memo(({
   };
 
   return (
-    <section className="py-6 -mx-4 md:-mx-6">
+    <section className="py-6 -mx-4 md:-mx-6 touch-pan-x">
       {/* Section header - stays within padding */}
       <div className="px-4 md:px-6 mb-4 flex items-center justify-between">
         <h2 className="text-2xl font-bold flex items-center gap-2">
@@ -64,8 +64,11 @@ export const CategoryBookCarousel = memo(({
         opts={{
           align: 'start',
           dragFree: true,
+          containScroll: 'trimSnaps',
+          skipSnaps: false,
+          inViewThreshold: 0.7,
         }}
-        className="w-full"
+        className="w-full touch-pan-x"
       >
         <CarouselContent className="-ml-4">
           {displayBooks.map((book, index) => (

@@ -125,4 +125,10 @@ All colors MUST be HSL.
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+  
+  .touch-pan-x {
+    touch-action: pan-x pinch-zoom;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+  }
 }

@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookImage } from '@/components/ui/book-image';
 import { Badge } from '@/components/ui/badge';
@@ -23,6 +23,8 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
     triggerOnce: true,
   });
 
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+
   const handleCardClick = () => {
     if (user) {
       trackBookView(book.id);
@@ -30,6 +32,24 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
     } else {
       navigate('/pricing');
     }
+  };
+
+  const handlePointerDown = (e: React.PointerEvent) => {
+    setDragStart({ x: e.clientX, y: e.clientY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (!dragStart) return;
+    
+    const deltaX = Math.abs(e.clientX - dragStart.x);
+    const deltaY = Math.abs(e.clientY - dragStart.y);
+    
+    // If movement < 10px, treat as click
+    if (deltaX < 10 && deltaY < 10) {
+      handleCardClick();
+    }
+    
+    setDragStart(null);
   };
 
   // Extract metadata
@@ -42,8 +62,9 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
   return (
     <div
       ref={cardRef}
-      onClick={handleCardClick}
-      className="group relative bg-card hover:bg-accent/50 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+      onPointerDown={handlePointerDown}
+      onPointerUp={handlePointerUp}
+      className="group relative bg-card hover:bg-accent/50 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 md:hover:scale-[1.02] md:hover:shadow-lg active:scale-[0.98] select-none"
     >
       {book.is_highlighted && (
         <Badge className="absolute top-2 right-2 bg-primary text-primary-foreground z-10 text-xs">

@@ -11,6 +11,7 @@ import emotionsBookCover from '@/assets/book-covers/emotions-cover.png';
 import oppositesBookCover from '@/assets/book-covers/opposites-cover.png';
 import rhymingBookCover from '@/assets/book-covers/rhyming-cover.png';
 import sightWordsBookCover from '@/assets/book-covers/sight-words-cover.png';
+import animalsBookCover from '@/assets/book-covers/animals-cover.png';
 
 interface EmptyStateProps {
   onBookTypeSelect: (bookType: typeof BOOK_TYPES[0]) => void;
@@ -39,6 +40,7 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
             opposites: oppositesBookCover,
             rhyming: rhymingBookCover,
             'sight-words': sightWordsBookCover,
+            animals: animalsBookCover,
           };
           const coverImage = coverImages[bookType.id];
           

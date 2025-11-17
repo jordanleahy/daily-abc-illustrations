@@ -9,6 +9,10 @@ import {
 import { LibraryBookCard } from './LibraryBookCard';
 import type { LibraryBook } from '@/types/library';
 import type { LandingLibraryBook } from '@/types/book-extended';
+import { LIBRARY_ROUTES } from '@/config/routes';
+import { LIBRARY_TEXT } from '@/config/libraryText';
+import { LIBRARY_CONFIG } from '@/config/library';
+import { LIBRARY_STYLES } from '@/styles/library.styles';
 
 interface CategoryBookCarouselProps {
   categoryId: string;
@@ -37,48 +41,42 @@ export const CategoryBookCarousel = memo(({
   if (displayBooks.length === 0) return null;
 
   const handleViewAll = () => {
-    navigate(`/library?category=${categoryId}`);
+    navigate(LIBRARY_ROUTES.CATEGORY(categoryId));
   };
 
   return (
-    <section className="py-8 -mx-4 md:-mx-6">
+    <section className={LIBRARY_STYLES.carousel.section}>
       {/* Section header - stays within padding */}
-      <div className="px-4 md:px-6 mb-4 flex items-center justify-center">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Icon className={`w-6 h-6 ${categoryColor}`} />
+      <div className={LIBRARY_STYLES.carousel.header}>
+        <h2 className={LIBRARY_STYLES.carousel.title}>
+          <Icon className={`${LIBRARY_STYLES.carousel.icon} ${categoryColor}`} />
           <span>{categoryLabel}</span>
         </h2>
         {showViewAll && (
           <button
             onClick={handleViewAll}
-            className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className={LIBRARY_STYLES.carousel.viewAllButton}
           >
-            View All
-            <ChevronRight className="w-4 h-4" />
+            {LIBRARY_TEXT.ACTIONS.VIEW_ALL}
+            <ChevronRight className={LIBRARY_STYLES.carousel.chevron} />
           </button>
         )}
       </div>
 
       {/* Carousel - edge to edge */}
       <Carousel
-        opts={{
-          align: 'center',
-          dragFree: true,
-          containScroll: false,
-          skipSnaps: false,
-          inViewThreshold: 0.7,
-        }}
-        className="w-full touch-pan-x"
+        opts={LIBRARY_CONFIG.CAROUSEL}
+        className={LIBRARY_STYLES.carousel.wrapper}
       >
-        <CarouselContent className="-ml-2">
+        <CarouselContent className={LIBRARY_STYLES.carousel.content}>
           {displayBooks.map((book, index) => (
             <CarouselItem
               key={book.id}
-              className="pl-2 basis-[75vw] sm:basis-[65vw] md:basis-[45vw] lg:basis-[30vw]"
+              className={LIBRARY_STYLES.carousel.item}
             >
               <LibraryBookCard
                 book={book}
-                priority={index < 3}
+                priority={index < LIBRARY_CONFIG.PRIORITY_IMAGE_COUNT}
               />
             </CarouselItem>
           ))}

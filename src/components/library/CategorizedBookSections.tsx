@@ -1,10 +1,13 @@
 import { memo, useMemo } from 'react';
-import { CategoryBookCarousel } from './CategoryBookCarousel';
-import { BOOK_TYPES } from '@/config/bookTypes';
-import { Card } from '@/components/ui/card';
 import { BookOpen } from 'lucide-react';
+import { BOOK_TYPES } from '@/config/bookTypes';
+import { CategoryBookCarousel } from './CategoryBookCarousel';
+import { Card } from '@/components/ui/card';
 import type { LibraryBook } from '@/types/library';
 import type { LandingLibraryBook } from '@/types/book-extended';
+import { LIBRARY_TEXT } from '@/config/libraryText';
+import { LIBRARY_CONFIG } from '@/config/library';
+import { LIBRARY_STYLES } from '@/styles/library.styles';
 
 interface CategorizedBookSectionsProps {
   books: (LibraryBook | LandingLibraryBook)[];
@@ -15,9 +18,9 @@ interface CategorizedBookSectionsProps {
 
 export const CategorizedBookSections = memo(({
   books,
-  showAllCategories = false,
+  showAllCategories = LIBRARY_CONFIG.SHOW_ALL_CATEGORIES,
   maxBooksPerCategory,
-  showViewAllLinks = false,
+  showViewAllLinks = LIBRARY_CONFIG.SHOW_VIEW_ALL_LINKS,
 }: CategorizedBookSectionsProps) => {
   
   // Group books by category type
@@ -43,43 +46,43 @@ export const CategorizedBookSections = memo(({
     });
   }, [booksByCategory, showAllCategories]);
 
-  // Show empty state if no books at all
+  // Early return for completely empty state
   if (books.length === 0) {
     return (
-      <Card className="p-8 text-center">
-        <BookOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-        <p className="text-muted-foreground">No books available yet</p>
+      <Card className={LIBRARY_STYLES.emptyState.card}>
+        <BookOpen className={LIBRARY_STYLES.emptyState.icon} />
+        <p className={LIBRARY_STYLES.emptyState.text}>{LIBRARY_TEXT.EMPTY_STATE.NO_BOOKS}</p>
       </Card>
     );
   }
 
-  // Show empty state if no categories have books
+  // Return message if no categories to show
   if (categoriesToShow.length === 0) {
     return (
-      <Card className="p-8 text-center">
-        <BookOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-        <p className="text-muted-foreground">No categorized books found</p>
+      <Card className={LIBRARY_STYLES.emptyState.card}>
+        <BookOpen className={LIBRARY_STYLES.emptyState.icon} />
+        <p className={LIBRARY_STYLES.emptyState.text}>{LIBRARY_TEXT.EMPTY_STATE.NO_CATEGORIES}</p>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-2">
-      {categoriesToShow.map(bookType => {
-        const categoryBooks = booksByCategory[bookType.id] || [];
+    <div className={LIBRARY_STYLES.page.content}>
+      {categoriesToShow.map((category) => {
+        const categoryBooks = booksByCategory[category.id] || [];
         
         // Skip empty categories unless showAllCategories is true
-        if (!showAllCategories && categoryBooks.length === 0) {
+        if (categoryBooks.length === 0 && !showAllCategories) {
           return null;
         }
 
         return (
           <CategoryBookCarousel
-            key={bookType.id}
-            categoryId={bookType.id}
-            categoryLabel={bookType.label}
-            categoryIcon={bookType.icon}
-            categoryColor={bookType.color}
+            key={category.id}
+            categoryId={category.id}
+            categoryLabel={category.label}
+            categoryIcon={category.icon}
+            categoryColor={category.color}
             books={categoryBooks}
             showViewAll={showViewAllLinks}
             maxBooks={maxBooksPerCategory}

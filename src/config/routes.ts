@@ -53,6 +53,15 @@ export const ROUTES = {
 } as const;
 
 /**
+ * Library-specific route builders
+ */
+export const LIBRARY_ROUTES = {
+  BASE: '/library',
+  BOOK_DETAIL: (bookId: string) => `/library/${bookId}`,
+  CATEGORY: (categoryId: string) => `/library?category=${categoryId}`,
+} as const;
+
+/**
  * Main navigation configuration
  */
 export const navigationConfig: RouteConfig[] = [

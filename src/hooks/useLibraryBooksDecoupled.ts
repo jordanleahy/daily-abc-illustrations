@@ -2,12 +2,16 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { LibraryBook } from '@/types/library';
+import { queryKeys } from '@/hooks/queryKeys';
+import { DB_CONSTANTS } from '@/config/database';
+import { LIBRARY_CONFIG } from '@/config/library';
+import { logger } from '@/utils/logger';
 
 export const useLibraryBooksDecoupled = () => {
   const queryClient = useQueryClient();
   
   const query = useQuery({
-    queryKey: ['library-books-decoupled'],
+    queryKey: queryKeys.library.books,
     queryFn: async () => {
       const { data, error } = await supabase
         .from('books')
@@ -48,7 +52,7 @@ export const useLibraryBooksDecoupled = () => {
               )
             `)
             .eq('book_id', book.id)
-            .eq('page_type', 'cover')
+            .eq('page_type', DB_CONSTANTS.PAGE_TYPES.COVER)
             .eq('page_image_urls.is_latest', true)
             .maybeSingle();
           
@@ -79,34 +83,34 @@ export const useLibraryBooksDecoupled = () => {
 
       return booksWithData;
     },
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: LIBRARY_CONFIG.CACHE_STALE_TIME_MS,
   });
 
   // Real-time subscriptions for library books updates
   useEffect(() => {
-    console.log('📡 Setting up library books real-time subscriptions');
+    logger.realtime('Setting up library books real-time subscriptions');
 
     // Subscribe to books table changes
     const booksChannel = supabase
-      .channel('library-books-changes')
+      .channel(DB_CONSTANTS.CHANNELS.LIBRARY_BOOKS)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
           table: 'books',
-          filter: 'is_library_book=eq.true'
+          filter: DB_CONSTANTS.FILTERS.IS_LIBRARY_BOOK
         },
         (payload) => {
-          console.log('📚 Library book changed:', payload);
-          queryClient.invalidateQueries({ queryKey: ['library-books-decoupled'] });
+          logger.realtime('Library book changed', payload);
+          queryClient.invalidateQueries({ queryKey: queryKeys.library.books });
         }
       )
       .subscribe();
 
     // Subscribe to daily_published changes (when books are published/unpublished)
     const dailyPublishedChannel = supabase
-      .channel('library-daily-published-changes')
+      .channel(DB_CONSTANTS.CHANNELS.LIBRARY_DAILY_PUBLISHED)
       .on(
         'postgres_changes',
         {
@@ -115,15 +119,15 @@ export const useLibraryBooksDecoupled = () => {
           table: 'daily_published'
         },
         (payload) => {
-          console.log('📅 Daily published changed:', payload);
-          queryClient.invalidateQueries({ queryKey: ['library-books-decoupled'] });
+          logger.realtime('Daily published changed', payload);
+          queryClient.invalidateQueries({ queryKey: queryKeys.library.books });
         }
       )
       .subscribe();
 
     // Subscribe to seo_metadata changes (for cover images)
     const seoMetadataChannel = supabase
-      .channel('library-seo-metadata-changes')
+      .channel(DB_CONSTANTS.CHANNELS.LIBRARY_SEO)
       .on(
         'postgres_changes',
         {
@@ -132,14 +136,14 @@ export const useLibraryBooksDecoupled = () => {
           table: 'seo_metadata'
         },
         (payload) => {
-          console.log('🖼️ SEO metadata changed:', payload);
-          queryClient.invalidateQueries({ queryKey: ['library-books-decoupled'] });
+          logger.realtime('SEO metadata changed', payload);
+          queryClient.invalidateQueries({ queryKey: queryKeys.library.books });
         }
       )
       .subscribe();
 
     return () => {
-      console.log('🔌 Cleaning up library books subscriptions');
+      logger.realtime('Cleaning up library books subscriptions');
       supabase.removeChannel(booksChannel);
       supabase.removeChannel(dailyPublishedChannel);
       supabase.removeChannel(seoMetadataChannel);

@@ -124,7 +124,12 @@ Create an inviting, colorful scene that captures the essence of "${book.bookName
 - Use vibrant colors and child-friendly illustration style
 - Professional children's book quality with clear, simple shapes
 
-${textOverlayEnabled ? `Include text overlay displaying '${book.bookName.toUpperCase()}' in large, clear, child-friendly letters integrated naturally into the scene.` : ''}
+${textOverlayEnabled ? `Include the book title "${book.bookName.toUpperCase()}" as a BIG, BUBBLY, CENTERED text overlay:
+- PLACEMENT: Centered horizontally and positioned in the upper-middle area of the cover
+- STYLE: Large bubble-letter font (rounded, playful, child-friendly)
+- SIZE: Extra large - the title should be the most prominent text element on the cover
+- DESIGN: Simple and clean with high contrast against the background for easy readability
+- The text should feel like a classic children's book title - bold, inviting, and fun` : ''}
 
 **SECTION 2: EDUCATIONAL FOCUS INFORMATION CARD (Lower portion or side panel)**
 Create a vibrant, clean educational information card with three distinct badge sections arranged vertically using ${book.characterTheme ? `${book.characterTheme}'s characteristic color palette` : 'bright, cheerful colors (red, blue, green, yellow, pink pastels)'}:
@@ -384,7 +389,7 @@ function generateCoverPromptLayered(
   if (!textOverlayEnabled) {
     sceneDescription += ' CRITICAL: Generate cover illustration WITHOUT the book title text. No visible text of any kind - pure visual cover design. Title will be added as overlay later.';
   } else {
-    sceneDescription += ` Include the title "${book.bookName}" prominently displayed with large, clear, child-friendly lettering.`;
+    sceneDescription += ` Include the title "${book.bookName}" as a BIG, BUBBLY, CENTERED text overlay: extra large bubble-letter font, centered horizontally in the upper-middle area, rounded playful style, high contrast, simple and bold like a classic children's book cover.`;
   }
   
   // Use layered architecture if style guide provided

@@ -24,7 +24,7 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
         Choose a book type to start creating your educational content
       </p>
       
-      <div className="grid w-full max-w-2xl gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 pb-8">
+      <div className="grid w-full max-w-2xl gap-2 sm:gap-4 grid-cols-2 pb-8">
         {BOOK_TYPES.map((bookType) => {
           const IconComponent = bookType.icon;
           const coverImages: Record<string, string> = {
@@ -42,9 +42,8 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
               onClick={() => onBookTypeSelect(bookType)}
               variant="outline"
               className={cn(
-                "h-auto flex-col items-start gap-2 p-0 text-left overflow-hidden",
-                "hover:border-primary hover:bg-primary/5",
-                coverImage && "sm:p-4"
+                "h-auto flex-col items-start gap-0 p-0 text-left overflow-hidden relative group",
+                "hover:border-primary hover:bg-primary/5"
               )}
             >
               {coverImage ? (
@@ -52,23 +51,21 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
                   <img 
                     src={coverImage} 
                     alt={bookType.label}
-                    className="w-full h-auto sm:hidden"
+                    className="w-full h-auto"
                   />
-                  <div className="hidden sm:flex items-center gap-2 w-full">
-                    <IconComponent className="h-5 w-5" />
-                    <span className="font-semibold">{bookType.label}</span>
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 sm:p-4">
+                    <span className="font-semibold text-white text-sm sm:text-base">
+                      {bookType.label}
+                    </span>
                   </div>
-                  <p className="hidden sm:block text-xs text-muted-foreground">
-                    {bookType.description}
-                  </p>
                 </>
               ) : (
-                <div className="flex flex-col gap-2 p-4 w-full">
+                <div className="flex flex-col gap-2 p-3 sm:p-4 w-full">
                   <div className="flex items-center gap-2">
-                    <IconComponent className="h-5 w-5" />
-                    <span className="font-semibold">{bookType.label}</span>
+                    <IconComponent className="h-4 w-4 sm:h-5 sm:w-5" />
+                    <span className="font-semibold text-sm sm:text-base">{bookType.label}</span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground hidden sm:block">
                     {bookType.description}
                   </p>
                 </div>

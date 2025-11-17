@@ -43,7 +43,7 @@ export const CategoryBookCarousel = memo(({
   return (
     <section className="py-8 -mx-4 md:-mx-6">
       {/* Section header - stays within padding */}
-      <div className="px-4 md:px-6 mb-4 flex items-center justify-between">
+      <div className="px-4 md:px-6 mb-4 flex items-center justify-center">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <Icon className={`w-6 h-6 ${categoryColor}`} />
           <span>{categoryLabel}</span>

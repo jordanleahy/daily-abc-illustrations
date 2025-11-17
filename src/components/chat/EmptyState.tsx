@@ -5,6 +5,7 @@ import { BOOK_TYPES } from '@/config/bookTypes';
 import { cn } from '@/lib/utils';
 import colorsBookCover from '@/assets/book-covers/colors-cover.png';
 import shapesBookCover from '@/assets/book-covers/shapes-cover.png';
+import emotionsBookCover from '@/assets/book-covers/emotions-cover.png';
 
 interface EmptyStateProps {
   onBookTypeSelect: (bookType: typeof BOOK_TYPES[0]) => void;
@@ -27,6 +28,7 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
           const coverImages: Record<string, string> = {
             colors: colorsBookCover,
             shapes: shapesBookCover,
+            emotions: emotionsBookCover,
           };
           const coverImage = coverImages[bookType.id];
           

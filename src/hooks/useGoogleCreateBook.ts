@@ -23,6 +23,8 @@ export interface CreateBookParams {
   referenceBookId?: string;
   qaImages?: Record<string, string>;
   targetWords?: string[]; // Target words for vocabulary practice (from recommendations)
+  sessionId?: string; // Chat session ID for traceability
+  storedPrompts?: Record<number, string>; // Pre-extracted prompts from qa_page_prompts
 }
 
 interface CreateBookResponse {
@@ -45,30 +47,37 @@ export const useGoogleCreateBook = () => {
       // Parse educational focus from conversation
       const educationalFocus = parseEducationalFocus(params.conversationHistory);
 
-      // Extract full prompts from conversation for storage
-      const fullPrompts: Record<number, string> = {};
-      const conversationText = params.conversationHistory
-        .filter(m => m.role === 'assistant')
-        .map(m => m.content)
-        .join('\n');
+      // Use pre-stored prompts if available (preferred), otherwise extract from conversation
+      let fullPrompts: Record<number, string> = {};
       
-      // Extract cover prompt
-      const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
-      if (coverMatch) {
-        fullPrompts[1] = coverMatch[0];
-      }
-      
-      // Extract educational focus prompt
-      const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
-      if (eduMatch) {
-        fullPrompts[2] = eduMatch[0];
-      }
-      
-      // Extract numbered page prompts
-      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi);
-      for (const match of pageMatches) {
-        const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
-        fullPrompts[pageNum] = match[0];
+      if (params.storedPrompts && Object.keys(params.storedPrompts).length > 0) {
+        console.log('[Book Creation] Using pre-stored prompts from qa_page_prompts');
+        fullPrompts = params.storedPrompts;
+      } else {
+        console.log('[Book Creation] No stored prompts found, extracting from conversation (fallback)');
+        const conversationText = params.conversationHistory
+          .filter(m => m.role === 'assistant')
+          .map(m => m.content)
+          .join('\n');
+        
+        // Extract cover prompt
+        const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
+        if (coverMatch) {
+          fullPrompts[1] = coverMatch[0];
+        }
+        
+        // Extract educational focus prompt
+        const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
+        if (eduMatch) {
+          fullPrompts[2] = eduMatch[0];
+        }
+        
+        // Extract numbered page prompts
+        const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi);
+        for (const match of pageMatches) {
+          const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
+          fullPrompts[pageNum] = match[0];
+        }
       }
 
       const { data, error } = await supabase.functions.invoke('google-create-book', {
@@ -83,6 +92,7 @@ export const useGoogleCreateBook = () => {
           educationalFocus: educationalFocus || undefined,
           fullPrompts: fullPrompts,
           targetWords: params.targetWords || undefined,
+          sessionId: params.sessionId || undefined,
         },
       });
 

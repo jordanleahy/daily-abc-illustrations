@@ -10,7 +10,7 @@ export const LIBRARY_CONFIG = {
   
   // Carousel
   CAROUSEL: {
-    align: 'center' as const,
+    align: 'start' as const,
     dragFree: true,
     containScroll: false,
     skipSnaps: false,

@@ -15,14 +15,14 @@ export const LIBRARY_STYLES = {
   
   carousel: {
     section: 'py-8 -mx-4 md:-mx-6',
-    header: 'px-4 md:px-6 mb-4 flex items-center justify-center',
+    header: 'px-4 md:px-6 mb-4 flex items-center justify-center md:justify-start',
     title: 'text-2xl font-bold flex items-center gap-2',
     icon: 'w-6 h-6',
     viewAllButton: 'flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors',
     chevron: 'w-4 h-4',
-    wrapper: 'w-full touch-pan-x',
-    content: '-ml-2',
-    item: 'pl-2 basis-[75vw] sm:basis-[65vw] md:basis-[45vw] lg:basis-[30vw]',
+    wrapper: 'w-full touch-pan-x pl-4 md:pl-6',
+    content: '-ml-4 md:-ml-6',
+    item: 'pl-4 md:pl-6 basis-[75vw] sm:basis-[65vw] md:basis-[45vw] lg:basis-[30vw]',
   },
   
   emptyState: {

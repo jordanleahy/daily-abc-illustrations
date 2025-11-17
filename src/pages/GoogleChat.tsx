@@ -338,6 +338,13 @@ export default function GoogleChat() {
       // Replace "book cover" with "square card cover" to ensure 1:1 aspect ratio
       description = description.replace(/\bbook cover\b/gi, 'square card cover');
       
+      // Ensure centered title instruction exists (safety net)
+      if (!description.toLowerCase().includes('centered') && 
+          !description.toLowerCase().includes('center')) {
+        console.log('[Prompt Retrieval] Adding centered title instruction to cover prompt');
+        description = `${description}\n\nDISPLAY TITLE: Centered, large, bold letters taking up 50-60% of space.`;
+      }
+      
       console.log(`[Prompt Source] Using parsed cover prompt for page ${pageNum} (length: ${description.length})`);
       return `${description}`;
     }
@@ -822,8 +829,23 @@ export default function GoogleChat() {
       // Extract cover prompt
       const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
       if (coverMatch) {
-        fullPrompts[1] = coverMatch[0];
-        console.log('[Prompt Storage] Cover prompt length:', coverMatch[0].length);
+        let coverPrompt = coverMatch[0];
+        
+        // Normalize: Ensure title positioning is explicit
+        if (!coverPrompt.toLowerCase().includes('centered') && 
+            !coverPrompt.toLowerCase().includes('center')) {
+          console.log('[Prompt Normalization] Adding centered title instruction to cover prompt');
+          
+          // Extract book title if available
+          const titleMatch = conversationText.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
+          const bookTitle = titleMatch ? titleMatch[1].trim() : '[TITLE]';
+          
+          // Append title positioning instruction
+          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
+        }
+        
+        fullPrompts[1] = coverPrompt;
+        console.log('[Prompt Storage] Cover prompt length:', coverPrompt.length);
       }
       
       // Extract educational focus prompt

@@ -47,11 +47,18 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
               )}
             >
               {coverImage ? (
-                <img 
-                  src={coverImage} 
-                  alt={bookType.label}
-                  className="w-full h-auto"
-                />
+                <>
+                  <img 
+                    src={coverImage} 
+                    alt={bookType.label}
+                    className="w-full h-auto"
+                  />
+                  <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 sm:p-4">
+                    <span className="font-semibold text-white text-sm sm:text-base">
+                      {bookType.label}
+                    </span>
+                  </div>
+                </>
               ) : (
                 <div className="flex flex-col gap-2 p-3 sm:p-4 w-full">
                   <div className="flex items-center gap-2">

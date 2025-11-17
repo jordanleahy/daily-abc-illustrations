@@ -35,7 +35,7 @@ export const PageLayout = ({
   const shouldShowFooter = !isAuthenticated && !loading && location.pathname !== '/auth';
   
   return (
-    <div className={cn('min-h-screen bg-background flex flex-col', className)}>
+    <div className={cn('min-h-screen bg-background flex flex-col overflow-x-hidden', className)}>
       {showHeader && (
         <Header 
           title={title} 

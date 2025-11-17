@@ -14,7 +14,7 @@ export const PageContent = ({
 }: PageContentProps) => {
   return (
     <main className={cn(
-      'flex-1 flex flex-col mt-6',
+      'flex-1 flex flex-col mt-6 overflow-x-hidden',
       fullHeight && 'min-h-[calc(100vh-3.5rem)]', // Account for header height
       className
     )}>

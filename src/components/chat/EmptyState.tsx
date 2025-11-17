@@ -44,26 +44,17 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
               onClick={() => onBookTypeSelect(bookType)}
               variant="outline"
               className={cn(
-                "h-auto flex-col items-start gap-2 p-0 text-left overflow-hidden",
+                "h-auto flex-col items-start gap-2 text-left overflow-hidden",
                 "hover:border-primary hover:bg-primary/5",
-                coverImage && "sm:p-4"
+                coverImage ? "p-0" : "p-4"
               )}
             >
               {coverImage ? (
-                <>
-                  <img 
-                    src={coverImage} 
-                    alt={bookType.label}
-                    className="w-full h-auto sm:hidden"
-                  />
-                  <div className="hidden sm:flex items-center gap-2 w-full">
-                    <IconComponent className="h-5 w-5" />
-                    <span className="font-semibold">{bookType.label}</span>
-                  </div>
-                  <p className="hidden sm:block text-xs text-muted-foreground">
-                    {bookType.description}
-                  </p>
-                </>
+                <img 
+                  src={coverImage} 
+                  alt={bookType.label}
+                  className="w-full h-auto"
+                />
               ) : (
                 <div className="flex flex-col gap-2 p-4 w-full">
                   <div className="flex items-center gap-2">

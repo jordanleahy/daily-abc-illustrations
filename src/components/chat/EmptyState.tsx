@@ -3,6 +3,7 @@ import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { BOOK_TYPES } from '@/config/bookTypes';
 import { cn } from '@/lib/utils';
+import abcBookCover from '@/assets/book-covers/abc-cover.png';
 import colorsBookCover from '@/assets/book-covers/colors-cover.png';
 import shapesBookCover from '@/assets/book-covers/shapes-cover.png';
 import emotionsBookCover from '@/assets/book-covers/emotions-cover.png';
@@ -28,6 +29,7 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
         {BOOK_TYPES.map((bookType) => {
           const IconComponent = bookType.icon;
           const coverImages: Record<string, string> = {
+            abc: abcBookCover,
             colors: colorsBookCover,
             shapes: shapesBookCover,
             emotions: emotionsBookCover,

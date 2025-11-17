@@ -43,7 +43,7 @@ export function WordCarousel({
                 fontWeight: isCurrent ? '800' : '600',
               }}
             >
-              {index === 0 ? `"${wordObj.word}"` : wordObj.word}
+              {wordObj.word}
             </div>
           );
         })}

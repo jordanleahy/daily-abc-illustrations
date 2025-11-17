@@ -673,8 +673,12 @@ export default function GoogleChat() {
         bookType: selectedBookType || undefined,
         textOverlayPreference,
         referenceBookId,
-        targetWords: targetWords.length > 0 ? targetWords : undefined
+        targetWords: targetWords.length > 0 ? targetWords : undefined,
+        sessionId: currentSessionId, // Include session ID for traceability
+        storedPrompts: Object.keys(editorPagePrompts).length > 0 ? editorPagePrompts : undefined, // Use pre-stored prompts
       });
+      
+      console.log('[Book Creation] Created book with', Object.keys(editorPagePrompts).length, 'stored prompts');
       
       // Set local book ID immediately for UI responsiveness
       setLocalCreatedBookId(result.bookId);
@@ -792,20 +796,66 @@ export default function GoogleChat() {
     }
   }, [createdBookId, currentSessionId, navigate]);
 
-  const handleOpenEditorPanel = useCallback(() => {
+  const handleOpenEditorPanel = useCallback(async () => {
     // Reset mutation state to allow panel to open after book creation
     createBookMutation.reset();
     
-    // Load editor images and prompts from current session
+    // Extract and store prompts in qa_page_prompts on "View Outline" click
+    if (!selectedSession?.qa_page_prompts || Object.keys(selectedSession.qa_page_prompts).length === 0) {
+      console.log('[Prompt Storage] Extracting prompts on View Outline click');
+      
+      // Extract full prompts from conversation
+      const fullPrompts: Record<number, string> = {};
+      const conversationText = messages
+        .filter(m => m.role === 'assistant')
+        .map(m => m.content)
+        .join('\n');
+      
+      // Extract cover prompt
+      const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
+      if (coverMatch) {
+        fullPrompts[1] = coverMatch[0];
+        console.log('[Prompt Storage] Cover prompt length:', coverMatch[0].length);
+      }
+      
+      // Extract educational focus prompt
+      const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
+      if (eduMatch) {
+        fullPrompts[2] = eduMatch[0];
+        console.log('[Prompt Storage] Educational focus prompt length:', eduMatch[0].length);
+      }
+      
+      // Extract numbered page prompts
+      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi);
+      for (const match of pageMatches) {
+        const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
+        fullPrompts[pageNum] = match[0];
+        console.log(`[Prompt Storage] Page ${pageNum} prompt length:`, match[0].length);
+      }
+      
+      // Store prompts in session for later use
+      if (currentSessionId && Object.keys(fullPrompts).length > 0) {
+        console.log('[Prompt Storage] Storing', Object.keys(fullPrompts).length, 'prompts');
+        await updateQAPagePrompts({ 
+          sessionId: currentSessionId, 
+          qaPagePrompts: fullPrompts 
+        });
+        setEditorPagePrompts(fullPrompts);
+      }
+    } else {
+      // Load existing prompts
+      console.log('[Prompt Storage] Loading', Object.keys(selectedSession.qa_page_prompts).length, 'existing prompts');
+      setEditorPagePrompts(selectedSession.qa_page_prompts);
+    }
+    
+    // Load editor images from current session
     if (selectedSession?.qa_page_images) {
       setEditorPageImages(selectedSession.qa_page_images);
     }
-    if (selectedSession?.qa_page_prompts) {
-      setEditorPagePrompts(selectedSession.qa_page_prompts);
-    }
+    
     setShowEditor(true);
     setCurrentEditorPage(1);
-  }, [selectedSession, createBookMutation]);
+  }, [selectedSession, createBookMutation, messages, currentSessionId, updateQAPagePrompts]);
 
   const handleSelectSession = useCallback((sessionId: string) => {
     if (sessionId !== currentSessionId) {

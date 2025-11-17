@@ -158,6 +158,7 @@ export type Database = {
           book_description: string | null
           book_name: string
           category: string | null
+          chat_session_id: string | null
           created_at: string
           current_system_prompt_id: string | null
           educational_focus: Json | null
@@ -181,6 +182,7 @@ export type Database = {
           book_description?: string | null
           book_name: string
           category?: string | null
+          chat_session_id?: string | null
           created_at?: string
           current_system_prompt_id?: string | null
           educational_focus?: Json | null
@@ -204,6 +206,7 @@ export type Database = {
           book_description?: string | null
           book_name?: string
           category?: string | null
+          chat_session_id?: string | null
           created_at?: string
           current_system_prompt_id?: string | null
           educational_focus?: Json | null
@@ -224,6 +227,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "books_chat_session_id_fkey"
+            columns: ["chat_session_id"]
+            isOneToOne: false
+            referencedRelation: "gemini_chat_sessions"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "books_current_system_prompt_id_fkey"
             columns: ["current_system_prompt_id"]

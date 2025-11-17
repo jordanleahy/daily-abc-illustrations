@@ -26,6 +26,7 @@ const requestSchema = z.object({
   referenceBookId: z.string().uuid().optional(),
   fullPrompts: z.record(z.string()).optional(), // Full image prompts by page number
   targetWords: z.array(z.string()).optional(), // Target words for word learning recommendations
+  sessionId: z.string().uuid().optional(), // Chat session ID for traceability
   educationalFocus: z.object({
     targetAge: z.string(),
     learningType: z.string(),
@@ -42,7 +43,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId } = validatedData;
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -638,6 +639,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         total_pages: sanitizedPages.length + 1,
         status: 'draft',
         reference_book_id: referenceBookId || null,
+        chat_session_id: sessionId || null, // Link to chat session for traceability
         metadata: { ...validatedMetadata, hasStyleGuide: !!styleGuide }
       })
       .select()

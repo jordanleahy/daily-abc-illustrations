@@ -1277,7 +1277,10 @@ export default function GoogleChat() {
       
       if (insertError) throw insertError;
       
-      // 7. Invalidate queries
+      // 7. Optimistically update cache with new cover URL for instant UI feedback
+      queryClient.setQueryData(['book-cover-image', createdBookId], publicUrl);
+      
+      // 8. Invalidate queries for consistency
       await queryClient.invalidateQueries({ queryKey: ['book-cover-image', createdBookId] });
       await queryClient.invalidateQueries({ queryKey: ['book-cover-page', createdBookId] });
       await queryClient.invalidateQueries({ queryKey: ['book-page-images', createdBookId] });

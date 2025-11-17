@@ -33,6 +33,11 @@ export const usePageImageUrlsSubscription = (bookId?: string | null) => {
             queryKey: ['book-page-images', bookId]
           });
           
+          // Invalidate book cover image query (for cover page updates)
+          queryClient.invalidateQueries({
+            queryKey: ['book-cover-image', bookId]
+          });
+          
           // Also invalidate book pages query (for metadata updates)
           queryClient.invalidateQueries({
             queryKey: ['book-pages', bookId]

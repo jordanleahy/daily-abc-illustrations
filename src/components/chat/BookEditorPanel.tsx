@@ -289,10 +289,6 @@ export function BookEditorPanel({
     if (prompt) {
       try {
         await copyToClipboard(prompt);
-        
-        // Open AI Studio in new tab immediately after copying
-        window.open('https://aistudio.google.com/prompts/new_chat', '_blank');
-        
         setShowConfirmation(true);
       
         // Mark this page as copied
@@ -518,7 +514,7 @@ export function BookEditorPanel({
                 </div>
                 <p className="text-base font-semibold mb-2">Copy Image Prompt</p>
                 <p className="text-xs text-muted-foreground">
-                  Click to copy prompt and open AI Studio
+                  Click to copy prompt for AI Studio
                 </p>
               </button>
             ) : (

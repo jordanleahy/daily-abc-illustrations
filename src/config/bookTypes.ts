@@ -10,7 +10,8 @@ import {
   MessageCircle, 
   Moon,
   BookOpen,
-  Eye
+  Eye,
+  Package
 } from 'lucide-react';
 
 export interface BookType {
@@ -130,5 +131,13 @@ export const BOOK_TYPES: BookType[] = [
     color: 'text-teal-500',
     needsClarification: true,
     clarificationContext: 'Ask about reading level preference: Pre-K/Kindergarten (20-25 basic words like: the, and, a, to, you), Grade 1 (50 words - expanded list), Grade 2 (100 words - advanced list), or Custom word list. Provide these 4 specific options. Explain that each page will feature one sight word in a simple sentence with an illustration.'
+  },
+  {
+    id: 'other',
+    label: 'Other',
+    icon: Package,
+    description: 'Miscellaneous books',
+    prompt: '',
+    color: 'text-gray-500'
   }
 ];

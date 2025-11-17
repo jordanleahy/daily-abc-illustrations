@@ -305,10 +305,10 @@ IMPORTANT:
 COVER PAGE DESIGN GUIDELINES:
 When creating the cover description (pageNumber: 0), use this format for thumbnail-optimized, title-focused covers:
 
-"A vibrant educational cover image with [TITLE] displayed in large, bold, centered letters taking up 50-60% of the space. The background features [simple solid color or gentle gradient]. Around the edges and corners are [4-8 small themed decorative elements]. The design is clean, simple, and optimized for thumbnail visibility."
+"A vibrant educational cover image with [TITLE] displayed in large, bold, CENTERED letters AT THE CENTER taking up 50-60% of the space. The background features [simple solid color or gentle gradient]. Around the edges and corners are [4-8 small themed decorative elements]. The design is clean, simple, and optimized for thumbnail visibility."
 
 Cover Description Rules:
-1. Title Placement: Always mention "large, bold, centered" and "taking up 50-60% of the space"
+1. Title Placement: CRITICAL - Always include "with [TITLE] displayed in large, bold, CENTERED letters at the center of the image" AND mention title "taking up 50-60% of the space"
 2. Background: Describe as "vibrant [color] background" or "gentle [color]-to-[color] gradient" - keep it SIMPLE
    - Good: "sunny yellow-to-turquoise gradient background"
    - Good: "bright coral solid background"

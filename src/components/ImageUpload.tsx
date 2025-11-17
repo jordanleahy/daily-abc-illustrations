@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Upload, AlertCircle, Clipboard, Copy } from "lucide-react";
-// Toast notifications removed
+import { toast } from "sonner";
 import { processImage, formatFileSize } from "@/utils/imageProcessor";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -71,14 +71,14 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
   const handleFile = async (file: File, isPasted: boolean = false) => {
     const validationError = validateImage(file);
     if (validationError) {
-      console.error('Image validation error:', validationError);
+      toast.error(validationError);
       return;
     }
 
     if (requireSquare) {
       const isSquare = await checkAspectRatio(file);
       if (!isSquare) {
-        console.error('Image must have a 1:1 aspect ratio (square)');
+        toast.error('Image must have a 1:1 aspect ratio (square)');
         return;
       }
     }
@@ -106,10 +106,14 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
         { type: processed.blob.type }
       );
 
+      if (isPasted) {
+        toast.success('Image pasted successfully!');
+      }
+      
       onImageSelect(compressedFile);
     } catch (error) {
       console.error('Image processing error:', error);
-      console.error('Failed to process image. Please try another image.');
+      toast.error('Failed to process image. Please try another image.');
     } finally {
       setIsProcessing(false);
     }
@@ -163,7 +167,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
       }
     }
 
-    console.error('No image found in clipboard');
+    toast.error('No image found in clipboard');
   };
 
   const handlePasteFromClipboard = async () => {
@@ -184,18 +188,18 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
         }
       }
       
-      console.error('No image found in clipboard');
+      toast.error('No image found in clipboard');
     } catch (error) {
       console.error('Clipboard access error:', error);
       
       // Handle different error scenarios
       if (error instanceof Error) {
         if (error.name === 'NotAllowedError') {
-          console.error('Clipboard access denied. Please allow clipboard permissions.');
+          toast.error('Clipboard access denied. Please allow clipboard permissions.');
         } else if (error.name === 'NotFoundError') {
-          console.error('No image found in clipboard');
+          toast.error('No image found in clipboard');
         } else {
-          console.error('Failed to access clipboard. Try taking a photo instead.');
+          toast.error('Failed to access clipboard. Try copying your image first.');
         }
       }
     }

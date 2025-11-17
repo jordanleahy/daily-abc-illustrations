@@ -13,6 +13,7 @@ import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { useBookPages } from '@/hooks/useBookPages';
 import { usePageImageUrlsSubscription } from '@/hooks/usePageImageUrlsSubscription';
 import { useThemeImagePreloader } from '@/hooks/useThemeImagePreloader';
+import { useChatBookCoversPreloader } from '@/hooks/useChatBookCoversPreloader';
 import { ChatSessionSidebar } from '@/components/chat/ChatSessionSidebar';
 import { BookEditorPanel } from '@/components/chat/BookEditorPanel';
 import { MessageList } from '@/components/chat/MessageList';
@@ -46,8 +47,9 @@ export default function GoogleChat() {
   const targetWords = locationState.targetWords || [];
   const editBookId = locationState.editBookId || null;
 
-  // Preload all theme images for instant display
+  // Preload all theme images and book covers for instant display
   useThemeImagePreloader();
+  useChatBookCoversPreloader();
 
   // Detect mobile screen size
   useEffect(() => {

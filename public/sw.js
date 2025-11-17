@@ -29,10 +29,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
   
-  // Cache Supabase storage images AND local theme images
+  // Cache Supabase storage images, local theme images, and book cover assets
   const shouldCache = url.includes('supabase.co/storage') || 
                       url.includes('foxdnspwzhjxjxuicute.supabase.co/storage') ||
-                      url.includes('/themes/');
+                      url.includes('/themes/') ||
+                      url.includes('/assets/book-covers/') ||
+                      (url.includes('/assets/') && (url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.webp')));
   
   if (shouldCache) {
     event.respondWith(

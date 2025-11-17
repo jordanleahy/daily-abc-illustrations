@@ -9,11 +9,13 @@ interface ReadingPageStateConfig {
   pageId?: string;
   pageTitle?: string;
   words?: WordMetadata[];
+  initialWordIndex?: number;
+  initialWordStatuses?: Record<number, 'difficult' | 'understood'>;
 }
 
 export function useReadingPageState(config?: ReadingPageStateConfig) {
-  const [currentWordIndex, setCurrentWordIndex] = useState(0);
-  const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
+  const [currentWordIndex, setCurrentWordIndex] = useState(config?.initialWordIndex ?? 0);
+  const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>(config?.initialWordStatuses ?? {});
   const [isEditingText, setIsEditingText] = useState(false);
   const [isReadMode, setIsReadMode] = useState(false);
   const [hasReachedLastWord, setHasReachedLastWord] = useState(false);

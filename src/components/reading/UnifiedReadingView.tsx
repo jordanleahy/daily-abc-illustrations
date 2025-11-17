@@ -216,6 +216,12 @@ export function UnifiedReadingView({
   const [sessionStarted, setSessionStarted] = useState(false);
   const [initialPageTracked, setInitialPageTracked] = useState(false);
   
+  // Per-page word learning state persistence
+  const [pageWordStates, setPageWordStates] = useState<Record<string, {
+    currentWordIndex: number;
+    wordStatuses: Record<number, 'difficult' | 'understood'>;
+  }>>({});
+  
   // Auto-select kid if only one exists
   const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
   const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
@@ -231,19 +237,36 @@ export function UnifiedReadingView({
     return page?.content?.words || [];
   }, [bookPages, currentPage]);
   
-  // Word learning state with tracking config
+  // Word learning state with tracking config and restored state
+  const savedState = currentPage?.id ? pageWordStates[currentPage.id] : undefined;
   const readingState = useReadingPageState({
     kidProfileId: selectedKidId,
     bookId: book.book_id || book.id,
     pageId: currentPage?.id,
     pageTitle: currentPage?.title,
     words: currentPageWords,
+    initialWordIndex: savedState?.currentWordIndex,
+    initialWordStatuses: savedState?.wordStatuses,
   });
   
-  // Reset word learning state when page changes
+  // Save word learning state when page changes
   useEffect(() => {
-    readingState.resetState();
-  }, [currentPageIndex]);
+    const previousPage = reorderedPages[currentPageIndex];
+    if (!previousPage) return;
+
+    // Save current page state before switching
+    return () => {
+      if (previousPage?.id) {
+        setPageWordStates(prev => ({
+          ...prev,
+          [previousPage.id]: {
+            currentWordIndex: readingState.currentWordIndex,
+            wordStatuses: readingState.wordStatuses,
+          }
+        }));
+      }
+    };
+  }, [currentPageIndex, reorderedPages, readingState.currentWordIndex, readingState.wordStatuses]);
   
   // Start analytics session when content loads
   useEffect(() => {

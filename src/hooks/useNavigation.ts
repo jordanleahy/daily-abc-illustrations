@@ -37,7 +37,15 @@ export const useNavigation = () => {
       const handled = route.customClickHandler(navigate, location.pathname);
       if (handled && e) {
         e.preventDefault();
+      } else if (!handled) {
+        // Custom handler didn't handle it, use default navigation
+        navigate(route.path);
+        if (e) e.preventDefault();
       }
+    } else {
+      // No custom handler, use default navigation
+      navigate(route.path);
+      if (e) e.preventDefault();
     }
   };
 

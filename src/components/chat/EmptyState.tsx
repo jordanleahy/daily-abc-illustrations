@@ -59,6 +59,8 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
                   <img 
                     src={coverImage} 
                     alt={bookType.label}
+                    loading="eager"
+                    decoding="async"
                     className="w-full h-auto"
                   />
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-3 sm:p-4">

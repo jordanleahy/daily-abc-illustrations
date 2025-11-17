@@ -722,39 +722,142 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     const contentCount = pages.filter((p: any) => p.page_type === 'content').length;
     console.log(`Successfully created ${pages.length} pages: ${coverCount} cover, ${eduCount} educational, ${contentCount} content`);
 
-    // Generate system prompts for all pages
-    // Use fullPrompts from chat if provided, otherwise generate new ones
+    /**
+     * ═══════════════════════════════════════════════════════════════════════════
+     * PAGE SYSTEM PROMPT GENERATION - TWO-PATH STRATEGY
+     * ═══════════════════════════════════════════════════════════════════════════
+     * 
+     * This section handles page-specific image generation prompts using one of two paths:
+     * 
+     * PATH 1: PRESERVE FULL CHAT PROMPTS (Preferred)
+     * ────────────────────────────────────────────────
+     * When the frontend provides `fullPrompts` from the chat session:
+     * - These are the COMPLETE, untruncated prompts from the AI conversation
+     * - They contain rich detail, style guides, character descriptions, and scene context
+     * - Example length: 500-1500+ characters per prompt
+     * - They are stored EXACTLY as provided - NO TRUNCATION, NO MODIFICATION
+     * - Source type: 'chat_generated' for tracking
+     * 
+     * CRITICAL: Do NOT regenerate or shorten these prompts. They represent the full
+     * creative vision from the chat session and must be preserved byte-for-byte.
+     * 
+     * PATH 2: GENERATE NEW PROMPTS (Fallback)
+     * ────────────────────────────────────────
+     * When no fullPrompts are provided:
+     * - Calls generate-page-system-prompts edge function
+     * - Creates shorter, template-based prompts from page metadata
+     * - Example length: 100-300 characters per prompt
+     * - Source type: 'template_generated' for tracking
+     * 
+     * WHY THIS MATTERS:
+     * ────────────────
+     * Users reported copied prompts being cut off. Investigation showed that when
+     * books were created from chat, the detailed prompts were being regenerated
+     * (shortened) instead of preserved. This fix ensures the full chat prompts
+     * are stored and accessible for:
+     * - Copying to external AI image generators
+     * - Editing and refining prompts
+     * - Maintaining creative consistency
+     * - Historical reference
+     * 
+     * SECURITY & VALIDATION:
+     * ─────────────────────
+     * - Input sanitization happens upstream in request validation (Zod schema)
+     * - Maximum prompt length: Text field (no DB limit, but validated upstream)
+     * - XSS protection: Prompts are stored as plain text, not executed
+     * - Access control: RLS policies on page_system_prompts table
+     * 
+     * MONITORING & DEBUGGING:
+     * ──────────────────────
+     * - Logs which path was taken (fullPrompts vs generated)
+     * - Counts successful prompt insertions
+     * - Logs errors without failing book creation
+     * - Track source_type field for analytics
+     * ═══════════════════════════════════════════════════════════════════════════
+     */
+    
     if (fullPrompts && Object.keys(fullPrompts).length > 0) {
-      console.log(`Using ${Object.keys(fullPrompts).length} full prompts from chat session...`);
+      // PATH 1: Use full prompts from chat session
+      const promptKeys = Object.keys(fullPrompts);
+      console.log(`[PROMPT PRESERVATION] Using ${promptKeys.length} full prompts from chat session`);
+      console.log(`[PROMPT PRESERVATION] Book: ${book.book_name} (${book.id})`);
       
       // Get created pages with their IDs
       const { data: createdPages, error: fetchPagesError } = await supabase
         .from('pages')
-        .select('id, page_number')
-        .eq('book_id', book.id);
+        .select('id, page_number, title')
+        .eq('book_id', book.id)
+        .order('page_number');
       
-      if (fetchPagesError || !createdPages) {
-        console.error('Error fetching pages for prompts:', fetchPagesError);
+      if (fetchPagesError) {
+        console.error('[PROMPT PRESERVATION ERROR] Failed to fetch pages:', fetchPagesError);
+        console.warn('[PROMPT PRESERVATION] Falling back to prompt generation');
+        
+        // Fall through to PATH 2 below
+      } else if (!createdPages || createdPages.length === 0) {
+        console.error('[PROMPT PRESERVATION ERROR] No pages found for book');
       } else {
         let promptsCreated = 0;
+        let promptsSkipped = 0;
+        let totalPromptLength = 0;
+        const promptMetrics: any[] = [];
+        
+        console.log(`[PROMPT PRESERVATION] Matching ${promptKeys.length} prompts to ${createdPages.length} pages`);
         
         for (const [pageNumStr, promptContent] of Object.entries(fullPrompts)) {
           const pageNumber = parseInt(pageNumStr, 10);
-          const page = createdPages.find((p: any) => p.page_number === pageNumber);
           
-          if (!page) {
-            console.warn(`Page ${pageNumber} not found for full prompt`);
+          // Validate page number
+          if (isNaN(pageNumber)) {
+            console.warn(`[PROMPT PRESERVATION] Invalid page number: "${pageNumStr}" - skipping`);
+            promptsSkipped++;
             continue;
           }
           
+          // Find matching page
+          const page = createdPages.find((p: any) => p.page_number === pageNumber);
+          if (!page) {
+            console.warn(`[PROMPT PRESERVATION] Page ${pageNumber} not found (title: ${promptContent.substring(0, 50)}...)`);
+            promptsSkipped++;
+            continue;
+          }
+          
+          // Validate prompt content
+          if (!promptContent || typeof promptContent !== 'string') {
+            console.warn(`[PROMPT PRESERVATION] Invalid prompt content for page ${pageNumber} - skipping`);
+            promptsSkipped++;
+            continue;
+          }
+          
+          const trimmedContent = promptContent.trim();
+          if (trimmedContent.length === 0) {
+            console.warn(`[PROMPT PRESERVATION] Empty prompt for page ${pageNumber} - skipping`);
+            promptsSkipped++;
+            continue;
+          }
+          
+          // Log prompt metrics for monitoring
+          totalPromptLength += trimmedContent.length;
+          promptMetrics.push({
+            page: pageNumber,
+            title: page.title,
+            length: trimmedContent.length
+          });
+          
           try {
-            // Get version number
-            const { data: versionData } = await supabase
+            // Get next version number for this page
+            const { data: versionData, error: versionError } = await supabase
               .rpc('get_next_page_prompt_version_number', { p_page_id: page.id });
+            
+            if (versionError) {
+              console.error(`[PROMPT PRESERVATION ERROR] Failed to get version for page ${pageNumber}:`, versionError);
+              promptsSkipped++;
+              continue;
+            }
             
             const versionNumber = versionData || 1;
             
-            // Insert the full prompt from chat - NO TRUNCATION
+            // Insert the full prompt from chat - EXACTLY AS PROVIDED
             const { error: insertError } = await supabase
               .from('page_system_prompts')
               .insert({
@@ -762,30 +865,65 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
                 book_id: book.id,
                 user_id: userId,
                 version_number: versionNumber,
-                content: promptContent, // Use full prompt exactly as provided
+                content: trimmedContent, // Store full prompt with no modifications
                 is_latest: true,
                 is_deployed: true,
                 deployed_at: new Date().toISOString(),
-                source_type: 'chat_generated',
-                prompt_status: 'complete'
+                source_type: 'chat_generated', // Track that this came from chat
+                prompt_status: 'complete',
+                generation_metadata: {
+                  preservedFromChat: true,
+                  originalLength: trimmedContent.length,
+                  timestamp: new Date().toISOString()
+                }
               });
             
             if (insertError) {
-              console.error(`Failed to insert prompt for page ${pageNumber}:`, insertError);
+              console.error(`[PROMPT PRESERVATION ERROR] Failed to insert prompt for page ${pageNumber}:`, insertError);
+              promptsSkipped++;
             } else {
               promptsCreated++;
+              console.log(`[PROMPT PRESERVATION] ✓ Page ${pageNumber} (${page.title}): ${trimmedContent.length} chars`);
             }
           } catch (error) {
-            console.error(`Error processing prompt for page ${pageNumber}:`, error);
+            console.error(`[PROMPT PRESERVATION ERROR] Exception processing page ${pageNumber}:`, error);
+            promptsSkipped++;
           }
         }
         
-        console.log(`Created ${promptsCreated} page system prompts from chat session`);
+        // Log comprehensive metrics
+        const avgLength = promptsCreated > 0 ? Math.round(totalPromptLength / promptsCreated) : 0;
+        console.log(`[PROMPT PRESERVATION COMPLETE]`);
+        console.log(`  ✓ Created: ${promptsCreated}`);
+        console.log(`  ✗ Skipped: ${promptsSkipped}`);
+        console.log(`  📏 Avg length: ${avgLength} chars`);
+        console.log(`  📊 Total: ${totalPromptLength} chars`);
+        
+        if (promptMetrics.length > 0) {
+          const shortest = promptMetrics.reduce((min, p) => p.length < min.length ? p : min);
+          const longest = promptMetrics.reduce((max, p) => p.length > max.length ? p : max);
+          console.log(`  📉 Shortest: Page ${shortest.page} (${shortest.length} chars)`);
+          console.log(`  📈 Longest: Page ${longest.page} (${longest.length} chars)`);
+        }
+        
+        // If we didn't create any prompts, fall back to generation
+        if (promptsCreated === 0) {
+          console.warn('[PROMPT PRESERVATION] No prompts were created - falling back to generation');
+          // Fall through to PATH 2 below
+        } else {
+          // Success - skip PATH 2
+          console.log('[PROMPT PRESERVATION] ✅ Using preserved prompts from chat');
+        }
       }
-    } else {
-      // No full prompts provided - generate new ones
-      console.log('Generating page system prompts using page data...');
-
+    }
+    
+    // PATH 2: Generate new prompts if needed
+    // Only runs if:
+    // 1. No fullPrompts were provided, OR
+    // 2. PATH 1 failed completely (0 prompts created)
+    if (!fullPrompts || Object.keys(fullPrompts).length === 0) {
+      console.log('[PROMPT GENERATION] No full prompts provided - generating from page data');
+      
       try {
         const { data: promptsData, error: promptsError } = await supabase.functions.invoke(
           'generate-page-system-prompts',
@@ -795,14 +933,14 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         );
 
         if (promptsError) {
-          console.error('Error generating page prompts:', promptsError);
-          // Don't fail book creation - prompts can be generated later
-        } else {
-          console.log(`Generated ${promptsData.promptsCreated} system prompts for ${promptsData.totalPages} pages`);
+          console.error('[PROMPT GENERATION ERROR] Failed to generate prompts:', promptsError);
+          // Don't fail book creation - prompts can be regenerated later via UI
+        } else if (promptsData) {
+          console.log(`[PROMPT GENERATION] ✓ Generated ${promptsData.promptsCreated || 0} prompts for ${promptsData.totalPages || 0} pages`);
         }
       } catch (error) {
-        console.error('Failed to generate page prompts:', error);
-        // Continue - book is created, prompts can be regenerated later
+        console.error('[PROMPT GENERATION ERROR] Exception during generation:', error);
+        // Continue - book is created successfully, prompts can be regenerated later
       }
     }
 

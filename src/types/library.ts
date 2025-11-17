@@ -14,4 +14,10 @@ export interface LibraryBook {
   // User activity fields
   last_viewed_at?: string | null;
   view_count?: number;
+  // Book categorization metadata
+  metadata?: {
+    type?: string;
+    bookType?: string;
+    targetAge?: string;
+  } | null;
 }

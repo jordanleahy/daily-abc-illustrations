@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 import colorsBookCover from '@/assets/book-covers/colors-cover.png';
 import shapesBookCover from '@/assets/book-covers/shapes-cover.png';
 import emotionsBookCover from '@/assets/book-covers/emotions-cover.png';
+import oppositesBookCover from '@/assets/book-covers/opposites-cover.png';
 
 interface EmptyStateProps {
   onBookTypeSelect: (bookType: typeof BOOK_TYPES[0]) => void;
@@ -29,6 +30,7 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
             colors: colorsBookCover,
             shapes: shapesBookCover,
             emotions: emotionsBookCover,
+            opposites: oppositesBookCover,
           };
           const coverImage = coverImages[bookType.id];
           

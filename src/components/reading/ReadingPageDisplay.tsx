@@ -6,9 +6,10 @@ import { useBookPages } from '@/hooks/useBookPages';
 import { toast } from 'sonner';
 import { Pencil, X } from 'lucide-react';
 import { WordCarousel } from './WordCarousel';
-import type { PageType } from '@/types/book';
+import type { PageType, Page } from '@/types/book';
 
 interface ReadingPageDisplayProps {
+  pages?: Page[]; // Optional: if provided, avoids refetching pages
   pageId: string;
   bookId: string;
   pageNumber: number;
@@ -30,6 +31,7 @@ interface ReadingPageDisplayProps {
 }
 
 export function ReadingPageDisplay({
+  pages: propPages,
   pageId,
   bookId,
   pageNumber,
@@ -49,7 +51,9 @@ export function ReadingPageDisplay({
   hideBottomOverlay = false,
 }: ReadingPageDisplayProps) {
   const { generateMetadata } = useWordMetadata();
-  const { pages } = useBookPages(bookId);
+  // Only fetch pages if not provided as prop (backwards compatibility)
+  const { pages: fetchedPages } = useBookPages(propPages ? undefined : bookId);
+  const pages = propPages || fetchedPages || [];
   const [isEditingText, setIsEditingText] = useState(false);
 
   // Get current page words metadata

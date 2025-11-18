@@ -21,35 +21,53 @@ export const trackBookView = async (dailyPublishedId: string): Promise<void> => 
       return;
     }
 
-    // First, try to get existing activity record
-    const { data: existing } = await supabase
+    // Step 1: Try to get existing record
+    const { data: existing, error: selectError } = await supabase
       .from('user_book_activity')
-      .select('view_count')
+      .select('view_count, id')
       .eq('user_id', user.id)
       .eq('daily_published_id', dailyPublishedId)
       .maybeSingle();
 
-    // Upsert with incremented view count
-    const { error } = await supabase
-      .from('user_book_activity')
-      .upsert(
-        {
+    // Handle SELECT errors (except "no rows" which is expected)
+    if (selectError && selectError.code !== 'PGRST116') {
+      console.warn('Select error:', selectError);
+      return;
+    }
+
+    // Step 2: Update or insert based on result
+    if (existing) {
+      // Update existing record
+      const { error: updateError } = await supabase
+        .from('user_book_activity')
+        .update({
+          last_viewed_at: new Date().toISOString(),
+          view_count: existing.view_count + 1,
+        })
+        .eq('id', existing.id);
+
+      if (updateError) {
+        console.warn('Update error:', updateError);
+      }
+    } else {
+      // Insert new record
+      const { error: insertError } = await supabase
+        .from('user_book_activity')
+        .insert({
           user_id: user.id,
           daily_published_id: dailyPublishedId,
           last_viewed_at: new Date().toISOString(),
-          view_count: existing ? existing.view_count + 1 : 1,
-        },
-        {
-          onConflict: 'user_id,daily_published_id',
-        }
-      );
+          view_count: 1,
+        });
 
-    if (error) {
-      console.warn('Failed to track book view:', error);
-    } else {
-      // Invalidate library books query to update Recently Viewed
-      queryClient.invalidateQueries({ queryKey: ['library-books'] });
+      // Ignore duplicate key errors (23505 = race condition)
+      if (insertError && insertError.code !== '23505') {
+        console.warn('Insert error:', insertError);
+      }
     }
+
+    // Invalidate library books query to update Recently Viewed
+    queryClient.invalidateQueries({ queryKey: ['library-books'] });
   } catch (error) {
     console.warn('Failed to track book view:', error);
   }
@@ -68,31 +86,46 @@ export const trackUserBookActivity = async (bookId: string): Promise<void> => {
       return;
     }
 
-    // First, try to get existing activity record
-    const { data: existing } = await supabase
+    // Step 1: Try to get existing record
+    const { data: existing, error: selectError } = await supabase
       .from('user_book_activity')
-      .select('view_count')
+      .select('view_count, id')
       .eq('user_id', user.id)
       .eq('book_id', bookId)
       .maybeSingle();
 
-    // Upsert with incremented view count
-    const { error } = await supabase
-      .from('user_book_activity')
-      .upsert(
-        {
+    // Handle SELECT errors
+    if (selectError && selectError.code !== 'PGRST116') {
+      console.warn('Select error:', selectError);
+      return;
+    }
+
+    // Step 2: Update or insert
+    if (existing) {
+      const { error: updateError } = await supabase
+        .from('user_book_activity')
+        .update({
+          last_viewed_at: new Date().toISOString(),
+          view_count: existing.view_count + 1,
+        })
+        .eq('id', existing.id);
+
+      if (updateError) {
+        console.warn('Update error:', updateError);
+      }
+    } else {
+      const { error: insertError } = await supabase
+        .from('user_book_activity')
+        .insert({
           user_id: user.id,
           book_id: bookId,
           last_viewed_at: new Date().toISOString(),
-          view_count: existing ? existing.view_count + 1 : 1,
-        },
-        {
-          onConflict: 'user_id,book_id',
-        }
-      );
+          view_count: 1,
+        });
 
-    if (error) {
-      console.warn('Failed to track user book activity:', error);
+      if (insertError && insertError.code !== '23505') {
+        console.warn('Insert error:', insertError);
+      }
     }
   } catch (error) {
     console.warn('Failed to track user book activity:', error);

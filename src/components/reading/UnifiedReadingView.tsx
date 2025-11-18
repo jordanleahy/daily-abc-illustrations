@@ -64,7 +64,6 @@ import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidCoins } from '@/hooks/useKidCoins';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
-import { useBookPages } from '@/hooks/useBookPages';
 // Toast notifications removed
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
@@ -230,12 +229,11 @@ export function UnifiedReadingView({
   const currentPage = reorderedPages[currentPageIndex];
   const isLastPage = currentPageIndex === reorderedPages.length - 1;
   
-  // Get current page words for word learning
-  const { pages: bookPages } = useBookPages(book.book_id || book.id);
+  // Get current page words for word learning (use pages prop, no need to refetch)
   const currentPageWords = useMemo(() => {
-    const page = bookPages?.find(p => p.id === currentPage?.id);
+    const page = pages.find(p => p.id === currentPage?.id);
     return page?.content?.words || [];
-  }, [bookPages, currentPage]);
+  }, [pages, currentPage]);
   
   // Word learning state with tracking config and restored state
   const savedState = currentPage?.id ? pageWordStates[currentPage.id] : undefined;
@@ -416,6 +414,7 @@ export function UnifiedReadingView({
             style={onTapToAdvance ? { cursor: 'pointer' } : undefined}
           >
             <ReadingPageDisplay
+              pages={pages}
               pageId={currentPage.id}
               bookId={book.book_id || book.id}
               pageNumber={currentPage.page_number}

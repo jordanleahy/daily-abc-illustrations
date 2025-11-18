@@ -24,6 +24,27 @@ export function isValidAgeRange(value: unknown): value is AgeRangeId {
 }
 
 /**
+ * Legacy age range mappings for backwards compatibility
+ * Maps old string values to new enum values
+ */
+const LEGACY_AGE_RANGE_MAPPING: Record<string, AgeRangeId> = {
+  'toddler': '2-4',
+  'toddlers': '2-4',
+  'preschool': '4-6',
+  'pre-k': '4-6',
+  'prek': '4-6',
+  'pre-k/kindergarten': '4-6',
+  'kindergarten': '4-6',
+  'babies': '0-2',
+  'baby': '0-2',
+  'infant': '0-2',
+  'infants': '0-2',
+  'early elementary': '6-8',
+  'elementary': '8-10',
+  'middle school': '10-12',
+};
+
+/**
  * Normalizes and validates an age range string
  * @param ageRange - Age range string to normalize
  * @returns Validated AgeRangeId or undefined if invalid
@@ -34,12 +55,18 @@ export function normalizeAgeRange(ageRange: string | undefined): AgeRangeId | un
   // Convert to lowercase and trim
   const normalized = ageRange.toLowerCase().trim();
   
-  // Validate against known ranges
+  // Validate against known ranges (direct match)
   if (isValidAgeRange(normalized)) {
     return normalized;
   }
   
-  // Try to extract numbers and format (e.g., "2 to 4" -> "2-4")
+  // Check legacy mappings for backwards compatibility
+  if (normalized in LEGACY_AGE_RANGE_MAPPING) {
+    console.warn(`[Age Range Validation] Converting legacy value "${ageRange}" to "${LEGACY_AGE_RANGE_MAPPING[normalized]}"`);
+    return LEGACY_AGE_RANGE_MAPPING[normalized];
+  }
+  
+  // Try to extract numbers and format (e.g., "2 to 4" -> "2-4", "2-4 years" -> "2-4")
   const numbers = normalized.match(/(\d+)/g);
   if (numbers && numbers.length >= 2) {
     const formatted = `${numbers[0]}-${numbers[1]}`;

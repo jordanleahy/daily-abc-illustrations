@@ -76,6 +76,54 @@ export function normalizeBookType(bookType: string | undefined): ValidBookType {
   return 'other';
 }
 
+// ============================================
+// Age Range Validation
+// ============================================
+
+/**
+ * Valid age range IDs (must match frontend enum)
+ */
+export const VALID_AGE_RANGES = [
+  '0-2',
+  '2-4',
+  '4-6',
+  '6-8',
+  '8-10',
+  '10-12',
+  'other'
+] as const;
+
+export type ValidAgeRange = typeof VALID_AGE_RANGES[number];
+
+/**
+ * Normalizes and validates an age range string
+ * @param ageRange - Age range string to normalize
+ * @returns Validated age range or undefined if invalid
+ */
+export function normalizeAgeRange(ageRange: string | undefined): ValidAgeRange | undefined {
+  if (!ageRange) return undefined;
+  
+  // Convert to lowercase and trim
+  const normalized = ageRange.toLowerCase().trim();
+  
+  // Validate against known ranges
+  if (VALID_AGE_RANGES.includes(normalized as ValidAgeRange)) {
+    return normalized as ValidAgeRange;
+  }
+  
+  // Try to extract numbers and format (e.g., "2 to 4" -> "2-4")
+  const numbers = normalized.match(/(\d+)/g);
+  if (numbers && numbers.length >= 2) {
+    const formatted = `${numbers[0]}-${numbers[1]}`;
+    if (VALID_AGE_RANGES.includes(formatted as ValidAgeRange)) {
+      return formatted as ValidAgeRange;
+    }
+  }
+  
+  console.warn(`[Age Range Validation] Invalid age range: "${ageRange}", normalized to: "${normalized}"`);
+  return undefined;
+}
+
 /**
  * Shared types and utilities for Supabase Edge Functions
  * 

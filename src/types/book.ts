@@ -1,5 +1,6 @@
 import { CharacterThemeValue } from './characterTheme';
 import { BookTypeId } from './bookType';
+import { AgeRangeId } from './ageRange';
 
 /**
  * Page type enum matching database enum
@@ -36,8 +37,8 @@ export interface BookMetadata {
   bookType?: BookTypeId;
   /** Number of pages in the book */
   pageCount?: number;
-  /** Target age group (toddler, preschool, early-reader) */
-  targetAge?: string;
+  /** Target age group (e.g., '2-4', '4-6') */
+  targetAge?: AgeRangeId;
   
   // ABC Book specific
   /** Letter case preference for alphabet books */

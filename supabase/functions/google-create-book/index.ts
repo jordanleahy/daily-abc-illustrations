@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
-import { normalizeBookType, ValidBookType } from '../_shared/types.ts';
+import { normalizeBookType, normalizeAgeRange, ValidBookType, ValidAgeRange } from '../_shared/types.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -24,6 +24,7 @@ const requestSchema = z.object({
   qaImages: z.record(z.string()).optional(),
   bookType: z.string().optional(),
   characterTheme: z.string().optional(), // Validated character theme from enum
+  targetAge: z.string().optional(), // Target age range
   textOverlayPreference: z.enum(['with-text', 'without-text']).optional(),
   referenceBookId: z.string().uuid().optional(),
   fullPrompts: z.record(z.string()).optional(), // Full image prompts by page number
@@ -45,11 +46,15 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages, bookType: rawBookType, characterTheme, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId } = validatedData;
     
     // Normalize and validate book type
     const bookType = normalizeBookType(rawBookType);
     console.log(`[Book Creation] Raw book type: ${rawBookType}, Normalized: ${bookType}`);
+    
+    // Normalize and validate target age
+    const targetAge = normalizeAgeRange(rawTargetAge);
+    console.log(`[Book Creation] Raw target age: ${rawTargetAge}, Normalized: ${targetAge}`);
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -569,7 +574,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     const validatedMetadata = {
       bookType: normalizeBookType(metadata.bookType || bookData.bookType) || bookType,
       pageCount: bookData.pages.length,
-      targetAge: metadata.targetAge,
+      targetAge: normalizeAgeRange(metadata.targetAge) || targetAge,
       letterCase: metadata.letterCase || bookData.letterCase,
       numberRange: metadata.numberRange,
       countingStyle: metadata.countingStyle,

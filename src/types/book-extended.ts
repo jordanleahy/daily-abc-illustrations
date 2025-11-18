@@ -4,6 +4,7 @@
  */
 
 import { Book } from './book';
+import { AgeRangeId } from './ageRange';
 
 /**
  * Book with SEO metadata for daily published content
@@ -52,7 +53,7 @@ export interface LandingPopularBook {
   image_url: string | null;
   metadata?: {
     bookType?: string;
-    targetAge?: string;
+    targetAge?: AgeRangeId;
   };
 }
 
@@ -70,7 +71,7 @@ export interface LandingLibraryBook {
   image_url: string | null;
   metadata?: {
     bookType?: string;
-    targetAge?: string;
+    targetAge?: AgeRangeId;
   };
 }
 

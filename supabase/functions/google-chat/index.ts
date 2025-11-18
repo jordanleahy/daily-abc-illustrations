@@ -16,6 +16,7 @@ interface SuggestedAction {
   label: string;
   value: string;
   themeId?: string;
+  ageRangeId?: string;
 }
 
 interface Message {
@@ -46,6 +47,11 @@ function parseSuggestions(aiResponse: string): {
     'sesame-street', 'bear-stories', 'jewish-holidays'
   ]);
 
+  // Known age ranges - synced with AgeRangeId enum
+  const AGE_RANGES = new Set([
+    '0-2', '2-4', '4-6', '6-8', '8-10', '10-12', 'other'
+  ]);
+
   const suggestedActions = suggestionsText
     .split('\n')
     .filter(line => line.trim())
@@ -60,7 +66,8 @@ function parseSuggestions(aiResponse: string): {
         id,
         label,
         value: id === 'custom' ? '' : `${label}`,
-        themeId: CHARACTER_THEMES.has(id) ? id : undefined
+        themeId: CHARACTER_THEMES.has(id) ? id : undefined,
+        ageRangeId: AGE_RANGES.has(id) ? id : undefined
       };
     })
     .filter((action): action is SuggestedAction => action !== null);

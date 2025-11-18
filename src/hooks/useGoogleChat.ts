@@ -16,6 +16,7 @@ export interface SuggestedAction {
   label: string;
   value: string;
   themeId?: string;
+  ageRangeId?: string;
 }
 
 export interface Message {

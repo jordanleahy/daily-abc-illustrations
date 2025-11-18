@@ -15,7 +15,7 @@ export const LIBRARY_CONFIG = {
     containScroll: 'trimSnaps' as const,
     skipSnaps: false,
     inViewThreshold: 0.7,
-    watchDrag: false,
+    watchDrag: true,
     watchResize: true,
     watchSlides: true,
   },

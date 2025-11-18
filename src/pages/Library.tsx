@@ -54,6 +54,7 @@ const Library = memo(() => {
           {hasLibraryAccess ? (
             <CategorizedBookSections 
               books={libraryBooks}
+              showAllCategories={true}
             />
           ) : (
             <PremiumGate>

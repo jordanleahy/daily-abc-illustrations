@@ -43,6 +43,7 @@ const Landing = () => {
             books={landingData?.libraryBooks || []}
             maxBooksPerCategory={6}
             showViewAllLinks={false}
+            showAllCategories={true}
           />
           <SignupSection />
         </div>

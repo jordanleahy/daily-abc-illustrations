@@ -331,7 +331,19 @@ export default function Books() {
     isAllBooksView ? { page: currentPage, pageSize: PAGE_SIZE } : undefined
   );
   
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1; // At least 1 page
+  
+  // Reset page when switching between views
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [isAllBooksView]);
+  
+  // Reset to page 1 if current page exceeds total pages (e.g., after deletion)
+  useEffect(() => {
+    if (currentPage > totalPages && totalPages > 0) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
   
   // Mobile editor state
   const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
@@ -926,13 +938,13 @@ export default function Books() {
             </div>
 
             {/* Pagination Controls - Only show for all-books view */}
-            {isAllBooksView && totalPages > 1 && (
+            {isAllBooksView && totalCount > PAGE_SIZE && (
               <div className="flex items-center justify-center gap-2 mt-8">
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
+                  disabled={currentPage === 1 || loading}
                 >
                   <ChevronLeft className="h-4 w-4" />
                   Previous
@@ -949,7 +961,7 @@ export default function Books() {
                   variant="outline"
                   size="sm"
                   onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
+                  disabled={currentPage >= totalPages || loading}
                 >
                   Next
                   <ChevronRight className="h-4 w-4" />

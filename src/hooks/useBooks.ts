@@ -180,7 +180,7 @@ export const useBooks = (
         (payload) => {
           console.log('Book inserted:', payload.new);
           // Refetch to get the full data with daily_published status
-          queryClient.invalidateQueries({ queryKey: ['books', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['books'] });
         }
       )
       .on(
@@ -194,7 +194,7 @@ export const useBooks = (
         (payload) => {
           console.log('Book updated:', payload.new);
           // Refetch to get the updated data with daily_published status
-          queryClient.invalidateQueries({ queryKey: ['books', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['books'] });
         }
       )
       .on(
@@ -207,9 +207,8 @@ export const useBooks = (
         },
         (payload) => {
           console.log('Book deleted:', payload.old);
-          queryClient.setQueryData(['books', user.id], (old: Book[] = []) =>
-            old.filter(book => book.id !== payload.old.id)
-          );
+          // Invalidate all book queries to refetch
+          queryClient.invalidateQueries({ queryKey: ['books'] });
         }
       )
       .on(
@@ -222,7 +221,7 @@ export const useBooks = (
         (payload) => {
           console.log('Daily published changed:', payload);
           // Refetch books when daily_published status changes
-          queryClient.invalidateQueries({ queryKey: ['books', user.id] });
+          queryClient.invalidateQueries({ queryKey: ['books'] });
         }
       )
       .subscribe();

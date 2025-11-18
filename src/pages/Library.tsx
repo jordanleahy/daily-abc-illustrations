@@ -12,6 +12,7 @@ import { BookFilterBar } from '@/components/filters';
 import { LIBRARY_TEXT } from '@/config/libraryText';
 import { LIBRARY_STYLES } from '@/styles/library.styles';
 import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/themeFilters';
+import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
 
 const Library = memo(() => {
   const navigate = useNavigate();
@@ -20,8 +21,11 @@ const Library = memo(() => {
   const { data: libraryBooks = [], isLoading: isLoadingBooks } = useLibraryBooksDecoupled();
   const { favorites } = useFavorites();
   
-  // Filter state
-  const [searchQuery, setSearchQuery] = useState('');
+  // ⚡ PERFORMANCE OPTIMIZATION: Three strategies available
+  // 1. 'debounced' (default) - Best for large lists, delays filtering
+  // 2. 'transition' - Non-blocking updates, keeps UI responsive  
+  // 3. 'immediate' - No delay, requires well-memoized filters
+  const { rawQuery, activeQuery, setSearchQuery, isSearching } = useOptimizedSearch('debounced', 300);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   
   // Extract available themes from library books
@@ -30,10 +34,10 @@ const Library = memo(() => {
     [libraryBooks]
   );
   
-  // Apply filters to library books
+  // Apply filters using activeQuery (debounced/optimized value)
   const filteredBooks = useMemo(() => 
-    filterBooksByThemeAndSearch(libraryBooks, searchQuery, selectedThemes),
-    [libraryBooks, searchQuery, selectedThemes]
+    filterBooksByThemeAndSearch(libraryBooks, activeQuery, selectedThemes),
+    [libraryBooks, activeQuery, selectedThemes]
   );
 
   if (isLoadingBooks) {
@@ -75,12 +79,12 @@ const Library = memo(() => {
               {libraryBooks.length > 0 && (
                 <div className="mb-6">
                   <BookFilterBar
-                    searchQuery={searchQuery}
+                    searchQuery={rawQuery}
                     onSearchChange={setSearchQuery}
                     selectedThemes={selectedThemes}
                     onThemesChange={setSelectedThemes}
                     availableThemes={availableThemes}
-                    placeholder="Search library books..."
+                    placeholder={isSearching ? "Searching..." : "Search library books..."}
                   />
                 </div>
               )}

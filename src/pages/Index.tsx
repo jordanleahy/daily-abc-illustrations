@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { format } from 'date-fns';
 import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/themeFilters';
+import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
 
 const Index = () => {
   const { isAuthenticated } = useAuthContext();
@@ -40,8 +41,8 @@ const Index = () => {
   // Fetch library books using decoupled architecture
   const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooksDecoupled();
   
-  // Filter state
-  const [searchQuery, setSearchQuery] = useState('');
+  // ⚡ PERFORMANCE OPTIMIZATION: Debounced search for instant feel
+  const { rawQuery, activeQuery, setSearchQuery, isSearching } = useOptimizedSearch('debounced', 300);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   
   // Extract available themes from library books
@@ -50,10 +51,10 @@ const Index = () => {
     [libraryItems]
   );
   
-  // Apply filters to library books
+  // Apply filters using activeQuery (debounced value)
   const filteredLibraryItems = useMemo(() => 
-    filterBooksByThemeAndSearch(libraryItems, searchQuery, selectedThemes),
-    [libraryItems, searchQuery, selectedThemes]
+    filterBooksByThemeAndSearch(libraryItems, activeQuery, selectedThemes),
+    [libraryItems, activeQuery, selectedThemes]
   );
   
   // Preload book images for instant display on return visits
@@ -163,12 +164,12 @@ const Index = () => {
         {libraryItems.length > 0 && (
           <div className="mb-6">
             <BookFilterBar
-              searchQuery={searchQuery}
+              searchQuery={rawQuery}
               onSearchChange={setSearchQuery}
               selectedThemes={selectedThemes}
               onThemesChange={setSelectedThemes}
               availableThemes={availableThemes}
-              placeholder="Search your books..."
+              placeholder={isSearching ? "Searching..." : "Search your books..."}
             />
           </div>
         )}

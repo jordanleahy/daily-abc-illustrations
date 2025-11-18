@@ -103,6 +103,7 @@ export function FocusedPageView({
             onToggleOverlayVisibility={toggleOverlay}
             isPreferencesLoading={isPreferencesLoading}
             showDismissButton={true}
+            hideBottomOverlay={true}
             className="shadow-lg"
           />
         </div>

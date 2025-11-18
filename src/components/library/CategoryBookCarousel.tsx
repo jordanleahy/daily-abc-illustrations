@@ -5,6 +5,8 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
 } from '@/components/ui/carousel';
 import { LibraryBookCard } from './LibraryBookCard';
 import type { LibraryBook } from '@/types/library';
@@ -81,6 +83,8 @@ export const CategoryBookCarousel = memo(({
             </CarouselItem>
           ))}
         </CarouselContent>
+        <CarouselPrevious className="hidden md:flex" />
+        <CarouselNext className="hidden md:flex" />
       </Carousel>
     </section>
   );

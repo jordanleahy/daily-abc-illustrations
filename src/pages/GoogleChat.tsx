@@ -614,8 +614,8 @@ export default function GoogleChat() {
   }, []);
 
   const handleBookTypeSelect = useCallback(async (bookType: typeof BOOK_TYPES[0]) => {
-    // Store the book type ID for later use
-    setSelectedBookType(bookType.id);
+    // Store the book type ID for later use  
+    setSelectedBookType(bookType.id as BookTypeId);
     
     // Update session name with book type label (silent to avoid toast)
     if (currentSessionId) {

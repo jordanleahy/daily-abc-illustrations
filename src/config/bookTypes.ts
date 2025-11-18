@@ -26,9 +26,9 @@ export interface BookType {
   clarificationContext?: string;
 }
 
-export const BOOK_TYPES: BookType[] = [
+export const BOOK_TYPES = [
   {
-    id: 'abc',
+    id: 'abc' as const,
     label: 'ABC Book',
     icon: Sparkles,
     description: 'Alphabet learning with letter recognition (26 pages A-Z)',

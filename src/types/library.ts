@@ -19,5 +19,6 @@ export interface LibraryBook {
     type?: string;
     bookType?: string;
     targetAge?: string;
+    characterTheme?: string;
   } | null;
 }

@@ -1,10 +1,9 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 
 interface WordCarouselProps {
   words: Array<{ word: string }>;
   currentWordIndex: number;
   wordStatuses?: Record<number, 'difficult' | 'understood'>;
-  onWordChange?: (index: number) => void;
 }
 
 export function WordCarousel({
@@ -12,6 +11,16 @@ export function WordCarousel({
   currentWordIndex,
   wordStatuses,
 }: WordCarouselProps) {
+  const currentWordRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to current word
+  useEffect(() => {
+    currentWordRef.current?.scrollIntoView({ 
+      behavior: 'smooth', 
+      block: 'nearest',
+      inline: 'center' 
+    });
+  }, [currentWordIndex]);
   return (
     <div 
       className="w-full h-full flex items-center overflow-x-auto scrollbar-hide"
@@ -27,6 +36,7 @@ export function WordCarousel({
           return (
             <div
               key={index}
+              ref={isCurrent ? currentWordRef : null}
               className={`
                 inline-block px-3 py-2 rounded-lg font-semibold transition-all duration-300 ease-in-out text-xl flex-shrink-0
                 ${isCurrent 

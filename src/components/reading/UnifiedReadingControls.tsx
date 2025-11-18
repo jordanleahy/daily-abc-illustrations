@@ -24,7 +24,6 @@ interface UnifiedReadingControlsProps {
   overlayWords?: Array<{ word: string }>;
   overlayCurrentWordIndex?: number;
   overlayWordStatuses?: Record<number, 'difficult' | 'understood'>;
-  onOverlayWordChange?: (index: number) => void;
   showOverlay?: boolean;
   
   // Read/Focus toggle props
@@ -53,7 +52,6 @@ export function UnifiedReadingControls({
   overlayWords,
   overlayCurrentWordIndex = 0,
   overlayWordStatuses,
-  onOverlayWordChange,
   showOverlay = true,
   isReadMode = false,
   onToggleReadMode,
@@ -95,7 +93,6 @@ export function UnifiedReadingControls({
                   words={overlayWords}
                   currentWordIndex={overlayCurrentWordIndex}
                   wordStatuses={overlayWordStatuses}
-                  onWordChange={onOverlayWordChange}
                 />
               )
             ) : (

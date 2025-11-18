@@ -26,7 +26,6 @@ interface ReadingPageDisplayProps {
   wordStatuses?: Record<number, 'difficult' | 'understood'>;
   isPreferencesLoading?: boolean;
   showDismissButton?: boolean;
-  onWordChange?: (index: number) => void;
   hideBottomOverlay?: boolean; // Phase 3: Disable old overlay
 }
 
@@ -47,7 +46,6 @@ export function ReadingPageDisplay({
   wordStatuses,
   isPreferencesLoading = false,
   showDismissButton = true,
-  onWordChange,
   hideBottomOverlay = false,
 }: ReadingPageDisplayProps) {
   const { generateMetadata } = useWordMetadata();
@@ -133,7 +131,6 @@ export function ReadingPageDisplay({
                     words={currentPageWords}
                     currentWordIndex={currentWordIndex}
                     wordStatuses={wordStatuses}
-                    onWordChange={onWordChange}
                   />
                   {onUpdatePageText && (
                     <button

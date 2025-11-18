@@ -5,7 +5,7 @@
 
 export const SITE_CONFIG = {
   // Basic site information
-  name: 'Daily ABC Illustrations',
+  name: 'ChairLift',
   tagline: 'A New Book Every 24 Hours',
   description: 'My daughter loves digital learning, so I build her a new book every day',
   subheading: 'Im a Jersey City parent who likes to play with AI and build interactive learning tools for my toddler.',
@@ -25,12 +25,12 @@ export const SITE_CONFIG = {
     url: 'https://lovable.dev/opengraph-image-p98pqg.png',
     width: 1200,
     height: 630,
-    alt: 'Daily ABC Illustrations - New books published daily at 7:01 AM Eastern Time',
+    alt: 'ChairLift - New books published daily at 7:01 AM Eastern Time',
   },
   
   // Content specific
   dailyContent: {
-    title: 'Daily ABC Illustrations',
+    title: 'ChairLift',
     description: 'New books published daily at 7:01 AM Eastern Time',
     schedule: '7:01 AM Eastern Time daily',
   },

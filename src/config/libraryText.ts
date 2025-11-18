@@ -1,7 +1,7 @@
 export const LIBRARY_TEXT = {
   PAGE_TITLE: 'Library',
   PAGE_SUBTITLE: 'Your collection of ABC books',
-  META_TITLE: 'Library - Daily ABC Illustrations',
+  META_TITLE: 'Library - ChairLift',
   META_DESCRIPTION: 'Your books and our daily published ABC illustration books.',
   
   LOADING: 'Loading library...',

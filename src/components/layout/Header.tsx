@@ -88,7 +88,7 @@ interface HeaderProps {
  * appropriate interface and navigation options.
  */
 export function Header({
-  title = "Daily ABC Illustrations",
+  title = "ChairLift",
   subtitle,
   bookId,
   showQRCode = true,

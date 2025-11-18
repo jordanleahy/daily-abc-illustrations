@@ -8,6 +8,7 @@ import type { LandingLibraryBook } from '@/types/book-extended';
 import { LIBRARY_TEXT } from '@/config/libraryText';
 import { LIBRARY_CONFIG } from '@/config/library';
 import { LIBRARY_STYLES } from '@/styles/library.styles';
+import { normalizeBookType } from '@/types/bookType';
 
 interface CategorizedBookSectionsProps {
   books: (LibraryBook | LandingLibraryBook)[];
@@ -28,11 +29,26 @@ export const CategorizedBookSections = memo(({
     const grouped: Record<string, typeof books> = {};
     
     books.forEach(book => {
-      // Support both metadata.type and metadata.bookType with safe access
       const metadata = book.metadata;
-      const type = (metadata && ('type' in metadata ? metadata.type : metadata.bookType)) || 'other';
-      if (!grouped[type]) grouped[type] = [];
-      grouped[type].push(book);
+      
+      // Try bookType first, then type (with safe access), then fall back to category field
+      const bookType = metadata?.bookType;
+      const metadataType = metadata && 'type' in metadata ? metadata.type : undefined;
+      const categoryField = 'category' in book ? book.category : undefined;
+      
+      let type = bookType || metadataType;
+      let validated = normalizeBookType(type);
+      
+      // Fall back to category field if metadata bookType is invalid
+      if (!validated && typeof categoryField === 'string') {
+        validated = normalizeBookType(categoryField);
+      }
+      
+      // Final fallback to 'other'
+      const finalType = validated || 'other';
+      
+      if (!grouped[finalType]) grouped[finalType] = [];
+      grouped[finalType].push(book);
     });
     
     return grouped;

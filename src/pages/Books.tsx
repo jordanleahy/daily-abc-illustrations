@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { BookFilterBar } from '@/components/filters';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
@@ -14,6 +15,7 @@ import { BookOpen, Calendar, ChevronLeft, ChevronRight, Search } from 'lucide-re
 import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/themeFilters';
 import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
 import { BookImage } from '@/components/ui/book-image';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
@@ -326,12 +328,25 @@ export default function Books() {
   // Pagination state for all-books view
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const PAGE_SIZE = 18; // 3 rows of 6 books on large screens
   
-  const { books, totalCount, loading } = useBooks(
+  const { books: rawBooks, totalCount, loading } = useBooks(
     isAllBooksView ? 'all-books' : 'my-books',
     isAllBooksView ? { page: currentPage, pageSize: PAGE_SIZE } : undefined,
     searchQuery
+  );
+  
+  // Extract available themes from books
+  const availableThemes = useMemo(() => 
+    extractAvailableThemes(rawBooks as any[] || []),
+    [rawBooks]
+  );
+  
+  // Apply client-side theme filtering to books (after server-side search)
+  const books = useMemo(() => 
+    filterBooksByThemeAndSearch(rawBooks as any[] || [], '', selectedThemes), // Empty search since server already filters
+    [rawBooks, selectedThemes]
   );
   
   const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1; // At least 1 page
@@ -339,7 +354,7 @@ export default function Books() {
   // Reset page when switching between views or searching
   useEffect(() => {
     setCurrentPage(1);
-  }, [isAllBooksView, searchQuery]);
+  }, [isAllBooksView, searchQuery, selectedThemes]);
   
   // Reset to page 1 if current page exceeds total pages (e.g., after deletion)
   useEffect(() => {
@@ -907,30 +922,16 @@ export default function Books() {
           </Button>
         </div>
 
-        {/* Search Bar */}
-        {isAllBooksView && (
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Search books by title..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
-            </div>
-            {searchQuery && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setSearchQuery('')}
-              >
-                Clear
-              </Button>
-            )}
-          </div>
-        )}
+        {/* Book Filters */}
+        <BookFilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedThemes={selectedThemes}
+          onThemesChange={setSelectedThemes}
+          availableThemes={availableThemes}
+          placeholder={isAllBooksView ? "Search all books..." : "Search your books..."}
+          showSearch={isAllBooksView}
+        />
 
         {/* Books Grid */}
         {books && books.length > 0 ? (

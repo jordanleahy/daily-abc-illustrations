@@ -1,6 +1,7 @@
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
 import { CategorizedBookSections } from '@/components/library';
+import { BookFilterBar } from '@/components/filters';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
@@ -12,9 +13,10 @@ import { getTimeBasedGreeting } from '@/utils/timeUtils';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
-import { useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { format } from 'date-fns';
+import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/themeFilters';
 
 const Index = () => {
   const { isAuthenticated } = useAuthContext();
@@ -37,6 +39,22 @@ const Index = () => {
   
   // Fetch library books using decoupled architecture
   const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooksDecoupled();
+  
+  // Filter state
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
+  
+  // Extract available themes from library books
+  const availableThemes = useMemo(() => 
+    extractAvailableThemes(libraryItems),
+    [libraryItems]
+  );
+  
+  // Apply filters to library books
+  const filteredLibraryItems = useMemo(() => 
+    filterBooksByThemeAndSearch(libraryItems, searchQuery, selectedThemes),
+    [libraryItems, searchQuery, selectedThemes]
+  );
   
   // Preload book images for instant display on return visits
   useHomeImagePreloader(libraryItems);
@@ -69,7 +87,7 @@ const Index = () => {
     });
   
   // Limit books to top 5 per category for performance
-  const limitedLibraryItems = libraryItems.slice(0, 30);
+  const limitedLibraryItems = filteredLibraryItems.slice(0, 30);
   
   const isLoading = isLoadingKids || isLoadingHabits;
   const timeOfDay = getTimeBasedGreeting();
@@ -141,14 +159,34 @@ const Index = () => {
           </div>
         )}
 
-        {/* Categorized Book Sections */}
+        {/* Book Filters */}
         {libraryItems.length > 0 && (
+          <div className="mb-6">
+            <BookFilterBar
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              selectedThemes={selectedThemes}
+              onThemesChange={setSelectedThemes}
+              availableThemes={availableThemes}
+              placeholder="Search your books..."
+            />
+          </div>
+        )}
+
+        {/* Categorized Book Sections */}
+        {filteredLibraryItems.length > 0 ? (
           <CategorizedBookSections
             books={limitedLibraryItems}
             maxBooksPerCategory={5}
             showViewAllLinks={true}
           />
-        )}
+        ) : libraryItems.length > 0 ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">
+              No books found matching your filters.
+            </p>
+          </div>
+        ) : null}
       </div>
     </StandardPageLayout>
   );

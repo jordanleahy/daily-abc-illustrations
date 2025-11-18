@@ -41,8 +41,6 @@ const Landing = () => {
           <LandingHero dailyPublished={landingData?.dailyPublished} />
           <CategorizedBookSections
             books={landingData?.libraryBooks || []}
-            maxBooksPerCategory={6}
-            showViewAllLinks={false}
             showAllCategories={true}
           />
           <SignupSection />

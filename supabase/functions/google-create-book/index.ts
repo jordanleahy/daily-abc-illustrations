@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
+import { normalizeBookType, ValidBookType } from '../_shared/types.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -44,7 +45,11 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages, bookType, characterTheme, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages, bookType: rawBookType, characterTheme, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId } = validatedData;
+    
+    // Normalize and validate book type
+    const bookType = normalizeBookType(rawBookType);
+    console.log(`[Book Creation] Raw book type: ${rawBookType}, Normalized: ${bookType}`);
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -75,9 +80,7 @@ serve(async (req) => {
     }
 
     console.log('Creating book using Lovable AI for user:', userId);
-    if (bookType) {
-      console.log('Book type specified:', bookType);
-    }
+    console.log('Book type specified:', bookType);
 
     // Fetch style guide if referenceBookId is provided
     let styleGuide: string | null = null;
@@ -204,7 +207,7 @@ Return ONLY valid JSON with this structure:
   "category": "string", 
   "bookDescription": "string",
     "metadata": {
-      "bookType": "${bookType || 'educational'}",
+      "bookType": "${bookType}",
       "pageCount": ${pageDetails.length},
       "letterCase": "lowercase|uppercase|both (for ABC content)",
       "numberRange": "1-10 (for Numbers content)",
@@ -564,7 +567,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     // Extract and validate metadata
     const metadata = bookData.metadata || {};
     const validatedMetadata = {
-      bookType: metadata.bookType || bookData.bookType || bookType || 'custom',
+      bookType: normalizeBookType(metadata.bookType || bookData.bookType) || bookType,
       pageCount: bookData.pages.length,
       targetAge: metadata.targetAge,
       letterCase: metadata.letterCase || bookData.letterCase,

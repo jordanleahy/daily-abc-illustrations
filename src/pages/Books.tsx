@@ -17,6 +17,7 @@ import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/themeFilters';
 import { getThemeDisplayName } from '@/types/characterTheme';
+import { getBookTypeDisplayName } from '@/types/bookType';
 import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
 import { BookImage } from '@/components/ui/book-image';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
@@ -129,6 +130,11 @@ function UserBookCard({
           {book.metadata?.numberRange && (
             <Badge variant="outline">
               Numbers {book.metadata.numberRange}
+            </Badge>
+          )}
+          {book.metadata?.bookType && (
+            <Badge variant="secondary">
+              {getBookTypeDisplayName(book.metadata.bookType)}
             </Badge>
           )}
           {book.metadata?.characterTheme && (

@@ -16,14 +16,14 @@ export function HabitCarousel({ completions }: HabitCarouselProps) {
       <Carousel
         opts={{
           align: "start",
-          dragFree: false,
+          dragFree: true,
           containScroll: "trimSnaps",
         }}
         className="w-full"
       >
         <CarouselContent className="-ml-4">
           {completions.map((completion) => (
-            <CarouselItem key={completion.id} className="pl-4 basis-[85vw] sm:basis-[70vw]">
+            <CarouselItem key={completion.id} className="pl-4 basis-[50vw] sm:basis-[45vw] md:basis-[35vw] lg:basis-[22vw]">
               <HabitTrackingCard completion={completion} />
             </CarouselItem>
           ))}

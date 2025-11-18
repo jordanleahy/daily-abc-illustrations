@@ -5,11 +5,12 @@ import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
-import { BookOpen, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
+import { BookOpen, Calendar, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
@@ -324,19 +325,21 @@ export default function Books() {
   
   // Pagination state for all-books view
   const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
   const PAGE_SIZE = 18; // 3 rows of 6 books on large screens
   
   const { books, totalCount, loading } = useBooks(
     isAllBooksView ? 'all-books' : 'my-books',
-    isAllBooksView ? { page: currentPage, pageSize: PAGE_SIZE } : undefined
+    isAllBooksView ? { page: currentPage, pageSize: PAGE_SIZE } : undefined,
+    searchQuery
   );
   
   const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1; // At least 1 page
   
-  // Reset page when switching between views
+  // Reset page when switching between views or searching
   useEffect(() => {
     setCurrentPage(1);
-  }, [isAllBooksView]);
+  }, [isAllBooksView, searchQuery]);
   
   // Reset to page 1 if current page exceeds total pages (e.g., after deletion)
   useEffect(() => {
@@ -903,6 +906,31 @@ export default function Books() {
             Create New Book
           </Button>
         </div>
+
+        {/* Search Bar */}
+        {isAllBooksView && (
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 max-w-sm">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Search books by title..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            {searchQuery && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSearchQuery('')}
+              >
+                Clear
+              </Button>
+            )}
+          </div>
+        )}
 
         {/* Books Grid */}
         {books && books.length > 0 ? (

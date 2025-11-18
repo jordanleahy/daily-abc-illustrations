@@ -55,18 +55,21 @@ import { toast } from 'sonner';
  * );
  * ```
  */
-export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
+export const useBooks = (
+  viewMode: 'my-books' | 'all-books' = 'my-books',
+  pagination?: { page: number; pageSize: number }
+) => {
   const { user } = useAuthContext();
   const { isAdmin, isTeacher } = useRole();
   const queryClient = useQueryClient();
 
-  const { data: books = [], isLoading, error } = useQuery({
-    queryKey: ['books', user?.id, isAdmin, isTeacher, viewMode],
+  const { data: booksResult, isLoading, error } = useQuery({
+    queryKey: ['books', user?.id, isAdmin, isTeacher, viewMode, pagination?.page, pagination?.pageSize],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) return { books: [], totalCount: 0 };
       
       // ⚡ OPTIMIZED: Single query with JOIN including cover images
-      const query = supabase
+      let query = supabase
         .from('books')
         .select(`
           *,
@@ -84,16 +87,23 @@ export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
               is_latest
             )
           )
-        `);
+        `, { count: 'exact' });
       
       // Determine if we should show all books
       const showAllBooks = viewMode === 'all-books' && (isAdmin || isTeacher);
       
-      const finalQuery = showAllBooks
+      query = showAllBooks
         ? query.neq('status', 'archived')  // All books for admins on /all-books
         : query.eq('user_id', user.id).neq('status', 'archived');  // User's books
       
-      const { data: booksData, error: booksError } = await finalQuery;
+      // Apply pagination if provided (for performance on all-books view)
+      if (pagination) {
+        const from = (pagination.page - 1) * pagination.pageSize;
+        const to = from + pagination.pageSize - 1;
+        query = query.range(from, to);
+      }
+      
+      const { data: booksData, error: booksError, count } = await query;
 
       if (booksError) {
         console.error('Error fetching books:', booksError);
@@ -102,7 +112,10 @@ export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
       }
 
       if (!booksData || booksData.length === 0) {
-        return [];
+        return {
+          books: [],
+          totalCount: 0
+        };
       }
 
       // Map activity and cover image data directly from JOIN
@@ -130,10 +143,14 @@ export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
         };
       });
 
-      // Sort by updated_at (most recently updated/published first)
-      return booksWithActivity.sort((a, b) => {
-        return new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime();
-      });
+      const sortedBooks = booksWithActivity.sort((a, b) => 
+        new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+      );
+
+      return {
+        books: sortedBooks,
+        totalCount: count || sortedBooks.length
+      };
     },
     enabled: !!user?.id,
   });
@@ -213,10 +230,11 @@ export const useBooks = (viewMode: 'my-books' | 'all-books' = 'my-books') => {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, isAdmin, isTeacher, viewMode, queryClient]);
+  }, [user?.id, isAdmin, isTeacher, viewMode, queryClient, pagination]);
 
   return {
-    books,
+    books: booksResult?.books || [],
+    totalCount: booksResult?.totalCount || 0,
     loading: isLoading,
     error
   };

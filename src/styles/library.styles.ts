@@ -20,7 +20,7 @@ export const LIBRARY_STYLES = {
     icon: 'w-6 h-6',
     viewAllButton: 'flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors',
     chevron: 'w-4 h-4',
-    wrapper: 'w-full touch-pan-x pl-4 md:pl-6',
+    wrapper: 'w-full touch-pan-x pl-4 md:pl-6 cursor-grab active:cursor-grabbing',
     content: '-ml-4 md:-ml-6',
     item: 'pl-4 md:pl-6 basis-[50vw] sm:basis-[45vw] md:basis-[35vw] lg:basis-[22vw]',
   },

@@ -12,12 +12,13 @@ export const LIBRARY_CONFIG = {
   CAROUSEL: {
     align: 'start' as const,
     dragFree: true,
-    containScroll: false,
+    containScroll: 'trimSnaps' as const,
     skipSnaps: false,
     inViewThreshold: 0.7,
     watchDrag: true,
     watchResize: true,
     watchSlides: true,
+    dragThreshold: 10,
   },
   
   // Features

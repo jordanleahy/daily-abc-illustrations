@@ -149,3 +149,12 @@ verify_jwt = true
 
 [functions.generate-word-book-recommendations]
 verify_jwt = true
+
+[functions.categorize-existing-books]
+verify_jwt = true
+
+[functions.apply-book-categorization]
+verify_jwt = true
+
+[functions.rollback-categorization]
+verify_jwt = true

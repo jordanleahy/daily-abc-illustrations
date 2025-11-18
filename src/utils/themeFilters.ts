@@ -1,6 +1,6 @@
 import { Book } from '@/types/book';
 import { LibraryBook } from '@/types/library';
-import { characterThemes } from '@/config/characterThemes';
+import { themeDisplayNames, isValidCharacterTheme, getThemeDisplayName } from '@/types/characterTheme';
 
 export interface ThemeOption {
   value: string;
@@ -9,23 +9,12 @@ export interface ThemeOption {
 
 /**
  * Normalizes theme name for display
+ * Uses standardized display names from characterTheme enum
  * Examples: "paw-patrol" → "PAW Patrol", "bear-stories" → "Bear Stories"
  */
 export const normalizeThemeName = (theme: string): string => {
   if (!theme) return '';
-  
-  // Check if theme exists in characterThemes config
-  const themeConfig = characterThemes[theme];
-  if (themeConfig) {
-    // Extract clean name from altText
-    return themeConfig.altText.replace(' themed book', '').replace(' style', '');
-  }
-  
-  // Fallback: capitalize each word
-  return theme
-    .split('-')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+  return getThemeDisplayName(theme);
 };
 
 /**

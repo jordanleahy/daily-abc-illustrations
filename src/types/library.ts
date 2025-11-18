@@ -1,4 +1,5 @@
 import { CharacterThemeValue } from './characterTheme';
+import { AgeRangeId } from './ageRange';
 
 /**
  * Library book type for decoupled library architecture
@@ -20,7 +21,7 @@ export interface LibraryBook {
   metadata?: {
     type?: string;
     bookType?: string;
-    targetAge?: string;
+    targetAge?: AgeRangeId;
     characterTheme?: CharacterThemeValue;
   } | null;
 }

@@ -29,6 +29,7 @@ import { useQuery } from '@tanstack/react-query';
 import { PublicationStatus } from '@/types/shared/status';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { BookTypeId } from '@/types/bookType';
+import { AgeRangeId } from '@/types/ageRange';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ export default function GoogleChat() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [selectedBookType, setSelectedBookType] = useState<BookTypeId | null>(null);
+  const [selectedAgeRange, setSelectedAgeRange] = useState<AgeRangeId | null>(null);
   
   // Get location state for pre-filled prompts and target words from recommendations
   const locationState = window.history.state?.usr || {};
@@ -692,6 +694,7 @@ export default function GoogleChat() {
         qaImages: Object.keys(editorPageImages).length > 0 ? editorPageImages : undefined,
         bookType: selectedBookType || undefined,
         characterTheme: selectedCharacterTheme || undefined, // Pass validated theme from suggestions
+        targetAge: selectedAgeRange || undefined, // Pass validated age range
         textOverlayPreference,
         referenceBookId,
         targetWords: targetWords.length > 0 ? targetWords : undefined,
@@ -773,6 +776,12 @@ export default function GoogleChat() {
         setSelectedCharacterTheme(action.themeId);
       }
       
+      // Capture age range if present in the action
+      if (action.ageRangeId) {
+        console.log('[Age Range Selection] User selected age range:', action.ageRangeId);
+        setSelectedAgeRange(action.ageRangeId as AgeRangeId);
+      }
+      
       // Send the predefined response
       await sendMessage(action.value, undefined, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
@@ -804,6 +813,7 @@ export default function GoogleChat() {
         setOutlineJustCompleted(false);
         setSelectedBookType(null);
         setSelectedCharacterTheme(null); // Reset theme selection
+        setSelectedAgeRange(null); // Reset age range selection
         setReplacePageMode({});
         // Close mobile sidebar when creating new session
         setIsMobileSidebarOpen(false);

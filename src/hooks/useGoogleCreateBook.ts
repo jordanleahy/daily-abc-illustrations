@@ -19,6 +19,7 @@ export interface CreateBookParams {
   pageDetails?: PageDetail[];
   bookType?: string;
   characterTheme?: string;
+  targetAge?: string; // Target age range (e.g., '2-4', '4-6')
   textOverlayPreference?: 'with-text' | 'without-text';
   referenceBookId?: string;
   qaImages?: Record<string, string>;
@@ -88,6 +89,7 @@ export const useGoogleCreateBook = () => {
           qaImages: params.qaImages || undefined,
           bookType: params.bookType || undefined,
           characterTheme: params.characterTheme || undefined,
+          targetAge: params.targetAge || undefined,
           textOverlayPreference: params.textOverlayPreference || undefined,
           referenceBookId: params.referenceBookId || undefined,
           educationalFocus: educationalFocus || undefined,

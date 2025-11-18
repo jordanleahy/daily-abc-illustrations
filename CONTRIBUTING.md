@@ -1,4 +1,4 @@
-# Contributing to Daily ABC Illustrations
+# Contributing to ChairLift
 
 Thank you for contributing! Please read this guide before making changes.
 

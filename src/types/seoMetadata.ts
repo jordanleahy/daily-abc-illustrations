@@ -177,7 +177,7 @@ export function transformToSEOMetadata(row: SeoMetadataRow | null): import('./op
       height: 630,
       alt: row.seo_title
     } : undefined,
-    siteName: 'Daily ABC Illustrations',
+    siteName: 'ChairLift',
     locale: 'en_US',
     twitter: {
       card: 'summary_large_image',

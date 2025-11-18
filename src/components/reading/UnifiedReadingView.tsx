@@ -251,22 +251,24 @@ export function UnifiedReadingView({
   
   // Save word learning state when page changes
   useEffect(() => {
-    const previousPage = reorderedPages[currentPageIndex];
-    if (!previousPage) return;
-
-    // Save current page state before switching
-    return () => {
-      if (previousPage?.id) {
+    if (!currentPage?.id) return;
+    
+    // Save state when moving to a new page
+    const saveState = () => {
+      if (currentPage.id) {
         setPageWordStates(prev => ({
           ...prev,
-          [previousPage.id]: {
+          [currentPage.id]: {
             currentWordIndex: readingState.currentWordIndex,
             wordStatuses: readingState.wordStatuses,
           }
         }));
       }
     };
-  }, [currentPageIndex, reorderedPages, readingState.currentWordIndex, readingState.wordStatuses]);
+    
+    // Save on page change
+    return saveState;
+  }, [currentPage?.id, readingState.currentWordIndex, readingState.wordStatuses]);
   
   // Start analytics session when content loads
   useEffect(() => {
@@ -426,7 +428,6 @@ export function UnifiedReadingView({
               onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
               isPreferencesLoading={readingState.isPreferencesLoading}
               showDismissButton={false}
-              onWordChange={readingState.setCurrentWordIndex}
               imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex) : undefined}
               hideBottomOverlay={true}
             />
@@ -455,7 +456,6 @@ export function UnifiedReadingView({
           overlayWords={currentPageWords}
           overlayCurrentWordIndex={readingState.currentWordIndex}
           overlayWordStatuses={readingState.wordStatuses}
-          onOverlayWordChange={readingState.setCurrentWordIndex}
           showOverlay={!readingState.hiddenOverlayPages?.has(currentPage.id)}
           isReadMode={readingState.isReadMode}
           onToggleReadMode={readingState.toggleReadMode}

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useReadingPreferences } from '@/hooks/useReadingPreferences';
 import { useWordLearningProgress } from '@/hooks/useWordLearningProgress';
 import { WordMetadata } from '@/utils/wordParser';
@@ -25,6 +25,20 @@ export function useReadingPageState(config?: ReadingPageStateConfig) {
   
   // Word learning progress tracking
   const { saveWordMark } = useWordLearningProgress(config?.kidProfileId);
+
+  // Reset word state when page changes
+  useEffect(() => {
+    console.log('[Word State] Page changed:', {
+      pageId: config?.pageId,
+      resetting: true,
+      newWordIndex: config?.initialWordIndex ?? 0,
+      hasStatuses: Object.keys(config?.initialWordStatuses ?? {}).length > 0
+    });
+    
+    setCurrentWordIndex(config?.initialWordIndex ?? 0);
+    setWordStatuses(config?.initialWordStatuses ?? {});
+    setHasReachedLastWord(false);
+  }, [config?.pageId]);
 
   const handleNavigateWord = useCallback((direction: 'prev' | 'next', totalWords: number) => {
     setCurrentWordIndex(prev => {

@@ -46,6 +46,7 @@ import { initializeCacheWarming } from "./utils/cacheWarming";
 import { initializePerformanceMonitoring } from "./utils/performanceMonitoring";
 import { PerformanceDashboard } from "./components/dev/PerformanceDashboard";
 import { detectPlainImageTags, assertPerformanceTargets } from "./utils/imageOptimizationGuards";
+import { useChatBookCoversPreloader } from "./hooks/useChatBookCoversPreloader";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,6 +66,9 @@ const queryClient = new QueryClient({
 export { queryClient };
 
 const App = () => {
+  // Preload critical book cover images at app startup for instant display
+  useChatBookCoversPreloader();
+
   // PHASE 3 & 4: Initialize cache warming, cleanup, and performance monitoring
   useEffect(() => {
     scheduleCacheCleanup();

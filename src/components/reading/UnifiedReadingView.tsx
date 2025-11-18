@@ -428,7 +428,7 @@ export function UnifiedReadingView({
               showDismissButton={false}
               onWordChange={readingState.setCurrentWordIndex}
               imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex) : undefined}
-              hideBottomOverlay={false}
+              hideBottomOverlay={true}
             />
             </div>
           </div>

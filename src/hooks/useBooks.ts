@@ -57,14 +57,15 @@ import { toast } from 'sonner';
  */
 export const useBooks = (
   viewMode: 'my-books' | 'all-books' = 'my-books',
-  pagination?: { page: number; pageSize: number }
+  pagination?: { page: number; pageSize: number },
+  searchQuery?: string
 ) => {
   const { user } = useAuthContext();
   const { isAdmin, isTeacher } = useRole();
   const queryClient = useQueryClient();
 
   const { data: booksResult, isLoading, error } = useQuery({
-    queryKey: ['books', user?.id, isAdmin, isTeacher, viewMode, pagination?.page, pagination?.pageSize],
+    queryKey: ['books', user?.id, isAdmin, isTeacher, viewMode, pagination?.page, pagination?.pageSize, searchQuery],
     queryFn: async () => {
       if (!user?.id) return { books: [], totalCount: 0 };
       
@@ -97,6 +98,11 @@ export const useBooks = (
       // Apply user filter for non-admin views
       if (!showAllBooks) {
         query = query.eq('user_id', user.id);
+      }
+      
+      // Apply search filter if provided
+      if (searchQuery && searchQuery.trim()) {
+        query = query.ilike('book_name', `%${searchQuery.trim()}%`);
       }
       
       // Apply pagination if provided (for performance on all-books view)

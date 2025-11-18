@@ -5,6 +5,7 @@ import { SignupSection } from '@/components/landing/SignupSection';
 import { useLandingPageData } from '@/hooks/useLandingPageData';
 import { useLandingPageImagePreloader } from '@/hooks/useLandingPageImagePreloader';
 import { useLandingPageSubscription } from '@/hooks/useLandingPageSubscription';
+import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
 import { useGA4 } from '@/hooks/useGA4';
 import { useEffect } from 'react';
 import { MetaHead } from '@/components/common/MetaHead';
@@ -13,6 +14,7 @@ import { SITE_CONFIG, getSiteTitle } from '@/config/site';
 const Landing = () => {
   const { trackEvent } = useGA4();
   const { data: landingData } = useLandingPageData();
+  const { data: libraryBooks = [] } = useLibraryBooksDecoupled();
   
   // Enable real-time updates for all landing page content
   useLandingPageSubscription();
@@ -40,7 +42,7 @@ const Landing = () => {
         <div className="flex flex-col">
           <LandingHero dailyPublished={landingData?.dailyPublished} />
           <CategorizedBookSections
-            books={landingData?.libraryBooks || []}
+            books={libraryBooks}
             showAllCategories={true}
           />
           <SignupSection />

@@ -97,6 +97,28 @@ export default function AdminCategorizeBooks() {
             </Card>
           )}
 
+          {preview.error && (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="text-center text-destructive">
+                  <AlertCircle className="h-8 w-8 mx-auto mb-2" />
+                  <p className="font-semibold">Failed to load categorization preview</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {preview.error instanceof Error ? preview.error.message : 'Unknown error'}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {!preview.isLoading && !preview.error && !preview.data && (
+            <Card>
+              <CardContent className="pt-6 text-center text-muted-foreground">
+                <p>No data available</p>
+              </CardContent>
+            </Card>
+          )}
+
           {preview.data && (
             <>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

@@ -9,7 +9,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
-import { BookOpen, Calendar } from 'lucide-react';
+import { BookOpen, Calendar, ChevronLeft, ChevronRight } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
@@ -320,6 +320,19 @@ export default function Books() {
   const deletePublication = useDeleteDailyPublished();
   const deleteBook = useDeleteBook();
   
+  const isAllBooksView = location.pathname === '/all-books';
+  
+  // Pagination state for all-books view
+  const [currentPage, setCurrentPage] = useState(1);
+  const PAGE_SIZE = 18; // 3 rows of 6 books on large screens
+  
+  const { books, totalCount, loading } = useBooks(
+    isAllBooksView ? 'all-books' : 'my-books',
+    isAllBooksView ? { page: currentPage, pageSize: PAGE_SIZE } : undefined
+  );
+  
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  
   // Mobile editor state
   const [mobileEditorOpen, setMobileEditorOpen] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
@@ -373,12 +386,6 @@ export default function Books() {
     return statusMap[bookData.status] || PublicationStatus.DRAFT;
   }, [bookData?.status]);
   
-  // Determine view mode based on route
-  const isAllBooksView = location.pathname.startsWith('/all-books');
-  const viewMode = isAllBooksView ? 'all-books' : 'my-books';
-  
-  const { books, loading } = useBooks(viewMode);
-
   // Preload book images for instant display on return visits
   useEditorImagePreloader(books);
 
@@ -887,35 +894,69 @@ export default function Books() {
 
         {/* Books Grid */}
         {books && books.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {books.map((book, index) => (
-              <UserBookCard
-                key={book.id}
-                book={book}
-                index={index}
-                onClick={() => handleViewBook(book.id)}
-                onEditClick={(bookId) => {
-                  const publicationStatus = book.daily_published?.[0] ? {
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {books.map((book, index) => (
+                <UserBookCard
+                  key={book.id}
+                  book={book}
+                  index={index}
+                  onClick={() => handleViewBook(book.id)}
+                  onEditClick={(bookId) => {
+                    const publicationStatus = book.daily_published?.[0] ? {
+                      id: book.daily_published[0].id,
+                      status: book.daily_published[0].status as 'draft' | 'queued' | 'active' | 'expired',
+                      publish_date: book.daily_published[0].publish_date
+                    } : null;
+                    handleEditBook(bookId, book, publicationStatus);
+                  }}
+                  publicationStatus={book.daily_published?.[0] ? {
                     id: book.daily_published[0].id,
                     status: book.daily_published[0].status as 'draft' | 'queued' | 'active' | 'expired',
                     publish_date: book.daily_published[0].publish_date
-                  } : null;
-                  handleEditBook(bookId, book, publicationStatus);
-                }}
-                publicationStatus={book.daily_published?.[0] ? {
-                  id: book.daily_published[0].id,
-                  status: book.daily_published[0].status as 'draft' | 'queued' | 'active' | 'expired',
-                  publish_date: book.daily_published[0].publish_date
-                } : null}
-                onPublish={handlePublish}
-                onUnpublish={handleUnpublish}
-                onDelete={handleDeleteBook}
-                isPublishing={schedulePublication.isPending}
-                isUnpublishing={deletePublication.isPending}
-                isDeleting={deleteBook.isPending}
-              />
-            ))}
-          </div>
+                  } : null}
+                  onPublish={handlePublish}
+                  onUnpublish={handleUnpublish}
+                  onDelete={handleDeleteBook}
+                  isPublishing={schedulePublication.isPending}
+                  isUnpublishing={deletePublication.isPending}
+                  isDeleting={deleteBook.isPending}
+                />
+              ))}
+            </div>
+
+            {/* Pagination Controls - Only show for all-books view */}
+            {isAllBooksView && totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                  Previous
+                </Button>
+                <div className="flex items-center gap-2">
+                  <span className="text-sm text-muted-foreground">
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    ({totalCount} total books)
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Next
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
+          </>
         ) : (
           <Card>
             <CardContent className="flex flex-col items-center justify-center h-64 text-center">

@@ -104,7 +104,7 @@ export default async (request: Request, context: Context) => {
     }
 
     // Prepare metadata values
-    const title = seoMetadata?.seo_title || dailyPublished.title || 'Daily ABC Illustrations';
+    const title = seoMetadata?.seo_title || dailyPublished.title || 'ChairLift';
     const description = seoMetadata?.seo_description || dailyPublished.description || 'Explore educational ABC illustrations';
     const imageUrl = seoMetadata?.og_image_url || `${SUPABASE_URL}/storage/v1/object/public/page-images/default-book-cover.jpg`;
     const canonicalUrl = `https://dailyabcillustrations.com/book/${slug}`;
@@ -126,7 +126,7 @@ export default async (request: Request, context: Context) => {
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:url" content="${canonicalUrl}">
-  <meta property="og:site_name" content="Daily ABC Illustrations">
+  <meta property="og:site_name" content="ChairLift">
   
   <!-- Twitter Card Meta Tags -->
   <meta name="twitter:card" content="summary_large_image">

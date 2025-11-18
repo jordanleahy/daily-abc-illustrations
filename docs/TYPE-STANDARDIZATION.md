@@ -1,6 +1,6 @@
 # Type Standardization Guide
 
-This document provides guidelines for maintaining consistent type definitions across the Daily ABC Illustrations codebase.
+This document provides guidelines for maintaining consistent type definitions across the ChairLift codebase.
 
 ## Status Enums ✅ Complete
 

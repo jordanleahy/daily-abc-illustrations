@@ -27,7 +27,7 @@ const PrivacyPolicy = () => {
       <MetaHead
         metadata={{
           title: getSiteTitle('Privacy Policy'),
-          description: 'Privacy Policy for Daily ABC Illustrations - Learn how we collect, use, and protect your data.',
+          description: 'Privacy Policy for ChairLift - Learn how we collect, use, and protect your data.',
           siteName: SITE_CONFIG.name,
           type: 'website',
           url: window.location.href,
@@ -50,7 +50,7 @@ const PrivacyPolicy = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
                 <p>
-                  Welcome to Daily ABC Illustrations, operated by <strong>Van7, LLC</strong> ("Daily ABC Illustrations," "we," "us," or "our"). 
+                  Welcome to ChairLift, operated by <strong>Van7, LLC</strong> ("ChairLift," "we," "us," or "our").
                   We are committed to protecting your privacy and the privacy of your children. This Privacy Policy explains how we collect, use, 
                   disclose, and safeguard <strong>Personal Data</strong> when you use our educational platform at dailyabcillustrations.com and 
                   related applications (the "Service").
@@ -184,7 +184,7 @@ const PrivacyPolicy = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">5. Children's Privacy (COPPA)</h2>
                 <p>
-                  Daily ABC Illustrations is designed for <strong>parents, teachers, and caregivers</strong> to provide educational content to children. 
+                  ChairLift is designed for <strong>parents, teachers, and caregivers</strong> to provide educational content to children.
                   We comply with the <strong>Children's Online Privacy Protection Act (COPPA)</strong>.
                 </p>
                 <ul>
@@ -288,7 +288,7 @@ const PrivacyPolicy = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">12. Contact Us</h2>
                 <div className="bg-muted p-6 rounded-lg">
-                  <p className="font-semibold">Van7, LLC (DBA Daily ABC Illustrations)</p>
+                  <p className="font-semibold">Van7, LLC (DBA ChairLift)</p>
                   <p>Email: dailyabcillustrations@gmail.com</p>
                   <p>Website: https://dailyabcillustrations.com</p>
                 </div>

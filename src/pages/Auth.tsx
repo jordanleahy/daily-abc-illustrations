@@ -200,7 +200,7 @@ const Auth = () => {
               </div>
               {!isForgotPassword && (
                 <div className="text-xs text-muted-foreground">
-                  Daily ABC books delivered at 7:01 AM ET
+                  New books delivered daily at 7:01 AM ET
                 </div>
               )}
             </CardDescription>

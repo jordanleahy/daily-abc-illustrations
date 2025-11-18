@@ -10,7 +10,7 @@ export const DuolingoStylePricing = () => {
   const currentTier = getSubscriptionTier();
 
   const freeFeatures = [
-    { text: "Daily ABC adventures", icon: "📚", locked: false },
+    { text: "Daily learning adventures", icon: "📚", locked: false },
     { text: "Basic learning streak", icon: "🔥", locked: false },
     { text: "Limited story access", icon: "📖", locked: false },
   ];
@@ -23,7 +23,7 @@ export const DuolingoStylePricing = () => {
   ];
 
   const testimonials = [
-    { name: "Sarah M.", text: "My kids love their daily ABC time! The stories are so engaging.", streak: 47 },
+    { name: "Sarah M.", text: "My kids love their daily learning time! The stories are so engaging.", streak: 47 },
     { name: "Mike D.", text: "Perfect for homeschooling. Worth every penny!", streak: 89 },
     { name: "Lisa K.", text: "The progress tracking helps me see how much they've learned.", streak: 23 }
   ];

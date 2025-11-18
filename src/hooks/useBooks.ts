@@ -68,6 +68,9 @@ export const useBooks = (
     queryFn: async () => {
       if (!user?.id) return { books: [], totalCount: 0 };
       
+      // Determine if we should show all books
+      const showAllBooks = viewMode === 'all-books' && (isAdmin || isTeacher);
+      
       // ⚡ OPTIMIZED: Single query with JOIN including cover images
       let query = supabase
         .from('books')
@@ -87,14 +90,14 @@ export const useBooks = (
               is_latest
             )
           )
-        `, { count: 'exact' });
+        `, { count: 'exact' })
+        .neq('status', 'archived')
+        .order('updated_at', { ascending: false }); // ⚡ Explicit sort for consistent pagination
       
-      // Determine if we should show all books
-      const showAllBooks = viewMode === 'all-books' && (isAdmin || isTeacher);
-      
-      query = showAllBooks
-        ? query.neq('status', 'archived')  // All books for admins on /all-books
-        : query.eq('user_id', user.id).neq('status', 'archived');  // User's books
+      // Apply user filter for non-admin views
+      if (!showAllBooks) {
+        query = query.eq('user_id', user.id);
+      }
       
       // Apply pagination if provided (for performance on all-books view)
       if (pagination) {
@@ -153,6 +156,8 @@ export const useBooks = (
       };
     },
     enabled: !!user?.id,
+    staleTime: 5 * 60 * 1000, // ⚡ Cache for 5 minutes to reduce refetches
+    gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   });
 
   // Set up real-time subscription

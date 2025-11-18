@@ -16,6 +16,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/themeFilters';
+import { getThemeDisplayName } from '@/types/characterTheme';
 import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
 import { BookImage } from '@/components/ui/book-image';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
@@ -131,8 +132,8 @@ function UserBookCard({
             </Badge>
           )}
           {book.metadata?.characterTheme && (
-            <Badge variant="default" className="capitalize">
-              {book.metadata.characterTheme.replace(/-/g, ' ')}
+            <Badge variant="default">
+              {getThemeDisplayName(book.metadata.characterTheme)}
             </Badge>
           )}
           {book.metadata?.letterCase && (

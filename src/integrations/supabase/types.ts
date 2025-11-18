@@ -88,6 +88,56 @@ export type Database = {
           },
         ]
       }
+      book_categorization_log: {
+        Row: {
+          applied_at: string | null
+          applied_by: string | null
+          book_id: string
+          can_rollback: boolean | null
+          confidence_score: number | null
+          id: string
+          new_book_type: string
+          notes: string | null
+          old_book_type: string | null
+          old_category: string | null
+          rollback_at: string | null
+        }
+        Insert: {
+          applied_at?: string | null
+          applied_by?: string | null
+          book_id: string
+          can_rollback?: boolean | null
+          confidence_score?: number | null
+          id?: string
+          new_book_type: string
+          notes?: string | null
+          old_book_type?: string | null
+          old_category?: string | null
+          rollback_at?: string | null
+        }
+        Update: {
+          applied_at?: string | null
+          applied_by?: string | null
+          book_id?: string
+          can_rollback?: boolean | null
+          confidence_score?: number | null
+          id?: string
+          new_book_type?: string
+          notes?: string | null
+          old_book_type?: string | null
+          old_category?: string | null
+          rollback_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_categorization_log_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       book_system_prompts: {
         Row: {
           book_id: string

@@ -40,6 +40,7 @@ import HabitsManage from "./pages/HabitsManage";
 import MyHabits from "./pages/MyHabits";
 import Profile from "./pages/Profile";
 import WordProgress from "./pages/WordProgress";
+import AdminCategorizeBooks from "./pages/AdminCategorizeBooks";
 import { useEffect } from "react";
 import { scheduleCacheCleanup } from "./utils/cacheCleanup";
 import { initializeCacheWarming } from "./utils/cacheWarming";
@@ -139,6 +140,7 @@ const App = () => {
                <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />
                <Route path="/schedule" element={<Schedule />} />
                <Route path="/reddit" element={<Reddit />} />
+               <Route path="/admin/categorize-books" element={<ProtectedRoute><AdminCategorizeBooks /></ProtectedRoute>} />
                <Route path="/pricing" element={<Pricing />} />
                <Route path="/subscription/success" element={<ProtectedRoute><SubscriptionSuccess /></ProtectedRoute>} />
                <Route path="/subscription/cancel" element={<ProtectedRoute><SubscriptionCancel /></ProtectedRoute>} />

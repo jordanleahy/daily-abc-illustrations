@@ -1,4 +1,5 @@
 import { CharacterThemeValue } from './characterTheme';
+import { BookTypeId } from './bookType';
 
 /**
  * Page type enum matching database enum
@@ -32,7 +33,7 @@ export const isContentPage = (page: Page): boolean => {
  */
 export interface BookMetadata {
   /** Type of book created (abc, numbers, shapes, animals, etc.) */
-  bookType?: string;
+  bookType?: BookTypeId;
   /** Number of pages in the book */
   pageCount?: number;
   /** Target age group (toddler, preschool, early-reader) */

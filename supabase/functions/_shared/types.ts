@@ -34,6 +34,49 @@ export function normalizeTheme(theme: string | undefined): ValidCharacterTheme |
 }
 
 /**
+ * Book Type validation utilities
+ * Synced with frontend BookTypeId in src/types/bookType.ts
+ */
+export const VALID_BOOK_TYPES = [
+  'abc',
+  'numbers', 
+  'shapes',
+  'colors',
+  'rhyming',
+  'opposites',
+  'emotions',
+  'animals',
+  'first-words',
+  'bedtime',
+  'cvc',
+  'sight-words',
+  'other'
+] as const;
+
+export type ValidBookType = typeof VALID_BOOK_TYPES[number];
+
+/**
+ * Normalizes and validates a book type string
+ * Converts to kebab-case and validates against known types
+ * @param bookType - Book type string to normalize
+ * @returns Validated book type or 'other' as fallback
+ */
+export function normalizeBookType(bookType: string | undefined): ValidBookType {
+  if (!bookType) return 'other';
+  
+  // Convert to kebab-case
+  const normalized = bookType.toLowerCase().trim().replace(/\s+/g, '-');
+  
+  // Validate against known types
+  if (VALID_BOOK_TYPES.includes(normalized as ValidBookType)) {
+    return normalized as ValidBookType;
+  }
+  
+  console.warn(`[Book Type Validation] Invalid book type: "${bookType}", normalized to: "${normalized}", defaulting to 'other'`);
+  return 'other';
+}
+
+/**
  * Shared types and utilities for Supabase Edge Functions
  * 
  * This file contains common types, enums, and utility functions used across

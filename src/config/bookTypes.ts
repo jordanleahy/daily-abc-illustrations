@@ -13,9 +13,10 @@ import {
   Eye,
   Package
 } from 'lucide-react';
+import { BookTypeId } from '@/types/bookType';
 
 export interface BookType {
-  id: string;
+  id: BookTypeId;
   label: string;
   icon: any; // Lucide icon component
   prompt: string;

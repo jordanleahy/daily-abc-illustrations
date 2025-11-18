@@ -28,6 +28,7 @@ import { useUpdateBookStatus } from '@/hooks/useUpdateBookStatus';
 import { useQuery } from '@tanstack/react-query';
 import { PublicationStatus } from '@/types/shared/status';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
+import { BookTypeId } from '@/types/bookType';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
@@ -39,7 +40,7 @@ export default function GoogleChat() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [selectedBookType, setSelectedBookType] = useState<string | null>(null);
+  const [selectedBookType, setSelectedBookType] = useState<BookTypeId | null>(null);
   
   // Get location state for pre-filled prompts and target words from recommendations
   const locationState = window.history.state?.usr || {};

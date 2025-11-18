@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { normalizeBookType } from '../_shared/types.ts';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -58,6 +59,11 @@ serve(async (req) => {
 
     for (const change of changes) {
       try {
+        // Validate book type before applying
+        const validatedBookType = normalizeBookType(change.new_book_type);
+        
+        console.log(`[apply-book-categorization] Validating book type: ${change.new_book_type} -> ${validatedBookType}`);
+        
         // Fetch current book data
         const { data: book, error: fetchError } = await supabaseClient
           .from('books')
@@ -70,10 +76,10 @@ serve(async (req) => {
         const oldCategory = book.category;
         const oldBookType = book.metadata?.bookType || null;
 
-        // Update book metadata with new bookType
+        // Update book metadata with validated bookType
         const updatedMetadata = {
           ...(book.metadata || {}),
-          bookType: change.new_book_type,
+          bookType: validatedBookType,
         };
 
         const { error: updateError } = await supabaseClient

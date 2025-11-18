@@ -6,7 +6,7 @@
 export const SITE_CONFIG = {
   // Basic site information
   name: 'ChairLift',
-  tagline: 'A New Book Every 24 Hours',
+  tagline: 'Chairlift',
   description: 'My daughter loves digital learning, so I build her a new book every day',
   subheading: 'Im a Jersey City parent who likes to play with AI and build interactive learning tools for my toddler.',
   author: 'Lovable',

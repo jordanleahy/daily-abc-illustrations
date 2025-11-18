@@ -38,11 +38,12 @@ function parseSuggestions(aiResponse: string): {
   const suggestionsText = match[1].trim();
   const cleanContent = aiResponse.replace(suggestRegex, '').trim();
   
-  // Known character themes that have image thumbnails
+  // Known character themes that have image thumbnails - synced with CharacterTheme enum
   const CHARACTER_THEMES = new Set([
     'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
     'moana', 'mickey-mouse', 'toy-story', 
-    'pokemon', 'mario', 'daniel-tiger', 'benji-davies', 'black-and-white'
+    'pokemon', 'mario', 'daniel-tiger', 'benji-davies', 'black-and-white',
+    'sesame-street', 'bear-stories', 'jewish-holidays'
   ]);
 
   const suggestedActions = suggestionsText

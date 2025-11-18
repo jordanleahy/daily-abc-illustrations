@@ -128,6 +128,9 @@ export default function GoogleChat() {
   // Track locally created book ID (separate from session data for immediate UI updates)
   const [localCreatedBookId, setLocalCreatedBookId] = useState<string | null>(null);
   
+  // Track selected character theme from user suggestions
+  const [selectedCharacterTheme, setSelectedCharacterTheme] = useState<string | null>(null);
+  
   // Track cover page ID for post-creation uploads
   const [coverPageId, setCoverPageId] = useState<string | null>(null);
 
@@ -687,6 +690,7 @@ export default function GoogleChat() {
         pageDetails: pageDetails || undefined,
         qaImages: Object.keys(editorPageImages).length > 0 ? editorPageImages : undefined,
         bookType: selectedBookType || undefined,
+        characterTheme: selectedCharacterTheme || undefined, // Pass validated theme from suggestions
         textOverlayPreference,
         referenceBookId,
         targetWords: targetWords.length > 0 ? targetWords : undefined,
@@ -762,6 +766,12 @@ export default function GoogleChat() {
     
     // Regular quick reply
     if (action.value) {
+      // Capture character theme if present in the action
+      if (action.themeId) {
+        console.log('[Theme Selection] User selected theme:', action.themeId);
+        setSelectedCharacterTheme(action.themeId);
+      }
+      
       // Send the predefined response
       await sendMessage(action.value, undefined, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
@@ -792,6 +802,7 @@ export default function GoogleChat() {
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
         setSelectedBookType(null);
+        setSelectedCharacterTheme(null); // Reset theme selection
         setReplacePageMode({});
         // Close mobile sidebar when creating new session
         setIsMobileSidebarOpen(false);

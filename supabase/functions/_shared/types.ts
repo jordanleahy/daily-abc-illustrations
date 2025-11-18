@@ -1,4 +1,39 @@
 /**
+ * Character Theme validation utilities
+ * Synced with frontend CharacterTheme enum in src/types/characterTheme.ts
+ */
+export const VALID_CHARACTER_THEMES = [
+  'paw-patrol', 'peppa-pig', 'bluey', 'daniel-tiger',
+  'frozen', 'cocomelon', 'moana', 'mickey-mouse',
+  'toy-story', 'pokemon', 'mario', 'sesame-street',
+  'benji-davies', 'black-and-white', 'bear-stories',
+  'jewish-holidays'
+] as const;
+
+export type ValidCharacterTheme = typeof VALID_CHARACTER_THEMES[number];
+
+/**
+ * Normalizes and validates a character theme string
+ * Converts to kebab-case and validates against known themes
+ * @param theme - Theme string to normalize
+ * @returns Validated theme or undefined if invalid
+ */
+export function normalizeTheme(theme: string | undefined): ValidCharacterTheme | undefined {
+  if (!theme) return undefined;
+  
+  // Convert to kebab-case
+  const normalized = theme.toLowerCase().trim().replace(/\s+/g, '-');
+  
+  // Validate against known themes
+  if (VALID_CHARACTER_THEMES.includes(normalized as ValidCharacterTheme)) {
+    return normalized as ValidCharacterTheme;
+  }
+  
+  console.warn(`[Theme Validation] Invalid theme: "${theme}", normalized to: "${normalized}"`);
+  return undefined;
+}
+
+/**
  * Shared types and utilities for Supabase Edge Functions
  * 
  * This file contains common types, enums, and utility functions used across

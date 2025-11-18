@@ -158,3 +158,6 @@ verify_jwt = true
 
 [functions.rollback-categorization]
 verify_jwt = true
+
+[functions.migrate-age-ranges]
+verify_jwt = true

@@ -92,6 +92,7 @@ export function FocusedPageView({
       <div className="h-[calc(100vh-8rem)] mt-16 px-4 flex items-center justify-center">
         <div className="max-w-md w-full">
           <ReadingPageDisplay
+            pages={[page]}
             pageId={page.id}
             bookId={bookId}
             pageNumber={pageNumber}

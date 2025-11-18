@@ -16,6 +16,8 @@ export const LIBRARY_CONFIG = {
     skipSnaps: false,
     inViewThreshold: 0.7,
     watchDrag: true,
+    watchResize: true,
+    watchSlides: true,
   },
   
   // Features

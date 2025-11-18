@@ -31,19 +31,16 @@ serve(async (req) => {
       }
     );
 
-    // Verify admin role
+    // Verify admin role using RLS-safe function
     const { data: { user } } = await supabaseClient.auth.getUser();
     if (!user) {
       throw new Error('Unauthorized');
     }
 
-    const { data: userRole } = await supabaseClient
-      .from('user_roles')
-      .select('role')
-      .eq('user_id', user.id)
-      .single();
+    const { data: hasAdminRole, error: roleError } = await supabaseClient
+      .rpc('has_role', { _user_id: user.id, _role: 'admin' });
 
-    if (userRole?.role !== 'admin') {
+    if (roleError || !hasAdminRole) {
       throw new Error('Admin access required');
     }
 

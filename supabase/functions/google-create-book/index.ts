@@ -22,6 +22,7 @@ const requestSchema = z.object({
   pageDetails: z.array(pageDetailSchema).optional(),
   qaImages: z.record(z.string()).optional(),
   bookType: z.string().optional(),
+  characterTheme: z.string().optional(), // Validated character theme from enum
   textOverlayPreference: z.enum(['with-text', 'without-text']).optional(),
   referenceBookId: z.string().uuid().optional(),
   fullPrompts: z.record(z.string()).optional(), // Full image prompts by page number
@@ -43,7 +44,7 @@ serve(async (req) => {
   try {
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages, bookType, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId } = validatedData;
+    const { conversationHistory, userId, pageDetails, qaImages, bookType, characterTheme, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId } = validatedData;
     
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
@@ -202,15 +203,15 @@ Return ONLY valid JSON with this structure:
   "bookName": "string",
   "category": "string", 
   "bookDescription": "string",
-  "metadata": {
-    "bookType": "abc|numbers|shapes|colors|animals|etc",
-    "pageCount": ${pageDetails.length},
-    "letterCase": "lowercase|uppercase|both (for ABC content)",
-    "numberRange": "1-10 (for Numbers content)",
-    "countingStyle": "simple|skip-counting (for Numbers content)",
-    "characterTheme": "paw-patrol|dinosaurs|space|etc (if mentioned)",
-    "targetAge": "toddler|preschool|early-reader"
-  },
+    "metadata": {
+      "bookType": "${bookType || 'educational'}",
+      "pageCount": ${pageDetails.length},
+      "letterCase": "lowercase|uppercase|both (for ABC content)",
+      "numberRange": "1-10 (for Numbers content)",
+      "countingStyle": "simple|skip-counting (for Numbers content)",
+      "characterTheme": "${characterTheme || 'not-specified'}", 
+      "targetAge": "toddler|preschool|early-reader"
+    },
   "pages": [
     {
       "pageNumber": 0,
@@ -574,8 +575,8 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       animalCategory: metadata.animalCategory,
       animalFocus: metadata.animalFocus,
       readingLevel: metadata.readingLevel,
-      characterTheme: metadata.characterTheme,
-      styleGuideKey: metadata.characterTheme === 'bear-stories' ? 'bear-stories' : undefined,
+      characterTheme: characterTheme || metadata.characterTheme, // Prioritize validated theme from frontend
+      styleGuideKey: (characterTheme || metadata.characterTheme) === 'bear-stories' ? 'bear-stories' : undefined,
       colorsList: metadata.colorsList,
       colorsCount: metadata.colorsCount,
       showTextOverlay: showTextOverlay,

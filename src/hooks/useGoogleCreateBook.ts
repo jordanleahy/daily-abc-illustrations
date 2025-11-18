@@ -87,6 +87,7 @@ export const useGoogleCreateBook = () => {
           pageDetails: params.pageDetails || undefined,
           qaImages: params.qaImages || undefined,
           bookType: params.bookType || undefined,
+          characterTheme: params.characterTheme || undefined,
           textOverlayPreference: params.textOverlayPreference || undefined,
           referenceBookId: params.referenceBookId || undefined,
           educationalFocus: educationalFocus || undefined,

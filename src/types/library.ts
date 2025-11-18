@@ -1,3 +1,5 @@
+import { CharacterThemeValue } from './characterTheme';
+
 /**
  * Library book type for decoupled library architecture
  * Separates library books from daily publishing system
@@ -19,6 +21,6 @@ export interface LibraryBook {
     type?: string;
     bookType?: string;
     targetAge?: string;
-    characterTheme?: string;
+    characterTheme?: CharacterThemeValue;
   } | null;
 }

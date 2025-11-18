@@ -63,6 +63,10 @@ export const characterThemes: Record<string, CharacterTheme> = {
   'bear-stories': {
     thumbnail: '/themes/bear-stories.png',
     altText: 'Bear Memories - A cinematic winter adventure at Snowtop Mountain'
+  },
+  'jewish-holidays': {
+    thumbnail: '/placeholder.svg',
+    altText: 'Jewish Holidays & Traditions themed book'
   }
 };
 

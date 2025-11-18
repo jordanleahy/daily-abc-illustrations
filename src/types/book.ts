@@ -1,3 +1,5 @@
+import { CharacterThemeValue } from './characterTheme';
+
 /**
  * Page type enum matching database enum
  */
@@ -63,8 +65,8 @@ export interface BookMetadata {
   readingLevel?: string;
   
   // Universal
-  /** Character or theme (paw-patrol, dinosaurs, space, etc.) */
-  characterTheme?: string;
+  /** Character or theme (standardized enum values) */
+  characterTheme?: CharacterThemeValue;
   /** Flexible storage for future expansion */
   customOptions?: Record<string, any>;
 }

@@ -348,22 +348,19 @@ export default function Books() {
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const PAGE_SIZE = 18; // 3 rows of 6 books on large screens
   
-  const { books: rawBooks, totalCount, loading } = useBooks(
+  // ⚡ OPTIMIZED: Server-side filtering with theme filter
+  const { books, totalCount, loading } = useBooks(
     isAllBooksView ? 'all-books' : 'my-books',
     isAllBooksView ? { page: currentPage, pageSize: PAGE_SIZE } : undefined,
-    searchQuery
+    searchQuery,
+    selectedThemes.length > 0 ? selectedThemes : undefined // Pass theme filter to backend
   );
   
-  // Extract available themes from books
+  // Extract available themes from all possible themes (not just current books)
+  // This ensures filter options remain stable and don't disappear when filtering
   const availableThemes = useMemo(() => 
-    extractAvailableThemes(rawBooks as any[] || []),
-    [rawBooks]
-  );
-  
-  // Apply client-side theme filtering to books (after server-side search)
-  const books = useMemo(() => 
-    filterBooksByThemeAndSearch(rawBooks as any[] || [], '', selectedThemes), // Empty search since server already filters
-    [rawBooks, selectedThemes]
+    extractAvailableThemes([]), // Returns all themes from enum
+    []
   );
   
   const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1; // At least 1 page

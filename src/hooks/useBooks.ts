@@ -58,14 +58,15 @@ import { toast } from 'sonner';
 export const useBooks = (
   viewMode: 'my-books' | 'all-books' = 'my-books',
   pagination?: { page: number; pageSize: number },
-  searchQuery?: string
+  searchQuery?: string,
+  themeFilter?: string[] // New: Server-side theme filtering
 ) => {
   const { user } = useAuthContext();
   const { isAdmin, isTeacher } = useRole();
   const queryClient = useQueryClient();
 
   const { data: booksResult, isLoading, error } = useQuery({
-    queryKey: ['books', user?.id, isAdmin, isTeacher, viewMode, pagination?.page, pagination?.pageSize, searchQuery],
+    queryKey: ['books', user?.id, isAdmin, isTeacher, viewMode, pagination?.page, pagination?.pageSize, searchQuery, themeFilter],
     queryFn: async () => {
       if (!user?.id) return { books: [], totalCount: 0 };
       
@@ -103,6 +104,16 @@ export const useBooks = (
       // Apply search filter if provided
       if (searchQuery && searchQuery.trim()) {
         query = query.ilike('book_name', `%${searchQuery.trim()}%`);
+      }
+      
+      // ⚡ NEW: Apply theme filter at database level (server-side filtering)
+      if (themeFilter && themeFilter.length > 0) {
+        // Use OR condition to match any of the selected themes
+        // PostgreSQL JSONB operator: metadata->>'characterTheme' to extract the theme value
+        const themeConditions = themeFilter
+          .map(theme => `metadata->>'characterTheme'.eq.${theme}`)
+          .join(',');
+        query = query.or(themeConditions);
       }
       
       // Apply pagination if provided (for performance on all-books view)

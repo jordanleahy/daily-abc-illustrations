@@ -34,10 +34,10 @@ const Auth = () => {
   const [acceptTerms, setAcceptTerms] = useState(true);
 
 
-  // Redirect authenticated users to home
+  // Redirect authenticated users to chat
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/home');
+      navigate('/google-chat');
     }
   }, [isAuthenticated, navigate]);
 
@@ -47,7 +47,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/pricing`,
+          redirectTo: `${window.location.origin}/google-chat`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -165,7 +165,7 @@ const Auth = () => {
         } else {
           toast({
             title: "Account created!",
-            description: "Please check your email to verify your account. You'll be redirected to our pricing page.",
+            description: "Please check your email to verify your account, then start creating your first book!",
           });
         }
       }

@@ -1410,7 +1410,7 @@ export default function GoogleChat() {
                   <div className="flex justify-start mt-4">
                     <div className="max-w-[80%] rounded-lg px-4 py-3 bg-muted">
                       <p className="text-sm text-muted-foreground animate-pulse">
-                        Google Gemini is thinking...
+                        lift spinning...
                       </p>
                     </div>
                   </div>

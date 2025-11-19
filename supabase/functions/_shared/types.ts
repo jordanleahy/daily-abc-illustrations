@@ -7,7 +7,7 @@ export const VALID_CHARACTER_THEMES = [
   'frozen', 'cocomelon', 'moana', 'mickey-mouse',
   'toy-story', 'pokemon', 'mario', 'sesame-street',
   'benji-davies', 'black-and-white', 'bear-stories',
-  'jewish-holidays'
+  'jewish-holidays', 'dora'
 ] as const;
 
 export type ValidCharacterTheme = typeof VALID_CHARACTER_THEMES[number];

@@ -30,7 +30,6 @@ export const AnimalCategorySelector = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Not specified</SelectItem>
           <SelectItem value="farm">Farm Animals</SelectItem>
           <SelectItem value="zoo">Zoo Animals</SelectItem>
           <SelectItem value="ocean">Ocean Animals</SelectItem>

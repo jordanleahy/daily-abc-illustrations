@@ -30,7 +30,6 @@ export const LetterCaseSelector = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Not specified</SelectItem>
           <SelectItem value="lowercase">Lowercase</SelectItem>
           <SelectItem value="uppercase">Uppercase</SelectItem>
           <SelectItem value="both">Both</SelectItem>

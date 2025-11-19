@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Page } from '@/types/book';
+import { queryKeys } from '@/hooks/queryKeys';
 
 export const useDailyPublishedPages = (bookId: string | undefined) => {
   return useQuery({
-    queryKey: ['daily-published-pages', bookId],
+    queryKey: queryKeys.pages.byBook(bookId || ''),
     queryFn: async () => {
       if (!bookId) return [];
       

@@ -1493,6 +1493,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_subscription_cache: {
+        Row: {
+          cached_at: string
+          expires_at: string | null
+          has_active_subscription: boolean
+          subscription_tier: string | null
+          user_id: string
+        }
+        Insert: {
+          cached_at?: string
+          expires_at?: string | null
+          has_active_subscription?: boolean
+          subscription_tier?: string | null
+          user_id: string
+        }
+        Update: {
+          cached_at?: string
+          expires_at?: string | null
+          has_active_subscription?: boolean
+          subscription_tier?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_subscriptions: {
         Row: {
           cancel_at_period_end: boolean | null
@@ -1882,7 +1906,11 @@ export type Database = {
           isSetofReturn: true
         }
       }
-      has_active_subscription: { Args: { _user_id: string }; Returns: boolean }
+      has_active_subscription: { Args: { p_user_id: string }; Returns: boolean }
+      has_feature_access: {
+        Args: { p_feature: string; p_user_id: string }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1930,6 +1958,15 @@ export type Database = {
       skip_habit_completion: {
         Args: { p_completion_id: string }
         Returns: Json
+      }
+      update_subscription_cache: {
+        Args: {
+          p_expires_at?: string
+          p_has_active_subscription: boolean
+          p_subscription_tier?: string
+          p_user_id: string
+        }
+        Returns: undefined
       }
     }
     Enums: {

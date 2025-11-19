@@ -36,7 +36,7 @@ export const PreviewNav = () => {
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/preview" className="flex items-center space-x-2">
-            <span className="text-xl font-bold text-foreground">Chairlift Education</span>
+            <span className="text-xl font-bold text-foreground">Chairlift Habits</span>
           </Link>
 
           {/* Desktop Navigation */}

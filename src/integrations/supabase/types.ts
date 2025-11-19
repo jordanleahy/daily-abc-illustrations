@@ -1925,6 +1925,8 @@ export type Database = {
       process_enhanced_daily_publishing: { Args: never; Returns: Json }
       process_simple_daily_publishing: { Args: never; Returns: Json }
       seed_user_habits: { Args: { p_parent_user_id: string }; Returns: Json }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       skip_habit_completion: {
         Args: { p_completion_id: string }
         Returns: Json

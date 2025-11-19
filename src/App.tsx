@@ -133,8 +133,8 @@ const App = () => {
           <Route path="/auth/reset-password" element={<ResetPassword />} />
                <Route path="/agents" element={<Agents />} />
                {/* User book routes - Own books only */}
-               <Route path="/books" element={<ProtectedRoute><Books key="my-books" /></ProtectedRoute>} />
-               <Route path="/books/:id" element={<ProtectedRoute><BookDetail /></ProtectedRoute>} />
+               <Route path="/books" element={<ProtectedRoute requireSubscription={false}><Books key="my-books" /></ProtectedRoute>} />
+               <Route path="/books/:id" element={<ProtectedRoute requireSubscription={false}><BookDetail /></ProtectedRoute>} />
                 {/* Admin book routes - All books in system */}
                 <Route path="/all-books" element={<ProtectedRoute requireRole="admin"><Books key="all-books" /></ProtectedRoute>} />
                 <Route path="/all-books/:id" element={<ProtectedRoute requireRole="admin"><BookDetail /></ProtectedRoute>} />
@@ -145,7 +145,7 @@ const App = () => {
                 <Route path="/admin/library/:id" element={<ProtectedRoute requireRole="admin"><LibraryDetail /></ProtectedRoute>} />
                 
                 {/* User book reading view */}
-                <Route path="/books/:id/read" element={<ProtectedRoute><BookReadingView /></ProtectedRoute>} />
+                <Route path="/books/:id/read" element={<ProtectedRoute requireSubscription={false}><BookReadingView /></ProtectedRoute>} />
                 
                 {/* Public book landing page (no auth required) */}
                 <Route path="/book/:slug" element={<PublicBook />} />

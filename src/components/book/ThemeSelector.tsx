@@ -35,12 +35,13 @@ export const ThemeSelector = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          
-          {Object.entries(themeDisplayNames).map(([themeValue, displayName]) => (
-            <SelectItem key={themeValue} value={themeValue}>
-              {displayName}
-            </SelectItem>
-          ))}
+          {Object.entries(themeDisplayNames)
+            .sort(([, a], [, b]) => a.localeCompare(b))
+            .map(([themeValue, displayName]) => (
+              <SelectItem key={themeValue} value={themeValue}>
+                {displayName}
+              </SelectItem>
+            ))}
         </SelectContent>
       </Select>
     </div>

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { BookMetadata } from '@/types/book';
 import { toast } from 'sonner';
 import { queryKeys } from '@/hooks/queryKeys';
+import { useRef, useCallback } from 'react';
 
 interface UpdateMetadataParams {
   updates: Partial<BookMetadata>;
@@ -10,8 +11,10 @@ interface UpdateMetadataParams {
 
 export const useUpdateBookMetadata = (bookId: string) => {
   const queryClient = useQueryClient();
+  const debounceTimerRef = useRef<NodeJS.Timeout>();
+  const pendingUpdatesRef = useRef<Partial<BookMetadata>>({});
 
-  return useMutation({
+  const mutation = useMutation({
     mutationFn: async ({ updates }: UpdateMetadataParams) => {
       // Fetch current metadata
       const { data: book, error: fetchError } = await supabase
@@ -44,11 +47,13 @@ export const useUpdateBookMetadata = (bookId: string) => {
     onMutate: async ({ updates }) => {
       // Cancel outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['books'] });
+      await queryClient.cancelQueries({ queryKey: ['book', bookId] });
 
-      // Snapshot previous value
+      // Snapshot previous values
       const previousBooks = queryClient.getQueryData(['books']);
+      const previousBook = queryClient.getQueryData(['book', bookId]);
 
-      // Optimistically update cache
+      // Optimistically update all relevant caches immediately
       queryClient.setQueryData(['books'], (old: any) => {
         if (!old) return old;
         return {
@@ -64,28 +69,84 @@ export const useUpdateBookMetadata = (bookId: string) => {
         };
       });
 
-      return { previousBooks };
+      // Update individual book cache
+      queryClient.setQueryData(['book', bookId], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          metadata: { ...(old.metadata || {}), ...updates },
+        };
+      });
+
+      return { previousBooks, previousBook };
     },
     onError: (error, variables, context) => {
       // Rollback on error
       if (context?.previousBooks) {
         queryClient.setQueryData(['books'], context.previousBooks);
       }
+      if (context?.previousBook) {
+        queryClient.setQueryData(['book', bookId], context.previousBook);
+      }
       toast.error('Failed to update metadata', {
         description: error instanceof Error ? error.message : 'Unknown error',
       });
     },
-    onSuccess: (data, { updates }) => {
-      // Invalidate relevant queries
+    onSuccess: () => {
+      // Silently invalidate queries in the background
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['book', bookId] });
       queryClient.invalidateQueries({ queryKey: queryKeys.pages.byBook(bookId) });
-
-      // Success feedback
-      const updatedFields = Object.keys(updates).join(', ');
-      toast.success('Metadata updated', {
-        description: `Updated: ${updatedFields}`,
-      });
     },
   });
+
+  // Debounced mutate function
+  const debouncedMutate = useCallback(({ updates }: UpdateMetadataParams) => {
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Accumulate updates
+    pendingUpdatesRef.current = {
+      ...pendingUpdatesRef.current,
+      ...updates,
+    };
+
+    // Immediately update UI optimistically
+    queryClient.setQueryData(['books'], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        books: old.books?.map((book: any) =>
+          book.id === bookId
+            ? {
+                ...book,
+                metadata: { ...(book.metadata || {}), ...updates },
+              }
+            : book
+        ),
+      };
+    });
+
+    queryClient.setQueryData(['book', bookId], (old: any) => {
+      if (!old) return old;
+      return {
+        ...old,
+        metadata: { ...(old.metadata || {}), ...updates },
+      };
+    });
+
+    // Debounce the actual database write
+    debounceTimerRef.current = setTimeout(() => {
+      const allUpdates = { ...pendingUpdatesRef.current };
+      pendingUpdatesRef.current = {};
+      mutation.mutate({ updates: allUpdates });
+    }, 500); // 500ms debounce
+  }, [bookId, mutation, queryClient]);
+
+  return {
+    ...mutation,
+    mutate: debouncedMutate,
+  };
 };

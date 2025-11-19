@@ -34,6 +34,7 @@ import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminOnly } from '@/components/AdminOnly';
 import { cn } from '@/lib/utils';
+import { BookMetadataEditor } from '@/components/book';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -155,6 +156,15 @@ function UserBookCard({
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Admin-Only Metadata Editor - Inline */}
+        <AdminOnly>
+          <BookMetadataEditor 
+            bookId={book.id}
+            currentMetadata={book.metadata || {}}
+            className="mb-4"
+          />
+        </AdminOnly>
+        
         {/* Book Cover - Shows cover page type image or placeholder */}
         <AspectRatio ratio={1} className="bg-muted rounded-lg overflow-hidden relative group/thumbnail shadow-md hover:shadow-xl transition-shadow duration-300">
           {shouldRender ? (

@@ -93,6 +93,7 @@ export const useBooks = (
             )
           )
         `, { count: 'exact' })
+        .eq('pages.page_type', 'cover') // Only fetch cover pages to reduce payload
         .neq('status', 'archived')
         .order('updated_at', { ascending: false }); // ⚡ Explicit sort for consistent pagination
       

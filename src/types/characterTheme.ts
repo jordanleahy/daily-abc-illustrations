@@ -20,6 +20,7 @@ export const CharacterTheme = {
   BLACK_AND_WHITE: 'black-and-white',
   BEAR_STORIES: 'bear-stories',
   JEWISH_HOLIDAYS: 'jewish-holidays',
+  DORA: 'dora',
 } as const;
 
 export type CharacterThemeValue = typeof CharacterTheme[keyof typeof CharacterTheme];
@@ -45,6 +46,7 @@ export const themeDisplayNames: Record<CharacterThemeValue, string> = {
   'black-and-white': 'Black & White',
   'bear-stories': 'Bear Stories',
   'jewish-holidays': 'Jewish Holidays & Traditions',
+  'dora': 'Dora the Explorer',
 };
 
 /**

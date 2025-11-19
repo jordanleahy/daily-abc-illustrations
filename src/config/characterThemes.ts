@@ -67,6 +67,10 @@ export const characterThemes: Record<string, CharacterTheme> = {
   'jewish-holidays': {
     thumbnail: '/placeholder.svg',
     altText: 'Jewish Holidays & Traditions themed book'
+  },
+  'dora': {
+    thumbnail: '/placeholder.svg',
+    altText: 'Dora the Explorer themed book'
   }
 };
 

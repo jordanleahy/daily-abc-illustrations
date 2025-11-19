@@ -31,6 +31,26 @@ Deno.serve(async (req) => {
       throw new Error('Not authenticated');
     }
 
+    // Verify user has active subscription (Plus tier required for habits)
+    const { data: hasAccess, error: accessError } = await supabaseClient.rpc('has_feature_access', {
+      p_user_id: user.id,
+      p_feature: 'habits_rewards'
+    });
+
+    if (accessError || !hasAccess) {
+      console.log('[SEED-INITIAL-HABITS] User does not have access to habits feature', { userId: user.id });
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'This feature requires an active Plus subscription. Please upgrade to use habits.' 
+        }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
     console.log('Seeding habits for user:', user.id);
 
     // Step 1: Insert initial habits

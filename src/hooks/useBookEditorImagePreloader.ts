@@ -1,6 +1,4 @@
-import { useEffect } from 'react';
 import { useImagePreloader } from './useImagePreloader';
-import { prefetchImagesToCache } from '@/utils/imageCaching';
 
 /**
  * Hook to preload and cache book editor page images for instant display
@@ -37,13 +35,4 @@ export function useBookEditorImagePreloader(pageImages: Record<number, string> |
     batchSize: 5,
     batchDelay: 150
   });
-  
-  // Cache all images to service worker for instant repeat loads
-  useEffect(() => {
-    if (imageUrls.length > 0) {
-      prefetchImagesToCache(imageUrls).catch(error => {
-        console.warn('[Editor Image Preloader] Service worker cache failed:', error);
-      });
-    }
-  }, [imageUrls.length]);
 }

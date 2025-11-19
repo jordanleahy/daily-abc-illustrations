@@ -24,13 +24,6 @@ const Index = () => {
   const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
   const navigate = useNavigate();
   
-  // Redirect free users to library
-  useEffect(() => {
-    if (isAuthenticated && !subscriptionLoading && !hasActiveSubscription) {
-      navigate('/library', { replace: true });
-    }
-  }, [isAuthenticated, hasActiveSubscription, subscriptionLoading, navigate]);
-  
   // Get the first kid profile
   const { data: kidProfiles = [], isLoading: isLoadingKids } = useKidProfiles();
   const firstKid = kidProfiles[0];
@@ -94,25 +87,11 @@ const Index = () => {
   const timeOfDay = getTimeBasedGreeting();
   const isMobile = useIsMobile();
 
-  if (isLoading) {
+  if (subscriptionLoading || isLoadingBooks) {
     return (
       <StandardPageLayout>
         <div className="container mx-auto py-8">
-          <LoadingState text="Loading your habits..." />
-        </div>
-      </StandardPageLayout>
-    );
-  }
-
-  if (!firstKid) {
-    return (
-      <StandardPageLayout>
-        <div className="container mx-auto py-8">
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              No kid profiles found. Please create a kid profile first.
-            </p>
-          </div>
+          <LoadingState text="Loading..." />
         </div>
       </StandardPageLayout>
     );
@@ -121,43 +100,93 @@ const Index = () => {
   return (
     <StandardPageLayout>
       <div className="container mx-auto py-8 space-y-8">
-        {/* Child-focused header */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <h1 className="text-4xl font-bold">
-              Good {timeOfDay}, {firstKid.first_name}!
-            </h1>
-            <CoinCounter coins={firstKid.earned_coins} size="md" />
-          </div>
-          <p className="text-xl text-muted-foreground">
-            Today is {format(new Date(), 'EEEE, MMMM do')}
-          </p>
-          <p className="text-lg text-muted-foreground">
-            Here is your {timeOfDay} to-do list
-          </p>
-        </div>
+        {hasActiveSubscription && firstKid ? (
+          <>
+            {/* Premium: Child-focused header with habits */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <h1 className="text-4xl font-bold">
+                  Good {timeOfDay}, {firstKid.first_name}!
+                </h1>
+                <CoinCounter coins={firstKid.earned_coins} size="md" />
+              </div>
+              <p className="text-xl text-muted-foreground">
+                Today is {format(new Date(), 'EEEE, MMMM do')}
+              </p>
+              <p className="text-lg text-muted-foreground">
+                Here is your {timeOfDay} to-do list
+              </p>
+            </div>
 
-        {/* Habits list */}
-        {activeCompletions.length === 0 ? (
-          <div className="text-center py-12 bg-muted/50 rounded-lg space-y-2">
-            <p className="text-lg text-muted-foreground">
-              No habits scheduled for today! 
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Ask your parent to schedule habits from the Manage Habits page.
-            </p>
-          </div>
-        ) : isMobile ? (
-          <HabitCarousel completions={activeCompletions} />
+            {/* Habits list */}
+            {activeCompletions.length === 0 ? (
+              <div className="text-center py-12 bg-muted/50 rounded-lg space-y-2">
+                <p className="text-lg text-muted-foreground">
+                  No habits scheduled for today! 
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Ask your parent to schedule habits from the Manage Habits page.
+                </p>
+              </div>
+            ) : isMobile ? (
+              <HabitCarousel completions={activeCompletions} />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activeCompletions.map((completion) => (
+                  <HabitTrackingCard
+                    key={completion.id}
+                    completion={completion}
+                  />
+                ))}
+              </div>
+            )}
+          </>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {activeCompletions.map((completion) => (
-              <HabitTrackingCard
-                key={completion.id}
-                completion={completion}
-              />
-            ))}
-          </div>
+          <>
+            {/* Free tier: Welcome section */}
+            <div className="space-y-6">
+              <h1 className="text-4xl font-bold">
+                Good {timeOfDay}!
+              </h1>
+              <p className="text-xl text-muted-foreground">
+                Welcome to your reading library
+              </p>
+            </div>
+
+            {/* Upgrade prompt card */}
+            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 rounded-lg p-6 space-y-4">
+              <div className="space-y-2">
+                <h2 className="text-2xl font-bold">Unlock Habits & Rewards</h2>
+                <p className="text-muted-foreground">
+                  Track reading progress, earn coins, and motivate your kids with our interactive rewards system.
+                </p>
+              </div>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold mt-0.5">✓</span>
+                  <span>Create custom reading habits for your children</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold mt-0.5">✓</span>
+                  <span>Reward completed habits with coins</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold mt-0.5">✓</span>
+                  <span>Set up a rewards store for kids to spend coins</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-primary font-bold mt-0.5">✓</span>
+                  <span>Track progress and build reading consistency</span>
+                </li>
+              </ul>
+              <button
+                onClick={() => navigate('/pricing')}
+                className="w-full sm:w-auto px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Upgrade to Plus
+              </button>
+            </div>
+          </>
         )}
 
         {/* Book Filters */}

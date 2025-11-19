@@ -213,7 +213,31 @@ serve(async (req) => {
       cancel_at_period_end: cancelAtPeriodEnd
     };
 
-    // Cache the result
+    // Update subscription cache in database for RLS policies
+    try {
+      const subscriptionTier = hasActiveSub && productId ? 'plus' : null;
+      const expiresAt = subscriptionEnd ? new Date(subscriptionEnd) : null;
+      
+      await supabaseClient.rpc('update_subscription_cache', {
+        p_user_id: user.id,
+        p_has_active_subscription: hasActiveSub,
+        p_subscription_tier: subscriptionTier,
+        p_expires_at: expiresAt
+      });
+      
+      logStep("Updated subscription cache in database", { 
+        userId: user.id, 
+        hasSubscription: hasActiveSub,
+        tier: subscriptionTier 
+      });
+    } catch (cacheError) {
+      // Don't fail the request if cache update fails - just log it
+      logStep("Failed to update subscription cache", { 
+        error: cacheError instanceof Error ? cacheError.message : String(cacheError) 
+      });
+    }
+
+    // Cache the result in memory
     setCachedResult(cacheKey, result);
 
     return new Response(JSON.stringify(result), {

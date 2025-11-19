@@ -25,7 +25,7 @@ export const LetterCaseSelector = ({
           {label}
         </Label>
       )}
-      <Select value={value || ''} onValueChange={onValueChange}>
+      <Select value={value || undefined} onValueChange={onValueChange}>
         <SelectTrigger id="letter-case-selector" className="h-9">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

@@ -11,7 +11,7 @@ export const PreviewHero = () => {
           The modern way to grow young readers
         </h1>
         <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-          Chairlift Education helps your family build a daily reading habit with AI-made picture books, progress tracking, and kid-friendly rewards in one place.
+          Chairlift Habits helps your family build a daily reading habit with AI-made picture books, progress tracking, and kid-friendly rewards in one place.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
           <Button 

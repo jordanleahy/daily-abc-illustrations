@@ -65,10 +65,10 @@ export const PreviewFooter = () => {
 
         <div className="border-t border-border pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <div className="flex items-center space-x-2">
-            <span className="text-lg font-bold text-foreground">Chairlift Education</span>
+            <span className="text-lg font-bold text-foreground">Chairlift Habits</span>
           </div>
           <p className="text-sm text-muted-foreground">
-            © {currentYear} Chairlift Education. All rights reserved.
+            © {currentYear} Chairlift Habits. All rights reserved.
           </p>
         </div>
       </div>

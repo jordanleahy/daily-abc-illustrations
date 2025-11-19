@@ -5,8 +5,8 @@
 
 export const SITE_CONFIG = {
   // Basic site information
-  name: 'ChairLift',
-  tagline: 'Chairlift Habits',
+  name: 'Chairlift Habits',
+  tagline: 'The modern way to grow young readers',
   description: 'My daughter loves digital learning, so I build her a new book every day',
   subheading: 'Everyday I create a brand new book for DanDan and now you can as well.',
   author: 'Lovable',
@@ -25,12 +25,12 @@ export const SITE_CONFIG = {
     url: 'https://lovable.dev/opengraph-image-p98pqg.png',
     width: 1200,
     height: 630,
-    alt: 'ChairLift - New books published daily at 7:01 AM Eastern Time',
+    alt: 'Chairlift Habits - New books published daily at 7:01 AM Eastern Time',
   },
   
   // Content specific
   dailyContent: {
-    title: 'ChairLift',
+    title: 'Chairlift Habits',
     description: 'New books published daily at 7:01 AM Eastern Time',
     schedule: '7:01 AM Eastern Time daily',
   },

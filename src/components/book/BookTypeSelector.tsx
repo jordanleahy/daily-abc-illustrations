@@ -30,7 +30,7 @@ export const BookTypeSelector = ({
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
       )}
-      <Select value={value || undefined} onValueChange={onValueChange}>
+      <Select value={value || ''} onValueChange={onValueChange}>
         <SelectTrigger id="book-type-selector" className="h-9">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

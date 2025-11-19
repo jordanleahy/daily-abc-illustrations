@@ -25,7 +25,7 @@ export const AnimalCategorySelector = ({
           {label}
         </Label>
       )}
-      <Select value={value || undefined} onValueChange={onValueChange}>
+      <Select value={value || ''} onValueChange={onValueChange}>
         <SelectTrigger id="animal-category-selector" className="h-9">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

@@ -30,11 +30,12 @@ export const ThemeSelector = ({
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
       )}
-      <Select value={value || undefined} onValueChange={onValueChange}>
+      <Select value={value || ''} onValueChange={onValueChange}>
         <SelectTrigger id="theme-selector">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
+          <SelectItem value="">No Theme</SelectItem>
           {Object.entries(themeDisplayNames).map(([themeValue, displayName]) => (
             <SelectItem key={themeValue} value={themeValue}>
               {displayName}

@@ -83,18 +83,17 @@ export const useBooks = (
             view_count,
             user_id
           ),
-          cover_image:page_image_urls!left(
-            image_url,
-            is_latest,
-            pages!inner(page_type)
+          pages!left(
+            id,
+            page_type,
+            page_image_urls!left(
+              image_url,
+              is_latest
+            )
           )
         `, { count: 'exact' })
         .neq('status', 'archived')
-        .eq('page_image_urls.is_latest', true)
-        .eq('page_image_urls.pages.page_type', 'cover')
-        .order('updated_at', { ascending: false })
-        .limit(1, { foreignTable: 'page_image_urls' }) // Only fetch the latest cover per book
-        .limit(1, { foreignTable: 'pages' }); // Prevent nested page explosion
+        .order('updated_at', { ascending: false }); // ⚡ Explicit sort for consistent pagination
       
       // Apply user filter for non-admin views
       if (!showAllBooks) {
@@ -132,14 +131,17 @@ export const useBooks = (
       const booksWithActivity = booksData.map(book => {
         const activityArr = Array.isArray(book.activity) ? book.activity : [book.activity].filter(Boolean);
         const userActivity = activityArr.find((a: any) => a?.user_id === user.id);
-
-        // Extract a single cover image (already limited at the query level)
-        const coverImages = Array.isArray(book.cover_image) ? book.cover_image : [book.cover_image].filter(Boolean);
-        const coverImage = coverImages.find((img: any) => img?.pages?.page_type === 'cover' && img?.is_latest);
-        const coverImageUrl = coverImage?.image_url || null;
-
-        // Remove nested arrays from response (only used for extraction)
-        const { cover_image, activity, ...bookData } = book;
+        
+        // Extract cover image from pages with page_type = 'cover' and is_latest = true
+        const pagesArr = Array.isArray(book.pages) ? book.pages : [book.pages].filter(Boolean);
+        const coverPage = pagesArr.find((p: any) => p?.page_type === 'cover');
+        const coverImageUrls = coverPage?.page_image_urls || [];
+        const coverImageArr = Array.isArray(coverImageUrls) ? coverImageUrls : [coverImageUrls].filter(Boolean);
+        const latestCoverImage = coverImageArr.find((img: any) => img?.is_latest === true);
+        const coverImageUrl = latestCoverImage?.image_url || null;
+        
+        // Remove pages array from response (only used for extraction)
+        const { pages, activity, ...bookData } = book;
         
         return {
           ...bookData,

@@ -30,7 +30,7 @@ export const AgeRangeSelector = ({
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
       )}
-      <Select value={value || undefined} onValueChange={onValueChange}>
+      <Select value={value || ''} onValueChange={onValueChange}>
         <SelectTrigger id="age-range-selector" className="h-9">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

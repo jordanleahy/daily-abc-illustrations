@@ -1016,17 +1016,48 @@ export default function Books() {
             )}
           </>
         ) : (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center h-64 text-center">
-              <BookOpen className="h-12 w-12 text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No books yet</h3>
-              <p className="text-muted-foreground mb-4">
-                Create your first ABC book to get started
-              </p>
-              <Button onClick={handleCreateNewBook}>
-                <BookOpen className="mr-2 h-4 w-4" />
-                Create Your First Book
-              </Button>
+          <Card className="border-2 border-dashed">
+            <CardContent className="flex flex-col items-center justify-center py-16 text-center space-y-6">
+              <div className="rounded-full bg-primary/10 p-6">
+                <BookOpen className="h-16 w-16 text-primary" />
+              </div>
+              
+              <div className="space-y-2 max-w-md">
+                <h3 className="text-2xl font-bold">Start Your Book Collection</h3>
+                <p className="text-muted-foreground text-base">
+                  Create personalized ABC books with our AI assistant. Choose themes, customize pages, and bring stories to life.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                <Button onClick={handleCreateNewBook} size="lg">
+                  <BookOpen className="mr-2 h-5 w-5" />
+                  Create Your First Book
+                </Button>
+                <Button onClick={() => navigate('/library')} variant="outline" size="lg">
+                  Browse Library
+                </Button>
+              </div>
+
+              <div className="pt-6 border-t w-full max-w-md">
+                <p className="text-sm text-muted-foreground mb-3">
+                  <span className="font-medium text-foreground">How it works:</span>
+                </p>
+                <ul className="text-sm text-muted-foreground space-y-2 text-left">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold">1.</span>
+                    <span>Chat with our AI to design your book</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold">2.</span>
+                    <span>Choose themes, topics, and customize pages</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold">3.</span>
+                    <span>View, edit, and share your creation</span>
+                  </li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
         )}

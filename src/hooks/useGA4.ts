@@ -12,8 +12,16 @@ declare global {
 
 export const useGA4 = () => {
   const location = useLocation();
-  const { isAdmin, isLoading: roleLoading } = useRole();
+  const { isAdmin, isModerator, hasRole, isLoading: roleLoading } = useRole();
   const { user } = useAuthContext();
+
+  // Determine user role safely using server-validated RoleContext
+  const getUserRole = (): 'anonymous' | 'authenticated' | 'moderator' | 'admin' => {
+    if (!user) return 'anonymous';
+    if (isAdmin) return 'admin';
+    if (isModerator) return 'moderator';
+    return 'authenticated';
+  };
 
   // Set up visitor tracking and page views
   useEffect(() => {
@@ -26,10 +34,12 @@ export const useGA4 = () => {
     if (roleLoading) return;
 
     try {
-      const userType = user ? 'authenticated' : 'anonymous';
+      const userRole = getUserRole();
       const userProperties: Record<string, any> = {
-        user_type: userType,
-        is_admin: isAdmin,
+        user_role: userRole, // Primary dimension for filtering: anonymous, authenticated, moderator, admin
+        user_type: user ? 'authenticated' : 'anonymous', // Legacy support
+        is_admin: isAdmin, // Boolean flag for quick admin filtering
+        is_moderator: isModerator, // Boolean flag for moderator filtering
       };
       
       // For anonymous users, set visitor ID and stats
@@ -48,11 +58,12 @@ export const useGA4 = () => {
       window.gtag('set', 'user_properties', userProperties);
       window.gtag('config', 'G-GW7XZWKQM0', {
         page_path: location.pathname,
+        user_role: userRole, // Add to page view for easier segmentation
       });
     } catch (error) {
       console.error('[GA4] Error configuring analytics:', error);
     }
-  }, [location, isAdmin, roleLoading, user]);
+  }, [location, isAdmin, isModerator, roleLoading, user]);
 
   const trackEvent = (eventName: string, parameters?: Record<string, any>) => {
     // Wait for role to load and gtag to be available
@@ -64,10 +75,14 @@ export const useGA4 = () => {
     if (roleLoading) return;
 
     try {
-      // Enrich events with standard parameters
+      const userRole = getUserRole();
+      
+      // Enrich events with standard parameters for segmentation
       const enrichedParams: Record<string, any> = { 
         ...parameters,
-        is_admin: isAdmin,
+        user_role: userRole, // Primary dimension: anonymous, authenticated, moderator, admin
+        is_admin: isAdmin, // Boolean for quick filtering
+        is_moderator: isModerator, // Boolean for moderator filtering
       };
       
       if (!user) {
@@ -75,14 +90,14 @@ export const useGA4 = () => {
         const visitorStats = getVisitorStats();
         
         enrichedParams.visitor_id = visitorId;
-        enrichedParams.user_type = 'anonymous';
+        enrichedParams.user_type = 'anonymous'; // Legacy support
         
         if (visitorStats) {
           enrichedParams.visit_count = visitorStats.visitCount;
           enrichedParams.days_since_first_visit = Math.floor((Date.now() - visitorStats.firstVisit) / (1000 * 60 * 60 * 24));
         }
       } else {
-        enrichedParams.user_type = 'authenticated';
+        enrichedParams.user_type = 'authenticated'; // Legacy support
         enrichedParams.user_id = user.id;
       }
       

@@ -5,6 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { trackBookView } from '@/utils/bookViewTracking';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useSubscription } from '@/hooks/useSubscription';
+import { LibraryUpgradeModal } from './LibraryUpgradeModal';
 import type { LibraryBook } from '@/types/library';
 import type { LandingLibraryBook } from '@/types/book-extended';
 import { LIBRARY_ROUTES } from '@/config/routes';
@@ -21,6 +23,7 @@ interface LibraryBookCardProps {
 export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }: LibraryBookCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
+  const { hasActiveSubscription } = useSubscription();
   const { ref: cardRef, inView: isInView } = useIntersectionObserver({
     threshold: LIBRARY_CONFIG.INTERSECTION_THRESHOLD,
     rootMargin: LIBRARY_CONFIG.INTERSECTION_ROOT_MARGIN,
@@ -28,14 +31,21 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
   });
 
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleCardClick = () => {
-    if (user) {
-      trackBookView(book.id);
-      navigate(LIBRARY_ROUTES.BOOK_DETAIL(book.id));
-    } else {
-      navigate('/pricing');
+    if (!user) {
+      navigate('/auth?mode=signup');
+      return;
     }
+    
+    if (!hasActiveSubscription) {
+      setShowUpgradeModal(true);
+      return;
+    }
+    
+    trackBookView(book.id);
+    navigate(LIBRARY_ROUTES.BOOK_DETAIL(book.id));
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
@@ -64,47 +74,55 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
   const coverImage = 'cover_image' in book ? book.cover_image : ('image_url' in book ? book.image_url : null);
 
   return (
-    <div
-      ref={cardRef}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      className={LIBRARY_STYLES.bookCard.container}
-    >
-      {book.is_highlighted && (
-        <Badge className={LIBRARY_STYLES.bookCard.badge}>
-          {LIBRARY_TEXT.BADGES.FEATURED}
-        </Badge>
-      )}
-      
-      <div className={LIBRARY_STYLES.bookCard.imageContainer}>
-        {isInView && coverImage ? (
-          <BookImage
-            src={coverImage}
-            alt={book.book_name}
-            priority={priority}
-            className={LIBRARY_STYLES.bookCard.image}
-            enableMobileSave={true}
-          />
-        ) : (
-          <div className={LIBRARY_STYLES.bookCard.placeholder.container}>
-            <div className={LIBRARY_STYLES.bookCard.placeholder.text}>
-              {book.book_name.charAt(0)}
+    <>
+      <div
+        ref={cardRef}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        className={LIBRARY_STYLES.bookCard.container}
+      >
+        {book.is_highlighted && (
+          <Badge className={LIBRARY_STYLES.bookCard.badge}>
+            {LIBRARY_TEXT.BADGES.FEATURED}
+          </Badge>
+        )}
+        
+        <div className={LIBRARY_STYLES.bookCard.imageContainer}>
+          {isInView && coverImage ? (
+            <BookImage
+              src={coverImage}
+              alt={book.book_name}
+              priority={priority}
+              className={LIBRARY_STYLES.bookCard.image}
+              enableMobileSave={true}
+            />
+          ) : (
+            <div className={LIBRARY_STYLES.bookCard.placeholder.container}>
+              <div className={LIBRARY_STYLES.bookCard.placeholder.text}>
+                {book.book_name.charAt(0)}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
 
-      <div className={LIBRARY_STYLES.bookCard.content}>
-        <h3 className={LIBRARY_STYLES.bookCard.title}>
-          {book.book_name}
-        </h3>
-        {targetAge && (
-          <p className={LIBRARY_STYLES.bookCard.targetAge}>
-            {targetAge}
-          </p>
-        )}
+        <div className={LIBRARY_STYLES.bookCard.content}>
+          <h3 className={LIBRARY_STYLES.bookCard.title}>
+            {book.book_name}
+          </h3>
+          {targetAge && (
+            <p className={LIBRARY_STYLES.bookCard.targetAge}>
+              {targetAge}
+            </p>
+          )}
+        </div>
       </div>
-    </div>
+      
+      <LibraryUpgradeModal
+        open={showUpgradeModal}
+        onOpenChange={setShowUpgradeModal}
+        bookTitle={book.book_name}
+      />
+    </>
   );
 });
 

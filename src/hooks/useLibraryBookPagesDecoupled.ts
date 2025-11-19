@@ -6,7 +6,7 @@ import { queryKeys } from '@/hooks/queryKeys';
 
 export const useLibraryBookPagesDecoupled = (bookId: string | undefined) => {
   return useQuery({
-    queryKey: queryKeys.library.bookPages(bookId || ''),
+    queryKey: queryKeys.pages.byBook(bookId || ''),
     queryFn: async () => {
       if (!bookId || !isValidUUID(bookId)) return [];
 

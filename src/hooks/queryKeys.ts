@@ -4,4 +4,7 @@ export const queryKeys = {
     bookById: (bookId: string) => ['library-book-decoupled', bookId] as const,
     bookPages: (bookId: string) => ['library-book-pages-decoupled', bookId] as const,
   },
+  pages: {
+    byBook: (bookId: string) => ['book-pages', bookId] as const,
+  },
 } as const;

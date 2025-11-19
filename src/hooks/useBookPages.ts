@@ -3,12 +3,13 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Page } from '@/types/book';
 import { toast } from 'sonner';
+import { queryKeys } from '@/hooks/queryKeys';
 
 export const useBookPages = (bookId: string | undefined) => {
   const queryClient = useQueryClient();
 
   const { data: pages = [], isLoading, error } = useQuery({
-    queryKey: ['book-pages', bookId],
+    queryKey: queryKeys.pages.byBook(bookId || ''),
     queryFn: async () => {
       if (!bookId) return [];
       
@@ -48,7 +49,7 @@ export const useBookPages = (bookId: string | undefined) => {
         },
         (payload) => {
           console.log('Page inserted:', payload.new);
-          queryClient.setQueryData(['book-pages', bookId], (old: Page[] = []) => {
+          queryClient.setQueryData(queryKeys.pages.byBook(bookId), (old: Page[] = []) => {
             const newPage = {
               ...payload.new,
               content: payload.new.content as Page['content']
@@ -68,7 +69,7 @@ export const useBookPages = (bookId: string | undefined) => {
         },
         (payload) => {
           console.log('Page updated:', payload.new);
-          queryClient.setQueryData(['book-pages', bookId], (old: Page[] = []) =>
+          queryClient.setQueryData(queryKeys.pages.byBook(bookId), (old: Page[] = []) =>
             old.map(page =>
               page.id === payload.new.id ? {
                 ...payload.new,
@@ -88,7 +89,7 @@ export const useBookPages = (bookId: string | undefined) => {
         },
         (payload) => {
           console.log('Page deleted:', payload.old);
-          queryClient.setQueryData(['book-pages', bookId], (old: Page[] = []) =>
+          queryClient.setQueryData(queryKeys.pages.byBook(bookId), (old: Page[] = []) =>
             old.filter(page => page.id !== payload.old.id)
           );
         }

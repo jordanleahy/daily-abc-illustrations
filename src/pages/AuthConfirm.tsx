@@ -20,7 +20,7 @@ export default function AuthConfirm() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           setStatus("success");
-          setTimeout(() => navigate("/pricing", { replace: true }), 1500);
+          setTimeout(() => navigate("/google-chat", { replace: true }), 1500);
           return;
         }
 
@@ -45,7 +45,7 @@ export default function AuthConfirm() {
           window.history.replaceState(null, '', window.location.pathname);
 
           setStatus("success");
-          setTimeout(() => navigate("/pricing", { replace: true }), 1500);
+          setTimeout(() => navigate("/google-chat", { replace: true }), 1500);
           return;
         }
 
@@ -71,7 +71,7 @@ export default function AuthConfirm() {
         }
 
         setStatus("success");
-        setTimeout(() => navigate("/pricing", { replace: true }), 1500);
+        setTimeout(() => navigate("/google-chat", { replace: true }), 1500);
       } catch (error) {
         setStatus("error");
         setErrorMessage("An unexpected error occurred");
@@ -89,7 +89,7 @@ export default function AuthConfirm() {
             <CardTitle className="text-center">Email Confirmation</CardTitle>
             <CardDescription className="text-center">
               {status === "loading" && "Confirming your email..."}
-              {status === "success" && "Email confirmed! Redirecting you to pricing..."}
+              {status === "success" && "Email confirmed! Taking you to create your first book..."}
               {status === "error" && "Confirmation failed"}
             </CardDescription>
           </CardHeader>
@@ -101,7 +101,7 @@ export default function AuthConfirm() {
               <>
                 <CheckCircle2 className="h-12 w-12 text-green-600" />
                 <p className="text-center text-muted-foreground">
-                  Taking you to our pricing page...
+                  Get ready to create your first book...
                 </p>
               </>
             )}

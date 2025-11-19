@@ -108,12 +108,8 @@ export const useBooks = (
       
       // ⚡ NEW: Apply theme filter at database level (server-side filtering)
       if (themeFilter && themeFilter.length > 0) {
-        // Use OR condition to match any of the selected themes
-        // PostgreSQL JSONB operator: metadata->>'characterTheme' to extract the theme value
-        const themeConditions = themeFilter
-          .map(theme => `metadata->>'characterTheme'.eq.${theme}`)
-          .join(',');
-        query = query.or(themeConditions);
+        // Use .in() for multiple themes - checks if metadata->characterTheme is in the array
+        query = query.in('metadata->>characterTheme', themeFilter);
       }
       
       // Apply pagination if provided (for performance on all-books view)

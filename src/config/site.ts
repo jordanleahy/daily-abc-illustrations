@@ -8,7 +8,7 @@ export const SITE_CONFIG = {
   name: 'ChairLift',
   tagline: 'Chairlift Habits',
   description: 'My daughter loves digital learning, so I build her a new book every day',
-  subheading: 'Im a Jersey City parent who likes to play with AI and build interactive learning tools for my toddler.',
+  subheading: 'Everyday I create a brand new book for DanDan and now you can as well.',
   author: 'Lovable',
   
   // URLs and social

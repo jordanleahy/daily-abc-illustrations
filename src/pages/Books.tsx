@@ -10,6 +10,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { BookFilterBar } from '@/components/filters';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useBooks } from '@/hooks/useBooks';
+import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { BookOpen, Calendar, ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -344,15 +345,17 @@ export default function Books() {
   
   // Pagination state for all-books view
   const [currentPage, setCurrentPage] = useState(1);
-  const [searchQuery, setSearchQuery] = useState('');
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const PAGE_SIZE = 18; // 3 rows of 6 books on large screens
+  
+  // ⚡ PERFORMANCE: Debounced search to prevent reload on every keystroke
+  const { rawQuery: searchQuery, activeQuery: debouncedSearchQuery, setSearchQuery, isSearching } = useOptimizedSearch('debounced', 300);
   
   // ⚡ OPTIMIZED: Server-side filtering with theme filter
   const { books, totalCount, loading } = useBooks(
     isAllBooksView ? 'all-books' : 'my-books',
     isAllBooksView ? { page: currentPage, pageSize: PAGE_SIZE } : undefined,
-    searchQuery,
+    debouncedSearchQuery, // Use debounced query for database calls
     selectedThemes.length > 0 ? selectedThemes : undefined // Pass theme filter to backend
   );
   

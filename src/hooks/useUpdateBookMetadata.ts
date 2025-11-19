@@ -45,38 +45,13 @@ export const useUpdateBookMetadata = (bookId: string) => {
       return updatedMetadata;
     },
     onMutate: async ({ updates }) => {
-      // Cancel outgoing refetches
+      // Cancel outgoing refetches for consistency
       await queryClient.cancelQueries({ queryKey: ['books'] });
       await queryClient.cancelQueries({ queryKey: ['book', bookId] });
-
-      // Snapshot previous values
+      
+      // Snapshot previous values for rollback on error
       const previousBooks = queryClient.getQueryData(['books']);
       const previousBook = queryClient.getQueryData(['book', bookId]);
-
-      // Optimistically update all relevant caches immediately
-      queryClient.setQueryData(['books'], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          books: old.books?.map((book: any) =>
-            book.id === bookId
-              ? {
-                  ...book,
-                  metadata: { ...(book.metadata || {}), ...updates },
-                }
-              : book
-          ),
-        };
-      });
-
-      // Update individual book cache
-      queryClient.setQueryData(['book', bookId], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          metadata: { ...(old.metadata || {}), ...updates },
-        };
-      });
 
       return { previousBooks, previousBook };
     },
@@ -100,7 +75,7 @@ export const useUpdateBookMetadata = (bookId: string) => {
     },
   });
 
-  // Debounced mutate function
+  // Debounced mutate function with immediate UI feedback
   const debouncedMutate = useCallback(({ updates }: UpdateMetadataParams) => {
     // Clear existing timer
     if (debounceTimerRef.current) {
@@ -113,28 +88,11 @@ export const useUpdateBookMetadata = (bookId: string) => {
       ...updates,
     };
 
-    // Immediately update UI optimistically
-    queryClient.setQueryData(['books'], (old: any) => {
-      if (!old) return old;
-      return {
-        ...old,
-        books: old.books?.map((book: any) =>
-          book.id === bookId
-            ? {
-                ...book,
-                metadata: { ...(book.metadata || {}), ...updates },
-              }
-            : book
-        ),
-      };
-    });
-
-    queryClient.setQueryData(['book', bookId], (old: any) => {
-      if (!old) return old;
-      return {
-        ...old,
-        metadata: { ...(old.metadata || {}), ...updates },
-      };
+    // Immediately invalidate all books queries to trigger refetch with updated data
+    // This ensures real-time UI updates across all views
+    queryClient.invalidateQueries({ 
+      queryKey: ['books'],
+      refetchType: 'active' // Only refetch active queries for better performance
     });
 
     // Debounce the actual database write

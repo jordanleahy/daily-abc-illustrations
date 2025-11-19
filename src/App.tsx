@@ -41,6 +41,15 @@ import MyHabits from "./pages/MyHabits";
 import Profile from "./pages/Profile";
 import WordProgress from "./pages/WordProgress";
 import AdminCategorizeBooks from "./pages/AdminCategorizeBooks";
+import PreviewHome from "./pages/preview/PreviewHome";
+import ProductOverview from "./pages/preview/ProductOverview";
+import ReadingTracking from "./pages/preview/ReadingTracking";
+import HabitsRewards from "./pages/preview/HabitsRewards";
+import AIStudio from "./pages/preview/AIStudio";
+import ParentDashboard from "./pages/preview/ParentDashboard";
+import ForFamilies from "./pages/preview/ForFamilies";
+import PreviewPricing from "./pages/preview/PreviewPricing";
+import BlogHome from "./pages/preview/BlogHome";
 import { useEffect } from "react";
 import { scheduleCacheCleanup } from "./utils/cacheCleanup";
 import { initializeCacheWarming } from "./utils/cacheWarming";
@@ -104,6 +113,18 @@ const App = () => {
                 {process.env.NODE_ENV === 'development' && <PerformanceDashboard />}
                 <Routes>
                 <Route path="/" element={<Landing />} />
+                
+                {/* Preview Routes - Phase 1 */}
+                <Route path="/preview" element={<PreviewHome />} />
+                <Route path="/preview/product" element={<ProductOverview />} />
+                <Route path="/preview/tracking" element={<ReadingTracking />} />
+                <Route path="/preview/habits" element={<HabitsRewards />} />
+                <Route path="/preview/ai-studio" element={<AIStudio />} />
+                <Route path="/preview/dashboard" element={<ParentDashboard />} />
+                <Route path="/preview/for-families" element={<ForFamilies />} />
+                <Route path="/preview/pricing" element={<PreviewPricing />} />
+                <Route path="/preview/blog" element={<BlogHome />} />
+                
                 <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
                 <Route path="/admin/chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
                 <Route path="/google-chat" element={<ProtectedRoute><GoogleChat /></ProtectedRoute>} />

@@ -21,10 +21,10 @@ export const SUBSCRIPTION_TIERS = {
   // Plus tier - Full features (habits + rewards + library)
   // These are the existing products, now labeled as "Plus"
   plus_monthly: {
-    price_id: "price_1SFFx1C8Q85n0xWFNIFQGB4N",
+    price_id: "price_1SV26WC8Q85n0xWFQYibK0Jg",
     product_id: "prod_T7a3qkxm69uttK",
     name: "Plus Monthly",
-    price: 499, // Price in cents ($4.99)
+    price: 1499, // Price in cents ($14.99)
     interval: "month",
     features: {
       library_access: true,

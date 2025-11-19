@@ -80,7 +80,7 @@ export const PricingSection = () => {
               <CardTitle className="text-2xl">Plus Monthly</CardTitle>
               <CardDescription>Full features for your family</CardDescription>
               <div className="text-4xl font-bold mt-4">
-                $4.99
+                $14.99
                 <span className="text-lg font-normal text-muted-foreground">/month</span>
               </div>
             </CardHeader>
@@ -129,7 +129,7 @@ export const PricingSection = () => {
                 <span className="text-lg font-normal text-muted-foreground">/year</span>
               </div>
               <div className="text-sm text-green-600 font-medium">
-                Save $29.89 compared to monthly
+                Save $149.89 compared to monthly
               </div>
             </CardHeader>
             <CardContent>

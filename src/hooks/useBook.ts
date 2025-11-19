@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRole } from '@/contexts/RoleContext';
@@ -8,6 +9,40 @@ import { toast } from 'sonner';
 export const useBook = (bookId: string | undefined) => {
   const { user } = useAuthContext();
   const { isAdmin, isTeacher, isLoading: rolesLoading } = useRole();
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for book changes
+  useEffect(() => {
+    if (!bookId) return;
+
+    console.log('[Real-time] Setting up book subscription for:', bookId);
+
+    const channel = supabase
+      .channel(`book-${bookId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          schema: 'public',
+          table: 'books',
+          filter: `id=eq.${bookId}`
+        },
+        (payload) => {
+          console.log('[Real-time] Book changed:', payload);
+          
+          // Invalidate the book query to trigger refetch
+          queryClient.invalidateQueries({
+            queryKey: ['book', bookId]
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('[Real-time] Cleaning up book subscription for:', bookId);
+      supabase.removeChannel(channel);
+    };
+  }, [bookId, queryClient]);
 
   return useQuery({
     queryKey: ['book', bookId, isAdmin, isTeacher],

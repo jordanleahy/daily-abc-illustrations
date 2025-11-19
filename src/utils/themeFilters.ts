@@ -1,6 +1,6 @@
 import { Book } from '@/types/book';
 import { LibraryBook } from '@/types/library';
-import { themeDisplayNames, isValidCharacterTheme, getThemeDisplayName } from '@/types/characterTheme';
+import { themeDisplayNames, isValidCharacterTheme, getThemeDisplayName, CharacterThemeValue } from '@/types/characterTheme';
 
 export interface ThemeOption {
   value: string;
@@ -18,24 +18,17 @@ export const normalizeThemeName = (theme: string): string => {
 };
 
 /**
- * Extracts unique themes from books array
+ * Returns all available themes from the CharacterTheme enum
+ * This ensures the filter always shows standardized themes
  */
 export const extractAvailableThemes = (books: (Book | LibraryBook)[]): ThemeOption[] => {
-  const themesSet = new Set<string>();
-  
-  books.forEach(book => {
-    const theme = book.metadata?.characterTheme;
-    if (theme && typeof theme === 'string') {
-      themesSet.add(theme);
-    }
-  });
-  
-  return Array.from(themesSet)
-    .sort()
-    .map(theme => ({
-      value: theme,
-      label: normalizeThemeName(theme)
-    }));
+  // Convert themeDisplayNames to ThemeOption array and sort by label
+  return Object.entries(themeDisplayNames)
+    .map(([value, label]) => ({
+      value,
+      label
+    }))
+    .sort((a, b) => a.label.localeCompare(b.label));
 };
 
 /**

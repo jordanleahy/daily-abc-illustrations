@@ -71,6 +71,10 @@ export const characterThemes: Record<string, CharacterTheme> = {
   'dora': {
     thumbnail: '/placeholder.svg',
     altText: 'Dora the Explorer themed book'
+  },
+  'lion-king': {
+    thumbnail: '/placeholder.svg',
+    altText: 'The Lion King themed book'
   }
 };
 

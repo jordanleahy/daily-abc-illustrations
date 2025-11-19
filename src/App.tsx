@@ -125,7 +125,7 @@ const App = () => {
                 <Route path="/preview/pricing" element={<PreviewPricing />} />
                 <Route path="/preview/blog" element={<BlogHome />} />
                 
-                <Route path="/home" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+                <Route path="/home" element={<ProtectedRoute requireSubscription={false}><Index /></ProtectedRoute>} />
                 <Route path="/admin/chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
                 <Route path="/google-chat" element={<ProtectedRoute requireSubscription={false}><GoogleChat /></ProtectedRoute>} />
           <Route path="/auth" element={<Auth />} />

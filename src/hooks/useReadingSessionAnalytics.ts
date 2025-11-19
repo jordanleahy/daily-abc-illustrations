@@ -8,6 +8,8 @@ interface ReadingSessionConfig {
   contentType: 'daily_published' | 'library_book' | 'user_book';
   contentId: string;
   bookId: string;
+  bookName?: string;
+  category?: string;
   totalPages: number;
   entryPoint: 'direct_link' | 'homepage_redirect' | 'library_card' | 'reading_view_button';
   startingPage?: number;
@@ -68,6 +70,8 @@ export const useReadingSessionAnalytics = (): ReadingSessionAnalytics => {
       content_type: config.contentType,
       content_id: config.contentId,
       book_id: config.bookId,
+      book_name: config.bookName || 'Unknown',
+      category: config.category || 'Uncategorized',
       user_type: user ? 'authenticated' : 'anonymous',
       user_role: user ? primaryRole : null,
       entry_point: config.entryPoint,
@@ -102,6 +106,8 @@ export const useReadingSessionAnalytics = (): ReadingSessionAnalytics => {
       content_type: session.config.contentType,
       content_id: session.config.contentId,
       book_id: session.config.bookId,
+      book_name: session.config.bookName || 'Unknown',
+      category: session.config.category || 'Uncategorized',
       page_number: pageNumber,
       page_letter: pageLetter,
       time_on_previous_page: timeOnPreviousPage,
@@ -140,6 +146,8 @@ export const useReadingSessionAnalytics = (): ReadingSessionAnalytics => {
       content_type: session.config.contentType,
       content_id: session.config.contentId,
       book_id: session.config.bookId,
+      book_name: session.config.bookName || 'Unknown',
+      category: session.config.category || 'Uncategorized',
       total_duration: totalDuration,
       pages_viewed: session.pagesViewed.size,
       unique_pages_viewed: Array.from(session.pagesViewed),

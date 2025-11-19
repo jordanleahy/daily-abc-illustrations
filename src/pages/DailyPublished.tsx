@@ -53,6 +53,8 @@ export default function DailyPublished() {
           contentType: 'daily_published',
           contentId: dailyContent.id,
           bookId: dailyContent.book_id,
+          bookName: dailyContent.title,
+          category: 'Daily Published',
           totalPages: pages.length,
           entryPoint,
           startingPage: randomIndex + 1, // Use original index for analytics

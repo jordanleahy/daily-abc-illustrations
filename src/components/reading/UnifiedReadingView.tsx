@@ -88,8 +88,10 @@ export interface UnifiedReadingViewConfig {
     id: string;
     book_id?: string;
     book_name?: string;
+    name?: string;
     title?: string;
     book_description?: string;
+    category?: string;
   };
   
   /** Array of pages to display. Daily published passes single page, others pass full book */
@@ -275,6 +277,8 @@ export function UnifiedReadingView({
         contentType,
         contentId: book.id,
         bookId: book.book_id || book.id,
+        bookName: book.name || book.book_name,
+        category: book.category,
         totalPages: reorderedPages.length,
         entryPoint,
         startingPage: startingPageIndex + 1,

@@ -6,13 +6,10 @@ import { useLandingPageData } from '@/hooks/useLandingPageData';
 import { useLandingPageImagePreloader } from '@/hooks/useLandingPageImagePreloader';
 import { useLandingPageSubscription } from '@/hooks/useLandingPageSubscription';
 import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
-import { useGA4 } from '@/hooks/useGA4';
-import { useEffect } from 'react';
 import { MetaHead } from '@/components/common/MetaHead';
 import { SITE_CONFIG, getSiteTitle } from '@/config/site';
 
 const Landing = () => {
-  const { trackEvent } = useGA4();
   const { data: landingData } = useLandingPageData();
   const { data: libraryBooks = [] } = useLibraryBooksDecoupled();
   
@@ -21,13 +18,6 @@ const Landing = () => {
   
   // Preload images progressively
   useLandingPageImagePreloader(landingData);
-
-  useEffect(() => {
-    trackEvent('page_view', {
-      page_title: 'Landing',
-      page_path: '/',
-    });
-  }, [trackEvent]);
 
   return (
     <>

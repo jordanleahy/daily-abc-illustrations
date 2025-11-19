@@ -7,19 +7,9 @@ import { PreviewPricingSection } from '@/components/preview/PreviewPricingSectio
 import { PreviewSection } from '@/components/preview/layout/PreviewSection';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { useGA4 } from '@/hooks/useGA4';
-import { useEffect } from 'react';
 
 const PreviewHome = () => {
   const navigate = useNavigate();
-  const { trackEvent } = useGA4();
-
-  useEffect(() => {
-    trackEvent('page_view', {
-      page_title: 'Preview Home',
-      page_path: '/preview',
-    });
-  }, [trackEvent]);
 
   return (
     <PreviewPageLayout>

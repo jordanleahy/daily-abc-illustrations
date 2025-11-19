@@ -9,16 +9,16 @@ const ProductOverview = () => {
 
   const features = [
     {
-      icon: BookOpen,
-      title: 'Reading & Library',
-      description: 'Track every book, session, and word your child encounters. See progress over time with beautiful charts.',
-      link: '/preview/tracking'
-    },
-    {
       icon: Target,
       title: 'Habits & Rewards',
       description: 'Set simple reading habits and let kids earn coins. Trade coins for rewards you approve.',
       link: '/preview/habits'
+    },
+    {
+      icon: BookOpen,
+      title: 'Reading & Library',
+      description: 'Track every book, session, and word your child encounters. See progress over time with beautiful charts.',
+      link: '/preview/tracking'
     },
     {
       icon: Sparkles,

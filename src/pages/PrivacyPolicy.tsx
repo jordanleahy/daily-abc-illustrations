@@ -1,5 +1,3 @@
-import { useEffect } from 'react';
-import { useGA4 } from '@/hooks/useGA4';
 import { MetaHead } from '@/components/common';
 import { SITE_CONFIG, getSiteTitle } from '@/config/site';
 import { Container } from '@/components/layout';
@@ -8,16 +6,7 @@ import { Footer } from '@/components/landing/Footer';
 import { useAuthContext } from '@/contexts/AuthContext';
 
 const PrivacyPolicy = () => {
-  const { trackEvent } = useGA4();
   const { isAuthenticated, loading } = useAuthContext();
-
-  useEffect(() => {
-    trackEvent('page_view', {
-      page_title: 'Privacy Policy',
-      page_location: window.location.href,
-      page_path: '/privacy-policy'
-    });
-  }, [trackEvent]);
 
   const lastUpdated = "October 1, 2025";
   const shouldShowFooter = !isAuthenticated && !loading;

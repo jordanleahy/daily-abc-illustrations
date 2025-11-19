@@ -15,42 +15,60 @@ export const useGA4 = () => {
   const { isAdmin, isLoading: roleLoading } = useRole();
   const { user } = useAuthContext();
 
-  // Set up visitor tracking for non-authenticated users
+  // Set up visitor tracking and page views
   useEffect(() => {
-    // Wait for role to load before tracking
-    if (typeof window.gtag === 'function' && !roleLoading && !isAdmin) {
+    // Wait for role to load and gtag to be available
+    if (typeof window.gtag !== 'function') {
+      console.warn('[GA4] Google Analytics not loaded');
+      return;
+    }
+
+    if (roleLoading) return;
+
+    try {
       const userType = user ? 'authenticated' : 'anonymous';
+      const userProperties: Record<string, any> = {
+        user_type: userType,
+        is_admin: isAdmin,
+      };
       
       // For anonymous users, set visitor ID and stats
       if (!user) {
         const visitorId = getOrCreateVisitorId();
         const visitorStats = trackVisit();
         
-        window.gtag('set', 'user_properties', {
-          user_type: userType,
-          visitor_id: visitorId,
-          visit_count: visitorStats.visitCount,
-          days_since_first_visit: Math.floor((Date.now() - visitorStats.firstVisit) / (1000 * 60 * 60 * 24)),
-          total_books_read: visitorStats.totalBooksRead,
-        });
+        userProperties.visitor_id = visitorId;
+        userProperties.visit_count = visitorStats.visitCount;
+        userProperties.days_since_first_visit = Math.floor((Date.now() - visitorStats.firstVisit) / (1000 * 60 * 60 * 24));
+        userProperties.total_books_read = visitorStats.totalBooksRead;
       } else {
-        window.gtag('set', 'user_properties', {
-          user_type: userType,
-          user_id: user.id,
-        });
+        userProperties.user_id = user.id;
       }
 
+      window.gtag('set', 'user_properties', userProperties);
       window.gtag('config', 'G-GW7XZWKQM0', {
         page_path: location.pathname,
       });
+    } catch (error) {
+      console.error('[GA4] Error configuring analytics:', error);
     }
   }, [location, isAdmin, roleLoading, user]);
 
   const trackEvent = (eventName: string, parameters?: Record<string, any>) => {
-    // Wait for role to load before tracking
-    if (typeof window.gtag === 'function' && !roleLoading && !isAdmin) {
-      // Enrich events with visitor data for anonymous users
-      const enrichedParams = { ...parameters };
+    // Wait for role to load and gtag to be available
+    if (typeof window.gtag !== 'function') {
+      console.warn('[GA4] Google Analytics not loaded, skipping event:', eventName);
+      return;
+    }
+
+    if (roleLoading) return;
+
+    try {
+      // Enrich events with standard parameters
+      const enrichedParams: Record<string, any> = { 
+        ...parameters,
+        is_admin: isAdmin,
+      };
       
       if (!user) {
         const visitorId = getOrCreateVisitorId();
@@ -69,6 +87,8 @@ export const useGA4 = () => {
       }
       
       window.gtag('event', eventName, enrichedParams);
+    } catch (error) {
+      console.error('[GA4] Error tracking event:', eventName, error);
     }
   };
 

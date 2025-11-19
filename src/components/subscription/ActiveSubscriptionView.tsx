@@ -42,13 +42,13 @@ export const ActiveSubscriptionView = () => {
         name: "Annual Plan",
         price: "$29.99",
         period: "year",
-        savings: "Save $29.89 (50% off)",
+        savings: "Save $149.89 (83% off)",
         priceId: SUBSCRIPTION_TIERS.plus_annual.price_id,
         buttonText: "Switch to Annual"
       }]
     : [{
         name: "Monthly Plan", 
-        price: "$4.99",
+        price: "$14.99",
         period: "month",
         priceId: SUBSCRIPTION_TIERS.plus_monthly.price_id,
         buttonText: "Switch to Monthly"

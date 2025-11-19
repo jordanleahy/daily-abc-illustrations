@@ -55,7 +55,7 @@ export const PricingSection = () => {
               <CardTitle className="text-2xl mb-2">Plus Monthly</CardTitle>
               <div className="mt-4">
                 <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-bold">$4.99</span>
+                  <span className="text-5xl font-bold">$14.99</span>
                   <span className="text-muted-foreground text-lg">/month</span>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
@@ -95,7 +95,7 @@ export const PricingSection = () => {
           {/* Plus Annual Card - Highlighted */}
           <Card className="border-2 border-primary shadow-xl relative">
             <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-              <Badge className="px-4 py-1 text-sm">Save 50%</Badge>
+              <Badge className="px-4 py-1 text-sm">Save 83%</Badge>
             </div>
             <CardHeader className="text-center pb-8">
               <CardTitle className="text-2xl mb-2">Plus Annual</CardTitle>

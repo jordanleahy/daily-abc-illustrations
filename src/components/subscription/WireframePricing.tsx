@@ -54,7 +54,7 @@ export const WireframePricing = () => {
   const plans = [
     {
       name: "Plus Monthly",
-      price: "$4.99",
+      price: "$14.99",
       period: "month",
       features: [
         "Full library access",
@@ -72,13 +72,13 @@ export const WireframePricing = () => {
       name: "Plus Annual",
       price: "$29.99", 
       period: "year",
-      savings: "Save $29.89 (50% off)",
+      savings: "Save $149.89 (83% off)",
       features: [
         "Everything in Plus Monthly, plus:",
         "Early access to new books",
         "Educational activity guides",
         "Priority support",
-        "Best value - save 50%"
+        "Best value - save 83%"
       ],
       buttonText: currentTier?.interval === 'year' ? "Current Plan" : "Select Annual",
       buttonDisabled: loading || (hasActiveSubscription && currentTier?.interval === 'year'),

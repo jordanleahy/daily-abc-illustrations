@@ -16,7 +16,6 @@ import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
 
 const Library = memo(() => {
   const navigate = useNavigate();
-  const { hasLibraryAccess } = useFeatureAccess();
   
   const { data: libraryBooks = [], isLoading: isLoadingBooks } = useLibraryBooksDecoupled();
   const { favorites } = useFavorites();
@@ -73,41 +72,33 @@ const Library = memo(() => {
             <p className={LIBRARY_STYLES.page.header.subtitle}>{LIBRARY_TEXT.PAGE_SUBTITLE}</p>
           </div>
           
-          {hasLibraryAccess ? (
-            <>
-              {/* Book Filters */}
-              {libraryBooks.length > 0 && (
-                <div className="mb-6">
-                  <BookFilterBar
-                    searchQuery={rawQuery}
-                    onSearchChange={setSearchQuery}
-                    selectedThemes={selectedThemes}
-                    onThemesChange={setSelectedThemes}
-                    availableThemes={availableThemes}
-                    placeholder={isSearching ? "Searching..." : "Search library books..."}
-                  />
-                </div>
-              )}
-              
-              {/* Book Sections */}
-              {filteredBooks.length > 0 ? (
-                <CategorizedBookSections 
-                  books={filteredBooks}
-                  showAllCategories={true}
-                />
-              ) : libraryBooks.length > 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-muted-foreground">
-                    No books found matching your filters.
-                  </p>
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <PremiumGate>
-              <p className="text-center">{LIBRARY_TEXT.PREMIUM_GATE_MESSAGE}</p>
-            </PremiumGate>
+          {/* Book Filters - Available to all users */}
+          {libraryBooks.length > 0 && (
+            <div className="mb-6">
+              <BookFilterBar
+                searchQuery={rawQuery}
+                onSearchChange={setSearchQuery}
+                selectedThemes={selectedThemes}
+                onThemesChange={setSelectedThemes}
+                availableThemes={availableThemes}
+                placeholder={isSearching ? "Searching..." : "Search library books..."}
+              />
+            </div>
           )}
+          
+          {/* Book Sections - Available to all users (upgrade modal on click) */}
+          {filteredBooks.length > 0 ? (
+            <CategorizedBookSections 
+              books={filteredBooks}
+              showAllCategories={true}
+            />
+          ) : libraryBooks.length > 0 ? (
+            <div className="text-center py-12">
+              <p className="text-muted-foreground">
+                No books found matching your filters.
+              </p>
+            </div>
+          ) : null}
         </div>
       </StandardPageLayout>
     </>

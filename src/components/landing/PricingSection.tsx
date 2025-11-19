@@ -95,19 +95,19 @@ export const PricingSection = () => {
           {/* Plus Annual Card - Highlighted */}
           <Card className="border-2 border-primary shadow-xl relative">
             <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-              <Badge className="px-4 py-1 text-sm">Save 83%</Badge>
+              <Badge className="px-4 py-1 text-sm">Save 45%</Badge>
             </div>
             <CardHeader className="text-center pb-8">
               <CardTitle className="text-2xl mb-2">Plus Annual</CardTitle>
-              <div className="mt-4">
-                <div className="flex items-baseline justify-center gap-2">
-                  <span className="text-5xl font-bold">$2.50</span>
-                  <span className="text-muted-foreground text-lg">/month</span>
-                </div>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Billed $29.99 annually
-                </p>
+            <div className="mt-4">
+              <div className="flex items-baseline justify-center gap-2">
+                <span className="text-5xl font-bold">$8.25</span>
+                <span className="text-muted-foreground text-lg">/month</span>
               </div>
+              <p className="text-sm text-muted-foreground mt-2">
+                Billed $99.00 annually
+              </p>
+            </div>
             </CardHeader>
             <CardContent className="space-y-6">
               <ul className="space-y-3">

@@ -70,9 +70,9 @@ export const WireframePricing = () => {
     },
     {
       name: "Plus Annual",
-      price: "$29.99", 
+      price: "$99.00", 
       period: "year",
-      savings: "Save $149.89 (83% off)",
+      savings: "Save $80.88 (45% off)",
       features: [
         "Everything in Plus Monthly, plus:",
         "Early access to new books",

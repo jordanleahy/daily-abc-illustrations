@@ -100,7 +100,7 @@ export const navigationConfig: RouteConfig[] = [
   },
   {
     path: ROUTES.GOOGLE_CHAT,
-    name: 'Google Chat',
+    name: 'Create Book',
     icon: MessageSquare,
     group: 'main',
     activeMatch: { exact: true },

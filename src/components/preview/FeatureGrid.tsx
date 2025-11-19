@@ -7,18 +7,18 @@ export const FeatureGrid = () => {
 
   const features = [
     {
-      icon: BookOpen,
-      title: 'Read',
-      subtitle: 'Know what your child reads',
-      description: 'See every finished book in one timeline. Track streaks, minutes, and pages per session. Spot which book types your child returns to again and again.',
-      link: '/preview/tracking'
-    },
-    {
       icon: Target,
       title: 'Habits',
       subtitle: 'Make reading a daily routine',
       description: 'Set simple reading habits that match your family\'s schedule. Mark habits done from any device in a few taps. Turn streaks into coins so kids feel proud of progress.',
       link: '/preview/habits'
+    },
+    {
+      icon: BookOpen,
+      title: 'Read',
+      subtitle: 'Know what your child reads',
+      description: 'See every finished book in one timeline. Track streaks, minutes, and pages per session. Spot which book types your child returns to again and again.',
+      link: '/preview/tracking'
     },
     {
       icon: Gift,

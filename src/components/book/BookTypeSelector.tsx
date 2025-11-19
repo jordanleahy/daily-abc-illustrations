@@ -35,7 +35,6 @@ export const BookTypeSelector = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Not specified</SelectItem>
           {BOOK_TYPE_IDS.filter(id => id !== 'other').map((bookTypeId) => (
             <SelectItem key={bookTypeId} value={bookTypeId}>
               {getBookTypeDisplayName(bookTypeId)}

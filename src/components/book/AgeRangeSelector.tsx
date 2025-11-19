@@ -35,7 +35,6 @@ export const AgeRangeSelector = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">Not specified</SelectItem>
           {AGE_RANGE_IDS.filter(id => id !== 'other').map((ageRangeId) => (
             <SelectItem key={ageRangeId} value={ageRangeId}>
               {getAgeRangeDisplayName(ageRangeId)}

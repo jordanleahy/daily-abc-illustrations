@@ -35,7 +35,7 @@ export const SUBSCRIPTION_TIERS = {
     price_id: "price_1SEEd8C8Q85n0xWFLL92SUJy",
     product_id: "prod_T7a5vTweAt6UZm",
     name: "Plus Annual",
-    price: 2999, // Price in cents ($29.99)
+    price: 9900, // Price in cents ($99.00)
     interval: "year",
     features: {
       library_access: true,

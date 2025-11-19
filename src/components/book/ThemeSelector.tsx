@@ -35,7 +35,6 @@ export const ThemeSelector = ({
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="">No Theme</SelectItem>
           {Object.entries(themeDisplayNames).map(([themeValue, displayName]) => (
             <SelectItem key={themeValue} value={themeValue}>
               {displayName}

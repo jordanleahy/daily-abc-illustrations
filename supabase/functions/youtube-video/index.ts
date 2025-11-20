@@ -179,6 +179,140 @@ Deno.serve(async (req) => {
         );
       }
 
+      case 'search-channels': {
+        const searchQuery = url.searchParams.get('query');
+        
+        if (!searchQuery) {
+          throw new Error('Search query is required');
+        }
+
+        console.log('Searching for channels:', searchQuery);
+        
+        // Search for channels using YouTube Data API v3
+        const searchResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(searchQuery)}&maxResults=20&key=${YOUTUBE_API_KEY}`
+        );
+
+        if (!searchResponse.ok) {
+          const errorText = await searchResponse.text();
+          console.error('YouTube API search error:', errorText);
+          throw new Error('Failed to search channels');
+        }
+
+        const searchData = await searchResponse.json();
+        
+        if (!searchData.items || searchData.items.length === 0) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: { channels: [] },
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Get detailed channel info including subscriber count
+        const channelIds = searchData.items.map((item: any) => item.snippet.channelId).join(',');
+        const channelsResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/channels?part=snippet,statistics&id=${channelIds}&key=${YOUTUBE_API_KEY}`
+        );
+
+        if (!channelsResponse.ok) {
+          throw new Error('Failed to fetch channel details');
+        }
+
+        const channelsData = await channelsResponse.json();
+
+        const channels = channelsData.items.map((channel: any) => ({
+          channelId: channel.id,
+          title: channel.snippet.title,
+          description: channel.snippet.description,
+          thumbnailUrl: channel.snippet.thumbnails.high?.url || channel.snippet.thumbnails.default?.url,
+          subscriberCount: parseInt(channel.statistics.subscriberCount || '0'),
+          videoCount: parseInt(channel.statistics.videoCount || '0'),
+        }));
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: { channels },
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      case 'get-channel-videos': {
+        const channelId = url.searchParams.get('channelId');
+        const maxResults = url.searchParams.get('maxResults') || '12';
+        
+        if (!channelId) {
+          throw new Error('Channel ID is required');
+        }
+
+        console.log('Fetching videos for channel:', channelId);
+        
+        // Get videos from the channel
+        const searchResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`
+        );
+
+        if (!searchResponse.ok) {
+          const errorText = await searchResponse.text();
+          console.error('YouTube API error:', errorText);
+          throw new Error('Failed to fetch channel videos');
+        }
+
+        const searchData = await searchResponse.json();
+        
+        if (!searchData.items || searchData.items.length === 0) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: { videos: [] },
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+
+        // Get video details including duration
+        const videoIds = searchData.items.map((item: any) => item.id.videoId).join(',');
+        const videosResponse = await fetch(
+          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoIds}&key=${YOUTUBE_API_KEY}`
+        );
+
+        if (!videosResponse.ok) {
+          throw new Error('Failed to fetch video details');
+        }
+
+        const videosData = await videosResponse.json();
+
+        const videos = videosData.items.map((video: any) => {
+          const duration = video.contentDetails.duration;
+          const durationMatch = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+          const hours = parseInt(durationMatch?.[1] || '0');
+          const minutes = parseInt(durationMatch?.[2] || '0');
+          const seconds = parseInt(durationMatch?.[3] || '0');
+          const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+          return {
+            videoId: video.id,
+            title: video.snippet.title,
+            description: video.snippet.description,
+            thumbnailUrl: video.snippet.thumbnails.high?.url || video.snippet.thumbnails.default?.url,
+            durationSeconds: totalSeconds,
+            publishedAt: video.snippet.publishedAt,
+          };
+        });
+
+        return new Response(
+          JSON.stringify({
+            success: true,
+            data: { videos },
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       default:
         throw new Error('Invalid action');
     }

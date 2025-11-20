@@ -1,10 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { VideoManagement } from '@/components/video/VideoManagement';
-import { YouTubeVideoPlayer } from '@/components/video/YouTubeVideoPlayer';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState } from 'react';
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { AuthHeader } from "@/components/layout/AuthHeader";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { YouTubeVideoPlayer } from "@/components/video/YouTubeVideoPlayer";
+import { VideoManagement } from "@/components/video/VideoManagement";
+import { ChannelBrowser } from "@/components/video/ChannelBrowser";
 
 export default function Videos() {
   const [selectedKid, setSelectedKid] = useState<string>('');
@@ -42,59 +45,73 @@ export default function Videos() {
   });
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <h1 className="text-3xl font-bold">Video Time</h1>
+    <div className="min-h-screen bg-background">
+      <AuthHeader />
+      <div className="container mx-auto px-4 py-8">
+        <Tabs defaultValue="library" className="space-y-6">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="library">Video Library</TabsTrigger>
+            <TabsTrigger value="browse">Browse Channels</TabsTrigger>
+          </TabsList>
 
-      <VideoManagement />
+          <TabsContent value="library" className="space-y-8">
+            <VideoManagement />
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Watch Videos</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium mb-2 block">Select Child</label>
-              <Select value={selectedKid} onValueChange={setSelectedKid}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a child" />
-                </SelectTrigger>
-                <SelectContent>
-                  {kids?.map((kid) => (
-                    <SelectItem key={kid.id} value={kid.id}>
-                      {kid.first_name} {kid.last_name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Watch Videos</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Select Child</label>
+                    <Select value={selectedKid} onValueChange={setSelectedKid}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a child" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {kids?.map((kid) => (
+                          <SelectItem key={kid.id} value={kid.id}>
+                            {kid.first_name} {kid.last_name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">Select Video</label>
-              <Select value={selectedVideo} onValueChange={setSelectedVideo}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Choose a video" />
-                </SelectTrigger>
-                <SelectContent>
-                  {videos?.map((video) => (
-                    <SelectItem key={video.id} value={video.id}>
-                      {video.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Select Video</label>
+                    <Select value={selectedVideo} onValueChange={setSelectedVideo}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a video" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {videos?.map((video) => (
+                          <SelectItem key={video.id} value={video.id}>
+                            {video.title}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
 
-          {selectedKid && selectedVideo && (
-            <YouTubeVideoPlayer
-              videoId={videos?.find((v) => v.id === selectedVideo)?.youtube_video_id || ''}
-              kidProfileId={selectedKid}
-              videoContentId={selectedVideo}
-            />
-          )}
-        </CardContent>
-      </Card>
+                {selectedKid && selectedVideo && (
+                  <YouTubeVideoPlayer
+                    videoId={videos?.find((v) => v.id === selectedVideo)?.youtube_video_id || ''}
+                    kidProfileId={selectedKid}
+                    videoContentId={selectedVideo}
+                  />
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="browse">
+            <ChannelBrowser />
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   );
 }

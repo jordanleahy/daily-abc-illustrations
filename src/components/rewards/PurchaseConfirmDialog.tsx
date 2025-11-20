@@ -67,6 +67,14 @@ export const PurchaseConfirmDialog = ({
                 <span className="font-medium">After Purchase:</span>
                 <CoinCounter coins={remainingCoins} size="sm" showLabel={false} />
               </div>
+
+              {remainingCoins < 0 && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-md p-3 mt-2">
+                  <p className="text-destructive text-xs font-medium">
+                    ⚠️ Insufficient funds. You need {formatCoinsAsCurrency(product.coin_price - currentCoins)} more coins.
+                  </p>
+                </div>
+              )}
             </div>
 
             <p className="text-xs text-muted-foreground">
@@ -76,7 +84,10 @@ export const PurchaseConfirmDialog = ({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction onClick={onConfirm}>
+          <AlertDialogAction 
+            onClick={onConfirm}
+            disabled={remainingCoins < 0}
+          >
             Confirm Purchase
           </AlertDialogAction>
         </AlertDialogFooter>

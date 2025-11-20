@@ -631,52 +631,75 @@ Create an engaging illustration that makes learning the letter "${page.letter}" 
  * Specialized prompt for numbers books
  */
 function generateNumbersPagePrompt(book: BookContext, page: PageContext, textOverlayEnabled: boolean = true): string {
+  // Extract the main countable object from the description
+  // Example: "Five colorful balloons floating in the sky" -> "balloons"
+  const extractObject = (desc: string): string => {
+    const common = ['apple', 'balloon', 'ball', 'star', 'flower', 'button', 'car', 'tree', 'block', 'toy', 'fish', 'bird', 'cat', 'dog', 'hat', 'shoe', 'book', 'cup', 'pencil', 'crayon'];
+    const lowerDesc = desc.toLowerCase();
+    
+    for (const obj of common) {
+      if (lowerDesc.includes(obj)) {
+        return obj + 's'; // Pluralize
+      }
+    }
+    
+    // Fallback: try to extract noun after number words
+    const words = desc.split(' ');
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i].toLowerCase();
+      if (['one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10'].includes(word) && i + 1 < words.length) {
+        return words[i + 1];
+      }
+    }
+    
+    return 'objects';
+  };
+
+  const objectName = extractObject(page.description);
+  
   const noTextWarning = !textOverlayEnabled ? `
 🚫🚫🚫 ABSOLUTELY NO TEXT IN THIS IMAGE 🚫🚫🚫
 ========================================
-CRITICAL REQUIREMENT: This image must be 100% TEXT-FREE.
-- NO letters, words, numbers, or any written characters
-- NO text on signs, books, labels, clothing, walls, or anywhere
-- NO visible writing of any kind whatsoever
-- If you include ANY text, this image will be rejected
+CRITICAL: This image must be 100% TEXT-FREE.
+- NO numbers, letters, words, or written characters
+- NO text anywhere in the image
 ========================================
 ` : '';
 
-  return `${noTextWarning}You are creating a NUMBERS PAGE for "${book.bookName}".
+  return `${noTextWarning}COUNTING IMAGE: Show EXACTLY ${page.letter} ${objectName}
 
-NUMBER PAGE DETAILS:
-- Number: ${page.letter}
-- Counting Concept: ${page.title}
-- Scene: ${page.description}
+CRITICAL REQUIREMENTS:
+═══════════════════════
+✓ EXACT COUNT: EXACTLY ${page.letter} ${objectName} - no more, no less
+✓ IDENTICAL: All ${objectName} must be the SAME size and appearance
+✓ CLEARLY SEPARATED: Each ${objectName} must be distinct and separate
+✓ FULLY VISIBLE: Every ${objectName} must be complete (no partial objects)
+✓ EASY TO COUNT: A child should point and count: ${Array.from({length: parseInt(page.letter) || 1}, (_, i) => i + 1).join(', ')}
 
-COUNTING PAGE REQUIREMENTS:
-1. Show exactly ${page.letter} items that children can count
-2. Make the items clear, distinct, and easy to count
-3. Arrange the items in an engaging, visually interesting pattern
-4. Use the concept from: ${page.description}
-5. Create a scene that makes counting fun and interactive
+LAYOUT:
+─────────
+- Arrange in a simple grid, row, or clear scattered pattern
+- Plain or minimal background (solid color or simple gradient)
+- NO decorative elements or complex scenes
+- NO background clutter
+- Square format (1:1)
 
-COMPOSITION:
-- ${page.letter} clearly identifiable items arranged at CENTER
-- Center the countable items with balanced arrangement radiating outward
-- Arrangement that guides counting from center (balanced pattern)
-- Square format (1:1) with organized, countable layout
-${getCenterFocusInstructions()}
+OBJECT CLARITY:
+─────────────
+- Each ${objectName} should be clearly recognizable
+- Consistent size across all objects
+- Good spacing between objects for easy counting
+- Clear visual separation
 
 ${textOverlayEnabled ? `TEXT INCLUSION:
-- Display the number "${page.letter}" prominently in large, bold text
-- Include the word "${page.title}" clearly in the illustration
-- Use playful numerals that children can easily recognize` : `🚫 CRITICAL - ABSOLUTELY NO TEXT ALLOWED 🚫
-===============================================
-- DO NOT include the number "${page.letter}" as text anywhere
-- DO NOT show any numerals, words, numbers, or counting labels
-- Show only the countable objects visually
-- All numbers and text will be added separately as an overlay
-- The illustration must be 100% text-free
-- If there is ANY text in your image, it will be rejected
-===============================================`}
+- Display the number "${page.letter}" prominently
+- Include the word "${page.title}" in the illustration` : `🚫 NO TEXT ALLOWED 🚫
+- NO number "${page.letter}" as text
+- NO numerals or counting labels
+- Show ONLY the countable ${objectName}
+- Text will be added as overlay later`}
 
-Create an illustration that makes learning to count ${page.letter} fun and clear!${!textOverlayEnabled ? '\n\n🚫 FINAL REMINDER: NO TEXT OF ANY KIND IN THIS IMAGE 🚫' : ''}`;
+VERIFICATION: Before completing, count the ${objectName} in your image. There must be EXACTLY ${page.letter}.${!textOverlayEnabled ? '\n\n🚫 FINAL REMINDER: NO TEXT IN THIS IMAGE 🚫' : ''}`;
 }
 
 /**

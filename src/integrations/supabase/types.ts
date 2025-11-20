@@ -2004,6 +2004,10 @@ export type Database = {
         Returns: Json
       }
       analyze_page_image_storage: { Args: never; Returns: Json }
+      auto_purchase_screen_time: {
+        Args: { p_kid_id: string; p_required_seconds: number }
+        Returns: Json
+      }
       cleanup_old_page_images: {
         Args: {
           p_dry_run?: boolean

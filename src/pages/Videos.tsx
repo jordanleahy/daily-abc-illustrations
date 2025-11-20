@@ -77,6 +77,11 @@ export default function Videos() {
     onSuccess: (contentId, video) => {
       queryClient.invalidateQueries({ queryKey: ['video-content'] });
       setPlayingVideo({ videoId: video.videoId, contentId });
+      
+      // Auto-select first kid if none selected
+      if (!selectedKid && kids && kids.length > 0) {
+        setSelectedKid(kids[0].id);
+      }
     },
     onError: (error: Error) => {
       toast.error(`Failed to load video: ${error.message}`);
@@ -103,6 +108,28 @@ export default function Videos() {
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-8">
           <ChannelBrowser onVideoSelect={(video) => addAndPlayVideo.mutate(video)} />
+
+          {playingVideo && !selectedKid && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Select a Child to Watch Video</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Select value={selectedKid} onValueChange={setSelectedKid}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a child" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kids?.map((kid) => (
+                      <SelectItem key={kid.id} value={kid.id}>
+                        {kid.first_name} {kid.last_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </CardContent>
+            </Card>
+          )}
 
           {playingVideo && selectedKid && (
             <Card>

@@ -90,7 +90,6 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                   <div className="aspect-video">
                     <YouTubeVideoPlayer
                       videoId={video.videoId}
-                      title={video.title}
                     />
                   </div>
                 ) : (

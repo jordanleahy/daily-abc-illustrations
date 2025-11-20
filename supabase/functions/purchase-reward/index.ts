@@ -195,6 +195,20 @@ Deno.serve(async (req) => {
         newBalance,
         balanceInMinutes: Math.floor(newBalance / 60)
       });
+      
+      // Mark purchase as fulfilled for screen time products
+      const { error: fulfillError } = await supabase
+        .from('kid_purchases')
+        .update({ 
+          purchase_status: 'fulfilled',
+          fulfilled_at: new Date().toISOString()
+        })
+        .eq('id', purchase.id);
+        
+      if (fulfillError) {
+        console.error('[PURCHASE-REWARD] Failed to mark purchase as fulfilled', fulfillError);
+        // Continue anyway - screen time was added successfully
+      }
     }
 
     // 8. Optionally decrease quantity available

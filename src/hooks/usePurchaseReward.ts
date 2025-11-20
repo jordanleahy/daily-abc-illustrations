@@ -25,6 +25,7 @@ export const usePurchaseReward = () => {
       queryClient.invalidateQueries({ queryKey: ['kid-purchases'] });
       queryClient.invalidateQueries({ queryKey: ['kid-profiles'] });
       queryClient.invalidateQueries({ queryKey: ['rewards-products'] });
+      queryClient.invalidateQueries({ queryKey: ['kid-screen-time'] });
       
       toast({
         title: '🎉 Purchase Successful!',

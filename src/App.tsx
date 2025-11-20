@@ -41,6 +41,7 @@ import MyHabits from "./pages/MyHabits";
 import Profile from "./pages/Profile";
 import WordProgress from "./pages/WordProgress";
 import AdminCategorizeBooks from "./pages/AdminCategorizeBooks";
+import Videos from "./pages/Videos";
 import PreviewHome from "./pages/preview/PreviewHome";
 import ProductOverview from "./pages/preview/ProductOverview";
 import ReadingTracking from "./pages/preview/ReadingTracking";
@@ -155,6 +156,7 @@ const App = () => {
                 <Route path="/rewards/manage" element={<ProtectedRoute requireFeature="habits_rewards"><RewardsManage /></ProtectedRoute>} />
                 <Route path="/habits/manage" element={<ProtectedRoute requireFeature="habits_rewards"><HabitsManage /></ProtectedRoute>} />
                 <Route path="/my-habits" element={<ProtectedRoute requireFeature="habits_rewards"><MyHabits /></ProtectedRoute>} />
+                <Route path="/videos" element={<ProtectedRoute requireFeature="habits_rewards"><Videos /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/word-progress" element={<ProtectedRoute><WordProgress /></ProtectedRoute>} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />

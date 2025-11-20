@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
 
@@ -70,22 +70,6 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <div className="flex items-start gap-4">
-            <img 
-              src={channel.thumbnailUrl} 
-              alt={channel.title}
-              className="w-24 h-24 rounded-lg object-cover"
-            />
-            <div className="flex-1">
-              <CardTitle>{channel.title}</CardTitle>
-              <CardDescription className="mt-2">{channel.description}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-      </Card>
-
       {isLoading && (
         <div className="text-center py-8 text-muted-foreground">
           Loading videos...

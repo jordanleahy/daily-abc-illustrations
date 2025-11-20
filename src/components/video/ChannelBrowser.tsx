@@ -163,7 +163,11 @@ export const ChannelBrowser = ({ onVideoSelect }: ChannelBrowserProps) => {
       {channels && channels.channels.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {channels.channels.map((channel: Channel) => (
-            <Card key={channel.channelId} className="overflow-hidden hover:shadow-lg transition-shadow">
+            <Card 
+              key={channel.channelId} 
+              className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+              onClick={() => setSelectedChannel(channel)}
+            >
               <div className="aspect-video relative">
                 <img 
                   src={channel.thumbnailUrl} 
@@ -175,7 +179,7 @@ export const ChannelBrowser = ({ onVideoSelect }: ChannelBrowserProps) => {
                 <CardTitle className="text-lg line-clamp-2">{channel.title}</CardTitle>
                 <CardDescription className="line-clamp-2">{channel.description}</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent>
                 <div className="flex items-center justify-between text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Users className="w-4 h-4" />
@@ -186,12 +190,6 @@ export const ChannelBrowser = ({ onVideoSelect }: ChannelBrowserProps) => {
                     <span>{channel.videoCount} videos</span>
                   </div>
                 </div>
-                <Button 
-                  className="w-full" 
-                  onClick={() => setSelectedChannel(channel)}
-                >
-                  View Videos
-                </Button>
               </CardContent>
             </Card>
           ))}

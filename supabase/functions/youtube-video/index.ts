@@ -40,15 +40,21 @@ Deno.serve(async (req) => {
     const url = new URL(req.url);
     const action = url.searchParams.get('action');
 
+    // For GET requests without action, check for POST body
+    let requestBody = null;
+    if (req.method === 'POST') {
+      requestBody = await req.json();
+    }
+
     // Get YouTube API key
     const YOUTUBE_API_KEY = Deno.env.get('GOOGLE_API_KEY');
     if (!YOUTUBE_API_KEY) {
       throw new Error('YouTube API key not configured');
     }
 
-    switch (action) {
-      case 'get-metadata': {
-        const { videoId }: VideoMetadataRequest = await req.json();
+    // Handle POST request for metadata (default if no action specified)
+    if (req.method === 'POST' && requestBody && 'videoId' in requestBody) {
+      const { videoId }: VideoMetadataRequest = requestBody;
         
         console.log('Fetching metadata for video:', videoId);
         
@@ -79,19 +85,24 @@ Deno.serve(async (req) => {
         const seconds = parseInt(durationMatch?.[3] || '0');
         const totalSeconds = hours * 3600 + minutes * 60 + seconds;
 
-        return new Response(
-          JSON.stringify({
-            success: true,
-            data: {
-              videoId,
-              title: videoData.snippet.title,
-              description: videoData.snippet.description,
-              thumbnailUrl: videoData.snippet.thumbnails.high.url,
-              durationSeconds: totalSeconds,
-            },
-          }),
-          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+      return new Response(
+        JSON.stringify({
+          success: true,
+          data: {
+            videoId,
+            title: videoData.snippet.title,
+            description: videoData.snippet.description,
+            thumbnailUrl: videoData.snippet.thumbnails.high.url,
+            durationSeconds: totalSeconds,
+          },
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    switch (action) {
+      case 'get-metadata': {
+        throw new Error('Please use POST request with videoId in body for metadata');
       }
 
       case 'track-watch-time': {

@@ -33,23 +33,17 @@ export const ChannelVideosList = ({ channel }: ChannelVideosListProps) => {
   const { data: videos, isLoading } = useQuery({
     queryKey: ['channel-videos', channel.channelId],
     queryFn: async () => {
-      const { data, error } = await supabase.functions.invoke('youtube-video', {
-        body: {},
-        method: 'GET',
-      });
-
-      if (error) throw error;
-
-      const url = new URL(data.url || window.location.href);
-      url.searchParams.set('action', 'get-channel-videos');
-      url.searchParams.set('channelId', channel.channelId);
-      url.searchParams.set('maxResults', '12');
-
-      const response = await fetch(url.toString(), {
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/youtube-video?action=get-channel-videos&channelId=${channel.channelId}&maxResults=12`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+        }
+      );
 
       const result = await response.json();
       if (!result.success) throw new Error(result.error);
@@ -63,27 +57,12 @@ export const ChannelVideosList = ({ channel }: ChannelVideosListProps) => {
       // First get metadata
       const { data: metadataResponse, error: metadataError } = await supabase.functions.invoke('youtube-video', {
         body: { videoId: video.videoId },
-        method: 'POST',
       });
 
       if (metadataError) throw metadataError;
+      if (!metadataResponse?.success) throw new Error(metadataResponse?.error || 'Failed to get metadata');
 
-      const url = new URL(metadataResponse.url || window.location.href);
-      url.searchParams.set('action', 'get-metadata');
-
-      const response = await fetch(url.toString(), {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ videoId: video.videoId }),
-      });
-
-      const metadataResult = await response.json();
-      if (!metadataResult.success) throw new Error(metadataResult.error);
-
-      const metadata = metadataResult.data;
+      const metadata = metadataResponse.data;
 
       // Insert into video_content
       const { data: { user } } = await supabase.auth.getUser();

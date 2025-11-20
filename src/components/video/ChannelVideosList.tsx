@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { CoinCounter } from "@/components/ui/coin-counter";
 import { Clock } from "lucide-react";
+import { formatCoinsAsCurrency } from "@/utils/currency";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
 import { useKidScreenTime } from "@/hooks/useKidScreenTime";
 import { useConsumeScreenTime } from "@/hooks/useConsumeScreenTime";
@@ -344,48 +346,73 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
       <AlertDialog open={purchaseModal.show}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>
-              {purchaseModal.needsPurchase ? '🎬 Purchase Screen Time?' : '▶️ Watch Video?'}
+            <AlertDialogTitle className="text-xl font-bold">
+              {purchaseModal.needsPurchase ? 'Confirm Purchase' : '▶️ Watch Video?'}
             </AlertDialogTitle>
-            <AlertDialogDescription className="space-y-3">
+            <AlertDialogDescription className="space-y-4">
               {purchaseModal.video && (
-                <div>
-                  <p className="font-medium text-foreground">{purchaseModal.video.title}</p>
-                  <p className="text-sm mt-1">Duration: {formatDuration(purchaseModal.video.durationSeconds)}</p>
-                </div>
-              )}
-              
-              {purchaseModal.needsPurchase ? (
-                <div className="bg-primary/10 p-3 rounded-lg space-y-2">
-                  <p className="text-sm">
-                    You need {purchaseModal.minutesNeeded} minutes of screen time to watch this video.
+                <div className="space-y-2">
+                  <p className="text-foreground font-medium">{purchaseModal.video.title}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Duration: {formatDuration(purchaseModal.video.durationSeconds)}
                   </p>
-                  <div className="flex items-center justify-between text-sm font-medium">
-                    <span>Cost:</span>
-                    <span className="text-primary">{purchaseModal.coinsNeeded} coins</span>
-                  </div>
-                  {availableScreenTime && (
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Your coins:</span>
-                      <span>{availableScreenTime.availableCoins} coins</span>
-                    </div>
-                  )}
                 </div>
-              ) : (
-                <p className="text-sm">
-                  You have enough screen time to watch this video!
-                </p>
               )}
-            </AlertDialogDescription>
+            
+            {purchaseModal.needsPurchase ? (
+              <>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span>Cost:</span>
+                    <div className="flex items-center gap-2">
+                      <CoinCounter coins={purchaseModal.coinsNeeded} size="sm" showLabel={false} />
+                      <span className="text-muted-foreground">
+                        ({formatCoinsAsCurrency(purchaseModal.coinsNeeded)})
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center">
+                    <span>Your Balance:</span>
+                    <CoinCounter coins={availableScreenTime?.availableCoins || 0} size="sm" showLabel={false} />
+                  </div>
+
+                  <div className="flex justify-between items-center pt-2 border-t">
+                    <span className="font-medium">After Purchase:</span>
+                    <CoinCounter 
+                      coins={(availableScreenTime?.availableCoins || 0) - purchaseModal.coinsNeeded} 
+                      size="sm" 
+                      showLabel={false} 
+                    />
+                  </div>
+                </div>
+                
+                <p className="text-xs text-muted-foreground">
+                  This will purchase {purchaseModal.minutesNeeded} minutes of screen time to watch this video.
+                </p>
+              </>
+            ) : (
+              <div className="bg-primary/10 p-4 rounded-lg">
+                <p className="text-sm">
+                  ✨ You have enough screen time to watch this video!
+                </p>
+              </div>
+            )}
+          </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+
+          <AlertDialogFooter className="gap-2 sm:gap-0">
             <Button
               onClick={() => setPurchaseModal({ ...purchaseModal, show: false })}
               variant="outline"
+              className="flex-1 sm:flex-none"
             >
               Cancel
             </Button>
-            <AlertDialogAction onClick={handleConfirmWatch}>
+            <AlertDialogAction 
+              onClick={handleConfirmWatch}
+              className="flex-1 sm:flex-none"
+            >
               {purchaseModal.needsPurchase ? '🛒 Purchase & Watch' : '▶️ Watch Now'}
             </AlertDialogAction>
           </AlertDialogFooter>

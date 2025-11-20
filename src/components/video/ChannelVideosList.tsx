@@ -392,10 +392,19 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                 </p>
               </>
             ) : (
-              <div className="bg-primary/10 p-4 rounded-lg">
-                <p className="text-sm">
-                  ✨ You have enough screen time to watch this video!
-                </p>
+              <div className="space-y-4">
+                <div className="bg-primary/10 p-4 rounded-lg">
+                  <p className="text-sm">
+                    ✨ You have enough screen time to watch this video!
+                  </p>
+                </div>
+                
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between items-center">
+                    <span>Your Balance:</span>
+                    <CoinCounter coins={availableScreenTime?.availableCoins || 0} size="sm" showLabel={false} />
+                  </div>
+                </div>
               </div>
             )}
           </AlertDialogDescription>

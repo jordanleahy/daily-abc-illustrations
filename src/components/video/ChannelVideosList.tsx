@@ -1,7 +1,9 @@
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
+import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
 
 interface Channel {
   channelId: string;
@@ -23,11 +25,11 @@ interface Video {
 
 interface ChannelVideosListProps {
   channel: Channel;
-  onVideoSelect: (video: Video) => void;
+  onVideoSelect?: (video: Video) => void;
 }
 
 export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListProps) => {
-  
+  const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ['channel-videos', channel.channelId],
@@ -51,8 +53,8 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
     },
   });
 
-  const handleVideoClick = (video: Video) => {
-    onVideoSelect(video);
+  const handleVideoClick = (videoId: string) => {
+    setPlayingVideoId(videoId);
   };
 
   const formatDuration = (seconds: number) => {
@@ -92,28 +94,43 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
 
       {videos && videos.length > 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {videos.map((video) => (
-            <Card 
-              key={video.videoId} 
-              className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={() => handleVideoClick(video)}
-            >
-              <div className="aspect-video relative">
-                <img 
-                  src={video.thumbnailUrl} 
-                  alt={video.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  {formatDuration(video.durationSeconds)}
-                </div>
-              </div>
-              <CardHeader>
-                <CardTitle className="text-base line-clamp-2">{video.title}</CardTitle>
-              </CardHeader>
-            </Card>
-          ))}
+          {videos.map((video) => {
+            const isPlaying = playingVideoId === video.videoId;
+            
+            return (
+              <Card 
+                key={video.videoId} 
+                className="overflow-hidden hover:shadow-lg transition-shadow"
+              >
+                {isPlaying ? (
+                  <div className="aspect-video">
+                    <YouTubeVideoPlayer
+                      videoId={video.videoId}
+                      title={video.title}
+                    />
+                  </div>
+                ) : (
+                  <div 
+                    className="aspect-video relative cursor-pointer"
+                    onClick={() => handleVideoClick(video.videoId)}
+                  >
+                    <img 
+                      src={video.thumbnailUrl} 
+                      alt={video.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                      <Clock className="w-3 h-3" />
+                      {formatDuration(video.durationSeconds)}
+                    </div>
+                  </div>
+                )}
+                <CardHeader>
+                  <CardTitle className="text-base line-clamp-2">{video.title}</CardTitle>
+                </CardHeader>
+              </Card>
+            );
+          })}
         </div>
       )}
 

@@ -27,7 +27,7 @@ interface Video {
 }
 
 interface ChannelBrowserProps {
-  onVideoSelect: (video: Video) => void;
+  onVideoSelect?: (video: Video) => void;
 }
 
 export const ChannelBrowser = ({ onVideoSelect }: ChannelBrowserProps) => {

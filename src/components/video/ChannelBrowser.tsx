@@ -27,29 +27,25 @@ export const ChannelBrowser = () => {
     queryFn: async () => {
       if (!searchQuery.trim()) return { channels: [] };
 
-      const { data, error } = await supabase.functions.invoke('youtube-video', {
-        body: {},
-        method: 'GET',
-      });
+      const session = await supabase.auth.getSession();
+      const token = session.data.session?.access_token;
 
-      if (error) throw error;
-      
-      const url = new URL(data.url || window.location.href);
-      url.searchParams.set('action', 'search-channels');
-      url.searchParams.set('query', searchQuery);
-
-      const response = await fetch(url.toString(), {
-        headers: {
-          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`,
-        },
-      });
+      const response = await fetch(
+        `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/youtube-video?action=search-channels&query=${encodeURIComponent(searchQuery)}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
+          },
+        }
+      );
 
       const result = await response.json();
       if (!result.success) throw new Error(result.error);
       
       return result.data;
     },
-    enabled: true, // Always fetch, even with empty search
+    enabled: true,
   });
 
   const handleSearch = (e: React.FormEvent) => {

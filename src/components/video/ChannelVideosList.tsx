@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Clock } from "lucide-react";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
 import { useKidScreenTime } from "@/hooks/useKidScreenTime";
@@ -50,6 +51,19 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
   const [timerExpired, setTimerExpired] = useState(false);
   const [noScreenTimeModal, setNoScreenTimeModal] = useState(false);
   const [isAutoPurchasing, setIsAutoPurchasing] = useState(false);
+  const [purchaseModal, setPurchaseModal] = useState<{
+    show: boolean;
+    video: Video | null;
+    needsPurchase: boolean;
+    coinsNeeded: number;
+    minutesNeeded: number;
+  }>({
+    show: false,
+    video: null,
+    needsPurchase: false,
+    coinsNeeded: 0,
+    minutesNeeded: 0,
+  });
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: screenTimeBalance = 0 } = useKidScreenTime(DUNDUN_KID_ID);
@@ -128,7 +142,7 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
     };
   }, [playingVideoId, screenTimeBalance, sessionStartTime, consumeScreenTime]);
 
-  const handleVideoClick = async (videoId: string, durationSeconds: number) => {
+  const handleVideoClick = (video: Video) => {
     const currentBalance = screenTimeBalance || 0;
     const totalAvailable = availableScreenTime?.totalAvailableSeconds || 0;
     
@@ -138,22 +152,56 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
       return;
     }
     
-    // If they don't have enough balance but have coins, auto-purchase
-    if (currentBalance < durationSeconds && availableScreenTime) {
-      const needsSeconds = durationSeconds;
+    // Calculate if purchase is needed
+    const needsPurchase = currentBalance < video.durationSeconds;
+    
+    if (needsPurchase && availableScreenTime) {
+      // Calculate coins needed for this video
+      const secondsNeeded = video.durationSeconds - currentBalance;
+      const productsNeeded = Math.ceil(secondsNeeded / availableScreenTime.secondsPerProduct);
+      const coinsNeeded = productsNeeded * availableScreenTime.productPrice;
+      const minutesNeeded = productsNeeded * (availableScreenTime.secondsPerProduct / 60);
       
+      // Show purchase confirmation modal
+      setPurchaseModal({
+        show: true,
+        video,
+        needsPurchase: true,
+        coinsNeeded,
+        minutesNeeded,
+      });
+    } else {
+      // They have enough balance, show confirmation
+      setPurchaseModal({
+        show: true,
+        video,
+        needsPurchase: false,
+        coinsNeeded: 0,
+        minutesNeeded: 0,
+      });
+    }
+  };
+
+  const handleConfirmWatch = async () => {
+    if (!purchaseModal.video) return;
+    
+    const video = purchaseModal.video;
+    const needsPurchase = purchaseModal.needsPurchase;
+    
+    setPurchaseModal({ ...purchaseModal, show: false });
+    
+    if (needsPurchase) {
       setIsAutoPurchasing(true);
       autoPurchaseScreenTime(
         { 
           kidId: DUNDUN_KID_ID, 
-          requiredSeconds: needsSeconds 
+          requiredSeconds: video.durationSeconds 
         },
         {
           onSuccess: (result) => {
             setIsAutoPurchasing(false);
             if (result.success) {
-              // Start playing after successful purchase
-              setPlayingVideoId(videoId);
+              setPlayingVideoId(video.videoId);
               setSessionStartTime(Date.now());
               setTimerExpired(false);
             }
@@ -165,8 +213,7 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
         }
       );
     } else {
-      // They have enough balance, start playing
-      setPlayingVideoId(videoId);
+      setPlayingVideoId(video.videoId);
       setSessionStartTime(Date.now());
       setTimerExpired(false);
     }
@@ -243,7 +290,7 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                 ) : (
                   <div 
                     className={`aspect-video relative cursor-pointer ${isAutoPurchasing ? 'opacity-50' : ''}`}
-                    onClick={() => !isAutoPurchasing && handleVideoClick(video.videoId, video.durationSeconds)}
+                    onClick={() => !isAutoPurchasing && handleVideoClick(video)}
                   >
                     <img 
                       src={video.thumbnailUrl} 
@@ -288,6 +335,58 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
           <AlertDialogFooter>
             <AlertDialogAction onClick={handleStartOver}>
               Got It
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Purchase/Watch Confirmation Modal */}
+      <AlertDialog open={purchaseModal.show}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {purchaseModal.needsPurchase ? '🎬 Purchase Screen Time?' : '▶️ Watch Video?'}
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              {purchaseModal.video && (
+                <div>
+                  <p className="font-medium text-foreground">{purchaseModal.video.title}</p>
+                  <p className="text-sm mt-1">Duration: {formatDuration(purchaseModal.video.durationSeconds)}</p>
+                </div>
+              )}
+              
+              {purchaseModal.needsPurchase ? (
+                <div className="bg-primary/10 p-3 rounded-lg space-y-2">
+                  <p className="text-sm">
+                    You need {purchaseModal.minutesNeeded} minutes of screen time to watch this video.
+                  </p>
+                  <div className="flex items-center justify-between text-sm font-medium">
+                    <span>Cost:</span>
+                    <span className="text-primary">{purchaseModal.coinsNeeded} coins</span>
+                  </div>
+                  {availableScreenTime && (
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Your coins:</span>
+                      <span>{availableScreenTime.availableCoins} coins</span>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <p className="text-sm">
+                  You have enough screen time to watch this video!
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button
+              onClick={() => setPurchaseModal({ ...purchaseModal, show: false })}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <AlertDialogAction onClick={handleConfirmWatch}>
+              {purchaseModal.needsPurchase ? '🛒 Purchase & Watch' : '▶️ Watch Now'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -27,7 +27,7 @@ interface Video {
 }
 
 interface ChannelBrowserProps {
-  onVideoSelect?: (video: Video) => void;
+  onVideoSelect: (video: Video) => void;
 }
 
 export const ChannelBrowser = ({ onVideoSelect }: ChannelBrowserProps) => {
@@ -97,7 +97,7 @@ export const ChannelBrowser = ({ onVideoSelect }: ChannelBrowserProps) => {
         >
           ← Back to Channels
         </Button>
-        <ChannelVideosList channel={selectedChannel} onVideoSelect={(video) => onVideoSelect?.(video)} />
+        <ChannelVideosList channel={selectedChannel} onVideoSelect={onVideoSelect} />
       </div>
     );
   }

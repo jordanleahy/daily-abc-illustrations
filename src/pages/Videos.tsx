@@ -97,14 +97,40 @@ export default function Videos() {
     },
   });
 
+  const handleVideoSelect = (video: Video) => {
+    if (!selectedKid) {
+      toast.error("Please select a child first");
+      return;
+    }
+    addAndPlayVideo.mutate(video);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <AuthHeader />
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-8">
-          <ChannelBrowser onVideoSelect={(video) => addAndPlayVideo.mutate(video)} />
+          <Card>
+            <CardHeader>
+              <CardTitle>Select Child</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Select value={selectedKid} onValueChange={setSelectedKid}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a child to start watching" />
+                </SelectTrigger>
+                <SelectContent>
+                  {kids?.map((kid) => (
+                    <SelectItem key={kid.id} value={kid.id}>
+                      {kid.first_name} {kid.last_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
 
-          {playingVideo && selectedKid && (
+          {playingVideo && selectedKid ? (
             <Card>
               <CardHeader>
                 <CardTitle>Now Playing</CardTitle>
@@ -117,57 +143,8 @@ export default function Videos() {
                 />
               </CardContent>
             </Card>
-          )}
-
-          {!playingVideo && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Watch Videos</CardTitle>
-              </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Select Child</label>
-                  <Select value={selectedKid} onValueChange={setSelectedKid}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a child" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {kids?.map((kid) => (
-                        <SelectItem key={kid.id} value={kid.id}>
-                          {kid.first_name} {kid.last_name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Select Video</label>
-                  <Select value={selectedVideo} onValueChange={setSelectedVideo}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Choose a video" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {videos?.map((video) => (
-                        <SelectItem key={video.id} value={video.id}>
-                          {video.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              {selectedKid && selectedVideo && (
-                <YouTubeVideoPlayer
-                  videoId={videos?.find((v) => v.id === selectedVideo)?.youtube_video_id || ''}
-                  kidProfileId={selectedKid}
-                  videoContentId={selectedVideo}
-                />
-              )}
-            </CardContent>
-          </Card>
+          ) : (
+            <ChannelBrowser onVideoSelect={handleVideoSelect} />
           )}
         </div>
       </div>

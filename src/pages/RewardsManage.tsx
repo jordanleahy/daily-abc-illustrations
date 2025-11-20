@@ -33,9 +33,13 @@ const RewardsManage = () => {
     setCreateModalOpen(true);
   };
 
-  const handleDelete = (productId: string) => {
+  const handleDelete = (product: RewardsProduct) => {
+    if (product.is_system_product) {
+      alert('System products like Screen Time cannot be deleted. You can edit the price and minutes instead.');
+      return;
+    }
     if (confirm('Are you sure you want to remove this product?')) {
-      deleteProduct.mutate(productId);
+      deleteProduct.mutate(product);
     }
   };
 
@@ -93,7 +97,7 @@ const RewardsManage = () => {
                     product={product}
                     mode="parent"
                     onEdit={() => handleEdit(product)}
-                    onDelete={() => handleDelete(product.id)}
+                    onDelete={() => handleDelete(product)}
                     isDeleting={deleteProduct.isPending}
                   />
                 ))}

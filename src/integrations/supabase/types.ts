@@ -773,6 +773,7 @@ export type Database = {
           last_name: string
           parent_user_id: string
           profile_image_url: string | null
+          screen_time_balance_seconds: number | null
           updated_at: string
         }
         Insert: {
@@ -784,6 +785,7 @@ export type Database = {
           last_name: string
           parent_user_id: string
           profile_image_url?: string | null
+          screen_time_balance_seconds?: number | null
           updated_at?: string
         }
         Update: {
@@ -795,6 +797,7 @@ export type Database = {
           last_name?: string
           parent_user_id?: string
           profile_image_url?: string | null
+          screen_time_balance_seconds?: number | null
           updated_at?: string
         }
         Relationships: [
@@ -878,10 +881,12 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean
+          is_system_product: boolean | null
           parent_user_id: string
           product_image_url: string | null
           product_video_url: string | null
           quantity_available: number | null
+          screen_time_minutes: number | null
           title: string
           updated_at: string
         }
@@ -891,10 +896,12 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_system_product?: boolean | null
           parent_user_id: string
           product_image_url?: string | null
           product_video_url?: string | null
           quantity_available?: number | null
+          screen_time_minutes?: number | null
           title: string
           updated_at?: string
         }
@@ -904,10 +911,12 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean
+          is_system_product?: boolean | null
           parent_user_id?: string
           product_image_url?: string | null
           product_video_url?: string | null
           quantity_available?: number | null
+          screen_time_minutes?: number | null
           title?: string
           updated_at?: string
         }
@@ -1284,6 +1293,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      screen_time_sessions: {
+        Row: {
+          created_at: string | null
+          ended_at: string | null
+          id: string
+          kid_profile_id: string
+          parent_user_id: string
+          seconds_consumed: number | null
+          started_at: string | null
+          video_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string
+          kid_profile_id: string
+          parent_user_id: string
+          seconds_consumed?: number | null
+          started_at?: string | null
+          video_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          ended_at?: string | null
+          id?: string
+          kid_profile_id?: string
+          parent_user_id?: string
+          seconds_consumed?: number | null
+          started_at?: string | null
+          video_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "screen_time_sessions_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       seo_metadata: {
         Row: {
@@ -1982,6 +2032,10 @@ export type Database = {
         Args: { p_amount: number; p_kid_id: string }
         Returns: undefined
       }
+      decrement_screen_time: {
+        Args: { p_kid_id: string; p_seconds: number }
+        Returns: Record<string, unknown>
+      }
       delete_habit_completion_safe: {
         Args: { p_completion_id: string }
         Returns: Json
@@ -2051,6 +2105,7 @@ export type Database = {
           last_name: string
           parent_user_id: string
           profile_image_url: string | null
+          screen_time_balance_seconds: number | null
           updated_at: string
         }[]
         SetofOptions: {
@@ -2075,6 +2130,10 @@ export type Database = {
       increment_kid_coins: {
         Args: { p_amount: number; p_kid_id: string }
         Returns: undefined
+      }
+      increment_screen_time: {
+        Args: { p_kid_id: string; p_seconds: number }
+        Returns: number
       }
       insert_page_at_position: {
         Args: {

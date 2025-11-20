@@ -161,3 +161,9 @@ verify_jwt = true
 
 [functions.migrate-age-ranges]
 verify_jwt = true
+
+[functions.consume-screen-time]
+verify_jwt = true
+
+[functions.youtube-video]
+verify_jwt = true

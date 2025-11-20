@@ -8,6 +8,8 @@ export interface RewardsProduct {
   product_video_url?: string;
   is_active: boolean;
   quantity_available?: number;
+  screen_time_minutes?: number;
+  is_system_product?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -29,4 +31,5 @@ export interface UpdateRewardsProductInput {
   product_video_url?: string;
   is_active?: boolean;
   quantity_available?: number;
+  screen_time_minutes?: number;
 }

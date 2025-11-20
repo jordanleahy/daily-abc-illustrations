@@ -169,7 +169,35 @@ Deno.serve(async (req) => {
 
     console.log('[PURCHASE-REWARD] Purchase record created', { purchaseId: purchase.id });
 
-    // 7. Optionally decrease quantity available
+    // 7. Check if this is a screen time product and add screen time
+    if (product.screen_time_minutes && product.screen_time_minutes > 0) {
+      const secondsToAdd = product.screen_time_minutes * 60;
+      
+      console.log('[PURCHASE-REWARD] Adding screen time', { 
+        kidId: kidProfile.id, 
+        minutes: product.screen_time_minutes,
+        seconds: secondsToAdd 
+      });
+      
+      // Use atomic RPC function to add screen time
+      const { data: newBalance, error: screenTimeError } = await supabase
+        .rpc('increment_screen_time', {
+          p_kid_id: kidProfileId,
+          p_seconds: secondsToAdd
+        });
+        
+      if (screenTimeError) {
+        console.error('[PURCHASE-REWARD] Failed to add screen time', screenTimeError);
+        throw new Error('Failed to add screen time');
+      }
+      
+      console.log('[PURCHASE-REWARD] Screen time added', { 
+        newBalance,
+        balanceInMinutes: Math.floor(newBalance / 60)
+      });
+    }
+
+    // 8. Optionally decrease quantity available
     if (product.quantity_available !== null) {
       const { error: quantityError } = await supabase
         .from('kid_rewards_products')

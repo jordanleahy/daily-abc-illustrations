@@ -30,16 +30,23 @@ export const YouTubeVideoPlayer = ({
 
   const loadRemainingTime = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('youtube-video', {
-        body: null,
-        method: 'GET',
-      });
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch(
+        `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/youtube-video?action=get-remaining-time&kidProfileId=${kidProfileId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${session?.access_token}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
+          },
+        }
+      );
 
-      if (error) throw error;
+      const result = await response.json();
+      
+      if (!result.success) throw new Error(result.error);
 
-      if (data?.success) {
-        setRemainingSeconds(data.data.remainingSeconds);
-      }
+      setRemainingSeconds(result.data.remainingSeconds);
     } catch (error) {
       console.error('Error loading remaining time:', error);
       toast({

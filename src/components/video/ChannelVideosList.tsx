@@ -163,6 +163,12 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
       const coinsNeeded = productsNeeded * availableScreenTime.productPrice;
       const minutesNeeded = productsNeeded * (availableScreenTime.secondsPerProduct / 60);
       
+      // Check if user has enough coins
+      if ((availableScreenTime.availableCoins || 0) < coinsNeeded) {
+        setNoScreenTimeModal(true);
+        return;
+      }
+      
       // Show purchase confirmation modal
       setPurchaseModal({
         show: true,
@@ -416,10 +422,8 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
           <AlertDialogHeader>
             <AlertDialogTitle>No Screen Time Available</AlertDialogTitle>
             <AlertDialogDescription>
-              {availableScreenTime && availableScreenTime.availableCoins > 0 
-                ? `You don't have enough coins to purchase screen time. Earn ${availableScreenTime.productPrice} coins to unlock more videos!`
-                : "You don't have any screen time or coins available. Complete habits to earn coins and unlock screen time!"
-              }
+              You don't have enough coins to purchase the screen time needed for this video. 
+              Complete more habits to earn coins!
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

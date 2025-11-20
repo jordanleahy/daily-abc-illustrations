@@ -156,7 +156,7 @@ const App = () => {
                 <Route path="/rewards/manage" element={<ProtectedRoute requireFeature="habits_rewards"><RewardsManage /></ProtectedRoute>} />
                 <Route path="/habits/manage" element={<ProtectedRoute requireFeature="habits_rewards"><HabitsManage /></ProtectedRoute>} />
                 <Route path="/my-habits" element={<ProtectedRoute requireFeature="habits_rewards"><MyHabits /></ProtectedRoute>} />
-                <Route path="/videos" element={<ProtectedRoute requireFeature="habits_rewards"><Videos /></ProtectedRoute>} />
+                <Route path="/videos" element={<ProtectedRoute requireRole="admin"><Videos /></ProtectedRoute>} />
                 <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/word-progress" element={<ProtectedRoute><WordProgress /></ProtectedRoute>} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />

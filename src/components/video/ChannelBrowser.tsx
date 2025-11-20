@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Users, Video } from "lucide-react";
+import { Search, Users, Video, X } from "lucide-react";
 import { toast } from "sonner";
 import { ChannelVideosList } from "./ChannelVideosList";
 
@@ -100,12 +100,24 @@ export const ChannelBrowser = () => {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSearch} className="flex gap-2">
-            <Input
-              placeholder="Search for channels (e.g., 'educational kids', 'nursery rhymes')"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
-            />
+            <div className="relative flex-1">
+              <Input
+                placeholder="Search for channels (e.g., 'educational kids', 'nursery rhymes')"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pr-10"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("kids educational channels")}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-sm transition-colors"
+                  aria-label="Clear search"
+                >
+                  <X className="w-4 h-4 text-muted-foreground" />
+                </button>
+              )}
+            </div>
             <Button type="submit" disabled={isSearching || !searchQuery.trim()}>
               <Search className="w-4 h-4 mr-2" />
               Search

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,19 +19,29 @@ interface Channel {
 
 export const ChannelBrowser = () => {
   const [searchQuery, setSearchQuery] = useState("kids educational channels");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const queryClient = useQueryClient();
 
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const { data: channels, isLoading: isSearching } = useQuery({
-    queryKey: ['youtube-channels', searchQuery],
+    queryKey: ['youtube-channels', debouncedSearchQuery],
     queryFn: async () => {
-      if (!searchQuery.trim()) return { channels: [] };
+      if (!debouncedSearchQuery.trim()) return { channels: [] };
 
       const session = await supabase.auth.getSession();
       const token = session.data.session?.access_token;
 
       const response = await fetch(
-        `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/youtube-video?action=search-channels&query=${encodeURIComponent(searchQuery)}`,
+        `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/youtube-video?action=search-channels&query=${encodeURIComponent(debouncedSearchQuery)}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,

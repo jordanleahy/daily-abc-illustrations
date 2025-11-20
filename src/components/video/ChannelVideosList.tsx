@@ -40,7 +40,7 @@ interface ChannelVideosListProps {
 }
 
 // TODO: Replace with actual kid ID from context/state management
-const DUNDUN_KID_ID = 'b0792c6d-fb13-4e17-8c0f-b8c0866ab933'; // Hard-coded for MVP
+const DUNDUN_KID_ID = '1e6996b6-5e1d-450b-b875-d03e58a1da09'; // DanDan's kid profile ID
 
 export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListProps) => {
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);

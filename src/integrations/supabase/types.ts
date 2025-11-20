@@ -1583,6 +1583,156 @@ export type Database = {
         }
         Relationships: []
       }
+      video_content: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          duration_seconds: number
+          id: string
+          is_active: boolean | null
+          parent_user_id: string
+          thumbnail_url: string | null
+          title: string
+          updated_at: string | null
+          youtube_video_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          duration_seconds: number
+          id?: string
+          is_active?: boolean | null
+          parent_user_id: string
+          thumbnail_url?: string | null
+          title: string
+          updated_at?: string | null
+          youtube_video_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          duration_seconds?: number
+          id?: string
+          is_active?: boolean | null
+          parent_user_id?: string
+          thumbnail_url?: string | null
+          title?: string
+          updated_at?: string | null
+          youtube_video_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_content_parent_user_id_fkey"
+            columns: ["parent_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_time_limits: {
+        Row: {
+          created_at: string | null
+          daily_limit_minutes: number
+          id: string
+          kid_profile_id: string
+          parent_user_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          daily_limit_minutes?: number
+          id?: string
+          kid_profile_id: string
+          parent_user_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          daily_limit_minutes?: number
+          id?: string
+          kid_profile_id?: string
+          parent_user_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_time_limits_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: true
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_time_limits_parent_user_id_fkey"
+            columns: ["parent_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      video_watch_sessions: {
+        Row: {
+          created_at: string | null
+          id: string
+          kid_profile_id: string
+          parent_user_id: string
+          seconds_watched: number
+          session_ended_at: string | null
+          session_started_at: string | null
+          updated_at: string | null
+          video_content_id: string
+          watch_date: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          kid_profile_id: string
+          parent_user_id: string
+          seconds_watched?: number
+          session_ended_at?: string | null
+          session_started_at?: string | null
+          updated_at?: string | null
+          video_content_id: string
+          watch_date?: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          kid_profile_id?: string
+          parent_user_id?: string
+          seconds_watched?: number
+          session_ended_at?: string | null
+          session_started_at?: string | null
+          updated_at?: string | null
+          video_content_id?: string
+          watch_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "video_watch_sessions_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_watch_sessions_parent_user_id_fkey"
+            columns: ["parent_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "video_watch_sessions_video_content_id_fkey"
+            columns: ["video_content_id"]
+            isOneToOne: false
+            referencedRelation: "video_content"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       word_assessments: {
         Row: {
           assessed_at: string | null
@@ -1886,6 +2036,10 @@ export type Database = {
         Returns: number
       }
       get_next_version_number: { Args: { p_book_id: string }; Returns: number }
+      get_remaining_video_time: {
+        Args: { p_kid_profile_id: string }
+        Returns: number
+      }
       get_user_kids: {
         Args: never
         Returns: {

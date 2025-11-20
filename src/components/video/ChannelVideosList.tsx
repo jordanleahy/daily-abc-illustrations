@@ -1,9 +1,18 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface Channel {
   channelId: string;
@@ -28,8 +37,12 @@ interface ChannelVideosListProps {
   onVideoSelect?: (video: Video) => void;
 }
 
+const WATCH_TIME_LIMIT = 0.5; // minutes (30 seconds)
+
 export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListProps) => {
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [timerExpired, setTimerExpired] = useState(false);
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ['channel-videos', channel.channelId],
@@ -53,8 +66,37 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
     },
   });
 
+  useEffect(() => {
+    // Clear any existing timer
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
+
+    // Start new timer if video is playing
+    if (playingVideoId) {
+      const timeoutMs = WATCH_TIME_LIMIT * 60 * 1000; // Convert minutes to milliseconds
+      
+      timerRef.current = setTimeout(() => {
+        setTimerExpired(true);
+      }, timeoutMs);
+    }
+
+    // Cleanup on unmount or when playingVideoId changes
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [playingVideoId]);
+
   const handleVideoClick = (videoId: string) => {
     setPlayingVideoId(videoId);
+    setTimerExpired(false);
+  };
+
+  const handleStartOver = () => {
+    setTimerExpired(false);
+    setPlayingVideoId(null);
   };
 
   const formatDuration = (seconds: number) => {
@@ -122,6 +164,22 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
           No videos found for this channel.
         </div>
       )}
+
+      <AlertDialog open={timerExpired}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Time's Up!</AlertDialogTitle>
+            <AlertDialogDescription>
+              Your {WATCH_TIME_LIMIT * 60}-second watch time has expired. Click "Start Over" to continue watching.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={handleStartOver}>
+              Start Over
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

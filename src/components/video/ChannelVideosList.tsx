@@ -4,6 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
+import { useKidScreenTime } from "@/hooks/useKidScreenTime";
+import { useConsumeScreenTime } from "@/hooks/useConsumeScreenTime";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,12 +39,18 @@ interface ChannelVideosListProps {
   onVideoSelect?: (video: Video) => void;
 }
 
-const WATCH_TIME_LIMIT = 0.5; // minutes (30 seconds)
+// TODO: Replace with actual kid ID from context/state management
+const DUNDUN_KID_ID = 'b0792c6d-fb13-4e17-8c0f-b8c0866ab933'; // Hard-coded for MVP
 
 export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListProps) => {
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
+  const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [timerExpired, setTimerExpired] = useState(false);
+  const [noScreenTimeModal, setNoScreenTimeModal] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { data: screenTimeBalance = 0 } = useKidScreenTime(DUNDUN_KID_ID);
+  const { mutate: consumeScreenTime } = useConsumeScreenTime();
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ['channel-videos', channel.channelId],
@@ -66,18 +74,44 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
     },
   });
 
+  // Cleanup effect to consume time on unmount
+  useEffect(() => {
+    return () => {
+      if (playingVideoId && sessionStartTime) {
+        const watchedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+        if (watchedSeconds > 0) {
+          consumeScreenTime({
+            kidId: DUNDUN_KID_ID,
+            seconds: Math.min(watchedSeconds, screenTimeBalance),
+            videoId: playingVideoId
+          });
+        }
+      }
+    };
+  }, [playingVideoId, sessionStartTime, screenTimeBalance, consumeScreenTime]);
+
+  // Timer effect using screen time balance
   useEffect(() => {
     // Clear any existing timer
     if (timerRef.current) {
       clearTimeout(timerRef.current);
     }
 
-    // Start new timer if video is playing
-    if (playingVideoId) {
-      const timeoutMs = WATCH_TIME_LIMIT * 60 * 1000; // Convert minutes to milliseconds
+    // Start new timer if video is playing and has balance
+    if (playingVideoId && screenTimeBalance > 0) {
+      const timeoutMs = screenTimeBalance * 1000; // Convert seconds to milliseconds
       
       timerRef.current = setTimeout(() => {
+        if (sessionStartTime) {
+          const watchedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+          consumeScreenTime({
+            kidId: DUNDUN_KID_ID,
+            seconds: Math.min(watchedSeconds, screenTimeBalance),
+            videoId: playingVideoId
+          });
+        }
         setTimerExpired(true);
+        setPlayingVideoId(null);
       }, timeoutMs);
     }
 
@@ -87,10 +121,16 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
         clearTimeout(timerRef.current);
       }
     };
-  }, [playingVideoId]);
+  }, [playingVideoId, screenTimeBalance, sessionStartTime, consumeScreenTime]);
 
   const handleVideoClick = (videoId: string) => {
+    if (!screenTimeBalance || screenTimeBalance <= 0) {
+      setNoScreenTimeModal(true);
+      return;
+    }
+    
     setPlayingVideoId(videoId);
+    setSessionStartTime(Date.now());
     setTimerExpired(false);
   };
 
@@ -110,8 +150,27 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
     return `${minutes}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const formatTimeRemaining = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   return (
     <div className="space-y-6">
+      {/* Screen Time Balance Display */}
+      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-primary" />
+            <span className="font-medium">Screen Time Remaining:</span>
+          </div>
+          <span className="text-2xl font-bold text-primary">
+            {formatTimeRemaining(screenTimeBalance)}
+          </span>
+        </div>
+      </div>
+
       {isLoading && (
         <div className="text-center py-8 text-muted-foreground">
           Loading videos...
@@ -165,17 +224,35 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
         </div>
       )}
 
+      {/* Screen Time Used Up Modal */}
       <AlertDialog open={timerExpired}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Time's Up!</AlertDialogTitle>
+            <AlertDialogTitle>Screen Time Used Up!</AlertDialogTitle>
             <AlertDialogDescription>
-              Your {WATCH_TIME_LIMIT * 60}-second watch time has expired. Click "Start Over" to continue watching.
+              You've used all your screen time. Purchase more screen time from the rewards store to continue watching.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction onClick={handleStartOver}>
-              Start Over
+              Got It
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* No Screen Time Available Modal */}
+      <AlertDialog open={noScreenTimeModal}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>No Screen Time Available</AlertDialogTitle>
+            <AlertDialogDescription>
+              You don't have any screen time available. Ask your parent to purchase screen time from the rewards store.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setNoScreenTimeModal(false)}>
+              OK
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

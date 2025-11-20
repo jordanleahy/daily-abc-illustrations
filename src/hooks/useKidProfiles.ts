@@ -11,6 +11,7 @@ export interface KidProfile {
   profile_image_url?: string;
   is_active: boolean;
   earned_coins: number;
+  screen_time_balance_seconds: number;
   created_at: string;
   updated_at: string;
 }

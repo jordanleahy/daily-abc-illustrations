@@ -28,6 +28,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
   const [title, setTitle] = useState(editProduct?.title || '');
   const [description, setDescription] = useState(editProduct?.description || '');
   const [coinPrice, setCoinPrice] = useState(editProduct?.coin_price?.toString() || '');
+  const [screenTimeMinutes, setScreenTimeMinutes] = useState(editProduct?.screen_time_minutes?.toString() || '');
   const [hasQuantityLimit, setHasQuantityLimit] = useState(!!editProduct?.quantity_available);
   const [quantityAvailable, setQuantityAvailable] = useState(editProduct?.quantity_available?.toString() || '1');
   const [uploadedImage, setUploadedImage] = useState<File | null>(null);
@@ -42,6 +43,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
       setTitle(editProduct.title || '');
       setDescription(editProduct.description || '');
       setCoinPrice(editProduct.coin_price?.toString() || '');
+      setScreenTimeMinutes(editProduct.screen_time_minutes?.toString() || '');
       setHasQuantityLimit(!!editProduct.quantity_available);
       setQuantityAvailable(editProduct.quantity_available?.toString() || '1');
       setExistingImageUrl(editProduct.product_image_url || '');
@@ -123,6 +125,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
         coin_price: parseInt(coinPrice),
         product_image_url: productImageUrl,
         product_video_url: productVideoUrl,
+        screen_time_minutes: screenTimeMinutes ? parseInt(screenTimeMinutes) : undefined,
         quantity_available: hasQuantityLimit ? parseInt(quantityAvailable) : undefined,
       };
 
@@ -155,6 +158,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
     setTitle('');
     setDescription('');
     setCoinPrice('');
+    setScreenTimeMinutes('');
     setHasQuantityLimit(false);
     setQuantityAvailable('1');
     setUploadedImage(null);
@@ -204,7 +208,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="title">Title *</Label>
+            <Label htmlFor="title">Title * {editProduct?.is_system_product && <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded ml-2">System Product</span>}</Label>
             <Input
               id="title"
               value={title}
@@ -212,6 +216,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
               placeholder="e.g., Ice Cream Trip, New Toy"
               required
               maxLength={100}
+              disabled={editProduct?.is_system_product}
             />
           </div>
 
@@ -227,20 +232,37 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="price">Coin Price *</Label>
-            <Input
-              id="price"
-              type="number"
-              min="1"
-              value={coinPrice}
-              onChange={(e) => setCoinPrice(e.target.value)}
-              placeholder="100"
-              required
-            />
-            <p className="text-xs text-muted-foreground">
-              {coins > 0 && `${coins} coins = ${formatCoinsAsCurrency(coins)}`}
-            </p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="price">Coin Price *</Label>
+              <Input
+                id="price"
+                type="number"
+                min="1"
+                value={coinPrice}
+                onChange={(e) => setCoinPrice(e.target.value)}
+                placeholder="100"
+                required
+              />
+              <p className="text-xs text-muted-foreground">
+                {coins > 0 && `${coins} coins = ${formatCoinsAsCurrency(coins)}`}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="screenTime">Screen Time (minutes)</Label>
+              <Input
+                id="screenTime"
+                type="number"
+                min="0"
+                value={screenTimeMinutes}
+                onChange={(e) => setScreenTimeMinutes(e.target.value)}
+                placeholder="30"
+              />
+              <p className="text-xs text-muted-foreground">
+                Minutes of video watch time this product provides
+              </p>
+            </div>
           </div>
 
           <div className="space-y-3">

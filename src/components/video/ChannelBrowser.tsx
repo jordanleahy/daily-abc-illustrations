@@ -18,7 +18,7 @@ interface Channel {
 }
 
 export const ChannelBrowser = () => {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("kids educational channels");
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
   const queryClient = useQueryClient();
 
@@ -49,7 +49,7 @@ export const ChannelBrowser = () => {
       
       return result.data;
     },
-    enabled: searchQuery.trim().length > 0,
+    enabled: true, // Always fetch, even with empty search
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -87,9 +87,9 @@ export const ChannelBrowser = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Browse YouTube Channels</CardTitle>
+          <CardTitle>Browse Educational Channels</CardTitle>
           <CardDescription>
-            Search for kid-friendly YouTube channels and add their videos to your library
+            Discover kid-friendly educational YouTube channels or search for specific content
           </CardDescription>
         </CardHeader>
         <CardContent>

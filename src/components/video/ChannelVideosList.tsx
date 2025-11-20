@@ -6,6 +6,8 @@ import { Clock } from "lucide-react";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
 import { useKidScreenTime } from "@/hooks/useKidScreenTime";
 import { useConsumeScreenTime } from "@/hooks/useConsumeScreenTime";
+import { useAvailableScreenTime } from "@/hooks/useAvailableScreenTime";
+import { useAutoPurchaseScreenTime } from "@/hooks/useAutoPurchaseScreenTime";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,10 +49,13 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [timerExpired, setTimerExpired] = useState(false);
   const [noScreenTimeModal, setNoScreenTimeModal] = useState(false);
+  const [isAutoPurchasing, setIsAutoPurchasing] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
   const { data: screenTimeBalance = 0 } = useKidScreenTime(DUNDUN_KID_ID);
+  const { data: availableScreenTime } = useAvailableScreenTime(DUNDUN_KID_ID);
   const { mutate: consumeScreenTime } = useConsumeScreenTime();
+  const { mutate: autoPurchaseScreenTime } = useAutoPurchaseScreenTime();
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ['channel-videos', channel.channelId],
@@ -123,15 +128,48 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
     };
   }, [playingVideoId, screenTimeBalance, sessionStartTime, consumeScreenTime]);
 
-  const handleVideoClick = (videoId: string) => {
-    if (!screenTimeBalance || screenTimeBalance <= 0) {
+  const handleVideoClick = async (videoId: string, durationSeconds: number) => {
+    const currentBalance = screenTimeBalance || 0;
+    const totalAvailable = availableScreenTime?.totalAvailableSeconds || 0;
+    
+    // Check if they have any way to watch (either balance or purchasable time)
+    if (totalAvailable <= 0) {
       setNoScreenTimeModal(true);
       return;
     }
     
-    setPlayingVideoId(videoId);
-    setSessionStartTime(Date.now());
-    setTimerExpired(false);
+    // If they don't have enough balance but have coins, auto-purchase
+    if (currentBalance < durationSeconds && availableScreenTime) {
+      const needsSeconds = durationSeconds;
+      
+      setIsAutoPurchasing(true);
+      autoPurchaseScreenTime(
+        { 
+          kidId: DUNDUN_KID_ID, 
+          requiredSeconds: needsSeconds 
+        },
+        {
+          onSuccess: (result) => {
+            setIsAutoPurchasing(false);
+            if (result.success) {
+              // Start playing after successful purchase
+              setPlayingVideoId(videoId);
+              setSessionStartTime(Date.now());
+              setTimerExpired(false);
+            }
+          },
+          onError: () => {
+            setIsAutoPurchasing(false);
+            setNoScreenTimeModal(true);
+          }
+        }
+      );
+    } else {
+      // They have enough balance, start playing
+      setPlayingVideoId(videoId);
+      setSessionStartTime(Date.now());
+      setTimerExpired(false);
+    }
   };
 
   const handleStartOver = () => {
@@ -161,12 +199,21 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
       {/* Screen Time Balance Display */}
       <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Clock className="w-5 h-5 text-primary" />
-            <span className="font-medium">Screen Time Remaining:</span>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-primary" />
+              <span className="font-medium">Available Screen Time:</span>
+            </div>
+            {availableScreenTime && availableScreenTime.purchasableSeconds > 0 && (
+              <span className="text-xs text-muted-foreground ml-7">
+                Balance: {formatTimeRemaining(availableScreenTime.currentBalance)} 
+                {' + '}
+                {formatTimeRemaining(availableScreenTime.purchasableSeconds)} purchasable with coins
+              </span>
+            )}
           </div>
           <span className="text-2xl font-bold text-primary">
-            {formatTimeRemaining(screenTimeBalance)}
+            {formatTimeRemaining(availableScreenTime?.totalAvailableSeconds || screenTimeBalance)}
           </span>
         </div>
       </div>
@@ -195,8 +242,8 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                   </div>
                 ) : (
                   <div 
-                    className="aspect-video relative cursor-pointer"
-                    onClick={() => handleVideoClick(video.videoId)}
+                    className={`aspect-video relative cursor-pointer ${isAutoPurchasing ? 'opacity-50' : ''}`}
+                    onClick={() => !isAutoPurchasing && handleVideoClick(video.videoId, video.durationSeconds)}
                   >
                     <img 
                       src={video.thumbnailUrl} 
@@ -207,6 +254,11 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                       <Clock className="w-3 h-3" />
                       {formatDuration(video.durationSeconds)}
                     </div>
+                    {isAutoPurchasing && (
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/50">
+                        <div className="text-white text-sm font-medium">Purchasing screen time...</div>
+                      </div>
+                    )}
                   </div>
                 )}
                 <CardHeader>
@@ -247,7 +299,10 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
           <AlertDialogHeader>
             <AlertDialogTitle>No Screen Time Available</AlertDialogTitle>
             <AlertDialogDescription>
-              You don't have any screen time available. Ask your parent to purchase screen time from the rewards store.
+              {availableScreenTime && availableScreenTime.availableCoins > 0 
+                ? `You don't have enough coins to purchase screen time. Earn ${availableScreenTime.productPrice} coins to unlock more videos!`
+                : "You don't have any screen time or coins available. Complete habits to earn coins and unlock screen time!"
+              }
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

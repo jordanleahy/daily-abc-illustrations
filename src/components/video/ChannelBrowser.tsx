@@ -17,7 +17,20 @@ interface Channel {
   videoCount: number;
 }
 
-export const ChannelBrowser = () => {
+interface Video {
+  videoId: string;
+  title: string;
+  description: string;
+  thumbnailUrl: string;
+  durationSeconds: number;
+  publishedAt: string;
+}
+
+interface ChannelBrowserProps {
+  onVideoSelect?: (video: Video) => void;
+}
+
+export const ChannelBrowser = ({ onVideoSelect }: ChannelBrowserProps) => {
   const [searchQuery, setSearchQuery] = useState("kids educational channels");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const [selectedChannel, setSelectedChannel] = useState<Channel | null>(null);
@@ -84,7 +97,7 @@ export const ChannelBrowser = () => {
         >
           ← Back to Channels
         </Button>
-        <ChannelVideosList channel={selectedChannel} />
+        <ChannelVideosList channel={selectedChannel} onVideoSelect={(video) => onVideoSelect?.(video)} />
       </div>
     );
   }

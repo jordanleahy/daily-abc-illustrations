@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface AvailableScreenTime {
@@ -14,7 +15,9 @@ interface AvailableScreenTime {
  * Calculate total available screen time including what can be purchased with coins
  */
 export const useAvailableScreenTime = (kidId: string) => {
-  return useQuery({
+  const queryClient = useQueryClient();
+
+  const query = useQuery({
     queryKey: ['available-screen-time', kidId],
     queryFn: async (): Promise<AvailableScreenTime> => {
       if (!kidId) {
@@ -74,4 +77,44 @@ export const useAvailableScreenTime = (kidId: string) => {
     enabled: !!kidId,
     refetchInterval: 5000, // Refresh every 5 seconds
   });
+
+  // Real-time subscription for product changes
+  useEffect(() => {
+    if (!kidId) return;
+
+    const channel = supabase
+      .channel('screen-time-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'kid_rewards_products',
+        },
+        () => {
+          console.log('[useAvailableScreenTime] Product updated, refreshing...');
+          queryClient.invalidateQueries({ queryKey: ['available-screen-time', kidId] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'kid_profiles',
+          filter: `id=eq.${kidId}`,
+        },
+        () => {
+          console.log('[useAvailableScreenTime] Kid profile updated, refreshing...');
+          queryClient.invalidateQueries({ queryKey: ['available-screen-time', kidId] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [kidId, queryClient]);
+
+  return query;
 };

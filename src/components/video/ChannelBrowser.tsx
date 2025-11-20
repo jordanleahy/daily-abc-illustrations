@@ -105,8 +105,23 @@ export const ChannelBrowser = () => {
       </Card>
 
       {isSearching && (
-        <div className="text-center py-8 text-muted-foreground">
-          Searching channels...
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="overflow-hidden">
+              <div className="aspect-video bg-muted animate-pulse" />
+              <CardHeader>
+                <div className="h-6 bg-muted rounded animate-pulse mb-2" />
+                <div className="h-4 bg-muted rounded animate-pulse w-3/4" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="h-4 bg-muted rounded animate-pulse w-24" />
+                  <div className="h-4 bg-muted rounded animate-pulse w-20" />
+                </div>
+                <div className="h-10 bg-muted rounded animate-pulse" />
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 

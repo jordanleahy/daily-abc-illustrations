@@ -371,20 +371,22 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
               <AlertDialogTitle className="text-xl font-bold">
                 ▶️ Watch Video?
               </AlertDialogTitle>
-              <AlertDialogDescription className="space-y-4">
-                {purchaseModal.video && (
-                  <div className="space-y-2">
-                    <p className="text-foreground font-medium">{purchaseModal.video.title}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Duration: {formatDuration(purchaseModal.video.durationSeconds)}
-                    </p>
+              <AlertDialogDescription asChild>
+                <div className="space-y-4">
+                  {purchaseModal.video && (
+                    <div className="space-y-2">
+                      <div className="text-foreground font-medium">{purchaseModal.video.title}</div>
+                      <div className="text-sm text-muted-foreground">
+                        Duration: {formatDuration(purchaseModal.video.durationSeconds)}
+                      </div>
+                    </div>
+                  )}
+                
+                  <div className="bg-primary/10 p-4 rounded-lg">
+                    <div className="text-sm">
+                      ✨ You have enough screen time to watch this video!
+                    </div>
                   </div>
-                )}
-              
-                <div className="bg-primary/10 p-4 rounded-lg">
-                  <p className="text-sm">
-                    ✨ You have enough screen time to watch this video!
-                  </p>
                 </div>
               </AlertDialogDescription>
             </AlertDialogHeader>

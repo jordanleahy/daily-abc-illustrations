@@ -61,14 +61,20 @@ export const YouTubeVideoPlayer = ({
 
   // Initialize YouTube Player
   useEffect(() => {
+    console.log('[YouTube Player] Initializing with videoId:', videoId);
+    
     if (!window.YT) {
+      console.log('[YouTube Player] Loading YouTube IFrame API script');
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       const firstScriptTag = document.getElementsByTagName('script')[0];
       firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+    } else {
+      console.log('[YouTube Player] YouTube IFrame API already loaded');
     }
 
     const onYouTubeIframeAPIReady = () => {
+      console.log('[YouTube Player] Creating player instance');
       playerRef.current = new window.YT.Player('youtube-player', {
         videoId,
         playerVars: {
@@ -78,13 +84,17 @@ export const YouTubeVideoPlayer = ({
         },
         events: {
           onStateChange: handlePlayerStateChange,
+          onReady: () => console.log('[YouTube Player] Player ready'),
+          onError: (event: any) => console.error('[YouTube Player] Error:', event.data),
         },
       });
     };
 
     if (window.YT && window.YT.Player) {
+      console.log('[YouTube Player] API ready, creating player immediately');
       onYouTubeIframeAPIReady();
     } else {
+      console.log('[YouTube Player] Waiting for API to load');
       window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
     }
 
@@ -124,18 +134,29 @@ export const YouTubeVideoPlayer = ({
 
       // Track 1 second of watch time
       try {
-        const { data, error } = await supabase.functions.invoke('youtube-video', {
-          body: {
-            kidProfileId,
-            videoContentId,
-            secondsWatched: 1,
-          },
-        });
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        const response = await fetch(
+          `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/youtube-video?action=track-watch-time`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session?.access_token}`,
+              'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              kidProfileId,
+              videoContentId,
+              secondsWatched: 1,
+            }),
+          }
+        );
 
-        if (error) throw error;
+        const result = await response.json();
 
-        if (data?.success) {
-          setRemainingSeconds(data.data.remainingSeconds);
+        if (result?.success) {
+          setRemainingSeconds(result.data.remainingSeconds);
         }
       } catch (error) {
         console.error('Error tracking watch time:', error);

@@ -528,11 +528,93 @@ export default function Books() {
   }, [bookPages, currentEditorPage]);
 
   const handleEditorImageUpload = useCallback(async (imageDataUrl: string) => {
-    if (!selectedBookId) return;
+    if (!selectedBookId || !user) return;
     
-    setEditorPageImages(prev => ({ ...prev, [currentEditorPage]: imageDataUrl }));
-    setReplacePageMode(prev => ({ ...prev, [currentEditorPage]: false }));
-  }, [selectedBookId, currentEditorPage]);
+    // Get current page ID
+    const currentPage = bookPages?.find(p => p.page_number === currentEditorPage);
+    if (!currentPage) {
+      console.error('Page not found for page number:', currentEditorPage);
+      return;
+    }
+    
+    try {
+      // Convert base64 to File object
+      const base64Response = await fetch(imageDataUrl);
+      const blob = await base64Response.blob();
+      const file = new File([blob], `page-${currentEditorPage}-${Date.now()}.webp`, { type: blob.type });
+      
+      // Get next version number
+      const { data: versionData } = await supabase.rpc('get_next_page_image_version_number', {
+        p_page_id: currentPage.id
+      });
+      const versionNumber = versionData || 1;
+      
+      // Create database record first
+      const { data: record, error: recordError } = await supabase
+        .from('page_image_urls')
+        .insert({
+          page_id: currentPage.id,
+          book_id: selectedBookId,
+          user_id: user.id,
+          version_number: versionNumber,
+          prompt_used: `User uploaded via editor: ${file.name}`,
+          source_type: 'user_uploaded'
+        })
+        .select()
+        .single();
+      
+      if (recordError) {
+        console.error('Error creating image record:', recordError);
+        return;
+      }
+      
+      // Upload to storage
+      const fileName = `${user.id}/pages/${currentPage.id}/uploaded-${Date.now()}.${file.name.split('.').pop()}`;
+      const { error: uploadError } = await supabase.storage
+        .from('page-images')
+        .upload(fileName, file, {
+          contentType: file.type,
+          upsert: false
+        });
+      
+      if (uploadError) {
+        // Clean up the record if upload fails
+        await supabase.from('page_image_urls').delete().eq('id', record.id);
+        console.error('Error uploading image:', uploadError);
+        return;
+      }
+      
+      // Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('page-images')
+        .getPublicUrl(fileName);
+      
+      // Update record with image URL
+      const { data: updatedRecord, error: updateError } = await supabase
+        .from('page_image_urls')
+        .update({ image_url: publicUrlData.publicUrl })
+        .eq('id', record.id)
+        .select()
+        .single();
+      
+      if (updateError) {
+        console.error('Error updating image URL:', updateError);
+        return;
+      }
+      
+      // Update state with permanent URL
+      setEditorPageImages(prev => ({ ...prev, [currentEditorPage]: publicUrlData.publicUrl }));
+      setReplacePageMode(prev => ({ ...prev, [currentEditorPage]: false }));
+      
+      // Invalidate queries to refresh the UI
+      queryClient.invalidateQueries({ queryKey: ['page-image-latest', currentPage.id] });
+      queryClient.invalidateQueries({ queryKey: ['book-page-images', selectedBookId] });
+      
+      console.log('✅ Image uploaded successfully:', publicUrlData.publicUrl);
+    } catch (error) {
+      console.error('Error handling image upload:', error);
+    }
+  }, [selectedBookId, currentEditorPage, bookPages, user, queryClient]);
 
   const handleRemoveEditorImage = useCallback(async (pageNumber: number) => {
     setReplacePageMode(prev => ({ ...prev, [pageNumber]: true }));

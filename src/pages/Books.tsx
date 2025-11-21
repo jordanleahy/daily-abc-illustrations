@@ -19,8 +19,7 @@ import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/themeFilters';
 import { getThemeDisplayName } from '@/types/characterTheme';
 import { getBookTypeDisplayName } from '@/types/bookType';
-import { useBookCoverImage } from '@/hooks/useBookCoverImage';
-import { useBookEditorImagePreloader } from '@/hooks/useBookEditorImagePreloader';
+import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
 import { BookImage } from '@/components/ui/book-image';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
@@ -392,20 +391,15 @@ export default function Books() {
   const [editorPageImages] = useState<Record<number, string>>({});
   const [editorPagePrompts] = useState<Record<number, string>>({});
   const [pageTextOverlays, setPageTextOverlays] = useState<Record<number, string>>({});
+  const [coverPageId, setCoverPageId] = useState<string | null>(null);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
   
   // Hooks for Book Editor Panel
   const { pages: dbPages } = useBookPages(selectedBookId || undefined);
   const { data: displayImages = {} } = useBookPageImages(selectedBookId);
-  const { data: coverImageUrl } = useBookCoverImage(selectedBookId || undefined);
   const updateBookStatusMutation = useUpdateBookStatus();
   const { generateMetadata } = useWordMetadata();
-  
-  // Progressive image preloading for better performance
-  useBookEditorImagePreloader(displayImages);
-  
-  // Subscribe to real-time image updates
-  usePageImageUrlsSubscription(selectedBookId);
   
   // Subscribe to real-time image updates
   usePageImageUrlsSubscription(selectedBookId);
@@ -440,7 +434,7 @@ export default function Books() {
   }, [bookData?.status]);
   
   // Preload book images for instant display on return visits
-  // Images are now progressively loaded by useBookEditorImagePreloader in editor panel
+  useEditorImagePreloader(books);
 
   // Invalidate books query when route changes to ensure fresh data
   useEffect(() => {
@@ -470,7 +464,50 @@ export default function Books() {
     setMobileEditorOpen(true);
   };
 
-  // Cover image managed by useBookCoverImage hook for consistency
+  // Load cover page ID when book is selected
+  useEffect(() => {
+    if (!selectedBookId) {
+      setCoverPageId(null);
+      return;
+    }
+    
+    const fetchCoverPage = async () => {
+      const { data, error } = await supabase
+        .from('pages')
+        .select('id')
+        .eq('book_id', selectedBookId)
+        .eq('page_type', 'cover')
+        .single();
+      if (!error && data) setCoverPageId(data.id);
+    };
+    fetchCoverPage();
+  }, [selectedBookId]);
+
+  // Load thumbnail URL from cover page when book is selected
+  useEffect(() => {
+    if (!selectedBookId) {
+      setThumbnailUrl(null);
+      return;
+    }
+    
+    const fetchCoverImage = async () => {
+      const { data, error } = await supabase
+        .from('page_image_urls')
+        .select(`
+          image_url,
+          pages!inner(page_type)
+        `)
+        .eq('book_id', selectedBookId)
+        .eq('pages.page_type', 'cover')
+        .eq('is_latest', true)
+        .maybeSingle();
+      
+      if (!error && data?.image_url) {
+        setThumbnailUrl(data.image_url);
+      }
+    };
+    fetchCoverImage();
+  }, [selectedBookId]);
 
   // Load page text overlays from database pages (using title as single source)
   useEffect(() => {
@@ -730,6 +767,8 @@ export default function Books() {
       await queryClient.invalidateQueries({ queryKey: ['book-page-images', selectedBookId] });
       await queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
       
+      setThumbnailUrl(publicUrl);
+      
       console.log('Cover image uploaded successfully!');
     } catch (error: any) {
       console.error('Cover upload error:', error);
@@ -754,39 +793,9 @@ export default function Books() {
   }, [selectedBookId, bookStatus, updateBookStatusMutation]);
 
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
-    // PRIORITY 1: Check session prompts (currently unused in Books.tsx but future-proof)
-    if (editorPagePrompts[pageNum]) {
-      console.log(`[Books] Using session prompt for page ${pageNum}`);
-      return editorPagePrompts[pageNum];
-    }
-
-    // PRIORITY 2: Get from database (primary source for Books.tsx)
-    if (selectedBookId && dbPages && dbPages.length > 0) {
-      const page = dbPages.find(p => p.page_number === pageNum);
-      if (!page) {
-        console.warn(`[Books] Page ${pageNum} not found in database`);
-        return null;
-      }
-      
-      // Try content.imagePrompt first (stores full unlimited text)
-      const fullPrompt = (page.content as any)?.imagePrompt;
-      if (fullPrompt) {
-        console.log(`[Books] Using imagePrompt for page ${pageNum} (${fullPrompt.length} chars)`);
-        return fullPrompt;
-      }
-      
-      // Fallback to page.description (may be truncated but better than nothing)
-      if (page.description) {
-        console.log(`[Books] Using description for page ${pageNum} (${page.description.length} chars)`);
-        return page.description;
-      }
-      
-      console.warn(`[Books] No prompt found for page ${pageNum}`);
-      return null;
-    }
-    
+    // Not used in Books.tsx context - return null
     return null;
-  }, [editorPagePrompts, selectedBookId, dbPages]);
+  }, []);
 
   const handleCreateNewBook = () => {
     navigate('/google-chat'); // Redirect to GoogleChat page for book creation
@@ -858,9 +867,10 @@ export default function Books() {
               onImageUpload={handleEditorImageUpload}
               onRemoveImage={handleRemoveEditorImage}
               onCreateBook={() => {}}
+              coverPageId={coverPageId}
               bookId={selectedBookId}
               onCoverUpload={handleThumbnailUpload}
-              thumbnailUrl={coverImageUrl || undefined}
+              thumbnailUrl={thumbnailUrl}
               pageTextOverlays={pageTextOverlays}
               onUpdatePageText={handleUpdatePageText}
               onToggleStatus={handleToggleBookStatus}
@@ -892,9 +902,10 @@ export default function Books() {
             onImageUpload={handleEditorImageUpload}
             onRemoveImage={handleRemoveEditorImage}
             onCreateBook={() => {}}
+            coverPageId={coverPageId}
             bookId={selectedBookId}
             onCoverUpload={handleThumbnailUpload}
-            thumbnailUrl={coverImageUrl || undefined}
+            thumbnailUrl={thumbnailUrl}
             pageTextOverlays={pageTextOverlays}
             onUpdatePageText={handleUpdatePageText}
             onToggleStatus={handleToggleBookStatus}
@@ -936,7 +947,7 @@ export default function Books() {
           onThemesChange={setSelectedThemes}
           availableThemes={availableThemes}
           placeholder={isAllBooksView ? "Search all books..." : "Search your books..."}
-          showSearch={true}
+          showSearch={isAllBooksView}
         />
 
         {/* Books Grid */}

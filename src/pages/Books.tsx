@@ -947,7 +947,7 @@ export default function Books() {
           onThemesChange={setSelectedThemes}
           availableThemes={availableThemes}
           placeholder={isAllBooksView ? "Search all books..." : "Search your books..."}
-          showSearch={isAllBooksView}
+          showSearch={true}
         />
 
         {/* Books Grid */}

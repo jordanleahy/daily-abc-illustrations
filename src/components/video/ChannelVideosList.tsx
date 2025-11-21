@@ -286,35 +286,6 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
 
   return (
     <div className="space-y-6">
-      {/* Screen Time Balance Display */}
-      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <Clock className="w-5 h-5 text-primary" />
-              <span className="font-medium">Available Screen Time:</span>
-            </div>
-            {availableScreenTime && availableScreenTime.purchasableSeconds > 0 && (
-              <span className="text-xs text-muted-foreground ml-7">
-                Balance: {formatTimeRemaining(availableScreenTime.currentBalance)} 
-                {' + '}
-                {formatTimeRemaining(availableScreenTime.purchasableSeconds)} purchasable with coins
-              </span>
-            )}
-          </div>
-          <div className="text-right">
-            <span className={`text-2xl font-bold ${!availableScreenTime?.hasMinimumCoins ? 'opacity-50' : 'text-primary'}`}>
-              {formatTimeRemaining(playingVideoId ? displayedTimeRemaining : (availableScreenTime?.totalAvailableSeconds || screenTimeBalance))}
-            </span>
-            {!availableScreenTime?.hasMinimumCoins && (
-              <div className="text-xs text-muted-foreground mt-1">
-                🔒 Need {availableScreenTime?.productPrice || 100} coins
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
       {isLoading && (
         <div className="text-center py-8 text-muted-foreground">
           Loading videos...

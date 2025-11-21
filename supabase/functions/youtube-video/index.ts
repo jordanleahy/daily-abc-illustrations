@@ -459,16 +459,12 @@ Deno.serve(async (req) => {
         const videosData = await videosResponse.json();
 
         const videos = videosData.items.map((video: any) => {
-          const duration = video.contentDetails?.duration;
-          let totalSeconds = 0;
-          
-          if (duration) {
-            const durationMatch = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-            const hours = parseInt(durationMatch?.[1] || '0');
-            const minutes = parseInt(durationMatch?.[2] || '0');
-            const seconds = parseInt(durationMatch?.[3] || '0');
-            totalSeconds = hours * 3600 + minutes * 60 + seconds;
-          }
+          const duration = video.contentDetails.duration;
+          const durationMatch = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+          const hours = parseInt(durationMatch?.[1] || '0');
+          const minutes = parseInt(durationMatch?.[2] || '0');
+          const seconds = parseInt(durationMatch?.[3] || '0');
+          const totalSeconds = hours * 3600 + minutes * 60 + seconds;
 
           return {
             videoId: video.id,

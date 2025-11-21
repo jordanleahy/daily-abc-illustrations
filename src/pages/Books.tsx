@@ -29,6 +29,7 @@ import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/the
 import { getThemeDisplayName } from '@/types/characterTheme';
 import { getBookTypeDisplayName } from '@/types/bookType';
 import { useEditorImagePreloader } from '@/hooks/useEditorImagePreloader';
+import { useBookEditorImagePreloader } from '@/hooks/useBookEditorImagePreloader';
 import { BookImage } from '@/components/ui/book-image';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
@@ -89,6 +90,7 @@ interface UserBookCardProps {
   isPublishing?: boolean;
   isUnpublishing?: boolean;
   isDeleting?: boolean;
+  queryClient: ReturnType<typeof useQueryClient>;
 }
 
 function UserBookCard({ 
@@ -102,7 +104,8 @@ function UserBookCard({
   onDelete,
   isPublishing,
   isUnpublishing,
-  isDeleting
+  isDeleting,
+  queryClient
 }: UserBookCardProps) {
   const { data: seoMetadata } = useBookSeoMetadata(book.id);
   // Use coverImageUrl from book object (already fetched by useBooks hook)
@@ -117,6 +120,41 @@ function UserBookCard({
   // Priority loading for first 6 cards
   const shouldLoadImmediately = index < 6;
   const shouldRender = shouldLoadImmediately || inView;
+
+  // Phase 2: Hover-based prefetching for instant editor loading
+  const handleEditHover = useCallback(() => {
+    // Prefetch editor data on hover (500ms before click)
+    queryClient.prefetchQuery({
+      queryKey: ['book-page-images', book.id],
+      queryFn: async () => {
+        const { data, error } = await supabase
+          .from('page_image_urls')
+          .select(`
+            id,
+            image_url,
+            pages!inner(
+              page_number
+            )
+          `)
+          .eq('book_id', book.id)
+          .eq('is_latest', true)
+          .not('image_url', 'is', null)
+          .order('pages(page_number)', { ascending: true });
+
+        if (error) throw error;
+
+        const imageMap: Record<number, string> = {};
+        data?.forEach((item: any) => {
+          if (item.image_url && item.pages?.page_number !== undefined) {
+            imageMap[item.pages.page_number] = item.image_url;
+          }
+        });
+
+        return imageMap;
+      },
+      staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    });
+  }, [book.id, queryClient]);
 
   return (
     <Card 
@@ -212,6 +250,7 @@ function UserBookCard({
         <Button 
           variant="outline" 
           className="w-full"
+          onMouseEnter={handleEditHover}
           onClick={(e) => {
             e.stopPropagation();
             if (onEditClick) {
@@ -496,6 +535,9 @@ export default function Books() {
   
   // Preload book images for instant display on return visits
   useEditorImagePreloader(books);
+  
+  // Phase 1: Preload page images when editor data loads for instant display
+  useBookEditorImagePreloader(bookPageImages);
 
   // Invalidate books query when route changes to ensure fresh data
   useEffect(() => {
@@ -837,6 +879,7 @@ export default function Books() {
                   isPublishing={schedulePublication.isPending}
                   isUnpublishing={deletePublication.isPending}
                   isDeleting={deleteBook.isPending}
+                  queryClient={queryClient}
                 />
               ))}
             </div>

@@ -706,6 +706,66 @@ export default function GoogleChat() {
       console.log(`Extracted ${pageDetails.length} page details from conversation`);
     }
 
+    // ✅ CRITICAL: Extract prompts BEFORE book creation if not already extracted
+    let promptsToStore = editorPagePrompts;
+    
+    if (Object.keys(promptsToStore).length === 0) {
+      console.log('[Book Creation] No prompts found, extracting from conversation...');
+      
+      const fullPrompts: Record<number, string> = {};
+      const conversationText = messages
+        .filter(m => m.role === 'assistant')
+        .map(m => m.content)
+        .join('\n');
+      
+      // Extract cover prompt (page 1)
+      const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
+      if (coverMatch) {
+        let coverPrompt = coverMatch[0];
+        
+        // Normalize: Ensure title positioning is explicit
+        if (!coverPrompt.toLowerCase().includes('centered') && 
+            !coverPrompt.toLowerCase().includes('center')) {
+          const titleMatch = conversationText.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
+          const bookTitle = titleMatch ? titleMatch[1].trim() : '[TITLE]';
+          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
+        }
+        
+        fullPrompts[1] = coverPrompt;
+      }
+      
+      // Extract educational focus prompt (page 2)
+      const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
+      if (eduMatch) {
+        fullPrompts[2] = eduMatch[0];
+      }
+      
+      // Extract numbered page prompts (pages 3-28 = A-Z)
+      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi);
+      for (const match of pageMatches) {
+        const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
+        fullPrompts[pageNum] = match[0];
+      }
+      
+      if (Object.keys(fullPrompts).length > 0) {
+        console.log(`[Book Creation] Extracted ${Object.keys(fullPrompts).length} prompts, saving to session...`);
+        
+        // Save prompts to session database
+        await updateQAPagePrompts({ 
+          sessionId: currentSessionId, 
+          qaPagePrompts: fullPrompts 
+        });
+        
+        // Update local state
+        setEditorPagePrompts(fullPrompts);
+        promptsToStore = fullPrompts;
+      } else {
+        console.warn('[Book Creation] No prompts extracted from conversation');
+      }
+    } else {
+      console.log(`[Book Creation] Using ${Object.keys(promptsToStore).length} existing prompts`);
+    }
+
     // Extract text overlay and style reference
     // Text overlay logic: 
     // - Cover pages can have title text overlays
@@ -744,10 +804,10 @@ export default function GoogleChat() {
         referenceBookId,
         targetWords: targetWords.length > 0 ? targetWords : undefined,
         sessionId: currentSessionId, // Include session ID for traceability
-        storedPrompts: Object.keys(editorPagePrompts).length > 0 ? editorPagePrompts : undefined, // Use pre-stored prompts
+        storedPrompts: Object.keys(promptsToStore).length > 0 ? promptsToStore : undefined, // Use extracted prompts
       });
       
-      console.log('[Book Creation] Created book with', Object.keys(editorPagePrompts).length, 'stored prompts');
+      console.log('[Book Creation] Created book with', Object.keys(promptsToStore).length, 'stored prompts');
       
       // Set local book ID immediately for UI responsiveness
       setLocalCreatedBookId(result.bookId);
@@ -782,7 +842,7 @@ export default function GoogleChat() {
       console.error('Book creation error:', error);
       // Error toast is handled by the mutation
     }
-  }, [currentSessionId, messages, parsedPageDetails, editorPageImages, createBookMutation, linkBookToSession]);
+  }, [currentSessionId, messages, parsedPageDetails, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, selectedCharacterTheme, selectedAgeRange, targetWords]);
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
     // Handle special actions

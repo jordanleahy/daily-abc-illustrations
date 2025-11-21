@@ -29,9 +29,12 @@ import { BookEditorPanel } from '@/components/chat/BookEditorPanel';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { useBookPages } from '@/hooks/useBookPages';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
+import { useBookCoverPage } from '@/hooks/useBookCoverPage';
+import { useBookCoverImage } from '@/hooks/useBookCoverImage';
 import { useUpdateBookStatus } from '@/hooks/useUpdateBookStatus';
 import { usePageImageUrlsSubscription } from '@/hooks/usePageImageUrlsSubscription';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
+import { useBookSessionData } from '@/hooks/useBookSessionData';
 import { supabase } from '@/integrations/supabase/client';
 import { AdminOnly } from '@/components/AdminOnly';
 import { cn } from '@/lib/utils';
@@ -341,6 +344,16 @@ export default function Books() {
   const deletePublication = useDeleteDailyPublished();
   const deleteBook = useDeleteBook();
   
+  // Book Editor Panel state
+  const [showEditor, setShowEditor] = useState(false);
+  const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  const [currentEditorPage, setCurrentEditorPage] = useState(1);
+  const [editorPageImages, setEditorPageImages] = useState<Record<number, string>>({});
+  const [editorPagePrompts, setEditorPagePrompts] = useState<Record<number, string>>({});
+  const [pageTextOverlays, setPageTextOverlays] = useState<Record<number, string>>({});
+  const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
+  
   const isAllBooksView = location.pathname === '/all-books';
   
   // Pagination state for all-books view
@@ -380,8 +393,65 @@ export default function Books() {
     }
   }, [currentPage, totalPages]);
   
-  // Editor functionality moved to GoogleChat - Edit button now navigates there
-  
+  // Fetch session data (prompts & images) when book is selected
+  const { data: sessionData } = useBookSessionData(selectedBookId);
+
+  // Fetch book pages for navigation
+  const { pages: bookPages } = useBookPages(selectedBookId);
+
+  // Fetch book page images from storage
+  const { data: bookPageImages } = useBookPageImages(selectedBookId);
+
+  // Fetch cover page and image
+  const { data: coverPage } = useBookCoverPage(selectedBookId);
+  const { data: coverImageUrl } = useBookCoverImage(selectedBookId);
+
+  // Fetch book status for publish/unpublish toggle
+  const { data: selectedBook } = useQuery({
+    queryKey: ['book', selectedBookId],
+    queryFn: async () => {
+      if (!selectedBookId) return null;
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('id', selectedBookId)
+        .single();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedBookId,
+  });
+
+  // Book status mutation
+  const updateBookStatusMutation = useUpdateBookStatus();
+
+  // Effect: Load session data when book is selected
+  useEffect(() => {
+    if (sessionData) {
+      setEditorPagePrompts((sessionData.qa_page_prompts as Record<number, string>) || {});
+      setEditorPageImages((sessionData.qa_page_images as Record<number, string>) || {});
+      console.log('[Books Editor] Loaded session data:', {
+        promptCount: Object.keys(sessionData.qa_page_prompts || {}).length,
+        imageCount: Object.keys(sessionData.qa_page_images || {}).length
+      });
+    }
+  }, [sessionData]);
+
+  // Effect: Extract page text overlays from database pages
+  useEffect(() => {
+    if (bookPages) {
+      const overlays = bookPages.reduce((acc, page) => ({
+        ...acc,
+        [page.page_number]: page.title
+      }), {} as Record<number, string>);
+      setPageTextOverlays(overlays);
+    }
+  }, [bookPages]);
+
+  // Effect: Set thumbnail URL from cover image
+  useEffect(() => {
+    setThumbnailUrl(coverImageUrl || null);
+  }, [coverImageUrl]);
   
   // Preload book images for instant display on return visits
   useEditorImagePreloader(books);
@@ -406,20 +476,138 @@ export default function Books() {
     }
   };
 
-  const handleEditBook = (bookId: string, book: any, publicationStatus?: Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null) => {
-    // Navigate to GoogleChat with edit mode (reuse working "View Outline" flow)
-    navigate('/google-chat', {
-      state: { 
-        editBookId: bookId,
-        from: 'my-books'
-      }
-    });
+  const handleEditBook = (bookId: string) => {
+    setSelectedBookId(bookId);
+    setShowEditor(true);
+    setCurrentEditorPage(1);
   };
 
-  // Load cover page ID when book is selected
+  const handleEditorPageNavigation = useCallback((direction: 'next' | 'prev') => {
+    if (bookPages && bookPages.length > 0) {
+      const sortedPages = [...bookPages].sort((a, b) => a.page_number - b.page_number);
+      const currentIndex = sortedPages.findIndex(p => p.page_number === currentEditorPage);
+      
+      if (direction === 'next' && currentIndex < sortedPages.length - 1) {
+        setCurrentEditorPage(sortedPages[currentIndex + 1].page_number);
+      } else if (direction === 'prev' && currentIndex > 0) {
+        setCurrentEditorPage(sortedPages[currentIndex - 1].page_number);
+      }
+    }
+  }, [bookPages, currentEditorPage]);
+
+  const handleEditorImageUpload = useCallback(async (imageDataUrl: string) => {
+    if (!selectedBookId) return;
+    
+    setEditorPageImages(prev => ({ ...prev, [currentEditorPage]: imageDataUrl }));
+    setReplacePageMode(prev => ({ ...prev, [currentEditorPage]: false }));
+  }, [selectedBookId, currentEditorPage]);
+
+  const handleRemoveEditorImage = useCallback(async (pageNumber: number) => {
+    setReplacePageMode(prev => ({ ...prev, [pageNumber]: true }));
+  }, []);
+
+  const handleUpdatePageText = useCallback(async (pageNumber: number, newText: string) => {
+    if (!selectedBookId || !bookPages) return;
+
+    const page = bookPages.find(p => p.page_number === pageNumber);
+    if (!page) return;
+
+    const { error } = await supabase
+      .from('pages')
+      .update({ title: newText })
+      .eq('id', page.id);
+
+    if (!error) {
+      setPageTextOverlays(prev => ({ ...prev, [pageNumber]: newText }));
+      queryClient.invalidateQueries({ queryKey: ['book-pages', selectedBookId] });
+    }
+  }, [selectedBookId, bookPages, queryClient]);
+
+  const handleToggleBookStatus = useCallback(async () => {
+    if (!selectedBookId) return;
+    
+    const currentStatus = selectedBook?.status || PublicationStatus.DRAFT;
+    const newStatus = currentStatus === PublicationStatus.DRAFT 
+      ? PublicationStatus.PUBLISHED 
+      : PublicationStatus.DRAFT;
+    
+    updateBookStatusMutation.mutate({
+      bookId: selectedBookId,
+      status: newStatus,
+    });
+  }, [selectedBookId, selectedBook?.status, updateBookStatusMutation]);
+
+  const handleThumbnailUpload = useCallback(async (file: File) => {
+    if (!selectedBookId || !coverPage) return;
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${coverPage.id}.${fileExt}`;
+    const filePath = `${selectedBookId}/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('page-images')
+      .upload(filePath, file, { upsert: true });
+
+    if (uploadError) {
+      console.error('Upload error:', uploadError);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('page-images')
+      .getPublicUrl(filePath);
+
+    const { error: dbError } = await supabase
+      .from('page_image_urls')
+      .upsert({
+        page_id: coverPage.id,
+        book_id: selectedBookId,
+        user_id: user?.id!,
+        image_url: publicUrl,
+        source_type: 'user_uploaded',
+        is_latest: true,
+      });
+
+    if (!dbError) {
+      setThumbnailUrl(publicUrl);
+      queryClient.invalidateQueries({ queryKey: ['book-cover-image', selectedBookId] });
+    }
+  }, [selectedBookId, coverPage, user?.id, queryClient]);
+
+  const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
+    if (editorPagePrompts[pageNum]) {
+      return editorPagePrompts[pageNum];
+    }
+
+    if (bookPages && bookPages.length > 0) {
+      const page = bookPages.find(p => p.page_number === pageNum);
+      if (!page) return null;
+      
+      const fullPrompt = (page.content as any)?.imagePrompt;
+      if (fullPrompt) return fullPrompt;
+      if (page.description) return page.description;
+    }
+    
+    return null;
+  }, [editorPagePrompts, bookPages]);
+
+  const displayImages = useMemo(() => {
+    const baseImages = (selectedBookId && bookPageImages) ? bookPageImages : editorPageImages;
+    const filtered: Record<number, string> = {};
+    Object.entries(baseImages).forEach(([pageNum, imageUrl]) => {
+      if (!replacePageMode[Number(pageNum)]) {
+        filtered[Number(pageNum)] = imageUrl as string;
+      }
+    });
+    return filtered;
+  }, [selectedBookId, bookPageImages, editorPageImages, replacePageMode]);
+
+  const isBookCreated = !!selectedBookId;
+  const pageCount = bookPages?.length || 26;
+  const coverPageId = coverPage?.id || null;
 
   const handleCreateNewBook = () => {
-    navigate('/google-chat'); // Redirect to GoogleChat page for book creation
+    navigate('/google-chat');
   };
 
   const handlePublish = (bookId: string, title: string, description?: string) => {
@@ -505,12 +693,7 @@ export default function Books() {
                   index={index}
                   onClick={() => handleViewBook(book.id)}
                   onEditClick={(bookId) => {
-                    const publicationStatus = book.daily_published?.[0] ? {
-                      id: book.daily_published[0].id,
-                      status: book.daily_published[0].status as 'draft' | 'queued' | 'active' | 'expired',
-                      publish_date: book.daily_published[0].publish_date
-                    } : null;
-                    handleEditBook(bookId, book, publicationStatus);
+                    handleEditBook(bookId);
                   }}
                   publicationStatus={book.daily_published?.[0] ? {
                     id: book.daily_published[0].id,
@@ -607,6 +790,94 @@ export default function Books() {
         )}
         </div>
       </StandardPageLayout>
+
+      {/* Mobile: Bottom Sheet Editor */}
+      {isMobile && (
+        <Sheet 
+          open={showEditor} 
+          onOpenChange={(open) => {
+            setShowEditor(open);
+            if (!open) {
+              setSelectedBookId(null);
+              setReplacePageMode({});
+            }
+          }}
+        >
+          <SheetContent 
+            side="bottom" 
+            className="w-full max-h-[90vh] p-0 overflow-hidden rounded-t-xl z-[100]"
+          >
+            <BookEditorPanel
+              showEditor={true}
+              isBookCreated={isBookCreated}
+              createdBookId={selectedBookId}
+              currentPageNumber={currentEditorPage}
+              pageCount={pageCount}
+              displayImages={displayImages}
+              editorPageImages={editorPageImages}
+              editorPagePrompts={editorPagePrompts}
+              getCurrentPagePrompt={getCurrentPagePrompt}
+              createBookMutation={{ isSuccess: false } as any}
+              onClose={() => {
+                setShowEditor(false);
+                setSelectedBookId(null);
+              }}
+              onNavigate={handleEditorPageNavigation}
+              onImageUpload={handleEditorImageUpload}
+              onRemoveImage={handleRemoveEditorImage}
+              onCreateBook={() => {}}
+              coverPageId={coverPageId}
+              bookId={selectedBookId}
+              onCoverUpload={handleThumbnailUpload}
+              thumbnailUrl={thumbnailUrl}
+              pageTextOverlays={pageTextOverlays}
+              onUpdatePageText={handleUpdatePageText}
+              onToggleStatus={handleToggleBookStatus}
+              bookStatus={(selectedBook?.status as PublicationStatus) || PublicationStatus.DRAFT}
+            />
+          </SheetContent>
+        </Sheet>
+      )}
+
+      {/* Desktop: Sliding Side Panel Editor */}
+      {!isMobile && (
+        <div
+          className={cn(
+            "fixed right-0 top-[3.5rem] bottom-0 w-[400px] bg-background border-l shadow-lg z-[100]",
+            "transition-transform duration-300 ease-out",
+            showEditor ? "translate-x-0" : "translate-x-full"
+          )}
+        >
+          <BookEditorPanel
+            showEditor={true}
+            isBookCreated={isBookCreated}
+            createdBookId={selectedBookId}
+            currentPageNumber={currentEditorPage}
+            pageCount={pageCount}
+            displayImages={displayImages}
+            editorPageImages={editorPageImages}
+            editorPagePrompts={editorPagePrompts}
+            getCurrentPagePrompt={getCurrentPagePrompt}
+            createBookMutation={{ isSuccess: false } as any}
+            onClose={() => {
+              setShowEditor(false);
+              setSelectedBookId(null);
+            }}
+            onNavigate={handleEditorPageNavigation}
+            onImageUpload={handleEditorImageUpload}
+            onRemoveImage={handleRemoveEditorImage}
+            onCreateBook={() => {}}
+            coverPageId={coverPageId}
+            bookId={selectedBookId}
+            onCoverUpload={handleThumbnailUpload}
+            thumbnailUrl={thumbnailUrl}
+            pageTextOverlays={pageTextOverlays}
+            onUpdatePageText={handleUpdatePageText}
+            onToggleStatus={handleToggleBookStatus}
+            bookStatus={(selectedBook?.status as PublicationStatus) || PublicationStatus.DRAFT}
+          />
+        </div>
+      )}
       </div>
     </>
   );

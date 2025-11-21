@@ -203,12 +203,21 @@ export function BookEditorPanel({
     setWordStatuses({});
   }, [currentPageNumber]); // Removed copiedPages to prevent immediate trigger
   
-  // Hide confirmation immediately when image is pasted/uploaded
+  // Hide confirmation immediately when image is pasted/uploaded + auto-advance to next page
   useEffect(() => {
     if (currentPageImage) {
       setShowConfirmation(false);
+
+      // Auto-advance to next page after successful upload (but not on last page)
+      if (currentPageNumber < pageCount) {
+        const timer = setTimeout(() => {
+          onNavigate('next');
+        }, 400); // Brief delay for visual feedback
+
+        return () => clearTimeout(timer);
+      }
     }
-  }, [currentPageImage]);
+  }, [currentPageImage, currentPageNumber, pageCount, onNavigate]);
   
   // Word Learning Helper handlers
   const handleNavigateWord = (direction: 'prev' | 'next') => {

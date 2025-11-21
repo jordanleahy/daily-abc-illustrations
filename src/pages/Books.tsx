@@ -793,9 +793,39 @@ export default function Books() {
   }, [selectedBookId, bookStatus, updateBookStatusMutation]);
 
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
-    // Not used in Books.tsx context - return null
+    // PRIORITY 1: Check session prompts (currently unused in Books.tsx but future-proof)
+    if (editorPagePrompts[pageNum]) {
+      console.log(`[Books] Using session prompt for page ${pageNum}`);
+      return editorPagePrompts[pageNum];
+    }
+
+    // PRIORITY 2: Get from database (primary source for Books.tsx)
+    if (selectedBookId && dbPages && dbPages.length > 0) {
+      const page = dbPages.find(p => p.page_number === pageNum);
+      if (!page) {
+        console.warn(`[Books] Page ${pageNum} not found in database`);
+        return null;
+      }
+      
+      // Try content.imagePrompt first (stores full unlimited text)
+      const fullPrompt = (page.content as any)?.imagePrompt;
+      if (fullPrompt) {
+        console.log(`[Books] Using imagePrompt for page ${pageNum} (${fullPrompt.length} chars)`);
+        return fullPrompt;
+      }
+      
+      // Fallback to page.description (may be truncated but better than nothing)
+      if (page.description) {
+        console.log(`[Books] Using description for page ${pageNum} (${page.description.length} chars)`);
+        return page.description;
+      }
+      
+      console.warn(`[Books] No prompt found for page ${pageNum}`);
+      return null;
+    }
+    
     return null;
-  }, []);
+  }, [editorPagePrompts, selectedBookId, dbPages]);
 
   const handleCreateNewBook = () => {
     navigate('/google-chat'); // Redirect to GoogleChat page for book creation

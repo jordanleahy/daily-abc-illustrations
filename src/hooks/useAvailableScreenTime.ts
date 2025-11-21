@@ -9,6 +9,8 @@ interface AvailableScreenTime {
   totalAvailableSeconds: number;
   productPrice: number;
   secondsPerProduct: number;
+  hasMinimumCoins: boolean;
+  coinsNeeded: number;
 }
 
 /**
@@ -55,6 +57,8 @@ export const useAvailableScreenTime = (kidId: string) => {
           totalAvailableSeconds: currentBalance,
           productPrice: 0,
           secondsPerProduct: 0,
+          hasMinimumCoins: true,
+          coinsNeeded: 0,
         };
       }
 
@@ -63,7 +67,13 @@ export const useAvailableScreenTime = (kidId: string) => {
       const productPrice = product.coin_price;
       const affordableProducts = Math.floor(availableCoins / productPrice);
       const purchasableSeconds = affordableProducts * secondsPerProduct;
-      const totalAvailableSeconds = currentBalance + purchasableSeconds;
+      
+      // Option B: Screen time is only usable if user has minimum coins
+      const hasMinimumCoins = availableCoins >= productPrice;
+      const totalAvailableSeconds = hasMinimumCoins 
+        ? currentBalance + purchasableSeconds 
+        : 0;
+      const coinsNeeded = hasMinimumCoins ? 0 : (productPrice - availableCoins);
 
       return {
         currentBalance,
@@ -72,6 +82,8 @@ export const useAvailableScreenTime = (kidId: string) => {
         totalAvailableSeconds,
         productPrice,
         secondsPerProduct,
+        hasMinimumCoins,
+        coinsNeeded,
       };
     },
     enabled: !!kidId,

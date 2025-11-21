@@ -172,10 +172,16 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
   }, [playingVideoId, sessionStartTime, screenTimeBalance, availableScreenTime]);
 
   const handleVideoClick = (video: Video) => {
+    // Option B: Check if user has minimum coins first
+    if (!availableScreenTime?.hasMinimumCoins) {
+      setNoScreenTimeModal(true);
+      return;
+    }
+    
     const currentBalance = screenTimeBalance || 0;
     const totalAvailable = availableScreenTime?.totalAvailableSeconds || 0;
     
-    // Check if they have any way to watch (either balance or purchasable time)
+    // This check should now be redundant, but keep as safety
     if (totalAvailable <= 0) {
       setNoScreenTimeModal(true);
       return;
@@ -294,9 +300,16 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
               </span>
             )}
           </div>
-          <span className="text-2xl font-bold text-primary">
-            {formatTimeRemaining(playingVideoId ? displayedTimeRemaining : (availableScreenTime?.totalAvailableSeconds || screenTimeBalance))}
-          </span>
+          <div className="text-right">
+            <span className={`text-2xl font-bold ${!availableScreenTime?.hasMinimumCoins ? 'opacity-50' : 'text-primary'}`}>
+              {formatTimeRemaining(playingVideoId ? displayedTimeRemaining : (availableScreenTime?.totalAvailableSeconds || screenTimeBalance))}
+            </span>
+            {!availableScreenTime?.hasMinimumCoins && (
+              <div className="text-xs text-muted-foreground mt-1">
+                🔒 Need {availableScreenTime?.productPrice || 100} coins
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -445,18 +458,40 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
       )}
 
       {/* No Screen Time Available Modal */}
-      <AlertDialog open={noScreenTimeModal}>
+      <AlertDialog open={noScreenTimeModal} onOpenChange={setNoScreenTimeModal}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>No Screen Time Available</AlertDialogTitle>
-            <AlertDialogDescription>
-              You don't have enough coins to purchase the screen time needed for this video. 
-              Complete more habits to earn coins!
+            <AlertDialogTitle>
+              {availableScreenTime?.hasMinimumCoins === false
+                ? "Need More Coins to Unlock Videos"
+                : "No Screen Time Available"}
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2">
+                {availableScreenTime?.hasMinimumCoins === false ? (
+                  <>
+                    <p>You need at least <strong>{availableScreenTime.productPrice} coins</strong> to access videos.</p>
+                    <div className="bg-muted p-3 rounded-lg space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Current coins:</span>
+                        <span className="font-medium">{availableScreenTime.availableCoins}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Coins needed:</span>
+                        <span className="font-medium text-primary">{availableScreenTime.coinsNeeded}</span>
+                      </div>
+                    </div>
+                    <p className="text-sm mt-2">Complete habits to earn more coins!</p>
+                  </>
+                ) : (
+                  <p>You don't have enough screen time or coins to watch this video. Complete habits to earn more coins!</p>
+                )}
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogAction onClick={() => setNoScreenTimeModal(false)}>
-              OK
+              Got it
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

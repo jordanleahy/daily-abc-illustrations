@@ -91,6 +91,8 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
       
       return result.data.videos as Video[];
     },
+    staleTime: 60 * 60 * 1000, // 1 hour - don't refetch for 1 hour
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache for a full day
   });
 
   // Cleanup effect to consume time on unmount

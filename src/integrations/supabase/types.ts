@@ -1914,6 +1914,36 @@ export type Database = {
           },
         ]
       }
+      youtube_cache: {
+        Row: {
+          cache_key: string
+          cache_type: string
+          created_at: string | null
+          data: Json
+          expires_at: string
+          id: string
+          updated_at: string | null
+        }
+        Insert: {
+          cache_key: string
+          cache_type: string
+          created_at?: string | null
+          data: Json
+          expires_at: string
+          id?: string
+          updated_at?: string | null
+        }
+        Update: {
+          cache_key?: string
+          cache_type?: string
+          created_at?: string | null
+          data?: Json
+          expires_at?: string
+          id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       active_daily_published: {

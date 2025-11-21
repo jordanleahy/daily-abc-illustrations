@@ -50,6 +50,7 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [timerExpired, setTimerExpired] = useState(false);
+  const [displayedTimeRemaining, setDisplayedTimeRemaining] = useState<number>(0);
   const [noScreenTimeModal, setNoScreenTimeModal] = useState(false);
   const [isAutoPurchasing, setIsAutoPurchasing] = useState(false);
   const [purchaseModal, setPurchaseModal] = useState<{
@@ -142,6 +143,35 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
       }
     };
   }, [playingVideoId, screenTimeBalance, sessionStartTime, consumeScreenTime]);
+
+  // Real-time countdown display
+  useEffect(() => {
+    let intervalId: NodeJS.Timeout | null = null;
+    
+    if (playingVideoId && sessionStartTime) {
+      // Update displayed time every second
+      intervalId = setInterval(() => {
+        const elapsedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
+        const remaining = Math.max(0, screenTimeBalance - elapsedSeconds);
+        setDisplayedTimeRemaining(remaining);
+        
+        // Stop interval when time runs out
+        if (remaining <= 0) {
+          if (intervalId) clearInterval(intervalId);
+        }
+      }, 1000);
+      
+      // Set initial value immediately
+      setDisplayedTimeRemaining(screenTimeBalance);
+    } else {
+      // Reset to full balance when not playing
+      setDisplayedTimeRemaining(availableScreenTime?.totalAvailableSeconds || screenTimeBalance);
+    }
+    
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [playingVideoId, sessionStartTime, screenTimeBalance, availableScreenTime]);
 
   const handleVideoClick = (video: Video) => {
     const currentBalance = screenTimeBalance || 0;
@@ -267,7 +297,7 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
             )}
           </div>
           <span className="text-2xl font-bold text-primary">
-            {formatTimeRemaining(availableScreenTime?.totalAvailableSeconds || screenTimeBalance)}
+            {formatTimeRemaining(playingVideoId ? displayedTimeRemaining : (availableScreenTime?.totalAvailableSeconds || screenTimeBalance))}
           </span>
         </div>
       </div>

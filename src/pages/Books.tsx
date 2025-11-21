@@ -425,6 +425,38 @@ export default function Books() {
   // Book status mutation
   const updateBookStatusMutation = useUpdateBookStatus();
 
+  // Fetch deployed prompts from page_system_prompts table (full untruncated content)
+  const { data: deployedPrompts } = useQuery({
+    queryKey: ['deployed-prompts', selectedBookId, bookPages],
+    queryFn: async () => {
+      if (!selectedBookId || !bookPages || bookPages.length === 0) return {};
+      
+      const pageIds = bookPages.map(p => p.id);
+      const { data, error } = await supabase
+        .from('page_system_prompts')
+        .select('page_id, content')
+        .in('page_id', pageIds)
+        .eq('is_deployed', true);
+      
+      if (error) {
+        console.error('Error fetching deployed prompts:', error);
+        return {};
+      }
+      
+      // Map to page_number for easy lookup
+      const promptMap: Record<number, string> = {};
+      data?.forEach((prompt) => {
+        const page = bookPages.find(p => p.id === prompt.page_id);
+        if (page) {
+          promptMap[page.page_number] = prompt.content;
+        }
+      });
+      
+      return promptMap;
+    },
+    enabled: !!selectedBookId && !!bookPages && bookPages.length > 0,
+  });
+
   // Effect: Load session data when book is selected
   useEffect(() => {
     if (sessionData) {
@@ -575,10 +607,17 @@ export default function Books() {
   }, [selectedBookId, coverPage, user?.id, queryClient]);
 
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
+    // PRIORITY 1: Full deployed prompts from page_system_prompts (no truncation)
+    if (deployedPrompts && deployedPrompts[pageNum]) {
+      return deployedPrompts[pageNum];
+    }
+
+    // PRIORITY 2: Session prompts (may be truncated)
     if (editorPagePrompts[pageNum]) {
       return editorPagePrompts[pageNum];
     }
 
+    // PRIORITY 3: Fallback to page content (likely truncated)
     if (bookPages && bookPages.length > 0) {
       const page = bookPages.find(p => p.page_number === pageNum);
       if (!page) return null;
@@ -589,7 +628,7 @@ export default function Books() {
     }
     
     return null;
-  }, [editorPagePrompts, bookPages]);
+  }, [deployedPrompts, editorPagePrompts, bookPages]);
 
   const displayImages = useMemo(() => {
     const baseImages = (selectedBookId && bookPageImages) ? bookPageImages : editorPageImages;

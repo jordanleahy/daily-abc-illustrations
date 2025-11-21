@@ -13,6 +13,15 @@ import { useBooks } from '@/hooks/useBooks';
 import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { BookOpen, Calendar, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { 
+  Pagination, 
+  PaginationContent, 
+  PaginationEllipsis, 
+  PaginationItem, 
+  PaginationLink, 
+  PaginationNext, 
+  PaginationPrevious 
+} from '@/components/ui/pagination';
 import { LoadingState } from '@/components/ui/loading-state';
 import { trackUserBookActivity } from '@/utils/bookViewTracking';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
@@ -356,18 +365,18 @@ export default function Books() {
   
   const isAllBooksView = location.pathname === '/all-books';
   
-  // Pagination state for all-books view
+  // Pagination state for both views
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
-  const PAGE_SIZE = 18; // 3 rows of 6 books on large screens
+  const PAGE_SIZE = 24; // 4 rows of 6 books - better performance
   
   // ⚡ PERFORMANCE: Debounced search to prevent reload on every keystroke
   const { rawQuery: searchQuery, activeQuery: debouncedSearchQuery, setSearchQuery, isSearching } = useOptimizedSearch('debounced', 300);
   
-  // ⚡ OPTIMIZED: Server-side filtering with theme filter
+  // ⚡ OPTIMIZED: Server-side filtering with pagination for both views
   const { books, totalCount, loading } = useBooks(
     isAllBooksView ? 'all-books' : 'my-books',
-    isAllBooksView ? { page: currentPage, pageSize: PAGE_SIZE } : undefined,
+    { page: currentPage, pageSize: PAGE_SIZE }, // Always paginate for performance
     debouncedSearchQuery, // Use debounced query for database calls
     selectedThemes.length > 0 ? selectedThemes : undefined // Pass theme filter to backend
   );
@@ -832,35 +841,97 @@ export default function Books() {
               ))}
             </div>
 
-            {/* Pagination Controls - Only show for all-books view */}
-            {isAllBooksView && totalCount > PAGE_SIZE && (
-              <div className="flex items-center justify-center gap-2 mt-8">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  disabled={currentPage === 1 || loading}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                  Previous
-                </Button>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm text-muted-foreground">
-                    Page {currentPage} of {totalPages}
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    ({totalCount} total books)
-                  </span>
+            {/* Pagination Controls - Show when there are more books than page size */}
+            {totalCount > PAGE_SIZE && (
+              <div className="flex flex-col items-center gap-4 mt-8">
+                <Pagination>
+                  <PaginationContent>
+                    <PaginationItem>
+                      <PaginationPrevious 
+                        onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        className={cn(
+                          "cursor-pointer",
+                          (currentPage === 1 || loading) && "pointer-events-none opacity-50"
+                        )}
+                      />
+                    </PaginationItem>
+                    
+                    {/* First page */}
+                    {totalPages > 1 && (
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(1)}
+                          isActive={currentPage === 1}
+                          className="cursor-pointer"
+                        >
+                          1
+                        </PaginationLink>
+                      </PaginationItem>
+                    )}
+                    
+                    {/* Left ellipsis */}
+                    {currentPage > 3 && totalPages > 5 && (
+                      <PaginationItem>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    )}
+                    
+                    {/* Middle pages */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1)
+                      .filter(page => {
+                        // Show pages around current page
+                        if (totalPages <= 5) return page > 1 && page < totalPages;
+                        if (page === 1 || page === totalPages) return false;
+                        return Math.abs(page - currentPage) <= 1;
+                      })
+                      .map(page => (
+                        <PaginationItem key={page}>
+                          <PaginationLink
+                            onClick={() => setCurrentPage(page)}
+                            isActive={currentPage === page}
+                            className="cursor-pointer"
+                          >
+                            {page}
+                          </PaginationLink>
+                        </PaginationItem>
+                      ))}
+                    
+                    {/* Right ellipsis */}
+                    {currentPage < totalPages - 2 && totalPages > 5 && (
+                      <PaginationItem>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    )}
+                    
+                    {/* Last page */}
+                    {totalPages > 1 && (
+                      <PaginationItem>
+                        <PaginationLink
+                          onClick={() => setCurrentPage(totalPages)}
+                          isActive={currentPage === totalPages}
+                          className="cursor-pointer"
+                        >
+                          {totalPages}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )}
+                    
+                    <PaginationItem>
+                      <PaginationNext 
+                        onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                        className={cn(
+                          "cursor-pointer",
+                          (currentPage === totalPages || loading) && "pointer-events-none opacity-50"
+                        )}
+                      />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+                
+                {/* Page info */}
+                <div className="text-sm text-muted-foreground">
+                  Showing {((currentPage - 1) * PAGE_SIZE) + 1} to {Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} books
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  disabled={currentPage >= totalPages || loading}
-                >
-                  Next
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
               </div>
             )}
           </>

@@ -91,8 +91,10 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
       
       return result.data.videos as Video[];
     },
-    staleTime: 60 * 60 * 1000, // 1 hour - don't refetch for 1 hour
-    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache for a full day
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - match server cache TTL for consistency
+    gcTime: 7 * 24 * 60 * 60 * 1000, // 7 days - keep in cache longer for instant loads
+    refetchOnWindowFocus: false, // Don't refetch when user returns to tab
+    refetchOnReconnect: false, // Don't refetch on reconnect
   });
 
   // Cleanup effect to consume time on unmount
@@ -317,6 +319,8 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                       src={video.thumbnailUrl} 
                       alt={video.title}
                       className="w-full h-full object-cover"
+                      loading="lazy"
+                      decoding="async"
                     />
                     <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
                       <Clock className="w-3 h-3" />

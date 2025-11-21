@@ -11,7 +11,7 @@ import { SITE_CONFIG, getSiteTitle } from '@/config/site';
 
 const Landing = () => {
   const { data: landingData } = useLandingPageData();
-  const { data: libraryBooks = [] } = useLibraryBooksDecoupled();
+  const { data: libraryBooks = [], isLoading: isLoadingBooks } = useLibraryBooksDecoupled();
   
   // Enable real-time updates for all landing page content
   useLandingPageSubscription();
@@ -34,6 +34,7 @@ const Landing = () => {
           <CategorizedBookSections
             books={libraryBooks}
             showAllCategories={true}
+            isLoading={isLoadingBooks}
           />
           <SignupSection />
         </div>

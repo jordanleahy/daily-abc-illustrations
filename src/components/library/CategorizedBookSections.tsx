@@ -9,12 +9,14 @@ import { LIBRARY_TEXT } from '@/config/libraryText';
 import { LIBRARY_CONFIG } from '@/config/library';
 import { LIBRARY_STYLES } from '@/styles/library.styles';
 import { normalizeBookType } from '@/types/bookType';
+import { LibraryBookSkeleton } from '@/components/ui/book-card-skeleton';
 
 interface CategorizedBookSectionsProps {
   books: (LibraryBook | LandingLibraryBook)[];
   showAllCategories?: boolean;
   maxBooksPerCategory?: number;
   showViewAllLinks?: boolean;
+  isLoading?: boolean;
 }
 
 export const CategorizedBookSections = memo(({
@@ -22,7 +24,21 @@ export const CategorizedBookSections = memo(({
   showAllCategories = LIBRARY_CONFIG.SHOW_ALL_CATEGORIES,
   maxBooksPerCategory,
   showViewAllLinks = LIBRARY_CONFIG.SHOW_VIEW_ALL_LINKS,
+  isLoading = false,
 }: CategorizedBookSectionsProps) => {
+  
+  // Show loading shimmer while fetching
+  if (isLoading) {
+    return (
+      <div className={LIBRARY_STYLES.page.content}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <LibraryBookSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
   
   // Group books by category type
   const booksByCategory = useMemo(() => {

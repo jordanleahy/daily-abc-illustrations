@@ -248,11 +248,61 @@ Deno.serve(async (req) => {
         })()
       : Promise.resolve({ data: new Map(), error: null });
 
-    const [pagesResult, seoResult, popularThumbnailsResult] = await Promise.all([
-      pagesPromise, 
-      seoPromise,
-      popularBookThumbnailsPromise
-    ]);
+    // ⚡ CRITICAL: Fetch library book images in parallel to avoid sequential bottleneck
+    const libraryBookThumbnailsPromise = libraryBookIds.length > 0
+      ? (async () => {
+          console.log('  📚 Fetching cover images for', libraryBookIds.length, 'library books...');
+          
+          const pagesResult = await supabase
+            .from('pages')
+            .select('id, book_id, page_number')
+            .in('book_id', libraryBookIds)
+            .eq('page_type', 'cover');
+          
+          if (!pagesResult.data || pagesResult.data.length === 0) {
+            console.log('  ⚠️ No cover pages found for library books');
+            return { data: new Map(), error: null };
+          }
+          
+          const pageIds = pagesResult.data.map(p => p.id);
+          const imagesResult = await supabase
+            .from('page_image_urls')
+            .select('page_id, image_url')
+            .in('page_id', pageIds)
+            .eq('is_latest', true)
+            .not('image_url', 'is', null);
+          
+          const imageMap = new Map();
+          if (imagesResult.data) {
+            imagesResult.data.forEach(img => {
+              const page = pagesResult.data.find(p => p.id === img.page_id);
+              if (page) {
+                imageMap.set(page.book_id, img.image_url);
+              }
+            });
+          }
+          
+          console.log(`  ✅ Found ${imageMap.size}/${libraryBookIds.length} library book cover images`);
+          return { data: imageMap, error: null };
+        })()
+      : Promise.resolve({ data: new Map(), error: null });
+
+    // Execute all image fetching in parallel with timeout protection
+    const TIMEOUT_MS = 8000; // 8 second timeout (edge functions timeout at 10s)
+    
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error('Operation timed out after 8 seconds')), TIMEOUT_MS)
+    );
+
+    const [pagesResult, seoResult, popularThumbnailsResult, libraryThumbnailsResult] = await Promise.race([
+      Promise.all([
+        pagesPromise, 
+        seoPromise,
+        popularBookThumbnailsPromise,
+        libraryBookThumbnailsPromise
+      ]),
+      timeoutPromise
+    ]) as any;
 
     console.log('✅ Step 2 complete');
 
@@ -299,44 +349,12 @@ Deno.serve(async (req) => {
 
     console.log(`🎨 Popular books with images: ${popularBooksWithImages.filter(b => b.image_url).length}/${popularBooks.length}`);
 
-    // Fetch cover page images for library books
-    let libraryBooksWithImages = libraryBooks;
-    if (libraryBookIds.length > 0) {
-      console.log(`🔄 Fetching cover images for ${libraryBookIds.length} library books`);
-      
-      const pagesResult = await supabase
-        .from('pages')
-        .select('id, book_id, page_number')
-        .in('book_id', libraryBookIds)
-        .eq('page_type', 'cover');
-      
-      if (pagesResult.data && pagesResult.data.length > 0) {
-        const pageIds = pagesResult.data.map(p => p.id);
-        const imagesResult = await supabase
-          .from('page_image_urls')
-          .select('page_id, image_url')
-          .in('page_id', pageIds)
-          .eq('is_latest', true)
-          .not('image_url', 'is', null);
-        
-        if (imagesResult.data) {
-          const imageMap = new Map();
-          imagesResult.data.forEach(img => {
-            const page = pagesResult.data.find(p => p.id === img.page_id);
-            if (page) {
-              imageMap.set(page.book_id, img.image_url);
-            }
-          });
-          
-          libraryBooksWithImages = libraryBooks.map(book => ({
-            ...book,
-            image_url: imageMap.get(book.id) || null
-          }));
-          
-          console.log(`✅ Found ${imageMap.size} cover images for library books`);
-        }
-      }
-    }
+    // Map library book thumbnails using the parallel query results
+    const libraryThumbnailMap = libraryThumbnailsResult.data || new Map();
+    const libraryBooksWithImages = libraryBooks.map(book => ({
+      ...book,
+      image_url: libraryThumbnailMap.get(book.id) || null
+    }));
 
     console.log(`🖼️ Library books with images: ${libraryBooksWithImages.filter(b => b.image_url).length}/${libraryBooksWithImages.length}`);
 

@@ -253,8 +253,15 @@ Deno.serve(async (req) => {
       }
 
       case 'get-channel-videos': {
-        const channelId = url.searchParams.get('channelId');
-        const maxResults = url.searchParams.get('maxResults') || '12';
+        // Support both query params (GET) and body (POST)
+        let channelId = url.searchParams.get('channelId');
+        let maxResults = url.searchParams.get('maxResults') || '12';
+        
+        // If no query params, try to get from body
+        if (!channelId && requestBody) {
+          channelId = requestBody.channelId;
+          maxResults = requestBody.maxResults || '12';
+        }
         
         if (!channelId) {
           throw new Error('Channel ID is required');

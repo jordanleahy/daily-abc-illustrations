@@ -28,15 +28,36 @@ Deno.serve(async (req) => {
       videoId 
     });
 
-    // Verify kid belongs to parent
+    // Verify kid belongs to parent and get coin balance
     const { data: kidProfile, error: kidError } = await supabase
       .from('kid_profiles')
-      .select('parent_user_id')
+      .select('parent_user_id, earned_coins')
       .eq('id', kidProfileId)
       .single();
 
     if (kidError || !kidProfile || kidProfile.parent_user_id !== user.id) {
       throw new Error('Kid profile not found or unauthorized');
+    }
+
+    // Get screen time product to check coin requirement
+    const { data: product } = await supabase
+      .from('kid_rewards_products')
+      .select('coin_price')
+      .eq('parent_user_id', kidProfile.parent_user_id)
+      .eq('title', 'Screen Time')
+      .eq('is_active', true)
+      .single();
+
+    // Option B: Verify user has minimum coins to use screen time
+    if (product && kidProfile.earned_coins < product.coin_price) {
+      console.error('[consume-screen-time] Insufficient coins to unlock screen time');
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Need at least ${product.coin_price} coins to access videos. Current: ${kidProfile.earned_coins}`,
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+      );
     }
 
     // Use atomic RPC function to deduct screen time

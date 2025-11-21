@@ -772,7 +772,10 @@ export default function Books() {
   return (
     <>
       
-      <div className="transition-all duration-300 ease-out">
+      <div className={cn(
+        "transition-all duration-300 ease-out",
+        !isMobile && showEditor && "mr-[400px]"
+      )}>
         <StandardPageLayout title={pageTitle} containerClassName="py-8">
           <div className="space-y-6">
         {/* Header */}
@@ -912,6 +915,46 @@ export default function Books() {
         </div>
       </StandardPageLayout>
 
+      {/* Desktop: Sliding Side Panel Editor */}
+      {!isMobile && (
+        <div
+          className={cn(
+            "fixed right-0 top-[3.5rem] bottom-0 w-[400px] bg-background border-l shadow-lg",
+            "transition-transform duration-300 ease-out overflow-y-auto",
+            showEditor ? "translate-x-0" : "translate-x-full"
+          )}
+        >
+          <BookEditorPanel
+            showEditor={true}
+            isBookCreated={isBookCreated}
+            createdBookId={selectedBookId}
+            currentPageNumber={currentEditorPage}
+            pageCount={pageCount}
+            displayImages={displayImages}
+            editorPageImages={editorPageImages}
+            editorPagePrompts={editorPagePrompts}
+            getCurrentPagePrompt={getCurrentPagePrompt}
+            createBookMutation={{ isSuccess: false } as any}
+            onClose={() => {
+              setShowEditor(false);
+              setSelectedBookId(null);
+            }}
+            onNavigate={handleEditorPageNavigation}
+            onImageUpload={handleEditorImageUpload}
+            onRemoveImage={handleRemoveEditorImage}
+            onCreateBook={() => {}}
+            coverPageId={coverPageId}
+            bookId={selectedBookId}
+            onCoverUpload={handleThumbnailUpload}
+            thumbnailUrl={thumbnailUrl}
+            pageTextOverlays={pageTextOverlays}
+            onUpdatePageText={handleUpdatePageText}
+            onToggleStatus={handleToggleBookStatus}
+            bookStatus={(selectedBook?.status as PublicationStatus) || PublicationStatus.DRAFT}
+          />
+        </div>
+      )}
+
       {/* Mobile: Bottom Sheet Editor */}
       {isMobile && (
         <Sheet 
@@ -960,46 +1003,8 @@ export default function Books() {
         </Sheet>
       )}
 
-      {/* Desktop: Sliding Side Panel Editor */}
-      {!isMobile && (
-        <div
-          className={cn(
-            "fixed right-0 top-[3.5rem] bottom-0 w-[400px] bg-background border-l shadow-lg z-[100]",
-            "transition-transform duration-300 ease-out",
-            showEditor ? "translate-x-0" : "translate-x-full"
-          )}
-        >
-          <BookEditorPanel
-            showEditor={true}
-            isBookCreated={isBookCreated}
-            createdBookId={selectedBookId}
-            currentPageNumber={currentEditorPage}
-            pageCount={pageCount}
-            displayImages={displayImages}
-            editorPageImages={editorPageImages}
-            editorPagePrompts={editorPagePrompts}
-            getCurrentPagePrompt={getCurrentPagePrompt}
-            createBookMutation={{ isSuccess: false } as any}
-            onClose={() => {
-              setShowEditor(false);
-              setSelectedBookId(null);
-            }}
-            onNavigate={handleEditorPageNavigation}
-            onImageUpload={handleEditorImageUpload}
-            onRemoveImage={handleRemoveEditorImage}
-            onCreateBook={() => {}}
-            coverPageId={coverPageId}
-            bookId={selectedBookId}
-            onCoverUpload={handleThumbnailUpload}
-            thumbnailUrl={thumbnailUrl}
-            pageTextOverlays={pageTextOverlays}
-            onUpdatePageText={handleUpdatePageText}
-            onToggleStatus={handleToggleBookStatus}
-            bookStatus={(selectedBook?.status as PublicationStatus) || PublicationStatus.DRAFT}
-          />
-        </div>
-      )}
       </div>
+    
     </>
   );
 }

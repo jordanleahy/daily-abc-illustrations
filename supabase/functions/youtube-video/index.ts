@@ -15,6 +15,50 @@ interface TrackWatchTimeRequest {
   secondsWatched: number;
 }
 
+// Cache helper functions
+async function checkCache(supabaseClient: any, cacheKey: string, cacheType: string) {
+  const { data } = await supabaseClient
+    .from('youtube_cache')
+    .select('data, expires_at')
+    .eq('cache_key', cacheKey)
+    .eq('cache_type', cacheType)
+    .maybeSingle();
+    
+  if (data && new Date(data.expires_at) > new Date()) {
+    console.log(`[CACHE HIT] ${cacheType}:${cacheKey}`);
+    return data.data;
+  }
+  console.log(`[CACHE MISS] ${cacheType}:${cacheKey}`);
+  return null;
+}
+
+async function saveCache(supabaseClient: any, cacheKey: string, cacheType: string, data: any, ttlHours = 24) {
+  const expiresAt = new Date(Date.now() + ttlHours * 60 * 60 * 1000);
+  
+  await supabaseClient
+    .from('youtube_cache')
+    .upsert({
+      cache_key: cacheKey,
+      cache_type: cacheType,
+      data,
+      expires_at: expiresAt.toISOString(),
+      updated_at: new Date().toISOString()
+    });
+    
+  console.log(`[CACHE SAVE] ${cacheType}:${cacheKey} (expires: ${expiresAt.toISOString()})`);
+}
+
+async function getStaleCache(supabaseClient: any, cacheKey: string, cacheType: string) {
+  const { data } = await supabaseClient
+    .from('youtube_cache')
+    .select('data')
+    .eq('cache_key', cacheKey)
+    .eq('cache_type', cacheType)
+    .maybeSingle();
+    
+  return data?.data || null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -58,6 +102,21 @@ Deno.serve(async (req) => {
         
         console.log('Fetching metadata for video:', videoId);
         
+        // Check cache first (TTL: 7 days for video metadata)
+        const cacheKey = `metadata:${videoId}`;
+        const cachedData = await checkCache(supabaseClient, cacheKey, 'video-metadata');
+        
+        if (cachedData) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: cachedData,
+              cached: true,
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
         // Fetch video details from YouTube Data API v3
         const youtubeResponse = await fetch(
           `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${YOUTUBE_API_KEY}`
@@ -66,6 +125,25 @@ Deno.serve(async (req) => {
         if (!youtubeResponse.ok) {
           const errorText = await youtubeResponse.text();
           console.error('YouTube API error:', errorText);
+          
+          // If quota exceeded, try to return stale cache
+          if (errorText.includes('quotaExceeded')) {
+            const staleCache = await getStaleCache(supabaseClient, cacheKey, 'video-metadata');
+            if (staleCache) {
+              console.warn('[QUOTA EXCEEDED] Returning stale cache data');
+              return new Response(
+                JSON.stringify({
+                  success: true,
+                  data: staleCache,
+                  cached: true,
+                  stale: true,
+                  message: 'Using cached data - YouTube quota exceeded'
+                }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+          }
+          
           throw new Error('Failed to fetch video metadata from YouTube');
         }
 
@@ -85,16 +163,21 @@ Deno.serve(async (req) => {
         const seconds = parseInt(durationMatch?.[3] || '0');
         const totalSeconds = hours * 3600 + minutes * 60 + seconds;
 
+        const metadata = {
+          videoId,
+          title: videoData.snippet.title,
+          description: videoData.snippet.description,
+          thumbnailUrl: videoData.snippet.thumbnails.high.url,
+          durationSeconds: totalSeconds,
+        };
+
+        // Save to cache (7 days TTL for video metadata)
+        await saveCache(supabaseClient, cacheKey, 'video-metadata', metadata, 168);
+
       return new Response(
         JSON.stringify({
           success: true,
-          data: {
-            videoId,
-            title: videoData.snippet.title,
-            description: videoData.snippet.description,
-            thumbnailUrl: videoData.snippet.thumbnails.high.url,
-            durationSeconds: totalSeconds,
-          },
+          data: metadata,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -199,6 +282,21 @@ Deno.serve(async (req) => {
 
         console.log('Searching for channels:', searchQuery);
         
+        // Check cache first (TTL: 24 hours for channel searches)
+        const cacheKey = `search:${searchQuery}`;
+        const cachedData = await checkCache(supabaseClient, cacheKey, 'channel-search');
+        
+        if (cachedData) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: cachedData,
+              cached: true,
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
         // Search for channels using YouTube Data API v3
         const searchResponse = await fetch(
           `https://www.googleapis.com/youtube/v3/search?part=snippet&type=channel&q=${encodeURIComponent(searchQuery)}&maxResults=20&key=${YOUTUBE_API_KEY}`
@@ -207,6 +305,25 @@ Deno.serve(async (req) => {
         if (!searchResponse.ok) {
           const errorText = await searchResponse.text();
           console.error('YouTube API search error:', errorText);
+          
+          // If quota exceeded, try to return stale cache
+          if (errorText.includes('quotaExceeded')) {
+            const staleCache = await getStaleCache(supabaseClient, cacheKey, 'channel-search');
+            if (staleCache) {
+              console.warn('[QUOTA EXCEEDED] Returning stale cache data');
+              return new Response(
+                JSON.stringify({
+                  success: true,
+                  data: staleCache,
+                  cached: true,
+                  stale: true,
+                  message: 'Using cached data - YouTube quota exceeded'
+                }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+          }
+          
           throw new Error('Failed to search channels');
         }
 
@@ -243,6 +360,9 @@ Deno.serve(async (req) => {
           videoCount: parseInt(channel.statistics.videoCount || '0'),
         }));
 
+        // Save to cache (24 hours TTL)
+        await saveCache(supabaseClient, cacheKey, 'channel-search', { channels }, 24);
+
         return new Response(
           JSON.stringify({
             success: true,
@@ -269,6 +389,21 @@ Deno.serve(async (req) => {
 
         console.log('Fetching videos for channel:', channelId);
         
+        // Check cache first (TTL: 24 hours for channel videos)
+        const cacheKey = `videos:${channelId}`;
+        const cachedData = await checkCache(supabaseClient, cacheKey, 'channel-videos');
+        
+        if (cachedData) {
+          return new Response(
+            JSON.stringify({
+              success: true,
+              data: cachedData,
+              cached: true,
+            }),
+            { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
+        }
+        
         // Get videos from the channel
         const searchResponse = await fetch(
           `https://www.googleapis.com/youtube/v3/search?part=snippet&channelId=${channelId}&type=video&order=date&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`
@@ -277,6 +412,25 @@ Deno.serve(async (req) => {
         if (!searchResponse.ok) {
           const errorText = await searchResponse.text();
           console.error('YouTube API error:', errorText);
+          
+          // If quota exceeded, try to return stale cache
+          if (errorText.includes('quotaExceeded')) {
+            const staleCache = await getStaleCache(supabaseClient, cacheKey, 'channel-videos');
+            if (staleCache) {
+              console.warn('[QUOTA EXCEEDED] Returning stale cache data');
+              return new Response(
+                JSON.stringify({
+                  success: true,
+                  data: staleCache,
+                  cached: true,
+                  stale: true,
+                  message: 'Using cached data - YouTube quota exceeded'
+                }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+              );
+            }
+          }
+          
           throw new Error('Failed to fetch channel videos');
         }
 
@@ -321,6 +475,9 @@ Deno.serve(async (req) => {
             publishedAt: video.snippet.publishedAt,
           };
         });
+
+        // Save to cache (24 hours TTL)
+        await saveCache(supabaseClient, cacheKey, 'channel-videos', { videos }, 24);
 
         return new Response(
           JSON.stringify({

@@ -77,6 +77,17 @@ export function BookEditorPanel({
 }: BookEditorPanelProps) {
   const navigate = useNavigate();
   const [hasClickedCopy, setHasClickedCopy] = useState(false);
+  
+  // Handle close with context-aware navigation
+  const handleClose = () => {
+    const cameFromMyBooks = window.history.state?.usr?.from === 'my-books';
+    
+    if (cameFromMyBooks) {
+      navigate('/books', { replace: true });
+    } else {
+      onClose();
+    }
+  };
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
@@ -349,7 +360,7 @@ export function BookEditorPanel({
           variant="ghost"
           size="icon"
           type="button"
-          onClick={onClose}
+          onClick={handleClose}
           className="h-8 w-8"
           aria-label="Close review panel"
         >

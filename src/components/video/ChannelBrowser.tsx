@@ -69,10 +69,8 @@ export const ChannelBrowser = ({ onVideoSelect }: ChannelBrowserProps) => {
       return result.data;
     },
     enabled: true,
-    staleTime: 24 * 60 * 60 * 1000, // 24 hours - match server cache for consistency
-    gcTime: 7 * 24 * 60 * 60 * 1000, // 7 days - keep in cache longer
-    refetchOnWindowFocus: false, // Don't refetch when user returns to tab
-    refetchOnReconnect: false, // Don't refetch on reconnect
+    staleTime: 60 * 60 * 1000, // 1 hour - don't refetch for 1 hour
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache for a full day
   });
 
   const handleSearch = (e: React.FormEvent) => {
@@ -177,8 +175,6 @@ export const ChannelBrowser = ({ onVideoSelect }: ChannelBrowserProps) => {
                   src={channel.thumbnailUrl} 
                   alt={channel.title}
                   className="w-full h-full object-cover"
-                  loading="lazy"
-                  decoding="async"
                 />
               </div>
               <CardHeader>

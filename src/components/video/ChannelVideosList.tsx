@@ -10,8 +10,7 @@ import { useKidScreenTime } from "@/hooks/useKidScreenTime";
 import { useConsumeScreenTime } from "@/hooks/useConsumeScreenTime";
 import { useAvailableScreenTime } from "@/hooks/useAvailableScreenTime";
 import { useAutoPurchaseScreenTime } from "@/hooks/useAutoPurchaseScreenTime";
-import { useLastViewedBook } from "@/hooks/useLastViewedBook";
-import { useBookCoverImage } from "@/hooks/useBookCoverImage";
+import { useLastViewedBookWithCover } from "@/hooks/useLastViewedBookWithCover";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useNavigate } from "react-router-dom";
 import { useKidProfiles } from "@/hooks/useKidProfiles";
@@ -78,11 +77,8 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
   const { mutate: consumeScreenTime } = useConsumeScreenTime();
   const { mutate: autoPurchaseScreenTime } = useAutoPurchaseScreenTime();
   
-  // Fetch the last viewed book for this kid
-  const { data: lastViewedBook } = useLastViewedBook(kidId);
-  
-  // Fetch book cover image using the dedicated hook
-  const { data: bookCoverUrl } = useBookCoverImage(lastViewedBook?.id);
+  // Fetch the last viewed book with cover image (single optimized query)
+  const { data: lastViewedBook } = useLastViewedBookWithCover(kidId);
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ['channel-videos', channel.channelId],
@@ -472,19 +468,14 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                         <button
                           onClick={() => {
                             setNoScreenTimeModal(false);
-                            // Navigate to library page if it has a slug, otherwise to the book page
-                            if (lastViewedBook.daily_published_slug) {
-                              navigate(`/library/${lastViewedBook.daily_published_slug}`);
-                            } else {
-                              navigate(`/book/${lastViewedBook.id}`);
-                            }
+                            navigate(`/book/${lastViewedBook.book_id}`);
                           }}
                           className="group"
                         >
-                          {bookCoverUrl ? (
+                          {lastViewedBook.cover_image_url ? (
                             <AspectRatio ratio={1} className="w-32 h-32 rounded-lg overflow-hidden bg-muted shadow-md group-hover:shadow-lg transition-shadow">
                               <img 
-                                src={bookCoverUrl} 
+                                src={lastViewedBook.cover_image_url} 
                                 alt={lastViewedBook.book_name}
                                 className="w-full h-full object-cover"
                               />

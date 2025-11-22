@@ -136,6 +136,13 @@ export type Database = {
             referencedRelation: "books"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "book_categorization_log_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
+          },
         ]
       }
       book_system_prompts: {
@@ -200,6 +207,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_system_prompts_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
           },
         ]
       }
@@ -298,6 +312,13 @@ export type Database = {
             referencedRelation: "books"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "books_reference_book_id_fkey"
+            columns: ["reference_book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
+          },
         ]
       }
       color_palettes: {
@@ -388,6 +409,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "color_palettes_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
+          },
+          {
             foreignKeyName: "color_palettes_style_guide_id_fkey"
             columns: ["style_guide_id"]
             isOneToOne: false
@@ -470,6 +498,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_published_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
           },
         ]
       }
@@ -761,6 +796,13 @@ export type Database = {
             referencedRelation: "books"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "habits_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
+          },
         ]
       }
       kid_profiles: {
@@ -991,6 +1033,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "page_image_urls_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
+          },
+          {
             foreignKeyName: "page_image_urls_page_id_fkey"
             columns: ["page_id"]
             isOneToOne: false
@@ -1034,6 +1083,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_reference_images_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
           },
           {
             foreignKeyName: "page_reference_images_page_id_fkey"
@@ -1244,6 +1300,13 @@ export type Database = {
             referencedRelation: "books"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pages_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
+          },
         ]
       }
       profiles: {
@@ -1404,6 +1467,13 @@ export type Database = {
             referencedRelation: "books"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "seo_metadata_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
+          },
         ]
       }
       user_book_activity: {
@@ -1456,6 +1526,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_book_activity_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
           },
           {
             foreignKeyName: "user_book_activity_daily_published_id_fkey"
@@ -1829,6 +1906,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "word_assessments_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
+          },
+          {
             foreignKeyName: "word_assessments_kid_profile_id_fkey"
             columns: ["kid_profile_id"]
             isOneToOne: false
@@ -1897,6 +1981,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "books"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "word_learning_progress_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
           },
           {
             foreignKeyName: "word_learning_progress_kid_profile_id_fkey"
@@ -2019,6 +2110,33 @@ export type Database = {
             columns: ["book_id"]
             isOneToOne: false
             referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_published_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
+          },
+        ]
+      }
+      kid_last_viewed_book_with_cover: {
+        Row: {
+          book_description: string | null
+          book_id: string | null
+          book_name: string | null
+          cover_image_url: string | null
+          is_library_book: boolean | null
+          kid_id: string | null
+          last_viewed_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_book_activity_kid_id_fkey"
+            columns: ["kid_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
             referencedColumns: ["id"]
           },
         ]

@@ -351,6 +351,22 @@ export function Header({
                     );
                   })}
                   
+                  {/* Admin User Activity Link */}
+                  <AdminOnly>
+                    <Link
+                      to="/admin/user-activity"
+                      onClick={() => setIsSheetOpen(false)}
+                      className={`flex items-center rounded-md px-3 py-2 text-base font-medium transition-all duration-150 active:scale-[0.98] ${
+                        location.pathname === '/admin/user-activity'
+                          ? 'bg-primary/10 text-primary'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted active:bg-muted/80'
+                      }`}
+                    >
+                      <Users className="mr-2 h-4 w-4" />
+                      User Activity
+                    </Link>
+                  </AdminOnly>
+                  
                   {/* User Section */}
                   <button
                     onClick={() => {
@@ -409,6 +425,13 @@ export function Header({
                   <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
                 </div>
                 <DropdownMenuSeparator />
+                <AdminOnly>
+                  <DropdownMenuItem onClick={() => navigate('/admin/user-activity')}>
+                    <Users className="mr-2 h-4 w-4" />
+                    User Activity
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                </AdminOnly>
                 <DropdownMenuItem onClick={() => navigate('/word-progress')}>
                   <Activity className="mr-2 h-4 w-4" />
                   Word Progress

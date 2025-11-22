@@ -43,21 +43,29 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
   }, [autoTrigger, disabled]);
 
   const validateImage = (file: File): string | null => {
-    // Check file type
-    if (!file.type.startsWith('image/')) {
-      return 'Please select an image file';
+    const isImage = file.type.startsWith('image/');
+    const isVideo = file.type.startsWith('video/');
+    
+    if (!isImage && !isVideo) {
+      return 'Please select an image or video file';
     }
 
-    // Check supported formats
-    const supportedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-    if (!supportedTypes.includes(file.type)) {
-      return 'Supported formats: PNG, JPG, WEBP';
+    if (isImage) {
+      const supportedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+      if (!supportedTypes.includes(file.type)) {
+        return 'Supported formats: PNG, JPG, WEBP';
+      }
+      const maxSize = 5 * 1024 * 1024; // 5MB for images
+      if (file.size > maxSize) {
+        return 'Image must be smaller than 5MB';
+      }
     }
 
-    // Check file size (5MB limit)
-    const maxSize = 5 * 1024 * 1024; // 5MB
-    if (file.size > maxSize) {
-      return 'Image must be smaller than 5MB';
+    if (isVideo) {
+      const maxSize = 50 * 1024 * 1024; // 50MB for videos
+      if (file.size > maxSize) {
+        return 'Video must be smaller than 50MB';
+      }
     }
 
     return null;
@@ -79,11 +87,14 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
   const handleFile = async (file: File, isPasted: boolean = false) => {
     const validationError = validateImage(file);
     if (validationError) {
-      console.error('Image validation error:', validationError);
+      console.error('File validation error:', validationError);
       return;
     }
 
-    if (requireSquare) {
+    const isVideo = file.type.startsWith('video/');
+
+    // Skip aspect ratio check for videos
+    if (!isVideo && requireSquare) {
       const isSquare = await checkAspectRatio(file);
       if (!isSquare) {
         console.error('Image must have a 1:1 aspect ratio (square)');
@@ -91,33 +102,36 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
       }
     }
 
-    // Process and compress the image
     setIsProcessing(true);
     try {
-      // Mobile-first optimization: minimal data usage, instant uploads
-      const processingOptions = {
-        maxWidth: 1200,
-        maxHeight: 1200,
-        quality: 0.88,
-        // Optimized for 4G networks: ~100-200KB files, <0.2s upload
-      };
+      if (isVideo) {
+        // For videos, just pass the file directly without processing
+        onImageSelect(file);
+      } else {
+        // Process and compress images
+        const processingOptions = {
+          maxWidth: 1200,
+          maxHeight: 1200,
+          quality: 0.88,
+        };
 
-      const processed = await processImage(file, processingOptions);
+        const processed = await processImage(file, processingOptions);
 
-      // Set preview from processed image
-      setPreview(processed.dataUrl);
+        // Set preview from processed image
+        setPreview(processed.dataUrl);
 
-      // Create a File object from the compressed blob
-      const compressedFile = new File(
-        [processed.blob],
-        file.name.replace(/\.[^.]+$/, '.webp'), // Change extension to webp
-        { type: processed.blob.type }
-      );
+        // Create a File object from the compressed blob
+        const compressedFile = new File(
+          [processed.blob],
+          file.name.replace(/\.[^.]+$/, '.webp'),
+          { type: processed.blob.type }
+        );
 
-      onImageSelect(compressedFile);
+        onImageSelect(compressedFile);
+      }
     } catch (error) {
-      console.error('Image processing error:', error);
-      console.error('Failed to process image. Please try another image.');
+      console.error('File processing error:', error);
+      console.error('Failed to process file. Please try another file.');
     } finally {
       setIsProcessing(false);
     }
@@ -236,7 +250,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png,image/jpeg,image/jpg,image/webp"
+        accept="image/png,image/jpeg,image/jpg,image/webp,video/mp4,video/webm,video/quicktime,video/x-msvideo"
         onChange={handleFileSelect}
         className="hidden"
         disabled={disabled}
@@ -274,9 +288,9 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
           <div className="flex flex-col items-center justify-center text-center space-y-4 h-full">
             <Upload className="w-8 h-8 text-muted-foreground mx-auto" />
             <div className="mx-auto space-y-3">
-              <p className="text-sm font-medium">{requireSquare ? 'Upload 1:1 Image' : 'Upload Image'}</p>
+              <p className="text-sm font-medium">{requireSquare ? 'Upload 1:1 Image' : 'Upload Image or Video'}</p>
               <p className="text-xs text-muted-foreground">
-                Drop or paste your image here
+                Drop or paste your file here
               </p>
               <Button
                 type="button"

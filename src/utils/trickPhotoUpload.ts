@@ -4,11 +4,19 @@ export async function uploadTrickPhoto(file: File, userId: string): Promise<stri
   const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
   const fileName = `${userId}/${Date.now()}.${fileExt}`;
   
+  // Determine content type for videos and images
+  const contentType = file.type || (
+    ['mp4', 'webm', 'mov', 'avi'].includes(fileExt) 
+      ? `video/${fileExt}` 
+      : `image/${fileExt}`
+  );
+  
   const { data, error } = await supabase.storage
     .from('trick-photos')
     .upload(fileName, file, {
       cacheControl: '3600',
       upsert: false,
+      contentType,
     });
 
   if (error) throw error;

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AdminOnly } from '@/components/AdminOnly';
+import { Header } from '@/components/layout/Header';
 import { UserSelector } from '@/components/analytics/UserSelector';
 import { ActivitySummaryCards } from '@/components/analytics/ActivitySummaryCards';
 import { UserActivityTable } from '@/components/analytics/UserActivityTable';
@@ -15,14 +16,8 @@ const AdminUserActivity = () => {
 
   return (
     <AdminOnly>
+      <Header title="User Activity Analytics" showQRCode={false} />
       <div className="container mx-auto py-8 space-y-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-2">User Activity Analytics</h1>
-          <p className="text-muted-foreground">
-            View detailed reading activity for any parent user and their kids
-          </p>
-        </div>
-
         {isLoadingUsers ? (
           <LoadingState text="Loading users..." />
         ) : (

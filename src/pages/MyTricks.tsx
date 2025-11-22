@@ -1,15 +1,21 @@
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { useTrickGoals } from '@/hooks/useTrickGoals';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { TrickProgressCard } from '@/components/tricks/TrickProgressCard';
+import { TrickTrackingCard } from '@/components/tricks/TrickTrackingCard';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { CoinCounter } from '@/components/ui/coin-counter';
 
 export default function MyTricks() {
   const { data: kids } = useKidProfiles();
   const activeKid = kids?.find((k) => k.is_active);
-  const [selectedKidId, setSelectedKidId] = useState<string>(activeKid?.id || '');
+  const [selectedKidId, setSelectedKidId] = useState<string>('');
+  
+  useEffect(() => {
+    if (activeKid && !selectedKidId) {
+      setSelectedKidId(activeKid.id);
+    }
+  }, [activeKid, selectedKidId]);
   
   const { data: goals, isLoading } = useTrickGoals(selectedKidId);
 
@@ -53,7 +59,7 @@ export default function MyTricks() {
         ) : (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {goals.map((goal) => (
-              <TrickProgressCard key={goal.id} goal={goal} />
+              <TrickTrackingCard key={goal.id} goal={goal} />
             ))}
           </div>
         )}

@@ -10,7 +10,8 @@ import { useKidScreenTime } from "@/hooks/useKidScreenTime";
 import { useConsumeScreenTime } from "@/hooks/useConsumeScreenTime";
 import { useAvailableScreenTime } from "@/hooks/useAvailableScreenTime";
 import { useAutoPurchaseScreenTime } from "@/hooks/useAutoPurchaseScreenTime";
-import { useTodayHabits } from "@/hooks/useTodayHabits";
+import { useLastViewedBook } from "@/hooks/useLastViewedBook";
+import { useBookCoverImage } from "@/hooks/useBookCoverImage";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useNavigate } from "react-router-dom";
 import {
@@ -77,57 +78,11 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
   const { mutate: consumeScreenTime } = useConsumeScreenTime();
   const { mutate: autoPurchaseScreenTime } = useAutoPurchaseScreenTime();
   
-  // Fetch today's habits to show pending book reading habits
-  const { data: todayHabits = [] } = useTodayHabits(DUNDUN_KID_ID);
+  // Fetch the last viewed book for this kid
+  const { data: lastViewedBook } = useLastViewedBook(DUNDUN_KID_ID);
   
-  // Find the first pending book habit
-  const pendingBookHabit = todayHabits.find(
-    completion => completion.status === 'pending' && completion.habit_assignments?.habits?.book_id
-  );
-
-  // Fetch book details if there's a pending book habit
-  const { data: recommendedBook } = useQuery({
-    queryKey: ['recommended-book', pendingBookHabit?.habit_assignments?.habits?.book_id],
-    queryFn: async () => {
-      const bookId = pendingBookHabit?.habit_assignments?.habits?.book_id;
-      if (!bookId) return null;
-
-      const { data, error } = await supabase
-        .from('books')
-        .select(`
-          id,
-          book_name,
-          book_description
-        `)
-        .eq('id', bookId)
-        .single();
-
-      if (error) throw error;
-      return data;
-    },
-    enabled: !!pendingBookHabit?.habit_assignments?.habits?.book_id,
-  });
-
-  // Fetch book cover image
-  const { data: bookCoverUrl } = useQuery({
-    queryKey: ['book-cover-url', recommendedBook?.id],
-    queryFn: async () => {
-      if (!recommendedBook?.id) return null;
-
-      const { data, error } = await supabase
-        .from('page_image_urls')
-        .select('image_url, pages!inner(page_type)')
-        .eq('book_id', recommendedBook.id)
-        .eq('is_latest', true)
-        .eq('pages.page_type', 'cover')
-        .not('image_url', 'is', null)
-        .maybeSingle();
-
-      if (error) throw error;
-      return data?.image_url || null;
-    },
-    enabled: !!recommendedBook?.id,
-  });
+  // Fetch book cover image using the dedicated hook
+  const { data: bookCoverUrl } = useBookCoverImage(lastViewedBook?.id);
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ['channel-videos', channel.channelId],
@@ -512,11 +467,11 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                     </div>
 
                     {/* Show Recommended Book Habit */}
-                    {pendingBookHabit && recommendedBook && (
+                    {lastViewedBook && (
                       <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-3">
                         <div className="flex items-center gap-2 text-primary font-semibold">
                           <BookOpen className="h-5 w-5" />
-                          <span>Complete this book to get closer! 🎯</span>
+                          <span>Read this book again to earn coins! 🎯</span>
                         </div>
                         
                         <div className="flex gap-3">
@@ -524,7 +479,7 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                             <AspectRatio ratio={1} className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                               <img 
                                 src={bookCoverUrl} 
-                                alt={recommendedBook.book_name}
+                                alt={lastViewedBook.book_name}
                                 className="w-full h-full object-cover"
                               />
                             </AspectRatio>
@@ -536,10 +491,10 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                           
                           <div className="flex-1 min-w-0">
                             <p className="font-medium text-foreground line-clamp-2 text-sm">
-                              {recommendedBook.book_name}
+                              {lastViewedBook.book_name}
                             </p>
                             <p className="text-xs text-muted-foreground mt-1">
-                              Earn {pendingBookHabit.habit_assignments.habits.coin_amount} coins
+                              Earn coins by reading
                             </p>
                           </div>
                         </div>
@@ -558,7 +513,7 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                       </div>
                     )}
 
-                    {!pendingBookHabit && (
+                    {!lastViewedBook && (
                       <p className="text-sm mt-2">Complete habits to earn more coins!</p>
                     )}
                   </>

@@ -7,6 +7,59 @@ import { Textarea } from '@/components/ui/textarea';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useCreateTrick } from '@/hooks/useCreateTrick';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { Check, ChevronsUpDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
+
+const TRICK_NAMES = [
+  '50-50',
+  'Frontside 50-50',
+  'Frontside 50-50 - BS 180 Out',
+  'Frontside 50-50 - BS 360 Out',
+  'Frontside 50-50 - FS 180 Out',
+  'Frontside 50-50 - FS 360 Out',
+  'Backside 50-50',
+  'Backside 50-50 - BS 180 Out',
+  'Backside 50-50 - BS 360 Out',
+  'Backside 50-50 - FS 180 Out',
+  'Backside 50-50 - FS 360 Out',
+  'Frontside Nose Press',
+  'Frontside Nose Press - BS 180 OUT',
+  'Frontside Nose Press - FS 180 OUT',
+  'Backside Nose Press',
+  'Backside Nose Press  BS 180 OUT',
+  'Backside Nose Press  FS 180 OUT',
+  'Frontside Tail Press',
+  'Frontside Tail Press  BS 180 OUT',
+  'Frontside Tail Press   FS 180 OUT',
+  'Backside Tail Press',
+  'Backside Tail Press BS 180 OUT',
+  'Backside Tail Press FS 180 OUT',
+  'Front Board',
+  'Front Board - Pretzel Out',
+  'Front Board - Fakie Out',
+  'Boardslide',
+  'Boardslide - Fake out',
+  'Front Lip',
+  'Front Lip - Prezel out',
+  'Front Lip - Revert Out',
+  'Back Lip',
+  'Back Lip - Prezel out',
+  'Back Lip -  Revert Out',
+  'Frontside Noseslide',
+  'Frontside Noseslide -  Pretzel Out',
+  'Backside Noseslide',
+  'Backside Noseslide -  Pretzel Out',
+  'Frontside Tailpress',
+  'Frontside Tailpress - BS 180 Out',
+  'Frontside Tailpress - FS 180 Out',
+  'Backside Tailpress',
+  'Backside Tailpress - BS 180 Out',
+  'Backside Tailpress - FS 180 Out',
+  'Front Blunt',
+  'Back Blunt',
+];
 
 interface CreateTrickModalProps {
   open: boolean;
@@ -21,6 +74,7 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
   const [description, setDescription] = useState('');
   const [pointsPerCompletion, setPointsPerCompletion] = useState(1);
   const [selectedKids, setSelectedKids] = useState<Record<string, { selected: boolean; targetCount: number }>>({});
+  const [comboboxOpen, setComboboxOpen] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +103,7 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
           setDescription('');
           setPointsPerCompletion(1);
           setSelectedKids({});
+          setComboboxOpen(false);
           onOpenChange(false);
         },
       }
@@ -84,13 +139,47 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <Label htmlFor="name">Trick Name</Label>
-            <Input
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., Cartwheel"
-              required
-            />
+            <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={comboboxOpen}
+                  className="w-full justify-between"
+                >
+                  {name || "Select trick..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0 pointer-events-auto" align="start">
+                <Command>
+                  <CommandInput placeholder="Search tricks..." />
+                  <CommandList>
+                    <CommandEmpty>No trick found.</CommandEmpty>
+                    <CommandGroup>
+                      {TRICK_NAMES.map((trick) => (
+                        <CommandItem
+                          key={trick}
+                          value={trick}
+                          onSelect={(currentValue) => {
+                            setName(currentValue === name ? '' : currentValue);
+                            setComboboxOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              name === trick ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                          {trick}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
           </div>
 
           <div>

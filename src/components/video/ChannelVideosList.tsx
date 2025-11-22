@@ -468,7 +468,18 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                         <button
                           onClick={() => {
                             setNoScreenTimeModal(false);
-                            navigate(`/book/${lastViewedBook.book_id}`);
+                            
+                            if (!lastViewedBook?.book_id) {
+                              navigate('/library');
+                              return;
+                            }
+                            
+                            // Route based on book type
+                            if (lastViewedBook.is_library_book) {
+                              navigate(`/library/${lastViewedBook.book_id}`);
+                            } else {
+                              navigate(`/books/${lastViewedBook.book_id}/read`);
+                            }
                           }}
                           className="group"
                         >
@@ -490,7 +501,20 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                     )}
 
                     {!lastViewedBook && (
-                      <p className="text-sm mt-2">Complete habits to earn more coins!</p>
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground mb-3">
+                          Complete habits to earn more coins!
+                        </p>
+                        <Button 
+                          onClick={() => {
+                            setNoScreenTimeModal(false);
+                            navigate('/library');
+                          }} 
+                          className="w-full"
+                        >
+                          Browse Library
+                        </Button>
+                      </div>
                     )}
                   </>
                 ) : (

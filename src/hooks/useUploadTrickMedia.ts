@@ -29,6 +29,7 @@ export function useUploadTrickMedia() {
           parent_user_id: user.id,
           media_url: mediaUrl,
           media_type: mediaType,
+          captured_at: data.captured_at?.toISOString() || null,
           location_latitude: data.location?.latitude || null,
           location_longitude: data.location?.longitude || null,
           location_accuracy: data.location?.accuracy || null,

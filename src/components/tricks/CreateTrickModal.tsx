@@ -85,6 +85,15 @@ const TYPES = [
 interface CreateTrickModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editTrick?: Trick | null;
+}
+
+interface Trick {
+  id: string;
+  name: string;
+  description: string | null;
+  photo_url: string | null;
+  points_per_completion: number;
 }
 
 export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) {

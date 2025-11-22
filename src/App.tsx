@@ -159,9 +159,12 @@ const App = () => {
                 <Route path="/rewards/manage" element={<ProtectedRoute requireFeature="habits_rewards"><RewardsManage /></ProtectedRoute>} />
                 <Route path="/habits/manage" element={<ProtectedRoute requireFeature="habits_rewards"><HabitsManage /></ProtectedRoute>} />
                 <Route path="/my-habits" element={<ProtectedRoute requireFeature="habits_rewards"><MyHabits /></ProtectedRoute>} />
+                
+                {/* Tricks routes - Plus tier only */}
                 <Route path="/tricks/manage" element={<ProtectedRoute requireFeature="habits_rewards"><TricksManage /></ProtectedRoute>} />
                 <Route path="/my-tricks" element={<ProtectedRoute requireFeature="habits_rewards"><MyTricks /></ProtectedRoute>} />
-               <Route path="/videos" element={<ProtectedRoute requireRole="admin"><Videos /></ProtectedRoute>} />
+                
+                <Route path="/videos" element={<ProtectedRoute requireRole="admin"><Videos /></ProtectedRoute>} />
                <Route path="/admin/user-activity" element={<ProtectedRoute requireRole="admin"><AdminUserActivity /></ProtectedRoute>} />
                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/word-progress" element={<ProtectedRoute><WordProgress /></ProtectedRoute>} />

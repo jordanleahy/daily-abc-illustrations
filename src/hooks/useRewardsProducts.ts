@@ -21,9 +21,8 @@ export const useRewardsProducts = () => {
       return data as RewardsProduct[];
     },
     enabled: !!user?.id,
-    staleTime: 60 * 60 * 1000, // 1 hour - instant loading for returning users
-    gcTime: 24 * 60 * 60 * 1000, // 24 hours - keep in cache for full day
-    refetchOnMount: false, // Use cached data for returning users
-    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    staleTime: 0, // Always fetch fresh data to ensure is_system_product is loaded
+    refetchOnMount: true, // Fetch on mount to get latest data
+    refetchOnWindowFocus: false,
   });
 };

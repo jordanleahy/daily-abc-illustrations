@@ -4,6 +4,7 @@ import { Progress } from '@/components/ui/progress';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { TrickGoalWithDetails } from '@/types/trick';
 import { useAddTrickCompletion } from '@/hooks/useAddTrickCompletion';
+import { useTrickMediaUploads } from '@/hooks/useTrickMediaUploads';
 import { cn } from '@/lib/utils';
 import { TrickMediaUploadButton } from './TrickMediaUploadButton';
 
@@ -13,8 +14,12 @@ interface TrickTrackingCardProps {
 
 export function TrickTrackingCard({ goal }: TrickTrackingCardProps) {
   const addCompletion = useAddTrickCompletion();
+  const { data: mediaUploads } = useTrickMediaUploads(goal.trick_id, goal.kid_profile_id);
   const progressPercentage = (goal.current_count / goal.target_count) * 100;
   const isCompleted = goal.current_count >= goal.target_count;
+  
+  // Use first uploaded media or fallback to trick photo
+  const displayImage = mediaUploads?.[0]?.media_url || goal.tricks?.photo_url;
 
   const handleSuccess = () => {
     addCompletion.mutate({
@@ -37,11 +42,11 @@ export function TrickTrackingCard({ goal }: TrickTrackingCardProps) {
       'transition-all',
       isCompleted && 'border-primary bg-primary/5'
     )}>
-      {goal.tricks?.photo_url && (
+      {displayImage && (
         <div className="w-full h-48 overflow-hidden rounded-t-lg">
           <img 
-            src={goal.tricks.photo_url} 
-            alt={goal.tricks.name}
+            src={displayImage} 
+            alt={goal.tricks?.name}
             className="w-full h-full object-cover"
           />
         </div>

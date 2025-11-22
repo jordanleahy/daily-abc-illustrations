@@ -38,6 +38,8 @@ import NotFound from "./pages/NotFound";
 import { GA4Tracker } from "./components/GA4Tracker";
 import HabitsManage from "./pages/HabitsManage";
 import MyHabits from "./pages/MyHabits";
+import TricksManage from "./pages/TricksManage";
+import MyTricks from "./pages/MyTricks";
 import Profile from "./pages/Profile";
 import WordProgress from "./pages/WordProgress";
 import AdminCategorizeBooks from "./pages/AdminCategorizeBooks";
@@ -157,6 +159,8 @@ const App = () => {
                 <Route path="/rewards/manage" element={<ProtectedRoute requireFeature="habits_rewards"><RewardsManage /></ProtectedRoute>} />
                 <Route path="/habits/manage" element={<ProtectedRoute requireFeature="habits_rewards"><HabitsManage /></ProtectedRoute>} />
                 <Route path="/my-habits" element={<ProtectedRoute requireFeature="habits_rewards"><MyHabits /></ProtectedRoute>} />
+                <Route path="/tricks/manage" element={<ProtectedRoute requireFeature="habits_rewards"><TricksManage /></ProtectedRoute>} />
+                <Route path="/my-tricks" element={<ProtectedRoute requireFeature="habits_rewards"><MyTricks /></ProtectedRoute>} />
                <Route path="/videos" element={<ProtectedRoute requireRole="admin"><Videos /></ProtectedRoute>} />
                <Route path="/admin/user-activity" element={<ProtectedRoute requireRole="admin"><AdminUserActivity /></ProtectedRoute>} />
                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />

@@ -1,0 +1,78 @@
+/**
+ * Trick type definitions for cumulative progress tracking
+ */
+
+export interface Trick {
+  id: string;
+  parent_user_id: string;
+  name: string;
+  description: string | null;
+  photo_url: string | null;
+  points_per_completion: number;
+  is_active: boolean;
+  display_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TrickGoal {
+  id: string;
+  trick_id: string;
+  kid_profile_id: string;
+  parent_user_id: string;
+  target_count: number;
+  current_count: number;
+  is_active: boolean;
+  goal_started_at: string;
+  goal_completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TrickGoalWithDetails extends TrickGoal {
+  tricks?: Trick;
+  kid_profiles?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    profile_image_url: string | null;
+    earned_coins: number;
+  };
+}
+
+export interface TrickCompletion {
+  id: string;
+  trick_goal_id: string;
+  kid_profile_id: string;
+  parent_user_id: string;
+  count_increment: number;
+  points_awarded: number;
+  completed_at: string;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface NewTrick {
+  name: string;
+  description?: string;
+  photo_url?: string;
+  points_per_completion: number;
+  assigned_kids: {
+    kid_profile_id: string;
+    target_count: number;
+  }[];
+}
+
+export interface UpdateTrickData {
+  trickId: string;
+  name?: string;
+  description?: string;
+  photo_url?: string;
+  points_per_completion?: number;
+}
+
+export interface AddTrickCompletionParams {
+  goalId: string;
+  count_increment: number;
+  notes?: string;
+}

@@ -41,11 +41,11 @@ export const BOOK_TYPES = [
     id: 'numbers',
     label: 'Numbers Book',
     icon: Hash,
-    description: 'Counting and number recognition (1-10 or 1-20)',
-    prompt: 'I want to create a numbers book for toddlers that teaches counting and number recognition. Include fun counting activities and clear number illustrations. IMPORTANT: Page titles must use numeric digits (1, 2, 3, 4...) NOT written words (one, two, three...). For example: "1 apple", "2 birds", "3 cars".',
+    description: 'Counting and number recognition (any 10-number range)',
+    prompt: 'I want to create a numbers book that teaches counting and number recognition. Include fun counting activities and clear number illustrations. IMPORTANT: Page titles must use numeric digits (1, 2, 3, 4...) NOT written words (one, two, three...). For example: "1 apple", "2 birds", "3 cars".',
     color: 'text-green-500',
     needsClarification: true,
-    clarificationContext: 'Ask about number range preference: 1-10 (for toddlers), 1-20 (for preschoolers), or custom range. Also consider counting style like simple counting, skip counting, or number families. Provide 3-4 specific suggestions with a custom option.'
+    clarificationContext: 'Ask about number range preference. The book will have exactly 10 pages covering any consecutive 10-number range. Popular options: 1-10 (for toddlers learning first numbers), 11-20 (for building on basics), 10-20 (for tens place practice), or any custom 10-number range like 30-40, 60-70. Also consider counting style: simple counting, skip counting (2s, 5s, 10s), or number families. Provide these specific examples and emphasize custom ranges are welcome.'
   },
   {
     id: 'shapes',

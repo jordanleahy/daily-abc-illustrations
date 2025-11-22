@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
-import { normalizeBookType, normalizeAgeRange, ValidBookType, ValidAgeRange } from '../_shared/types.ts';
+import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange } from '../_shared/types.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -354,7 +354,11 @@ Analyze the conversation for:
 1. Content type selected (ABC, Numbers, Shapes, Animals, Sight Words, etc.)
 2. Number of pages requested (5, 10, 15, 20, custom, or "let agent decide")
 3. Letter case preference (for ABC content: lowercase, uppercase, both)
-4. Number range and counting style (for Numbers content: 1-10, 1-20, simple, skip-counting)
+4. Number range and counting style (for Numbers content):
+   - Range can be ANY consecutive 10 integers (e.g., "1-10", "11-20", "30-40", "60-70")
+   - Always format as "start-end" (e.g., "10-20", not "10 to 20")
+   - Examples: "1-10" (basic), "10-20" (tens practice), "30-40" (higher numbers)
+   - Counting style: simple, skip-counting, number-families
 5. Shape complexity and theme (for Shapes content)
 6. Animal category and focus (for Animals content)
 7. Reading level (for Sight Words content)
@@ -373,7 +377,7 @@ Return ONLY a JSON object with this structure (no markdown, no code blocks):
     "pageCount": <number or null>,
     "targetAge": "toddler|preschool|early-reader",
     "letterCase": "lowercase|uppercase|both (for ABC content)",
-    "numberRange": "1-10|1-20|1-100 (for Numbers content)",
+    "numberRange": "start-end format covering exactly 10 integers (for Numbers content, e.g., '1-10', '10-20', '30-40', '60-70')",
     "countingStyle": "simple|skip-counting|number-families (for Numbers content)",
     "shapeComplexity": "basic|2d-and-3d|advanced (for Shapes content)",
     "shapeTheme": "nature|everyday-objects (for Shapes content)",
@@ -576,7 +580,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       pageCount: bookData.pages.length,
       targetAge: normalizeAgeRange(metadata.targetAge) || targetAge,
       letterCase: metadata.letterCase || bookData.letterCase,
-      numberRange: metadata.numberRange,
+      numberRange: validateNumberRange(metadata.numberRange),
       countingStyle: metadata.countingStyle,
       shapeComplexity: metadata.shapeComplexity,
       shapeTheme: metadata.shapeTheme,

@@ -61,6 +61,16 @@ const TRICK_NAMES = [
   'Back Blunt',
 ];
 
+const FEATURE_ANGLES = [
+  'Flat',
+  'Down',
+  'Up',
+  'Down Flat Down',
+  'Up Down',
+  'Flat, Down, Flat Down',
+  'Down Flat Down Rail',
+];
+
 interface CreateTrickModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -71,10 +81,13 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
   const createTrick = useCreateTrick();
 
   const [name, setName] = useState('');
+  const [featureAngle, setFeatureAngle] = useState('');
   const [description, setDescription] = useState('');
   const [pointsPerCompletion, setPointsPerCompletion] = useState(1);
   const [selectedKids, setSelectedKids] = useState<Record<string, { selected: boolean; targetCount: number }>>({});
   const [comboboxOpen, setComboboxOpen] = useState(false);
+  const [featureAngleOpen, setFeatureAngleOpen] = useState(false);
+  const [customFeatureAngle, setCustomFeatureAngle] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,17 +106,20 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
     createTrick.mutate(
       {
         name,
-        description,
+        description: `${featureAngle ? `Feature Angle: ${featureAngle}\n` : ''}${description}`,
         points_per_completion: pointsPerCompletion,
         assigned_kids: assignedKids,
       },
       {
         onSuccess: () => {
           setName('');
+          setFeatureAngle('');
           setDescription('');
           setPointsPerCompletion(1);
           setSelectedKids({});
           setComboboxOpen(false);
+          setFeatureAngleOpen(false);
+          setCustomFeatureAngle('');
           onOpenChange(false);
         },
       }
@@ -173,6 +189,70 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
                             )}
                           />
                           {trick}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div>
+            <Label htmlFor="featureAngle">Feature Angle</Label>
+            <Popover open={featureAngleOpen} onOpenChange={setFeatureAngleOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={featureAngleOpen}
+                  className="w-full justify-between"
+                >
+                  {featureAngle || "Select feature angle..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0 pointer-events-auto" align="start">
+                <Command>
+                  <CommandInput 
+                    placeholder="Search or type custom..." 
+                    value={customFeatureAngle}
+                    onValueChange={setCustomFeatureAngle}
+                  />
+                  <CommandList>
+                    <CommandEmpty>
+                      <Button
+                        variant="ghost"
+                        className="w-full"
+                        onClick={() => {
+                          if (customFeatureAngle.trim()) {
+                            setFeatureAngle(customFeatureAngle.trim());
+                            setFeatureAngleOpen(false);
+                            setCustomFeatureAngle('');
+                          }
+                        }}
+                      >
+                        Add "{customFeatureAngle}"
+                      </Button>
+                    </CommandEmpty>
+                    <CommandGroup>
+                      {FEATURE_ANGLES.map((angle) => (
+                        <CommandItem
+                          key={angle}
+                          value={angle}
+                          onSelect={(currentValue) => {
+                            setFeatureAngle(currentValue === featureAngle ? '' : currentValue);
+                            setFeatureAngleOpen(false);
+                            setCustomFeatureAngle('');
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              featureAngle === angle ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                          {angle}
                         </CommandItem>
                       ))}
                     </CommandGroup>

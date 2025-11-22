@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { BookImage } from '@/components/ui/book-image';
 import { Badge } from '@/components/ui/badge';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { trackBookView } from '@/utils/bookViewTracking';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
@@ -23,6 +24,7 @@ interface LibraryBookCardProps {
 export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }: LibraryBookCardProps) => {
   const navigate = useNavigate();
   const { user } = useAuthContext();
+  const { data: kidProfiles = [] } = useKidProfiles();
   const { hasActiveSubscription } = useSubscription();
   const { ref: cardRef, inView: isInView } = useIntersectionObserver({
     threshold: LIBRARY_CONFIG.INTERSECTION_THRESHOLD,
@@ -44,7 +46,8 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
       return;
     }
     
-    trackBookView(book.id);
+    const kidId = kidProfiles.length > 0 ? kidProfiles[0].id : undefined;
+    trackBookView(book.id, kidId);
     navigate(LIBRARY_ROUTES.BOOK_DETAIL(book.id));
   };
 

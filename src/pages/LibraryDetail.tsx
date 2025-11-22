@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { StandardPageLayout } from '@/components/layout';
 import { useLibraryBookByIdDecoupled } from '@/hooks/useLibraryBookByIdDecoupled';
 import { useLibraryBookPagesDecoupled } from '@/hooks/useLibraryBookPagesDecoupled';
@@ -85,6 +86,7 @@ function LazyLibraryCard({
 export default function LibraryDetail() {
   const { bookId } = useParams<{ bookId: string }>();
   const { user } = useAuthContext();
+  const { data: kidProfiles = [] } = useKidProfiles();
   const navigate = useNavigate();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
@@ -103,13 +105,14 @@ export default function LibraryDetail() {
     }
   }, [user, navigate]);
 
-  // Track book view for cache management and database
+  // Track book view for cache management and database with kid_id for personalized recommendations
   useEffect(() => {
     if (book?.id && user) {
-      trackBookView(book.id);
+      const kidId = kidProfiles.length > 0 ? kidProfiles[0].id : undefined;
+      trackBookView(book.id, kidId);
       trackBookViewForCache(book.id);
     }
-  }, [book?.id, user]);
+  }, [book?.id, user, kidProfiles]);
 
   const metaTitle = book?.book_name || 'Library Book';
   const metaDescription = book?.book_description || 'View this educational ABC book';

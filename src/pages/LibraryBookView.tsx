@@ -18,6 +18,7 @@ import { useLibraryBookPagesDecoupled } from '@/hooks/useLibraryBookPagesDecoupl
 import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { useLibraryBookImagePreloader } from '@/hooks/useLibraryBookImagePreloader';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { trackBookView } from '@/utils/bookViewTracking';
 import { Card } from '@/components/ui/card';
 import { BookImage } from '@/components/ui/book-image';
@@ -32,6 +33,7 @@ export default function LibraryBookView() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuthContext();
+  const { data: kidProfiles = [] } = useKidProfiles();
   const safeBookId = bookId && isValidUUID(bookId) ? bookId : undefined;
   
   const { data: book, isLoading: isLoadingBook, error: bookError } = useLibraryBookByIdDecoupled(safeBookId);
@@ -41,12 +43,13 @@ export default function LibraryBookView() {
   // Preload library images with optimization and caching
   useLibraryBookImagePreloader(safeBookId, pages);
   
-  // Track book view when page loads
+  // Track book view when page loads with kid_id for personalized recommendations
   useEffect(() => {
     if (book?.id && user) {
-      trackBookView(book.id);
+      const kidId = kidProfiles.length > 0 ? kidProfiles[0].id : undefined;
+      trackBookView(book.id, kidId);
     }
-  }, [book?.id, user]);
+  }, [book?.id, user, kidProfiles]);
   
   // Get starting page index from location state
   const startingPageIndex = location.state?.startingPageIndex ?? 0;

@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface UserWithActivity {
@@ -27,6 +28,32 @@ export interface UserReadingActivity {
 }
 
 export const useAllUsersWithActivity = () => {
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for user activity updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('user-activity-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_book_activity',
+        },
+        () => {
+          // Invalidate queries when any reading progress is updated
+          queryClient.invalidateQueries({ queryKey: ['users-with-activity'] });
+          queryClient.invalidateQueries({ queryKey: ['user-reading-activity'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: ['users-with-activity'],
     queryFn: async () => {
@@ -40,6 +67,35 @@ export const useAllUsersWithActivity = () => {
 };
 
 export const useUserReadingActivity = (userId: string | null) => {
+  const queryClient = useQueryClient();
+
+  // Real-time subscription for specific user's reading activity
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`user-${userId}-reading-activity`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_book_activity',
+          filter: `user_id=eq.${userId}`,
+        },
+        () => {
+          // Invalidate this user's reading activity when their progress updates
+          queryClient.invalidateQueries({ queryKey: ['user-reading-activity', userId] });
+          queryClient.invalidateQueries({ queryKey: ['users-with-activity'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, queryClient]);
+
   return useQuery({
     queryKey: ['user-reading-activity', userId],
     queryFn: async () => {

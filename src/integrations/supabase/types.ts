@@ -2199,6 +2199,10 @@ export type Database = {
       is_book_published: { Args: { book_id: string }; Returns: boolean }
       process_enhanced_daily_publishing: { Args: never; Returns: Json }
       process_simple_daily_publishing: { Args: never; Returns: Json }
+      seed_screen_time_product: {
+        Args: { p_parent_user_id: string }
+        Returns: Json
+      }
       seed_user_habits: { Args: { p_parent_user_id: string }; Returns: Json }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }

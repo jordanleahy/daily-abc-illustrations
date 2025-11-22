@@ -42,7 +42,7 @@ export const BOOK_TYPES = [
     label: 'Numbers Book',
     icon: Hash,
     description: 'Counting and number recognition (1-10 or 1-20)',
-    prompt: 'I want to create a numbers book for toddlers that teaches counting and number recognition. Include fun counting activities and clear number illustrations.',
+    prompt: 'I want to create a numbers book for toddlers that teaches counting and number recognition. Include fun counting activities and clear number illustrations. IMPORTANT: Page titles must use numeric digits (1, 2, 3, 4...) NOT written words (one, two, three...). For example: "1 apple", "2 birds", "3 cars".',
     color: 'text-green-500',
     needsClarification: true,
     clarificationContext: 'Ask about number range preference: 1-10 (for toddlers), 1-20 (for preschoolers), or custom range. Also consider counting style like simple counting, skip counting, or number families. Provide 3-4 specific suggestions with a custom option.'

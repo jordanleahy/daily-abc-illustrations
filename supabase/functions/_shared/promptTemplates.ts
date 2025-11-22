@@ -81,6 +81,11 @@ interface BookContext {
   characterTheme?: string;
   targetAge?: string;
   bookType?: string;
+  metadata?: {
+    countingObject?: string; // For numbers books: specific object being counted (e.g., "apple", "balloon")
+    color?: string; // For colors books: specific color
+    [key: string]: any;
+  };
 }
 
 interface PageContext {
@@ -89,6 +94,10 @@ interface PageContext {
   title: string;
   description: string;
   mainConcept?: string;
+  content?: {
+    color?: string;
+    [key: string]: any;
+  };
 }
 
 /**
@@ -484,8 +493,11 @@ function generateNumbersPagePromptLayered(
   const numberMatch = page.title?.match(/\d+/) || page.description?.match(/\d+/);
   const number = numberMatch ? numberMatch[0] : '1';
   
-  // LAYER 1: Scene Description
-  let sceneDescription = `Educational illustration for number ${number}. ${page.description}. CRITICAL: Show exactly ${number} items/objects clearly visible and countable. Arrange items in a pattern that makes counting easy and obvious.`;
+  // Extract the specific counting object from metadata (preferred) or description
+  const countingObject = book.metadata?.countingObject || extractObjectFromDescription(page.description);
+  
+  // LAYER 1: Scene Description with specific object enforcement
+  let sceneDescription = `Educational illustration for number ${number}. CRITICAL: Show exactly ${number} ${countingObject} (use ONLY ${countingObject}, not mixed objects). ${page.description}. Arrange the ${number} ${countingObject} in a pattern that makes counting easy and obvious. ALL items must be ${countingObject} - maintain consistency.`;
   
   if (!textOverlayEnabled) {
     sceneDescription += ' CRITICAL: Generate illustration WITHOUT any text, numbers, or numerals. No visible text of any kind - pure visual counting exercise. Text will be added as overlay later.';
@@ -504,6 +516,25 @@ function generateNumbersPagePromptLayered(
   
   // Fallback to original function
   return generateNumbersPagePrompt(book, page, textOverlayEnabled);
+}
+
+/**
+ * Extract specific object from description (fallback if not in metadata)
+ */
+function extractObjectFromDescription(description: string): string {
+  // Common countable objects - prioritize specific over generic
+  const specificObjects = ['apple', 'balloon', 'ball', 'star', 'flower', 'button', 'car', 'tree', 'block', 'toy', 'fish', 'bird', 'cat', 'dog', 'hat', 'shoe', 'book', 'cup', 'pencil', 'crayon', 'cookie', 'banana', 'orange', 'strawberry'];
+  const lowerDesc = description.toLowerCase();
+  
+  for (const obj of specificObjects) {
+    if (lowerDesc.includes(obj)) {
+      // Return plural form for consistency
+      return obj.endsWith('s') ? obj : obj + 's';
+    }
+  }
+  
+  // Fallback to "items" if no specific object found
+  return 'items';
 }
 
 /**

@@ -44,6 +44,8 @@ export function useUploadTrickMedia() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['trick-media-uploads'] });
+      queryClient.invalidateQueries({ queryKey: ['tricks'] });
+      queryClient.invalidateQueries({ queryKey: ['trick-goals'] });
       toast.success('Media uploaded successfully!');
     },
     onError: (error) => {

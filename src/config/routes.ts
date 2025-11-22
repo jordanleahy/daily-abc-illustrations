@@ -1,4 +1,4 @@
-import { LucideIcon, Home, BookOpen, Book, MessageSquare, Gift, Calendar, Users, Search, Video, BarChart } from 'lucide-react';
+import { LucideIcon, Home, BookOpen, Book, MessageSquare, Gift, Calendar, Users, Search, Video, BarChart, Target } from 'lucide-react';
 import { NavigateFunction } from 'react-router-dom';
 
 /**
@@ -44,6 +44,8 @@ export const ROUTES = {
   GOOGLE_CHAT: '/google-chat',
   REWARDS: '/rewards',
   MANAGE_HABITS: '/habits/manage',
+  MANAGE_TRICKS: '/tricks/manage',
+  MY_TRICKS: '/my-tricks',
   VIDEOS: '/videos',
   AGENTS: '/agents',
   DAILY_PUB_SCHEDULE: '/daily-published-schedule',
@@ -119,6 +121,14 @@ export const navigationConfig: RouteConfig[] = [
     path: ROUTES.MANAGE_HABITS,
     name: 'Manage Habits',
     icon: Calendar,
+    group: 'rewards',
+    permission: { feature: 'habits_rewards' },
+    activeMatch: { startsWith: true },
+  },
+  {
+    path: ROUTES.MANAGE_TRICKS,
+    name: 'Manage Tricks',
+    icon: Target,
     group: 'rewards',
     permission: { feature: 'habits_rewards' },
     activeMatch: { startsWith: true },

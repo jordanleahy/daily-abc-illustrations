@@ -1476,6 +1476,153 @@ export type Database = {
           },
         ]
       }
+      trick_completions: {
+        Row: {
+          completed_at: string
+          count_increment: number
+          created_at: string
+          id: string
+          kid_profile_id: string
+          notes: string | null
+          parent_user_id: string
+          points_awarded: number
+          trick_goal_id: string
+        }
+        Insert: {
+          completed_at?: string
+          count_increment?: number
+          created_at?: string
+          id?: string
+          kid_profile_id: string
+          notes?: string | null
+          parent_user_id: string
+          points_awarded: number
+          trick_goal_id: string
+        }
+        Update: {
+          completed_at?: string
+          count_increment?: number
+          created_at?: string
+          id?: string
+          kid_profile_id?: string
+          notes?: string | null
+          parent_user_id?: string
+          points_awarded?: number
+          trick_goal_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trick_completions_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trick_completions_trick_goal_id_fkey"
+            columns: ["trick_goal_id"]
+            isOneToOne: false
+            referencedRelation: "trick_goals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      trick_goals: {
+        Row: {
+          created_at: string
+          current_count: number
+          goal_completed_at: string | null
+          goal_started_at: string
+          id: string
+          is_active: boolean
+          kid_profile_id: string
+          parent_user_id: string
+          target_count: number
+          trick_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_count?: number
+          goal_completed_at?: string | null
+          goal_started_at?: string
+          id?: string
+          is_active?: boolean
+          kid_profile_id: string
+          parent_user_id: string
+          target_count: number
+          trick_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_count?: number
+          goal_completed_at?: string | null
+          goal_started_at?: string
+          id?: string
+          is_active?: boolean
+          kid_profile_id?: string
+          parent_user_id?: string
+          target_count?: number
+          trick_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trick_goals_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trick_goals_trick_id_fkey"
+            columns: ["trick_id"]
+            isOneToOne: false
+            referencedRelation: "tricks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tricks: {
+        Row: {
+          created_at: string
+          description: string | null
+          display_order: number
+          id: string
+          is_active: boolean
+          name: string
+          parent_user_id: string
+          photo_url: string | null
+          points_per_completion: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name: string
+          parent_user_id: string
+          photo_url?: string | null
+          points_per_completion?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          display_order?: number
+          id?: string
+          is_active?: boolean
+          name?: string
+          parent_user_id?: string
+          photo_url?: string | null
+          points_per_completion?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_book_activity: {
         Row: {
           book_id: string | null
@@ -2163,6 +2310,10 @@ export type Database = {
         Returns: Json
       }
       create_scheduled_habit_completions: { Args: never; Returns: Json }
+      create_trick_completion_unified: {
+        Args: { p_count_increment: number; p_goal_id: string; p_notes?: string }
+        Returns: Json
+      }
       decrement_kid_coins: {
         Args: { p_amount: number; p_kid_id: string }
         Returns: undefined

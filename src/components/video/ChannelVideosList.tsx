@@ -14,6 +14,7 @@ import { useLastViewedBook } from "@/hooks/useLastViewedBook";
 import { useBookCoverImage } from "@/hooks/useBookCoverImage";
 import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useNavigate } from "react-router-dom";
+import { useKidProfiles } from "@/hooks/useKidProfiles";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,11 +48,10 @@ interface ChannelVideosListProps {
   onVideoSelect?: (video: Video) => void;
 }
 
-// TODO: Replace with actual kid ID from context/state management
-const DUNDUN_KID_ID = '1e6996b6-5e1d-450b-b875-d03e58a1da09'; // DanDan's kid profile ID
-
 export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListProps) => {
   const navigate = useNavigate();
+  const { data: kidProfiles = [] } = useKidProfiles();
+  const kidId = kidProfiles[0]?.id;
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [timerExpired, setTimerExpired] = useState(false);
@@ -73,13 +73,13 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
   });
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const { data: screenTimeBalance = 0 } = useKidScreenTime(DUNDUN_KID_ID);
-  const { data: availableScreenTime } = useAvailableScreenTime(DUNDUN_KID_ID);
+  const { data: screenTimeBalance = 0 } = useKidScreenTime(kidId);
+  const { data: availableScreenTime } = useAvailableScreenTime(kidId);
   const { mutate: consumeScreenTime } = useConsumeScreenTime();
   const { mutate: autoPurchaseScreenTime } = useAutoPurchaseScreenTime();
   
   // Fetch the last viewed book for this kid
-  const { data: lastViewedBook } = useLastViewedBook(DUNDUN_KID_ID);
+  const { data: lastViewedBook } = useLastViewedBook(kidId);
   
   // Fetch book cover image using the dedicated hook
   const { data: bookCoverUrl } = useBookCoverImage(lastViewedBook?.id);
@@ -111,9 +111,9 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
     return () => {
       if (playingVideoId && sessionStartTime) {
         const watchedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
-        if (watchedSeconds > 0) {
+        if (watchedSeconds > 0 && kidId) {
           consumeScreenTime({
-            kidId: DUNDUN_KID_ID,
+            kidId: kidId,
             seconds: Math.min(watchedSeconds, screenTimeBalance),
             videoId: playingVideoId
           });
@@ -134,10 +134,10 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
       const timeoutMs = screenTimeBalance * 1000; // Convert seconds to milliseconds
       
       timerRef.current = setTimeout(() => {
-        if (sessionStartTime) {
+        if (sessionStartTime && kidId) {
           const watchedSeconds = Math.floor((Date.now() - sessionStartTime) / 1000);
           consumeScreenTime({
-            kidId: DUNDUN_KID_ID,
+            kidId: kidId,
             seconds: Math.min(watchedSeconds, screenTimeBalance),
             videoId: playingVideoId
           });
@@ -244,11 +244,11 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
     
     setPurchaseModal({ ...purchaseModal, show: false });
     
-    if (needsPurchase) {
+    if (needsPurchase && kidId) {
       setIsAutoPurchasing(true);
       autoPurchaseScreenTime(
         { 
-          kidId: DUNDUN_KID_ID, 
+          kidId: kidId, 
           requiredSeconds: video.durationSeconds 
         },
         {

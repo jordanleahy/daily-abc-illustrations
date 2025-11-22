@@ -7,6 +7,7 @@ interface LastViewedBook {
   book_description: string | null;
   last_viewed_at: string;
   daily_published_id: string | null;
+  daily_published_slug: string | null;
   is_library_book: boolean | null;
 }
 
@@ -40,11 +41,12 @@ export const useLastViewedBook = (kidProfileId: string | undefined) => {
       // Get the book details
       let bookId = activity.book_id;
 
-      // If the activity was for a daily published book, get the book_id from that
+      // If the activity was for a daily published book, get the book_id and slug from that
+      let dailyPublishedSlug: string | null = null;
       if (!bookId && activity.daily_published_id) {
         const { data: dailyPublished, error: dpError } = await supabase
           .from('daily_published')
-          .select('book_id')
+          .select('book_id, slug')
           .eq('id', activity.daily_published_id)
           .single();
 
@@ -54,6 +56,7 @@ export const useLastViewedBook = (kidProfileId: string | undefined) => {
         }
 
         bookId = dailyPublished?.book_id;
+        dailyPublishedSlug = dailyPublished?.slug || null;
       }
 
       if (!bookId) return null;
@@ -74,6 +77,7 @@ export const useLastViewedBook = (kidProfileId: string | undefined) => {
         ...book,
         last_viewed_at: activity.last_viewed_at,
         daily_published_id: activity.daily_published_id,
+        daily_published_slug: dailyPublishedSlug,
       };
     },
     enabled: !!kidProfileId,

@@ -11,6 +11,10 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ImageUpload } from '@/components/ImageUpload';
+import { uploadTrickPhoto } from '@/utils/trickPhotoUpload';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 const TRICK_NAMES = [
   '50-50',
@@ -86,6 +90,7 @@ interface CreateTrickModalProps {
 export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) {
   const { data: kids } = useKidProfiles();
   const createTrick = useCreateTrick();
+  const { user } = useAuthContext();
 
   const [name, setName] = useState('');
   const [featureAngle, setFeatureAngle] = useState('');
@@ -97,8 +102,10 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
   const [featureAngleOpen, setFeatureAngleOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
   const [customFeatureAngle, setCustomFeatureAngle] = useState('');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     const assignedKids = Object.entries(selectedKids)
@@ -109,32 +116,52 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
       }));
 
     if (assignedKids.length === 0) {
+      toast.error('Please assign at least one kid');
       return;
     }
 
-    createTrick.mutate(
-      {
-        name,
-        description: `${featureAngle ? `Feature Angle: ${featureAngle}\n` : ''}${type ? `Type: ${type}\n` : ''}${description}`,
-        points_per_completion: pointsPerCompletion,
-        assigned_kids: assignedKids,
-      },
-      {
-        onSuccess: () => {
-          setName('');
-          setFeatureAngle('');
-          setType('');
-          setDescription('');
-          setPointsPerCompletion(1);
-          setSelectedKids({});
-          setComboboxOpen(false);
-          setFeatureAngleOpen(false);
-          setTypeOpen(false);
-          setCustomFeatureAngle('');
-          onOpenChange(false);
-        },
+    try {
+      setIsUploading(true);
+      let photoUrl: string | undefined;
+
+      // Upload photo if one was selected
+      if (photoFile && user) {
+        photoUrl = await uploadTrickPhoto(photoFile, user.id);
       }
-    );
+
+      createTrick.mutate(
+        {
+          name,
+          description: `${featureAngle ? `Feature Angle: ${featureAngle}\n` : ''}${type ? `Type: ${type}\n` : ''}${description}`,
+          points_per_completion: pointsPerCompletion,
+          photo_url: photoUrl,
+          assigned_kids: assignedKids,
+        },
+        {
+          onSuccess: () => {
+            setName('');
+            setFeatureAngle('');
+            setType('');
+            setDescription('');
+            setPointsPerCompletion(1);
+            setSelectedKids({});
+            setComboboxOpen(false);
+            setFeatureAngleOpen(false);
+            setTypeOpen(false);
+            setCustomFeatureAngle('');
+            setPhotoFile(null);
+            onOpenChange(false);
+          },
+          onSettled: () => {
+            setIsUploading(false);
+          },
+        }
+      );
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+      toast.error('Failed to upload photo');
+      setIsUploading(false);
+    }
   };
 
   const toggleKid = (kidId: string) => {
@@ -341,6 +368,14 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
             />
           </div>
 
+          <div>
+            <Label>Trick Photo (Optional)</Label>
+            <ImageUpload
+              onImageSelect={setPhotoFile}
+              disabled={isUploading}
+            />
+          </div>
+
           <div className="space-y-3">
             <Label>Assign to Kids</Label>
             {kids?.map((kid) => (
@@ -372,8 +407,8 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createTrick.isPending}>
-              {createTrick.isPending ? 'Creating...' : 'Create Trick'}
+            <Button type="submit" disabled={createTrick.isPending || isUploading}>
+              {isUploading ? 'Uploading...' : createTrick.isPending ? 'Creating...' : 'Create Trick'}
             </Button>
           </DialogFooter>
         </form>

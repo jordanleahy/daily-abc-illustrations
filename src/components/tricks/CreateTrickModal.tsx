@@ -108,7 +108,7 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
   const [featureAngleOpen, setFeatureAngleOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
   const [customFeatureAngle, setCustomFeatureAngle] = useState('');
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   // Load edit trick data when modal opens with editTrick
@@ -121,7 +121,7 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
       setDescription('');
       setPointsPerCompletion(1);
       setSelectedKids({});
-      setPhotoFile(null);
+      setPhotoFiles([]);
       return;
     }
 
@@ -164,10 +164,13 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
     try {
       setIsUploading(true);
       
-      // Upload new photo if selected
+      // Upload new photos if selected
       let photoUrl = editTrick?.photo_url;
-      if (photoFile && user) {
-        photoUrl = await uploadTrickPhoto(photoFile, user.id);
+      if (photoFiles.length > 0 && user) {
+        const uploadPromises = photoFiles.map(file => uploadTrickPhoto(file, user.id));
+        const uploadedUrls = await Promise.all(uploadPromises);
+        // Store as JSON array
+        photoUrl = JSON.stringify(uploadedUrls);
       }
 
       const commonData = { name, description: fullDescription, points_per_completion: pointsPerCompletion, photo_url: photoUrl, assigned_kids: assignedKids };
@@ -395,13 +398,42 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
           </div>
 
           <div>
-            <Label>Trick Photo (Optional)</Label>
-            <ImageUpload
-              onImageSelect={setPhotoFile}
-              disabled={isUploading}
-              existingImageUrl={editTrick?.photo_url}
-              requireSquare={false}
-            />
+            <Label>Trick Photos (Optional)</Label>
+            <div className="space-y-3">
+              {photoFiles.map((file, index) => (
+                <div key={index} className="flex items-center gap-2 p-2 border rounded-lg">
+                  <img 
+                    src={URL.createObjectURL(file)} 
+                    alt={`Preview ${index + 1}`}
+                    className="w-16 h-16 object-cover rounded"
+                  />
+                  <span className="flex-1 text-sm truncate">{file.name}</span>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setPhotoFiles(prev => prev.filter((_, i) => i !== index))}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+              <Input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => {
+                  const files = Array.from(e.target.files || []);
+                  setPhotoFiles(prev => [...prev, ...files]);
+                }}
+                disabled={isUploading}
+              />
+              {editTrick?.photo_url && photoFiles.length === 0 && (
+                <div className="text-sm text-muted-foreground">
+                  Current photos will be replaced when you upload new ones
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="space-y-3">

@@ -6,6 +6,7 @@ interface LastViewedBook {
   book_name: string;
   book_description: string | null;
   last_viewed_at: string;
+  daily_published_id: string | null;
 }
 
 /**
@@ -71,6 +72,7 @@ export const useLastViewedBook = (kidProfileId: string | undefined) => {
       return {
         ...book,
         last_viewed_at: activity.last_viewed_at,
+        daily_published_id: activity.daily_published_id,
       };
     },
     enabled: !!kidProfileId,

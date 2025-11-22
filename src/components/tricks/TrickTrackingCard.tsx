@@ -5,6 +5,7 @@ import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { TrickGoalWithDetails } from '@/types/trick';
 import { useAddTrickCompletion } from '@/hooks/useAddTrickCompletion';
 import { cn } from '@/lib/utils';
+import { TrickMediaUploadButton } from './TrickMediaUploadButton';
 
 interface TrickTrackingCardProps {
   goal: TrickGoalWithDetails;
@@ -65,26 +66,35 @@ export function TrickTrackingCard({ goal }: TrickTrackingCardProps) {
         </div>
 
         {!isCompleted && (
-          <div className="grid grid-cols-2 gap-3">
-            <Button
-              onClick={handleSuccess}
-              disabled={addCompletion.isPending}
-              className="bg-green-600 hover:bg-green-700 text-white"
-              size="lg"
-            >
-              <ThumbsUp className="mr-2 h-5 w-5" />
-              Success
-            </Button>
-            <Button
-              onClick={handleFailed}
-              disabled={addCompletion.isPending}
-              variant="destructive"
-              size="lg"
-            >
-              <ThumbsDown className="mr-2 h-5 w-5" />
-              Failed
-            </Button>
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3">
+              <Button
+                onClick={handleSuccess}
+                disabled={addCompletion.isPending}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                size="lg"
+              >
+                <ThumbsUp className="mr-2 h-5 w-5" />
+                Success
+              </Button>
+              <Button
+                onClick={handleFailed}
+                disabled={addCompletion.isPending}
+                variant="destructive"
+                size="lg"
+              >
+                <ThumbsDown className="mr-2 h-5 w-5" />
+                Failed
+              </Button>
+            </div>
+            
+            <div className="flex justify-center">
+              <TrickMediaUploadButton
+                trickId={goal.trick_id}
+                kidProfileId={goal.kid_profile_id}
+              />
+            </div>
+          </>
         )}
 
         {isCompleted && (

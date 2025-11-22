@@ -46,11 +46,12 @@ export function useTrickGoals(kidProfileId?: string) {
         .from('trick_goals')
         .select(`
           *,
-          tricks(*),
+          tricks!inner(*),
           kid_profiles(id, first_name, last_name, profile_image_url, earned_coins)
         `)
         .eq('parent_user_id', user.id)
         .eq('is_active', true)
+        .eq('tricks.is_active', true)
         .order('created_at', { ascending: false });
 
       if (kidProfileId) {

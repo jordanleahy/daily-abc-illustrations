@@ -71,6 +71,13 @@ const FEATURE_ANGLES = [
   'Down Flat Down Rail',
 ];
 
+const TYPES = [
+  'Box',
+  'Flat Rail',
+  'Round Rail',
+  'Log',
+];
+
 interface CreateTrickModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -82,11 +89,13 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
 
   const [name, setName] = useState('');
   const [featureAngle, setFeatureAngle] = useState('');
+  const [type, setType] = useState('');
   const [description, setDescription] = useState('');
   const [pointsPerCompletion, setPointsPerCompletion] = useState(1);
   const [selectedKids, setSelectedKids] = useState<Record<string, { selected: boolean; targetCount: number }>>({});
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [featureAngleOpen, setFeatureAngleOpen] = useState(false);
+  const [typeOpen, setTypeOpen] = useState(false);
   const [customFeatureAngle, setCustomFeatureAngle] = useState('');
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -106,7 +115,7 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
     createTrick.mutate(
       {
         name,
-        description: `${featureAngle ? `Feature Angle: ${featureAngle}\n` : ''}${description}`,
+        description: `${featureAngle ? `Feature Angle: ${featureAngle}\n` : ''}${type ? `Type: ${type}\n` : ''}${description}`,
         points_per_completion: pointsPerCompletion,
         assigned_kids: assignedKids,
       },
@@ -114,11 +123,13 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
         onSuccess: () => {
           setName('');
           setFeatureAngle('');
+          setType('');
           setDescription('');
           setPointsPerCompletion(1);
           setSelectedKids({});
           setComboboxOpen(false);
           setFeatureAngleOpen(false);
+          setTypeOpen(false);
           setCustomFeatureAngle('');
           onOpenChange(false);
         },
@@ -253,6 +264,51 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
                             )}
                           />
                           {angle}
+                        </CommandItem>
+                      ))}
+                    </CommandGroup>
+                  </CommandList>
+                </Command>
+              </PopoverContent>
+            </Popover>
+          </div>
+
+          <div>
+            <Label htmlFor="type">Type</Label>
+            <Popover open={typeOpen} onOpenChange={setTypeOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  role="combobox"
+                  aria-expanded={typeOpen}
+                  className="w-full justify-between"
+                >
+                  {type || "Select type..."}
+                  <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-full p-0 pointer-events-auto" align="start">
+                <Command>
+                  <CommandInput placeholder="Search type..." />
+                  <CommandList>
+                    <CommandEmpty>No type found.</CommandEmpty>
+                    <CommandGroup>
+                      {TYPES.map((t) => (
+                        <CommandItem
+                          key={t}
+                          value={t}
+                          onSelect={(currentValue) => {
+                            setType(currentValue === type ? '' : currentValue);
+                            setTypeOpen(false);
+                          }}
+                        >
+                          <Check
+                            className={cn(
+                              'mr-2 h-4 w-4',
+                              type === t ? 'opacity-100' : 'opacity-0'
+                            )}
+                          />
+                          {t}
                         </CommandItem>
                       ))}
                     </CommandGroup>

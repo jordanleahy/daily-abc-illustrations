@@ -2184,6 +2184,17 @@ export type Database = {
         Returns: string
       }
       generate_slug: { Args: { input_text: string }; Returns: string }
+      get_all_users_with_activity: {
+        Args: never
+        Returns: {
+          kids_count: number
+          last_activity_at: string
+          total_books_accessed: number
+          total_reading_sessions: number
+          user_id: string
+          user_name: string
+        }[]
+      }
       get_current_user_role: {
         Args: never
         Returns: Database["public"]["Enums"]["app_role"]
@@ -2250,6 +2261,24 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      get_user_reading_activity: {
+        Args: { p_user_id: string }
+        Returns: {
+          activity_id: string
+          book_category: string
+          book_id: string
+          book_name: string
+          created_at: string
+          kid_id: string
+          kid_name: string
+          last_reading_session_at: string
+          last_viewed_at: string
+          pages_read: number
+          reading_completed: boolean
+          total_pages: number
+          view_count: number
+        }[]
+      }
       has_active_subscription: { Args: { p_user_id: string }; Returns: boolean }
       has_feature_access: {
         Args: { p_feature: string; p_user_id: string }
@@ -2310,6 +2339,16 @@ export type Database = {
       skip_habit_completion: {
         Args: { p_completion_id: string }
         Returns: Json
+      }
+      update_reading_progress: {
+        Args: {
+          p_book_id: string
+          p_kid_id: string
+          p_pages_read: number
+          p_reading_completed: boolean
+          p_user_id: string
+        }
+        Returns: undefined
       }
       update_subscription_cache: {
         Args: {

@@ -63,6 +63,13 @@ export const ProductCard = ({
             <Badge variant="destructive">Out of Stock</Badge>
           </div>
         )}
+        {product.is_system_product && mode === 'parent' && (
+          <div className="absolute top-2 right-2">
+            <Badge variant="default" className="bg-primary/90 backdrop-blur-sm">
+              System Product
+            </Badge>
+          </div>
+        )}
       </div>
 
       <CardContent className="p-4 space-y-2">
@@ -101,22 +108,24 @@ export const ProductCard = ({
             <Button
               variant="outline"
               size="sm"
-              className="flex-1"
+              className={product.is_system_product ? "w-full" : "flex-1"}
               onClick={onEdit}
             >
               <Edit2 className="w-4 h-4 mr-2" />
               Edit
             </Button>
-            <Button
-              variant="destructive"
-              size="sm"
-              className="flex-1"
-              onClick={onDelete}
-              disabled={isDeleting}
-            >
-              <Trash2 className="w-4 h-4 mr-2" />
-              {isDeleting ? 'Removing...' : 'Remove'}
-            </Button>
+            {!product.is_system_product && (
+              <Button
+                variant="destructive"
+                size="sm"
+                className="flex-1"
+                onClick={onDelete}
+                disabled={isDeleting}
+              >
+                <Trash2 className="w-4 h-4 mr-2" />
+                {isDeleting ? 'Removing...' : 'Remove'}
+              </Button>
+            )}
           </>
         ) : (
           <Button

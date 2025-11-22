@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Info } from 'lucide-react';
 import { ImageUpload } from '@/components/ImageUpload';
 import { VideoUpload } from '@/components/VideoUpload';
 import { supabase } from '@/integrations/supabase/client';
@@ -179,12 +181,24 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
           </DialogDescription>
         </DialogHeader>
 
+        {editProduct?.is_system_product && (
+          <Alert>
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              Screen Time is a required system product. You can only modify the coin price and minutes.
+            </AlertDescription>
+          </Alert>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="image">Product Image</Label>
               <div className="h-48">
-                <ImageUpload onImageSelect={handleImageSelect} />
+                <ImageUpload 
+                  onImageSelect={handleImageSelect} 
+                  disabled={editProduct?.is_system_product}
+                />
               </div>
               {existingImageUrl && !uploadedImage && (
                 <BookImage 
@@ -199,7 +213,10 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
             <div className="space-y-2">
               <Label htmlFor="video">Product Video (Portrait)</Label>
               <div className="h-48">
-                <VideoUpload onVideoSelect={handleVideoSelect} />
+                <VideoUpload 
+                  onVideoSelect={handleVideoSelect} 
+                  disabled={editProduct?.is_system_product}
+                />
               </div>
               {existingVideoUrl && !uploadedVideo && (
                 <video src={existingVideoUrl} className="w-32 h-48 object-cover rounded-lg" controls />
@@ -229,6 +246,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
               placeholder="Optional details about this reward"
               rows={3}
               maxLength={500}
+              disabled={editProduct?.is_system_product}
             />
           </div>
 
@@ -271,8 +289,9 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
                 id="quantity"
                 checked={hasQuantityLimit}
                 onCheckedChange={(checked) => setHasQuantityLimit(checked as boolean)}
+                disabled={editProduct?.is_system_product}
               />
-              <Label htmlFor="quantity" className="cursor-pointer">
+              <Label htmlFor="quantity" className={editProduct?.is_system_product ? "opacity-50" : "cursor-pointer"}>
                 Limit quantity available
               </Label>
             </div>
@@ -284,6 +303,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
                 value={quantityAvailable}
                 onChange={(e) => setQuantityAvailable(e.target.value)}
                 placeholder="How many times can this be purchased?"
+                disabled={editProduct?.is_system_product}
               />
             )}
           </div>

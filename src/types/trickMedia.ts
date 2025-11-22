@@ -7,6 +7,7 @@ export interface TrickMediaUpload {
   media_url: string;
   media_type: 'image' | 'video';
   uploaded_at: string;
+  captured_at: string | null;
   location_latitude: number | null;
   location_longitude: number | null;
   location_accuracy: number | null;
@@ -19,6 +20,7 @@ export interface CreateTrickMediaUpload {
   trick_goal_id?: string;
   kid_profile_id: string;
   media_file: File;
+  captured_at?: Date;
   location?: {
     latitude: number;
     longitude: number;

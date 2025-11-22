@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Upload, Loader2 } from 'lucide-react';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { useUploadTrickMedia } from '@/hooks/useUploadTrickMedia';
+import { extractExifData } from '@/utils/exifExtractor';
 import { toast } from 'sonner';
 
 interface TrickMediaUploadButtonProps {
@@ -33,19 +34,42 @@ export function TrickMediaUploadButton({
     setIsUploading(true);
 
     try {
-      // Request location
-      toast.info('Getting location...');
-      const location = await requestLocation();
-      
-      if (!location) {
-        toast.warning('Location not available, uploading without location data');
+      let location = null;
+      let capturedAt = null;
+
+      // Extract EXIF data from image
+      if (file.type.startsWith('image/')) {
+        toast.info('Extracting photo metadata...');
+        const exifData = await extractExifData(file);
+        
+        if (exifData.location) {
+          location = {
+            latitude: exifData.location.latitude,
+            longitude: exifData.location.longitude,
+            accuracy: 0 // EXIF GPS doesn't provide accuracy
+          };
+          toast.success('Using photo location and date');
+        }
+        
+        capturedAt = exifData.capturedAt;
       }
 
-      // Upload with location data
+      // If no EXIF GPS data, fall back to device location
+      if (!location) {
+        toast.info('Getting device location...');
+        location = await requestLocation();
+        
+        if (!location) {
+          toast.warning('Location not available, uploading without location data');
+        }
+      }
+
+      // Upload with all metadata
       await uploadMedia.mutateAsync({
         trick_id: trickId,
         kid_profile_id: kidProfileId,
         media_file: file,
+        captured_at: capturedAt || undefined,
         location: location || undefined,
       });
 

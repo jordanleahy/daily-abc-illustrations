@@ -468,15 +468,16 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
 
                     {/* Show Recommended Book Habit */}
                     {lastViewedBook && (
-                      <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 space-y-3">
-                        <div className="flex items-center gap-2 text-primary font-semibold">
-                          <BookOpen className="h-5 w-5" />
-                          <span>Read this book again to earn coins! 🎯</span>
-                        </div>
-                        
-                        <div className="flex gap-3">
+                      <div className="flex justify-center">
+                        <button
+                          onClick={() => {
+                            setNoScreenTimeModal(false);
+                            navigate('/my-habits');
+                          }}
+                          className="group"
+                        >
                           {bookCoverUrl ? (
-                            <AspectRatio ratio={1} className="w-20 h-20 rounded-lg overflow-hidden bg-muted flex-shrink-0">
+                            <AspectRatio ratio={1} className="w-32 h-32 rounded-lg overflow-hidden bg-muted shadow-md group-hover:shadow-lg transition-shadow">
                               <img 
                                 src={bookCoverUrl} 
                                 alt={lastViewedBook.book_name}
@@ -484,32 +485,11 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                               />
                             </AspectRatio>
                           ) : (
-                            <div className="w-20 h-20 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                              <BookOpen className="h-8 w-8 text-muted-foreground" />
+                            <div className="w-32 h-32 rounded-lg bg-muted flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+                              <BookOpen className="h-12 w-12 text-muted-foreground" />
                             </div>
                           )}
-                          
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-foreground line-clamp-2 text-sm">
-                              {lastViewedBook.book_name}
-                            </p>
-                            <p className="text-xs text-muted-foreground mt-1">
-                              Earn coins by reading
-                            </p>
-                          </div>
-                        </div>
-
-                        <Button 
-                          onClick={() => {
-                            setNoScreenTimeModal(false);
-                            navigate('/my-habits');
-                          }}
-                          variant="default"
-                          size="sm"
-                          className="w-full"
-                        >
-                          Go Read Book
-                        </Button>
+                        </button>
                       </div>
                     )}
 

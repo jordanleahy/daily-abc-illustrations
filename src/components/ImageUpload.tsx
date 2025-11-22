@@ -13,15 +13,23 @@ interface ImageUploadProps {
   requireSquare?: boolean;
   showCopyPrompt?: boolean;
   onCopyPrompt?: () => void;
+  existingImageUrl?: string;
 }
 
-export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false, requireSquare = true, showCopyPrompt = false, onCopyPrompt }: ImageUploadProps) {
+export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false, requireSquare = true, showCopyPrompt = false, onCopyPrompt, existingImageUrl }: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [preview, setPreview] = useState<string | null>(existingImageUrl || null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+
+  // Update preview when existingImageUrl changes
+  useEffect(() => {
+    if (existingImageUrl) {
+      setPreview(existingImageUrl);
+    }
+  }, [existingImageUrl]);
 
   // Auto-trigger file picker when autoTrigger is true
   useEffect(() => {
@@ -242,14 +250,22 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
             </p>
           </div>
         ) : preview ? (
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full min-h-[200px]">
             <img
               src={preview}
-              alt="Upload preview"
+              alt="Uploaded image"
               className="w-full h-full object-cover rounded-lg"
             />
-            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
-              <Button type="button" variant="secondary" size="sm">
+            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-200 rounded-lg flex flex-col gap-2 items-center justify-center">
+              <Button 
+                type="button" 
+                variant="secondary" 
+                size="sm"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  openFileSelector();
+                }}
+              >
                 Change Image
               </Button>
             </div>

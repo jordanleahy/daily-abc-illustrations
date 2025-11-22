@@ -399,6 +399,8 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
             <ImageUpload
               onImageSelect={setPhotoFile}
               disabled={isUploading}
+              existingImageUrl={editTrick?.photo_url}
+              requireSquare={false}
             />
           </div>
 

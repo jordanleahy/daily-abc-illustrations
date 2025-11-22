@@ -35,7 +35,7 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
   const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  const handleCardClick = () => {
+  const handleCardClick = async () => {
     if (!user) {
       navigate('/auth?mode=signup');
       return;
@@ -47,7 +47,18 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
     }
     
     const kidId = kidProfiles.length > 0 ? kidProfiles[0].id : undefined;
-    trackBookView(book.id, kidId);
+    
+    // Fetch daily_published_id for this book
+    const { supabase } = await import('@/integrations/supabase/client');
+    const { data: dailyPublished } = await supabase
+      .from('daily_published')
+      .select('id')
+      .eq('book_id', book.id)
+      .maybeSingle();
+    
+    if (dailyPublished?.id) {
+      trackBookView(dailyPublished.id, kidId);
+    }
     navigate(LIBRARY_ROUTES.BOOK_DETAIL(book.id));
   };
 

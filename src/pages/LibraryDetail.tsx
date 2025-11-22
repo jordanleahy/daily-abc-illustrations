@@ -13,6 +13,7 @@ import { MetaHead } from '@/components/common/MetaHead';
 import { LibraryCard } from '@/components/page-prompts/LibraryCard';
 import { trackBookViewForCache, trackBookView } from '@/utils/bookViewTracking';
 import { useLibraryDetailImagePreloader } from '@/hooks/useLibraryDetailImagePreloader';
+import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import type { Page } from '@/types/book';
@@ -107,11 +108,25 @@ export default function LibraryDetail() {
 
   // Track book view for cache management and database with kid_id for personalized recommendations
   useEffect(() => {
-    if (book?.id && user) {
-      const kidId = kidProfiles.length > 0 ? kidProfiles[0].id : undefined;
-      trackBookView(book.id, kidId);
-      trackBookViewForCache(book.id);
-    }
+    const trackView = async () => {
+      if (book?.id && user) {
+        const kidId = kidProfiles.length > 0 ? kidProfiles[0].id : undefined;
+        
+        // Fetch daily_published_id for this book
+        const { data: dailyPublished } = await supabase
+          .from('daily_published')
+          .select('id')
+          .eq('book_id', book.id)
+          .maybeSingle();
+        
+        if (dailyPublished?.id) {
+          trackBookView(dailyPublished.id, kidId);
+        }
+        trackBookViewForCache(book.id);
+      }
+    };
+    
+    trackView();
   }, [book?.id, user, kidProfiles]);
 
   const metaTitle = book?.book_name || 'Library Book';

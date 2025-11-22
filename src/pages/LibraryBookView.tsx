@@ -20,6 +20,7 @@ import { useLibraryBookImagePreloader } from '@/hooks/useLibraryBookImagePreload
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { trackBookView } from '@/utils/bookViewTracking';
+import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { BookImage } from '@/components/ui/book-image';
 import { UnifiedReadingView } from '@/components/reading';
@@ -45,10 +46,24 @@ export default function LibraryBookView() {
   
   // Track book view when page loads with kid_id for personalized recommendations
   useEffect(() => {
-    if (book?.id && user) {
-      const kidId = kidProfiles.length > 0 ? kidProfiles[0].id : undefined;
-      trackBookView(book.id, kidId);
-    }
+    const trackView = async () => {
+      if (book?.id && user) {
+        const kidId = kidProfiles.length > 0 ? kidProfiles[0].id : undefined;
+        
+        // Fetch daily_published_id for this book
+        const { data: dailyPublished } = await supabase
+          .from('daily_published')
+          .select('id')
+          .eq('book_id', book.id)
+          .maybeSingle();
+        
+        if (dailyPublished?.id) {
+          trackBookView(dailyPublished.id, kidId);
+        }
+      }
+    };
+    
+    trackView();
   }, [book?.id, user, kidProfiles]);
   
   // Get starting page index from location state

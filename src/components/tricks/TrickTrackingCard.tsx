@@ -4,7 +4,6 @@ import { Progress } from '@/components/ui/progress';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { TrickGoalWithDetails } from '@/types/trick';
 import { useAddTrickCompletion } from '@/hooks/useAddTrickCompletion';
-import { useTrickMediaUploads } from '@/hooks/useTrickMediaUploads';
 import { cn } from '@/lib/utils';
 import { TrickMediaUploadButton } from './TrickMediaUploadButton';
 
@@ -14,12 +13,22 @@ interface TrickTrackingCardProps {
 
 export function TrickTrackingCard({ goal }: TrickTrackingCardProps) {
   const addCompletion = useAddTrickCompletion();
-  const { data: mediaUploads } = useTrickMediaUploads(goal.trick_id, goal.kid_profile_id);
   const progressPercentage = (goal.current_count / goal.target_count) * 100;
   const isCompleted = goal.current_count >= goal.target_count;
   
-  // Use first uploaded media or fallback to trick photo
-  const displayImage = mediaUploads?.[0]?.media_url || goal.tricks?.photo_url;
+  // Parse photo_url JSON array and use first image
+  const displayImage = (() => {
+    const photoUrl = goal.tricks?.photo_url;
+    if (!photoUrl) return null;
+    
+    try {
+      const urls = JSON.parse(photoUrl);
+      return Array.isArray(urls) && urls.length > 0 ? urls[0] : null;
+    } catch {
+      // If it's not JSON, treat as single URL
+      return photoUrl;
+    }
+  })();
 
   const handleSuccess = () => {
     addCompletion.mutate({

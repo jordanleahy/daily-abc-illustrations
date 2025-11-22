@@ -472,8 +472,8 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                         <button
                           onClick={() => {
                             setNoScreenTimeModal(false);
-                            // Navigate to library home if it's a daily published book, otherwise to the user's book
-                            if (lastViewedBook.daily_published_id) {
+                            // Navigate to library home if it's a library book or daily published book
+                            if (lastViewedBook.daily_published_id || lastViewedBook.is_library_book) {
                               navigate('/');
                             } else {
                               navigate(`/book/${lastViewedBook.id}`);

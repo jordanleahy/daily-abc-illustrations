@@ -7,6 +7,7 @@ interface LastViewedBook {
   book_description: string | null;
   last_viewed_at: string;
   daily_published_id: string | null;
+  is_library_book: boolean | null;
 }
 
 /**
@@ -60,7 +61,7 @@ export const useLastViewedBook = (kidProfileId: string | undefined) => {
       // Fetch the book details
       const { data: book, error: bookError } = await supabase
         .from('books')
-        .select('id, book_name, book_description')
+        .select('id, book_name, book_description, is_library_book')
         .eq('id', bookId)
         .single();
 

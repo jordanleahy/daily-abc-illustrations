@@ -1584,6 +1584,83 @@ export type Database = {
           },
         ]
       }
+      trick_media_uploads: {
+        Row: {
+          created_at: string
+          id: string
+          kid_profile_id: string
+          location_accuracy: number | null
+          location_latitude: number | null
+          location_longitude: number | null
+          media_type: string
+          media_url: string
+          notes: string | null
+          parent_user_id: string
+          trick_goal_id: string | null
+          trick_id: string
+          uploaded_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          kid_profile_id: string
+          location_accuracy?: number | null
+          location_latitude?: number | null
+          location_longitude?: number | null
+          media_type: string
+          media_url: string
+          notes?: string | null
+          parent_user_id: string
+          trick_goal_id?: string | null
+          trick_id: string
+          uploaded_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          kid_profile_id?: string
+          location_accuracy?: number | null
+          location_latitude?: number | null
+          location_longitude?: number | null
+          media_type?: string
+          media_url?: string
+          notes?: string | null
+          parent_user_id?: string
+          trick_goal_id?: string | null
+          trick_id?: string
+          uploaded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "trick_media_uploads_kid_profile_id_fkey"
+            columns: ["kid_profile_id"]
+            isOneToOne: false
+            referencedRelation: "kid_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trick_media_uploads_parent_user_id_fkey"
+            columns: ["parent_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trick_media_uploads_trick_goal_id_fkey"
+            columns: ["trick_goal_id"]
+            isOneToOne: false
+            referencedRelation: "trick_goals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "trick_media_uploads_trick_id_fkey"
+            columns: ["trick_id"]
+            isOneToOne: false
+            referencedRelation: "tricks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tricks: {
         Row: {
           created_at: string

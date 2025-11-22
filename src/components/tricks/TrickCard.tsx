@@ -15,11 +15,20 @@ interface TrickCardProps {
 export function TrickCard({ trick, goals, onEdit, onDelete }: TrickCardProps) {
   return (
     <Card className="p-6">
+      {trick.photo_url && (
+        <div className="mb-4 -mt-6 -mx-6">
+          <img 
+            src={trick.photo_url} 
+            alt={trick.name}
+            className="w-full h-48 object-cover rounded-t-lg"
+          />
+        </div>
+      )}
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold">{trick.name}</h3>
           {trick.description && (
-            <p className="text-sm text-muted-foreground mt-1">{trick.description}</p>
+            <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">{trick.description}</p>
           )}
           <p className="text-xs text-muted-foreground mt-2">
             {trick.points_per_completion} {trick.points_per_completion === 1 ? 'coin' : 'coins'} per completion

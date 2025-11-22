@@ -36,6 +36,15 @@ export function TrickTrackingCard({ goal }: TrickTrackingCardProps) {
       'transition-all',
       isCompleted && 'border-primary bg-primary/5'
     )}>
+      {goal.tricks?.photo_url && (
+        <div className="w-full h-48 overflow-hidden rounded-t-lg">
+          <img 
+            src={goal.tricks.photo_url} 
+            alt={goal.tricks.name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      )}
       <CardHeader>
         <CardTitle className="text-lg">{goal.tricks?.name}</CardTitle>
         {goal.tricks?.description && (

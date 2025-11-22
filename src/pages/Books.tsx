@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { BookFilterBar } from '@/components/filters';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useBooks } from '@/hooks/useBooks';
 import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
 import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
@@ -383,6 +384,7 @@ function UserBookCard({
 
 export default function Books() {
   const { user, loading: authLoading } = useAuthContext();
+  const { data: kidProfiles = [] } = useKidProfiles();
   const isMobile = useIsMobile();
   
   const navigate = useNavigate();
@@ -545,8 +547,9 @@ export default function Books() {
   }, [location.pathname, queryClient]);
 
   const handleViewBook = async (bookId: string) => {
-    // Track the user book activity (writes to user_book_activity table with book_id)
-    trackUserBookActivity(bookId);
+    // Track the user book activity with kid_id for personalized recommendations
+    const kidId = kidProfiles.length > 0 ? kidProfiles[0].id : undefined;
+    trackUserBookActivity(bookId, kidId);
     
     // Invalidate query to refresh sort order with new activity
     queryClient.invalidateQueries({ queryKey: ['books', user?.id] });

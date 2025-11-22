@@ -11,8 +11,10 @@ import { queryClient } from '@/App';
  * Track that a daily published book was viewed by the current user
  * Uses a two-step process: fetch current count, then upsert with increment
  * Invalidates library cache to update Recently Viewed in real-time
+ * @param dailyPublishedId - The ID of the daily published book
+ * @param kidId - Optional kid profile ID for personalized tracking
  */
-export const trackBookView = async (dailyPublishedId: string): Promise<void> => {
+export const trackBookView = async (dailyPublishedId: string, kidId?: string): Promise<void> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -55,6 +57,7 @@ export const trackBookView = async (dailyPublishedId: string): Promise<void> => 
         .from('user_book_activity')
         .insert({
           user_id: user.id,
+          kid_id: kidId || null,
           daily_published_id: dailyPublishedId,
           last_viewed_at: new Date().toISOString(),
           view_count: 1,
@@ -76,8 +79,10 @@ export const trackBookView = async (dailyPublishedId: string): Promise<void> => 
 /**
  * Track that a user's own book was viewed/opened
  * For tracking activity on the Books page (user's created books)
+ * @param bookId - The ID of the user's book
+ * @param kidId - Optional kid profile ID for personalized tracking
  */
-export const trackUserBookActivity = async (bookId: string): Promise<void> => {
+export const trackUserBookActivity = async (bookId: string, kidId?: string): Promise<void> => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     
@@ -118,6 +123,7 @@ export const trackUserBookActivity = async (bookId: string): Promise<void> => {
         .from('user_book_activity')
         .insert({
           user_id: user.id,
+          kid_id: kidId || null,
           book_id: bookId,
           last_viewed_at: new Date().toISOString(),
           view_count: 1,

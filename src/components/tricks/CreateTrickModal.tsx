@@ -231,10 +231,10 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0 pointer-events-auto" align="start">
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] max-h-[60vh] p-0 pointer-events-auto overflow-y-auto" align="start">
                 <Command>
                   <CommandInput placeholder="Search tricks..." />
-                  <CommandList className="max-h-[300px] overflow-y-auto">
+                  <CommandList>
                     <CommandEmpty>No trick found.</CommandEmpty>
                     <CommandGroup>
                       {TRICK_NAMES.map((trick) => (
@@ -276,7 +276,7 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0 pointer-events-auto" align="start">
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] max-h-[60vh] p-0 pointer-events-auto overflow-y-auto" align="start">
                 <Command>
                   <CommandInput 
                     placeholder="Search or type custom..." 
@@ -340,7 +340,7 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-full p-0 pointer-events-auto" align="start">
+              <PopoverContent className="w-[var(--radix-popover-trigger-width)] max-h-[60vh] p-0 pointer-events-auto overflow-y-auto" align="start">
                 <Command>
                   <CommandInput placeholder="Search type..." />
                   <CommandList>

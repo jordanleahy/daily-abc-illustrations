@@ -134,6 +134,14 @@ export const navigationConfig: RouteConfig[] = [
     activeMatch: { startsWith: true },
   },
   {
+    path: ROUTES.MY_TRICKS,
+    name: 'My Tricks',
+    icon: Target,
+    group: 'rewards',
+    permission: { feature: 'habits_rewards' },
+    activeMatch: { exact: true },
+  },
+  {
     path: ROUTES.ALL_BOOKS,
     name: 'All Books',
     icon: Book,

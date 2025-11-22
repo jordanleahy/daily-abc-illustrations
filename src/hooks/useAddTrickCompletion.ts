@@ -39,9 +39,13 @@ export function useAddTrickCompletion() {
           description: `Earned ${data.points_awarded} coins! ${data.new_count}/${data.target_count}`,
           duration: 5000,
         });
-      } else {
+      } else if (data.points_awarded > 0) {
         toast.success(`+${data.points_awarded} coins earned!`, {
           description: `Progress: ${data.new_count}/${data.target_count}`,
+        });
+      } else {
+        toast.info('Attempt recorded', {
+          description: 'Keep practicing, you\'ll get it!',
         });
       }
     },

@@ -40,7 +40,7 @@ Deno.serve(async (req) => {
     }
 
     // Get screen time product to check coin requirement
-    const { data: product } = await supabase
+    let { data: product } = await supabase
       .from('kid_rewards_products')
       .select('coin_price')
       .eq('parent_user_id', kidProfile.parent_user_id)
@@ -48,7 +48,32 @@ Deno.serve(async (req) => {
       .eq('is_active', true)
       .single();
 
-    // Option B: Verify user has minimum coins to use screen time
+    // Safety check: Auto-create Screen Time product if it doesn't exist
+    if (!product) {
+      console.warn('[CONSUME-SCREEN-TIME] Screen Time product missing, auto-creating', {
+        parentUserId: kidProfile.parent_user_id
+      });
+      
+      const { data: seedResult } = await supabase
+        .rpc('seed_screen_time_product', {
+          p_parent_user_id: kidProfile.parent_user_id
+        });
+      
+      if (seedResult?.success) {
+        // Fetch the newly created product
+        const { data: newProduct } = await supabase
+          .from('kid_rewards_products')
+          .select('coin_price')
+          .eq('parent_user_id', kidProfile.parent_user_id)
+          .eq('title', 'Screen Time')
+          .eq('is_active', true)
+          .single();
+        
+        product = newProduct;
+      }
+    }
+
+    // Verify user has minimum coins to use screen time
     if (product && kidProfile.earned_coins < product.coin_price) {
       console.error('[consume-screen-time] Insufficient coins to unlock screen time');
       return new Response(

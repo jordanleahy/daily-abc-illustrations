@@ -472,7 +472,12 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                         <button
                           onClick={() => {
                             setNoScreenTimeModal(false);
-                            navigate('/my-habits');
+                            // Navigate to library home if it's a daily published book, otherwise to the user's book
+                            if (lastViewedBook.daily_published_id) {
+                              navigate('/');
+                            } else {
+                              navigate(`/book/${lastViewedBook.id}`);
+                            }
                           }}
                           className="group"
                         >

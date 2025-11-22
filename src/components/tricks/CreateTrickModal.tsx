@@ -234,7 +234,7 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
               <PopoverContent className="w-full p-0 pointer-events-auto" align="start">
                 <Command>
                   <CommandInput placeholder="Search tricks..." />
-                  <CommandList>
+                  <CommandList className="max-h-[300px] overflow-y-auto">
                     <CommandEmpty>No trick found.</CommandEmpty>
                     <CommandGroup>
                       {TRICK_NAMES.map((trick) => (

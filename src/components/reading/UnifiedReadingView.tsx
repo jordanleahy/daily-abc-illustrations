@@ -218,6 +218,7 @@ export function UnifiedReadingView({
   const [earnedRewards, setEarnedRewards] = useState(0);
   const [sessionStarted, setSessionStarted] = useState(false);
   const [initialPageTracked, setInitialPageTracked] = useState(false);
+  const [selectedKidId, setSelectedKidId] = useState<string | undefined>(undefined);
   
   // Per-page word learning state persistence
   const [pageWordStates, setPageWordStates] = useState<Record<string, {
@@ -225,8 +226,13 @@ export function UnifiedReadingView({
     wordStatuses: Record<number, 'difficult' | 'understood'>;
   }>>({});
   
-  // Auto-select kid if only one exists
-  const selectedKidId = kidProfiles?.length === 1 ? kidProfiles[0].id : undefined;
+  // Auto-select first kid for progress tracking
+  useEffect(() => {
+    if (kidProfiles && kidProfiles.length > 0 && !selectedKidId) {
+      setSelectedKidId(kidProfiles[0].id);
+    }
+  }, [kidProfiles, selectedKidId]);
+  
   const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
   
   // Get current page and related data

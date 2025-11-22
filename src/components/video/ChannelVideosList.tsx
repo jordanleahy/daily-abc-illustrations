@@ -472,7 +472,12 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
                         <button
                           onClick={() => {
                             setNoScreenTimeModal(false);
-                            navigate(`/book/${lastViewedBook.id}`);
+                            // Navigate to library page if it has a slug, otherwise to the book page
+                            if (lastViewedBook.daily_published_slug) {
+                              navigate(`/library/${lastViewedBook.daily_published_slug}`);
+                            } else {
+                              navigate(`/book/${lastViewedBook.id}`);
+                            }
                           }}
                           className="group"
                         >

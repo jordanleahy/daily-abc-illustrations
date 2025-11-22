@@ -125,6 +125,60 @@ export function normalizeAgeRange(ageRange: string | undefined): ValidAgeRange |
 }
 
 /**
+ * Validates and normalizes number ranges for number books
+ * Accepts any range with exactly 10 consecutive integers (inclusive)
+ * Examples: "1-10", "10-20", "30-40", "60-70" are all valid
+ * 
+ * @param range - Number range string to validate (format: "start-end")
+ * @returns Validated range string or undefined if invalid
+ * 
+ * Security: Validates input format, range bounds, and span to prevent injection
+ */
+export function validateNumberRange(range: string | undefined): string | undefined {
+  if (!range) return undefined;
+  
+  // Sanitize and trim input
+  const trimmed = range.trim();
+  
+  // Match pattern: number-number (e.g., "1-10", "30-40")
+  // Only allows digits and single hyphen to prevent injection
+  const rangePattern = /^(\d+)-(\d+)$/;
+  const match = trimmed.match(rangePattern);
+  
+  if (!match) {
+    console.warn(`[Number Range Validation] Invalid format: "${range}" (expected format: "start-end")`);
+    return undefined;
+  }
+  
+  const start = parseInt(match[1], 10);
+  const end = parseInt(match[2], 10);
+  
+  // Validate: end must be greater than start
+  if (end <= start) {
+    console.warn(`[Number Range Validation] End must be greater than start: "${range}"`);
+    return undefined;
+  }
+  
+  // Validate: must be exactly 10 integers (inclusive)
+  // For range "10-20", we have 11 numbers: 10,11,12,13,14,15,16,17,18,19,20
+  // So we check if (end - start) === 10
+  const span = end - start;
+  if (span !== 10) {
+    console.warn(`[Number Range Validation] Range must span exactly 10 integers: "${range}" spans ${span}`);
+    return undefined;
+  }
+  
+  // Validate: reasonable bounds (0-999 to prevent extreme values)
+  if (start < 0 || end > 999) {
+    console.warn(`[Number Range Validation] Numbers must be between 0-999: "${range}"`);
+    return undefined;
+  }
+  
+  console.log(`[Number Range Validation] Valid range: "${trimmed}" (${start} to ${end}, inclusive = ${span + 1} numbers)`);
+  return trimmed;
+}
+
+/**
  * Shared types and utilities for Supabase Edge Functions
  * 
  * This file contains common types, enums, and utility functions used across

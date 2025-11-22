@@ -111,42 +111,9 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
 
-  // Load edit trick data
+  // Load edit trick data when modal opens with editTrick
   useEffect(() => {
-    if (editTrick && open) {
-      setName(editTrick.name);
-      
-      // Parse description to extract feature angle and type
-      const lines = editTrick.description?.split('\n') || [];
-      const featureAngleLine = lines.find(l => l.startsWith('Feature Angle:'));
-      const typeLine = lines.find(l => l.startsWith('Type:'));
-      
-      if (featureAngleLine) {
-        setFeatureAngle(featureAngleLine.replace('Feature Angle:', '').trim());
-      }
-      if (typeLine) {
-        setType(typeLine.replace('Type:', '').trim());
-      }
-      
-      const remainingDescription = lines
-        .filter(l => !l.startsWith('Feature Angle:') && !l.startsWith('Type:'))
-        .join('\n')
-        .trim();
-      setDescription(remainingDescription);
-      
-      setPointsPerCompletion(editTrick.points_per_completion);
-
-      // Load assigned kids
-      const trickGoals = allGoals?.filter(g => g.trick_id === editTrick.id) || [];
-      const kidAssignments: Record<string, { selected: boolean; targetCount: number }> = {};
-      trickGoals.forEach(goal => {
-        kidAssignments[goal.kid_profile_id] = {
-          selected: true,
-          targetCount: goal.target_count,
-        };
-      });
-      setSelectedKids(kidAssignments);
-    } else if (!open) {
+    if (!open) {
       // Reset form when modal closes
       setName('');
       setFeatureAngle('');
@@ -155,6 +122,28 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
       setPointsPerCompletion(1);
       setSelectedKids({});
       setPhotoFile(null);
+      return;
+    }
+
+    if (editTrick) {
+      setName(editTrick.name);
+      setPointsPerCompletion(editTrick.points_per_completion);
+
+      // Parse description
+      const lines = editTrick.description?.split('\n') || [];
+      const featureAngleLine = lines.find(l => l.startsWith('Feature Angle:'));
+      const typeLine = lines.find(l => l.startsWith('Type:'));
+      
+      setFeatureAngle(featureAngleLine?.replace('Feature Angle:', '').trim() || '');
+      setType(typeLine?.replace('Type:', '').trim() || '');
+      setDescription(lines.filter(l => !l.startsWith('Feature Angle:') && !l.startsWith('Type:')).join('\n').trim());
+
+      // Load assigned kids
+      const trickGoals = allGoals?.filter(g => g.trick_id === editTrick.id) || [];
+      const kidAssignments = Object.fromEntries(
+        trickGoals.map(goal => [goal.kid_profile_id, { selected: true, targetCount: goal.target_count }])
+      );
+      setSelectedKids(kidAssignments);
     }
   }, [editTrick, open, allGoals]);
 
@@ -163,65 +152,35 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
     
     const assignedKids = Object.entries(selectedKids)
       .filter(([_, value]) => value.selected)
-      .map(([kidId, value]) => ({
-        kid_profile_id: kidId,
-        target_count: value.targetCount,
-      }));
+      .map(([kidId, value]) => ({ kid_profile_id: kidId, target_count: value.targetCount }));
 
     if (assignedKids.length === 0) {
       toast.error('Please assign at least one kid');
       return;
     }
 
+    const fullDescription = `${featureAngle ? `Feature Angle: ${featureAngle}\n` : ''}${type ? `Type: ${type}\n` : ''}${description}`;
+    
     try {
       setIsUploading(true);
-      let photoUrl: string | undefined = editTrick?.photo_url;
-
-      // Upload photo if one was selected
+      
+      // Upload new photo if selected
+      let photoUrl = editTrick?.photo_url;
       if (photoFile && user) {
         photoUrl = await uploadTrickPhoto(photoFile, user.id);
       }
 
-      const fullDescription = `${featureAngle ? `Feature Angle: ${featureAngle}\n` : ''}${type ? `Type: ${type}\n` : ''}${description}`;
+      const commonData = { name, description: fullDescription, points_per_completion: pointsPerCompletion, photo_url: photoUrl, assigned_kids: assignedKids };
 
       if (editTrick) {
-        // Update existing trick
         updateTrick.mutate(
-          {
-            trickId: editTrick.id,
-            name,
-            description: fullDescription,
-            points_per_completion: pointsPerCompletion,
-            photo_url: photoUrl,
-            assigned_kids: assignedKids,
-          },
-          {
-            onSuccess: () => {
-              onOpenChange(false);
-            },
-            onSettled: () => {
-              setIsUploading(false);
-            },
-          }
+          { trickId: editTrick.id, ...commonData },
+          { onSuccess: () => onOpenChange(false), onSettled: () => setIsUploading(false) }
         );
       } else {
-        // Create new trick
         createTrick.mutate(
-          {
-            name,
-            description: fullDescription,
-            points_per_completion: pointsPerCompletion,
-            photo_url: photoUrl,
-            assigned_kids: assignedKids,
-          },
-          {
-            onSuccess: () => {
-              onOpenChange(false);
-            },
-            onSettled: () => {
-              setIsUploading(false);
-            },
-          }
+          commonData,
+          { onSuccess: () => onOpenChange(false), onSettled: () => setIsUploading(false) }
         );
       }
     } catch (error) {

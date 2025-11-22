@@ -249,7 +249,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
               className="w-full h-full object-cover rounded-lg"
             />
             <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-200 rounded-lg flex items-center justify-center">
-              <Button variant="secondary" size="sm">
+              <Button type="button" variant="secondary" size="sm">
                 Change Image
               </Button>
             </div>
@@ -263,6 +263,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                 Drop or paste your image here
               </p>
               <Button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   openFileSelector();
@@ -279,6 +280,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                 Or use clipboard
               </p>
               <Button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   handlePasteFromClipboard();
@@ -294,6 +296,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
               
               {showCopyPrompt && onCopyPrompt && (
                 <Button
+                  type="button"
                   onClick={(e) => {
                     e.stopPropagation();
                     onCopyPrompt();

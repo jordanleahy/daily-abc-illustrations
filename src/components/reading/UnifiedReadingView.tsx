@@ -60,6 +60,7 @@ import { useState, useEffect, useMemo, ReactNode } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { reorderPagesFromStartingLetter } from '@/utils/pageNavigation';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
+import { useReadingProgressTracking } from '@/hooks/useReadingProgressTracking';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidCoins } from '@/hooks/useKidCoins';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
@@ -191,6 +192,7 @@ export function UnifiedReadingView({
 }: UnifiedReadingViewConfig) {
   const navigate = useNavigate();
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
+  const { updateProgress } = useReadingProgressTracking();
   const { data: kidProfiles } = useKidProfiles();
   const { completeBookHabit } = useCompleteBookHabit();
   const { hasHabitsRewards } = useFeatureAccess();
@@ -309,10 +311,17 @@ export function UnifiedReadingView({
     
     // Default navigation logic
     if (isLastPage) {
+      // Track final reading progress
+      const totalPages = reorderedPages.length;
+      const bookIdToTrack = book.book_id || book.id;
+      if (bookIdToTrack) {
+        await updateProgress(bookIdToTrack, totalPages, totalPages, selectedKidId);
+      }
+      
       // Auto-complete reading habit if exists (only for Plus tier users)
-      if (hasHabitsRewards && selectedKidId && (book.book_id || book.id)) {
+      if (hasHabitsRewards && selectedKidId && bookIdToTrack) {
         await completeBookHabit({
-          bookId: book.book_id || book.id,
+          bookId: bookIdToTrack,
           kidProfileId: selectedKidId,
         });
       }
@@ -343,6 +352,12 @@ export function UnifiedReadingView({
       const newIndex = currentPageIndex + 1;
       setCurrentPageIndex(newIndex);
       setEarnedRewards(prev => prev + 1);
+      
+      // Track reading progress
+      const bookIdToTrack = book.book_id || book.id;
+      if (bookIdToTrack) {
+        await updateProgress(bookIdToTrack, newIndex + 1, reorderedPages.length, selectedKidId);
+      }
       
       if (sessionStarted && reorderedPages[newIndex]) {
         trackPageView(newIndex + 1, reorderedPages[newIndex].letter, 'next_swipe');

@@ -6,8 +6,6 @@ interface LastViewedBook {
   book_name: string;
   book_description: string | null;
   last_viewed_at: string;
-  daily_published_id: string | null;
-  daily_published_slug: string | null;
   is_library_book: boolean | null;
 }
 
@@ -25,7 +23,7 @@ export const useLastViewedBook = (kidProfileId: string | undefined) => {
       // Query user_book_activity to find the most recently viewed book
       const { data: activity, error: activityError } = await supabase
         .from('user_book_activity')
-        .select('book_id, daily_published_id, last_viewed_at')
+        .select('book_id, last_viewed_at')
         .eq('kid_id', kidProfileId)
         .order('last_viewed_at', { ascending: false })
         .limit(1)
@@ -36,36 +34,13 @@ export const useLastViewedBook = (kidProfileId: string | undefined) => {
         return null;
       }
 
-      if (!activity) return null;
-
-      // Get the book details
-      let bookId = activity.book_id;
-
-      // If the activity was for a daily published book, get the book_id and slug from that
-      let dailyPublishedSlug: string | null = null;
-      if (!bookId && activity.daily_published_id) {
-        const { data: dailyPublished, error: dpError } = await supabase
-          .from('daily_published')
-          .select('book_id, slug')
-          .eq('id', activity.daily_published_id)
-          .single();
-
-        if (dpError) {
-          console.error('Error fetching daily published book:', dpError);
-          return null;
-        }
-
-        bookId = dailyPublished?.book_id;
-        dailyPublishedSlug = dailyPublished?.slug || null;
-      }
-
-      if (!bookId) return null;
+      if (!activity || !activity.book_id) return null;
 
       // Fetch the book details
       const { data: book, error: bookError } = await supabase
         .from('books')
         .select('id, book_name, book_description, is_library_book')
-        .eq('id', bookId)
+        .eq('id', activity.book_id)
         .single();
 
       if (bookError) {
@@ -76,8 +51,6 @@ export const useLastViewedBook = (kidProfileId: string | undefined) => {
       return {
         ...book,
         last_viewed_at: activity.last_viewed_at,
-        daily_published_id: activity.daily_published_id,
-        daily_published_slug: dailyPublishedSlug,
       };
     },
     enabled: !!kidProfileId,

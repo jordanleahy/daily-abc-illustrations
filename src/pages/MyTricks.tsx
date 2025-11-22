@@ -165,6 +165,7 @@ export default function MyTricks() {
           setCreateModalOpen(open);
           if (!open) setEditTrick(null);
         }}
+        editTrick={editTrick}
       />
     </StandardPageLayout>
   );

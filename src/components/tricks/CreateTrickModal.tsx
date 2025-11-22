@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,6 +6,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useCreateTrick } from '@/hooks/useCreateTrick';
+import { useUpdateTrick } from '@/hooks/useUpdateTrick';
+import { useTrickGoals } from '@/hooks/useTrickGoals';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
@@ -15,6 +17,7 @@ import { ImageUpload } from '@/components/ImageUpload';
 import { uploadTrickPhoto } from '@/utils/trickPhotoUpload';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { Trick } from '@/types/trick';
 
 const TRICK_NAMES = [
   '50-50',
@@ -85,11 +88,14 @@ const TYPES = [
 interface CreateTrickModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  editTrick?: Trick | null;
 }
 
-export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) {
+export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickModalProps) {
   const { data: kids } = useKidProfiles();
   const createTrick = useCreateTrick();
+  const updateTrick = useUpdateTrick();
+  const { data: allGoals } = useTrickGoals();
   const { user } = useAuthContext();
 
   const [name, setName] = useState('');
@@ -104,6 +110,53 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
   const [customFeatureAngle, setCustomFeatureAngle] = useState('');
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+
+  // Load edit trick data
+  useEffect(() => {
+    if (editTrick && open) {
+      setName(editTrick.name);
+      
+      // Parse description to extract feature angle and type
+      const lines = editTrick.description?.split('\n') || [];
+      const featureAngleLine = lines.find(l => l.startsWith('Feature Angle:'));
+      const typeLine = lines.find(l => l.startsWith('Type:'));
+      
+      if (featureAngleLine) {
+        setFeatureAngle(featureAngleLine.replace('Feature Angle:', '').trim());
+      }
+      if (typeLine) {
+        setType(typeLine.replace('Type:', '').trim());
+      }
+      
+      const remainingDescription = lines
+        .filter(l => !l.startsWith('Feature Angle:') && !l.startsWith('Type:'))
+        .join('\n')
+        .trim();
+      setDescription(remainingDescription);
+      
+      setPointsPerCompletion(editTrick.points_per_completion);
+
+      // Load assigned kids
+      const trickGoals = allGoals?.filter(g => g.trick_id === editTrick.id) || [];
+      const kidAssignments: Record<string, { selected: boolean; targetCount: number }> = {};
+      trickGoals.forEach(goal => {
+        kidAssignments[goal.kid_profile_id] = {
+          selected: true,
+          targetCount: goal.target_count,
+        };
+      });
+      setSelectedKids(kidAssignments);
+    } else if (!open) {
+      // Reset form when modal closes
+      setName('');
+      setFeatureAngle('');
+      setType('');
+      setDescription('');
+      setPointsPerCompletion(1);
+      setSelectedKids({});
+      setPhotoFile(null);
+    }
+  }, [editTrick, open, allGoals]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,41 +175,55 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
 
     try {
       setIsUploading(true);
-      let photoUrl: string | undefined;
+      let photoUrl: string | undefined = editTrick?.photo_url;
 
       // Upload photo if one was selected
       if (photoFile && user) {
         photoUrl = await uploadTrickPhoto(photoFile, user.id);
       }
 
-      createTrick.mutate(
-        {
-          name,
-          description: `${featureAngle ? `Feature Angle: ${featureAngle}\n` : ''}${type ? `Type: ${type}\n` : ''}${description}`,
-          points_per_completion: pointsPerCompletion,
-          photo_url: photoUrl,
-          assigned_kids: assignedKids,
-        },
-        {
-          onSuccess: () => {
-            setName('');
-            setFeatureAngle('');
-            setType('');
-            setDescription('');
-            setPointsPerCompletion(1);
-            setSelectedKids({});
-            setComboboxOpen(false);
-            setFeatureAngleOpen(false);
-            setTypeOpen(false);
-            setCustomFeatureAngle('');
-            setPhotoFile(null);
-            onOpenChange(false);
+      const fullDescription = `${featureAngle ? `Feature Angle: ${featureAngle}\n` : ''}${type ? `Type: ${type}\n` : ''}${description}`;
+
+      if (editTrick) {
+        // Update existing trick
+        updateTrick.mutate(
+          {
+            trickId: editTrick.id,
+            name,
+            description: fullDescription,
+            points_per_completion: pointsPerCompletion,
+            photo_url: photoUrl,
+            assigned_kids: assignedKids,
           },
-          onSettled: () => {
-            setIsUploading(false);
+          {
+            onSuccess: () => {
+              onOpenChange(false);
+            },
+            onSettled: () => {
+              setIsUploading(false);
+            },
+          }
+        );
+      } else {
+        // Create new trick
+        createTrick.mutate(
+          {
+            name,
+            description: fullDescription,
+            points_per_completion: pointsPerCompletion,
+            photo_url: photoUrl,
+            assigned_kids: assignedKids,
           },
-        }
-      );
+          {
+            onSuccess: () => {
+              onOpenChange(false);
+            },
+            onSettled: () => {
+              setIsUploading(false);
+            },
+          }
+        );
+      }
     } catch (error) {
       console.error('Failed to upload photo:', error);
       toast.error('Failed to upload photo');
@@ -188,7 +255,7 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Trick</DialogTitle>
+          <DialogTitle>{editTrick ? 'Edit Trick' : 'Create New Trick'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -407,8 +474,10 @@ export function CreateTrickModal({ open, onOpenChange }: CreateTrickModalProps) 
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={createTrick.isPending || isUploading}>
-              {isUploading ? 'Uploading...' : createTrick.isPending ? 'Creating...' : 'Create Trick'}
+            <Button type="submit" disabled={createTrick.isPending || updateTrick.isPending || isUploading}>
+              {isUploading ? 'Uploading...' : 
+               editTrick ? (updateTrick.isPending ? 'Updating...' : 'Update Trick') :
+               (createTrick.isPending ? 'Creating...' : 'Create Trick')}
             </Button>
           </DialogFooter>
         </form>

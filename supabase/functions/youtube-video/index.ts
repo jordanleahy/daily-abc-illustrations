@@ -282,7 +282,7 @@ Deno.serve(async (req) => {
 
         console.log('Searching for channels:', searchQuery);
         
-        // Check cache first (TTL: 24 hours for channel searches)
+        // Check cache first (TTL: 7 days for channel searches)
         const cacheKey = `search:${searchQuery}`;
         const cachedData = await checkCache(supabaseClient, cacheKey, 'channel-search');
         
@@ -360,8 +360,8 @@ Deno.serve(async (req) => {
           videoCount: parseInt(channel.statistics.videoCount || '0'),
         }));
 
-        // Save to cache (24 hours TTL)
-        await saveCache(supabaseClient, cacheKey, 'channel-search', { channels }, 24);
+        // Save to cache (7 days TTL for channel searches)
+        await saveCache(supabaseClient, cacheKey, 'channel-search', { channels }, 168);
 
         return new Response(
           JSON.stringify({
@@ -389,7 +389,7 @@ Deno.serve(async (req) => {
 
         console.log('Fetching videos for channel:', channelId);
         
-        // Check cache first (TTL: 24 hours for channel videos)
+        // Check cache first (TTL: 3 days for channel videos)
         const cacheKey = `videos:${channelId}`;
         const cachedData = await checkCache(supabaseClient, cacheKey, 'channel-videos');
         
@@ -476,8 +476,8 @@ Deno.serve(async (req) => {
           };
         });
 
-        // Save to cache (24 hours TTL)
-        await saveCache(supabaseClient, cacheKey, 'channel-videos', { videos }, 24);
+        // Save to cache (3 days TTL for channel videos)
+        await saveCache(supabaseClient, cacheKey, 'channel-videos', { videos }, 72);
 
         return new Response(
           JSON.stringify({

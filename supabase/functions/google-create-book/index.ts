@@ -354,11 +354,12 @@ Analyze the conversation for:
 1. Content type selected (ABC, Numbers, Shapes, Animals, Sight Words, etc.)
 2. Number of pages requested (5, 10, 15, 20, custom, or "let agent decide")
 3. Letter case preference (for ABC content: lowercase, uppercase, both)
-4. Number range and counting style (for Numbers content):
+4. Number range, counting style, AND counting object (for Numbers content):
    - Range can be ANY consecutive 10 integers (e.g., "1-10", "11-20", "30-40", "60-70")
    - Always format as "start-end" (e.g., "10-20", not "10 to 20")
    - Examples: "1-10" (basic), "10-20" (tens practice), "30-40" (higher numbers)
    - Counting style: simple, skip-counting, number-families
+   - CRITICAL: countingObject MUST be ONE specific item (e.g., "apple" NOT "fruits", "balloon" NOT "party items")
 5. Shape complexity and theme (for Shapes content)
 6. Animal category and focus (for Animals content)
 7. Reading level (for Sight Words content)
@@ -379,6 +380,7 @@ Return ONLY a JSON object with this structure (no markdown, no code blocks):
     "letterCase": "lowercase|uppercase|both (for ABC content)",
     "numberRange": "start-end format covering exactly 10 integers (for Numbers content, e.g., '1-10', '10-20', '30-40', '60-70')",
     "countingStyle": "simple|skip-counting|number-families (for Numbers content)",
+    "countingObject": "ONE specific singular object (for Numbers content, e.g., 'apple', 'balloon', 'star' - NEVER generic like 'fruits' or 'items')",
     "shapeComplexity": "basic|2d-and-3d|advanced (for Shapes content)",
     "shapeTheme": "nature|everyday-objects (for Shapes content)",
     "animalCategory": "farm|zoo|ocean|pets|mixed (for Animals content)",
@@ -446,6 +448,28 @@ IMPORTANT - COLOR CONTENT INSTRUCTIONS:
 - Normalize color names to lowercase (Red → red, BLUE → blue)
 - Common colors: red, orange, yellow, green, blue, purple, pink, brown, black, white, gray
 - Also populate metadata.colorsList (array of unique colors) and metadata.colorsCount at the content level
+`;
+    }
+
+    // Add numbers-specific instructions if this is a numbers book
+    if (bookType === 'numbers') {
+      systemPrompt += `
+
+IMPORTANT - NUMBERS CONTENT INSTRUCTIONS:
+- This is NUMBERS CONTENT. Each page teaches counting with ONE specific object type.
+- CRITICAL: You MUST choose ONE specific, singular object for counting (e.g., "apple", "balloon", "star")
+- NEVER use generic category terms like "fruits", "toys", "items", "objects", "party items"
+- NEVER mix objects (if you choose "apple", ALL pages show apples, not fruits or other items)
+- Extract or determine the specific counting object and include it in metadata.countingObject
+- Examples of GOOD counting objects: "apple", "balloon", "star", "flower", "car", "ball", "cookie"
+- Examples of BAD counting objects: "fruits", "toys", "items", "things", "objects", "party supplies"
+- Page titles should include the number and the specific object (e.g., "5 apples", "13 balloons")
+- In the JSON response, include the countingObject in metadata:
+  "metadata": {
+    ...
+    "countingObject": "apple"  // ← ONE specific singular object
+  }
+- This ensures visual consistency and makes counting easier for children
 `;
     }
 

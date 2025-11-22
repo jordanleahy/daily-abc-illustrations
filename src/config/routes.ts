@@ -1,4 +1,4 @@
-import { LucideIcon, Home, BookOpen, Book, MessageSquare, Gift, Calendar, Users, Search, Video } from 'lucide-react';
+import { LucideIcon, Home, BookOpen, Book, MessageSquare, Gift, Calendar, Users, Search, Video, BarChart } from 'lucide-react';
 import { NavigateFunction } from 'react-router-dom';
 
 /**
@@ -47,6 +47,7 @@ export const ROUTES = {
   VIDEOS: '/videos',
   AGENTS: '/agents',
   DAILY_PUB_SCHEDULE: '/daily-published-schedule',
+  ADMIN_USER_ACTIVITY: '/admin/user-activity',
   REDDIT: '/reddit',
   AUTH: '/auth',
   PROFILE: '/profile',
@@ -149,6 +150,14 @@ export const navigationConfig: RouteConfig[] = [
     path: ROUTES.DAILY_PUB_SCHEDULE,
     name: 'Daily Pub Schedule',
     icon: Calendar,
+    group: 'admin',
+    permission: { role: 'admin' },
+    activeMatch: { startsWith: true },
+  },
+  {
+    path: ROUTES.ADMIN_USER_ACTIVITY,
+    name: 'User Activity',
+    icon: BarChart,
     group: 'admin',
     permission: { role: 'admin' },
     activeMatch: { startsWith: true },

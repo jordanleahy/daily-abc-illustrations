@@ -115,12 +115,12 @@ export const useLibraryBooks = () => {
       // Fetch user activity separately
       const { data: activityData } = await supabase
         .from('user_book_activity')
-        .select('daily_published_id, last_viewed_at, view_count')
+        .select('book_id, last_viewed_at, view_count')
         .eq('user_id', user?.id || '');
 
-      // Create activity lookup map
+      // Create activity lookup map by book_id
       const activityMap = new Map(
-        (activityData || []).map(activity => [activity.daily_published_id, activity])
+        (activityData || []).map(activity => [activity.book_id, activity])
       );
 
       // Fetch first page images only for books without og_image_url
@@ -160,8 +160,8 @@ export const useLibraryBooks = () => {
         // Get SEO metadata from map
         const seo = seoMap.get(item.id);
         
-        // Get activity from map
-        const activity = activityMap.get(item.id);
+        // Get activity from map using book_id
+        const activity = activityMap.get(item.book_id);
         
         const fallbackImage = firstPageMap.get(item.book_id);
         

@@ -42,6 +42,7 @@ import Profile from "./pages/Profile";
 import WordProgress from "./pages/WordProgress";
 import AdminCategorizeBooks from "./pages/AdminCategorizeBooks";
 import Videos from "./pages/Videos";
+import AdminUserActivity from "./pages/AdminUserActivity";
 import PreviewHome from "./pages/preview/PreviewHome";
 import ProductOverview from "./pages/preview/ProductOverview";
 import ReadingTracking from "./pages/preview/ReadingTracking";
@@ -156,8 +157,9 @@ const App = () => {
                 <Route path="/rewards/manage" element={<ProtectedRoute requireFeature="habits_rewards"><RewardsManage /></ProtectedRoute>} />
                 <Route path="/habits/manage" element={<ProtectedRoute requireFeature="habits_rewards"><HabitsManage /></ProtectedRoute>} />
                 <Route path="/my-habits" element={<ProtectedRoute requireFeature="habits_rewards"><MyHabits /></ProtectedRoute>} />
-                <Route path="/videos" element={<ProtectedRoute requireRole="admin"><Videos /></ProtectedRoute>} />
-                <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+               <Route path="/videos" element={<ProtectedRoute requireRole="admin"><Videos /></ProtectedRoute>} />
+               <Route path="/admin/user-activity" element={<ProtectedRoute requireRole="admin"><AdminUserActivity /></ProtectedRoute>} />
+               <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
                 <Route path="/word-progress" element={<ProtectedRoute><WordProgress /></ProtectedRoute>} />
                <Route path="/daily-published/:id" element={<DailyPublished />} />
                <Route path="/daily-published-schedule" element={<DailyPublishedSchedule />} />

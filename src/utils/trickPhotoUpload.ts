@@ -2,7 +2,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export async function uploadTrickPhoto(file: File, userId: string): Promise<string> {
   const fileExt = file.name.split('.').pop()?.toLowerCase() || 'jpg';
-  const fileName = `${userId}/${Date.now()}.${fileExt}`;
+  const fileName = `${userId}/${Date.now()}-${Math.random().toString(36).substring(2, 9)}.${fileExt}`;
   
   // Determine content type for videos and images
   const contentType = file.type || (

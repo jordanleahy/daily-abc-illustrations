@@ -171,142 +171,177 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
 
   const coins = parseInt(coinPrice) || 0;
 
+  const isSystemProduct = editProduct?.is_system_product;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{editProduct ? 'Edit' : 'Create'} Reward Product</DialogTitle>
+          <DialogTitle>
+            {isSystemProduct ? 'Edit Screen Time Settings' : `${editProduct ? 'Edit' : 'Create'} Reward Product`}
+          </DialogTitle>
           <DialogDescription>
-            Create rewards that your kids can purchase with their earned coins
+            {isSystemProduct 
+              ? 'Adjust the coin price and minutes for the Screen Time reward'
+              : 'Create rewards that your kids can purchase with their earned coins'
+            }
           </DialogDescription>
         </DialogHeader>
 
-        {editProduct?.is_system_product && (
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              Screen Time is a required system product. You can only modify the coin price and minutes.
-            </AlertDescription>
-          </Alert>
-        )}
-
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="image">Product Image</Label>
-              <div className="h-48">
-                <ImageUpload 
-                  onImageSelect={handleImageSelect} 
-                  disabled={editProduct?.is_system_product}
+          {isSystemProduct ? (
+            // Simplified layout for system products
+            <>
+              <Alert>
+                <Info className="h-4 w-4" />
+                <AlertDescription>
+                  Screen Time is a required system product. You can only modify the coin price and minutes.
+                </AlertDescription>
+              </Alert>
+
+              <div className="space-y-2">
+                <Label htmlFor="price">Coin Price *</Label>
+                <Input
+                  id="price"
+                  type="number"
+                  min="1"
+                  value={coinPrice}
+                  onChange={(e) => setCoinPrice(e.target.value)}
+                  placeholder="100"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  {coins > 0 && `${coins} coins = ${formatCoinsAsCurrency(coins)}`}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="screenTime">Screen Time (minutes) *</Label>
+                <Input
+                  id="screenTime"
+                  type="number"
+                  min="1"
+                  value={screenTimeMinutes}
+                  onChange={(e) => setScreenTimeMinutes(e.target.value)}
+                  placeholder="30"
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  Minutes of video watch time this product provides
+                </p>
+              </div>
+            </>
+          ) : (
+            // Full form for regular products
+            <>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="image">Product Image</Label>
+                  <div className="h-48">
+                    <ImageUpload onImageSelect={handleImageSelect} />
+                  </div>
+                  {existingImageUrl && !uploadedImage && (
+                    <BookImage 
+                      src={existingImageUrl} 
+                      alt="Current product image" 
+                      className="w-32 h-32 object-cover rounded-lg"
+                      priority={false}
+                    />
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="video">Product Video (Portrait)</Label>
+                  <div className="h-48">
+                    <VideoUpload onVideoSelect={handleVideoSelect} />
+                  </div>
+                  {existingVideoUrl && !uploadedVideo && (
+                    <video src={existingVideoUrl} className="w-32 h-48 object-cover rounded-lg" controls />
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="title">Title *</Label>
+                <Input
+                  id="title"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="e.g., Ice Cream Trip, New Toy"
+                  required
+                  maxLength={100}
                 />
               </div>
-              {existingImageUrl && !uploadedImage && (
-                <BookImage 
-                  src={existingImageUrl} 
-                  alt="Current product image" 
-                  className="w-32 h-32 object-cover rounded-lg"
-                  priority={false}
-                />
-              )}
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="video">Product Video (Portrait)</Label>
-              <div className="h-48">
-                <VideoUpload 
-                  onVideoSelect={handleVideoSelect} 
-                  disabled={editProduct?.is_system_product}
+              <div className="space-y-2">
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Optional details about this reward"
+                  rows={3}
+                  maxLength={500}
                 />
               </div>
-              {existingVideoUrl && !uploadedVideo && (
-                <video src={existingVideoUrl} className="w-32 h-48 object-cover rounded-lg" controls />
-              )}
-            </div>
-          </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="title">Title * {editProduct?.is_system_product && <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded ml-2">System Product</span>}</Label>
-            <Input
-              id="title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g., Ice Cream Trip, New Toy"
-              required
-              maxLength={100}
-              disabled={editProduct?.is_system_product}
-            />
-          </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="price">Coin Price *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    min="1"
+                    value={coinPrice}
+                    onChange={(e) => setCoinPrice(e.target.value)}
+                    placeholder="100"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    {coins > 0 && `${coins} coins = ${formatCoinsAsCurrency(coins)}`}
+                  </p>
+                </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea
-              id="description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional details about this reward"
-              rows={3}
-              maxLength={500}
-              disabled={editProduct?.is_system_product}
-            />
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="screenTime">Screen Time (minutes)</Label>
+                  <Input
+                    id="screenTime"
+                    type="number"
+                    min="0"
+                    value={screenTimeMinutes}
+                    onChange={(e) => setScreenTimeMinutes(e.target.value)}
+                    placeholder="30"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Minutes of video watch time this product provides
+                  </p>
+                </div>
+              </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="price">Coin Price *</Label>
-              <Input
-                id="price"
-                type="number"
-                min="1"
-                value={coinPrice}
-                onChange={(e) => setCoinPrice(e.target.value)}
-                placeholder="100"
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                {coins > 0 && `${coins} coins = ${formatCoinsAsCurrency(coins)}`}
-              </p>
-            </div>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="quantity"
+                    checked={hasQuantityLimit}
+                    onCheckedChange={(checked) => setHasQuantityLimit(checked as boolean)}
+                  />
+                  <Label htmlFor="quantity" className="cursor-pointer">
+                    Limit quantity available
+                  </Label>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="screenTime">Screen Time (minutes)</Label>
-              <Input
-                id="screenTime"
-                type="number"
-                min="0"
-                value={screenTimeMinutes}
-                onChange={(e) => setScreenTimeMinutes(e.target.value)}
-                placeholder="30"
-              />
-              <p className="text-xs text-muted-foreground">
-                Minutes of video watch time this product provides
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="quantity"
-                checked={hasQuantityLimit}
-                onCheckedChange={(checked) => setHasQuantityLimit(checked as boolean)}
-                disabled={editProduct?.is_system_product}
-              />
-              <Label htmlFor="quantity" className={editProduct?.is_system_product ? "opacity-50" : "cursor-pointer"}>
-                Limit quantity available
-              </Label>
-            </div>
-
-            {hasQuantityLimit && (
-              <Input
-                type="number"
-                min="0"
-                value={quantityAvailable}
-                onChange={(e) => setQuantityAvailable(e.target.value)}
-                placeholder="How many times can this be purchased?"
-                disabled={editProduct?.is_system_product}
-              />
-            )}
-          </div>
+                {hasQuantityLimit && (
+                  <Input
+                    type="number"
+                    min="0"
+                    value={quantityAvailable}
+                    onChange={(e) => setQuantityAvailable(e.target.value)}
+                    placeholder="How many times can this be purchased?"
+                  />
+                )}
+              </div>
+            </>
+          )}
 
           <DialogFooter>
             <Button
@@ -324,6 +359,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
               disabled={
                 !title ||
                 !coinPrice ||
+                (isSystemProduct && !screenTimeMinutes) ||
                 isUploading ||
                 createProduct.isPending ||
                 updateProduct.isPending

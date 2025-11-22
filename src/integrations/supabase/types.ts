@@ -1480,7 +1480,6 @@ export type Database = {
         Row: {
           book_id: string | null
           created_at: string
-          daily_published_id: string | null
           id: string
           kid_id: string | null
           last_reading_session_at: string | null
@@ -1494,7 +1493,6 @@ export type Database = {
         Insert: {
           book_id?: string | null
           created_at?: string
-          daily_published_id?: string | null
           id?: string
           kid_id?: string | null
           last_reading_session_at?: string | null
@@ -1508,7 +1506,6 @@ export type Database = {
         Update: {
           book_id?: string | null
           created_at?: string
-          daily_published_id?: string | null
           id?: string
           kid_id?: string | null
           last_reading_session_at?: string | null
@@ -1533,20 +1530,6 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "kid_last_viewed_book_with_cover"
             referencedColumns: ["book_id"]
-          },
-          {
-            foreignKeyName: "user_book_activity_daily_published_id_fkey"
-            columns: ["daily_published_id"]
-            isOneToOne: false
-            referencedRelation: "active_daily_published"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "user_book_activity_daily_published_id_fkey"
-            columns: ["daily_published_id"]
-            isOneToOne: false
-            referencedRelation: "daily_published"
-            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "user_book_activity_kid_id_fkey"

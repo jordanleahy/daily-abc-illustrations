@@ -151,9 +151,24 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
         ''
       }`}>
       <CardHeader>
-        <div className="flex items-center justify-center gap-1 mb-3">
-          <Coins className="h-5 w-5 text-amber-500" />
-          <span className="font-semibold text-lg">{habit.coin_amount} coins</span>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-1">
+            <Coins className="h-5 w-5 text-amber-500" />
+            <span className="font-semibold text-lg">{habit.coin_amount} coins</span>
+          </div>
+          
+          {isPending && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+              onClick={handleDeleteClick}
+              disabled={deleteHabitCompletion.isPending}
+              title="Remove from today's list"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          )}
         </div>
         
         <div className="flex justify-between items-start">
@@ -171,27 +186,12 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
             </p>
           </div>
           
-          <div className="flex flex-col gap-2 items-end">
-            {isPending && (
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
-                onClick={handleDeleteClick}
-                disabled={deleteHabitCompletion.isPending}
-                title="Remove from today's list"
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            )}
-            
-            {habit.deadline_time && (
-              <Badge variant="secondary" className="text-xs">
-                <Clock className="h-3 w-3 mr-1" />
-                Due: {formatDeadlineTime(habit.deadline_time)}
-              </Badge>
-            )}
-          </div>
+          {habit.deadline_time && (
+            <Badge variant="secondary" className="text-xs">
+              <Clock className="h-3 w-3 mr-1" />
+              Due: {formatDeadlineTime(habit.deadline_time)}
+            </Badge>
+          )}
         </div>
       </CardHeader>
 

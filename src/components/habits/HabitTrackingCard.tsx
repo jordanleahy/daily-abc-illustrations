@@ -151,8 +151,13 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
         ''
       }`}>
       <CardHeader>
+        <div className="flex items-center justify-center gap-1 mb-3">
+          <Coins className="h-5 w-5 text-amber-500" />
+          <span className="font-semibold text-lg">{habit.coin_amount} coins</span>
+        </div>
+        
         <div className="flex justify-between items-start">
-          <div>
+          <div className="flex-1">
             <div className="flex items-center gap-2">
               <CardTitle className="text-base">{habit.title}</CardTitle>
               {completion.instance_number > 1 && (
@@ -167,25 +172,18 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
           </div>
           
           <div className="flex flex-col gap-2 items-end">
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1">
-                <Coins className="h-4 w-4 text-amber-500" />
-                <span className="font-semibold">{habit.coin_amount} coins</span>
-              </div>
-              
-              {isPending && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={handleDeleteClick}
-                  disabled={deleteHabitCompletion.isPending}
-                  title="Remove from today's list"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
+            {isPending && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                onClick={handleDeleteClick}
+                disabled={deleteHabitCompletion.isPending}
+                title="Remove from today's list"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
             
             {habit.deadline_time && (
               <Badge variant="secondary" className="text-xs">
@@ -217,11 +215,11 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
         <div className="mt-auto pt-3">
           {isPending ? (
             (habit.book_id || habit.title.toLowerCase().includes('read')) ? (
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 <Button
                   onClick={handleStartReading}
                   disabled={isResolving}
-                  className="flex-1"
+                  className="w-full"
                   variant="default"
                 >
                   {isResolving ? 'Loading...' : 'Start Reading'}
@@ -230,18 +228,18 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                 <Button
                   onClick={() => handleMarkComplete(false)}
                   disabled={markComplete.isPending}
-                  className="flex-1"
+                  className="w-full"
                   variant="destructive"
                 >
                   Wrong
                 </Button>
               </div>
             ) : (
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2">
                 <Button
                   onClick={() => handleMarkComplete(true)}
                   disabled={markComplete.isPending}
-                  className="flex-1"
+                  className="w-full"
                   variant="success"
                 >
                   Right
@@ -250,7 +248,7 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                 <Button
                   onClick={() => handleMarkComplete(false)}
                   disabled={markComplete.isPending}
-                  className="flex-1"
+                  className="w-full"
                   variant="destructive"
                 >
                   Wrong

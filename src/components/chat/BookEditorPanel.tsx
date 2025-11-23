@@ -297,6 +297,14 @@ export function BookEditorPanel({
     );
   };
 
+  // Helper function to strip title headers from prompts before copying
+  const stripTitleFromPrompt = (prompt: string): string => {
+    // Remove title patterns: **Page N: Title**, **Cover: Title**, **Educational Focus: Title**, etc.
+    return prompt
+      .replace(/^\*\*(?:Page\s+\d+|Cover|Educational Focus):[^\n*]*\*\*\s*/i, '')
+      .trim();
+  };
+
   // Handle copy with confirmation and delayed transition
   const handleCopyPrompt = async () => {
     const prompt = getCurrentPagePrompt(currentPageNumber);
@@ -318,7 +326,9 @@ export function BookEditorPanel({
           });
         }
 
-        await copyToClipboard(prompt);
+        // Strip title header before copying to prevent AI from adding text to images
+        const cleanPrompt = stripTitleFromPrompt(prompt);
+        await copyToClipboard(cleanPrompt);
         setShowConfirmation(true);
       
         // Mark this page as copied

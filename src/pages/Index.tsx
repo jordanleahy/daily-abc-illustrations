@@ -189,19 +189,7 @@ const Index = () => {
           </>
         )}
 
-        {/* Book Filters */}
-        {libraryItems.length > 0 && (
-          <div className="mb-6">
-            <BookFilterBar
-              searchQuery={rawQuery}
-              onSearchChange={setSearchQuery}
-              selectedThemes={selectedThemes}
-              onThemesChange={setSelectedThemes}
-              availableThemes={availableThemes}
-              placeholder={isSearching ? "Searching..." : "Search your books..."}
-            />
-          </div>
-        )}
+        {/* Search and filter removed from home page */}
 
         {/* Categorized Book Sections */}
         {filteredLibraryItems.length > 0 ? (

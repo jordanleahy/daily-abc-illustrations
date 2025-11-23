@@ -97,6 +97,7 @@ export function BookEditorPanel({
   const [isReplacing, setIsReplacing] = useState(false);
   
   const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
+  const [hasRunQaAgent, setHasRunQaAgent] = useState(false);
   const { generateMetadata, isGenerating } = useWordMetadata();
   const { isOverlayHidden, toggleOverlay, isToggling, isLoading: isPreferencesLoading } = useReadingPreferences();
   const { user } = useAuthContext();
@@ -299,6 +300,22 @@ export function BookEditorPanel({
     const prompt = getCurrentPagePrompt(currentPageNumber);
     if (prompt) {
       try {
+        // Run QA Theme Agent on first copy if book is created
+        if (isBookCreated && createdBookId && !hasRunQaAgent) {
+          setHasRunQaAgent(true);
+          // Fire and forget - run in background, don't wait
+          fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/qa-theme-agent`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+            },
+            body: JSON.stringify({ bookId: createdBookId }),
+          }).catch(error => {
+            console.error('QA Theme Agent error (non-blocking):', error);
+          });
+        }
+
         await copyToClipboard(prompt);
         setShowConfirmation(true);
       

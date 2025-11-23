@@ -167,3 +167,6 @@ verify_jwt = true
 
 [functions.youtube-video]
 verify_jwt = true
+
+[functions.qa-theme-agent]
+verify_jwt = true

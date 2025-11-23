@@ -14,6 +14,7 @@ import AuthConfirm from "./pages/AuthConfirm";
 import ResetPassword from "./pages/ResetPassword";
 import Agents from "./pages/Agents";
 import Books from "./pages/Books";
+import AllBooksPage from "./pages/AllBooksPage";
 import BookDetail from "./pages/BookDetail";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Library from "./pages/Library";
@@ -136,11 +137,11 @@ const App = () => {
           <Route path="/auth/reset-password" element={<ResetPassword />} />
                <Route path="/agents" element={<Agents />} />
                {/* User book routes - Own books only */}
-               <Route path="/books" element={<ProtectedRoute requireSubscription={false}><Books key="my-books" /></ProtectedRoute>} />
-               <Route path="/books/:id" element={<ProtectedRoute requireSubscription={false}><BookDetail /></ProtectedRoute>} />
-                {/* Admin book routes - All books in system */}
-                <Route path="/all-books" element={<ProtectedRoute requireRole="admin"><Books key="all-books" /></ProtectedRoute>} />
-                <Route path="/all-books/:id" element={<ProtectedRoute requireRole="admin"><BookDetail /></ProtectedRoute>} />
+                <Route path="/books" element={<ProtectedRoute requireSubscription={false}><Books /></ProtectedRoute>} />
+                <Route path="/books/:id" element={<ProtectedRoute requireSubscription={false}><BookDetail /></ProtectedRoute>} />
+                 {/* Admin book routes - All books in system */}
+                 <Route path="/all-books" element={<ProtectedRoute requireRole="admin"><AllBooksPage /></ProtectedRoute>} />
+                 <Route path="/all-books/:id" element={<ProtectedRoute requireRole="admin"><BookDetail /></ProtectedRoute>} />
                 {/* Library routes - All subscription tiers */}
                 <Route path="/library" element={<ProtectedRoute requireSubscription={false}><Library key="library" /></ProtectedRoute>} />
                 <Route path="/library/:bookId" element={<ProtectedRoute requireSubscription={false}><LibraryBookView /></ProtectedRoute>} />

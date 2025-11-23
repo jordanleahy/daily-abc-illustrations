@@ -178,7 +178,6 @@ export default function GoogleChat() {
   const [currentEditorPage, setCurrentEditorPage] = useState(1);
   const [editorPageImages, setEditorPageImages] = useState<Record<number, string>>({});
   const [editorPagePrompts, setEditorPagePrompts] = useState<Record<number, string>>({});
-  const [showEditor, setShowEditor] = useState(false);
   const [outlineJustCompleted, setOutlineJustCompleted] = useState(false);
   const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
   const previousShouldShow = useRef(false);
@@ -233,6 +232,9 @@ export default function GoogleChat() {
     // Always show button if we have pages, even after book creation
     return hasPages;
   }, [messages, isLoading, parsedPageDetails]);
+
+  // Derive showEditor from whether outline is ready or book exists
+  const showEditor = shouldShowReviewButton || isBookCreated;
 
   // Parse educational focus from messages
   const educationalFocus = useMemo(() => {
@@ -426,10 +428,8 @@ export default function GoogleChat() {
       return;
     }
     
-    if (outlineJustCompleted && !showEditor) {
+    if (outlineJustCompleted) {
       setCurrentEditorPage(1); // Start at cover page
-      
-      setShowEditor(true);
       
       // Scroll to bottom to show the banner
       setTimeout(() => {
@@ -439,7 +439,7 @@ export default function GoogleChat() {
       // Reset flag after opening
       setOutlineJustCompleted(false);
     }
-  }, [outlineJustCompleted, showEditor, isMobile, createdBookId, bookData?.status]);
+  }, [outlineJustCompleted, isMobile, createdBookId, bookData?.status]);
 
   // Add quick reply buttons when AI indicates book is ready to create
   const messagesWithCreateOptions = useMemo(() => {
@@ -524,7 +524,6 @@ export default function GoogleChat() {
           }
           
           // Auto-open the Book Editor Panel in edit mode
-          setShowEditor(true);
           setCurrentEditorPage(1);
         });
       } else {
@@ -910,10 +909,9 @@ export default function GoogleChat() {
       // Use startTransition for non-urgent state updates
       startTransition(() => {
         setCurrentSessionId(newSession.id);
-        setCurrentEditorPage(0);
+        setCurrentEditorPage(1);
         setEditorPageImages({});
         setEditorPagePrompts({});
-        setShowEditor(false);
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
         setSelectedBookType(null);
@@ -1012,7 +1010,6 @@ export default function GoogleChat() {
       setEditorPageImages(selectedSession.qa_page_images);
     }
     
-    setShowEditor(true);
     setCurrentEditorPage(1);
   }, [selectedSession, createBookMutation, messages, currentSessionId, updateQAPagePrompts]);
 
@@ -1021,20 +1018,24 @@ export default function GoogleChat() {
       // Batch state updates using startTransition
       startTransition(() => {
         setCurrentSessionId(sessionId);
-        setCurrentEditorPage(0);
-        setShowEditor(false);
+        setCurrentEditorPage(1);
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
         setIsMobileSidebarOpen(false);
         setSelectedBookType(null);
         setReplacePageMode({});
         
-        // Load editor images from the selected session
+        // Load editor images and prompts from the selected session
         const session = sessions.find(s => s.id === sessionId);
         if (session?.qa_page_images) {
           setEditorPageImages(session.qa_page_images);
         } else {
           setEditorPageImages({});
+        }
+        if (session?.qa_page_prompts) {
+          setEditorPagePrompts(session.qa_page_prompts);
+        } else {
+          setEditorPagePrompts({});
         }
       });
     }
@@ -1548,7 +1549,7 @@ export default function GoogleChat() {
           <Sheet 
             open={showEditor && !createBookMutation.isSuccess} 
             onOpenChange={(open) => {
-              setShowEditor(open);
+              // Editor state is derived, onOpenChange is no-op
             }}
           >
             <SheetContent 
@@ -1566,7 +1567,9 @@ export default function GoogleChat() {
                 editorPagePrompts={editorPagePrompts}
                 getCurrentPagePrompt={getCurrentPagePrompt}
                 createBookMutation={createBookMutation}
-                onClose={() => setShowEditor(false)}
+                onClose={() => {
+                  // Editor state is derived, close is no-op
+                }}
                 onNavigate={handleEditorPageNavigation}
                 onImageUpload={handleEditorImageUpload}
                 onRemoveImage={handleRemoveEditorImage}
@@ -1603,7 +1606,9 @@ export default function GoogleChat() {
               editorPagePrompts={editorPagePrompts}
               getCurrentPagePrompt={getCurrentPagePrompt}
               createBookMutation={createBookMutation}
-              onClose={() => setShowEditor(false)}
+              onClose={() => {
+                // Editor state is derived, close is no-op
+              }}
               onNavigate={handleEditorPageNavigation}
               onImageUpload={handleEditorImageUpload}
               onRemoveImage={handleRemoveEditorImage}

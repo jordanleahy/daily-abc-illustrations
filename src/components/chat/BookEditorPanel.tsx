@@ -76,7 +76,9 @@ export function BookEditorPanel({
   bookStatus = PublicationStatus.DRAFT,
 }: BookEditorPanelProps) {
   const navigate = useNavigate();
-  const [hasClickedCopy, setHasClickedCopy] = useState(false);
+  
+  // Derive hasClickedCopy from whether prompt exists for current page
+  const hasClickedCopy = !!editorPagePrompts[currentPageNumber];
   
   // Handle close with context-aware navigation
   const handleClose = () => {
@@ -206,8 +208,6 @@ export function BookEditorPanel({
   useEffect(() => {
     setShowConfirmation(false);
     setIsEditingText(false);
-    // Check if this page has been copied before
-    setHasClickedCopy(copiedPages.has(currentPageNumber));
     
     // Reset word learning state
     setCurrentWordIndex(0);
@@ -313,7 +313,6 @@ export function BookEditorPanel({
         // Transition to upload after 5 seconds
         setTimeout(() => {
           setShowConfirmation(false);
-          setHasClickedCopy(true);
         }, 5000);
       } catch (error) {
         console.error('Failed to copy prompt:', error);

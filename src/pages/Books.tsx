@@ -394,22 +394,20 @@ export default function Books() {
   const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   
-  const isAllBooksView = location.pathname === '/all-books';
-  
-  // Pagination state for both views
+  // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
-  const PAGE_SIZE = 24; // 4 rows of 6 books - better performance
+  const PAGE_SIZE = 24;
   
-  // ⚡ PERFORMANCE: Debounced search to prevent reload on every keystroke
+  // ⚡ PERFORMANCE: Debounced search
   const { rawQuery: searchQuery, activeQuery: debouncedSearchQuery, setSearchQuery, isSearching } = useOptimizedSearch('debounced', 300);
   
-  // ⚡ OPTIMIZED: Server-side filtering with pagination for both views
+  // ⚡ OPTIMIZED: Server-side filtering with pagination
   const { books, totalCount, loading } = useBooks(
-    isAllBooksView ? 'all-books' : 'my-books',
-    { page: currentPage, pageSize: PAGE_SIZE }, // Always paginate for performance
-    debouncedSearchQuery, // Use debounced query for database calls
-    selectedThemes.length > 0 ? selectedThemes : undefined // Pass theme filter to backend
+    'my-books',
+    { page: currentPage, pageSize: PAGE_SIZE },
+    debouncedSearchQuery,
+    selectedThemes.length > 0 ? selectedThemes : undefined
   );
   
   // Extract available themes from all possible themes (not just current books)
@@ -419,21 +417,21 @@ export default function Books() {
     []
   );
   
-  const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1; // At least 1 page
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
   
-  // Reset page when switching between views or searching
+  // Reset page when searching or filtering
   useEffect(() => {
     setCurrentPage(1);
-  }, [isAllBooksView, searchQuery, selectedThemes]);
+  }, [searchQuery, selectedThemes]);
   
-  // Reset to page 1 if current page exceeds total pages (e.g., after deletion)
+  // Reset to page 1 if current page exceeds total pages
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) {
       setCurrentPage(totalPages);
     }
   }, [currentPage, totalPages]);
   
-  // Fetch session data (prompts & images) when book is selected
+  // Fetch session data when book is selected
   const { data: sessionData } = useBookSessionData(selectedBookId);
 
   // Fetch book pages for navigation
@@ -544,12 +542,8 @@ export default function Books() {
     // Invalidate query to refresh sort order with new activity
     queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
     
-    // Navigate based on context
-    if (isAllBooksView) {
-      navigate(`/all-books/${bookId}`); // Admin editor
-    } else {
-      navigate(`/books/${bookId}/read`, { state: { from: 'my-books' } }); // Reading view with back navigation
-    }
+    // Navigate to reading view
+    navigate(`/books/${bookId}/read`, { state: { from: 'my-books' } });
   };
 
   const handleEditBook = (bookId: string) => {
@@ -787,10 +781,8 @@ export default function Books() {
     deleteBook.mutate(bookId);
   };
 
-  const pageTitle = isAllBooksView ? "All Books" : "My Books";
-  const pageDescription = isAllBooksView 
-    ? "View and manage all ABC books in the system" 
-    : "Create and manage your ABC books";
+  const pageTitle = "My Books";
+  const pageDescription = "Create and manage your ABC books";
 
   // Show loading while auth is being checked
   if (authLoading) {
@@ -844,8 +836,8 @@ export default function Books() {
           selectedThemes={selectedThemes}
           onThemesChange={setSelectedThemes}
           availableThemes={availableThemes}
-          placeholder={isAllBooksView ? "Search all books..." : "Search your books..."}
-          showSearch={isAllBooksView}
+          placeholder="Search your books..."
+          showSearch={true}
         />
 
         {/* Books Grid */}

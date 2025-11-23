@@ -43,6 +43,8 @@ import { InlineEditTextarea } from '@/components/ui/inline-edit-textarea';
 import { useRealTimeInlineEdit } from '@/hooks/useRealTimeInlineEdit';
 import { LoadingState } from '@/components/ui/loading-state';
 import { LoadingProgress } from '@/components/ui/loading-progress';
+import { AdminOnly } from '@/components/AdminOnly';
+import { BookMetadataEditor } from '@/components/book';
 import {
   Select,
   SelectContent,
@@ -886,6 +888,16 @@ export default function BookDetail() {
                           )}
                         </div>
                       </div>
+                      
+                      {/* Admin-Only Metadata Editor */}
+                      <AdminOnly>
+                        <div className="mt-6">
+                          <BookMetadataEditor 
+                            bookId={book.id}
+                            currentMetadata={book.metadata || {}}
+                          />
+                        </div>
+                      </AdminOnly>
                     </div>
                     
                     {/* Right side - QR Code */}

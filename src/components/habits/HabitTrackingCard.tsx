@@ -4,6 +4,16 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Shimmer } from '@/components/ui/shimmer';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { X, Coins, Clock } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +33,7 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
   const deleteHabitCompletion = useDeleteHabitCompletion();
   const { toast } = useToast();
   const [isResolving, setIsResolving] = useState(false);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const habit = completion.habit_assignments.habits;
   const kid = completion.habit_assignments.kid_profiles;
 
@@ -53,13 +64,13 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
     });
   };
 
-  const handleDelete = () => {
-    if (window.confirm(
-      `Remove this "${habit.title}" task from today's list?\n\n` +
-      `(The habit will remain active for future days)`
-    )) {
-      deleteHabitCompletion.mutate(completion.id);
-    }
+  const handleDeleteClick = () => {
+    setShowDeleteDialog(true);
+  };
+
+  const handleConfirmDelete = () => {
+    deleteHabitCompletion.mutate(completion.id);
+    setShowDeleteDialog(false);
   };
 
   const handleStartReading = async () => {
@@ -129,10 +140,11 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
   const isProcessing = markComplete.isPending || deleteHabitCompletion.isPending;
 
   return (
-    <Shimmer 
-      isShimmering={isProcessing}
-      className="rounded-lg"
-    >
+    <>
+      <Shimmer 
+        isShimmering={isProcessing}
+        className="rounded-lg"
+      >
       <Card className={
         isCompleted ? 'border-green-500 bg-green-50/50' :
         isDeclined ? 'border-red-500 bg-red-50/50' :
@@ -166,7 +178,7 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
                   variant="ghost"
                   size="icon"
                   className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
-                  onClick={handleDelete}
+                  onClick={handleDeleteClick}
                   disabled={deleteHabitCompletion.isPending}
                   title="Remove from today's list"
                 >
@@ -255,7 +267,26 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
           </div>
         )}
       </CardContent>
-    </Card>
-    </Shimmer>
+      </Card>
+      </Shimmer>
+
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove task from today's list?</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>Remove <span className="font-semibold text-foreground">"{habit.title}"</span> from today's checklist?</p>
+              <p className="text-muted-foreground">The habit will remain active and appear again tomorrow.</p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleConfirmDelete}>
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }

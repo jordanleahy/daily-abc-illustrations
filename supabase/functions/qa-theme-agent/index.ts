@@ -114,7 +114,7 @@ If no updates are needed, return: { "updates": [] }`;
         model: 'google/gemini-2.5-flash',
         messages: [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Review the page titles and provide improvements if needed.' }
+          { role: 'user', content: 'Review the page titles and provide improvements if needed. Please ensure that each page title is suitable for the age type provided in the educational focus. Also consider the content approach - for example, use lowercase letters for ABC content if appropriate, and use numeric representations (like "1", "2", "3") rather than spelled-out numbers (like "One", "Two", "Three") for numbers content.' }
         ],
         temperature: 0.7,
       }),

@@ -5,6 +5,11 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { SafeLocalStorage, SUBSCRIPTION_CACHE_KEY, SUBSCRIPTION_CACHE_DAYS } from '@/utils/storage';
 
+// Global request lock to prevent concurrent API calls
+let pendingRequest: Promise<SubscriptionStatus> | null = null;
+let lastRequestTime = 0;
+const MIN_REQUEST_INTERVAL = 2000; // Minimum 2 seconds between requests
+
 interface SubscriptionStatus {
   subscribed: boolean;
   product_id?: string;
@@ -93,39 +98,63 @@ export const useSubscription = () => {
         return { ...cached, loading: false };
       }
 
-      // Cache miss - fetch from API
-      try {
-        console.log('[SUBSCRIPTION] Fetching fresh subscription from API');
-        const { data, error } = await supabase.functions.invoke('check-subscription');
-        if (error) throw error;
-
-        const subscriptionData: SubscriptionStatus = {
-          subscribed: data.subscribed || false,
-          product_id: data.product_id,
-          price_id: data.price_id,
-          interval: data.interval,
-          subscription_end: data.subscription_end,
-          cancel_at_period_end: data.cancel_at_period_end,
-          loading: false,
-        };
-
-        // Cache for 90 days - instant loads for game app users
-        SafeLocalStorage.set(
-          SUBSCRIPTION_CACHE_KEY,
-          subscriptionData,
-          90 * 24
-        );
-
-        return subscriptionData;
-      } catch (error) {
-        console.error('Error checking subscription:', error);
-        SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
-        return {
-          subscribed: false,
-          loading: false,
-          error: error instanceof Error ? error.message : 'Failed to check subscription',
-        };
+      // If there's already a pending request, wait for it
+      if (pendingRequest) {
+        console.log('[SUBSCRIPTION] Request already in progress, waiting...');
+        return pendingRequest;
       }
+
+      // Enforce minimum time between requests
+      const now = Date.now();
+      const timeSinceLastRequest = now - lastRequestTime;
+      if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+        const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+        console.log(`[SUBSCRIPTION] Rate limiting - waiting ${waitTime}ms before next request`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+
+      // Create and store the pending request
+      pendingRequest = (async () => {
+        try {
+          console.log('[SUBSCRIPTION] Fetching fresh subscription from API');
+          lastRequestTime = Date.now();
+          
+          const { data, error } = await supabase.functions.invoke('check-subscription');
+          if (error) throw error;
+
+          const subscriptionData: SubscriptionStatus = {
+            subscribed: data.subscribed || false,
+            product_id: data.product_id,
+            price_id: data.price_id,
+            interval: data.interval,
+            subscription_end: data.subscription_end,
+            cancel_at_period_end: data.cancel_at_period_end,
+            loading: false,
+          };
+
+          // Cache for 90 days - instant loads for game app users
+          SafeLocalStorage.set(
+            SUBSCRIPTION_CACHE_KEY,
+            subscriptionData,
+            90 * 24
+          );
+
+          return subscriptionData;
+        } catch (error) {
+          console.error('Error checking subscription:', error);
+          SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+          return {
+            subscribed: false,
+            loading: false,
+            error: error instanceof Error ? error.message : 'Failed to check subscription',
+          };
+        } finally {
+          // Clear the pending request after completion
+          pendingRequest = null;
+        }
+      })();
+
+      return pendingRequest;
     },
     enabled: !!user,
     staleTime: SUBSCRIPTION_CACHE_DAYS * 24 * 60 * 60 * 1000, // 30 days in ms

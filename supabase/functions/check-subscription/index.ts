@@ -46,6 +46,38 @@ const setCachedResult = (key: string, data: any): void => {
   }
 };
 
+// Retry helper with exponential backoff for rate limits
+const retryWithBackoff = async <T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  initialDelayMs = 1000
+): Promise<T> => {
+  let lastError: Error | null = null;
+  
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+      
+      // Check if it's a rate limit error
+      const isRateLimit = error?.message?.includes('rate limit') || 
+                         error?.statusCode === 429 ||
+                         error?.code === 'rate_limit';
+      
+      if (!isRateLimit || attempt === maxRetries - 1) {
+        throw error; // Not a rate limit or last attempt
+      }
+      
+      const delayMs = initialDelayMs * Math.pow(2, attempt);
+      logStep(`Rate limit hit, retrying in ${delayMs}ms`, { attempt: attempt + 1, maxRetries });
+      await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+  }
+  
+  throw lastError;
+};
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -128,9 +160,12 @@ serve(async (req) => {
       });
     }
 
-    // Query Stripe API directly - single source of truth
+    // Query Stripe API with retry logic for rate limits
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    
+    const customers = await retryWithBackoff(() => 
+      stripe.customers.list({ email: user.email, limit: 1 })
+    );
     
     if (customers.data.length === 0) {
       logStep("No customer found, returning unsubscribed state");
@@ -145,11 +180,13 @@ serve(async (req) => {
     const customerId = customers.data[0].id;
     logStep("Found Stripe customer", { customerId });
 
-    const subscriptions = await stripe.subscriptions.list({
-      customer: customerId,
-      status: "active",
-      limit: 1,
-    });
+    const subscriptions = await retryWithBackoff(() =>
+      stripe.subscriptions.list({
+        customer: customerId,
+        status: "active",
+        limit: 1,
+      })
+    );
 
     const hasActiveSub = subscriptions.data.length > 0;
     let productId = null;

@@ -70,7 +70,7 @@ serve(async (req) => {
     }
 
     // Build prompt for AI to review titles
-    const systemPrompt = `You are a QA Theme Agent reviewing page titles for an educational children's ABC book. Your job is to ensure that each page title accurately reflects the original user intent and is engaging for children.
+    const systemPrompt = `You are a QA Theme Agent reviewing page titles for early educational content for children. Your job is to ensure that each page title accurately reflects the original user intent and is engaging for children.
 
 Book Context:
 - Book Name: ${book.book_name}

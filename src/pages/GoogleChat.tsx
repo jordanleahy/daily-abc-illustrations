@@ -181,6 +181,7 @@ export default function GoogleChat() {
   const [outlineJustCompleted, setOutlineJustCompleted] = useState(false);
   const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
   const previousShouldShow = useRef(false);
+  const [forceEditorClosed, setForceEditorClosed] = useState(false);
 
   // Priority: Show book images from storage if book exists, otherwise show Book Editor images
   // But hide images for pages in replace mode
@@ -234,7 +235,7 @@ export default function GoogleChat() {
   }, [messages, isLoading, parsedPageDetails]);
 
   // Derive showEditor from whether outline is ready or book exists
-  const showEditor = shouldShowReviewButton || isBookCreated;
+  const showEditor = (shouldShowReviewButton || isBookCreated) && !forceEditorClosed;
 
   // Parse educational focus from messages
   const educationalFocus = useMemo(() => {
@@ -942,6 +943,9 @@ export default function GoogleChat() {
     // Reset mutation state to allow panel to open after book creation
     createBookMutation.reset();
     
+    // Reset force close state to allow editor to open
+    setForceEditorClosed(false);
+    
     // Extract and store prompts in qa_page_prompts on "View Outline" click
     if (!selectedSession?.qa_page_prompts || Object.keys(selectedSession.qa_page_prompts).length === 0) {
       console.log('[Prompt Storage] Extracting prompts on View Outline click');
@@ -1435,11 +1439,16 @@ export default function GoogleChat() {
       
       setThumbnailUrl(publicUrl);
       
+      // Auto-navigate to next page after successful cover upload
+      if (currentEditorPage === 1 && pageCount > 1) {
+        setCurrentEditorPage(2);
+      }
+      
       console.log('Cover image uploaded successfully!');
     } catch (error: any) {
       console.error('Cover upload error:', error);
     }
-  }, [createdBookId, user, queryClient]);
+  }, [createdBookId, user, queryClient, currentEditorPage, pageCount]);
 
   // Fetch thumbnail URL from cover page
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
@@ -1586,9 +1595,7 @@ export default function GoogleChat() {
                 editorPagePrompts={editorPagePrompts}
                 getCurrentPagePrompt={getCurrentPagePrompt}
                 createBookMutation={createBookMutation}
-                onClose={() => {
-                  // Editor state is derived, close is no-op
-                }}
+                onClose={() => setForceEditorClosed(true)}
                 onNavigate={handleEditorPageNavigation}
                 onImageUpload={handleEditorImageUpload}
                 onRemoveImage={handleRemoveEditorImage}
@@ -1625,9 +1632,7 @@ export default function GoogleChat() {
               editorPagePrompts={editorPagePrompts}
               getCurrentPagePrompt={getCurrentPagePrompt}
               createBookMutation={createBookMutation}
-              onClose={() => {
-                // Editor state is derived, close is no-op
-              }}
+              onClose={() => setForceEditorClosed(true)}
               onNavigate={handleEditorPageNavigation}
               onImageUpload={handleEditorImageUpload}
               onRemoveImage={handleRemoveEditorImage}

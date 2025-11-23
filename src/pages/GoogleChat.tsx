@@ -1066,6 +1066,24 @@ export default function GoogleChat() {
       try {
         console.log('Uploading image...');
         
+        // OPTIMISTIC UPDATE: Immediately update local state before upload
+        setEditorPageImages(prev => ({
+          ...prev,
+          [currentEditorPage]: imageDataUrl
+        }));
+        
+        // Clear replace mode immediately
+        setReplacePageMode(prev => {
+          const updated = { ...prev };
+          delete updated[currentEditorPage];
+          return updated;
+        });
+        
+        // Auto-advance immediately for instant UX
+        if (currentEditorPage < pageCount) {
+          setCurrentEditorPage(currentEditorPage + 1);
+        }
+        
         // Convert base64 to blob
         const response = await fetch(imageDataUrl);
         const blob = await response.blob();
@@ -1117,24 +1135,25 @@ export default function GoogleChat() {
         
         if (insertError) throw insertError;
         
-        // Invalidate queries to refetch images
-        await queryClient.invalidateQueries({ queryKey: ['book-page-images', createdBookId] });
+        // Update React Query cache directly instead of invalidating
+        queryClient.setQueryData(['book-page-images', createdBookId], (old: Record<number, string> | undefined) => ({
+          ...old,
+          [currentEditorPage]: publicUrl
+        }));
         
-        // Clear replace mode for this page
-        setReplacePageMode(prev => {
+        // Update optimistic state with final URL
+        setEditorPageImages(prev => ({
+          ...prev,
+          [currentEditorPage]: publicUrl
+        }));
+      } catch (error: any) {
+        console.error('Image upload error:', error);
+        // Rollback optimistic update on error
+        setEditorPageImages(prev => {
           const updated = { ...prev };
           delete updated[currentEditorPage];
           return updated;
         });
-        
-        // Auto-advance to next page if not the last page
-        if (currentEditorPage < pageCount) {
-          setTimeout(() => {
-            setCurrentEditorPage(currentEditorPage + 1);
-          }, 500);
-        }
-      } catch (error: any) {
-        console.error('Image upload error:', error);
       }
     } else {
       // Pre-creation: Store in session editor images

@@ -145,11 +145,11 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
         isShimmering={isProcessing}
         className="rounded-lg"
       >
-      <Card className={
+      <Card className={`h-full flex flex-col ${
         isCompleted ? 'border-green-500 bg-green-50/50' :
         isDeclined ? 'border-red-500 bg-red-50/50' :
         ''
-      }>
+      }`}>
       <CardHeader>
         <div className="flex justify-between items-start">
           <div>
@@ -197,75 +197,79 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-3">
-        {habit.photo_url && (
-          <AspectRatio ratio={16/9} className="rounded-lg overflow-hidden">
-            <img 
-              src={habit.photo_url} 
-              alt={habit.title}
-              className="w-full h-full object-cover"
-            />
-          </AspectRatio>
-        )}
+      <CardContent className="space-y-3 flex-1 flex flex-col">
+        <div className="space-y-3">
+          {habit.photo_url && (
+            <AspectRatio ratio={16/9} className="rounded-lg overflow-hidden">
+              <img 
+                src={habit.photo_url} 
+                alt={habit.title}
+                className="w-full h-full object-cover"
+              />
+            </AspectRatio>
+          )}
 
-        {habit.description && (
-          <p className="text-sm text-muted-foreground">{habit.description}</p>
-        )}
+          {habit.description && (
+            <p className="text-sm text-muted-foreground">{habit.description}</p>
+          )}
+        </div>
 
-        {isPending ? (
-          (habit.book_id || habit.title.toLowerCase().includes('read')) ? (
-            <div className="flex gap-2">
-              <Button
-                onClick={handleStartReading}
-                disabled={isResolving}
-                className="flex-1"
-                variant="default"
-              >
-                {isResolving ? 'Loading...' : 'Start Reading'}
-              </Button>
-              
-              <Button
-                onClick={() => handleMarkComplete(false)}
-                disabled={markComplete.isPending}
-                className="flex-1"
-                variant="destructive"
-              >
-                Wrong
-              </Button>
-            </div>
+        <div className="mt-auto pt-3">
+          {isPending ? (
+            (habit.book_id || habit.title.toLowerCase().includes('read')) ? (
+              <div className="flex gap-2">
+                <Button
+                  onClick={handleStartReading}
+                  disabled={isResolving}
+                  className="flex-1"
+                  variant="default"
+                >
+                  {isResolving ? 'Loading...' : 'Start Reading'}
+                </Button>
+                
+                <Button
+                  onClick={() => handleMarkComplete(false)}
+                  disabled={markComplete.isPending}
+                  className="flex-1"
+                  variant="destructive"
+                >
+                  Wrong
+                </Button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <Button
+                  onClick={() => handleMarkComplete(true)}
+                  disabled={markComplete.isPending}
+                  className="flex-1"
+                  variant="success"
+                >
+                  Right
+                </Button>
+                
+                <Button
+                  onClick={() => handleMarkComplete(false)}
+                  disabled={markComplete.isPending}
+                  className="flex-1"
+                  variant="destructive"
+                >
+                  Wrong
+                </Button>
+              </div>
+            )
           ) : (
-            <div className="flex gap-2">
-              <Button
-                onClick={() => handleMarkComplete(true)}
-                disabled={markComplete.isPending}
-                className="flex-1"
-                variant="success"
-              >
-                Right
-              </Button>
-              
-              <Button
-                onClick={() => handleMarkComplete(false)}
-                disabled={markComplete.isPending}
-                className="flex-1"
-                variant="destructive"
-              >
-                Wrong
-              </Button>
+            <div className="space-y-2">
+              <Badge variant={isCompleted ? 'default' : 'destructive'} className="w-full justify-center py-2">
+                {isCompleted ? '✓ Completed' : '✗ Not Done'}
+              </Badge>
+              {completion.marked_at && (
+                <p className="text-xs text-center text-muted-foreground">
+                  Marked at {formatMarkedTime(completion.marked_at)}
+                </p>
+              )}
             </div>
-          )
-        ) : (
-          <div className="space-y-2">
-            <Badge variant={isCompleted ? 'default' : 'destructive'} className="w-full justify-center py-2">
-              {isCompleted ? '✓ Completed' : '✗ Not Done'}
-            </Badge>
-            {completion.marked_at && (
-              <p className="text-xs text-center text-muted-foreground">
-                Marked at {formatMarkedTime(completion.marked_at)}
-              </p>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </CardContent>
       </Card>
       </Shimmer>

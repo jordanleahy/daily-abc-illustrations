@@ -8,7 +8,7 @@ export interface AgentConfig {
   /** Display name shown to users */
   name: string;
   /** Agent type determining its specialized capabilities and role */
-  type: 'chat' | 'book-creation' | 'book-creation-numbers' | 'book-creation-rhyming' | 'book-creation-colors' | 'book-creation-abc' | 'illustration-director' | 'graphic-designer';
+  type: 'chat' | 'book-creation' | 'book-creation-numbers' | 'book-creation-rhyming' | 'book-creation-colors' | 'book-creation-abc';
   /** Description of the agent's purpose and goals */
   intent: string;
   /** Current operational status */

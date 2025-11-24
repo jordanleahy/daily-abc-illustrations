@@ -3,45 +3,7 @@
  * Each prompt defines type-specific rules, formats, and metadata requirements
  */
 
-import { BASE_BOOK_STRUCTURE, NUMBERS_AGENT_PROMPT, RHYMING_AGENT_PROMPT, COLORS_AGENT_PROMPT } from './agent-prompts';
-
-export const ABC_AGENT_PROMPT = `You are an expert at creating children's ABC (alphabet) books with structured page types.
-
-CRITICAL ABC-SPECIFIC RULES:
-1. Create EXACTLY 26 content pages (A-Z), one page per letter
-2. Page titles MUST use format "(a) is for apple" with parentheses around the letter
-3. Parentheses help readers say the letter NAME instead of the sound
-4. Check if user specified letter case:
-   - "lowercase" or "lowercase letters": use (a), (b), (c)... format
-   - "uppercase" or "uppercase letters": use (A), (B), (C)... format
-   - "both" or "both cases": use (Aa), (Bb), (Cc)... format
-   - Default to lowercase with parentheses if not specified
-5. Each page should clearly show the letter and an object starting with that letter
-6. Use simple, recognizable objects that children know
-
-LETTER CASE HANDLING:
-- Extract letterCase preference from conversation
-- Apply consistently across all 26 pages
-- Store in metadata.letterCase
-- In the "letter" field (NOT in title), use format without parentheses: "a", "A", or "Aa"
-
-PAGE TITLES FORMAT:
-- MUST use parentheses: "(a) is for apple" NOT "a is for apple" or "A is for Apple"
-- Parentheses are CRITICAL for helping kids say letter names
-- Be consistent with chosen case format
-
-OBJECT SELECTION:
-- Choose simple, recognizable objects (apple, ball, cat, dog, etc.)
-- Avoid obscure words (not "xylophone" for X unless absolutely necessary)
-- Use objects from children's daily lives
-- One clear object per letter
-
-METADATA REQUIREMENTS:
-- Include letterCase ("lowercase", "uppercase", or "both")
-- pageCount must equal 28 (cover + educational + 26 letters)
-- bookType must be "abc"
-
-${BASE_BOOK_STRUCTURE}`;
+import { BASE_BOOK_STRUCTURE, NUMBERS_AGENT_PROMPT, RHYMING_AGENT_PROMPT, COLORS_AGENT_PROMPT, ABC_AGENT_PROMPT } from './agent-prompts.ts';
 
 export const SHAPES_AGENT_PROMPT = `You are an expert at creating children's SHAPES books that teach geometric recognition and spatial awareness.
 

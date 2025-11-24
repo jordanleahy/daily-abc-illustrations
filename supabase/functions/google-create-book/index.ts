@@ -5,6 +5,7 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
 import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange, BOOK_TYPE_TO_AGENT_TYPE, AgentType } from '../_shared/types.ts';
+import { SPECIALIZED_AGENT_PROMPTS } from './specialized-agent-prompts.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -241,13 +242,34 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
 
     // Use the selected agent's instructions as system prompt
     let systemPrompt = selectedAgent.instructions;
+    let promptSource = 'database';
+    
+    // CRITICAL: Check if database has placeholder prompt (< 500 chars)
+    // If so, use full prompt from specialized-agent-prompts.ts file instead
+    const MIN_PROMPT_LENGTH = 500;
+    if (systemPrompt.length < MIN_PROMPT_LENGTH) {
+      console.warn(`[Prompt Validation] Database prompt is suspiciously short (${systemPrompt.length} chars). Checking for file-based fallback...`);
+      
+      // Try to map agent type to specialized prompt
+      const filePrompt = SPECIALIZED_AGENT_PROMPTS[bookType as keyof typeof SPECIALIZED_AGENT_PROMPTS];
+      if (filePrompt) {
+        console.log(`[Prompt Fallback] ✓ Using full prompt from specialized-agent-prompts.ts for ${bookType} (${filePrompt.length} chars)`);
+        systemPrompt = filePrompt;
+        promptSource = 'file-fallback';
+      } else {
+        console.warn(`[Prompt Fallback] ✗ No file-based prompt found for book type: ${bookType}. Using short database prompt.`);
+        promptSource = 'database-short';
+      }
+    }
+    
     console.log('[Orchestration] Agent selected:', {
       agentId: selectedAgent.id,
       agentName: selectedAgent.name,
       agentType: selectedAgent.type,
       version: selectedAgent.version,
       source: agentSource,
-      promptLength: systemPrompt.length
+      promptLength: systemPrompt.length,
+      promptSource: promptSource
     });
 
     // ============================================================================

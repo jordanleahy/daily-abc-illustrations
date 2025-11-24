@@ -38,3 +38,6 @@ export type {
   AgentConfigBackend,
   CompareAgentRequest
 } from './agent';
+
+// Agent utilities
+export { BOOK_TYPE_TO_AGENT_TYPE } from './agent';

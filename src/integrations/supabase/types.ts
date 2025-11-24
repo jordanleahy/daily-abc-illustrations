@@ -14,6 +14,73 @@ export type Database = {
   }
   public: {
     Tables: {
+      agent_performance_metrics: {
+        Row: {
+          agent_id: string | null
+          agent_type: string
+          book_created: boolean | null
+          book_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          metadata_captured: Json | null
+          prompt_patterns: Json | null
+          total_pages: number | null
+          user_edited_pages: number | null
+          user_satisfaction: number | null
+        }
+        Insert: {
+          agent_id?: string | null
+          agent_type: string
+          book_created?: boolean | null
+          book_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          metadata_captured?: Json | null
+          prompt_patterns?: Json | null
+          total_pages?: number | null
+          user_edited_pages?: number | null
+          user_satisfaction?: number | null
+        }
+        Update: {
+          agent_id?: string | null
+          agent_type?: string
+          book_created?: boolean | null
+          book_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          metadata_captured?: Json | null
+          prompt_patterns?: Json | null
+          total_pages?: number | null
+          user_edited_pages?: number | null
+          user_satisfaction?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_performance_metrics_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_performance_metrics_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_performance_metrics_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           created_at: string

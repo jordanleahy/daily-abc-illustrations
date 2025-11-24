@@ -25,7 +25,11 @@ export interface Message {
   suggestedActions?: SuggestedAction[];
 }
 
-export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: Message[], sessionId: string) => void) => {
+export const useGoogleChat = (
+  sessionId?: string, 
+  onMessagesUpdate?: (messages: Message[], sessionId: string) => void,
+  kidAge?: { years: number; months: number }
+) => {
   const queryClient = useQueryClient();
   const { user, session } = useAuthContext();
   const [isLoading, setIsLoading] = useState(false);
@@ -93,7 +97,8 @@ export const useGoogleChat = (sessionId?: string, onMessagesUpdate?: (messages: 
           body: JSON.stringify({ 
             messages: [...messagesWithoutSuggestions, apiUserMessage],
             outlineReady: context?.outlineReady,
-            bookCreated: context?.bookCreated
+            bookCreated: context?.bookCreated,
+            kidAge
           })
         }
       );

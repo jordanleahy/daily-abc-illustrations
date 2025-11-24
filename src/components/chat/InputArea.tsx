@@ -3,6 +3,7 @@ import { Send, Image as ImageIcon, BookOpen, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ImageUpload } from '@/components/ImageUpload';
+import { KidSelector } from '@/components/chat/KidSelector';
 import { cn } from '@/lib/utils';
 
 interface InputAreaProps {
@@ -12,6 +13,7 @@ interface InputAreaProps {
   createdBookId: string | null;
   isMobile: boolean;
   shouldShowReviewButton: boolean;
+  selectedKidId: string | null;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
@@ -19,6 +21,7 @@ interface InputAreaProps {
   onImageSelect: (file: File) => void;
   onViewBook: () => void;
   onOpenReview: () => void;
+  onKidChange: (kidId: string | null) => void;
 }
 
 export const InputArea = memo(({
@@ -28,13 +31,15 @@ export const InputArea = memo(({
   createdBookId,
   isMobile,
   shouldShowReviewButton,
+  selectedKidId,
   onInputChange,
   onSend,
   onKeyPress,
   onImageUploadToggle,
   onImageSelect,
   onViewBook,
-  onOpenReview
+  onOpenReview,
+  onKidChange
 }: InputAreaProps) => {
   console.log('[InputArea Debug] Render with:', {
     shouldShowReviewButton,
@@ -65,9 +70,10 @@ export const InputArea = memo(({
 
   return (
     <div className="border-t bg-background p-4">
-      {shouldShowReviewButton && (
-        <div className="mx-auto max-w-4xl mb-3">
-          <div className="grid grid-cols-2 gap-2">
+      <div className="mx-auto max-w-4xl mb-3 flex items-center justify-between gap-4">
+        <KidSelector selectedKidId={selectedKidId} onKidChange={onKidChange} />
+        {shouldShowReviewButton && (
+          <div className="grid grid-cols-2 gap-2 flex-1">
             <Button
               onClick={onViewBook}
               variant={createdBookId ? "default" : "outline"}
@@ -86,8 +92,8 @@ export const InputArea = memo(({
               Outline
             </Button>
           </div>
-        </div>
-      )}
+        )}
+      </div>
       <div className="mx-auto flex max-w-4xl gap-2">
         <Input
           value={input}

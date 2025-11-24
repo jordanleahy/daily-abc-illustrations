@@ -81,10 +81,11 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, kidAge } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
+      kidAge?: { years: number; months: number };
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -220,7 +221,7 @@ For all book types, follow this order:
 1. **CHARACTER THEME** - FIRST QUESTION! Ask if they want popular characters (show 5-10 suggestions + skip option)
 2. **CLARIFICATION** - If book type needs clarification, ask that specific question AFTER character selection
 3. **THEME/CONCEPT** - Ask about the specific theme (incorporate character if selected)
-4. **AGE GROUP** - Ask about target age with suggestions
+4. **AGE GROUP** - ${kidAge ? `SKIP THIS - Child is ${kidAge.years} years ${kidAge.months} months old. Use this age for all content decisions.` : 'Ask about target age with suggestions'}
 5. **ART STYLE** - ONLY ask if user skipped character selection. If they chose a character, skip this and use the character's style
 6. **ADDITIONAL DETAILS** - Any other relevant questions for that book type
 7. **PROPOSE TITLE & DESCRIPTION** - Based on all gathered info including character theme

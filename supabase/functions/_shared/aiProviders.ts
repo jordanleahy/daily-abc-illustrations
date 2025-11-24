@@ -1,50 +1,26 @@
 /**
  * AI Provider Configuration and Utilities
- * Handles API calls to multiple AI providers (OpenAI, DeepSeek)
+ * Handles API calls via Lovable AI Gateway
+ * Supports multiple models: Google Gemini, OpenAI, DeepSeek through a unified gateway
  */
 
 import type { AgentConfig } from './types.ts';
 
 /**
- * AI Provider API endpoints
+ * Lovable AI Gateway endpoint (OpenAI-compatible)
  */
-const PROVIDER_ENDPOINTS = {
-  openai: 'https://api.openai.com/v1/chat/completions',
-  deepseek: 'https://api.deepseek.com/chat/completions',
-  google: 'https://generativelanguage.googleapis.com/v1beta/models',
-} as const;
+const LOVABLE_AI_GATEWAY_ENDPOINT = 'https://ai.gateway.lovable.dev/v1/chat/completions';
 
 /**
- * Get the API endpoint for a given provider
+ * Get the Lovable API key from environment variables
  */
-export function getProviderEndpoint(provider: AgentConfig['provider']): string {
-  return PROVIDER_ENDPOINTS[provider];
+export function getLovableApiKey(): string | undefined {
+  return Deno.env.get('LOVABLE_API_KEY');
 }
 
 /**
- * Get the API key for a given provider from environment variables
- */
-export function getProviderApiKey(provider: AgentConfig['provider']): string | undefined {
-  if (provider === 'openai') {
-    return Deno.env.get('OPENAI_API_KEY');
-  } else if (provider === 'deepseek') {
-    return Deno.env.get('DEEPSEEK_API_KEY');
-  } else if (provider === 'google') {
-    return Deno.env.get('GOOGLE_API_KEY');
-  }
-  return undefined;
-}
-
-/**
- * Check if a model uses legacy parameter format (max_tokens instead of max_completion_tokens)
- */
-export function isLegacyModel(model: string): boolean {
-  const legacyModels = ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'];
-  return legacyModels.some(legacy => model.includes(legacy));
-}
-
-/**
- * Build OpenAI-compatible request body with proper parameter handling
+ * Build request body for Lovable AI Gateway (OpenAI-compatible format)
+ * The gateway handles provider-specific formatting internally
  */
 export function buildRequestBody(
   agent: AgentConfig,
@@ -54,46 +30,15 @@ export function buildRequestBody(
     temperature?: number;
   } = {}
 ): Record<string, any> {
-  // Google Gemini uses different format
-  if (agent.provider === 'google') {
-    return {
-      contents: messages.map(msg => ({
-        role: msg.role === 'assistant' ? 'model' : (msg.role === 'system' ? 'user' : msg.role),
-        parts: typeof msg.content === 'string' 
-          ? [{ text: msg.content }]
-          : msg.content.map(part => part.text ? { text: part.text } : { text: '' })
-      })),
-      generationConfig: {
-        maxOutputTokens: agent.max_completion_tokens,
-        topP: agent.top_p,
-        temperature: options.temperature !== undefined ? options.temperature : 1.0
-      }
-    };
-  }
-
   const body: Record<string, any> = {
-    model: agent.model,
+    model: agent.model, // Should be in format: google/gemini-2.5-flash, openai/gpt-5-mini, etc.
     messages,
+    max_completion_tokens: agent.max_completion_tokens,
     top_p: agent.top_p,
   };
 
-  // Handle legacy vs new models for OpenAI
-  if (agent.provider === 'openai') {
-    if (isLegacyModel(agent.model)) {
-      body.max_tokens = agent.max_completion_tokens;
-      if (options.temperature !== undefined) {
-        body.temperature = options.temperature;
-      }
-    } else {
-      body.max_completion_tokens = agent.max_completion_tokens;
-      // Newer models don't support temperature parameter
-    }
-  } else if (agent.provider === 'deepseek') {
-    // DeepSeek uses OpenAI-compatible format
-    body.max_tokens = agent.max_completion_tokens;
-    if (options.temperature !== undefined) {
-      body.temperature = options.temperature;
-    }
+  if (options.temperature !== undefined) {
+    body.temperature = options.temperature;
   }
 
   if (options.stream) {
@@ -104,7 +49,8 @@ export function buildRequestBody(
 }
 
 /**
- * Make an AI API call with provider-specific configuration
+ * Make an AI API call via Lovable AI Gateway
+ * The gateway automatically routes to the appropriate provider based on model name
  */
 export async function callAIProvider(
   agent: AgentConfig,
@@ -114,38 +60,16 @@ export async function callAIProvider(
     temperature?: number;
   } = {}
 ): Promise<Response> {
-  const apiKey = getProviderApiKey(agent.provider);
+  const apiKey = getLovableApiKey();
   
   if (!apiKey) {
-    throw new Error(`${agent.provider.toUpperCase()}_API_KEY is not configured`);
+    throw new Error('LOVABLE_API_KEY is not configured');
   }
 
   const body = buildRequestBody(agent, messages, options);
-  console.log(`Calling ${agent.provider} API with model: ${agent.model}`);
+  console.log(`Calling Lovable AI Gateway with model: ${agent.model}`);
 
-  // Google uses different endpoint structure
-  if (agent.provider === 'google') {
-    const endpoint = `${getProviderEndpoint(agent.provider)}/${agent.model}:generateContent?key=${apiKey}`;
-    
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`Google API Error:`, response.status, errorText);
-      throw new Error(`Google API error: ${response.status} - ${errorText}`);
-    }
-
-    return response;
-  }
-
-  const endpoint = getProviderEndpoint(agent.provider);
-  const response = await fetch(endpoint, {
+  const response = await fetch(LOVABLE_AI_GATEWAY_ENDPOINT, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${apiKey}`,
@@ -156,19 +80,25 @@ export async function callAIProvider(
 
   if (!response.ok) {
     const errorText = await response.text();
-    console.error(`${agent.provider} API Error:`, response.status, errorText);
-    throw new Error(`${agent.provider} API error: ${response.status} - ${errorText}`);
+    console.error(`Lovable AI Gateway Error:`, response.status, errorText);
+    
+    // Handle specific error codes
+    if (response.status === 429) {
+      throw new Error('Rate limit exceeded. Please try again later.');
+    }
+    if (response.status === 402) {
+      throw new Error('Payment required. Please add credits to your Lovable AI workspace.');
+    }
+    
+    throw new Error(`Lovable AI Gateway error: ${response.status} - ${errorText}`);
   }
 
   return response;
 }
 
 /**
- * Parse AI response content based on provider
+ * Parse AI response content (OpenAI-compatible format from gateway)
  */
 export function parseAIResponse(provider: AgentConfig['provider'], responseData: any): string {
-  if (provider === 'google') {
-    return responseData.candidates[0].content.parts[0].text;
-  }
   return responseData.choices[0].message.content;
 }

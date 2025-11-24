@@ -13,6 +13,7 @@ interface AgentIdentityCardProps {
   lastChangeDescription?: string | null;
   onClearChangeDescription?: () => void;
   className?: string;
+  isAdmin?: boolean;
 }
 
 export const AgentIdentityCard = ({ 
@@ -20,7 +21,8 @@ export const AgentIdentityCard = ({
   onUpdate, 
   lastChangeDescription, 
   onClearChangeDescription,
-  className 
+  className,
+  isAdmin = false
 }: AgentIdentityCardProps) => {
   const [editingField, setEditingField] = useState<string | null>(null);
 
@@ -100,6 +102,39 @@ export const AgentIdentityCard = ({
               placeholder="Describe the agent's purpose and capabilities"
             />
         </div>
+
+        {/* System Prompt / Instructions - Admin Only */}
+        {isAdmin && (
+          <div>
+            <label className="text-sm font-medium text-muted-foreground">
+              System Prompt (Admin Only)
+            </label>
+            <InlineEditTextarea
+              value={config.instructions || ''}
+              onSave={(instructions) => {
+                onUpdate({ instructions });
+                setEditingField(null);
+              }}
+              isEditing={editingField === 'instructions'}
+              renderDisplay={(value) => (
+                <div 
+                  className="text-sm cursor-pointer hover:text-primary transition-colors mt-1 p-2 rounded-md hover:bg-muted/50 max-h-[200px] overflow-y-auto"
+                  onClick={() => setEditingField('instructions')}
+                >
+                  {value ? (
+                    <pre className="whitespace-pre-wrap font-mono text-xs">
+                      {value}
+                    </pre>
+                  ) : (
+                    <span className="text-muted-foreground">No system prompt configured</span>
+                  )}
+                </div>
+              )}
+              className="min-h-[200px] text-xs font-mono"
+              placeholder="Enter the system prompt / instructions for this agent"
+            />
+          </div>
+        )}
 
         {/* Change Response Panel - Always visible */}
         <ChangeResponsePanel

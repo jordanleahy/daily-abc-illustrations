@@ -17,6 +17,7 @@ export const AddKidModal: React.FC<AddKidModalProps> = ({ open, onOpenChange }) 
   const createKidProfile = useCreateKidProfile();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
@@ -24,6 +25,7 @@ export const AddKidModal: React.FC<AddKidModalProps> = ({ open, onOpenChange }) 
   const resetForm = () => {
     setFirstName('');
     setLastName('');
+    setDateOfBirth('');
     setProfileImage(null);
     setImagePreview('');
   };
@@ -99,6 +101,7 @@ export const AddKidModal: React.FC<AddKidModalProps> = ({ open, onOpenChange }) 
       {
         first_name: firstName.trim(),
         last_name: lastName.trim(),
+        date_of_birth: dateOfBirth || undefined,
         profile_image_url: imageUrl,
       },
       {
@@ -190,6 +193,16 @@ export const AddKidModal: React.FC<AddKidModalProps> = ({ open, onOpenChange }) 
                 required
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dateOfBirth">Birthday</Label>
+            <Input
+              id="dateOfBirth"
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+            />
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

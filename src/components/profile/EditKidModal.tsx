@@ -20,6 +20,7 @@ export const EditKidModal: React.FC<EditKidModalProps> = ({ kid, open, onOpenCha
   const updateKidProfile = useUpdateKidProfile();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
   const [profileImage, setProfileImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
@@ -28,6 +29,7 @@ export const EditKidModal: React.FC<EditKidModalProps> = ({ kid, open, onOpenCha
     if (kid) {
       setFirstName(kid.first_name);
       setLastName(kid.last_name);
+      setDateOfBirth(kid.date_of_birth || '');
       setImagePreview(kid.profile_image_url || '');
       setProfileImage(null);
     }
@@ -108,6 +110,7 @@ export const EditKidModal: React.FC<EditKidModalProps> = ({ kid, open, onOpenCha
         id: kid.id,
         first_name: firstName.trim(),
         last_name: lastName.trim(),
+        date_of_birth: dateOfBirth || null,
         profile_image_url: imageUrl,
       },
       {
@@ -200,6 +203,16 @@ export const EditKidModal: React.FC<EditKidModalProps> = ({ kid, open, onOpenCha
                 required
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="editDateOfBirth">Birthday</Label>
+            <Input
+              id="editDateOfBirth"
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+            />
           </div>
 
           <div className="flex justify-end space-x-2 pt-4">

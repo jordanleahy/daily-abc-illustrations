@@ -37,8 +37,8 @@ const Agents = () => {
   }> = [
     {
       type: 'chat',
-      title: 'ABC Cards Agent (Chat)',
-      description: 'Main conversational AI that helps users create educational content and provides assistance.',
+      title: 'Chat Agent',
+      description: 'Universal planning assistant that gathers requirements and creates structured outlines for all 13 book types (ages 2-7).',
       icon: MessageCircle,
       badge: 'Active'
     },

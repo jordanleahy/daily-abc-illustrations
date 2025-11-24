@@ -50,6 +50,13 @@ export default function GoogleChat() {
   // Get kid profiles
   const { data: kidProfiles = [] } = useKidProfiles();
   
+  // Auto-select kid if there's exactly one profile
+  useEffect(() => {
+    if (kidProfiles.length === 1 && !selectedKidId) {
+      setSelectedKidId(kidProfiles[0].id);
+    }
+  }, [kidProfiles, selectedKidId]);
+  
   // Get location state for pre-filled prompts and target words from recommendations
   const locationState = window.history.state?.usr || {};
   const initialPrompt = locationState.initialPrompt || '';

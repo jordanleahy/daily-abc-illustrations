@@ -2,16 +2,18 @@ import { StandardPageLayout } from '@/components/layout';
 import { AgentIdentityCard } from '@/components/agents/AgentIdentityCard';
 import { ConfigurationTabs } from '@/components/agents/ConfigurationTabs';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AgentConfig } from '@/types/agent';
-import { BookOpen, MessageCircle } from 'lucide-react';
+import { BookOpen, MessageCircle, Hash, Music, Palette, BookText } from 'lucide-react';
 import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 
 const Agents = () => {
   const [selectedAgentType, setSelectedAgentType] = useState<AgentConfig['type']>('chat');
+  const { data: userRole } = useUserRole();
   
   const {
     config,
@@ -25,6 +27,57 @@ const Agents = () => {
     saveConfigWithOverrides,
     clearChangeDescription,
   } = useAgentConfig(selectedAgentType);
+
+  const agentTypes: Array<{
+    type: AgentConfig['type'];
+    title: string;
+    description: string;
+    icon: any;
+    badge?: string;
+  }> = [
+    {
+      type: 'chat',
+      title: 'ABC Cards Agent (Chat)',
+      description: 'Main conversational AI that helps users create educational content and provides assistance.',
+      icon: MessageCircle,
+      badge: 'Active'
+    },
+    {
+      type: 'book-creation',
+      title: 'Generic Book Creation Agent',
+      description: 'Fallback agent for creating educational ABC books when no specialized agent is available.',
+      icon: BookOpen,
+      badge: 'Fallback'
+    },
+    {
+      type: 'book-creation-numbers',
+      title: 'Numbers Book Agent',
+      description: 'Specialized in creating number books with consistent counting objects and numeric digits.',
+      icon: Hash,
+      badge: 'Specialized'
+    },
+    {
+      type: 'book-creation-rhyming',
+      title: 'Rhyming Book Agent',
+      description: 'Expert in creating rhyming books with rhythmic language and consistent rhyme schemes.',
+      icon: Music,
+      badge: 'Specialized'
+    },
+    {
+      type: 'book-creation-colors',
+      title: 'Colors Book Agent',
+      description: 'Focused on color education with one color per page and child-friendly associations.',
+      icon: Palette,
+      badge: 'Specialized'
+    },
+    {
+      type: 'book-creation-abc',
+      title: 'ABC Book Agent',
+      description: 'Specialized in alphabet books with letter-focused educational content.',
+      icon: BookText,
+      badge: 'Specialized'
+    }
+  ];
 
   if (isInitialLoading) {
     return (
@@ -50,60 +103,47 @@ const Agents = () => {
         </div>
 
         {/* Agent Type Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedAgentType === 'chat' ? 'ring-2 ring-primary' : ''}`}>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-primary/10">
-                  <MessageCircle className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">ABC Cards Agent (Chat)</CardTitle>
-                  <Badge variant="secondary" className="text-xs">Active</Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Your main ABC Cards conversational AI that helps users create educational content and provides assistance.
-              </p>
-              <Button 
-                variant={selectedAgentType === 'chat' ? 'default' : 'outline'} 
-                size="sm" 
-                className="w-full"
-                onClick={() => setSelectedAgentType('chat')}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {agentTypes.map((agent) => {
+            const Icon = agent.icon;
+            const isSelected = selectedAgentType === agent.type;
+            
+            return (
+              <Card 
+                key={agent.type}
+                className={`cursor-pointer transition-all hover:shadow-md ${isSelected ? 'ring-2 ring-primary' : ''}`}
+                onClick={() => setSelectedAgentType(agent.type)}
               >
-                {selectedAgentType === 'chat' ? 'Currently Active' : 'Switch to Chat Agent'}
-              </Button>
-            </CardContent>
-          </Card>
-
-          <Card className={`cursor-pointer transition-all hover:shadow-md ${selectedAgentType === 'book-creation' ? 'ring-2 ring-primary' : ''}`}>
-            <CardHeader>
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-full bg-primary/10">
-                  <BookOpen className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <CardTitle className="text-lg">Book Creation Agent</CardTitle>
-                  <Badge variant="secondary" className="text-xs">New</Badge>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-4">
-                Specialized AI that converts conversations into educational ABC books for children.
-              </p>
-              <Button 
-                variant={selectedAgentType === 'book-creation' ? 'default' : 'outline'} 
-                size="sm" 
-                className="w-full"
-                onClick={() => setSelectedAgentType('book-creation')}
-              >
-                {selectedAgentType === 'book-creation' ? 'Currently Active' : 'Switch to Book Agent'}
-              </Button>
-            </CardContent>
-          </Card>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-primary/10">
+                      <Icon className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <CardTitle className="text-sm truncate">{agent.title}</CardTitle>
+                      {agent.badge && (
+                        <Badge variant="secondary" className="text-xs mt-1">
+                          {agent.badge}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
+                    {agent.description}
+                  </p>
+                  <Button 
+                    variant={isSelected ? 'default' : 'outline'} 
+                    size="sm" 
+                    className="w-full"
+                  >
+                    {isSelected ? 'Selected' : 'Select'}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
         </div>
 
         {/* Agent Configuration Content */}
@@ -114,6 +154,7 @@ const Agents = () => {
               onUpdate={updateConfig}
               lastChangeDescription={lastChangeDescription}
               onClearChangeDescription={clearChangeDescription}
+              isAdmin={userRole?.isAdmin ?? false}
             />
             
             <ConfigurationTabs

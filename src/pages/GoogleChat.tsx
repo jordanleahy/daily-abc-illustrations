@@ -30,6 +30,8 @@ import { PublicationStatus } from '@/types/shared/status';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { BookTypeId } from '@/types/bookType';
 import { AgeRangeId } from '@/types/ageRange';
+import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { differenceInYears, differenceInMonths } from 'date-fns';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
@@ -43,6 +45,10 @@ export default function GoogleChat() {
   const [isMobile, setIsMobile] = useState(false);
   const [selectedBookType, setSelectedBookType] = useState<BookTypeId | null>(null);
   const [selectedAgeRange, setSelectedAgeRange] = useState<AgeRangeId | null>(null);
+  const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
+  
+  // Get kid profiles
+  const { data: kidProfiles = [] } = useKidProfiles();
   
   // Get location state for pre-filled prompts and target words from recommendations
   const locationState = window.history.state?.usr || {};
@@ -116,9 +122,23 @@ export default function GoogleChat() {
     }, 1000);
   }, [updateSessionMessages]);
 
+  // Calculate kid age if selected
+  const kidAge = useMemo(() => {
+    if (!selectedKidId) return undefined;
+    const kid = kidProfiles.find(k => k.id === selectedKidId);
+    if (!kid?.date_of_birth) return undefined;
+    
+    const birthDate = new Date(kid.date_of_birth);
+    const years = differenceInYears(new Date(), birthDate);
+    const months = differenceInMonths(new Date(), birthDate) % 12;
+    
+    return { years, months };
+  }, [selectedKidId, kidProfiles]);
+
   const { isLoading, sendMessage, sendMessageWithImage } = useGoogleChat(
     currentSessionId || undefined,
-    handleMessagesUpdate
+    handleMessagesUpdate,
+    kidAge
   );
   
   console.log('[Chat Hook Debug] useGoogleChat initialized with session:', currentSessionId);
@@ -1561,6 +1581,7 @@ export default function GoogleChat() {
             createdBookId={isBookPublished ? createdBookId : null}
             isMobile={isMobile}
             shouldShowReviewButton={shouldShowReviewButton || isBookPublished}
+            selectedKidId={selectedKidId}
             onInputChange={setInput}
             onSend={handleSend}
             onKeyPress={handleKeyPress}
@@ -1568,6 +1589,7 @@ export default function GoogleChat() {
             onImageSelect={handleImageSelect}
             onViewBook={handleViewCreatedBook}
             onOpenReview={handleOpenEditorPanel}
+            onKidChange={setSelectedKidId}
           />
         </div>
 

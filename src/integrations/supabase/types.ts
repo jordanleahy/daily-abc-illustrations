@@ -875,6 +875,7 @@ export type Database = {
       kid_profiles: {
         Row: {
           created_at: string
+          date_of_birth: string | null
           earned_coins: number
           first_name: string
           id: string
@@ -887,6 +888,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          date_of_birth?: string | null
           earned_coins?: number
           first_name: string
           id?: string
@@ -899,6 +901,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          date_of_birth?: string | null
           earned_coins?: number
           first_name?: string
           id?: string
@@ -2542,6 +2545,7 @@ export type Database = {
         Args: never
         Returns: {
           created_at: string
+          date_of_birth: string | null
           earned_coins: number
           first_name: string
           id: string

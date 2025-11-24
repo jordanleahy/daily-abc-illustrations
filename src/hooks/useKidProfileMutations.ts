@@ -6,6 +6,7 @@ import { useToast } from './use-toast';
 interface CreateKidProfileData {
   first_name: string;
   last_name: string;
+  date_of_birth?: string;
   profile_image_url?: string;
 }
 
@@ -13,6 +14,7 @@ interface UpdateKidProfileData {
   id: string;
   first_name: string;
   last_name: string;
+  date_of_birth?: string | null;
   profile_image_url?: string;
 }
 
@@ -31,6 +33,7 @@ export const useCreateKidProfile = () => {
           parent_user_id: user.id,
           first_name: kidData.first_name,
           last_name: kidData.last_name,
+          date_of_birth: kidData.date_of_birth,
           profile_image_url: kidData.profile_image_url,
         })
         .select()
@@ -67,6 +70,7 @@ export const useUpdateKidProfile = () => {
         .update({
           first_name: kidData.first_name,
           last_name: kidData.last_name,
+          date_of_birth: kidData.date_of_birth,
           profile_image_url: kidData.profile_image_url,
         })
         .eq('id', kidData.id)

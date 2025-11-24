@@ -26,9 +26,10 @@ export interface Message {
 }
 
 export const useGoogleChat = (
-  sessionId?: string, 
+  sessionId?: string,
   onMessagesUpdate?: (messages: Message[], sessionId: string) => void,
-  kidAge?: { years: number; months: number }
+  kidAge?: { years: number; months: number },
+  bookType?: string
 ) => {
   const queryClient = useQueryClient();
   const { user, session } = useAuthContext();
@@ -98,7 +99,8 @@ export const useGoogleChat = (
             messages: [...messagesWithoutSuggestions, apiUserMessage],
             outlineReady: context?.outlineReady,
             bookCreated: context?.bookCreated,
-            kidAge
+            kidAge,
+            bookType
           })
         }
       );

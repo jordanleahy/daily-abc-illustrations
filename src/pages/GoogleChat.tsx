@@ -145,7 +145,8 @@ export default function GoogleChat() {
   const { isLoading, sendMessage, sendMessageWithImage } = useGoogleChat(
     currentSessionId || undefined,
     handleMessagesUpdate,
-    kidAge
+    kidAge,
+    selectedBookType || undefined
   );
   
   console.log('[Chat Hook Debug] useGoogleChat initialized with session:', currentSessionId);

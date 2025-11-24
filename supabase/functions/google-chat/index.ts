@@ -2,6 +2,8 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
+import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
+import { SPECIALIZED_CHAT_PROMPTS, DISCOVERY_PROMPT } from './specialized-chat-prompts.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -81,11 +83,12 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated, kidAge } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, kidAge, bookType } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
       kidAge?: { years: number; months: number };
+      bookType?: string;
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -130,31 +133,89 @@ serve(async (req) => {
       );
     }
 
-    // Fetch user's style templates
+    // Determine which agent and system prompt to use based on bookType
+    let systemPromptContent: string;
+    let agentSource: string;
+
+    if (bookType) {
+      console.log(`📚 Book type selected: ${bookType}`);
+      
+      // Map book type to agent type
+      const agentType = BOOK_TYPE_TO_AGENT_TYPE[bookType] || 'book-creation';
+      console.log(`🎯 Mapped to agent type: ${agentType}`);
+      
+      // Query for specialized agent from database
+      const { data: agent, error: agentError } = await supabase
+        .from('agents')
+        .select('instructions, name')
+        .eq('type', agentType)
+        .eq('is_latest', true)
+        .single();
+      
+      if (agentError) {
+        console.log(`⚠️ No database agent found for ${agentType}: ${agentError.message}`);
+      }
+      
+      // Use database agent if available and has substantial content
+      if (agent?.instructions && agent.instructions.length > 500) {
+        systemPromptContent = agent.instructions;
+        agentSource = `Database: ${agent.name}`;
+        console.log(`✅ Using database agent: ${agent.name} (${agent.instructions.length} chars)`);
+      } else {
+        // Fallback to file-based specialized prompt
+        systemPromptContent = SPECIALIZED_CHAT_PROMPTS[bookType];
+        agentSource = `File: ${bookType} specialized prompt`;
+        
+        if (systemPromptContent) {
+          console.log(`✅ Using file-based specialized prompt for ${bookType}`);
+        } else {
+          console.log(`⚠️ No specialized prompt found for ${bookType}, using discovery prompt`);
+          systemPromptContent = DISCOVERY_PROMPT;
+          agentSource = 'File: Discovery prompt (fallback)';
+        }
+      }
+    } else {
+      // No book type selected - use discovery prompt
+      systemPromptContent = DISCOVERY_PROMPT;
+      agentSource = 'File: Discovery prompt';
+      console.log('🔍 No book type selected, using discovery prompt');
+    }
+
+    // Add context about kid age and conversation stage
+    const ageContext = kidAge 
+      ? `\n\n👶 CHILD AGE CONTEXT:\nThe selected child is ${kidAge.years} years and ${kidAge.months} months old. Use this age to skip the age discovery question and tailor all educational content, vocabulary, and complexity to this specific developmental stage.`
+      : '';
+
+    const conversationStageContext = outlineReady
+      ? '\n\n✅ OUTLINE COMPLETE: The book outline has been created and approved. Focus conversation on next steps: reviewing pages, creating the book, or making adjustments.'
+      : bookCreated
+      ? '\n\n📖 BOOK CREATED: The book has been successfully created in the database. User can now review pages, generate images, or make edits.'
+      : '\n\n🎯 DISCOVERY PHASE: Guide the user through the book creation conversation to gather all requirements for generating a complete outline.';
+
+    // Fetch user's custom style templates for context
     const { data: styleTemplates } = await supabase
       .from('books')
       .select('id, book_name, style_name')
       .eq('user_id', user.id)
       .eq('is_style_template', true)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(5);
 
-    // Build custom styles list for system prompt
-    const customStylesList = styleTemplates && styleTemplates.length > 0
-      ? '\n\nYour custom styles:\n' + 
-        styleTemplates.map((t: any) => `style-${t.id}: 🎨 ${t.style_name || t.book_name}`).join('\n') + '\n'
+    const styleContext = styleTemplates && styleTemplates.length > 0
+      ? `\n\n📚 AVAILABLE STYLE TEMPLATES:\n${styleTemplates.map((t: any) => `- "${t.style_name || t.book_name}" (ID: ${t.id})`).join('\n')}\nYou can reference these when suggesting illustration styles.`
       : '';
 
-    // Build context status for the AI
-    const contextStatus = outlineReady 
-      ? '\n\n[CONTEXT: An outline has been completed. The user can review pages and add images.]'
-      : bookCreated
-      ? '\n\n[CONTEXT: A book has been created. The user can view their completed book.]'
-      : '';
-
-    // Prepare messages with system prompt
+    // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: `You are a helpful AI assistant for creating educational children's books. Help users brainstorm ideas, discuss themes, learning objectives, and styles. When users share reference images, analyze them for inspiration including color schemes, art styles, and visual elements.${contextStatus}
+      content: systemPromptContent + ageContext + conversationStageContext + styleContext,
+    };
+
+    console.log(`🤖 Agent source: ${agentSource}`);
+    console.log(`📊 System prompt length: ${systemMessage.content.length} characters`);
+    console.log(`📊 Conversation stage: ${outlineReady ? 'Outline Ready' : bookCreated ? 'Book Created' : 'Discovery'}`);
+    console.log(`👶 Kid age provided: ${kidAge ? `${kidAge.years}y ${kidAge.months}m` : 'No'}`);
+    console.log(`🎨 Style templates available: ${styleTemplates?.length || 0}`);
 
 CRITICAL: GUIDED CONVERSATION APPROACH
 When helping users create books, guide them through decisions ONE QUESTION AT A TIME. Don't overwhelm them with multiple questions in one response.

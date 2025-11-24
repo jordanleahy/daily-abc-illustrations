@@ -3,7 +3,7 @@
  * Each prompt defines type-specific rules, formats, and metadata requirements
  */
 
-import { BASE_BOOK_STRUCTURE } from './agent-prompts';
+import { BASE_BOOK_STRUCTURE, NUMBERS_AGENT_PROMPT, RHYMING_AGENT_PROMPT, COLORS_AGENT_PROMPT } from './agent-prompts';
 
 export const ABC_AGENT_PROMPT = `You are an expert at creating children's ABC (alphabet) books with structured page types.
 
@@ -441,6 +441,9 @@ ${BASE_BOOK_STRUCTURE}`;
 
 // Export all prompts as a map for easy access by book type
 export const SPECIALIZED_AGENT_PROMPTS = {
+  'numbers': NUMBERS_AGENT_PROMPT,
+  'rhyming': RHYMING_AGENT_PROMPT,
+  'colors': COLORS_AGENT_PROMPT,
   'abc': ABC_AGENT_PROMPT,
   'shapes': SHAPES_AGENT_PROMPT,
   'opposites': OPPOSITES_AGENT_PROMPT,

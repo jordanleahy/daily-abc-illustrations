@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AgentConfig } from '@/types/agent';
-import { BookOpen, MessageCircle, Hash, Music, Palette, BookText } from 'lucide-react';
+import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 
@@ -75,6 +75,62 @@ const Agents = () => {
       title: 'ABC Book Agent',
       description: 'Specialized in alphabet books with letter-focused educational content.',
       icon: BookText,
+      badge: 'Specialized'
+    },
+    {
+      type: 'book-creation-shapes',
+      title: 'Shapes Book Agent',
+      description: 'Expert at creating shape books teaching geometric recognition and spatial awareness.',
+      icon: Shapes,
+      badge: 'Specialized'
+    },
+    {
+      type: 'book-creation-opposites',
+      title: 'Opposites Book Agent',
+      description: 'Focused on teaching opposite concepts with clear visual comparisons.',
+      icon: ArrowLeftRight,
+      badge: 'Specialized'
+    },
+    {
+      type: 'book-creation-emotions',
+      title: 'Emotions Book Agent',
+      description: 'Specialized in emotional intelligence with relatable characters and scenarios.',
+      icon: Heart,
+      badge: 'Specialized'
+    },
+    {
+      type: 'book-creation-animals',
+      title: 'Animals Book Agent',
+      description: 'Expert in animal books with descriptions, habitats, sounds, and fun facts.',
+      icon: PawPrint,
+      badge: 'Specialized'
+    },
+    {
+      type: 'book-creation-first-words',
+      title: 'First Words Book Agent',
+      description: 'Builds foundational vocabulary with high-frequency words and clear illustrations.',
+      icon: Type,
+      badge: 'Specialized'
+    },
+    {
+      type: 'book-creation-bedtime',
+      title: 'Bedtime Book Agent',
+      description: 'Creates calming bedtime routines with soothing language and sequences.',
+      icon: Moon,
+      badge: 'Specialized'
+    },
+    {
+      type: 'book-creation-cvc',
+      title: 'CVC Words Book Agent',
+      description: 'Focused on early phonics with CVC word families and decodable words.',
+      icon: Blocks,
+      badge: 'Specialized'
+    },
+    {
+      type: 'book-creation-sight-words',
+      title: 'Sight Words Book Agent',
+      description: 'Develops reading fluency with prominent sight word display and context.',
+      icon: Eye,
       badge: 'Specialized'
     }
   ];

@@ -903,6 +903,13 @@ export default function GoogleChat() {
     
     // Regular quick reply
     if (action.value) {
+      // Capture book type if the action ID matches a valid book type
+      const validBookTypes = ['abc', 'numbers', 'colors', 'shapes', 'rhyming', 'opposites', 'emotions', 'animals', 'first-words', 'bedtime', 'cvc', 'sight-words'];
+      if (validBookTypes.includes(action.id)) {
+        console.log('[Book Type Selection] User selected book type:', action.id);
+        setSelectedBookType(action.id as BookTypeId);
+      }
+      
       // Capture character theme if present in the action
       if (action.themeId) {
         console.log('[Theme Selection] User selected theme:', action.themeId);

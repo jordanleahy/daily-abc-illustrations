@@ -255,39 +255,15 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
     // ============================================================================
     
     if (pageDetails && pageDetails.length > 0) {
-      // User provided structured page details - AI must use them
+      // User provided structured page details - append them to the agent's base instructions
       console.log(`Using ${pageDetails.length} pre-defined page details from chat`);
       
-      systemPrompt = `You are an expert at creating children's educational books with structured page types. The user has already designed specific pages in our conversation.
+      systemPrompt += `
 
-BOOK STRUCTURE - THREE PAGE TYPES:
-Books have three distinct page types that MUST be returned in this exact order:
-
-1. COVER PAGE (pageType: "cover", pageNumber: 0)
-   - Always the first page
-   - Contains the book title and visual theme
-   - Title should be "large, bold, centered" taking up "50-60% of the space"
-   - Background: "vibrant [color] background" or "gentle gradient"
-   - Decorative elements: "small [items] around edges and corners"
-   - Composition: "clean, simple, and optimized for thumbnail visibility"
-
-2. EDUCATIONAL FOCUS PAGE (pageType: "educational", pageNumber: 1) - OPTIONAL
-   - Only if the user specified learning objectives, target age, or educational goals
-   - Contains metadata about the educational approach
-   - Title is usually "Educational Focus"
-   - Description includes age range, learning type, specific skills
-
-3. CONTENT PAGES (pageType: "content", pageNumber: 2+)
-   - The main learning content
-   - For ABC books: EXACTLY 26 pages (A-Z), one page per letter
-     * CRITICAL: Page titles MUST use format "(a) is for apple" with parentheses around the letter
-     * This helps readers say the letter NAME instead of the sound
-   - For Numbers: one page per number
-   - For other types: topic-based pages
-
-CRITICAL INSTRUCTIONS: 
-- You MUST include pageType field for EVERY page
+CRITICAL INSTRUCTIONS FOR THIS REQUEST:
+- The user has already designed specific pages in our conversation
 - You MUST use the exact page titles and descriptions provided below
+- You MUST include pageType field for EVERY page
 - Cover page is ALWAYS pageNumber: 0, pageType: "cover"
 - Educational focus (if present) is ALWAYS pageNumber: 1, pageType: "educational"
 - Content pages start at pageNumber: 2, pageType: "content"
@@ -303,15 +279,15 @@ Return ONLY valid JSON with this structure:
   "bookName": "string",
   "category": "string", 
   "bookDescription": "string",
-    "metadata": {
-      "bookType": "${bookType}",
-      "pageCount": ${pageDetails.length},
-      "letterCase": "lowercase|uppercase|both (for ABC content)",
-      "numberRange": "1-10 (for Numbers content)",
-      "countingStyle": "simple|skip-counting (for Numbers content)",
-      "characterTheme": "${characterTheme || 'not-specified'}", 
-      "targetAge": "toddler|preschool|early-reader"
-    },
+  "metadata": {
+    "bookType": "${bookType}",
+    "pageCount": ${pageDetails.length},
+    "letterCase": "lowercase|uppercase|both (for ABC content)",
+    "numberRange": "1-10 (for Numbers content)",
+    "countingStyle": "simple|skip-counting (for Numbers content)",
+    "characterTheme": "${characterTheme || 'not-specified'}", 
+    "targetAge": "toddler|preschool|early-reader"
+  },
   "pages": [
     {
       "pageNumber": 0,
@@ -351,218 +327,6 @@ Return ONLY valid JSON with this structure:
     }
   ]
 }`;
-    } else {
-      // No structured details - use original full AI generation prompt
-      systemPrompt = `You are an expert at creating children's educational books with structured page types.
-
-BOOK STRUCTURE - THREE PAGE TYPES:
-Every book must have pages organized by type:
-
-1. COVER PAGE (pageType: "cover", pageNumber: 0)
-   - REQUIRED: Always the first page
-   - Contains the book title as the main visual element
-   - Use "large, bold, centered" title taking up "50-60% of the space"
-   - Background: Simple solid color or gentle gradient
-   - Decorative elements: 4-8 small items around edges/corners only
-   - Must be "clean, simple, and optimized for thumbnail visibility"
-
-2. EDUCATIONAL FOCUS PAGE (pageType: "educational", pageNumber: 1)
-   - OPTIONAL: Only if educational goals/objectives are mentioned in conversation
-   - Title: "Educational Focus"
-   - Description format: "Age: [age] | [learning type]"
-   - Content: Target age, learning approach, specific skills
-   - Skip this page if no educational objectives are specified
-
-3. CONTENT PAGES (pageType: "content", pageNumber: 2+)
-   - REQUIRED: The main learning/story content
-   - Number and structure depend on content type (see below)
-
-Content Types:
-- "alphabet": ABC learning content with EXACTLY 26 pages (A-Z), each page teaching a letter
-  * CRITICAL: ABC books MUST have 26 content pages (one for each letter A-Z)
-  * Page titles MUST use parentheses around the letter: "(a) is for apple" NOT "a is for apple"
-  * Parentheses help readers understand to say the letter NAME, not the sound
-  * For alphabet content, check if user specified letter case:
-    - "lowercase" or "lowercase letters": use (a), (b), (c)... format
-    - "uppercase" or "uppercase letters": use (A), (B), (C)... format
-    - "both" or "both cases": use (Aa), (Bb), (Cc)... format
-    - Default to lowercase with parentheses: (a), (b), (c)... if not specified
-- "story": Narrative story content with 8-16 pages telling a cohesive story
-- "educational": Topic-based learning content with 10-20 pages covering different aspects
-- "chapter": Longer content with 15-26 pages divided into chapters
-
-IMPORTANT: 
-- Do NOT include aspect ratio specifications (like "1:1", "16:9", etc.) in page titles or descriptions
-- Aspect ratios are handled separately by the image generation tool
-- FOR ABC BOOKS: Page titles MUST use format "(a) is for apple" with parentheses around the letter
-- For NON-ABC books: NEVER use quotes, apostrophes, or any quotation marks in titles
-- For NON-alphabet content, do NOT include "letter" fields
-- For alphabet content, include "letter" field with values matching the specified case format (WITHOUT parentheses)
-- ABC books MUST have EXACTLY 26 content pages (A-Z)
-- For other content types, adjust page count based on content type and complexity
-- Make content age-appropriate and engaging
-- EXTRACT and RETURN metadata from the conversation (content type, page count preferences, themes, etc.)
-
-COVER PAGE DESIGN GUIDELINES:
-When creating the cover description (pageNumber: 0), use this format for thumbnail-optimized, title-focused covers:
-
-"A vibrant educational cover image with [TITLE] displayed in large, bold, CENTERED letters AT THE CENTER taking up 50-60% of the space. The background features [simple solid color or gentle gradient]. Around the edges and corners are [4-8 small themed decorative elements]. The design is clean, simple, and optimized for thumbnail visibility."
-
-Cover Description Rules:
-1. Title Placement: CRITICAL - Always include "with [TITLE] displayed in large, bold, CENTERED letters at the center of the image" AND mention title "taking up 50-60% of the space"
-2. Background: Describe as "vibrant [color] background" or "gentle [color]-to-[color] gradient" - keep it SIMPLE
-   - Good: "sunny yellow-to-turquoise gradient background"
-   - Good: "bright coral solid background"
-   - Bad: "detailed park scene with trees and playground equipment"
-3. Decorative Elements: Describe 4-8 SMALL items "around the edges and corners"
-   - Should relate to the theme (ABC letters, numbers, themed icons, character elements)
-   - Place around borders/corners ONLY, not competing with center title space
-4. Character Theme Integration: If character theme mentioned (Paw Patrol, Peppa Pig, etc.):
-   - Include small character icons or themed elements around edges
-   - Do NOT make characters the main focal point
-   - Example: "small Paw Patrol character faces in the corners"
-5. Overall Composition: Always describe as "clean, simple, and optimized for thumbnail visibility"
-
-Cover Examples:
-
-ABC Content Cover:
-"A vibrant educational cover image with 'ABC ADVENTURE' displayed in large, bold, centered white letters with colorful outlines, taking up the center 60% of the space. The background features a cheerful yellow-to-turquoise gradient. Around the edges and corners are small alphabet blocks, letter tiles, and simple A, B, C graphics scattered playfully. The design is clean, simple, and optimized for thumbnail visibility."
-
-Character Theme (Paw Patrol) Cover:
-"A vibrant educational cover image with 'PAW PATROL LEARNING FUN' displayed in large, bold, centered white letters with blue outlines, taking up the center 50% of the space. The background features a bright sky blue gradient. Around the edges and corners are small Paw Patrol character faces, paw prints, and badge icons scattered playfully. The design is clean, simple, and optimized for thumbnail visibility."
-
-Kitchen/Food Theme Cover:
-"A vibrant educational cover image with 'KITCHEN ABCS' displayed in large, bold, centered white letters with colored outlines, taking up the center 55% of the space. The background features a warm peach-to-cream gradient. Around the edges and corners are small cooking utensils, fruit icons, and kitchen items scattered playfully. The design is clean, simple, and optimized for thumbnail visibility."
-
-What NOT to Do for Covers:
-- Do NOT describe detailed scenes (no "park with swings and slides")
-- Do NOT describe characters as the main focus
-- Do NOT describe complex backgrounds
-- Do NOT place decorative elements in the center competing with title
-- Do NOT describe layouts that won't read well as thumbnails
-
-METADATA EXTRACTION:
-Analyze the conversation for:
-1. Content type selected (ABC, Numbers, Shapes, Animals, Sight Words, etc.)
-2. Number of pages requested (5, 10, 15, 20, custom, or "let agent decide")
-3. Letter case preference (for ABC content: lowercase, uppercase, both)
-4. Number range, counting style, AND counting object (for Numbers content):
-   - Range can be ANY consecutive 10 integers (e.g., "1-10", "11-20", "30-40", "60-70")
-   - Always format as "start-end" (e.g., "10-20", not "10 to 20")
-   - Examples: "1-10" (basic), "10-20" (tens practice), "30-40" (higher numbers)
-   - Counting style: simple, skip-counting, number-families
-   - CRITICAL: countingObject MUST be ONE specific item (e.g., "apple" NOT "fruits", "balloon" NOT "party items")
-5. Shape complexity and theme (for Shapes content)
-6. Animal category and focus (for Animals content)
-7. Reading level (for Sight Words content)
-8. Character/theme mentions (Paw Patrol, dinosaurs, space, etc.)
-9. Target age group (toddler, preschool, early-reader)
-
-Return ONLY a JSON object with this structure (no markdown, no code blocks):
-{
-  "bookName": "string",
-  "category": "string",
-  "bookDescription": "string",
-  "bookType": "story|alphabet|educational|chapter",
-  "letterCase": "lowercase|uppercase|both (only for alphabet content)",
-  "metadata": {
-    "bookType": "abc|numbers|shapes|colors|animals|sight-words|etc",
-    "pageCount": <number or null>,
-    "targetAge": "toddler|preschool|early-reader",
-    "letterCase": "lowercase|uppercase|both (for ABC content)",
-    "numberRange": "start-end format covering exactly 10 integers (for Numbers content, e.g., '1-10', '10-20', '30-40', '60-70')",
-    "countingStyle": "simple|skip-counting|number-families (for Numbers content)",
-    "countingObject": "ONE specific singular object (for Numbers content, e.g., 'apple', 'balloon', 'star' - NEVER generic like 'fruits' or 'items')",
-    "shapeComplexity": "basic|2d-and-3d|advanced (for Shapes content)",
-    "shapeTheme": "nature|everyday-objects (for Shapes content)",
-    "animalCategory": "farm|zoo|ocean|pets|mixed (for Animals content)",
-    "animalFocus": "sounds|habitats|characteristics (for Animals content)",
-    "readingLevel": "pre-k|grade-1|grade-2 (for Sight Words content)",
-    "characterTheme": "paw-patrol|dinosaurs|space|etc (if mentioned)"
-  },
-  "pages": [
-    {
-      "pageNumber": 0,
-      "pageType": "cover",
-      "letter": "COVER",
-      "title": "Book Title",
-      "description": "Cover description following the title-focused format",
-      "content": {
-        "mainConcept": "Book title",
-        "funFact": "Book description",
-        "activity": ""
-      }
-    },
-    {
-      "pageNumber": 1,
-      "pageType": "educational",
-      "letter": "FOCUS",
-      "title": "Educational Focus",
-      "description": "Age: [age] | [learning type]",
-      "content": {
-        "mainConcept": "Target age",
-        "funFact": "Learning approach",
-        "activity": "Specific skills"
-      }
-    },
-    {
-      "pageNumber": 2,
-      "pageType": "content",
-      "letter": "a (use format matching letterCase for alphabet, WITHOUT parentheses in this field)",
-      "title": "string - FOR ABC BOOKS: MUST use format '(a) is for apple' with parentheses around letter",
-      "description": "string",
-      "content": {
-        "mainConcept": "string",
-        "funFact": "string (optional for non-educational)",
-        "activity": "string (optional for non-educational)"${bookType === 'colors' ? ',\n        "color": "string (extracted color name for color content)"' : ''}
-      }
-    }
-  ]
-}`;
-    }
-
-    // Add color-specific instructions if this is a color book
-    if (bookType === 'colors') {
-      systemPrompt += `
-
-IMPORTANT - COLOR CONTENT INSTRUCTIONS:
-- This is COLOR CONTENT. Each page teaches ONE specific color.
-- Extract the color name from each page title and include it in the page metadata.
-- Page titles should follow the pattern: "**ColorName:** Description"
-  Example: "**Red:** Marshall with a big red fire truck"
-- In the JSON response, include the color in each page's content:
-  "content": {
-    "mainConcept": "...",
-    "funFact": "...",
-    "activity": "...",
-    "color": "red"  // ← Extract this from the title
-  }
-- Normalize color names to lowercase (Red → red, BLUE → blue)
-- Common colors: red, orange, yellow, green, blue, purple, pink, brown, black, white, gray
-- Also populate metadata.colorsList (array of unique colors) and metadata.colorsCount at the content level
-`;
-    }
-
-    // Add numbers-specific instructions if this is a numbers book
-    if (bookType === 'numbers') {
-      systemPrompt += `
-
-IMPORTANT - NUMBERS CONTENT INSTRUCTIONS:
-- This is NUMBERS CONTENT. Each page teaches counting with ONE specific object type.
-- CRITICAL: You MUST choose ONE specific, singular object for counting (e.g., "apple", "balloon", "star")
-- NEVER use generic category terms like "fruits", "toys", "items", "objects", "party items"
-- NEVER mix objects (if you choose "apple", ALL pages show apples, not fruits or other items)
-- Extract or determine the specific counting object and include it in metadata.countingObject
-- Examples of GOOD counting objects: "apple", "balloon", "star", "flower", "car", "ball", "cookie"
-- Examples of BAD counting objects: "fruits", "toys", "items", "things", "objects", "party supplies"
-- Page titles should include the number and the specific object (e.g., "5 apples", "13 balloons")
-- In the JSON response, include the countingObject in metadata:
-  "metadata": {
-    ...
-    "countingObject": "apple"  // ← ONE specific singular object
-  }
-- This ensures visual consistency and makes counting easier for children
-`;
     }
 
     // Add targetWords instructions if provided (from word learning recommendations)
@@ -770,7 +534,15 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         status: 'draft',
         reference_book_id: referenceBookId || null,
         chat_session_id: sessionId || null, // Link to chat session for traceability
-        metadata: { ...validatedMetadata, hasStyleGuide: !!styleGuide }
+        metadata: { 
+          ...validatedMetadata, 
+          hasStyleGuide: !!styleGuide,
+          // Track which agent created this book for learning
+          createdByAgentId: selectedAgent.id,
+          createdByAgentType: selectedAgent.type,
+          createdByAgentVersion: selectedAgent.version,
+          agentSource: agentSource
+        }
       })
       .select()
       .single();

@@ -39,7 +39,12 @@ export const useGoogleChat = (
     content: string | MessageContent[], 
     displayText?: string, 
     currentMessages: Message[] = [],
-    context?: { outlineReady?: boolean; bookCreated?: boolean }
+    context?: { 
+      outlineReady?: boolean; 
+      bookCreated?: boolean;
+      characterTheme?: string | null;
+      bookType?: string | null;
+    }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
       sessionId,
@@ -100,7 +105,8 @@ export const useGoogleChat = (
             outlineReady: context?.outlineReady,
             bookCreated: context?.bookCreated,
             kidAge,
-            bookType
+            bookType: context?.bookType || bookType,
+            characterTheme: context?.characterTheme
           })
         }
       );
@@ -251,7 +257,12 @@ export const useGoogleChat = (
       text: string, 
       imageDataUrl: string, 
       currentMessages: Message[] = [],
-      context?: { outlineReady?: boolean; bookCreated?: boolean }
+      context?: { 
+        outlineReady?: boolean; 
+        bookCreated?: boolean;
+        characterTheme?: string | null;
+        bookType?: string | null;
+      }
     ) => {
       return sendMessage(
         [

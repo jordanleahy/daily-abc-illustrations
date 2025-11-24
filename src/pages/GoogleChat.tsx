@@ -656,7 +656,9 @@ export default function GoogleChat() {
 
     await sendMessage(raw, undefined, messages, {
       outlineReady: shouldShowReviewButton && !createdBookId,
-      bookCreated: !!createdBookId
+      bookCreated: !!createdBookId,
+      characterTheme: selectedCharacterTheme,
+      bookType: selectedBookType
     });
     setInput('');
   };
@@ -676,7 +678,9 @@ export default function GoogleChat() {
       setShowImageUpload(false);
       await sendMessageWithImage(message, base64Data, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
-        bookCreated: !!createdBookId
+        bookCreated: !!createdBookId,
+        characterTheme: selectedCharacterTheme,
+        bookType: selectedBookType
       });
     };
     reader.readAsDataURL(file);
@@ -925,7 +929,9 @@ export default function GoogleChat() {
       // Send the predefined response
       await sendMessage(action.value, undefined, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
-        bookCreated: !!createdBookId
+        bookCreated: !!createdBookId,
+        characterTheme: selectedCharacterTheme,
+        bookType: selectedBookType
       });
     } else {
       // "Custom" option - just focus the input field

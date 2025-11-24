@@ -83,12 +83,13 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated, kidAge, bookType } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, kidAge, bookType, characterTheme } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
       kidAge?: { years: number; months: number };
       bookType?: string;
+      characterTheme?: string;
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -181,9 +182,13 @@ serve(async (req) => {
       console.log('🔍 No book type selected, using discovery prompt');
     }
 
-    // Add context about kid age and conversation stage
+    // Add context about kid age, theme, and conversation stage
     const ageContext = kidAge 
       ? `\n\n👶 CHILD AGE CONTEXT:\nThe selected child is ${kidAge.years} years and ${kidAge.months} months old. Use this age to skip the age discovery question and tailor all educational content, vocabulary, and complexity to this specific developmental stage.`
+      : '';
+
+    const themeContext = characterTheme
+      ? `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. Skip the theme discovery question and integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
       : '';
 
     const conversationStageContext = outlineReady
@@ -208,13 +213,14 @@ serve(async (req) => {
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + ageContext + conversationStageContext + styleContext,
+      content: systemPromptContent + ageContext + themeContext + conversationStageContext + styleContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
     console.log(`📊 System prompt length: ${systemMessage.content.length} characters`);
     console.log(`📊 Conversation stage: ${outlineReady ? 'Outline Ready' : bookCreated ? 'Book Created' : 'Discovery'}`);
     console.log(`👶 Kid age provided: ${kidAge ? `${kidAge.years}y ${kidAge.months}m` : 'No'}`);
+    console.log(`🎨 Character theme: ${characterTheme || 'None'}`);
     console.log(`🎨 Style templates available: ${styleTemplates?.length || 0}`);
 
     // Format messages for Gemini (handles both text and multimodal content)

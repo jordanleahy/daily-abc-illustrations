@@ -44,8 +44,49 @@ export const ModelSettingsTab = ({
     }
   };
 
+  const providerInfo = {
+    openai: {
+      name: 'OpenAI',
+      models: ['gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-4o', 'gpt-4o-mini'],
+      secretKey: 'OPENAI_API_KEY'
+    },
+    google: {
+      name: 'Google Gemini',
+      models: ['gemini-2.5-pro-preview', 'gemini-2.5-flash-preview', 'gemini-1.5-flash', 'gemini-1.5-pro'],
+      secretKey: 'GOOGLE_API_KEY'
+    },
+    deepseek: {
+      name: 'DeepSeek',
+      models: ['deepseek-chat', 'deepseek-coder'],
+      secretKey: 'DEEPSEEK_API_KEY'
+    }
+  };
+
+  const currentProvider = config.provider || 'openai';
+  const info = providerInfo[currentProvider];
+
   return (
     <div className="space-y-6">
+      {/* Provider Information */}
+      <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-3">
+        <div className="flex items-start gap-2">
+          <div className="p-2 rounded-full bg-primary/10">
+            <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <div className="flex-1 space-y-1">
+            <p className="text-sm font-semibold text-foreground">Current Provider: {info.name}</p>
+            <p className="text-xs text-muted-foreground">
+              This system uses direct API calls to {info.name}. Make sure <span className="font-mono bg-muted px-1 py-0.5 rounded">{info.secretKey}</span> is configured in your Supabase Edge Function Secrets.
+            </p>
+            <p className="text-xs text-muted-foreground mt-2">
+              <span className="font-medium">Valid models:</span> <span className="font-mono">{info.models.slice(0, 3).join(', ')}</span>
+            </p>
+          </div>
+        </div>
+      </div>
+
       <div className="grid gap-6">
         {/* Model Selection */}
         <div className="space-y-2">
@@ -54,11 +95,11 @@ export const ModelSettingsTab = ({
             id="model"
             value={modelSettings.model}
             onChange={(e) => handleSettingChange('model', e.target.value)}
-            placeholder="Enter model name (e.g., gpt-4o)"
+            placeholder={`e.g., ${info.models[0]}`}
             className="w-full"
           />
           <p className="text-xs text-muted-foreground">
-            Enter the AI model name for your agent. Examples: gpt-4o, gpt-4o-mini, gpt-3.5-turbo
+            Enter the exact model name from {info.name}. Copy/paste recommended to avoid typos.
           </p>
         </div>
 

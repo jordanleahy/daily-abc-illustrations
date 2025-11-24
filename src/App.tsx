@@ -7,7 +7,6 @@ import { RoleProvider } from "@/contexts/RoleContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
-import AdminChat from "./pages/AdminChat";
 import GoogleChat from "./pages/GoogleChat";
 import Auth from "./pages/Auth";
 import AuthConfirm from "./pages/AuthConfirm";
@@ -130,7 +129,6 @@ const App = () => {
                 <Route path="/preview/blog" element={<BlogHome />} />
                 
                 <Route path="/home" element={<ProtectedRoute requireSubscription={false}><Index /></ProtectedRoute>} />
-                <Route path="/admin/chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
                 <Route path="/google-chat" element={<ProtectedRoute requireSubscription={false}><GoogleChat /></ProtectedRoute>} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/confirm" element={<AuthConfirm />} />

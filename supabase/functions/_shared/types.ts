@@ -283,13 +283,51 @@ export type AIProvider = 'openai' | 'deepseek' | 'google';
  * Agent configuration structure for edge functions
  * Represents a configured AI agent with its behavior and model settings
  */
+/**
+ * Agent type enumeration matching frontend types
+ */
+export type AgentType = 
+  | 'chat' 
+  | 'book-creation'
+  | 'book-creation-numbers'
+  | 'book-creation-rhyming'
+  | 'book-creation-colors'
+  | 'book-creation-abc'
+  | 'book-creation-shapes'
+  | 'book-creation-animals'
+  | 'book-creation-sight-words'
+  | 'book-creation-emotions'
+  | 'book-creation-cvc'
+  | 'book-creation-opposites'
+  | 'book-creation-first-words'
+  | 'book-creation-bedtime';
+
+/**
+ * Maps book types to specialized agent types
+ */
+export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
+  'numbers': 'book-creation-numbers',
+  'rhyming': 'book-creation-rhyming',
+  'colors': 'book-creation-colors',
+  'abc': 'book-creation-abc',
+  'shapes': 'book-creation-shapes',
+  'animals': 'book-creation-animals',
+  'sight-words': 'book-creation-sight-words',
+  'emotions': 'book-creation-emotions',
+  'cvc': 'book-creation-cvc',
+  'opposites': 'book-creation-opposites',
+  'first-words': 'book-creation-first-words',
+  'bedtime': 'book-creation-bedtime',
+  'other': 'book-creation'
+} as const;
+
 export interface AgentConfig {
   /** Unique identifier for the agent */
   id: string;
   /** Display name shown to users */
   name: string;
   /** Agent type determining its specialized capabilities */
-  type: 'chat' | 'book-creation';
+  type: AgentType;
   /** Description of the agent's purpose and goals */
   intent: string;
   /** Current operational status */

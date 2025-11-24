@@ -3,8 +3,43 @@ import { BaseEntity, VersionTracked, DeploymentTracked, Optional } from './base'
 
 /**
  * Agent type enumeration for specialized capabilities
+ * Expanded to support theme-specific book creation agents
  */
-export type AgentType = 'chat' | 'book-creation';
+export type AgentType = 
+  | 'chat' 
+  | 'book-creation'                  // Generic fallback
+  | 'book-creation-numbers'          // Numbers/counting
+  | 'book-creation-rhyming'          // Rhymes/phonics
+  | 'book-creation-colors'           // Color learning
+  | 'book-creation-abc'              // Alphabet
+  | 'book-creation-shapes'
+  | 'book-creation-animals'
+  | 'book-creation-sight-words'
+  | 'book-creation-emotions'
+  | 'book-creation-cvc'
+  | 'book-creation-opposites'
+  | 'book-creation-first-words'
+  | 'book-creation-bedtime';
+
+/**
+ * Maps book types to specialized agent types for orchestration
+ */
+export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
+  'numbers': 'book-creation-numbers',
+  'rhyming': 'book-creation-rhyming',
+  'colors': 'book-creation-colors',
+  'abc': 'book-creation-abc',
+  'shapes': 'book-creation-shapes',
+  'animals': 'book-creation-animals',
+  'sight-words': 'book-creation-sight-words',
+  'emotions': 'book-creation-emotions',
+  'cvc': 'book-creation-cvc',
+  'opposites': 'book-creation-opposites',
+  'first-words': 'book-creation-first-words',
+  'bedtime': 'book-creation-bedtime',
+  // Fallback for unknown types
+  'other': 'book-creation'
+} as const;
 
 /**
  * AI provider types

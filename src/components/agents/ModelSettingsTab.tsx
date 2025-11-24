@@ -20,7 +20,7 @@ export const ModelSettingsTab = ({
 }: ModelSettingsTabProps) => {
   // Use parent's state management instead of local duplication
   const modelSettings = config?.modelSettings || {
-    model: 'gpt-4o',
+    model: 'google/gemini-2.5-flash',
     maxCompletionTokens: 1000,
     topP: 1.0
   };
@@ -54,11 +54,11 @@ export const ModelSettingsTab = ({
             id="model"
             value={modelSettings.model}
             onChange={(e) => handleSettingChange('model', e.target.value)}
-            placeholder="Enter model name (e.g., gpt-4o)"
+            placeholder="google/gemini-2.5-flash"
             className="w-full"
           />
           <p className="text-xs text-muted-foreground">
-            Enter the AI model name for your agent. Examples: gpt-4o, gpt-4o-mini, gpt-3.5-turbo
+            Enter the Lovable AI Gateway model name. Examples: google/gemini-2.5-flash (default), google/gemini-2.5-pro, openai/gpt-5-mini
           </p>
         </div>
 

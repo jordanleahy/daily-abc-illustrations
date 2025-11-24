@@ -1331,6 +1331,7 @@ export type Database = {
           description: string | null
           id: string
           letter: string
+          page_identifier: string
           page_number: number
           page_type: Database["public"]["Enums"]["page_type"]
           title: string
@@ -1344,6 +1345,7 @@ export type Database = {
           description?: string | null
           id?: string
           letter: string
+          page_identifier: string
           page_number: number
           page_type?: Database["public"]["Enums"]["page_type"]
           title: string
@@ -1357,6 +1359,7 @@ export type Database = {
           description?: string | null
           id?: string
           letter?: string
+          page_identifier?: string
           page_number?: number
           page_type?: Database["public"]["Enums"]["page_type"]
           title?: string
@@ -2616,6 +2619,7 @@ export type Database = {
           description: string | null
           id: string
           letter: string
+          page_identifier: string
           page_number: number
           page_type: Database["public"]["Enums"]["page_type"]
           title: string

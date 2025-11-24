@@ -740,8 +740,8 @@ export default function GoogleChat() {
         fullPrompts[2] = eduMatch[0];
       }
       
-      // Extract numbered page prompts (pages 3-28 = A-Z)
-      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi);
+      // Extract numbered page prompts (pages 3-28 = A-Z) - Stop after "Clean illustration only."
+      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?Clean illustration only\.)\s*(?=\n\*\*Page|\n\n|$)/gi);
       for (const match of pageMatches) {
         const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
         fullPrompts[pageNum] = match[0];

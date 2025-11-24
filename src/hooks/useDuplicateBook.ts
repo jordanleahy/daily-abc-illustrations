@@ -58,6 +58,7 @@ export const useDuplicateBook = () => {
         const pagesToInsert = originalPages.map((page) => ({
           book_id: newBook.id,
           letter: page.letter,
+          page_identifier: page.page_identifier || page.letter,
           page_number: page.page_number,
           title: page.title,
           description: page.description,

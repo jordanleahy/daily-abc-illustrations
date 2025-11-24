@@ -127,6 +127,8 @@ export interface Page {
   page_type: PageType;
   /** Letter for content pages (A-Z), or identifier for cover/educational */
   letter: string;
+  /** Page identifier (e.g., "A" for ABC, "3" for Numbers, "Red" for Colors) */
+  page_identifier: string;
   /** Sequential page number (1, 2, 3...) */
   page_number: number;
   /** Title or heading for the page */

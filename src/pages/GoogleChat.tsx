@@ -1410,6 +1410,7 @@ export default function GoogleChat() {
             book_id: createdBookId,
             page_number: 0,
             letter: 'Cover',
+            page_identifier: 'Cover',
             title: 'Cover',
             page_type: 'cover',
             content: {}

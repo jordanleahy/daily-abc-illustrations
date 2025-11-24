@@ -50,6 +50,7 @@ export const useCreatePage = () => {
           book_id: bookId,
           page_type: pageType,
           letter,
+          page_identifier: letter,
           page_number: pageNumber,
           title,
           description: description || null,

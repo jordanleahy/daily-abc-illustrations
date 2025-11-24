@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
-import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange } from '../_shared/types.ts';
+import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange, BOOK_TYPE_TO_AGENT_TYPE, AgentType } from '../_shared/types.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -159,8 +159,100 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
       return null;
     };
 
+    // ============================================================================
+    // ORCHESTRATION: Agent Selection Based on Book Type
+    // ============================================================================
+    console.log('[Orchestration] Starting agent selection for book type:', bookType);
+
+    // Map book type to agent type
+    const agentType: AgentType = BOOK_TYPE_TO_AGENT_TYPE[bookType || 'other'] || 'book-creation';
+    console.log('[Orchestration] Mapped to agent type:', agentType);
+
+    // Attempt to fetch specialized agent
+    let selectedAgent: any = null;
+    let agentSource = 'none';
+
+    // Try specialized agent first (if not generic)
+    if (agentType !== 'book-creation') {
+      const { data: specializedAgent, error: specializedError } = await supabase
+        .from('agents')
+        .select('*')
+        .eq('type', agentType)
+        .eq('is_latest', true)
+        .maybeSingle();
+      
+      if (specializedAgent && !specializedError) {
+        selectedAgent = specializedAgent;
+        agentSource = 'specialized';
+        console.log('[Orchestration] ✓ Using specialized agent:', specializedAgent.name, 'version:', specializedAgent.version);
+      } else {
+        console.log('[Orchestration] ⚠ Specialized agent not found, falling back to generic');
+      }
+    }
+
+    // Fallback to generic book-creation agent
+    if (!selectedAgent) {
+      const { data: genericAgent, error: genericError } = await supabase
+        .from('agents')
+        .select('*')
+        .eq('type', 'book-creation')
+        .eq('is_latest', true)
+        .maybeSingle();
+      
+      if (genericAgent && !genericError) {
+        selectedAgent = genericAgent;
+        agentSource = 'generic-fallback';
+        console.log('[Orchestration] ✓ Using generic agent:', genericAgent.name);
+      } else {
+        console.error('[Orchestration] ✗ No agents found! Aborting.');
+        return new Response(
+          JSON.stringify({ 
+            success: false,
+            error: 'No book creation agent configured. Please set up agents in the admin panel.' 
+          }),
+          { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    }
+
+    // Track agent usage for learning (async, non-blocking)
+    const metricsInsert = await supabase
+      .from('agent_performance_metrics')
+      .insert({
+        agent_id: selectedAgent.id,
+        agent_type: selectedAgent.type,
+        metadata_captured: {
+          bookType,
+          targetAge,
+          characterTheme,
+          agentSource,
+          sessionId
+        }
+      })
+      .select('id')
+      .single();
+
+    const performanceMetricId = metricsInsert.data?.id;
+    if (metricsInsert.error) {
+      console.error('[Learning] Failed to create performance metric:', metricsInsert.error);
+    } else {
+      console.log('[Learning] Created performance metric:', performanceMetricId);
+    }
+
+    // Use the selected agent's instructions as system prompt
+    let systemPrompt = selectedAgent.instructions;
+    console.log('[Orchestration] Agent selected:', {
+      agentId: selectedAgent.id,
+      agentName: selectedAgent.name,
+      agentType: selectedAgent.type,
+      version: selectedAgent.version,
+      source: agentSource,
+      promptLength: systemPrompt.length
+    });
+
+    // ============================================================================
     // Prepare prompt for book creation
-    let systemPrompt = '';
+    // ============================================================================
     
     if (pageDetails && pageDetails.length > 0) {
       // User provided structured page details - AI must use them
@@ -500,7 +592,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
 
     console.log('Calling Lovable AI to generate book structure');
 
-    // Call Lovable AI Gateway
+    // Call Lovable AI Gateway using selected agent's model settings
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -508,9 +600,10 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: selectedAgent.model || 'google/gemini-2.5-flash',
+        max_completion_tokens: selectedAgent.max_completion_tokens || 8000,
+        top_p: selectedAgent.top_p || 0.95,
         messages,
-        max_tokens: 8000, // Allow for full 26-page book
       }),
     });
 
@@ -1135,6 +1228,31 @@ Create an illustration that brings the page content to life while maintaining th
     supabase.functions.invoke('generate-seo-metadata', {
       body: { bookId: book.id }
     }).catch(err => console.error('Failed to trigger SEO generation:', err));
+
+    // Update performance tracking with book completion (async, non-blocking)
+    if (performanceMetricId) {
+      await supabase
+        .from('agent_performance_metrics')
+        .update({ 
+          book_id: book.id,
+          book_created: true,
+          total_pages: pages.length,
+          completed_at: new Date().toISOString(),
+          metadata_captured: {
+            bookType,
+            targetAge,
+            characterTheme,
+            agentSource,
+            sessionId,
+            pageCount: pages.length
+          }
+        })
+        .eq('id', performanceMetricId)
+        .then(({ error }) => {
+          if (error) console.error('[Learning] Failed to update performance metric:', error);
+          else console.log('[Learning] Updated performance metric with book ID:', book.id);
+        });
+    }
 
     return new Response(
       JSON.stringify({ 

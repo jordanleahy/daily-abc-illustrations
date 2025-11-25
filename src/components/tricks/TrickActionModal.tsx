@@ -90,7 +90,7 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange} shouldScaleBackground>
-      <DrawerContent className="px-6 transition-all duration-300 ease-in-out">
+      <DrawerContent className="px-6 transition-all duration-300 ease-out">
         {(images.length > 0 || videos.length > 0) && (
           <div className="w-full mb-4 animate-fade-in">
             <TrickMediaViewer images={images} videos={videos} />

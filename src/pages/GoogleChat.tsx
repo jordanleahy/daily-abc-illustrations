@@ -30,6 +30,7 @@ import { PublicationStatus } from '@/types/shared/status';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { BookTypeId } from '@/types/bookType';
 import { AgeRangeId } from '@/types/ageRange';
+import type { CharacterThemeValue } from '@/types/characterTheme';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { differenceInYears, differenceInMonths } from 'date-fns';
 
@@ -160,7 +161,7 @@ export default function GoogleChat() {
   const [localCreatedBookId, setLocalCreatedBookId] = useState<string | null>(null);
   
   // Track selected character theme from user suggestions
-  const [selectedCharacterTheme, setSelectedCharacterTheme] = useState<string | null>(null);
+  const [selectedCharacterTheme, setSelectedCharacterTheme] = useState<CharacterThemeValue | null>(null);
   
   // Track cover page ID for post-creation uploads
   const [coverPageId, setCoverPageId] = useState<string | null>(null);

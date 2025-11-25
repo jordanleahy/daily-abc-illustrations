@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
+import type { CharacterThemeValue } from '@/types/characterTheme';
+import type { BookTypeId } from '@/types/bookType';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -15,7 +17,7 @@ export interface SuggestedAction {
   id: string;
   label: string;
   value: string;
-  themeId?: string;
+  themeId?: CharacterThemeValue;
   ageRangeId?: string;
 }
 
@@ -42,8 +44,8 @@ export const useGoogleChat = (
     context?: { 
       outlineReady?: boolean; 
       bookCreated?: boolean;
-      characterTheme?: string | null;
-      bookType?: string | null;
+      characterTheme?: CharacterThemeValue | null;
+      bookType?: BookTypeId | null;
     }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
@@ -260,8 +262,8 @@ export const useGoogleChat = (
       context?: { 
         outlineReady?: boolean; 
         bookCreated?: boolean;
-        characterTheme?: string | null;
-        bookType?: string | null;
+        characterTheme?: CharacterThemeValue | null;
+        bookType?: BookTypeId | null;
       }
     ) => {
       return sendMessage(

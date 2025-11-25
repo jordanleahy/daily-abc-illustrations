@@ -137,6 +137,37 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
       setType(editTrick.type || '');
       setDescription(editTrick.description || '');
 
+      // Load existing images
+      if (editTrick.photo_url) {
+        try {
+          const urls = JSON.parse(editTrick.photo_url);
+          setImageDataUrls(Array.isArray(urls) ? urls : [editTrick.photo_url]);
+        } catch {
+          setImageDataUrls([editTrick.photo_url]);
+        }
+      }
+
+      // Load existing videos
+      if (editTrick.video_urls) {
+        try {
+          const urls = JSON.parse(editTrick.video_urls);
+          // For existing videos, we only have URLs, not full video data
+          // We'll display them as simple thumbnails without duration
+          const videoDataFromUrls = (Array.isArray(urls) ? urls : [editTrick.video_urls]).map(url => ({
+            dataUrl: url,
+            thumbnail: url, // Use video URL as thumbnail (will show first frame)
+            duration: 0, // Unknown duration for existing videos
+          }));
+          setVideoData(videoDataFromUrls);
+        } catch {
+          setVideoData([{
+            dataUrl: editTrick.video_urls,
+            thumbnail: editTrick.video_urls,
+            duration: 0,
+          }]);
+        }
+      }
+
       // Load assigned kids
       const trickGoals = allGoals?.filter(g => g.trick_id === editTrick.id) || [];
       const kidAssignments = Object.fromEntries(

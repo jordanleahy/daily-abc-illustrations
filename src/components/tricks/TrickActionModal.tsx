@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -26,7 +27,7 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
 
   if (!trick) return null;
 
-  const images = (() => {
+  const images = useMemo(() => {
     const photoUrl = trick.photo_url;
     if (!photoUrl) return [];
     
@@ -36,16 +37,15 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
     } catch {
       return [photoUrl];
     }
-  })();
+  }, [trick.photo_url]);
 
-  const videos = (() => {
+  const videos = useMemo(() => {
     const videoUrls = trick.video_urls;
     if (!videoUrls) return [];
     
     try {
       const parsed = JSON.parse(videoUrls);
       if (Array.isArray(parsed)) {
-        // Check if it's VideoData[] or string[]
         if (parsed.length > 0 && typeof parsed[0] === 'object' && 'dataUrl' in parsed[0]) {
           return (parsed as VideoData[]).map(v => v.dataUrl);
         }
@@ -55,7 +55,7 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
     } catch {
       return [videoUrls];
     }
-  })();
+  }, [trick.video_urls]);
 
   const handleSuccess = () => {
     if (!goal) return;
@@ -85,14 +85,13 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
     });
   };
 
-  const hasGoal = !!goal;
   const isCompleted = goal && goal.current_count >= goal.target_count;
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange} shouldScaleBackground>
+    <Drawer open={open} onOpenChange={onOpenChange}>
       <DrawerContent className="px-6">
         {(images.length > 0 || videos.length > 0) && (
-          <div className="w-full mb-4 animate-fade-in">
+          <div className="w-full mb-4">
             <TrickMediaViewer images={images} videos={videos} />
           </div>
         )}
@@ -123,7 +122,7 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
           )}
         </DrawerHeader>
 
-        {!hasGoal ? (
+        {!goal ? (
           <div className="text-center py-4 px-4">
             <p className="text-sm text-muted-foreground">
               No active goal for this trick. Ask your parent to set up a goal!

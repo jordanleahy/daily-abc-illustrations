@@ -17,15 +17,15 @@ export const RewardsCarouselCard = memo(({ product, onClick }: RewardsCarouselCa
       onClick={onClick}
     >
       <CardContent className="p-0">
-        <AspectRatio ratio={1/1} className="shadow-md hover:shadow-xl transition-shadow duration-300">
+        <AspectRatio ratio={1/1} className="shadow-md hover:shadow-xl transition-shadow duration-300 bg-muted">
           {product.product_image_url ? (
             <img
               src={product.product_image_url}
               alt={product.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain p-4"
             />
           ) : (
-            <div className="w-full h-full bg-muted flex items-center justify-center">
+            <div className="w-full h-full flex items-center justify-center">
               <span className="text-muted-foreground text-4xl">🎁</span>
             </div>
           )}
@@ -34,9 +34,16 @@ export const RewardsCarouselCard = memo(({ product, onClick }: RewardsCarouselCa
           <h3 className="font-semibold text-sm line-clamp-2">
             {product.title}
           </h3>
-          <Badge variant="secondary" className="text-xs">
-            {formatCoinsAsCurrency(product.coin_price)}
-          </Badge>
+          <div className="flex items-center justify-between">
+            <Badge variant="secondary" className="text-xs">
+              {formatCoinsAsCurrency(product.coin_price)}
+            </Badge>
+            {product.quantity_available !== null && (
+              <span className="text-sm font-medium">
+                {product.quantity_available} out of 100
+              </span>
+            )}
+          </div>
         </div>
       </CardContent>
     </Card>

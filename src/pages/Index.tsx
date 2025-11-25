@@ -23,138 +23,126 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { format } from 'date-fns';
 import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/themeFilters';
 import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
-
 const Index = () => {
-  const { isAuthenticated } = useAuthContext();
-  const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
+  const {
+    isAuthenticated
+  } = useAuthContext();
+  const {
+    hasActiveSubscription,
+    loading: subscriptionLoading
+  } = useSubscription();
   const navigate = useNavigate();
-  
+
   // Get the first kid profile
-  const { data: kidProfiles = [], isLoading: isLoadingKids } = useKidProfiles();
+  const {
+    data: kidProfiles = [],
+    isLoading: isLoadingKids
+  } = useKidProfiles();
   const firstKid = kidProfiles[0];
-  
+
   // Fetch today's habits for the first kid
-  const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
-  
+  const {
+    data: completions = [],
+    isLoading: isLoadingHabits
+  } = useTodayHabits(firstKid?.id);
+
   // Fetch rewards products
-  const { data: rewardsProducts = [] } = useRewardsProducts();
-  
+  const {
+    data: rewardsProducts = []
+  } = useRewardsProducts();
+
   // Fetch tricks and goals
-  const { data: tricks = [] } = useTricks();
-  const { data: trickGoals = [] } = useTrickGoals(firstKid?.id);
-  
+  const {
+    data: tricks = []
+  } = useTricks();
+  const {
+    data: trickGoals = []
+  } = useTrickGoals(firstKid?.id);
+
   // Fetch library books using decoupled architecture
-  const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooksDecoupled();
-  
+  const {
+    data: libraryItems = [],
+    isLoading: isLoadingBooks
+  } = useLibraryBooksDecoupled();
+
   // ⚡ PERFORMANCE OPTIMIZATION: Debounced search for instant feel
-  const { rawQuery, activeQuery, setSearchQuery, isSearching } = useOptimizedSearch('debounced', 300);
+  const {
+    rawQuery,
+    activeQuery,
+    setSearchQuery,
+    isSearching
+  } = useOptimizedSearch('debounced', 300);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
-  
+
   // Extract available themes from library books
-  const availableThemes = useMemo(() => 
-    extractAvailableThemes(libraryItems),
-    [libraryItems]
-  );
-  
+  const availableThemes = useMemo(() => extractAvailableThemes(libraryItems), [libraryItems]);
+
   // Apply filters using activeQuery (debounced value)
-  const filteredLibraryItems = useMemo(() => 
-    filterBooksByThemeAndSearch(libraryItems, activeQuery, selectedThemes),
-    [libraryItems, activeQuery, selectedThemes]
-  );
-  
+  const filteredLibraryItems = useMemo(() => filterBooksByThemeAndSearch(libraryItems, activeQuery, selectedThemes), [libraryItems, activeQuery, selectedThemes]);
+
   // Preload book images for instant display on return visits
   useHomeImagePreloader(libraryItems);
-  
+
   // 🚀 Predictive prefetching: Anticipate which books user will view next
   // Prefetches the top 3 most likely books based on favorites and viewing history
-  const { predictedBooks } = usePredictivePrefetch();
-  
+  const {
+    predictedBooks
+  } = usePredictivePrefetch();
+
   // Filter out skipped habits and sort by status (pending first, completed/failed last)
-  const activeCompletions = completions
-    .filter(c => c.status !== 'skipped')
-    .sort((a, b) => {
-      // Define status priority (lower number = higher priority)
-      const statusPriority = {
-        pending: 1,
-        completed: 2,
-        declined: 2
-      };
-      
-      const priorityA = statusPriority[a.status as keyof typeof statusPriority] || 3;
-      const priorityB = statusPriority[b.status as keyof typeof statusPriority] || 3;
-      
-      // Sort by status priority first
-      if (priorityA !== priorityB) {
-        return priorityA - priorityB;
-      }
-      
-      // If same status, maintain creation order
-      return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
-    });
-  
+  const activeCompletions = completions.filter(c => c.status !== 'skipped').sort((a, b) => {
+    // Define status priority (lower number = higher priority)
+    const statusPriority = {
+      pending: 1,
+      completed: 2,
+      declined: 2
+    };
+    const priorityA = statusPriority[a.status as keyof typeof statusPriority] || 3;
+    const priorityB = statusPriority[b.status as keyof typeof statusPriority] || 3;
+
+    // Sort by status priority first
+    if (priorityA !== priorityB) {
+      return priorityA - priorityB;
+    }
+
+    // If same status, maintain creation order
+    return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+  });
+
   // Limit books to top 5 per category for performance
   const limitedLibraryItems = filteredLibraryItems.slice(0, 30);
-  
   const isLoading = isLoadingKids || isLoadingHabits;
   const timeOfDay = getTimeBasedGreeting();
   const isMobile = useIsMobile();
-
   if (subscriptionLoading || isLoadingBooks) {
-    return (
-      <StandardPageLayout>
+    return <StandardPageLayout>
         <div className="container mx-auto py-8">
           <LoadingState text="Loading..." />
         </div>
-      </StandardPageLayout>
-    );
+      </StandardPageLayout>;
   }
-
-  return (
-    <StandardPageLayout>
+  return <StandardPageLayout>
       <div className="container mx-auto py-8 space-y-8">
-        {hasActiveSubscription && firstKid ? (
-          <>
+        {hasActiveSubscription && firstKid ? <>
             {/* Premium: Child-focused header with habits */}
             <div className="space-y-2">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <h1 className="text-4xl font-bold">
-                  Good {timeOfDay}, {firstKid.first_name}!
-                </h1>
-                <CoinCounter coins={firstKid.earned_coins} size="md" />
-              </div>
-              <p className="text-xl text-muted-foreground">
-                Today is {format(new Date(), 'EEEE, MMMM do')}
-              </p>
-              <p className="text-lg text-muted-foreground">
-                Here is your {timeOfDay} to-do list
-              </p>
+              
+              
+              
             </div>
 
             {/* Habits list */}
-            {activeCompletions.length === 0 ? (
-              <div className="text-center py-12 bg-muted/50 rounded-lg space-y-2">
+            {activeCompletions.length === 0 ? <div className="text-center py-12 bg-muted/50 rounded-lg space-y-2">
                 <p className="text-lg text-muted-foreground">
                   No habits scheduled for today! 
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Ask your parent to schedule habits from the Manage Habits page.
                 </p>
-              </div>
-            ) : isMobile ? (
-              <HabitCarousel completions={activeCompletions} />
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {activeCompletions.map((completion) => (
-                  <HabitTrackingCard
-                    key={completion.id}
-                    completion={completion}
-                  />
-                ))}
-              </div>
-            )}
-          </>
-        ) : (
-          <>
+              </div> : isMobile ? <HabitCarousel completions={activeCompletions} /> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {activeCompletions.map(completion => <HabitTrackingCard key={completion.id} completion={completion} />)}
+              </div>}
+          </> : <>
             {/* Free tier: Welcome section */}
             <div className="space-y-6">
               <h1 className="text-4xl font-bold">
@@ -191,52 +179,27 @@ const Index = () => {
                   <span>Track progress and build reading consistency</span>
                 </li>
               </ul>
-              <button
-                onClick={() => navigate('/pricing')}
-                className="w-full sm:w-auto px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors"
-              >
+              <button onClick={() => navigate('/pricing')} className="w-full sm:w-auto px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors">
                 Upgrade to Plus
               </button>
             </div>
-          </>
-        )}
+          </>}
 
         {/* Search and filter removed from home page */}
 
         {/* Rewards Carousel - Only for subscribed users with kid profile */}
-        {hasActiveSubscription && firstKid && rewardsProducts.length > 0 && (
-          <RewardsCarousel
-            products={rewardsProducts}
-            kidId={firstKid.id}
-            currentCoins={firstKid.earned_coins}
-          />
-        )}
+        {hasActiveSubscription && firstKid && rewardsProducts.length > 0 && <RewardsCarousel products={rewardsProducts} kidId={firstKid.id} currentCoins={firstKid.earned_coins} />}
 
         {/* Tricks Carousel - Only for subscribed users with kid profile */}
-        {hasActiveSubscription && firstKid && tricks.length > 0 && (
-          <TricksCarousel
-            tricks={tricks}
-            goals={trickGoals}
-          />
-        )}
+        {hasActiveSubscription && firstKid && tricks.length > 0 && <TricksCarousel tricks={tricks} goals={trickGoals} />}
 
         {/* Categorized Book Sections */}
-        {filteredLibraryItems.length > 0 ? (
-          <CategorizedBookSections
-            books={limitedLibraryItems}
-            maxBooksPerCategory={5}
-            showViewAllLinks={true}
-          />
-        ) : libraryItems.length > 0 ? (
-          <div className="text-center py-12">
+        {filteredLibraryItems.length > 0 ? <CategorizedBookSections books={limitedLibraryItems} maxBooksPerCategory={5} showViewAllLinks={true} /> : libraryItems.length > 0 ? <div className="text-center py-12">
             <p className="text-muted-foreground">
               No books found matching your filters.
             </p>
-          </div>
-        ) : null}
+          </div> : null}
       </div>
-    </StandardPageLayout>
-  );
+    </StandardPageLayout>;
 };
-
 export default Index;

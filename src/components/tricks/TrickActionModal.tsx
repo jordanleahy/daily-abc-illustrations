@@ -165,6 +165,7 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
                 trickId={trick.id}
                 goalId={goal?.id}
                 kidProfileId={goal?.kid_profile_id}
+                attemptNumber={goal?.current_count}
               />
             </div>
           </>

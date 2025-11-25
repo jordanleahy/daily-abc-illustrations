@@ -34,6 +34,7 @@ export function useUploadTrickMedia() {
           location_longitude: data.location?.longitude || null,
           location_accuracy: data.location?.accuracy || null,
           notes: data.notes || null,
+          attempt_number: data.attempt_number || null,
         })
         .select()
         .single();

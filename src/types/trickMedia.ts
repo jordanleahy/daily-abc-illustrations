@@ -12,6 +12,7 @@ export interface TrickMediaUpload {
   location_longitude: number | null;
   location_accuracy: number | null;
   notes: string | null;
+  attempt_number: number | null;
   created_at: string;
 }
 
@@ -27,6 +28,7 @@ export interface CreateTrickMediaUpload {
     accuracy: number;
   };
   notes?: string;
+  attempt_number?: number;
 }
 
 export interface GeolocationData {

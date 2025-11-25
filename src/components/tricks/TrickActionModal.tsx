@@ -25,9 +25,8 @@ interface TrickActionModalProps {
 export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActionModalProps) => {
   const addCompletion = useAddTrickCompletion();
 
-  if (!trick) return null;
-
   const images = useMemo(() => {
+    if (!trick) return [];
     const photoUrl = trick.photo_url;
     if (!photoUrl) return [];
     
@@ -37,9 +36,10 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
     } catch {
       return [photoUrl];
     }
-  }, [trick.photo_url]);
+  }, [trick?.photo_url]);
 
   const videos = useMemo(() => {
+    if (!trick) return [];
     const videoUrls = trick.video_urls;
     if (!videoUrls) return [];
     
@@ -55,7 +55,9 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
     } catch {
       return [videoUrls];
     }
-  }, [trick.video_urls]);
+  }, [trick?.video_urls]);
+
+  if (!trick) return null;
 
   const handleSuccess = () => {
     if (!goal) return;

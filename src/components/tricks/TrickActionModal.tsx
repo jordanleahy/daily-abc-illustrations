@@ -14,6 +14,7 @@ import { Trick, VideoData } from '@/types/trick';
 import { TrickGoalWithDetails } from '@/types/trick';
 import { useAddTrickCompletion } from '@/hooks/useAddTrickCompletion';
 import { TrickMediaViewer } from './TrickMediaViewer';
+import { TrickUploadZone } from './TrickUploadZone';
 
 interface TrickActionModalProps {
   open: boolean;
@@ -137,26 +138,36 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 py-2 px-4">
-            <Button
-              onClick={handleSuccess}
-              disabled={addCompletion.isPending}
-              className="bg-green-600 hover:bg-green-700 text-white"
-              size="lg"
-            >
-              <ThumbsUp className="mr-2 h-5 w-5" />
-              Success
-            </Button>
-            <Button
-              onClick={handleFailed}
-              disabled={addCompletion.isPending}
-              variant="destructive"
-              size="lg"
-            >
-              <ThumbsDown className="mr-2 h-5 w-5" />
-              Failed
-            </Button>
-          </div>
+          <>
+            <div className="grid grid-cols-2 gap-3 py-2 px-4">
+              <Button
+                onClick={handleSuccess}
+                disabled={addCompletion.isPending}
+                className="bg-green-600 hover:bg-green-700 text-white"
+                size="lg"
+              >
+                <ThumbsUp className="mr-2 h-5 w-5" />
+                Success
+              </Button>
+              <Button
+                onClick={handleFailed}
+                disabled={addCompletion.isPending}
+                variant="destructive"
+                size="lg"
+              >
+                <ThumbsDown className="mr-2 h-5 w-5" />
+                Failed
+              </Button>
+            </div>
+            
+            <div className="px-4 py-2">
+              <TrickUploadZone
+                trickId={trick.id}
+                goalId={goal?.id}
+                kidProfileId={goal?.kid_profile_id}
+              />
+            </div>
+          </>
         )}
 
         {trick.points_per_completion > 0 && (

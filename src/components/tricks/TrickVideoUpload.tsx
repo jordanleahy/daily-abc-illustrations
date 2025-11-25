@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Plus, X, Loader2, Play } from 'lucide-react';
+import { Plus, Loader2 } from 'lucide-react';
 import { processVideo, validateVideo, validateVideoDuration } from '@/utils/videoProcessor';
 import { uploadTrickVideo, uploadTrickVideoThumbnail, deleteTrickVideo } from '@/utils/trickVideoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { VideoData } from '@/types/trick';
+import { DndContext, closestCenter, DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { SortableVideoItem } from './SortableVideoItem';
 
 const MAX_VIDEOS = 3;
 
@@ -19,6 +21,24 @@ interface TrickVideoUploadProps {
 export function TrickVideoUpload({ videos, onVideosChange, disabled }: TrickVideoUploadProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 10 }
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 }
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = videos.findIndex((_, idx) => `${idx}-${videos[idx].dataUrl}` === active.id);
+      const newIndex = videos.findIndex((_, idx) => `${idx}-${videos[idx].dataUrl}` === over.id);
+      onVideosChange(arrayMove(videos, oldIndex, newIndex));
+    }
+  };
 
   const generateThumbnail = (video: HTMLVideoElement): Promise<Blob> => {
     return new Promise((resolve, reject) => {
@@ -159,52 +179,49 @@ export function TrickVideoUpload({ videos, onVideosChange, disabled }: TrickVide
 
   return (
     <div className="space-y-3">
-      <Label>Videos (Optional - Max {MAX_VIDEOS}, 30 seconds each)</Label>
-      <div className="flex flex-wrap gap-2">
-        {videos.map((video, index) => (
-          <div key={index} className="relative group">
-            <div className="w-16 h-16 rounded-lg border-2 border-border overflow-hidden relative">
-              <img
-                src={video.thumbnail}
-                alt={`Video ${index + 1}`}
-                className="w-full h-full object-cover"
+      <Label>Videos (Optional - Max {MAX_VIDEOS}, 30s each)</Label>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex flex-wrap gap-2">
+          <SortableContext 
+            items={videos.map((v, idx) => `${idx}-${v.dataUrl}`)} 
+            strategy={horizontalListSortingStrategy}
+          >
+            {videos.map((video, index) => (
+              <SortableVideoItem
+                key={`${index}-${video.dataUrl}`}
+                id={`${index}-${video.dataUrl}`}
+                thumbnail={video.thumbnail}
+                duration={video.duration}
+                index={index}
+                onRemove={() => handleRemoveVideo(index)}
+                disabled={disabled || isProcessing}
               />
-              <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                <Play className="h-6 w-6 text-white" />
-              </div>
-              <div className="absolute bottom-0 right-0 bg-black/70 text-white text-[10px] px-1 rounded-tl">
-                {formatDuration(video.duration)}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleRemoveVideo(index)}
+            ))}
+          </SortableContext>
+          
+          <label className="relative">
+            <input
+              type="file"
+              accept="video/*"
+              multiple
+              onChange={handleAddVideos}
               disabled={disabled || isProcessing}
-              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-        ))}
-        
-        <label className="relative">
-          <input
-            type="file"
-            accept="video/*"
-            multiple
-            onChange={handleAddVideos}
-            disabled={disabled || isProcessing}
-            className="sr-only"
-          />
-          <div className="w-16 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center cursor-pointer hover:bg-accent transition-colors">
-            {isProcessing ? (
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            ) : (
-              <Plus className="h-6 w-6 text-muted-foreground" />
-            )}
-          </div>
-        </label>
-      </div>
+              className="sr-only"
+            />
+            <div className="w-16 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center cursor-pointer hover:bg-accent transition-colors">
+              {isProcessing ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : (
+                <Plus className="h-6 w-6 text-muted-foreground" />
+              )}
+            </div>
+          </label>
+        </div>
+      </DndContext>
       {isProcessing && (
         <p className="text-xs text-muted-foreground">
           {uploadProgress || 'Processing...'}

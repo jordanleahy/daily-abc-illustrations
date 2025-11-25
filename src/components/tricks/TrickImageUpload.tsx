@@ -6,6 +6,9 @@ import { processImage } from '@/utils/imageProcessor';
 import { uploadTrickPhoto, deleteTrickPhoto } from '@/utils/trickPhotoUpload';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { DndContext, closestCenter, DragEndEvent, MouseSensor, TouchSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { SortableImageItem } from './SortableImageItem';
 
 const MAX_IMAGES = 5;
 
@@ -18,6 +21,24 @@ interface TrickImageUploadProps {
 export function TrickImageUpload({ images, onImagesChange, disabled }: TrickImageUploadProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string>('');
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: { distance: 10 }
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 }
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+      const oldIndex = images.findIndex(img => img === active.id);
+      const newIndex = images.findIndex(img => img === over.id);
+      onImagesChange(arrayMove(images, oldIndex, newIndex));
+    }
+  };
 
   const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -88,43 +109,44 @@ export function TrickImageUpload({ images, onImagesChange, disabled }: TrickImag
   return (
     <div className="space-y-3">
       <Label>Images (Optional - Max {MAX_IMAGES})</Label>
-      <div className="flex flex-wrap gap-2">
-        {images.map((imageUrl, index) => (
-          <div key={index} className="relative group">
-            <img
-              src={imageUrl}
-              alt={`Trick ${index + 1}`}
-              className="w-16 h-16 object-cover rounded-lg border-2 border-border"
-            />
-            <button
-              type="button"
-              onClick={() => handleRemoveImage(index)}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+      >
+        <div className="flex flex-wrap gap-2">
+          <SortableContext items={images} strategy={horizontalListSortingStrategy}>
+            {images.map((imageUrl, index) => (
+              <SortableImageItem
+                key={imageUrl}
+                id={imageUrl}
+                imageUrl={imageUrl}
+                index={index}
+                onRemove={() => handleRemoveImage(index)}
+                disabled={disabled || isProcessing}
+              />
+            ))}
+          </SortableContext>
+          
+          <label className="relative">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleAddImages}
               disabled={disabled || isProcessing}
-              className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </div>
-        ))}
-        
-        <label className="relative">
-          <input
-            type="file"
-            accept="image/*"
-            multiple
-            onChange={handleAddImages}
-            disabled={disabled || isProcessing}
-            className="sr-only"
-          />
-          <div className="w-16 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center cursor-pointer hover:bg-accent transition-colors">
-            {isProcessing ? (
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-            ) : (
-              <Plus className="h-6 w-6 text-muted-foreground" />
-            )}
-          </div>
-        </label>
-      </div>
+              className="sr-only"
+            />
+            <div className="w-16 h-16 border-2 border-dashed border-border rounded-lg flex items-center justify-center cursor-pointer hover:bg-accent transition-colors">
+              {isProcessing ? (
+                <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              ) : (
+                <Plus className="h-6 w-6 text-muted-foreground" />
+              )}
+            </div>
+          </label>
+        </div>
+      </DndContext>
       {isProcessing && (
         <p className="text-xs text-muted-foreground">
           {uploadProgress || 'Processing...'}

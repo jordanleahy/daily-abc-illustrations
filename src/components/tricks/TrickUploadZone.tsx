@@ -9,6 +9,7 @@ interface TrickUploadZoneProps {
   trickId: string;
   goalId?: string;
   kidProfileId?: string;
+  attemptNumber?: number;
   onUploadComplete?: () => void;
 }
 
@@ -16,6 +17,7 @@ export const TrickUploadZone = ({
   trickId,
   goalId,
   kidProfileId,
+  attemptNumber,
   onUploadComplete,
 }: TrickUploadZoneProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -91,6 +93,7 @@ export const TrickUploadZone = ({
           media_file: file,
           captured_at: exifData.capturedAt || undefined,
           location,
+          attempt_number: attemptNumber,
         },
         {
           onSuccess: () => {

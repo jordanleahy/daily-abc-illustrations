@@ -1659,6 +1659,7 @@ export type Database = {
       }
       trick_media_uploads: {
         Row: {
+          attempt_number: number | null
           captured_at: string | null
           created_at: string
           id: string
@@ -1675,6 +1676,7 @@ export type Database = {
           uploaded_at: string
         }
         Insert: {
+          attempt_number?: number | null
           captured_at?: string | null
           created_at?: string
           id?: string
@@ -1691,6 +1693,7 @@ export type Database = {
           uploaded_at?: string
         }
         Update: {
+          attempt_number?: number | null
           captured_at?: string | null
           created_at?: string
           id?: string

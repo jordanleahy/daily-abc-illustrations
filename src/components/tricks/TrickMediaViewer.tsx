@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
 import useEmblaCarousel from 'embla-carousel-react';
 
 interface TrickMediaViewerProps {
@@ -18,6 +19,8 @@ export function TrickMediaViewer({ images, videos, initialImageIndex = 0 }: Tric
   });
   const [currentImageIndex, setCurrentImageIndex] = useState(initialImageIndex);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
+  const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
+  const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
 
   useEffect(() => {
     if (!emblaApi) return;
@@ -40,6 +43,14 @@ export function TrickMediaViewer({ images, videos, initialImageIndex = 0 }: Tric
     emblaApi?.scrollNext();
   };
 
+  const handleImageLoad = (index: number) => {
+    setLoadedImages(prev => new Set(prev).add(index));
+  };
+
+  const handleImageError = (index: number) => {
+    setFailedImages(prev => new Set(prev).add(index));
+  };
+
   return (
     <>
       {/* Image Gallery with Swipe Support */}
@@ -49,12 +60,26 @@ export function TrickMediaViewer({ images, videos, initialImageIndex = 0 }: Tric
             <div className="flex touch-pan-y">
               {images.map((image, index) => (
                 <div key={index} className="flex-[0_0_100%] min-w-0">
-                  <div className="w-full aspect-square">
-                    <img
-                      src={image}
-                      alt={`Trick image ${index + 1}`}
-                      className="w-full h-full object-cover transition-opacity duration-300 ease-in-out"
-                    />
+                  <div className="w-full aspect-square relative">
+                    {!loadedImages.has(index) && !failedImages.has(index) && (
+                      <Skeleton className="absolute inset-0 w-full h-full" />
+                    )}
+                    {failedImages.has(index) ? (
+                      <div className="w-full h-full flex items-center justify-center bg-muted">
+                        <p className="text-sm text-muted-foreground">Failed to load image</p>
+                      </div>
+                    ) : (
+                      <img
+                        src={image}
+                        alt={`Trick image ${index + 1}`}
+                        loading="eager"
+                        onLoad={() => handleImageLoad(index)}
+                        onError={() => handleImageError(index)}
+                        className={`w-full h-full object-cover transition-opacity duration-300 ease-in-out ${
+                          loadedImages.has(index) ? 'opacity-100' : 'opacity-0'
+                        }`}
+                      />
+                    )}
                   </div>
                 </div>
               ))}

@@ -124,19 +124,19 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
         </DrawerHeader>
 
         {!hasGoal ? (
-          <div className="text-center py-4">
+          <div className="text-center py-4 px-4">
             <p className="text-sm text-muted-foreground">
               No active goal for this trick. Ask your parent to set up a goal!
             </p>
           </div>
         ) : isCompleted ? (
-          <div className="text-center py-4">
+          <div className="text-center py-4 px-4">
             <p className="text-sm font-medium text-primary">
               🎉 Goal Completed!
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 gap-3 py-2">
+          <div className="grid grid-cols-2 gap-3 py-2 px-4">
             <Button
               onClick={handleSuccess}
               disabled={addCompletion.isPending}
@@ -159,7 +159,7 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
         )}
 
         {trick.points_per_completion > 0 && (
-          <div className="text-xs text-muted-foreground text-center">
+          <div className="text-xs text-muted-foreground text-center px-4">
             +{trick.points_per_completion} coins per success
           </div>
         )}

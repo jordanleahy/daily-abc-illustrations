@@ -62,11 +62,23 @@ export function TrickTrackingCard({ goal }: TrickTrackingCardProps) {
       )}
       <CardHeader>
         <CardTitle className="text-lg">{goal.tricks?.name}</CardTitle>
-        {goal.tricks?.description && (
-          <p className="text-sm text-muted-foreground whitespace-pre-line">
-            {goal.tricks.description}
-          </p>
-        )}
+        <div className="space-y-1">
+          {goal.tricks?.feature_angle && (
+            <p className="text-sm text-muted-foreground">
+              Feature Angle: {goal.tricks.feature_angle}
+            </p>
+          )}
+          {goal.tricks?.type && (
+            <p className="text-sm text-muted-foreground">
+              Type: {goal.tricks.type}
+            </p>
+          )}
+          {goal.tricks?.description && (
+            <p className="text-sm text-muted-foreground">
+              {goal.tricks.description}
+            </p>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="space-y-2">

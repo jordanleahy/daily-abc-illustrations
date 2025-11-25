@@ -2,9 +2,11 @@ import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
 import { CategorizedBookSections } from '@/components/library';
 import { BookFilterBar } from '@/components/filters';
+import { RewardsCarousel } from '@/components/rewards/RewardsCarousel';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
+import { useRewardsProducts } from '@/hooks/useRewardsProducts';
 import { useHomeImagePreloader } from '@/hooks/useHomeImagePreloader';
 import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -30,6 +32,9 @@ const Index = () => {
   
   // Fetch today's habits for the first kid
   const { data: completions = [], isLoading: isLoadingHabits } = useTodayHabits(firstKid?.id);
+  
+  // Fetch rewards products
+  const { data: rewardsProducts = [] } = useRewardsProducts();
   
   // Fetch library books using decoupled architecture
   const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooksDecoupled();
@@ -190,6 +195,15 @@ const Index = () => {
         )}
 
         {/* Search and filter removed from home page */}
+
+        {/* Rewards Carousel - Only for subscribed users with kid profile */}
+        {hasActiveSubscription && firstKid && rewardsProducts.length > 0 && (
+          <RewardsCarousel
+            products={rewardsProducts}
+            kidId={firstKid.id}
+            currentCoins={firstKid.earned_coins}
+          />
+        )}
 
         {/* Categorized Book Sections */}
         {filteredLibraryItems.length > 0 ? (

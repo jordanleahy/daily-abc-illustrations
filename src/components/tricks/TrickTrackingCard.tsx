@@ -41,7 +41,7 @@ export function TrickTrackingCard({ goal }: TrickTrackingCardProps) {
   const handleFailed = () => {
     addCompletion.mutate({
       goalId: goal.id,
-      count_increment: 0,
+      count_increment: 1,
       notes: 'Failed attempt',
     });
   };

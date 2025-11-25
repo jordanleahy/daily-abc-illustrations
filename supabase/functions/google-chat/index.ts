@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
 import { SPECIALIZED_CHAT_PROMPTS, DISCOVERY_PROMPT } from './specialized-chat-prompts.ts';
+import { UNIVERSAL_INTAKE_PROMPT } from './universal-intake-prompt.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -134,12 +135,19 @@ serve(async (req) => {
       );
     }
 
-    // Determine which agent and system prompt to use based on bookType
+    // Check if intake is complete (detect [INTAKE_COMPLETE] marker in conversation)
+    const lastAssistantMessage = messages.slice().reverse().find(m => m.role === 'assistant');
+    const intakeComplete = lastAssistantMessage && 
+      typeof lastAssistantMessage.content === 'string' && 
+      lastAssistantMessage.content.includes('[INTAKE_COMPLETE]');
+
+    // Determine which agent and system prompt to use
     let systemPromptContent: string;
     let agentSource: string;
 
-    if (bookType) {
-      console.log(`📚 Book type selected: ${bookType}`);
+    if (bookType && intakeComplete) {
+      // Intake complete - switch to specialized agent
+      console.log(`📚 Book type selected: ${bookType}, intake complete - switching to specialized agent`);
       
       // Map book type to agent type
       const agentType = BOOK_TYPE_TO_AGENT_TYPE[bookType] || 'book-creation';
@@ -160,8 +168,8 @@ serve(async (req) => {
       // Use database agent if available and has substantial content
       if (agent?.instructions && agent.instructions.length > 500) {
         systemPromptContent = agent.instructions;
-        agentSource = `Database: ${agent.name}`;
-        console.log(`✅ Using database agent: ${agent.name} (${agent.instructions.length} chars)`);
+        agentSource = `Database: ${agent.name} (Specialized)`;
+        console.log(`✅ Using database specialized agent: ${agent.name} (${agent.instructions.length} chars)`);
       } else {
         // Fallback to file-based specialized prompt
         systemPromptContent = SPECIALIZED_CHAT_PROMPTS[bookType];
@@ -175,6 +183,12 @@ serve(async (req) => {
           agentSource = 'File: Discovery prompt (fallback)';
         }
       }
+    } else if (bookType && !intakeComplete) {
+      // Book type selected but intake not complete - use universal intake prompt
+      console.log(`📚 Book type selected: ${bookType}, starting universal intake`);
+      systemPromptContent = UNIVERSAL_INTAKE_PROMPT;
+      agentSource = 'Universal Intake Agent';
+      console.log('🎯 Using universal intake prompt to collect theme + age');
     } else {
       // No book type selected - use discovery prompt
       systemPromptContent = DISCOVERY_PROMPT;
@@ -183,12 +197,22 @@ serve(async (req) => {
     }
 
     // Add context about kid age, theme, and conversation stage
+    // For specialized agents (after intake), provide pre-gathered context
     const ageContext = kidAge 
-      ? `\n\n👶 CHILD AGE CONTEXT:\nThe selected child is ${kidAge.years} years and ${kidAge.months} months old. Use this age to skip the age discovery question and tailor all educational content, vocabulary, and complexity to this specific developmental stage.`
+      ? `\n\n👶 CHILD AGE CONTEXT:\nThe selected child is ${kidAge.years} years and ${kidAge.months} months old. ${intakeComplete ? 'This age was gathered during intake. ' : ''}Use this age to ${intakeComplete ? '' : 'skip the age discovery question and '}tailor all educational content, vocabulary, and complexity to this specific developmental stage.`
       : '';
 
     const themeContext = characterTheme
-      ? `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. Skip the theme discovery question and integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
+      ? `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. ${intakeComplete ? 'This theme was gathered during intake. ' : ''}${intakeComplete ? '' : 'Skip the theme discovery question and '}Integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
+      : '';
+
+    // For specialized agents, add explicit pre-gathered context
+    const preGatheredContext = intakeComplete
+      ? `\n\n✅ INTAKE COMPLETE - PRE-GATHERED INFORMATION:\n` +
+        `- Book Type: ${bookType}\n` +
+        `- Character Theme: ${characterTheme || 'Not selected'}\n` +
+        `- Age: ${kidAge ? `${kidAge.years} years ${kidAge.months} months` : 'Not provided'}\n\n` +
+        `You can now proceed directly to type-specific questions (e.g., letter case for ABC, number range for Numbers, color set for Colors). Do NOT re-ask about theme or age.`
       : '';
 
     const conversationStageContext = outlineReady
@@ -213,11 +237,12 @@ serve(async (req) => {
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + ageContext + themeContext + conversationStageContext + styleContext,
+      content: systemPromptContent + ageContext + themeContext + preGatheredContext + conversationStageContext + styleContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
     console.log(`📊 System prompt length: ${systemMessage.content.length} characters`);
+    console.log(`📊 Intake complete: ${intakeComplete ? 'Yes' : 'No'}`);
     console.log(`📊 Conversation stage: ${outlineReady ? 'Outline Ready' : bookCreated ? 'Book Created' : 'Discovery'}`);
     console.log(`👶 Kid age provided: ${kidAge ? `${kidAge.years}y ${kidAge.months}m` : 'No'}`);
     console.log(`🎨 Character theme: ${characterTheme || 'None'}`);

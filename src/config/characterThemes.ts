@@ -8,6 +8,10 @@ export const characterThemes: Record<string, CharacterTheme> = {
     thumbnail: '/themes/paw-patrol.png',
     altText: 'Paw Patrol themed book'
   },
+  'frozen': {
+    thumbnail: '/themes/frozen.png',
+    altText: 'Frozen themed book'
+  },
   'peppa-pig': {
     thumbnail: '/themes/peppa-pig.png',
     altText: 'Peppa Pig themed book'
@@ -15,14 +19,6 @@ export const characterThemes: Record<string, CharacterTheme> = {
   'bluey': {
     thumbnail: '/themes/bluey.png',
     altText: 'Bluey themed book'
-  },
-  'daniel-tiger': {
-    thumbnail: '/placeholder.svg',
-    altText: 'Daniel Tiger themed book'
-  },
-  'frozen': {
-    thumbnail: '/themes/frozen.png',
-    altText: 'Frozen themed book'
   },
   'cocomelon': {
     thumbnail: '/themes/cocomelon.png',
@@ -36,14 +32,6 @@ export const characterThemes: Record<string, CharacterTheme> = {
     thumbnail: '/themes/mickey-mouse.png',
     altText: 'Mickey Mouse themed book'
   },
-  // 'toy-story': {
-  //   thumbnail: '/themes/toy-story.png',
-  //   altText: 'Toy Story themed book'
-  // },
-  // 'pokemon': {
-  //   thumbnail: '/themes/pokemon.png',
-  //   altText: 'Pokemon themed book'
-  // },
   'mario': {
     thumbnail: '/themes/mario.png',
     altText: 'Mario themed book'
@@ -64,17 +52,13 @@ export const characterThemes: Record<string, CharacterTheme> = {
     thumbnail: '/themes/bear-stories.png',
     altText: 'Bear Memories - A cinematic winter adventure at Snowtop Mountain'
   },
-  'jewish-holidays': {
+  'custom': {
     thumbnail: '/placeholder.svg',
-    altText: 'Jewish Holidays & Traditions themed book'
+    altText: 'Custom theme - your choice'
   },
-  'dora': {
+  'no-theme': {
     thumbnail: '/placeholder.svg',
-    altText: 'Dora the Explorer themed book'
-  },
-  'lion-king': {
-    thumbnail: '/placeholder.svg',
-    altText: 'The Lion King themed book'
+    altText: 'Classic educational illustrations'
   }
 };
 

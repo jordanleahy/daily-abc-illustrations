@@ -5,23 +5,19 @@
  */
 export const CharacterTheme = {
   PAW_PATROL: 'paw-patrol',
+  FROZEN: 'frozen',
   PEPPA_PIG: 'peppa-pig',
   BLUEY: 'bluey',
-  DANIEL_TIGER: 'daniel-tiger',
-  FROZEN: 'frozen',
   COCOMELON: 'cocomelon',
   MOANA: 'moana',
   MICKEY_MOUSE: 'mickey-mouse',
-  TOY_STORY: 'toy-story',
-  POKEMON: 'pokemon',
   MARIO: 'mario',
   SESAME_STREET: 'sesame-street',
   BENJI_DAVIES: 'benji-davies',
   BLACK_AND_WHITE: 'black-and-white',
   BEAR_STORIES: 'bear-stories',
-  JEWISH_HOLIDAYS: 'jewish-holidays',
-  DORA: 'dora',
-  LION_KING: 'lion-king',
+  CUSTOM: 'custom',
+  NO_THEME: 'no-theme',
 } as const;
 
 export type CharacterThemeValue = typeof CharacterTheme[keyof typeof CharacterTheme];
@@ -32,23 +28,19 @@ export type CharacterThemeValue = typeof CharacterTheme[keyof typeof CharacterTh
  */
 export const themeDisplayNames: Record<CharacterThemeValue, string> = {
   'paw-patrol': 'PAW Patrol',
+  'frozen': 'Frozen',
   'peppa-pig': 'Peppa Pig',
   'bluey': 'Bluey',
-  'daniel-tiger': 'Daniel Tiger',
-  'frozen': 'Frozen',
   'cocomelon': 'Cocomelon',
   'moana': 'Moana',
   'mickey-mouse': 'Mickey Mouse',
-  'toy-story': 'Toy Story',
-  'pokemon': 'Pokemon',
   'mario': 'Mario',
   'sesame-street': 'Sesame Street',
   'benji-davies': 'Benji Davies Style',
   'black-and-white': 'Black & White',
   'bear-stories': 'Bear Stories',
-  'jewish-holidays': 'Jewish Holidays & Traditions',
-  'dora': 'Dora the Explorer',
-  'lion-king': 'The Lion King',
+  'custom': 'Custom Theme',
+  'no-theme': 'Classic Educational',
 };
 
 /**

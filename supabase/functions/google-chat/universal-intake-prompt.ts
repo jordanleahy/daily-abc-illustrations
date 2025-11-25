@@ -35,9 +35,13 @@ pokemon: Pokémon
 IMPORTANT: Only ask this if you don't already have the child's age from their profile.
 
 If age is needed, ask: "What age group is this book for?"
-- Toddler (2-3 years)
-- Preschool (3-5 years)  
-- Early Reader (5-7 years)
+
+Then provide age suggestions using this EXACT format:
+[SUGGEST]
+2-4: 👶 Toddler (2-3 years)
+4-6: 🎨 Preschool (4-5 years)  
+6-8: 📖 Early Reader (6-7 years)
+[/SUGGEST]
 
 **Step 3: Signal Completion**
 Once you have both pieces of information (or age from profile), respond with:

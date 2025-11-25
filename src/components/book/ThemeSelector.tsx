@@ -3,8 +3,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 
 interface ThemeSelectorProps {
-  value?: string;
-  onValueChange: (value: string) => void;
+  value?: CharacterThemeValue;
+  onValueChange: (value: CharacterThemeValue) => void;
   label?: string;
   placeholder?: string;
   required?: boolean;
@@ -30,7 +30,7 @@ export const ThemeSelector = ({
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
       )}
-      <Select value={value || ''} onValueChange={onValueChange}>
+      <Select value={value || ''} onValueChange={(v) => onValueChange(v as CharacterThemeValue)}>
         <SelectTrigger id="theme-selector">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>

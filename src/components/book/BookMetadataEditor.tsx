@@ -48,7 +48,7 @@ export const BookMetadataEditor = ({
         />
         <ThemeSelector 
           value={currentMetadata.characterTheme}
-          onValueChange={(value) => updateMetadata({ updates: { characterTheme: value as any } })}
+          onValueChange={(value) => updateMetadata({ updates: { characterTheme: value } })}
         />
         <MetadataTextInput
           label="Page Count"

@@ -9,6 +9,8 @@ interface UpdateTrickParams {
   description: string;
   points_per_completion: number;
   photo_url?: string;
+  feature_angle?: string | null;
+  type?: string | null;
   assigned_kids: { kid_profile_id: string; target_count: number }[];
 }
 
@@ -20,7 +22,7 @@ export function useUpdateTrick() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ trickId, name, description, points_per_completion, photo_url, assigned_kids }: UpdateTrickParams) => {
+    mutationFn: async ({ trickId, name, description, points_per_completion, photo_url, feature_angle, type, assigned_kids }: UpdateTrickParams) => {
       if (!user?.id) throw new Error('User not authenticated');
 
       // Update trick
@@ -31,6 +33,8 @@ export function useUpdateTrick() {
           description,
           points_per_completion,
           photo_url,
+          feature_angle,
+          type,
         })
         .eq('id', trickId)
         .eq('parent_user_id', user.id);

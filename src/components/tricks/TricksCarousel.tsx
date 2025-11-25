@@ -48,17 +48,21 @@ export const TricksCarousel = memo(({
         className={LIBRARY_STYLES.carousel.wrapper}
       >
         <CarouselContent className={LIBRARY_STYLES.carousel.content}>
-          {tricks.map((trick) => (
-            <CarouselItem
-              key={trick.id}
-              className={LIBRARY_STYLES.carousel.item}
-            >
-              <TricksCarouselCard
-                trick={trick}
-                onClick={() => setSelectedTrick(trick)}
-              />
-            </CarouselItem>
-          ))}
+          {tricks.map((trick) => {
+            const trickGoal = goals.find(goal => goal.trick_id === trick.id) || null;
+            return (
+              <CarouselItem
+                key={trick.id}
+                className={LIBRARY_STYLES.carousel.item}
+              >
+                <TricksCarouselCard
+                  trick={trick}
+                  goal={trickGoal}
+                  onClick={() => setSelectedTrick(trick)}
+                />
+              </CarouselItem>
+            );
+          })}
         </CarouselContent>
         <CarouselPrevious className="hidden md:flex" />
         <CarouselNext className="hidden md:flex" />

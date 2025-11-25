@@ -24,6 +24,8 @@ export function useCreateTrick() {
           description: data.description || null,
           photo_url: data.photo_url || null,
           points_per_completion: data.points_per_completion,
+          feature_angle: data.feature_angle || null,
+          type: data.type || null,
         })
         .select()
         .single();

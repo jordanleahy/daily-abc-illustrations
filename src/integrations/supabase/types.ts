@@ -1751,6 +1751,7 @@ export type Database = {
           points_per_completion: number
           type: string | null
           updated_at: string
+          video_urls: string | null
         }
         Insert: {
           created_at?: string
@@ -1765,6 +1766,7 @@ export type Database = {
           points_per_completion?: number
           type?: string | null
           updated_at?: string
+          video_urls?: string | null
         }
         Update: {
           created_at?: string
@@ -1779,6 +1781,7 @@ export type Database = {
           points_per_completion?: number
           type?: string | null
           updated_at?: string
+          video_urls?: string | null
         }
         Relationships: []
       }

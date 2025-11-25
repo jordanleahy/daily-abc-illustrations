@@ -13,11 +13,12 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Check, ChevronsUpDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { ImageUpload } from '@/components/ImageUpload';
 import { uploadTrickPhoto } from '@/utils/trickPhotoUpload';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { Trick } from '@/types/trick';
+import { TrickImageUpload } from './TrickImageUpload';
+import { TrickVideoUpload } from './TrickVideoUpload';
 
 const TRICK_NAMES = [
   '50-50',
@@ -108,7 +109,8 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
   const [featureAngleOpen, setFeatureAngleOpen] = useState(false);
   const [typeOpen, setTypeOpen] = useState(false);
   const [customFeatureAngle, setCustomFeatureAngle] = useState('');
-  const [photoFiles, setPhotoFiles] = useState<File[]>([]);
+  const [imageDataUrls, setImageDataUrls] = useState<string[]>([]);
+  const [videoData, setVideoData] = useState<Array<{ dataUrl: string; thumbnail: string; duration: number }>>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   // Load edit trick data when modal opens with editTrick
@@ -121,7 +123,8 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
       setDescription('');
       setPointsPerCompletion(1);
       setSelectedKids({});
-      setPhotoFiles([]);
+      setImageDataUrls([]);
+      setVideoData([]);
       return;
     }
 
@@ -158,13 +161,17 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
     try {
       setIsUploading(true);
       
-      // Upload new photos if selected
+      // Use existing photo_url if no new images
       let photoUrl = editTrick?.photo_url;
-      if (photoFiles.length > 0 && user) {
-        const uploadPromises = photoFiles.map(file => uploadTrickPhoto(file, user.id));
-        const uploadedUrls = await Promise.all(uploadPromises);
-        // Store as JSON array
-        photoUrl = JSON.stringify(uploadedUrls);
+      if (imageDataUrls.length > 0) {
+        photoUrl = JSON.stringify(imageDataUrls);
+      }
+
+      // Process video data URLs
+      let videoUrls = editTrick?.video_urls;
+      if (videoData.length > 0) {
+        const videoUrlsOnly = videoData.map(v => v.dataUrl);
+        videoUrls = JSON.stringify(videoUrlsOnly);
       }
 
       const commonData = { 
@@ -172,6 +179,7 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
         description, 
         points_per_completion: pointsPerCompletion, 
         photo_url: photoUrl, 
+        video_urls: videoUrls,
         feature_angle: featureAngle || null,
         type: type || null,
         assigned_kids: assignedKids 
@@ -189,8 +197,8 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
         );
       }
     } catch (error) {
-      console.error('Failed to upload photo:', error);
-      toast.error('Failed to upload photo');
+      console.error('Failed to upload media:', error);
+      toast.error('Failed to upload media');
       setIsUploading(false);
     }
   };
@@ -399,44 +407,17 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
             />
           </div>
 
-          <div>
-            <Label>Trick Photos (Optional)</Label>
-            <div className="space-y-3">
-              {photoFiles.map((file, index) => (
-                <div key={index} className="flex items-center gap-2 p-2 border rounded-lg">
-                  <img 
-                    src={URL.createObjectURL(file)} 
-                    alt={`Preview ${index + 1}`}
-                    className="w-16 h-16 object-cover rounded"
-                  />
-                  <span className="flex-1 text-sm truncate">{file.name}</span>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setPhotoFiles(prev => prev.filter((_, i) => i !== index))}
-                  >
-                    Remove
-                  </Button>
-                </div>
-              ))}
-              <Input
-                type="file"
-                accept="image/*"
-                multiple
-                onChange={(e) => {
-                  const files = Array.from(e.target.files || []);
-                  setPhotoFiles(prev => [...prev, ...files]);
-                }}
-                disabled={isUploading}
-              />
-              {editTrick?.photo_url && photoFiles.length === 0 && (
-                <div className="text-sm text-muted-foreground">
-                  Current photos will be replaced when you upload new ones
-                </div>
-              )}
-            </div>
-          </div>
+          <TrickImageUpload
+            images={imageDataUrls}
+            onImagesChange={setImageDataUrls}
+            disabled={isUploading}
+          />
+
+          <TrickVideoUpload
+            videos={videoData}
+            onVideosChange={setVideoData}
+            disabled={isUploading}
+          />
 
           <div className="space-y-3">
             <Label>Assign to Kids</Label>

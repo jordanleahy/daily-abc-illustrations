@@ -1,9 +1,10 @@
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Edit2, Trash2 } from 'lucide-react';
+import { Edit2, Trash2, Video } from 'lucide-react';
 import { Trick, TrickGoalWithDetails } from '@/types/trick';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 
 interface TrickCardProps {
   trick: Trick;
@@ -25,15 +26,33 @@ export function TrickCard({ trick, goals, onEdit, onDelete }: TrickCardProps) {
     }
   })();
 
+  const hasVideos = (() => {
+    const videoUrls = trick.video_urls;
+    if (!videoUrls) return false;
+    
+    try {
+      const urls = JSON.parse(videoUrls);
+      return Array.isArray(urls) && urls.length > 0;
+    } catch {
+      return !!videoUrls;
+    }
+  })();
+
   return (
     <Card className="p-6">
       {displayImage && (
-        <div className="mb-4 -mt-6 -mx-6">
+        <div className="mb-4 -mt-6 -mx-6 relative">
           <img 
             src={displayImage} 
             alt={trick.name}
             className="w-full h-48 object-cover rounded-t-lg"
           />
+          {hasVideos && (
+            <Badge className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm">
+              <Video className="h-3 w-3 mr-1" />
+              Has Videos
+            </Badge>
+          )}
         </div>
       )}
       <div className="flex items-start justify-between mb-4">

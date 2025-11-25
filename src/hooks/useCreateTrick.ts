@@ -23,6 +23,7 @@ export function useCreateTrick() {
           name: data.name,
           description: data.description || null,
           photo_url: data.photo_url || null,
+          video_urls: data.video_urls || null,
           points_per_completion: data.points_per_completion,
           feature_angle: data.feature_angle || null,
           type: data.type || null,

@@ -11,7 +11,11 @@ interface TrickMediaViewerProps {
 }
 
 export function TrickMediaViewer({ images, videos, initialImageIndex = 0 }: TrickMediaViewerProps) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, startIndex: initialImageIndex });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ 
+    loop: true, 
+    startIndex: initialImageIndex,
+    duration: 30,
+  });
   const [currentImageIndex, setCurrentImageIndex] = useState(initialImageIndex);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
 
@@ -45,11 +49,11 @@ export function TrickMediaViewer({ images, videos, initialImageIndex = 0 }: Tric
             <div className="flex touch-pan-y">
               {images.map((image, index) => (
                 <div key={index} className="flex-[0_0_100%] min-w-0">
-                  <div className="w-full h-48">
+                  <div className="w-full aspect-square">
                     <img
                       src={image}
                       alt={`Trick image ${index + 1}`}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover transition-opacity duration-300 ease-in-out"
                     />
                   </div>
                 </div>

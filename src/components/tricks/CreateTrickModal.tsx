@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 import { uploadTrickPhoto } from '@/utils/trickPhotoUpload';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { Trick } from '@/types/trick';
+import { Trick, VideoData } from '@/types/trick';
 import { TrickImageUpload } from './TrickImageUpload';
 import { TrickVideoUpload } from './TrickVideoUpload';
 
@@ -110,7 +110,7 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
   const [typeOpen, setTypeOpen] = useState(false);
   const [customFeatureAngle, setCustomFeatureAngle] = useState('');
   const [imageDataUrls, setImageDataUrls] = useState<string[]>([]);
-  const [videoData, setVideoData] = useState<Array<{ dataUrl: string; thumbnail: string; duration: number }>>([]);
+  const [videoData, setVideoData] = useState<VideoData[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
   // Load edit trick data when modal opens with editTrick
@@ -150,15 +150,27 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
       // Load existing videos
       if (editTrick.video_urls) {
         try {
-          const urls = JSON.parse(editTrick.video_urls);
-          // For existing videos, we only have URLs, not full video data
-          // We'll display them as simple thumbnails without duration
-          const videoDataFromUrls = (Array.isArray(urls) ? urls : [editTrick.video_urls]).map(url => ({
-            dataUrl: url,
-            thumbnail: url, // Use video URL as thumbnail (will show first frame)
-            duration: 0, // Unknown duration for existing videos
-          }));
-          setVideoData(videoDataFromUrls);
+          const parsed = JSON.parse(editTrick.video_urls);
+          if (Array.isArray(parsed)) {
+            // Check if it's an array of VideoData objects or strings
+            if (parsed.length > 0 && typeof parsed[0] === 'object' && 'dataUrl' in parsed[0]) {
+              setVideoData(parsed as VideoData[]);
+            } else {
+              // Legacy: array of URL strings
+              setVideoData((parsed as string[]).map(url => ({
+                dataUrl: url,
+                thumbnail: url,
+                duration: 0,
+              })));
+            }
+          } else {
+            // Single URL string
+            setVideoData([{
+              dataUrl: editTrick.video_urls,
+              thumbnail: editTrick.video_urls,
+              duration: 0,
+            }]);
+          }
         } catch {
           setVideoData([{
             dataUrl: editTrick.video_urls,

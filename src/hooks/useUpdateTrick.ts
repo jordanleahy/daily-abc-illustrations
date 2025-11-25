@@ -8,10 +8,10 @@ interface UpdateTrickParams {
   name: string;
   description: string;
   points_per_completion: number;
-  photo_url?: string;
-  video_urls?: string;
-  feature_angle?: string | null;
-  type?: string | null;
+  photo_url: string | null;
+  video_urls: string | null;
+  feature_angle: string | null;
+  type: string | null;
   assigned_kids: { kid_profile_id: string; target_count: number }[];
 }
 

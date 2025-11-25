@@ -3,11 +3,10 @@
  * Synced with frontend CharacterTheme enum in src/types/characterTheme.ts
  */
 export const VALID_CHARACTER_THEMES = [
-  'paw-patrol', 'peppa-pig', 'bluey', 'daniel-tiger',
-  'frozen', 'cocomelon', 'moana', 'mickey-mouse',
-  'toy-story', 'pokemon', 'mario', 'sesame-street',
+  'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
+  'moana', 'mickey-mouse', 'mario', 'sesame-street', 
   'benji-davies', 'black-and-white', 'bear-stories',
-  'jewish-holidays', 'dora', 'lion-king'
+  'custom', 'no-theme'
 ] as const;
 
 export type ValidCharacterTheme = typeof VALID_CHARACTER_THEMES[number];

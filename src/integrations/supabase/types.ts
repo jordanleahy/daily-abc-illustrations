@@ -1742,36 +1742,42 @@ export type Database = {
           created_at: string
           description: string | null
           display_order: number
+          feature_angle: string | null
           id: string
           is_active: boolean
           name: string
           parent_user_id: string
           photo_url: string | null
           points_per_completion: number
+          type: string | null
           updated_at: string
         }
         Insert: {
           created_at?: string
           description?: string | null
           display_order?: number
+          feature_angle?: string | null
           id?: string
           is_active?: boolean
           name: string
           parent_user_id: string
           photo_url?: string | null
           points_per_completion?: number
+          type?: string | null
           updated_at?: string
         }
         Update: {
           created_at?: string
           description?: string | null
           display_order?: number
+          feature_angle?: string | null
           id?: string
           is_active?: boolean
           name?: string
           parent_user_id?: string
           photo_url?: string | null
           points_per_completion?: number
+          type?: string | null
           updated_at?: string
         }
         Relationships: []

@@ -83,11 +83,23 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
             </div>
           )}
           <AlertDialogTitle className="text-xl">{trick.name}</AlertDialogTitle>
-          {trick.description && (
-            <AlertDialogDescription className="text-left whitespace-pre-line">
-              {trick.description}
-            </AlertDialogDescription>
-          )}
+          <div className="text-left space-y-1">
+            {trick.feature_angle && (
+              <AlertDialogDescription className="text-sm">
+                Feature Angle: {trick.feature_angle}
+              </AlertDialogDescription>
+            )}
+            {trick.type && (
+              <AlertDialogDescription className="text-sm">
+                Type: {trick.type}
+              </AlertDialogDescription>
+            )}
+            {trick.description && (
+              <AlertDialogDescription>
+                {trick.description}
+              </AlertDialogDescription>
+            )}
+          </div>
           {goal && (
             <div className="text-sm text-muted-foreground">
               Progress: {goal.current_count} / {goal.target_count} completions

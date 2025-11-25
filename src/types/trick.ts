@@ -11,6 +11,8 @@ export interface Trick {
   points_per_completion: number;
   is_active: boolean;
   display_order: number;
+  feature_angle: string | null;
+  type: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -57,6 +59,8 @@ export interface NewTrick {
   description?: string;
   photo_url?: string;
   points_per_completion: number;
+  feature_angle?: string;
+  type?: string;
   assigned_kids: {
     kid_profile_id: string;
     target_count: number;
@@ -69,6 +73,8 @@ export interface UpdateTrickData {
   description?: string;
   photo_url?: string;
   points_per_completion?: number;
+  feature_angle?: string;
+  type?: string;
 }
 
 export interface AddTrickCompletionParams {

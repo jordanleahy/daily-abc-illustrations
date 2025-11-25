@@ -1,14 +1,15 @@
 import { memo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Trick } from '@/types/trick';
+import { Trick, TrickGoalWithDetails } from '@/types/trick';
 
 interface TricksCarouselCardProps {
   trick: Trick;
+  goal: TrickGoalWithDetails | null;
   onClick: () => void;
 }
 
-export const TricksCarouselCard = memo(({ trick, onClick }: TricksCarouselCardProps) => {
+export const TricksCarouselCard = memo(({ trick, goal, onClick }: TricksCarouselCardProps) => {
   const displayImage = (() => {
     const photoUrl = trick.photo_url;
     if (!photoUrl) return null;
@@ -20,6 +21,15 @@ export const TricksCarouselCard = memo(({ trick, onClick }: TricksCarouselCardPr
       return photoUrl;
     }
   })();
+
+  // Format title: "{name} {feature_angle} {type}" all lowercase
+  const formattedTitle = [
+    trick.name,
+    trick.feature_angle?.toLowerCase(),
+    trick.type?.toLowerCase()
+  ]
+    .filter(Boolean)
+    .join(' ');
 
   return (
     <Card 
@@ -42,11 +52,11 @@ export const TricksCarouselCard = memo(({ trick, onClick }: TricksCarouselCardPr
         </AspectRatio>
         <div className="p-4 space-y-1">
           <h3 className="font-semibold text-sm line-clamp-2">
-            {trick.name}
+            {formattedTitle}
           </h3>
-          {trick.description && (
-            <p className="text-xs text-muted-foreground line-clamp-1">
-              {trick.description}
+          {goal && (
+            <p className="text-xs text-muted-foreground">
+              {goal.current_count} out of {goal.target_count}
             </p>
           )}
         </div>

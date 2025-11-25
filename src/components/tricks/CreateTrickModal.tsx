@@ -129,14 +129,10 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
       setName(editTrick.name);
       setPointsPerCompletion(editTrick.points_per_completion);
 
-      // Parse description
-      const lines = editTrick.description?.split('\n') || [];
-      const featureAngleLine = lines.find(l => l.startsWith('Feature Angle:'));
-      const typeLine = lines.find(l => l.startsWith('Type:'));
-      
-      setFeatureAngle(featureAngleLine?.replace('Feature Angle:', '').trim() || '');
-      setType(typeLine?.replace('Type:', '').trim() || '');
-      setDescription(lines.filter(l => !l.startsWith('Feature Angle:') && !l.startsWith('Type:')).join('\n').trim());
+      // Load fields directly from database
+      setFeatureAngle(editTrick.feature_angle || '');
+      setType(editTrick.type || '');
+      setDescription(editTrick.description || '');
 
       // Load assigned kids
       const trickGoals = allGoals?.filter(g => g.trick_id === editTrick.id) || [];
@@ -159,8 +155,6 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
       return;
     }
 
-    const fullDescription = `${featureAngle ? `Feature Angle: ${featureAngle}\n` : ''}${type ? `Type: ${type}\n` : ''}${description}`;
-    
     try {
       setIsUploading(true);
       
@@ -173,7 +167,15 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
         photoUrl = JSON.stringify(uploadedUrls);
       }
 
-      const commonData = { name, description: fullDescription, points_per_completion: pointsPerCompletion, photo_url: photoUrl, assigned_kids: assignedKids };
+      const commonData = { 
+        name, 
+        description, 
+        points_per_completion: pointsPerCompletion, 
+        photo_url: photoUrl, 
+        feature_angle: featureAngle || null,
+        type: type || null,
+        assigned_kids: assignedKids 
+      };
 
       if (editTrick) {
         updateTrick.mutate(

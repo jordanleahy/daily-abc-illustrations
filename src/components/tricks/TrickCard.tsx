@@ -39,8 +39,14 @@ export function TrickCard({ trick, goals, onEdit, onDelete }: TrickCardProps) {
       <div className="flex items-start justify-between mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold">{trick.name}</h3>
+          {trick.feature_angle && (
+            <p className="text-sm text-muted-foreground mt-1">Feature Angle: {trick.feature_angle}</p>
+          )}
+          {trick.type && (
+            <p className="text-sm text-muted-foreground">Type: {trick.type}</p>
+          )}
           {trick.description && (
-            <p className="text-sm text-muted-foreground mt-1 whitespace-pre-line">{trick.description}</p>
+            <p className="text-sm text-muted-foreground mt-1">{trick.description}</p>
           )}
           <p className="text-xs text-muted-foreground mt-2">
             {trick.points_per_completion} {trick.points_per_completion === 1 ? 'coin' : 'coins'} per completion

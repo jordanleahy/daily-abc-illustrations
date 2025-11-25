@@ -45,9 +45,11 @@ Guide users through creating alphabet books with clear letter formatting rules f
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature any characters? (Paw Patrol, Bluey, etc.) or create an original theme?"
 2. **LETTER CASE** - Ask: "Which letter format would you prefer?"
-   - Lowercase letters (a, b, c)
-   - Uppercase letters (A, B, C)  
-   - Both cases (Aa, Bb, Cc)
+[SUGGEST]
+lowercase: abc Lowercase (a, b, c)
+uppercase: ABC Uppercase (A, B, C)
+both: Aa Both Cases (Aa, Bb, Cc)
+[/SUGGEST]
 3. **AGE GROUP** - Ask target age if not provided via kid profile
 4. **PAGE COUNT** - Confirm: "We'll create 26 pages (A-Z). Ready to proceed?"
 
@@ -104,10 +106,12 @@ Guide users through creating counting books with STRICT numeric formatting rules
 
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature any characters?"
-2. **NUMBER RANGE** - Ask: "What number range?" 
-   - 1-10 (toddlers 2-3)
-   - 11-20 (preschool 3-5)
-   - Custom range like 30-40 (advanced)
+2. **NUMBER RANGE** - Ask: "What number range?"
+[SUGGEST]
+1-10: 🔢 1-10 (Toddlers)
+11-20: 🔢 11-20 (Preschool)
+custom: ✏️ Custom Range
+[/SUGGEST]
 3. **COUNTING OBJECT** - Ask: "What should we count throughout the book? (apples, balloons, stars, etc.)"
 4. **AGE GROUP** - Ask target age if not provided
 5. **PAGE COUNT** - Confirm: "We'll create exactly 10 pages for this range. Ready?"
@@ -156,9 +160,11 @@ Guide users through creating color recognition books with vibrant, clear example
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature any characters?"
 2. **COLOR SET** - Ask: "Which colors should we include?"
-   - Primary (red, blue, yellow)
-   - Rainbow (all 7)
-   - Custom selection
+[SUGGEST]
+primary: 🎨 Primary (Red, Blue, Yellow)
+rainbow: 🌈 Rainbow (All 7 Colors)
+custom: ✏️ Custom Selection
+[/SUGGEST]
 3. **AGE GROUP** - Ask target age if not provided
 4. **PAGE COUNT** - Will match number of colors selected
 
@@ -202,9 +208,11 @@ Guide users through creating geometric shape recognition books.
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature any characters?"
 2. **SHAPE SET** - Ask: "Which shapes should we include?"
-   - Basic (circle, square, triangle, rectangle)
-   - Extended (+ oval, diamond, star, heart)
-   - Advanced (+ pentagon, hexagon, octagon)
+[SUGGEST]
+basic: ⬛ Basic (Circle, Square, Triangle, Rectangle)
+extended: 🔶 Extended (+Oval, Diamond, Star, Heart)
+advanced: 🔷 Advanced (+Pentagon, Hexagon, Octagon)
+[/SUGGEST]
 3. **AGE GROUP** - Ask target age if not provided
 
 ⚠️ CRITICAL SHAPES RULES
@@ -245,7 +253,14 @@ Guide users through creating rhyming books with strong phonemic awareness.
 
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature any characters?"
-2. **RHYME FOCUS** - Ask: "Any specific word families or themes?" (cat/hat, day/play)
+2. **RHYME FOCUS** - Ask: "What theme or main character should we rhyme about?"
+[SUGGEST]
+animals: 🐾 Animals (cat/hat, dog/frog)
+bedtime: 🌙 Bedtime (night/light, sleep/sheep)
+adventure: 🚀 Adventure (play/day, go/know)
+nature: 🌳 Nature (tree/bee, sun/fun)
+family: 👨‍👩‍👧 Family & Friends (you/too, friend/end)
+[/SUGGEST]
 3. **AGE GROUP** - Ask target age if not provided
 4. **PAGE COUNT** - Suggest 10-15 pages for good rhythm
 
@@ -288,7 +303,14 @@ Guide users through creating books that teach conceptual understanding of contra
 
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature any characters?"
-2. **OPPOSITE PAIRS** - Ask: "Which opposite concepts?" (big/small, hot/cold, day/night)
+2. **OPPOSITE PAIRS** - Ask: "Which opposite concepts?"
+[SUGGEST]
+size: 📏 Big/Small
+temperature: 🌡️ Hot/Cold
+time: 🌙 Day/Night
+speed: 🏃 Fast/Slow
+emotion: 😀 Happy/Sad
+[/SUGGEST]
 3. **AGE GROUP** - Ask target age if not provided
 
 ⚠️ CRITICAL OPPOSITES RULES
@@ -330,8 +352,10 @@ Guide users through creating emotional literacy books with validation and expres
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature any characters?"
 2. **EMOTION SET** - Ask: "Which emotions should we explore?"
-   - Basic (happy, sad, angry, scared)
-   - Extended (+ excited, worried, proud, shy)
+[SUGGEST]
+basic: 😊 Basic (Happy, Sad, Angry, Scared)
+extended: 🎭 Extended (+Excited, Worried, Proud, Shy)
+[/SUGGEST]
 3. **AGE GROUP** - Ask target age if not provided
 
 ⚠️ CRITICAL EMOTIONS RULES
@@ -373,11 +397,13 @@ Guide users through creating animal knowledge books with habitats and characteri
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature any characters?"
 2. **ANIMAL GROUP** - Ask: "Which animals should we feature?"
-   - Farm animals
-   - Zoo animals
-   - Ocean animals
-   - Jungle animals
-   - Custom selection
+[SUGGEST]
+farm: 🐄 Farm Animals
+zoo: 🦁 Zoo Animals
+ocean: 🐋 Ocean Animals
+jungle: 🐒 Jungle Animals
+custom: ✏️ Custom Selection
+[/SUGGEST]
 3. **AGE GROUP** - Ask target age if not provided
 
 ⚠️ CRITICAL ANIMALS RULES
@@ -420,10 +446,12 @@ Guide users through creating early vocabulary books with everyday objects.
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature any characters?"
 2. **WORD CATEGORIES** - Ask: "Which categories?"
-   - Family (mama, dada, baby)
-   - Food (milk, apple, banana)
-   - Toys (ball, blocks, teddy)
-   - Actions (eat, sleep, play)
+[SUGGEST]
+family: 👨‍👩‍👧 Family (Mama, Dada, Baby)
+food: 🍎 Food (Milk, Apple, Banana)
+toys: 🎾 Toys (Ball, Blocks, Teddy)
+actions: 🏃 Actions (Eat, Sleep, Play)
+[/SUGGEST]
 3. **AGE GROUP** - Ask target age (typically 1-3 years)
 
 ⚠️ CRITICAL FIRST WORDS RULES
@@ -465,11 +493,12 @@ Guide users through creating calming bedtime routine books.
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature a specific character for the bedtime routine?"
 2. **ROUTINE STEPS** - Ask: "Which bedtime steps should we include?"
-   - Bath time
-   - Brush teeth
-   - Put on pajamas
-   - Read story
-   - Say goodnight
+[SUGGEST]
+full-routine: 🌙 Full Routine (All Steps)
+bath-focus: 🛁 Bath Time Focus
+story-focus: 📖 Storytime Focus
+custom: ✏️ Custom Steps
+[/SUGGEST]
 3. **AGE GROUP** - Ask target age if not provided
 
 ⚠️ CRITICAL BEDTIME RULES
@@ -511,11 +540,13 @@ Guide users through creating phonics books with decodable CVC patterns.
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature any characters?"
 2. **VOWEL FOCUS** - Ask: "Which vowel should we focus on?"
-   - Short a (cat, hat, mat)
-   - Short e (bed, red, ten)
-   - Short i (pig, big, win)
-   - Short o (dog, hop, mop)
-   - Short u (bug, hug, run)
+[SUGGEST]
+short-a: 🐱 Short A (cat, hat, mat)
+short-e: 🛏️ Short E (bed, red, ten)
+short-i: 🐷 Short I (pig, big, win)
+short-o: 🐕 Short O (dog, hop, mop)
+short-u: 🐛 Short U (bug, hug, run)
+[/SUGGEST]
 3. **WORD COUNT** - Suggest 10-12 CVC words
 4. **AGE GROUP** - Ask target age (typically 4-6 years)
 
@@ -559,11 +590,13 @@ Guide users through creating high-frequency word recognition books.
 📋 CONVERSATION FLOW
 1. **CHARACTER THEME** - Ask first: "Would you like to feature any characters?"
 2. **WORD LIST** - Ask: "Which sight word list?"
-   - Pre-K (I, see, the, a)
-   - Dolch Primer (and, is, to, in)
-   - Dolch Grade 1 (after, again, could)
-   - Fry's First 100
-   - Custom selection
+[SUGGEST]
+pre-k: 👶 Pre-K (I, see, the, a)
+dolch-primer: 📕 Dolch Primer (and, is, to, in)
+dolch-1: 📗 Dolch Grade 1 (after, again, could)
+fry-100: 📘 Fry's First 100
+custom: ✏️ Custom Selection
+[/SUGGEST]
 3. **WORD COUNT** - Suggest 10-15 words per book
 4. **AGE GROUP** - Ask target age if not provided
 

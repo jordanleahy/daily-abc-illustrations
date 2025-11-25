@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { ChevronLeft, ChevronRight, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import useEmblaCarousel from 'embla-carousel-react';
 
 interface TrickMediaViewerProps {
   images: string[];
@@ -10,28 +11,50 @@ interface TrickMediaViewerProps {
 }
 
 export function TrickMediaViewer({ images, videos, initialImageIndex = 0 }: TrickMediaViewerProps) {
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, startIndex: initialImageIndex });
   const [currentImageIndex, setCurrentImageIndex] = useState(initialImageIndex);
   const [selectedVideoUrl, setSelectedVideoUrl] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (!emblaApi) return;
+
+    const onSelect = () => {
+      setCurrentImageIndex(emblaApi.selectedScrollSnap());
+    };
+
+    emblaApi.on('select', onSelect);
+    return () => {
+      emblaApi.off('select', onSelect);
+    };
+  }, [emblaApi]);
+
   const goToPrevious = () => {
-    setCurrentImageIndex((prev) => (prev > 0 ? prev - 1 : images.length - 1));
+    emblaApi?.scrollPrev();
   };
 
   const goToNext = () => {
-    setCurrentImageIndex((prev) => (prev < images.length - 1 ? prev + 1 : 0));
+    emblaApi?.scrollNext();
   };
 
   return (
     <>
-      {/* Image Gallery */}
+      {/* Image Gallery with Swipe Support */}
       {images.length > 0 && (
         <div className="relative">
-          <div className="w-full h-48 overflow-hidden rounded-lg bg-muted">
-            <img
-              src={images[currentImageIndex]}
-              alt={`Trick image ${currentImageIndex + 1}`}
-              className="w-full h-full object-cover"
-            />
+          <div ref={emblaRef} className="overflow-hidden rounded-lg bg-muted">
+            <div className="flex touch-pan-y">
+              {images.map((image, index) => (
+                <div key={index} className="flex-[0_0_100%] min-w-0">
+                  <div className="w-full h-48">
+                    <img
+                      src={image}
+                      alt={`Trick image ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
 
           {images.length > 1 && (
@@ -56,7 +79,7 @@ export function TrickMediaViewer({ images, videos, initialImageIndex = 0 }: Tric
                 {images.map((_, index) => (
                   <button
                     key={index}
-                    onClick={() => setCurrentImageIndex(index)}
+                    onClick={() => emblaApi?.scrollTo(index)}
                     className={`w-2 h-2 rounded-full transition-colors ${
                       index === currentImageIndex ? 'bg-primary' : 'bg-primary/30'
                     }`}
@@ -97,7 +120,13 @@ export function TrickMediaViewer({ images, videos, initialImageIndex = 0 }: Tric
               src={selectedVideoUrl}
               controls
               autoPlay
+              playsInline
               className="w-full h-auto"
+              onError={(e) => {
+                // Handle autoplay blocked by showing play button
+                const video = e.currentTarget;
+                video.controls = true;
+              }}
             />
           )}
         </DialogContent>

@@ -3,7 +3,11 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Plus, X, Loader2 } from 'lucide-react';
 import { processImage } from '@/utils/imageProcessor';
+import { uploadTrickPhoto, deleteTrickPhoto } from '@/utils/trickPhotoUpload';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+const MAX_IMAGES = 5;
 
 interface TrickImageUploadProps {
   images: string[];
@@ -13,42 +17,77 @@ interface TrickImageUploadProps {
 
 export function TrickImageUpload({ images, onImagesChange, disabled }: TrickImageUploadProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
 
   const handleAddImages = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
+    // Check limit
+    if (images.length + files.length > MAX_IMAGES) {
+      toast.error(`Maximum ${MAX_IMAGES} images allowed`);
+      e.target.value = '';
+      return;
+    }
+
     setIsProcessing(true);
-    const processedImages: string[] = [];
+    const uploadedUrls: string[] = [];
 
     try {
-      for (const file of files) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setUploadProgress(`Processing ${i + 1}/${files.length}...`);
+        
+        // Compress image
         const processed = await processImage(file, {
           maxWidth: 800,
           maxHeight: 800,
           targetSizeBytes: 150 * 1024, // 150KB
           quality: 0.85,
         });
-        processedImages.push(processed.dataUrl);
+        
+        setUploadProgress(`Uploading ${i + 1}/${files.length}...`);
+        
+        // Upload to Supabase Storage
+        // Convert blob to File for uploadTrickPhoto
+        const imageFile = new File([processed.blob], `image-${i}.jpg`, { type: processed.blob.type });
+        const url = await uploadTrickPhoto(imageFile, user.id);
+        uploadedUrls.push(url);
       }
-      onImagesChange([...images, ...processedImages]);
-      toast.success(`${files.length} image(s) added`);
+      
+      onImagesChange([...images, ...uploadedUrls]);
+      toast.success(`${files.length} image(s) uploaded`);
     } catch (error) {
-      console.error('Failed to process images:', error);
-      toast.error('Failed to process images');
+      console.error('Failed to upload images:', error);
+      toast.error('Failed to upload images');
     } finally {
       setIsProcessing(false);
+      setUploadProgress('');
       e.target.value = '';
     }
   };
 
-  const handleRemoveImage = (index: number) => {
+  const handleRemoveImage = async (index: number) => {
+    const imageUrl = images[index];
+    
+    // Delete from storage if it's a storage URL
+    if (imageUrl.includes('trick-photos')) {
+      try {
+        await deleteTrickPhoto(imageUrl);
+      } catch (error) {
+        console.error('Failed to delete image from storage:', error);
+      }
+    }
+    
     onImagesChange(images.filter((_, i) => i !== index));
   };
 
   return (
     <div className="space-y-3">
-      <Label>Images (Optional)</Label>
+      <Label>Images (Optional - Max {MAX_IMAGES})</Label>
       <div className="flex flex-wrap gap-2">
         {images.map((imageUrl, index) => (
           <div key={index} className="relative group">
@@ -87,7 +126,9 @@ export function TrickImageUpload({ images, onImagesChange, disabled }: TrickImag
         </label>
       </div>
       {isProcessing && (
-        <p className="text-xs text-muted-foreground">Compressing images...</p>
+        <p className="text-xs text-muted-foreground">
+          {uploadProgress || 'Processing...'}
+        </p>
       )}
     </div>
   );

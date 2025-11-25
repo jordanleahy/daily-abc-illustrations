@@ -2,6 +2,12 @@
  * Trick type definitions for cumulative progress tracking
  */
 
+export interface VideoData {
+  dataUrl: string;
+  thumbnail: string;
+  duration: number;
+}
+
 export interface Trick {
   id: string;
   parent_user_id: string;

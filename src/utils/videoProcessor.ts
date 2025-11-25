@@ -250,20 +250,31 @@ export function validateVideo(file: File): string | null {
  * Validate video duration
  */
 export async function validateVideoDuration(file: File): Promise<string | null> {
-  try {
-    const video = await loadVideoFromFile(file);
+  return new Promise((resolve) => {
+    const video = document.createElement('video');
+    const url = URL.createObjectURL(file);
     const maxDuration = 30; // 30 seconds max
     
-    if (video.duration > maxDuration) {
-      return `Video must be 30 seconds or shorter (current: ${Math.ceil(video.duration)} seconds)`;
-    }
+    video.onloadedmetadata = () => {
+      const isValid = video.duration <= maxDuration;
+      // Cleanup in correct order: revoke URL BEFORE clearing src
+      URL.revokeObjectURL(url);
+      video.src = '';
+      
+      if (!isValid) {
+        resolve(`Video must be 30 seconds or shorter (current: ${Math.ceil(video.duration)} seconds)`);
+      } else {
+        resolve(null);
+      }
+    };
     
-    // Cleanup
-    video.src = '';
-    URL.revokeObjectURL(video.src);
+    video.onerror = () => {
+      // Cleanup in correct order
+      URL.revokeObjectURL(url);
+      video.src = '';
+      resolve('Failed to load video');
+    };
     
-    return null;
-  } catch (error) {
-    return 'Failed to validate video duration';
-  }
+    video.src = url;
+  });
 }

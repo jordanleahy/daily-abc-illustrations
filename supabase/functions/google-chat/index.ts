@@ -202,17 +202,23 @@ serve(async (req) => {
       ? `\n\n👶 CHILD AGE CONTEXT:\nThe selected child is ${kidAge.years} years and ${kidAge.months} months old. ${intakeComplete ? 'This age was gathered during intake. ' : ''}Use this age to ${intakeComplete ? '' : 'skip the age discovery question and '}tailor all educational content, vocabulary, and complexity to this specific developmental stage.`
       : '';
 
+    // Handle theme context with special cases
     const themeContext = characterTheme
-      ? `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. ${intakeComplete ? 'This theme was gathered during intake. ' : ''}${intakeComplete ? '' : 'Skip the theme discovery question and '}Integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
+      ? characterTheme === 'custom'
+        ? `\n\n🎨 CUSTOM THEME REQUESTED:\nThe user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.`
+        : characterTheme === 'no-theme'
+        ? `\n\n📚 NO THEME SELECTED:\nThe user prefers an educational-only book without character themes. ${intakeComplete ? 'This was gathered during intake. ' : ''}Focus purely on educational content with classic, simple illustrations. Do NOT integrate any character themes.`
+        : `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. ${intakeComplete ? 'This theme was gathered during intake. ' : ''}${intakeComplete ? '' : 'Skip the theme discovery question and '}Integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
       : '';
 
     // For specialized agents, add explicit pre-gathered context
     const preGatheredContext = intakeComplete
       ? `\n\n✅ INTAKE COMPLETE - PRE-GATHERED INFORMATION:\n` +
         `- Book Type: ${bookType}\n` +
-        `- Character Theme: ${characterTheme || 'Not selected'}\n` +
+        `- Character Theme: ${characterTheme === 'custom' ? 'Custom (awaiting user input)' : characterTheme === 'no-theme' ? 'None (educational focus only)' : characterTheme || 'Not selected'}\n` +
         `- Age: ${kidAge ? `${kidAge.years} years ${kidAge.months} months` : 'Not provided'}\n\n` +
-        `You can now proceed directly to type-specific questions (e.g., letter case for ABC, number range for Numbers, color set for Colors). Do NOT re-ask about theme or age.`
+        `${characterTheme === 'custom' ? 'IMPORTANT: User wants a custom theme but hasn\'t specified it yet. Ask for their custom theme idea before proceeding.\n\n' : ''}` +
+        `You can now proceed ${characterTheme === 'custom' ? 'after getting custom theme ' : ''}directly to type-specific questions (e.g., letter case for ABC, number range for Numbers, color set for Colors). Do NOT re-ask about ${characterTheme !== 'custom' ? 'theme or ' : ''}age.`
       : '';
 
     const conversationStageContext = outlineReady

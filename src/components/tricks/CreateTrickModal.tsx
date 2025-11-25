@@ -179,7 +179,11 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+    if (!name.trim()) {
+      toast.error('Please enter a trick name');
+      return;
+    }
+
     const assignedKids = Object.entries(selectedKids)
       .filter(([_, value]) => value.selected)
       .map(([kidId, value]) => ({ kid_profile_id: kidId, target_count: value.targetCount }));
@@ -189,21 +193,14 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
       return;
     }
 
-    try {
-      setIsUploading(true);
-      
-      // Use existing photo_url if no new images
-      let photoUrl = editTrick?.photo_url;
-      if (imageDataUrls.length > 0) {
-        photoUrl = JSON.stringify(imageDataUrls);
-      }
+    setIsUploading(true);
 
-      // Process video data URLs
-      let videoUrls = editTrick?.video_urls;
-      if (videoData.length > 0) {
-        const videoUrlsOnly = videoData.map(v => v.dataUrl);
-        videoUrls = JSON.stringify(videoUrlsOnly);
-      }
+    try {
+      // Images and videos are already uploaded to Storage by the upload components
+      // We just need to format them properly and handle empty arrays
+      const photoUrl = imageDataUrls.length > 0 ? JSON.stringify(imageDataUrls) : null;
+      const videoUrls = videoData.length > 0 ? JSON.stringify(videoData) : null;
+
 
       const commonData = { 
         name, 
@@ -219,17 +216,23 @@ export function CreateTrickModal({ open, onOpenChange, editTrick }: CreateTrickM
       if (editTrick) {
         updateTrick.mutate(
           { trickId: editTrick.id, ...commonData },
-          { onSuccess: () => onOpenChange(false), onSettled: () => setIsUploading(false) }
+          { 
+            onSuccess: () => onOpenChange(false), 
+            onSettled: () => setIsUploading(false) 
+          }
         );
       } else {
         createTrick.mutate(
           commonData,
-          { onSuccess: () => onOpenChange(false), onSettled: () => setIsUploading(false) }
+          { 
+            onSuccess: () => onOpenChange(false), 
+            onSettled: () => setIsUploading(false) 
+          }
         );
       }
     } catch (error) {
-      console.error('Failed to upload media:', error);
-      toast.error('Failed to upload media');
+      console.error('Failed to submit trick:', error);
+      toast.error('Failed to save trick');
       setIsUploading(false);
     }
   };

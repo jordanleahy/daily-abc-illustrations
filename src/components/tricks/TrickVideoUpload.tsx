@@ -3,13 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Plus, X, Loader2, Play } from 'lucide-react';
 import { processVideo, validateVideo, validateVideoDuration } from '@/utils/videoProcessor';
+import { uploadTrickVideo, uploadTrickVideoThumbnail, deleteTrickVideo } from '@/utils/trickVideoUpload';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { VideoData } from '@/types/trick';
 
-interface VideoData {
-  dataUrl: string;
-  thumbnail: string;
-  duration: number;
-}
+const MAX_VIDEOS = 3;
 
 interface TrickVideoUploadProps {
   videos: VideoData[];
@@ -19,18 +18,30 @@ interface TrickVideoUploadProps {
 
 export function TrickVideoUpload({ videos, onVideosChange, disabled }: TrickVideoUploadProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string>('');
 
-  const generateThumbnail = (video: HTMLVideoElement): Promise<string> => {
-    return new Promise((resolve) => {
+  const generateThumbnail = (video: HTMLVideoElement): Promise<Blob> => {
+    return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       canvas.width = 120;
       canvas.height = 120;
-      const ctx = canvas.getContext('2d')!;
+      const ctx = canvas.getContext('2d');
       
-      video.currentTime = 0.1; // Get frame at 0.1 seconds
+      if (!ctx) {
+        reject(new Error('Failed to get canvas context'));
+        return;
+      }
+      
+      video.currentTime = 0.1;
       video.onseeked = () => {
         ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL('image/jpeg', 0.8));
+        canvas.toBlob((blob) => {
+          if (blob) {
+            resolve(blob);
+          } else {
+            reject(new Error('Failed to create thumbnail blob'));
+          }
+        }, 'image/jpeg', 0.8);
       };
     });
   };
@@ -39,11 +50,24 @@ export function TrickVideoUpload({ videos, onVideosChange, disabled }: TrickVide
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
 
+    // Check limit
+    if (videos.length + files.length > MAX_VIDEOS) {
+      toast.error(`Maximum ${MAX_VIDEOS} videos allowed`);
+      e.target.value = '';
+      return;
+    }
+
     setIsProcessing(true);
-    const processedVideos: VideoData[] = [];
+    const uploadedVideos: VideoData[] = [];
 
     try {
-      for (const file of files) {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        setUploadProgress(`Processing ${i + 1}/${files.length}...`);
+        
         // Validate file type
         const typeError = validateVideo(file);
         if (typeError) {
@@ -66,31 +90,64 @@ export function TrickVideoUpload({ videos, onVideosChange, disabled }: TrickVide
           audioBitrate: 128000, // 128 kbps
         });
 
+        setUploadProgress(`Generating thumbnail ${i + 1}/${files.length}...`);
+        
         // Generate thumbnail
         const video = document.createElement('video');
-        video.src = processed.dataUrl;
-        await new Promise(resolve => video.onloadedmetadata = resolve);
-        const thumbnail = await generateThumbnail(video);
+        const videoObjectUrl = URL.createObjectURL(processed.blob);
+        video.src = videoObjectUrl;
+        
+        await new Promise(resolve => {
+          video.onloadedmetadata = resolve;
+        });
+        
+        const thumbnailBlob = await generateThumbnail(video);
+        
+        // Cleanup video element and object URL
+        URL.revokeObjectURL(videoObjectUrl);
+        video.src = '';
+        video.load();
 
-        processedVideos.push({
-          dataUrl: processed.dataUrl,
-          thumbnail,
+        setUploadProgress(`Uploading ${i + 1}/${files.length}...`);
+        
+        // Upload video and thumbnail to Supabase Storage
+        const videoUrl = await uploadTrickVideo(processed.blob, user.id);
+        const thumbnailUrl = await uploadTrickVideoThumbnail(thumbnailBlob, user.id);
+
+        uploadedVideos.push({
+          dataUrl: videoUrl,
+          thumbnail: thumbnailUrl,
           duration: processed.duration,
         });
       }
 
-      onVideosChange([...videos, ...processedVideos]);
-      toast.success(`${processedVideos.length} video(s) added`);
+      if (uploadedVideos.length > 0) {
+        onVideosChange([...videos, ...uploadedVideos]);
+        toast.success(`${uploadedVideos.length} video(s) uploaded`);
+      }
     } catch (error) {
-      console.error('Failed to process videos:', error);
-      toast.error('Failed to process videos');
+      console.error('Failed to upload videos:', error);
+      toast.error('Failed to upload videos');
     } finally {
       setIsProcessing(false);
+      setUploadProgress('');
       e.target.value = '';
     }
   };
 
-  const handleRemoveVideo = (index: number) => {
+  const handleRemoveVideo = async (index: number) => {
+    const video = videos[index];
+    
+    // Delete from storage if it's a storage URL
+    if (video.dataUrl.includes('trick-photos')) {
+      try {
+        await deleteTrickVideo(video.dataUrl);
+        await deleteTrickVideo(video.thumbnail);
+      } catch (error) {
+        console.error('Failed to delete video from storage:', error);
+      }
+    }
+    
     onVideosChange(videos.filter((_, i) => i !== index));
   };
 
@@ -102,7 +159,7 @@ export function TrickVideoUpload({ videos, onVideosChange, disabled }: TrickVide
 
   return (
     <div className="space-y-3">
-      <Label>Videos (Optional - Max 30 seconds)</Label>
+      <Label>Videos (Optional - Max {MAX_VIDEOS}, 30 seconds each)</Label>
       <div className="flex flex-wrap gap-2">
         {videos.map((video, index) => (
           <div key={index} className="relative group">
@@ -149,7 +206,9 @@ export function TrickVideoUpload({ videos, onVideosChange, disabled }: TrickVide
         </label>
       </div>
       {isProcessing && (
-        <p className="text-xs text-muted-foreground">Compressing videos...</p>
+        <p className="text-xs text-muted-foreground">
+          {uploadProgress || 'Processing...'}
+        </p>
       )}
     </div>
   );

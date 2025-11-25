@@ -13,6 +13,7 @@ import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Trick } from '@/types/trick';
 import { TrickGoalWithDetails } from '@/types/trick';
 import { useAddTrickCompletion } from '@/hooks/useAddTrickCompletion';
+import { TrickMediaViewer } from './TrickMediaViewer';
 
 interface TrickActionModalProps {
   open: boolean;
@@ -26,15 +27,27 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
 
   if (!trick) return null;
 
-  const displayImage = (() => {
+  const images = (() => {
     const photoUrl = trick.photo_url;
-    if (!photoUrl) return null;
+    if (!photoUrl) return [];
     
     try {
       const urls = JSON.parse(photoUrl);
-      return Array.isArray(urls) && urls.length > 0 ? urls[0] : null;
+      return Array.isArray(urls) ? urls : [photoUrl];
     } catch {
-      return photoUrl;
+      return [photoUrl];
+    }
+  })();
+
+  const videos = (() => {
+    const videoUrls = trick.video_urls;
+    if (!videoUrls) return [];
+    
+    try {
+      const urls = JSON.parse(videoUrls);
+      return Array.isArray(urls) ? urls : [videoUrls];
+    } catch {
+      return [videoUrls];
     }
   })();
 
@@ -73,13 +86,9 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent className="max-w-md">
         <AlertDialogHeader>
-          {displayImage && (
-            <div className="w-full h-48 overflow-hidden rounded-lg mb-4 -mt-6 -mx-6">
-              <img 
-                src={displayImage} 
-                alt={trick.name}
-                className="w-full h-full object-cover"
-              />
+          {(images.length > 0 || videos.length > 0) && (
+            <div className="-mt-6 -mx-6 mb-4">
+              <TrickMediaViewer images={images} videos={videos} />
             </div>
           )}
           <AlertDialogTitle className="text-xl">{trick.name}</AlertDialogTitle>

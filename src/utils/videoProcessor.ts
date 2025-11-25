@@ -252,10 +252,10 @@ export function validateVideo(file: File): string | null {
 export async function validateVideoDuration(file: File): Promise<string | null> {
   try {
     const video = await loadVideoFromFile(file);
-    const maxDuration = 180; // 3 minutes in seconds
+    const maxDuration = 30; // 30 seconds max
     
     if (video.duration > maxDuration) {
-      return `Video must be 3 minutes or shorter (current: ${Math.ceil(video.duration / 60)} minutes)`;
+      return `Video must be 30 seconds or shorter (current: ${Math.ceil(video.duration)} seconds)`;
     }
     
     // Cleanup

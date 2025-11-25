@@ -8,6 +8,7 @@ export interface Trick {
   name: string;
   description: string | null;
   photo_url: string | null;
+  video_urls: string | null;
   points_per_completion: number;
   is_active: boolean;
   display_order: number;
@@ -58,6 +59,7 @@ export interface NewTrick {
   name: string;
   description?: string;
   photo_url?: string;
+  video_urls?: string;
   points_per_completion: number;
   feature_angle?: string;
   type?: string;
@@ -72,6 +74,7 @@ export interface UpdateTrickData {
   name?: string;
   description?: string;
   photo_url?: string;
+  video_urls?: string;
   points_per_completion?: number;
   feature_angle?: string;
   type?: string;

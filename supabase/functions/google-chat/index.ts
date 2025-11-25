@@ -42,12 +42,12 @@ function parseSuggestions(aiResponse: string): {
   const suggestionsText = match[1].trim();
   const cleanContent = aiResponse.replace(suggestRegex, '').trim();
   
-  // Known character themes that have image thumbnails - synced with CharacterTheme enum
+  // Known character themes - synced with universal-intake-prompt.ts
   const CHARACTER_THEMES = new Set([
     'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
-    'moana', 'mickey-mouse', 'toy-story', 
-    'pokemon', 'mario', 'daniel-tiger', 'benji-davies', 'black-and-white',
-    'sesame-street', 'bear-stories', 'jewish-holidays'
+    'moana', 'mickey-mouse', 'mario', 'sesame-street', 
+    'benji-davies', 'black-and-white', 'bear-stories',
+    'custom', 'no-theme'
   ]);
 
   // Known age ranges - synced with AgeRangeId enum

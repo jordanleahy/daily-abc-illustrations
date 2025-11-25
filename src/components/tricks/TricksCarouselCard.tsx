@@ -40,10 +40,15 @@ export const TricksCarouselCard = memo(({ trick, onClick }: TricksCarouselCardPr
             </div>
           )}
         </AspectRatio>
-        <div className="p-4">
+        <div className="p-4 space-y-1">
           <h3 className="font-semibold text-sm line-clamp-2">
             {trick.name}
           </h3>
+          {trick.description && (
+            <p className="text-xs text-muted-foreground line-clamp-1">
+              {trick.description}
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

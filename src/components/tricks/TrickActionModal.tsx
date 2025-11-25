@@ -1,14 +1,13 @@
 import { Button } from '@/components/ui/button';
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Trick, VideoData } from '@/types/trick';
 import { TrickGoalWithDetails } from '@/types/trick';
@@ -90,30 +89,31 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
   const isCompleted = goal && goal.current_count >= goal.target_count;
 
   return (
-    <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="max-w-md">
-        <AlertDialogHeader>
-          {(images.length > 0 || videos.length > 0) && (
-            <div className="-mt-6 -mx-6 mb-4">
-              <TrickMediaViewer images={images} videos={videos} />
-            </div>
-          )}
-          <AlertDialogTitle className="text-xl">{trick.name}</AlertDialogTitle>
+    <Drawer open={open} onOpenChange={onOpenChange}>
+      <DrawerContent>
+        {(images.length > 0 || videos.length > 0) && (
+          <div className="w-full mb-4">
+            <TrickMediaViewer images={images} videos={videos} />
+          </div>
+        )}
+        
+        <DrawerHeader>
+          <DrawerTitle className="text-xl">{trick.name}</DrawerTitle>
           <div className="text-left space-y-1">
             {trick.feature_angle && (
-              <AlertDialogDescription className="text-sm">
+              <DrawerDescription className="text-sm">
                 Feature Angle: {trick.feature_angle}
-              </AlertDialogDescription>
+              </DrawerDescription>
             )}
             {trick.type && (
-              <AlertDialogDescription className="text-sm">
+              <DrawerDescription className="text-sm">
                 Type: {trick.type}
-              </AlertDialogDescription>
+              </DrawerDescription>
             )}
             {trick.description && (
-              <AlertDialogDescription>
+              <DrawerDescription>
                 {trick.description}
-              </AlertDialogDescription>
+              </DrawerDescription>
             )}
           </div>
           {goal && (
@@ -121,7 +121,7 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
               Progress: {goal.current_count} / {goal.target_count} completions
             </div>
           )}
-        </AlertDialogHeader>
+        </DrawerHeader>
 
         {!hasGoal ? (
           <div className="text-center py-4">
@@ -164,10 +164,12 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
           </div>
         )}
 
-        <AlertDialogFooter>
-          <AlertDialogCancel>Close</AlertDialogCancel>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+        <DrawerFooter>
+          <DrawerClose asChild>
+            <Button variant="outline" className="w-full">Close</Button>
+          </DrawerClose>
+        </DrawerFooter>
+      </DrawerContent>
+    </Drawer>
   );
 };

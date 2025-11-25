@@ -31,7 +31,7 @@ export const themeDisplayNames: Record<CharacterThemeValue, string> = {
   'frozen': 'Frozen',
   'peppa-pig': 'Peppa Pig',
   'bluey': 'Bluey',
-  'cocomelon': 'Cocomelon',
+  'cocomelon': 'CoComelon',
   'moana': 'Moana',
   'mickey-mouse': 'Mickey Mouse',
   'mario': 'Mario',

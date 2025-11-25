@@ -13,12 +13,24 @@ interface TrickCardProps {
 }
 
 export function TrickCard({ trick, goals, onEdit, onDelete }: TrickCardProps) {
+  const displayImage = (() => {
+    const photoUrl = trick.photo_url;
+    if (!photoUrl) return null;
+    
+    try {
+      const urls = JSON.parse(photoUrl);
+      return Array.isArray(urls) && urls.length > 0 ? urls[0] : null;
+    } catch {
+      return photoUrl;
+    }
+  })();
+
   return (
     <Card className="p-6">
-      {trick.photo_url && (
+      {displayImage && (
         <div className="mb-4 -mt-6 -mx-6">
           <img 
-            src={trick.photo_url} 
+            src={displayImage} 
             alt={trick.name}
             className="w-full h-48 object-cover rounded-t-lg"
           />

@@ -10,7 +10,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
-import { Trick } from '@/types/trick';
+import { Trick, VideoData } from '@/types/trick';
 import { TrickGoalWithDetails } from '@/types/trick';
 import { useAddTrickCompletion } from '@/hooks/useAddTrickCompletion';
 import { TrickMediaViewer } from './TrickMediaViewer';
@@ -44,8 +44,15 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
     if (!videoUrls) return [];
     
     try {
-      const urls = JSON.parse(videoUrls);
-      return Array.isArray(urls) ? urls : [videoUrls];
+      const parsed = JSON.parse(videoUrls);
+      if (Array.isArray(parsed)) {
+        // Check if it's VideoData[] or string[]
+        if (parsed.length > 0 && typeof parsed[0] === 'object' && 'dataUrl' in parsed[0]) {
+          return (parsed as VideoData[]).map(v => v.dataUrl);
+        }
+        return parsed as string[];
+      }
+      return [videoUrls];
     } catch {
       return [videoUrls];
     }

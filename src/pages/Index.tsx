@@ -3,10 +3,13 @@ import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
 import { CategorizedBookSections } from '@/components/library';
 import { BookFilterBar } from '@/components/filters';
 import { RewardsCarousel } from '@/components/rewards/RewardsCarousel';
+import { TricksCarousel } from '@/components/tricks/TricksCarousel';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
 import { useRewardsProducts } from '@/hooks/useRewardsProducts';
+import { useTricks } from '@/hooks/useTricks';
+import { useTrickGoals } from '@/hooks/useTrickGoals';
 import { useHomeImagePreloader } from '@/hooks/useHomeImagePreloader';
 import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -35,6 +38,10 @@ const Index = () => {
   
   // Fetch rewards products
   const { data: rewardsProducts = [] } = useRewardsProducts();
+  
+  // Fetch tricks and goals
+  const { data: tricks = [] } = useTricks();
+  const { data: trickGoals = [] } = useTrickGoals(firstKid?.id);
   
   // Fetch library books using decoupled architecture
   const { data: libraryItems = [], isLoading: isLoadingBooks } = useLibraryBooksDecoupled();
@@ -202,6 +209,14 @@ const Index = () => {
             products={rewardsProducts}
             kidId={firstKid.id}
             currentCoins={firstKid.earned_coins}
+          />
+        )}
+
+        {/* Tricks Carousel - Only for subscribed users with kid profile */}
+        {hasActiveSubscription && firstKid && tricks.length > 0 && (
+          <TricksCarousel
+            tricks={tricks}
+            goals={trickGoals}
           />
         )}
 

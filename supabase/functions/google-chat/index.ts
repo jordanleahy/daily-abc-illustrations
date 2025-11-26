@@ -140,6 +140,9 @@ serve(async (req) => {
     const intakeComplete = lastAssistantMessage && 
       typeof lastAssistantMessage.content === 'string' && 
       lastAssistantMessage.content.includes('[INTAKE_COMPLETE]');
+    
+    // If intake just completed, automatically trigger specialized agent's first message
+    const shouldAutoTriggerSpecialized = intakeComplete && messages[messages.length - 1]?.role === 'assistant';
 
     // Determine which agent and system prompt to use
     let systemPromptContent: string;
@@ -247,23 +250,36 @@ serve(async (req) => {
     console.log(`🤖 Agent source: ${agentSource}`);
     console.log(`📊 System prompt length: ${systemMessage.content.length} characters`);
     console.log(`📊 Intake complete: ${intakeComplete ? 'Yes' : 'No'}`);
+    console.log(`📊 Auto-trigger specialized: ${shouldAutoTriggerSpecialized ? 'Yes' : 'No'}`);
     console.log(`📊 Conversation stage: ${outlineReady ? 'Outline Ready' : bookCreated ? 'Book Created' : 'Discovery'}`);
     console.log(`👶 Kid age provided: ${kidAge ? `${kidAge.years}y ${kidAge.months}m` : 'No'}`);
     console.log(`🎨 Character theme: ${characterTheme || 'None'}`);
     console.log(`🎨 Style templates available: ${styleTemplates?.length || 0}`);
 
     // Format messages for Gemini (handles both text and multimodal content)
-    const formattedMessages = messages.map(msg => {
+    let formattedMessages = messages.map(msg => {
       // If content is already an array (multimodal), return as-is
       if (Array.isArray(msg.content)) {
         return msg;
       }
-      // Otherwise, convert string to text content format for consistency
+      // Filter out [INTAKE_COMPLETE] from messages sent to AI
+      const content = typeof msg.content === 'string' 
+        ? msg.content.replace(/\[INTAKE_COMPLETE\]/g, '').trim()
+        : msg.content;
       return {
         ...msg,
-        content: msg.content
+        content
       };
     });
+    
+    // If intake just completed, add an invisible user message to trigger specialized agent
+    if (shouldAutoTriggerSpecialized) {
+      formattedMessages.push({
+        role: 'user',
+        content: 'continue'
+      });
+      console.log('🚀 Auto-triggering specialized agent with invisible "continue" message');
+    }
 
     const allMessages = [systemMessage, ...formattedMessages];
 

@@ -1,6 +1,18 @@
 /**
- * Specialized Agent Prompts for Different Book Types
- * Each prompt is optimized for a specific educational content type
+ * DEPRECATED: Specialized Agent Prompts for Different Book Types
+ * 
+ * ⚠️ WARNING: This file is DEPRECATED and should not be used for runtime logic.
+ * 
+ * These prompts are kept as REFERENCE ONLY for initial database seeding.
+ * The single source of truth for agent prompts is now the `agents` table in the database.
+ * 
+ * To update agent prompts:
+ * 1. Navigate to /agents in the admin UI
+ * 2. Select the agent you want to modify
+ * 3. Edit the instructions in the UI
+ * 4. Save changes - they will be used immediately
+ * 
+ * Each prompt is optimized for a specific educational content type.
  */
 
 export const NUMBERS_AGENT_PROMPT = `You are an expert at creating children's educational NUMBERS books with structured page types.

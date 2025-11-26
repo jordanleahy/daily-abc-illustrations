@@ -1,7 +1,20 @@
 /**
- * Specialized Agent Chat Prompts
- * Each prompt guides the conversation AND outline creation for a specific book type
- * These are used when no database agent is found or as fallback
+ * DEPRECATED: Specialized Agent Chat Prompts
+ * 
+ * ⚠️ WARNING: Most of this file is DEPRECATED and should not be used for runtime logic.
+ * 
+ * DISCOVERY_PROMPT is still used for initial book type selection.
+ * All other specialized prompts (ABC, Numbers, Colors, etc.) are kept as REFERENCE ONLY.
+ * 
+ * The single source of truth for specialized agent prompts is now the `agents` table in the database.
+ * 
+ * To update specialized agent prompts:
+ * 1. Navigate to /agents in the admin UI
+ * 2. Select the agent you want to modify  
+ * 3. Edit the instructions in the UI
+ * 4. Save changes - they will be used immediately in both chat and book creation
+ * 
+ * Each prompt guides the conversation AND outline creation for a specific book type.
  */
 
 export const DISCOVERY_PROMPT = `You are a friendly educational planning assistant helping users create children's books.

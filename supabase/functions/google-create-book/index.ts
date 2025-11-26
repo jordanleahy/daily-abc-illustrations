@@ -5,7 +5,6 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
 import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange, BOOK_TYPE_TO_AGENT_TYPE, AgentType } from '../_shared/types.ts';
-import { SPECIALIZED_AGENT_PROMPTS } from './specialized-agent-prompts.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -240,24 +239,29 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
       console.log('[Learning] Created performance metric:', performanceMetricId);
     }
 
-    // Use the selected agent's instructions as system prompt
+    // Use the selected agent's instructions as system prompt (single source of truth)
     let systemPrompt = selectedAgent.instructions;
     let promptSource = 'database';
     
-    // CRITICAL: Check if database has placeholder prompt (< 500 chars)
-    // If so, use full prompt from specialized-agent-prompts.ts file instead
+    // Validate prompt length for completeness
     const MIN_PROMPT_LENGTH = 500;
     if (systemPrompt.length < MIN_PROMPT_LENGTH) {
-      console.warn(`[Prompt Validation] Database prompt is suspiciously short (${systemPrompt.length} chars). Checking for file-based fallback...`);
+      console.error(`[Prompt Validation] ✗ Agent prompt is dangerously short (${systemPrompt.length} chars). This indicates incomplete agent configuration in database.`);
+      console.error(`[Prompt Validation] ✗ Agent: ${selectedAgent.name}, Type: ${selectedAgent.type}`);
       
-      // Try to map agent type to specialized prompt
-      const filePrompt = SPECIALIZED_AGENT_PROMPTS[bookType as keyof typeof SPECIALIZED_AGENT_PROMPTS];
-      if (filePrompt) {
-        console.log(`[Prompt Fallback] ✓ Using full prompt from specialized-agent-prompts.ts for ${bookType} (${filePrompt.length} chars)`);
-        systemPrompt = filePrompt;
-        promptSource = 'file-fallback';
-      } else {
-        console.warn(`[Prompt Fallback] ✗ No file-based prompt found for book type: ${bookType}. Using short database prompt.`);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: `Agent configuration incomplete. The ${selectedAgent.name} has an invalid prompt (${systemPrompt.length} chars). Please update the agent configuration in the /agents admin panel.`,
+          agentType: selectedAgent.type,
+          promptLength: systemPrompt.length
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log(`[Prompt Validation] ✓ Agent prompt validated (${systemPrompt.length} chars)`);
+    console.log(`[Agent Source] ${promptSource}`);
         promptSource = 'database-short';
       }
     }

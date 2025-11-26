@@ -3,8 +3,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
-import { DISCOVERY_PROMPT } from './specialized-chat-prompts.ts';
-import { UNIVERSAL_INTAKE_PROMPT } from './universal-intake-prompt.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -140,46 +138,33 @@ serve(async (req) => {
     let agentSource: string;
 
     if (bookType) {
-      // Book type selected - route directly to specialized agent
-      console.log(`📚 Book type selected: ${bookType}, routing to specialized agent`);
-      
-      // Map book type to agent type
+      // Book type selected - route to specialized agent
       const agentType = BOOK_TYPE_TO_AGENT_TYPE[bookType] || 'book-creation';
-      console.log(`🎯 Mapped to agent type: ${agentType}`);
+      console.log(`📚 Book type: ${bookType} → Agent: ${agentType}`);
       
-      // Query for specialized agent from database
-      const { data: agent, error: agentError } = await supabase
+      // Query database for specialized agent
+      const { data: agent } = await supabase
         .from('agents')
         .select('instructions, name')
         .eq('type', agentType)
         .eq('is_latest', true)
         .single();
       
-      if (agentError) {
-        console.log(`⚠️ No database agent found for ${agentType}: ${agentError.message}`);
-      }
-      
-      // Use database agent (single source of truth)
       if (agent?.instructions) {
         systemPromptContent = agent.instructions;
-        agentSource = `Database: ${agent.name} (Specialized)`;
-        console.log(`✅ Using database specialized agent: ${agent.name} (${agent.instructions.length} chars)`);
-        
-        // Warn if prompt seems suspiciously short
-        if (agent.instructions.length < 500) {
-          console.warn(`⚠️ Agent prompt is suspiciously short (${agent.instructions.length} chars). This may indicate incomplete configuration.`);
-        }
+        agentSource = `Database: ${agent.name}`;
+        console.log(`✅ Using ${agent.name} (${agent.instructions.length} chars)`);
       } else {
-        // No database agent found - use discovery prompt
-        console.log(`⚠️ No database agent found for ${agentType}, using discovery prompt`);
-        systemPromptContent = DISCOVERY_PROMPT;
-        agentSource = 'File: Discovery prompt (fallback)';
+        // Fallback for no book type selected
+        systemPromptContent = `You are a helpful AI assistant for creating children's educational books. Help users explore different book types: ABC, Numbers, Colors, Shapes, Animals, Rhyming, Emotions, Opposites, First Words, CVC Words, Sight Words, and Bedtime stories. Ask which type interests them.`;
+        agentSource = 'Inline: Discovery';
+        console.log('⚠️ Using inline discovery prompt');
       }
     } else {
-      // No book type selected - use discovery prompt
-      systemPromptContent = DISCOVERY_PROMPT;
-      agentSource = 'File: Discovery prompt';
-      console.log('🔍 No book type selected, using discovery prompt');
+      // No book type - minimal discovery prompt
+      systemPromptContent = `You are a helpful AI assistant for creating children's educational books. Help users explore different book types: ABC, Numbers, Colors, Shapes, Animals, Rhyming, Emotions, Opposites, First Words, CVC Words, Sight Words, and Bedtime stories. Ask which type interests them.`;
+      agentSource = 'Inline: Discovery';
+      console.log('🔍 No book type selected');
     }
 
     // Add context about kid age and theme if already provided

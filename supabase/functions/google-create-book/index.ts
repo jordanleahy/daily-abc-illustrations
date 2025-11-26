@@ -391,6 +391,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         max_completion_tokens: selectedAgent.max_completion_tokens || 8000,
         top_p: selectedAgent.top_p || 0.95,
         messages,
+        stream: false, // CRITICAL: Disable streaming for complete JSON response
       }),
     });
 

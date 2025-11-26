@@ -421,7 +421,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
 
     // Call Lovable AI Gateway using selected agent's model settings
     // Ensure minimum tokens for book types with many pages (ABC needs ~12000 for 28 pages)
-    const minTokens = normalizedBookType === 'abc' ? 12000 : 8000;
+    const minTokens = bookType === 'abc' ? 12000 : 8000;
     const effectiveMaxTokens = Math.max(selectedAgent.max_completion_tokens || 8000, minTokens);
     
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -501,7 +501,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       console.error('Response appears truncated - likely hit token limit', {
         contentLength: content.length,
         maxTokens: effectiveMaxTokens,
-        bookType: normalizedBookType,
+        bookType: bookType,
         lastChars: content.slice(-50)
       });
       return new Response(

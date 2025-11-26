@@ -40,7 +40,7 @@ function parseSuggestions(aiResponse: string): {
   const suggestionsText = match[1].trim();
   const cleanContent = aiResponse.replace(suggestRegex, '').trim();
   
-  // Known character themes - synced with universal-intake-prompt.ts
+  // Known character themes - synced with VALID_CHARACTER_THEMES in _shared/types.ts
   const CHARACTER_THEMES = new Set([
     'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
     'moana', 'mickey-mouse', 'mario', 'sesame-street', 

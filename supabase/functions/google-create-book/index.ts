@@ -420,6 +420,10 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     console.log('Calling Lovable AI to generate book structure');
 
     // Call Lovable AI Gateway using selected agent's model settings
+    // Ensure minimum tokens for book types with many pages (ABC needs ~12000 for 28 pages)
+    const minTokens = normalizedBookType === 'abc' ? 12000 : 8000;
+    const effectiveMaxTokens = Math.max(selectedAgent.max_completion_tokens || 8000, minTokens);
+    
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -428,7 +432,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       },
       body: JSON.stringify({
         model: selectedAgent.model || 'google/gemini-2.5-flash',
-        max_completion_tokens: selectedAgent.max_completion_tokens || 8000,
+        max_completion_tokens: effectiveMaxTokens,
         top_p: selectedAgent.top_p || 0.95,
         messages,
         stream: false, // CRITICAL: Disable streaming for complete JSON response
@@ -491,6 +495,24 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     
     console.log('Cleaned content (first 200 chars):', content.substring(0, 200));
+    
+    // Check if response appears truncated (doesn't end with })
+    if (content.length > 0 && !content.trim().endsWith('}')) {
+      console.error('Response appears truncated - likely hit token limit', {
+        contentLength: content.length,
+        maxTokens: effectiveMaxTokens,
+        bookType: normalizedBookType,
+        lastChars: content.slice(-50)
+      });
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'AI response was incomplete. The book generation may require more processing capacity.',
+          details: 'Response was truncated mid-generation. Please try again.'
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     // Parse and validate with Zod
     let bookData: z.infer<typeof BookDataSchema>;

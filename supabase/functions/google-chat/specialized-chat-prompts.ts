@@ -78,7 +78,7 @@ Full-frame illustration showing alphabet theme. [Character integration if applic
 
 Educational focus illustration prompt: [Visual representation of learning goals]
 
-📖 CONTENT PAGES (A-Z)
+📖 CONTENT PAGES (A-Z) (INTERNAL - DO NOT SHOW TO USER)
 For each letter, generate:
 
 **Page [N]: (a) is for apple**

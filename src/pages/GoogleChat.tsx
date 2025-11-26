@@ -255,12 +255,12 @@ export default function GoogleChat() {
       return false;
     }
     
-    // Show as soon as we have ANY pages parsed (changed from >= 5 to > 0)
-    const hasPages = parsedPageDetails !== null && parsedPageDetails.length > 0;
-    console.log('[Review Button Debug] hasPages:', hasPages, '(need > 0 pages)');
+    // Show only when all 26 pages are complete (for ABC books)
+    const hasAllPages = parsedPageDetails !== null && parsedPageDetails.length === 26;
+    console.log('[Review Button Debug] hasAllPages:', hasAllPages, '(need exactly 26 pages)');
     
-    // Always show button if we have pages, even after book creation
-    return hasPages;
+    // Always show button if we have all pages, even after book creation
+    return hasAllPages;
   }, [messages, isLoading, parsedPageDetails]);
 
   // Derive showEditor from whether outline is ready or book exists
@@ -436,13 +436,21 @@ export default function GoogleChat() {
   useEffect(() => {
     // Don't detect completion for published books
     if (createdBookId && bookData?.status === 'published') {
+      console.log('[Outline Detection] Skipping detection for published book');
       return;
     }
     
     const currentShouldShow = shouldShowReviewButton;
     
+    console.log('[Outline Detection] Checking transition:', {
+      previousShouldShow: previousShouldShow.current,
+      currentShouldShow,
+      willTrigger: !previousShouldShow.current && currentShouldShow
+    });
+    
     // If we just transitioned from false → true, the outline was just completed
     if (!previousShouldShow.current && currentShouldShow) {
+      console.log('[Outline Detection] ✅ Outline completion detected! Setting outlineJustCompleted=true');
       setOutlineJustCompleted(true);
       // Auto-generate cover prompt when outline completes
       handleGenerateCoverPrompt();
@@ -455,10 +463,12 @@ export default function GoogleChat() {
   useEffect(() => {
     // Don't auto-show QA for published books
     if (createdBookId && bookData?.status === 'published') {
+      console.log('[Auto-Open] Skipping auto-open for published book');
       return;
     }
     
     if (outlineJustCompleted) {
+      console.log('[Auto-Open] Outline just completed! Opening editor panel at page 1');
       setCurrentEditorPage(1); // Start at cover page
       
       // Scroll to bottom to show the banner

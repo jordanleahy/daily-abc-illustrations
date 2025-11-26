@@ -114,14 +114,6 @@ function getCuratedItemsList(themeKey: string): string {
     .join('\n');
 }
 
-    const themeContext = characterTheme
-      ? characterTheme === 'custom'
-        ? `\n\n🎨 CUSTOM THEME REQUESTED:\nThe user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.`
-        : characterTheme === 'no-theme'
-        ? `\n\n📚 NO THEME SELECTED:\nThe user prefers an educational-only book without character themes. Skip the theme discovery question. Focus purely on educational content with classic, simple illustrations. Do NOT integrate any character themes.`
-        : `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. Skip the theme discovery question and integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
-      : '';
-
 // Optional parser for AI suggestions
 function parseSuggestions(aiResponse: string): { 
   cleanContent: string; 
@@ -136,19 +128,6 @@ function parseSuggestions(aiResponse: string): {
   
   const suggestionsText = match[1].trim();
   const cleanContent = aiResponse.replace(suggestRegex, '').trim();
-  
-  // Known character themes - synced with VALID_CHARACTER_THEMES in _shared/types.ts
-  const CHARACTER_THEMES = new Set([
-    'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
-    'moana', 'mickey-mouse', 'mario', 'sesame-street', 
-    'benji-davies', 'black-and-white', 'bear-stories',
-    'custom', 'no-theme'
-  ]);
-
-  // Known age ranges - synced with AgeRangeId enum
-  const AGE_RANGES = new Set([
-    '0-2', '2-4', '4-6', '6-8', '8-10', '10-12', 'other'
-  ]);
 
   const suggestedActions = suggestionsText
     .split('\n')
@@ -160,12 +139,11 @@ function parseSuggestions(aiResponse: string): {
       const id = line.substring(0, colonIndex).trim();
       const label = line.substring(colonIndex + 1).trim();
       
+      // Simple ID-based detection (no complex validation needed)
       return {
         id,
         label,
-        value: id === 'custom' ? '' : `${label}`,
-        themeId: CHARACTER_THEMES.has(id) ? id : undefined,
-        ageRangeId: AGE_RANGES.has(id) ? id : undefined
+        value: id === 'custom' ? '' : `${label}`
       };
     })
     .filter((action): action is SuggestedAction => action !== null);
@@ -269,39 +247,40 @@ serve(async (req) => {
       ? `\n\n👶 CHILD AGE CONTEXT:\nThe selected child is ${kidAge.years} years and ${kidAge.months} months old. Skip the age discovery question and use this age to tailor all educational content, vocabulary, and complexity to this specific developmental stage.`
       : '';
 
-    // Handle theme context if already provided
-    // ABC-specific curated items context (if subject theme is selected via conversation metadata)
-    const subjectTheme = messages.find(m => 
-      m.role === 'user' && 
-      typeof m.content === 'string' && 
-      (m.content.includes('Animals A-Z') || 
-       m.content.includes('Food & Fruits A-Z') ||
-       m.content.includes('Nature A-Z') ||
-       m.content.includes('Things That Go A-Z') ||
-       m.content.includes('Classic Mixed Objects') ||
-       m.content.includes('Mountain Village A-Z') ||
-       m.content.includes('Snowboarding A-Z'))
-    );
-    
+    // ABC-specific curated items context - only process if ABC book and subject theme selected
     let curatedItemsContext = '';
-    if (bookType === 'abc' && subjectTheme) {
-      const themeMapping: Record<string, string> = {
-        'Animals A-Z': 'animals',
-        'Food & Fruits A-Z': 'food',
-        'Nature A-Z': 'nature',
-        'Things That Go A-Z': 'vehicles',
-        'Classic Mixed Objects': 'mixed',
-        'Mountain Village A-Z': 'mountain-village',
-        'Snowboarding A-Z': 'snowboarding'
-      };
-      
-      const matchedTheme = Object.keys(themeMapping).find(key => 
-        typeof subjectTheme.content === 'string' && subjectTheme.content.includes(key)
+    if (bookType === 'abc') {
+      const subjectTheme = messages.find(m => 
+        m.role === 'user' && 
+        typeof m.content === 'string' && 
+        (m.content.includes('Animals A-Z') || 
+         m.content.includes('Food & Fruits A-Z') ||
+         m.content.includes('Nature A-Z') ||
+         m.content.includes('Things That Go A-Z') ||
+         m.content.includes('Classic Mixed Objects') ||
+         m.content.includes('Mountain Village A-Z') ||
+         m.content.includes('Snowboarding A-Z'))
       );
       
-      if (matchedTheme) {
-        const themeKey = themeMapping[matchedTheme];
-        curatedItemsContext = `\n\n📋 CURATED ITEMS REFERENCE (Select from these options):\n${getCuratedItemsList(themeKey)}`;
+      if (subjectTheme) {
+        const themeMapping: Record<string, string> = {
+          'Animals A-Z': 'animals',
+          'Food & Fruits A-Z': 'food',
+          'Nature A-Z': 'nature',
+          'Things That Go A-Z': 'vehicles',
+          'Classic Mixed Objects': 'mixed',
+          'Mountain Village A-Z': 'mountain-village',
+          'Snowboarding A-Z': 'snowboarding'
+        };
+        
+        const matchedTheme = Object.keys(themeMapping).find(key => 
+          typeof subjectTheme.content === 'string' && subjectTheme.content.includes(key)
+        );
+        
+        if (matchedTheme) {
+          const themeKey = themeMapping[matchedTheme];
+          curatedItemsContext = `\n\n📋 CURATED ITEMS REFERENCE (Select from these options):\n${getCuratedItemsList(themeKey)}`;
+        }
       }
     }
 

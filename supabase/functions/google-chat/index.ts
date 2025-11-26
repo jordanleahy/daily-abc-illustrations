@@ -135,22 +135,13 @@ serve(async (req) => {
       );
     }
 
-    // Check if intake is complete (detect [INTAKE_COMPLETE] marker in conversation)
-    const lastAssistantMessage = messages.slice().reverse().find(m => m.role === 'assistant');
-    const intakeComplete = lastAssistantMessage && 
-      typeof lastAssistantMessage.content === 'string' && 
-      lastAssistantMessage.content.includes('[INTAKE_COMPLETE]');
-    
-    // If intake just completed, automatically trigger specialized agent's first message
-    const shouldAutoTriggerSpecialized = intakeComplete && messages[messages.length - 1]?.role === 'assistant';
-
     // Determine which agent and system prompt to use
     let systemPromptContent: string;
     let agentSource: string;
 
-    if (bookType && intakeComplete) {
-      // Intake complete - switch to specialized agent
-      console.log(`📚 Book type selected: ${bookType}, intake complete - switching to specialized agent`);
+    if (bookType) {
+      // Book type selected - route directly to specialized agent
+      console.log(`📚 Book type selected: ${bookType}, routing to specialized agent`);
       
       // Map book type to agent type
       const agentType = BOOK_TYPE_TO_AGENT_TYPE[bookType] || 'book-creation';
@@ -184,12 +175,6 @@ serve(async (req) => {
         systemPromptContent = DISCOVERY_PROMPT;
         agentSource = 'File: Discovery prompt (fallback)';
       }
-    } else if (bookType && !intakeComplete) {
-      // Book type selected but intake not complete - use universal intake prompt
-      console.log(`📚 Book type selected: ${bookType}, starting universal intake`);
-      systemPromptContent = UNIVERSAL_INTAKE_PROMPT;
-      agentSource = 'Universal Intake Agent';
-      console.log('🎯 Using universal intake prompt to collect theme + age');
     } else {
       // No book type selected - use discovery prompt
       systemPromptContent = DISCOVERY_PROMPT;
@@ -197,29 +182,18 @@ serve(async (req) => {
       console.log('🔍 No book type selected, using discovery prompt');
     }
 
-    // Add context about kid age, theme, and conversation stage
-    // For specialized agents (after intake), provide pre-gathered context
+    // Add context about kid age and theme if already provided
     const ageContext = kidAge 
-      ? `\n\n👶 CHILD AGE CONTEXT:\nThe selected child is ${kidAge.years} years and ${kidAge.months} months old. ${intakeComplete ? 'This age was gathered during intake. ' : ''}Use this age to ${intakeComplete ? '' : 'skip the age discovery question and '}tailor all educational content, vocabulary, and complexity to this specific developmental stage.`
+      ? `\n\n👶 CHILD AGE CONTEXT:\nThe selected child is ${kidAge.years} years and ${kidAge.months} months old. Skip the age discovery question and use this age to tailor all educational content, vocabulary, and complexity to this specific developmental stage.`
       : '';
 
-    // Handle theme context with special cases
+    // Handle theme context if already provided
     const themeContext = characterTheme
       ? characterTheme === 'custom'
         ? `\n\n🎨 CUSTOM THEME REQUESTED:\nThe user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.`
         : characterTheme === 'no-theme'
-        ? `\n\n📚 NO THEME SELECTED:\nThe user prefers an educational-only book without character themes. ${intakeComplete ? 'This was gathered during intake. ' : ''}Focus purely on educational content with classic, simple illustrations. Do NOT integrate any character themes.`
-        : `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. ${intakeComplete ? 'This theme was gathered during intake. ' : ''}${intakeComplete ? '' : 'Skip the theme discovery question and '}Integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
-      : '';
-
-    // For specialized agents, add explicit pre-gathered context
-    const preGatheredContext = intakeComplete
-      ? `\n\n✅ INTAKE COMPLETE - PRE-GATHERED INFORMATION:\n` +
-        `- Book Type: ${bookType}\n` +
-        `- Character Theme: ${characterTheme === 'custom' ? 'Custom (awaiting user input)' : characterTheme === 'no-theme' ? 'None (educational focus only)' : characterTheme || 'Not selected'}\n` +
-        `- Age: ${kidAge ? `${kidAge.years} years ${kidAge.months} months` : 'Not provided'}\n\n` +
-        `${characterTheme === 'custom' ? 'IMPORTANT: User wants a custom theme but hasn\'t specified it yet. Ask for their custom theme idea before proceeding.\n\n' : ''}` +
-        `You can now proceed ${characterTheme === 'custom' ? 'after getting custom theme ' : ''}directly to type-specific questions (e.g., letter case for ABC, number range for Numbers, color set for Colors). Do NOT re-ask about ${characterTheme !== 'custom' ? 'theme or ' : ''}age.`
+        ? `\n\n📚 NO THEME SELECTED:\nThe user prefers an educational-only book without character themes. Skip the theme discovery question. Focus purely on educational content with classic, simple illustrations. Do NOT integrate any character themes.`
+        : `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. Skip the theme discovery question and integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
       : '';
 
     const conversationStageContext = outlineReady
@@ -249,37 +223,19 @@ serve(async (req) => {
 
     console.log(`🤖 Agent source: ${agentSource}`);
     console.log(`📊 System prompt length: ${systemMessage.content.length} characters`);
-    console.log(`📊 Intake complete: ${intakeComplete ? 'Yes' : 'No'}`);
-    console.log(`📊 Auto-trigger specialized: ${shouldAutoTriggerSpecialized ? 'Yes' : 'No'}`);
     console.log(`📊 Conversation stage: ${outlineReady ? 'Outline Ready' : bookCreated ? 'Book Created' : 'Discovery'}`);
     console.log(`👶 Kid age provided: ${kidAge ? `${kidAge.years}y ${kidAge.months}m` : 'No'}`);
     console.log(`🎨 Character theme: ${characterTheme || 'None'}`);
     console.log(`🎨 Style templates available: ${styleTemplates?.length || 0}`);
 
     // Format messages for Gemini (handles both text and multimodal content)
-    let formattedMessages = messages.map(msg => {
+    const formattedMessages = messages.map(msg => {
       // If content is already an array (multimodal), return as-is
       if (Array.isArray(msg.content)) {
         return msg;
       }
-      // Filter out [INTAKE_COMPLETE] from messages sent to AI
-      const content = typeof msg.content === 'string' 
-        ? msg.content.replace(/\[INTAKE_COMPLETE\]/g, '').trim()
-        : msg.content;
-      return {
-        ...msg,
-        content
-      };
+      return msg;
     });
-    
-    // If intake just completed, add an invisible user message to trigger specialized agent
-    if (shouldAutoTriggerSpecialized) {
-      formattedMessages.push({
-        role: 'user',
-        content: 'continue'
-      });
-      console.log('🚀 Auto-triggering specialized agent with invisible "continue" message');
-    }
 
     const allMessages = [systemMessage, ...formattedMessages];
 

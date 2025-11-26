@@ -1,9 +1,8 @@
+import { serve } from 'https://deno.land/std@0.168.0/http/server.ts';
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
-import { extractJSON } from '../_shared/jsonExtractor.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
 import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange, BOOK_TYPE_TO_AGENT_TYPE, AgentType } from '../_shared/types.ts';
 
@@ -39,98 +38,45 @@ const requestSchema = z.object({
   }).optional()
 });
 
-/**
- * Parse markdown format from ABC agent into JSON book structure
- */
-function parseMarkdownToBookStructure(content: string, bookType: string): any {
-  console.log('[Markdown Parser] Starting parse, content length:', content.length);
-  console.log('[Markdown Parser] First 500 chars:', content.substring(0, 500));
-  
-  const result: any = {
-    bookName: '',
-    bookDescription: '',
-    pages: [],
-    metadata: { bookType }
-  };
+// Zod schema for book data validation
+const PageContentSchema = z.object({
+  mainConcept: z.string().optional().default(''),
+  funFact: z.string().optional().default(''),
+  activity: z.string().optional().default(''),
+  color: z.string().optional()
+});
 
-  // Extract Cover
-  const coverMatch = content.match(/\*\*Cover:\s*([^\n]+)\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|$)/i);
-  console.log('[Markdown Parser] Cover match found:', !!coverMatch);
-  if (coverMatch) {
-    result.bookName = coverMatch[1].trim();
-    const coverPrompt = coverMatch[2].trim();
-    console.log('[Markdown Parser] Book name extracted:', result.bookName);
-    result.pages.push({
-      pageType: 'cover',
-      pageNumber: 0,
-      letter: '',
-      title: result.bookName,
-      description: coverPrompt,
-      content: { mainConcept: '', funFact: '', activity: '' }
-    });
-  } else {
-    console.log('[Markdown Parser] WARNING: No cover found in content');
-  }
+const PageSchema = z.object({
+  pageNumber: z.number(),
+  pageType: z.enum(['cover', 'educational', 'content']),
+  letter: z.string(),
+  title: z.string().min(1, 'Page title is required'),
+  description: z.string().min(1, 'Page description is required'),
+  content: PageContentSchema
+});
 
-  // Extract Educational Focus
-  const eduFocusMatch = content.match(/\*\*Educational Focus:\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus Image:|$)/i);
-  const eduImageMatch = content.match(/\*\*Educational Focus Image:\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/i);
-  console.log('[Markdown Parser] Educational focus matches:', { eduFocusMatch: !!eduFocusMatch, eduImageMatch: !!eduImageMatch });
-  
-  if (eduFocusMatch && eduImageMatch) {
-    const eduText = eduFocusMatch[1];
-    const ageMatch = eduText.match(/Target Age:\s*([^\n]+)/i);
-    const typeMatch = eduText.match(/Learning Type:\s*([^\n]+)/i);
-    const skillMatch = eduText.match(/Specific Skill:\s*([^\n]+)/i);
-    
-    result.pages.push({
-      pageType: 'educational',
-      pageNumber: 1,
-      letter: '',
-      title: 'Educational Focus',
-      description: eduImageMatch[1].trim(),
-      content: {
-        mainConcept: ageMatch ? ageMatch[1].trim() : '',
-        funFact: typeMatch ? typeMatch[1].trim() : '',
-        activity: skillMatch ? skillMatch[1].trim() : ''
-      }
-    });
-    console.log('[Markdown Parser] Educational page added');
-  }
-
-  // Extract content pages
-  const pagePattern = /\*\*Page\s+(\d+):\s*([^\n]+)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi;
-  let match: RegExpExecArray | null;
-  let pageCount = 0;
-  
-  while ((match = pagePattern.exec(content)) !== null) {
-    const pageNum = parseInt(match[1], 10);
-    const title = match[2].trim();
-    const imagePrompt = match[3].trim();
-    
-    // Extract letter from title (e.g., "(a) is for apple" -> "a")
-    const letterMatch = title.match(/\(([a-z])\)/i);
-    const letter = letterMatch ? letterMatch[1].toLowerCase() : '';
-    
-    result.pages.push({
-      pageType: 'content',
-      pageNumber: pageNum + 1, // +1 because educational focus is page 1
-      letter: letter,
-      title: title,
-      description: imagePrompt,
-      content: { mainConcept: '', funFact: '', activity: '' }
-    });
-    pageCount++;
-  }
-  
-  console.log('[Markdown Parser] Content pages extracted:', pageCount);
-
-  // Generate description from book name
-  result.bookDescription = `An alphabet journey from A to Z. Perfect for young learners.`;
-
-  console.log('[Markdown Parser] Parse complete - bookName:', result.bookName, ', total pages:', result.pages.length);
-  return result;
-}
+const BookDataSchema = z.object({
+  bookName: z.string().min(1, 'Book name is required'),
+  category: z.string().optional(),
+  bookDescription: z.string().optional(),
+  metadata: z.object({
+    bookType: z.string().optional(),
+    pageCount: z.number().optional(),
+    letterCase: z.string().optional(),
+    characterTheme: z.string().optional(),
+    targetAge: z.string().optional(),
+    numberRange: z.string().optional(),
+    countingStyle: z.string().optional(),
+    shapeComplexity: z.string().optional(),
+    shapeTheme: z.string().optional(),
+    animalCategory: z.string().optional(),
+    animalFocus: z.string().optional(),
+    readingLevel: z.string().optional(),
+    colorsList: z.array(z.string()).optional(),
+    colorsCount: z.number().optional()
+  }).optional(),
+  pages: z.array(PageSchema).min(1, 'At least one page is required')
+});
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -541,46 +487,32 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       );
     }
     
-    // Clean up response - remove markdown code blocks if present
+    // Clean up response - remove any markdown code fences
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     
-    console.log('Cleaned content:', content.substring(0, 200));
+    console.log('Cleaned content (first 200 chars):', content.substring(0, 200));
 
-    // Try to parse as JSON first using robust extraction, fall back to markdown parsing for ABC books
-    let bookData: any;
+    // Parse and validate with Zod
+    let bookData: z.infer<typeof BookDataSchema>;
     
-    // Try extracting and parsing JSON with the robust extractor
-    const jsonResult = extractJSON(content);
-    
-    if (jsonResult.isValid && jsonResult.data) {
-      bookData = jsonResult.data;
-      console.log('Successfully parsed JSON using extractor. Method:', jsonResult.extractionMethod);
-    } else {
-      // JSON extraction failed, try markdown parsing
-      console.log('JSON extraction failed, attempting markdown parsing...');
-      console.log('Extraction error:', jsonResult.parseError);
-      console.log('Content preview for markdown parsing:', content.substring(0, 1000));
+    try {
+      const parsed = JSON.parse(content);
+      bookData = BookDataSchema.parse(parsed);
+      console.log('✅ JSON parsed and validated successfully');
+      console.log('Book:', bookData.bookName, 'Pages:', bookData.pages.length);
+    } catch (error) {
+      console.error('❌ JSON parse/validation failed');
+      console.error('Error:', error instanceof Error ? error.message : String(error));
+      console.error('Full AI response content:', content);
       
-      bookData = parseMarkdownToBookStructure(content, bookType || 'abc');
-      console.log('Markdown parse result:', {
-        bookName: bookData.bookName,
-        pageCount: bookData.pages?.length || 0,
-        hasPages: Array.isArray(bookData.pages)
-      });
-    }
-
-    // Validate book data structure with detailed error
-    if (!bookData.bookName) {
-      console.error('Validation failed: Missing bookName');
-      throw new Error('Invalid book data: Missing book name. AI response may not match expected format.');
-    }
-    if (!bookData.pages || !Array.isArray(bookData.pages)) {
-      console.error('Validation failed: Invalid pages structure');
-      throw new Error('Invalid book data: Pages must be an array');
-    }
-    if (bookData.pages.length === 0) {
-      console.error('Validation failed: No pages found');
-      throw new Error('Invalid book data: No pages found in AI response. Check agent output format.');
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'AI returned invalid JSON format. Please try again.',
+          details: error instanceof Error ? error.message : 'JSON parse error'
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // If this is a color book, ensure colors are extracted

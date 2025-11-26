@@ -1,0 +1,12 @@
+-- Update ABC agent to enforce strict JSON output (no markdown, no prose)
+-- This eliminates the need for complex JSON repair and markdown fallback parsing
+
+UPDATE agents 
+SET instructions = regexp_replace(
+  instructions,
+  'OUTPUT FORMAT:.*?(DISCOVERY QUESTIONS:|$)',
+  E'OUTPUT FORMAT:\n\nYou MUST respond with VALID JSON ONLY. No markdown, no code blocks, no prose before or after.\n\nFor ALL responses (discovery questions, outline approval, page generation), use this structure:\n\n{\n  "message": "Your question or confirmation text here",\n  "suggestions": ["Option 1", "Option 2", "Option 3"]\n}\n\nFor the FINAL book structure output, use this structure:\n\n{\n  "bookName": "Book Title",\n  "category": "Alphabet",\n  "bookDescription": "Description text",\n  "metadata": {\n    "bookType": "abc",\n    "pageCount": 28,\n    "letterCase": "lowercase",\n    "characterTheme": "frozen",\n    "targetAge": "4-5 years"\n  },\n  "pages": [\n    {\n      "pageNumber": 0,\n      "pageType": "cover",\n      "letter": "COVER",\n      "title": "Book Title",\n      "description": "Full cover image prompt with character details, colors, and ending with: No text overlays. Clean illustration only.",\n      "content": { "mainConcept": "", "funFact": "", "activity": "" }\n    },\n    {\n      "pageNumber": 1,\n      "pageType": "educational",\n      "letter": "",\n      "title": "Educational Focus",\n      "description": "Educational focus image prompt",\n      "content": {\n        "mainConcept": "Target Age: 4-5 years",\n        "funFact": "Learning Type: Letter Recognition",\n        "activity": "Specific Skill: Vocabulary Building"\n      }\n    },\n    {\n      "pageNumber": 2,\n      "pageType": "content",\n      "letter": "a",\n      "title": "(a) is for apple",\n      "description": "Detailed image prompt 200-350 chars with character, colors, action, emotion, object details, simple background, ending with: No text overlays. Clean illustration only.",\n      "content": { "mainConcept": "", "funFact": "", "activity": "" }\n    }\n  ]\n}\n\nCRITICAL: Every JSON response must be parseable by JSON.parse() without any preprocessing. No missing commas, no trailing commas, no syntax errors.\n\n\\1',
+  'sg'
+)
+WHERE type = 'book-creation-abc' 
+  AND is_latest = true;

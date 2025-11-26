@@ -49,7 +49,8 @@ export function extractJSON<T>(
   // Clean common formatting issues
   jsonStr = jsonStr
     .replace(/^\s*[\r\n]+/gm, '') // Remove extra newlines
-    .replace(/,(\s*[}\]])/g, '$1') // Remove trailing commas
+    .replace(/,\s*([}\]])/g, '$1') // Remove trailing commas before } or ]
+    .replace(/}\s*{/g, '},{') // Fix missing commas between objects in arrays
     .trim();
 
   // Attempt to parse

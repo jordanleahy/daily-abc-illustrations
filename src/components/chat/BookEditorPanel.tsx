@@ -84,6 +84,11 @@ export function BookEditorPanel({
   const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
   const [hasRunQaAgent, setHasRunQaAgent] = useState(false);
   
+  // Check if user has seen the onboarding (one-time only)
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
+    return localStorage.getItem('qa-panel-onboarding-seen') === 'true';
+  });
+  
   // Derive hasClickedCopy from whether prompt exists for current page OR page was copied
   const hasClickedCopy = !!editorPagePrompts[currentPageNumber] || copiedPages.has(currentPageNumber);
   
@@ -324,6 +329,12 @@ export function BookEditorPanel({
 
   // Handle copy with confirmation and delayed transition
   const handleCopyPrompt = async () => {
+    // Mark onboarding as seen when copying from the onboarding overlay
+    if (!hasSeenOnboarding) {
+      localStorage.setItem('qa-panel-onboarding-seen', 'true');
+      setHasSeenOnboarding(true);
+    }
+    
     const prompt = getCurrentPagePrompt(currentPageNumber);
     
     // Add user feedback when no prompt is found
@@ -577,6 +588,19 @@ export function BookEditorPanel({
                   Upload area loading...
                 </p>
               </div>
+            ) : !hasSeenOnboarding ? (
+              <button
+                onClick={handleCopyPrompt}
+                className="w-full h-full flex flex-col items-center justify-center p-6 text-center hover:bg-muted/50 transition-colors cursor-pointer"
+              >
+                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                  <Copy className="h-8 w-8 text-foreground" />
+                </div>
+                <p className="text-base font-semibold mb-2">Copy Image Prompt</p>
+                <p className="text-xs text-muted-foreground">
+                  Click to copy prompt for AI Studio
+                </p>
+              </button>
             ) : !hasClickedCopy ? (
               <button
                 onClick={handleCopyPrompt}

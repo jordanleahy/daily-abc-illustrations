@@ -1531,9 +1531,18 @@ export default function GoogleChat() {
       onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
     >
       <div className="fixed inset-0 top-[3.5rem] flex">
-
-        {/* Desktop: Always-visible Sidebar */}
-        <div className={cn(
+        {/* Show selection flow if not completed */}
+        {showSelectionFlow ? (
+          <div className="flex-1 overflow-y-auto">
+            <BookTypeSelectionFlow 
+              onComplete={handleSelectionComplete}
+              kidAge={kidAge}
+            />
+          </div>
+        ) : (
+          <>
+            {/* Desktop: Always-visible Sidebar */}
+            <div className={cn(
           "border-r bg-muted/30 flex flex-col h-full transition-all duration-300",
           "hidden md:flex md:w-64 md:resize-x md:overflow-auto",
           "md:relative md:min-w-[200px] md:max-w-[600px]"
@@ -1690,9 +1699,11 @@ export default function GoogleChat() {
                 pageTextOverlays={pageTextOverlays}
                 onUpdatePageText={handleUpdatePageText}
                 onToggleStatus={handleToggleBookStatus}
-                bookStatus={(bookData?.status as PublicationStatus) || PublicationStatus.DRAFT}
+              bookStatus={(bookData?.status as PublicationStatus) || PublicationStatus.DRAFT}
             />
           </div>
+        )}
+          </>
         )}
       </div>
     </PageLayout>

@@ -90,6 +90,21 @@ export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: Messa
           
           return (
             <>
+              {/* Image buttons - grid layout */}
+              {imageActions.length > 0 && (
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
+                  {imageActions.map(({ action, theme }) => (
+                    <ImageButton
+                      key={action.id}
+                      action={action}
+                      imageSrc={theme.thumbnail}
+                      altText={theme.altText}
+                      onClick={() => onQuickReply?.(action)}
+                    />
+                  ))}
+                </div>
+              )}
+              
               {/* Text buttons - full width blocks */}
               {textActions.length > 0 && (
                 <div className="flex flex-col gap-2 pt-2">
@@ -103,21 +118,6 @@ export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: Messa
                     >
                       {action.label.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()}
                     </Button>
-                  ))}
-                </div>
-              )}
-              
-              {/* Image buttons - grid layout */}
-              {imageActions.length > 0 && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 pt-2">
-                  {imageActions.map(({ action, theme }) => (
-                    <ImageButton
-                      key={action.id}
-                      action={action}
-                      imageSrc={theme.thumbnail}
-                      altText={theme.altText}
-                      onClick={() => onQuickReply?.(action)}
-                    />
                   ))}
                 </div>
               )}

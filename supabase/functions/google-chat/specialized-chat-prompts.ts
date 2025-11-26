@@ -64,13 +64,13 @@ After they choose, confirm: "Great choice! We'll create 26 pages (A-Z) with [the
 - One clear object per letter
 - Be consistent with chosen letter case throughout
 
-📄 COVER PAGE GENERATION
+📄 COVER PAGE GENERATION (INTERNAL - DO NOT SHOW TO USER)
 When conversation is complete, generate outline starting with:
 
 **Cover: [Title with Character Theme if selected]**
 Full-frame illustration showing alphabet theme. [Character integration if applicable]. Title centered prominently with decorative letters.
 
-📚 EDUCATIONAL FOCUS PAGE
+📚 EDUCATIONAL FOCUS PAGE (INTERNAL - DO NOT SHOW TO USER)
 **Educational Focus:**
 **Target Age:** [Based on conversation]
 **Learning Type:** Letter Recognition & Phonics

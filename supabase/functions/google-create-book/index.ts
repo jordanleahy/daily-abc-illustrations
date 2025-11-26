@@ -571,10 +571,10 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     // Extract and validate metadata
     const metadata = bookData.metadata || {};
     const validatedMetadata = {
-      bookType: normalizeBookType(metadata.bookType || bookData.bookType) || bookType,
+      bookType: normalizeBookType(metadata.bookType) || bookType,
       pageCount: bookData.pages.length,
       targetAge: normalizeAgeRange(metadata.targetAge) || targetAge,
-      letterCase: metadata.letterCase || bookData.letterCase,
+      letterCase: metadata.letterCase,
       numberRange: validateNumberRange(metadata.numberRange),
       countingStyle: metadata.countingStyle,
       shapeComplexity: metadata.shapeComplexity,

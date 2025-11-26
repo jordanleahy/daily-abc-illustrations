@@ -12,7 +12,7 @@ import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 
 const Agents = () => {
-  const [selectedAgentType, setSelectedAgentType] = useState<AgentConfig['type']>('chat');
+  const [selectedAgentType, setSelectedAgentType] = useState<AgentConfig['type']>('book-creation-abc');
   const { data: userRole } = useUserRole();
   
   const {

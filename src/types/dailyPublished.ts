@@ -1,5 +1,14 @@
 export type DailyPublishedStatus = 'draft' | 'queued' | 'active' | 'expired';
 
+export interface QRCodeConfig {
+  size?: number;
+  margin?: number;
+  errorCorrectionLevel?: 'L' | 'M' | 'Q' | 'H';
+  foregroundColor?: string;
+  backgroundColor?: string;
+  includeMargin?: boolean;
+}
+
 export interface DailyPublished {
   id: string;
   book_id: string;
@@ -15,7 +24,7 @@ export interface DailyPublished {
   publish_date: string; // New date-based field
   qr_code_image?: string;
   qr_code_public_url?: string;
-  qr_code_config?: any;
+  qr_code_config?: QRCodeConfig;
   qr_code_generated_at?: string;
   slug?: string;
   // Simple queue ordering

@@ -184,9 +184,9 @@ export function parseWordsFromTitle(title: string): WordMetadata[] {
  * Update page content with word metadata
  */
 export function addWordMetadataToContent(
-  content: any,
+  content: Record<string, unknown>,
   title: string
-): any {
+): Record<string, unknown> & { words: WordMetadata[] } {
   const words = parseWordsFromTitle(title);
   
   return {

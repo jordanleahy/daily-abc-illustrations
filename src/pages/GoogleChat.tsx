@@ -99,22 +99,12 @@ export default function GoogleChat() {
   // Load messages for current session via React Query cache
   const { data: messages = [], isLoading: isLoadingMessages } = useSessionMessages(currentSessionId || undefined);
   
-  console.log('[Session Debug] Current session ID:', currentSessionId);
-  console.log('[Session Debug] Messages loaded:', messages.length);
-  console.log('[Session Debug] Is loading messages:', isLoadingMessages);
-  
   // Prefetch hook for hover optimization
   const { prefetchSession } = usePrefetchSession();
 
   // Debounce message updates to avoid excessive database writes
   const updateTimeoutRef = useRef<NodeJS.Timeout>();
   const handleMessagesUpdate = useCallback((messages: any[], sessionId: string) => {
-    console.log('[Message Persist Debug] Scheduling message update:', {
-      sessionId,
-      messageCount: messages.length,
-      willPersistIn: '1 second'
-    });
-    
     // Clear any existing timeout
     if (updateTimeoutRef.current) {
       clearTimeout(updateTimeoutRef.current);
@@ -122,10 +112,6 @@ export default function GoogleChat() {
     
     // Set new timeout to update after 1 second of inactivity
     updateTimeoutRef.current = setTimeout(() => {
-      console.log('[Message Persist Debug] Persisting messages to database:', {
-        sessionId,
-        messageCount: messages.length
-      });
       updateSessionMessages({ sessionId, messages });
     }, 1000);
   }, [updateSessionMessages]);
@@ -149,8 +135,6 @@ export default function GoogleChat() {
     kidAge,
     selectedBookType || undefined
   );
-  
-  console.log('[Chat Hook Debug] useGoogleChat initialized with session:', currentSessionId);
 
   const createBookMutation = useGoogleCreateBook();
 
@@ -228,36 +212,17 @@ export default function GoogleChat() {
 
   // Memoize parsed page details to avoid re-parsing on every render
   const parsedPageDetails = useMemo(() => {
-    const result = parsePageDetailsFromMessages(messages);
-    console.log('[Editor Debug] Parsed pages:', result?.length || 0, 'pages');
-    console.log('[Editor Debug] Parsed page details:', result);
-    console.log('[Editor Debug] Total messages:', messages.length);
-    console.log('[Editor Debug] Last 2 messages:', messages.slice(-2).map(m => ({
-      role: m.role,
-      contentPreview: typeof m.content === 'string' 
-        ? m.content.substring(0, 200) 
-        : 'non-string content'
-    })));
-    return result;
+    return parsePageDetailsFromMessages(messages);
   }, [messages]);
 
   // Detect when book outline is ready for Book Editor Panel
   const shouldShowReviewButton = useMemo(() => {
-    console.log('[Review Button Debug] Computing shouldShowReviewButton:', {
-      isLoading,
-      messagesLength: messages.length,
-      parsedPageDetailsLength: parsedPageDetails?.length || 0,
-      parsedPageDetailsNull: parsedPageDetails === null
-    });
-    
     if (isLoading || messages.length === 0) {
-      console.log('[Review Button Debug] Early return: isLoading or no messages');
       return false;
     }
     
     // Show only when all 26 pages are complete (for ABC books)
     const hasAllPages = parsedPageDetails !== null && parsedPageDetails.length === 26;
-    console.log('[Review Button Debug] hasAllPages:', hasAllPages, '(need exactly 26 pages)');
     
     // Always show button if we have all pages, even after book creation
     return hasAllPages;
@@ -268,24 +233,8 @@ export default function GoogleChat() {
 
   // Parse educational focus from messages
   const educationalFocus = useMemo(() => {
-    const result = parseEducationalFocus(messages);
-    console.log('[Review Button Debug] Educational focus:', result ? 'found' : 'not found');
-    return result;
+    return parseEducationalFocus(messages);
   }, [messages]);
-
-  // Debug: Log when key values change for outline button visibility
-  useEffect(() => {
-    console.log('[Review Button Debug] State changed:', {
-      shouldShowReviewButton,
-      isBookPublished,
-      showButton: shouldShowReviewButton || isBookPublished,
-      parsedPagesCount: parsedPageDetails?.length || 0,
-      isLoading,
-      messagesCount: messages.length,
-      hasEducationalFocus: !!educationalFocus,
-      createdBookId: createdBookId || 'none'
-    });
-  }, [shouldShowReviewButton, isBookPublished, parsedPageDetails, isLoading, messages.length, educationalFocus, createdBookId]);
 
   // Clear cached prompts when new outline is detected (for regeneration support)
   useEffect(() => {
@@ -301,7 +250,6 @@ export default function GoogleChat() {
       
       // If page count changed, or if we have parsed details but empty cache, clear the cache
       if (currentPageCount !== newPageCount || currentPageCount === 0) {
-        console.log('[Editor Debug] New outline detected, clearing cached prompts');
         setEditorPagePrompts({});
       }
     }
@@ -329,7 +277,6 @@ export default function GoogleChat() {
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
     // PRIORITY 1: Always check stored prompts from "View Outline" first
     if (editorPagePrompts[pageNum]) {
-      console.log(`[Prompt Source] Using stored session prompt for page ${pageNum} (length: ${editorPagePrompts[pageNum].length})`);
       return editorPagePrompts[pageNum];
     }
 
@@ -341,13 +288,11 @@ export default function GoogleChat() {
       // Try to get full prompt from content.imagePrompt (stores unlimited text)
       const fullPrompt = (page.content as any)?.imagePrompt;
       if (fullPrompt) {
-        console.log(`[Prompt Source] Using database prompt for page ${pageNum} (length: ${fullPrompt.length})`);
         return fullPrompt;
       }
       
       // Fallback to page description (may be truncated)
       if (page.description) {
-        console.log(`[Prompt Source] Using database description for page ${pageNum} (length: ${page.description.length})`);
         return page.description;
       }
       
@@ -381,17 +326,14 @@ export default function GoogleChat() {
       // Ensure centered title instruction exists (safety net)
       if (!description.toLowerCase().includes('centered') && 
           !description.toLowerCase().includes('center')) {
-        console.log('[Prompt Retrieval] Adding centered title instruction to cover prompt');
         description = `${description}\n\nDISPLAY TITLE: Centered, large, bold letters taking up 50-60% of space.`;
       }
       
-      console.log(`[Prompt Source] Using parsed cover prompt for page ${pageNum} (length: ${description.length})`);
       return `${description}`;
     }
     
     if (pageNum === 2 && educationalFocus) {
       // Educational focus page (Page 2) - return just the image prompt without title
-      console.log(`[Prompt Source] Using educational focus prompt for page ${pageNum} (length: ${educationalFocus.imagePrompt.length})`);
       return educationalFocus.imagePrompt;
     }
     
@@ -400,12 +342,10 @@ export default function GoogleChat() {
       const pageIndex = pageNum - 3; // Page 3 = index 0, Page 4 = index 1, etc.
       const pageDetail = parsedPageDetails[pageIndex];
       if (pageDetail?.description) {
-        console.log(`[Prompt Source] Using parsed prompt for page ${pageNum} (length: ${pageDetail.description.length})`);
         return pageDetail.description;
       }
     }
     
-    console.warn(`[Prompt Source] No prompt found for page ${pageNum}`);
     return null;
   }, [isBookCreated, dbPages, editorPagePrompts, educationalFocus, parsedPageDetails, messages]);
 
@@ -436,21 +376,13 @@ export default function GoogleChat() {
   useEffect(() => {
     // Don't detect completion for published books
     if (createdBookId && bookData?.status === 'published') {
-      console.log('[Outline Detection] Skipping detection for published book');
       return;
     }
     
     const currentShouldShow = shouldShowReviewButton;
     
-    console.log('[Outline Detection] Checking transition:', {
-      previousShouldShow: previousShouldShow.current,
-      currentShouldShow,
-      willTrigger: !previousShouldShow.current && currentShouldShow
-    });
-    
     // If we just transitioned from false → true, the outline was just completed
     if (!previousShouldShow.current && currentShouldShow) {
-      console.log('[Outline Detection] ✅ Outline completion detected! Setting outlineJustCompleted=true');
       setOutlineJustCompleted(true);
       // Auto-generate cover prompt when outline completes
       handleGenerateCoverPrompt();
@@ -463,12 +395,10 @@ export default function GoogleChat() {
   useEffect(() => {
     // Don't auto-show QA for published books
     if (createdBookId && bookData?.status === 'published') {
-      console.log('[Auto-Open] Skipping auto-open for published book');
       return;
     }
     
     if (outlineJustCompleted) {
-      console.log('[Auto-Open] Outline just completed! Opening editor panel at page 1');
       setCurrentEditorPage(1); // Start at cover page
       
       // Scroll to bottom to show the banner
@@ -527,7 +457,6 @@ export default function GoogleChat() {
   // Send initial prompt from recommendations if provided
   useEffect(() => {
     if (initialPrompt && currentSessionId && messages.length === 0 && !isLoading) {
-      console.log('[GoogleChat] Sending initial prompt from recommendations:', initialPrompt);
       setInput(initialPrompt);
       // Small delay to ensure component is fully mounted
       setTimeout(() => {
@@ -542,14 +471,10 @@ export default function GoogleChat() {
   // Handle edit mode from My Books
   useEffect(() => {
     if (editBookId && sessions && sessions.length > 0 && !currentSessionId) {
-      console.log('[GoogleChat] Edit mode triggered for book:', editBookId);
-      
       // Find the session linked to this book
       const bookSession = sessions.find(s => s.created_book_id === editBookId);
       
       if (bookSession) {
-        console.log('[GoogleChat] Found session for book:', bookSession.id);
-        
         // Select the session
         startTransition(() => {
           setCurrentSessionId(bookSession.id);
@@ -566,8 +491,6 @@ export default function GoogleChat() {
           // Auto-open the Book Editor Panel in edit mode
           setCurrentEditorPage(1);
         });
-      } else {
-        console.warn('[GoogleChat] No session found for book:', editBookId);
       }
     }
   }, [editBookId, sessions, currentSessionId]);
@@ -578,8 +501,6 @@ export default function GoogleChat() {
       const hasPrompts = selectedSession.qa_page_prompts && Object.keys(selectedSession.qa_page_prompts).length > 0;
       
       if (!hasPrompts) {
-        console.log('[Edit Mode] Extracting prompts for first-time edit');
-        
         // Extract prompts from conversation history
         const fullPrompts: Record<number, string> = {};
         const conversationText = messages

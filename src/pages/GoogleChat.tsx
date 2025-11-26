@@ -706,20 +706,11 @@ export default function GoogleChat() {
       });
     }
     
-    if (bookType.needsClarification && bookType.clarificationContext) {
-      // Format as natural instruction without internal tags
-      const clarificationPrompt = `${bookType.prompt}\n\nBefore we proceed, please ask me about: ${bookType.clarificationContext}`;
-      await sendMessage(clarificationPrompt, undefined, messages, {
-        outlineReady: shouldShowReviewButton && !createdBookId,
-        bookCreated: !!createdBookId
-      });
-    } else {
-      // Send direct prompt
-      await sendMessage(bookType.prompt, undefined, messages, {
-        outlineReady: shouldShowReviewButton && !createdBookId,
-        bookCreated: !!createdBookId
-      });
-    }
+    // Send base prompt - specialized agent handles clarifying questions with [SUGGEST] blocks
+    await sendMessage(bookType.prompt, undefined, messages, {
+      outlineReady: shouldShowReviewButton && !createdBookId,
+      bookCreated: !!createdBookId
+    });
   }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId]);
 
   const handleCreateBook = useCallback(async () => {

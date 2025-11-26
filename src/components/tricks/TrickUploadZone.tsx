@@ -4,6 +4,7 @@ import { useUploadTrickMedia } from '@/hooks/useUploadTrickMedia';
 import { extractExifData } from '@/utils/exifExtractor';
 import { toast } from 'sonner';
 import { GeolocationData } from '@/types/trickMedia';
+import { generateThumbnail } from '@/utils/videoThumbnail';
 
 interface TrickUploadZoneProps {
   trickId: string;
@@ -21,6 +22,7 @@ export const TrickUploadZone = ({
   onUploadComplete,
 }: TrickUploadZoneProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingThumbnail, setPendingThumbnail] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const uploadMedia = useUploadTrickMedia();
 
@@ -61,6 +63,30 @@ export const TrickUploadZone = ({
       return;
     }
 
+    // For videos, generate thumbnail immediately (non-blocking)
+    if (isVideo) {
+      try {
+        const video = document.createElement('video');
+        const videoObjectUrl = URL.createObjectURL(file);
+        video.src = videoObjectUrl;
+        
+        await new Promise((resolve) => {
+          video.onloadedmetadata = resolve;
+        });
+        
+        const thumbnailBlob = await generateThumbnail(video);
+        const thumbnailUrl = URL.createObjectURL(thumbnailBlob);
+        setPendingThumbnail(thumbnailUrl);
+        
+        // Cleanup video element and object URL
+        URL.revokeObjectURL(videoObjectUrl);
+        video.src = '';
+        video.load();
+      } catch (error) {
+        console.error('Failed to generate thumbnail:', error);
+      }
+    }
+
     setIsProcessing(true);
 
     try {
@@ -84,7 +110,7 @@ export const TrickUploadZone = ({
         }
       }
 
-      // Upload with all metadata
+      // Fire-and-forget: Upload in background
       uploadMedia.mutate(
         {
           trick_id: trickId,
@@ -97,13 +123,16 @@ export const TrickUploadZone = ({
         },
         {
           onSuccess: () => {
+            setPendingThumbnail(null);
+            setIsProcessing(false);
             onUploadComplete?.();
             // Reset file input
             if (fileInputRef.current) {
               fileInputRef.current.value = '';
             }
           },
-          onSettled: () => {
+          onError: () => {
+            setPendingThumbnail(null);
             setIsProcessing(false);
           },
         }
@@ -111,6 +140,7 @@ export const TrickUploadZone = ({
     } catch (error) {
       console.error('Error processing upload:', error);
       toast.error('Failed to process file');
+      setPendingThumbnail(null);
       setIsProcessing(false);
     }
   };
@@ -128,7 +158,20 @@ export const TrickUploadZone = ({
       onClick={handleTap}
       className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 text-center cursor-pointer hover:border-primary/50 hover:bg-muted/50 transition-colors"
     >
-      {isProcessing ? (
+      {pendingThumbnail ? (
+        <div className="relative inline-block">
+          <img 
+            src={pendingThumbnail} 
+            alt="Uploading video" 
+            className="w-16 h-16 rounded-lg object-cover"
+          />
+          {isProcessing && (
+            <div className="absolute inset-0 bg-background/50 rounded-lg flex items-center justify-center">
+              <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            </div>
+          )}
+        </div>
+      ) : isProcessing ? (
         <>
           <Loader2 className="h-6 w-6 animate-spin mx-auto text-primary" />
           <span className="text-sm text-muted-foreground mt-1 block">

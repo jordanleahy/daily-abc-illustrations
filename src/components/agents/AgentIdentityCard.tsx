@@ -104,11 +104,46 @@ export const AgentIdentityCard = ({
         </div>
 
         {/* System Prompt / Instructions - Admin Only */}
+        {!isAdmin && (
+          <div className="p-4 bg-warning/10 border border-warning/20 rounded-lg">
+            <p className="text-sm text-warning-foreground font-medium">
+              ⚠️ Admin Access Required
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              You need admin role to view and edit system prompts. Contact your administrator to grant admin access.
+            </p>
+          </div>
+        )}
+        
         {isAdmin && (
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">
-              System Prompt (Admin Only)
-            </label>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-medium text-muted-foreground">
+                System Prompt (Admin Only)
+              </label>
+              {editingField === 'instructions' && (
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setEditingField(null);
+                      // Reset to original value by triggering parent to revert
+                    }}
+                    className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    Cancel (Esc)
+                  </button>
+                  <button
+                    onClick={() => {
+                      onUpdate({ instructions: config.instructions });
+                      setEditingField(null);
+                    }}
+                    className="text-xs text-primary hover:underline font-medium"
+                  >
+                    Done (Ctrl+Enter)
+                  </button>
+                </div>
+              )}
+            </div>
             <InlineEditTextarea
               value={config.instructions || ''}
               onSave={(instructions) => {
@@ -118,21 +153,30 @@ export const AgentIdentityCard = ({
               isEditing={editingField === 'instructions'}
               renderDisplay={(value) => (
                 <div 
-                  className="text-sm cursor-pointer hover:text-primary transition-colors mt-1 p-2 rounded-md hover:bg-muted/50 max-h-[200px] overflow-y-auto"
+                  className="text-sm cursor-pointer hover:text-primary transition-colors p-3 rounded-md hover:bg-muted/50 border border-border max-h-[200px] overflow-y-auto"
                   onClick={() => setEditingField('instructions')}
                 >
                   {value ? (
-                    <pre className="whitespace-pre-wrap font-mono text-xs">
+                    <pre className="whitespace-pre-wrap font-mono text-xs leading-relaxed">
                       {value}
                     </pre>
                   ) : (
-                    <span className="text-muted-foreground">No system prompt configured</span>
+                    <span className="text-muted-foreground italic">Click to add system prompt...</span>
                   )}
                 </div>
               )}
-              className="min-h-[200px] text-xs font-mono"
-              placeholder="Enter the system prompt / instructions for this agent"
+              className="min-h-[300px] text-xs font-mono leading-relaxed"
+              placeholder="Enter the system prompt / instructions for this agent...
+
+Example:
+You are an expert educational assistant specializing in ABC books.
+Guide users through creating alphabet books with engaging themes..."
             />
+            {editingField !== 'instructions' && (
+              <p className="text-xs text-muted-foreground">
+                💡 Click the prompt to edit. After editing, click the "Save all changes" button at the bottom of the page to persist to database.
+              </p>
+            )}
           </div>
         )}
 

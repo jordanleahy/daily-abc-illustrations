@@ -552,9 +552,9 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     // Try extracting and parsing JSON with the robust extractor
     const jsonResult = extractJSON(content);
     
-    if (jsonResult.valid && jsonResult.data) {
+    if (jsonResult.isValid && jsonResult.data) {
       bookData = jsonResult.data;
-      console.log('Successfully parsed JSON using extractor');
+      console.log('Successfully parsed JSON using extractor. Method:', jsonResult.extractionMethod);
     } else {
       // JSON extraction failed, try markdown parsing
       console.log('JSON extraction failed, attempting markdown parsing...');

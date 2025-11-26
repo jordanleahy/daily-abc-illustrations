@@ -234,19 +234,26 @@ const Agents = () => {
           </div>
         )}
 
-        {/* Status Footer */}
+        {/* Status Footer - Fixed save button */}
         {hasUnsavedChanges && (
-          <div className="fixed bottom-4 right-4 p-4 bg-background border border-border rounded-lg shadow-lg">
-            <p className="text-sm text-muted-foreground mb-2">
-              You have unsaved changes
-            </p>
-            <button
-              onClick={saveConfig}
-              disabled={isLoading}
-              className="text-sm text-primary hover:underline disabled:opacity-50"
-            >
-              {isLoading ? 'Saving...' : 'Save all changes'}
-            </button>
+          <div className="fixed bottom-6 right-6 p-5 bg-background border-2 border-primary rounded-xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300 z-50">
+            <div className="flex items-start gap-3">
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-foreground mb-1">
+                  💾 Unsaved Changes
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Click save to persist changes to database
+                </p>
+              </div>
+              <button
+                onClick={saveConfig}
+                disabled={isLoading}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              >
+                {isLoading ? 'Saving...' : 'Save All Changes'}
+              </button>
+            </div>
           </div>
         )}
       </div>

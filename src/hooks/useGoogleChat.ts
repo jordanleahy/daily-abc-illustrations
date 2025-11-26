@@ -195,13 +195,12 @@ export const useGoogleChat = (
             cleanedText.includes('What would you like each letter to feature?')
           ) {
             const actions: SuggestedAction[] = [
-              { id: 'around-the-mountain', label: '🏔️ Around the Mountain A-Z', value: '🏔️ Around the Mountain A-Z' },
-              { id: 'snowboarding', label: '🏂 Snowboarding A-Z', value: '🏂 Snowboarding A-Z' },
+              { id: 'mountain-village', label: '🏔️ Mountain Village A-Z', value: '🏔️ Mountain Village A-Z' },
               { id: 'animals', label: '🐾 Animals A-Z', value: '🐾 Animals A-Z' },
               { id: 'food', label: '🍎 Food & Fruits A-Z', value: '🍎 Food & Fruits A-Z' },
-              { id: 'nature', label: '🌳 Nature A-Z', value: '🌳 Nature A-Z' },
               { id: 'vehicles', label: '🚗 Things That Go A-Z', value: '🚗 Things That Go A-Z' },
               { id: 'mixed', label: '🎨 Classic Mixed Objects', value: '🎨 Classic Mixed Objects' },
+              { id: 'snowboarding', label: '🏂 Snowboarding A-Z', value: '🏂 Snowboarding A-Z' },
               { id: 'custom', label: '✏️ Custom Theme', value: '' },
             ];
 

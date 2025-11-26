@@ -82,16 +82,16 @@ const ABC_CURATED_ITEMS: Record<string, Record<string, string[]>> = {
     V: ['Volcano', 'Violin', 'Vest'], W: ['Whale', 'Watermelon', 'Watch'], X: ['Xylophone', 'X-ray'],
     Y: ['Yo-yo', 'Yak', 'Yarn'], Z: ['Zebra', 'Zipper', 'Zoo']
   },
-  'around-the-mountain': {
-    A: ['Alpine Flower', 'Altitude Sign', 'Avalanche Path'], B: ['Boulder', 'Base Camp', 'Backpack'],
-    C: ['Cliff', 'Chairlift', 'Compass'], D: ['Downhill Trail', 'Den'], E: ['Eagle', 'Echo', 'Evergreen'],
-    F: ['Forest', 'Flag', 'Footbridge'], G: ['Glacier', 'Gondola', 'Goat'], H: ['Hiking Boot', 'Hill', 'Hut'],
-    I: ['Ice', 'Icicle'], J: ['Jacket', 'Jay'], K: ['Kayak'], L: ['Lodge', 'Lake', 'Lookout'],
-    M: ['Mountain Peak', 'Marmot', 'Map'], N: ['North Face', 'Nature Trail'], O: ['Overlook', 'Outcrop'],
-    P: ['Path', 'Pine Tree', 'Peak'], Q: ['Quarry', 'Quiet Valley'], R: ['Ridge', 'Rock', 'River'],
-    S: ['Summit', 'Stream', 'Snow'], T: ['Trail', 'Tent', 'Timber'], U: ['Uphill Climb'],
-    V: ['Valley', 'Vista', 'Village'], W: ['Waterfall', 'Wildlife', 'Wind'], X: ['X-Marks-the-Spot'],
-    Y: ['Yellow Wildflower', 'Yurt'], Z: ['Zigzag Trail', 'Zone']
+  'mountain-village': {
+    A: ['Apron', 'Alpine Cottage', 'Axe'], B: ['Bakery', 'Bridge', 'Barn'],
+    C: ['Church', 'Cottage', 'Café'], D: ['Door', 'Dog', 'Dairy'], E: ['Evergreen Tree', 'Entrance Gate'],
+    F: ['Fountain', 'Fence', 'Flower Box'], G: ['Garden', 'Goat', 'Gate'], H: ['House', 'Hill', 'Horse'],
+    I: ['Inn', 'Icicle'], J: ['Jug', 'Junction'], K: ['Kitchen', 'Kettle'], L: ['Lodge', 'Ladder', 'Lantern'],
+    M: ['Mill', 'Market', 'Mountain'], N: ['Nest', 'Narrow Path'], O: ['Oven', 'Old Oak'],
+    P: ['Path', 'Post Office', 'Porch'], Q: ['Quilt', 'Quiet Square'], R: ['Roof', 'River', 'Railing'],
+    S: ['School', 'Stone Wall', 'Shop'], T: ['Tower', 'Tavern', 'Terrace'], U: ['Umbrella', 'Upstairs Window'],
+    V: ['Village Square', 'Vegetable Garden', 'Valley View'], W: ['Well', 'Window Box', 'Wheelbarrow'],
+    X: ['X-Crossing'], Y: ['Yard', 'Yellow Door'], Z: ['Zigzag Roofline', 'Zone']
   },
   'snowboarding': {
     A: ['Aerial', 'Air', 'Alley-Oop'], B: ['Board', 'Backside', 'Binding'], C: ['Carve', 'Chairlift', 'Cornice'],
@@ -279,7 +279,7 @@ serve(async (req) => {
        m.content.includes('Nature A-Z') ||
        m.content.includes('Things That Go A-Z') ||
        m.content.includes('Classic Mixed Objects') ||
-       m.content.includes('Around the Mountain A-Z') ||
+       m.content.includes('Mountain Village A-Z') ||
        m.content.includes('Snowboarding A-Z'))
     );
     
@@ -291,7 +291,7 @@ serve(async (req) => {
         'Nature A-Z': 'nature',
         'Things That Go A-Z': 'vehicles',
         'Classic Mixed Objects': 'mixed',
-        'Around the Mountain A-Z': 'around-the-mountain',
+        'Mountain Village A-Z': 'mountain-village',
         'Snowboarding A-Z': 'snowboarding'
       };
       

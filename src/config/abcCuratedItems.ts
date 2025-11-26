@@ -9,7 +9,7 @@ export type ABCThemeType =
   | 'nature'
   | 'vehicles'
   | 'mixed'
-  | 'around-the-mountain'
+  | 'mountain-village'
   | 'snowboarding';
 
 export interface LetterOptions {
@@ -162,33 +162,33 @@ export const ABC_CURATED_ITEMS: Record<ABCThemeType, LetterOptions> = {
     Z: ['Zebra', 'Zipper', 'Zoo']
   },
   
-  'around-the-mountain': {
-    A: ['Alpine Flower', 'Altitude Sign', 'Avalanche Path'],
-    B: ['Boulder', 'Base Camp', 'Backpack'],
-    C: ['Cliff', 'Chairlift', 'Compass'],
-    D: ['Downhill Trail', 'Den (animal home)'],
-    E: ['Eagle', 'Echo', 'Evergreen'],
-    F: ['Forest', 'Flag (summit)', 'Footbridge'],
-    G: ['Glacier', 'Gondola', 'Goat (mountain)'],
-    H: ['Hiking Boot', 'Hill', 'Hut'],
-    I: ['Ice', 'Icicle'],
-    J: ['Jacket', 'Jay (bird)'],
-    K: ['Kayak (mountain lake)'],
-    L: ['Lodge', 'Lake', 'Lookout'],
-    M: ['Mountain Peak', 'Marmot', 'Map'],
-    N: ['North Face', 'Nature Trail'],
-    O: ['Overlook', 'Outcrop'],
-    P: ['Path', 'Pine Tree', 'Peak'],
-    Q: ['Quarry', 'Quiet Valley'],
-    R: ['Ridge', 'Rock', 'River'],
-    S: ['Summit', 'Stream', 'Snow'],
-    T: ['Trail', 'Tent', 'Timber'],
-    U: ['Uphill Climb'],
-    V: ['Valley', 'Vista', 'Village'],
-    W: ['Waterfall', 'Wildlife', 'Wind'],
-    X: ['X-Marks-the-Spot (trail marker)'],
-    Y: ['Yellow Wildflower', 'Yurt'],
-    Z: ['Zigzag Trail', 'Zone (altitude)']
+  'mountain-village': {
+    A: ['Apron (baker\'s)', 'Alpine Cottage', 'Axe'],
+    B: ['Bakery', 'Bridge', 'Barn'],
+    C: ['Church', 'Cottage', 'Café'],
+    D: ['Door (wooden)', 'Dog (village)', 'Dairy'],
+    E: ['Evergreen Tree', 'Entrance Gate'],
+    F: ['Fountain', 'Fence', 'Flower Box'],
+    G: ['Garden', 'Goat', 'Gate'],
+    H: ['House', 'Hill', 'Horse'],
+    I: ['Inn', 'Icicle'],
+    J: ['Jug (milk)', 'Junction'],
+    K: ['Kitchen', 'Kettle'],
+    L: ['Lodge', 'Ladder', 'Lantern'],
+    M: ['Mill', 'Market', 'Mountain (backdrop)'],
+    N: ['Nest', 'Narrow Path'],
+    O: ['Oven (baker\'s)', 'Old Oak'],
+    P: ['Path (cobblestone)', 'Post Office', 'Porch'],
+    Q: ['Quilt', 'Quiet Square'],
+    R: ['Roof (tiled)', 'River', 'Railing'],
+    S: ['School', 'Stone Wall', 'Shop'],
+    T: ['Tower (church)', 'Tavern', 'Terrace'],
+    U: ['Umbrella (café)', 'Upstairs Window'],
+    V: ['Village Square', 'Vegetable Garden', 'Valley View'],
+    W: ['Well', 'Window Box', 'Wheelbarrow'],
+    X: ['X-Crossing (village crossroads)'],
+    Y: ['Yard', 'Yellow Door'],
+    Z: ['Zigzag Roofline', 'Zone (village center)']
   },
   
   'snowboarding': {

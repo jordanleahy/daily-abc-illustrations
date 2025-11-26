@@ -523,6 +523,8 @@ export function BookEditorPanel({
                   }}
                   disabled={createBookMutation.isPending}
                   className="h-full"
+                  showCopyPrompt={true}
+                  onCopyPrompt={handleCopyPrompt}
                 />
                 <Button
                   variant="secondary"

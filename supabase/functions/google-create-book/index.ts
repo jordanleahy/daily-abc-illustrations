@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
+import { extractJSON } from '../_shared/jsonExtractor.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
 import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange, BOOK_TYPE_TO_AGENT_TYPE, AgentType } from '../_shared/types.ts';
 
@@ -527,20 +528,39 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     
     console.log('Lovable AI response received, length:', content.length);
     
+    // Handle empty AI response
+    if (!content || content.trim().length === 0) {
+      console.error('Empty AI response received. Full response:', JSON.stringify(aiResponse));
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'AI returned empty response. Please try again.',
+          details: 'The AI service returned no content. This may be a temporary issue.'
+        }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
     // Clean up response - remove markdown code blocks if present
     content = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
     
     console.log('Cleaned content:', content.substring(0, 200));
 
-    // Try to parse as JSON first, fall back to markdown parsing for ABC books
+    // Try to parse as JSON first using robust extraction, fall back to markdown parsing for ABC books
     let bookData: any;
-    try {
-      bookData = JSON.parse(content);
-      console.log('Successfully parsed as JSON');
-    } catch (jsonError) {
-      console.log('JSON parse failed, attempting markdown parsing...');
+    
+    // Try extracting and parsing JSON with the robust extractor
+    const jsonResult = extractJSON(content);
+    
+    if (jsonResult.valid && jsonResult.data) {
+      bookData = jsonResult.data;
+      console.log('Successfully parsed JSON using extractor');
+    } else {
+      // JSON extraction failed, try markdown parsing
+      console.log('JSON extraction failed, attempting markdown parsing...');
+      console.log('Extraction error:', jsonResult.parseError);
       console.log('Content preview for markdown parsing:', content.substring(0, 1000));
-      // ABC agent outputs markdown format, parse it
+      
       bookData = parseMarkdownToBookStructure(content, bookType || 'abc');
       console.log('Markdown parse result:', {
         bookName: bookData.bookName,

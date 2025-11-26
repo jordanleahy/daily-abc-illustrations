@@ -42,6 +42,9 @@ const requestSchema = z.object({
  * Parse markdown format from ABC agent into JSON book structure
  */
 function parseMarkdownToBookStructure(content: string, bookType: string): any {
+  console.log('[Markdown Parser] Starting parse, content length:', content.length);
+  console.log('[Markdown Parser] First 500 chars:', content.substring(0, 500));
+  
   const result: any = {
     bookName: '',
     bookDescription: '',
@@ -51,9 +54,11 @@ function parseMarkdownToBookStructure(content: string, bookType: string): any {
 
   // Extract Cover
   const coverMatch = content.match(/\*\*Cover:\s*([^\n]+)\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|$)/i);
+  console.log('[Markdown Parser] Cover match found:', !!coverMatch);
   if (coverMatch) {
     result.bookName = coverMatch[1].trim();
     const coverPrompt = coverMatch[2].trim();
+    console.log('[Markdown Parser] Book name extracted:', result.bookName);
     result.pages.push({
       pageType: 'cover',
       pageNumber: 0,
@@ -62,11 +67,14 @@ function parseMarkdownToBookStructure(content: string, bookType: string): any {
       description: coverPrompt,
       content: { mainConcept: '', funFact: '', activity: '' }
     });
+  } else {
+    console.log('[Markdown Parser] WARNING: No cover found in content');
   }
 
   // Extract Educational Focus
   const eduFocusMatch = content.match(/\*\*Educational Focus:\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus Image:|$)/i);
   const eduImageMatch = content.match(/\*\*Educational Focus Image:\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/i);
+  console.log('[Markdown Parser] Educational focus matches:', { eduFocusMatch: !!eduFocusMatch, eduImageMatch: !!eduImageMatch });
   
   if (eduFocusMatch && eduImageMatch) {
     const eduText = eduFocusMatch[1];
@@ -86,11 +94,13 @@ function parseMarkdownToBookStructure(content: string, bookType: string): any {
         activity: skillMatch ? skillMatch[1].trim() : ''
       }
     });
+    console.log('[Markdown Parser] Educational page added');
   }
 
   // Extract content pages
   const pagePattern = /\*\*Page\s+(\d+):\s*([^\n]+)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi;
   let match: RegExpExecArray | null;
+  let pageCount = 0;
   
   while ((match = pagePattern.exec(content)) !== null) {
     const pageNum = parseInt(match[1], 10);
@@ -109,11 +119,15 @@ function parseMarkdownToBookStructure(content: string, bookType: string): any {
       description: imagePrompt,
       content: { mainConcept: '', funFact: '', activity: '' }
     });
+    pageCount++;
   }
+  
+  console.log('[Markdown Parser] Content pages extracted:', pageCount);
 
   // Generate description from book name
   result.bookDescription = `An alphabet journey from A to Z. Perfect for young learners.`;
 
+  console.log('[Markdown Parser] Parse complete - bookName:', result.bookName, ', total pages:', result.pages.length);
   return result;
 }
 
@@ -525,14 +539,28 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       console.log('Successfully parsed as JSON');
     } catch (jsonError) {
       console.log('JSON parse failed, attempting markdown parsing...');
+      console.log('Content preview for markdown parsing:', content.substring(0, 1000));
       // ABC agent outputs markdown format, parse it
       bookData = parseMarkdownToBookStructure(content, bookType || 'abc');
-      console.log('Successfully parsed as markdown, pages:', bookData.pages.length);
+      console.log('Markdown parse result:', {
+        bookName: bookData.bookName,
+        pageCount: bookData.pages?.length || 0,
+        hasPages: Array.isArray(bookData.pages)
+      });
     }
 
-    // Validate book data structure
-    if (!bookData.bookName || !bookData.pages || !Array.isArray(bookData.pages)) {
-      throw new Error('Invalid book data structure from AI response');
+    // Validate book data structure with detailed error
+    if (!bookData.bookName) {
+      console.error('Validation failed: Missing bookName');
+      throw new Error('Invalid book data: Missing book name. AI response may not match expected format.');
+    }
+    if (!bookData.pages || !Array.isArray(bookData.pages)) {
+      console.error('Validation failed: Invalid pages structure');
+      throw new Error('Invalid book data: Pages must be an array');
+    }
+    if (bookData.pages.length === 0) {
+      console.error('Validation failed: No pages found');
+      throw new Error('Invalid book data: No pages found in AI response. Check agent output format.');
     }
 
     // If this is a color book, ensure colors are extracted

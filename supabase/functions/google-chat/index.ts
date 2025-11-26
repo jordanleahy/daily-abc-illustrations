@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
-import { SPECIALIZED_CHAT_PROMPTS, DISCOVERY_PROMPT } from './specialized-chat-prompts.ts';
+import { DISCOVERY_PROMPT } from './specialized-chat-prompts.ts';
 import { UNIVERSAL_INTAKE_PROMPT } from './universal-intake-prompt.ts';
 
 interface MessageContent {
@@ -165,23 +165,21 @@ serve(async (req) => {
         console.log(`⚠️ No database agent found for ${agentType}: ${agentError.message}`);
       }
       
-      // Use database agent if available and has substantial content
-      if (agent?.instructions && agent.instructions.length > 500) {
+      // Use database agent (single source of truth)
+      if (agent?.instructions) {
         systemPromptContent = agent.instructions;
         agentSource = `Database: ${agent.name} (Specialized)`;
         console.log(`✅ Using database specialized agent: ${agent.name} (${agent.instructions.length} chars)`);
-      } else {
-        // Fallback to file-based specialized prompt
-        systemPromptContent = SPECIALIZED_CHAT_PROMPTS[bookType];
-        agentSource = `File: ${bookType} specialized prompt`;
         
-        if (systemPromptContent) {
-          console.log(`✅ Using file-based specialized prompt for ${bookType}`);
-        } else {
-          console.log(`⚠️ No specialized prompt found for ${bookType}, using discovery prompt`);
-          systemPromptContent = DISCOVERY_PROMPT;
-          agentSource = 'File: Discovery prompt (fallback)';
+        // Warn if prompt seems suspiciously short
+        if (agent.instructions.length < 500) {
+          console.warn(`⚠️ Agent prompt is suspiciously short (${agent.instructions.length} chars). This may indicate incomplete configuration.`);
         }
+      } else {
+        // No database agent found - use discovery prompt
+        console.log(`⚠️ No database agent found for ${agentType}, using discovery prompt`);
+        systemPromptContent = DISCOVERY_PROMPT;
+        agentSource = 'File: Discovery prompt (fallback)';
       }
     } else if (bookType && !intakeComplete) {
       // Book type selected but intake not complete - use universal intake prompt

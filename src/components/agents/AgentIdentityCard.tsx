@@ -172,6 +172,27 @@ Example:
 You are an expert educational assistant specializing in ABC books.
 Guide users through creating alphabet books with engaging themes..."
             />
+            
+            {/* Character counter and validation */}
+            <div className="flex items-center justify-between text-xs">
+              <div className="flex items-center gap-2">
+                {config.instructions && config.instructions.length < 500 && (
+                  <span className="text-destructive font-medium">
+                    ⚠️ Warning: Prompt too short ({config.instructions.length} chars)
+                  </span>
+                )}
+                <span className={config.instructions && config.instructions.length < 500 ? 'text-destructive' : 'text-muted-foreground'}>
+                  {config.instructions?.length || 0} characters
+                  {config.instructions && config.instructions.length >= 500 && ' ✓'}
+                </span>
+              </div>
+              {config.instructions && config.instructions.length < 500 && (
+                <span className="text-xs text-destructive">
+                  Minimum 500 characters recommended for full agent functionality
+                </span>
+              )}
+            </div>
+            
             {editingField !== 'instructions' && (
               <p className="text-xs text-muted-foreground">
                 💡 Click the prompt to edit. After editing, click the "Save all changes" button at the bottom of the page to persist to database.

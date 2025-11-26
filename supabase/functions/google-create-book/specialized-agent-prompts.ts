@@ -1,6 +1,18 @@
 /**
- * Specialized Agent Prompts for All Book Types
- * Each prompt defines type-specific rules, formats, and metadata requirements
+ * DEPRECATED: Specialized Agent Prompts for All Book Types
+ * 
+ * ⚠️ WARNING: This file is DEPRECATED and should not be used for runtime logic.
+ * 
+ * These prompts are kept as REFERENCE ONLY for initial database seeding.
+ * The single source of truth for agent prompts is now the `agents` table in the database.
+ * 
+ * To update agent prompts:
+ * 1. Navigate to /agents in the admin UI
+ * 2. Select the agent you want to modify
+ * 3. Edit the instructions in the UI
+ * 4. Save changes - they will be used immediately
+ * 
+ * Each prompt defines type-specific rules, formats, and metadata requirements.
  */
 
 import { BASE_BOOK_STRUCTURE, NUMBERS_AGENT_PROMPT, RHYMING_AGENT_PROMPT, COLORS_AGENT_PROMPT, ABC_AGENT_PROMPT } from './agent-prompts.ts';

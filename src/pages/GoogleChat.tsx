@@ -709,7 +709,8 @@ export default function GoogleChat() {
     // Send base prompt - specialized agent handles clarifying questions with [SUGGEST] blocks
     await sendMessage(bookType.prompt, undefined, messages, {
       outlineReady: shouldShowReviewButton && !createdBookId,
-      bookCreated: !!createdBookId
+      bookCreated: !!createdBookId,
+      bookType: bookType.id as BookTypeId
     });
   }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId]);
 

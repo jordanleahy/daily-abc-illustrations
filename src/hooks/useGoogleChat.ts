@@ -188,25 +188,63 @@ export const useGoogleChat = (
         const match = cleanedText.match(suggestRegex);
         const effectiveBookType = context?.bookType || bookType;
         
-        // Fallback: ABC subject-theme question must ALWAYS have buttons, even if the model forgets [SUGGEST]
-        if (!match) {
-          if (
-            effectiveBookType === 'abc' &&
-            cleanedText.includes('What would you like each letter to feature?')
-          ) {
-            const actions: SuggestedAction[] = [
-              { id: 'mountain-village', label: '🏔️ Mountain Village A-Z', value: '🏔️ Mountain Village A-Z' },
-              { id: 'animals', label: '🐾 Animals A-Z', value: '🐾 Animals A-Z' },
-              { id: 'food', label: '🍎 Food & Fruits A-Z', value: '🍎 Food & Fruits A-Z' },
-              { id: 'vehicles', label: '🚗 Things That Go A-Z', value: '🚗 Things That Go A-Z' },
-              { id: 'mixed', label: '🎨 Classic Mixed Objects', value: '🎨 Classic Mixed Objects' },
-              { id: 'snowboarding', label: '🏂 Snowboarding A-Z', value: '🏂 Snowboarding A-Z' },
-              { id: 'custom', label: '✏️ Custom Theme', value: '' },
-            ];
-
-            return { cleanContent: cleanedText, suggestedActions: actions };
+        // Fallback: ABC agent questions must ALWAYS have buttons, even if the model forgets [SUGGEST]
+        if (!match && effectiveBookType === 'abc') {
+          // Letter case fallback
+          if (cleanedText.includes('uppercase, lowercase, or mixed')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'lowercase', label: 'lowercase letters (a, b, c...)', value: 'lowercase letters' },
+                { id: 'uppercase', label: 'UPPERCASE LETTERS (A, B, C...)', value: 'UPPERCASE LETTERS' },
+                { id: 'mixed', label: 'Mixed Case (Aa, Bb, Cc...)', value: 'Mixed Case' },
+              ]
+            };
           }
-
+          
+          // Age group fallback  
+          if (cleanedText.includes('What age is this ABC book for')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: '1-2', label: '1-2 years (very simple words)', value: '1-2 years' },
+                { id: '2-3', label: '2-3 years (familiar objects)', value: '2-3 years' },
+                { id: '3-4', label: '3-4 years (expanded vocabulary)', value: '3-4 years' },
+                { id: '4-5', label: '4-5 years (more complex words)', value: '4-5 years' },
+              ]
+            };
+          }
+          
+          // Subject theme fallback
+          if (cleanedText.includes('What would you like each letter to feature?')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'mountain-village', label: '🏔️ Mountain Village A-Z', value: '🏔️ Mountain Village A-Z' },
+                { id: 'animals', label: '🐾 Animals A-Z', value: '🐾 Animals A-Z' },
+                { id: 'food', label: '🍎 Food & Fruits A-Z', value: '🍎 Food & Fruits A-Z' },
+                { id: 'vehicles', label: '🚗 Things That Go A-Z', value: '🚗 Things That Go A-Z' },
+                { id: 'mixed', label: '🎨 Classic Mixed Objects', value: '🎨 Classic Mixed Objects' },
+                { id: 'snowboarding', label: '🏂 Snowboarding A-Z', value: '🏂 Snowboarding A-Z' },
+                { id: 'custom', label: '✏️ Custom Theme', value: '' },
+              ]
+            };
+          }
+          
+          // Title approval fallback
+          if (cleanedText.includes('Looks perfect') || cleanedText.includes('Create the book')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'approve', label: '✅ Looks perfect! Create the book', value: 'Looks perfect! Create the book' },
+                { id: 'edit-title', label: '✏️ Change the title', value: 'Change the title' },
+                { id: 'edit-description', label: '📝 Update the description', value: 'Update the description' },
+              ]
+            };
+          }
+        }
+        
+        if (!match) {
           return { cleanContent: cleanedText, suggestedActions: undefined };
         }
         

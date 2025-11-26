@@ -170,6 +170,15 @@ export default function GoogleChat() {
     setSelectedBookType(bookType);
     setSelectedCharacterTheme(characterTheme);
     setShowSelectionFlow(false);
+    
+    // Immediately send initial message to start specialized agent
+    setTimeout(() => {
+      const initialMessage = "Let's get started!";
+      handleSend(initialMessage, [], {
+        bookType,
+        characterTheme
+      });
+    }, 100);
   };
   
   // Track cover page ID for post-creation uploads

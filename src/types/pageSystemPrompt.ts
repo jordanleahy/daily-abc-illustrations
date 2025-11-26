@@ -2,6 +2,21 @@
  * System prompt configuration for individual book pages
  * Contains AI instructions for generating page-specific content like image prompts
  */
+
+export interface GenerationMetadata {
+  model?: string;
+  provider?: string;
+  temperature?: number;
+  max_tokens?: number;
+  prompt_tokens?: number;
+  completion_tokens?: number;
+  total_tokens?: number;
+  generation_time_ms?: number;
+  request_id?: string;
+  error_message?: string;
+  [key: string]: unknown; // Allow additional metadata fields
+}
+
 export interface PageSystemPrompt {
   /** Unique identifier for this system prompt */
   id: string;
@@ -24,7 +39,7 @@ export interface PageSystemPrompt {
   /** How the prompt was created ('manual' | 'image_generation' | etc.) */
   source_type: string; // Allow database flexibility for new types
   /** Additional metadata about prompt generation */
-  generation_metadata: any;
+  generation_metadata: GenerationMetadata | null;
   /** Current status of the prompt ('complete' | 'processing' | 'error') */
   prompt_status?: string;
   /** ISO timestamp when the prompt was created */

@@ -4,15 +4,9 @@ import { cn } from '@/lib/utils';
 interface BottomSlideNavigationProps {
   onPrevious?: () => void;
   onNext?: () => void;
-  /** @deprecated Use onNext instead */
-  onSlide?: () => void;
   disablePrevious?: boolean;
   disableNext?: boolean;
-  /** @deprecated Use disableNext instead */
-  disabled?: boolean;
   variant?: 'compact' | 'normal' | 'wide' | 'inline';
-  /** @deprecated Not used in arrow navigation */
-  slideText?: string;
   className?: string;
   show?: boolean;
 }
@@ -55,12 +49,9 @@ interface BottomSlideNavigationProps {
 export function BottomSlideNavigation({
   onPrevious,
   onNext,
-  onSlide, // Backward compatibility
   disablePrevious = false,
   disableNext = false,
-  disabled = false, // Backward compatibility
   variant = 'normal',
-  slideText, // Ignored in arrow navigation
   className,
   show = true
 }: BottomSlideNavigationProps) {
@@ -68,10 +59,6 @@ export function BottomSlideNavigation({
   if (!show) {
     return null;
   }
-
-  // Backward compatibility: onSlide maps to onNext
-  const handleNext = onNext || onSlide;
-  const isNextDisabled = disableNext || disabled;
 
   // Determine positioning and padding based on variant
   const isFixed = variant !== 'inline';
@@ -95,9 +82,9 @@ export function BottomSlideNavigation({
       <div className={containerClasses}>
         <ArrowNavigation 
           onPrevious={onPrevious}
-          onNext={handleNext}
+          onNext={onNext}
           disablePrevious={disablePrevious}
-          disableNext={isNextDisabled}
+          disableNext={disableNext}
           className="w-full"
         />
       </div>

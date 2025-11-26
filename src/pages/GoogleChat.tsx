@@ -781,11 +781,12 @@ export default function GoogleChat() {
         .eq('id', result.bookId)
         .single();
       
-      // Update session name with book title
+      // Update session name with book title (silent to avoid duplicate toast)
       if (bookData && !bookError) {
         await updateSessionName({
           sessionId: currentSessionId,
-          name: bookData.book_name
+          name: bookData.book_name,
+          silent: true
         });
       }
       

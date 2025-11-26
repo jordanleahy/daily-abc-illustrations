@@ -25,6 +25,103 @@ interface Message {
   content: string | MessageContent[];
 }
 
+// Curated ABC items for themed books
+const ABC_CURATED_ITEMS: Record<string, Record<string, string[]>> = {
+  'animals': {
+    A: ['Alligator', 'Ant', 'Anteater'], B: ['Bear', 'Butterfly', 'Bee'], C: ['Cat', 'Cow', 'Caterpillar'],
+    D: ['Dog', 'Duck', 'Dolphin'], E: ['Elephant', 'Eagle', 'Emu'], F: ['Fox', 'Frog', 'Fish'],
+    G: ['Giraffe', 'Gorilla', 'Goat'], H: ['Horse', 'Hippo', 'Hedgehog'], I: ['Iguana', 'Ibis'],
+    J: ['Jaguar', 'Jellyfish'], K: ['Kangaroo', 'Koala', 'Kiwi'], L: ['Lion', 'Llama', 'Leopard'],
+    M: ['Monkey', 'Mouse', 'Moose'], N: ['Newt', 'Narwhal'], O: ['Owl', 'Octopus', 'Otter'],
+    P: ['Penguin', 'Pig', 'Panda'], Q: ['Quail', 'Queen Bee'], R: ['Rabbit', 'Raccoon', 'Rhinoceros'],
+    S: ['Snake', 'Squirrel', 'Seal'], T: ['Tiger', 'Turtle', 'Turkey'], U: ['Urchin', 'Umbrellabird'],
+    V: ['Vulture', 'Viper'], W: ['Wolf', 'Whale', 'Walrus'], X: ['X-ray Fish', 'Xenops'],
+    Y: ['Yak', 'Yellow Jacket'], Z: ['Zebra', 'Zebu']
+  },
+  'food': {
+    A: ['Apple', 'Avocado', 'Apricot'], B: ['Banana', 'Bread', 'Broccoli'], C: ['Carrot', 'Cookie', 'Corn'],
+    D: ['Donut', 'Date', 'Dragon Fruit'], E: ['Egg', 'Eggplant'], F: ['Fish', 'Fries', 'Fig'],
+    G: ['Grapes', 'Grapefruit', 'Guava'], H: ['Hot Dog', 'Honey', 'Ham'], I: ['Ice Cream', 'Ice Pop'],
+    J: ['Juice', 'Jam', 'Jellybean'], K: ['Kiwi', 'Kale'], L: ['Lemon', 'Lettuce', 'Lollipop'],
+    M: ['Milk', 'Muffin', 'Mango'], N: ['Noodles', 'Nut', 'Nectarine'], O: ['Orange', 'Olive', 'Oatmeal'],
+    P: ['Pizza', 'Pear', 'Popcorn'], Q: ['Quiche', 'Quinoa'], R: ['Rice', 'Raisin', 'Radish'],
+    S: ['Strawberry', 'Sandwich', 'Soup'], T: ['Tomato', 'Toast', 'Taco'], U: ['Udon', 'Upside-down Cake'],
+    V: ['Vegetable', 'Vanilla'], W: ['Watermelon', 'Waffle', 'Walnut'], X: ['Xigua'],
+    Y: ['Yogurt', 'Yam'], Z: ['Zucchini', 'Ziti']
+  },
+  'nature': {
+    A: ['Acorn', 'Acacia Tree'], B: ['Butterfly', 'Branch', 'Brook'], C: ['Cloud', 'Creek', 'Clover'],
+    D: ['Dandelion', 'Dew', 'Daisy'], E: ['Earth', 'Evergreen'], F: ['Flower', 'Fern', 'Forest'],
+    G: ['Grass', 'Garden', 'Grove'], H: ['Hill', 'Honeybee', 'Hive'], I: ['Ivy', 'Island'],
+    J: ['Jungle', 'Jay'], K: ['Kelp', 'Kite'], L: ['Leaf', 'Lake', 'Lightning'],
+    M: ['Mountain', 'Moon', 'Meadow'], N: ['Nest', 'Night Sky'], O: ['Ocean', 'Oak Tree', 'Orchid'],
+    P: ['Pine Tree', 'Pebble', 'Pond'], Q: ['Quartz', 'Quiet Stream'], R: ['River', 'Rock', 'Rainbow'],
+    S: ['Sun', 'Stone', 'Stream'], T: ['Tree', 'Thunder', 'Tide'], U: ['Umbrella Leaf'],
+    V: ['Valley', 'Vine', 'Volcano'], W: ['Waterfall', 'Wind', 'Willow'], X: ['Xerophyte'],
+    Y: ['Yew Tree', 'Yellow Flower'], Z: ['Zinnia', 'Zen Garden']
+  },
+  'vehicles': {
+    A: ['Airplane', 'Ambulance', 'ATV'], B: ['Bus', 'Boat', 'Bicycle'], C: ['Car', 'Crane', 'Cement Truck'],
+    D: ['Dump Truck', 'Digger'], E: ['Excavator', 'Engine'], F: ['Fire Truck', 'Ferry', 'Fork Lift'],
+    G: ['Garbage Truck', 'Go-Kart'], H: ['Helicopter', 'Hot Air Balloon', 'Hovercraft'], I: ['Ice Cream Truck'],
+    J: ['Jet', 'Jeep'], K: ['Kayak', 'Kite'], L: ['Limousine', 'Loader'],
+    M: ['Motorcycle', 'Monster Truck'], N: ['NASCAR', 'Navy Ship'], O: ['Oil Tanker'],
+    P: ['Police Car', 'Plane', 'Pickup Truck'], Q: ['Quad Bike'], R: ['Race Car', 'Rocket', 'Rowboat'],
+    S: ['Submarine', 'Scooter', 'Sailboat'], T: ['Train', 'Tractor', 'Taxi'], U: ['Unicycle', 'Utility Truck'],
+    V: ['Van', 'Vespa'], W: ['Wagon', 'Water Ski'], X: ['X-15'], Y: ['Yacht', 'Yellow Bus'],
+    Z: ['Zamboni', 'Zeppelin']
+  },
+  'mixed': {
+    A: ['Apple', 'Alligator', 'Airplane'], B: ['Ball', 'Bear', 'Boat'], C: ['Cat', 'Car', 'Cookie'],
+    D: ['Dog', 'Drum', 'Door'], E: ['Elephant', 'Egg', 'Ear'], F: ['Fish', 'Flower', 'Fire Truck'],
+    G: ['Goat', 'Grapes', 'Guitar'], H: ['Horse', 'Hat', 'House'], I: ['Ice Cream', 'Iguana', 'Igloo'],
+    J: ['Jump Rope', 'Jellyfish', 'Juice'], K: ['Kite', 'Kangaroo', 'Key'], L: ['Lion', 'Leaf', 'Lemon'],
+    M: ['Moon', 'Monkey', 'Milk'], N: ['Nest', 'Nose', 'Nut'], O: ['Octopus', 'Orange', 'Owl'],
+    P: ['Pig', 'Pizza', 'Penguin'], Q: ['Queen', 'Quilt', 'Question Mark'], R: ['Rainbow', 'Rabbit', 'Ring'],
+    S: ['Sun', 'Snake', 'Star'], T: ['Tiger', 'Tree', 'Turtle'], U: ['Umbrella', 'Unicorn'],
+    V: ['Volcano', 'Violin', 'Vest'], W: ['Whale', 'Watermelon', 'Watch'], X: ['Xylophone', 'X-ray'],
+    Y: ['Yo-yo', 'Yak', 'Yarn'], Z: ['Zebra', 'Zipper', 'Zoo']
+  },
+  'around-the-mountain': {
+    A: ['Alpine Flower', 'Altitude Sign', 'Avalanche Path'], B: ['Boulder', 'Base Camp', 'Backpack'],
+    C: ['Cliff', 'Chairlift', 'Compass'], D: ['Downhill Trail', 'Den'], E: ['Eagle', 'Echo', 'Evergreen'],
+    F: ['Forest', 'Flag', 'Footbridge'], G: ['Glacier', 'Gondola', 'Goat'], H: ['Hiking Boot', 'Hill', 'Hut'],
+    I: ['Ice', 'Icicle'], J: ['Jacket', 'Jay'], K: ['Kayak'], L: ['Lodge', 'Lake', 'Lookout'],
+    M: ['Mountain Peak', 'Marmot', 'Map'], N: ['North Face', 'Nature Trail'], O: ['Overlook', 'Outcrop'],
+    P: ['Path', 'Pine Tree', 'Peak'], Q: ['Quarry', 'Quiet Valley'], R: ['Ridge', 'Rock', 'River'],
+    S: ['Summit', 'Stream', 'Snow'], T: ['Trail', 'Tent', 'Timber'], U: ['Uphill Climb'],
+    V: ['Valley', 'Vista', 'Village'], W: ['Waterfall', 'Wildlife', 'Wind'], X: ['X-Marks-the-Spot'],
+    Y: ['Yellow Wildflower', 'Yurt'], Z: ['Zigzag Trail', 'Zone']
+  },
+  'snowboarding': {
+    A: ['Aerial', 'Air', 'Alley-Oop'], B: ['Board', 'Backside', 'Binding'], C: ['Carve', 'Chairlift', 'Cornice'],
+    D: ['Drop', 'Deck', 'Downhill'], E: ['Edge', 'Eject'], F: ['Freestyle', 'Fakie', 'Fifty-Fifty'],
+    G: ['Grab', 'Goofy', 'Grind'], H: ['Halfpipe', 'Heel Edge', 'High Five'], I: ['Indy Grab', 'Invert'],
+    J: ['Jump', 'Jib', 'Japan Grab'], K: ['Kicker', 'Knuckle'], L: ['Landing', 'Lift', 'Lip'],
+    M: ['Method', 'Mute Grab', 'Mountain'], N: ['Nose Grab', 'Nollie'], O: ['Ollie', 'Off-Axis'],
+    P: ['Park', 'Powder', 'Pipe'], Q: ['Quarter Pipe'], R: ['Rail', 'Run', 'Regular'],
+    S: ['Slope', 'Spin', 'Stomp'], T: ['Terrain Park', 'Toe Edge', 'Tail'], U: ['Underflip', 'Uphill'],
+    V: ['Vert', 'Vitelli Flip'], W: ['Wipe Out', 'Wildcat', 'Wall Ride'], X: ['X-Games'],
+    Y: ['Yard Sale', 'Yawning'], Z: ['Zeach', 'Zone']
+  }
+};
+
+function getCuratedItemsList(themeKey: string): string {
+  const items = ABC_CURATED_ITEMS[themeKey];
+  if (!items) return '';
+  return Object.entries(items)
+    .map(([letter, options]) => `${letter}: ${options.join(' / ')}`)
+    .join('\n');
+}
+
+    const themeContext = characterTheme
+      ? characterTheme === 'custom'
+        ? `\n\n🎨 CUSTOM THEME REQUESTED:\nThe user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.`
+        : characterTheme === 'no-theme'
+        ? `\n\n📚 NO THEME SELECTED:\nThe user prefers an educational-only book without character themes. Skip the theme discovery question. Focus purely on educational content with classic, simple illustrations. Do NOT integrate any character themes.`
+        : `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. Skip the theme discovery question and integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
+      : '';
+
 // Optional parser for AI suggestions
 function parseSuggestions(aiResponse: string): { 
   cleanContent: string; 
@@ -173,6 +270,41 @@ serve(async (req) => {
       : '';
 
     // Handle theme context if already provided
+    // ABC-specific curated items context (if subject theme is selected via conversation metadata)
+    const subjectTheme = messages.find(m => 
+      m.role === 'user' && 
+      typeof m.content === 'string' && 
+      (m.content.includes('Animals A-Z') || 
+       m.content.includes('Food & Fruits A-Z') ||
+       m.content.includes('Nature A-Z') ||
+       m.content.includes('Things That Go A-Z') ||
+       m.content.includes('Classic Mixed Objects') ||
+       m.content.includes('Around the Mountain A-Z') ||
+       m.content.includes('Snowboarding A-Z'))
+    );
+    
+    let curatedItemsContext = '';
+    if (bookType === 'abc' && subjectTheme) {
+      const themeMapping: Record<string, string> = {
+        'Animals A-Z': 'animals',
+        'Food & Fruits A-Z': 'food',
+        'Nature A-Z': 'nature',
+        'Things That Go A-Z': 'vehicles',
+        'Classic Mixed Objects': 'mixed',
+        'Around the Mountain A-Z': 'around-the-mountain',
+        'Snowboarding A-Z': 'snowboarding'
+      };
+      
+      const matchedTheme = Object.keys(themeMapping).find(key => 
+        typeof subjectTheme.content === 'string' && subjectTheme.content.includes(key)
+      );
+      
+      if (matchedTheme) {
+        const themeKey = themeMapping[matchedTheme];
+        curatedItemsContext = `\n\n📋 CURATED ITEMS REFERENCE (Select from these options):\n${getCuratedItemsList(themeKey)}`;
+      }
+    }
+
     const themeContext = characterTheme
       ? characterTheme === 'custom'
         ? `\n\n🎨 CUSTOM THEME REQUESTED:\nThe user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.`
@@ -190,7 +322,7 @@ serve(async (req) => {
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + ageContext + themeContext + conversationStageContext,
+      content: systemPromptContent + ageContext + curatedItemsContext + themeContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

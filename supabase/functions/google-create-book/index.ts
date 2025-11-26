@@ -262,9 +262,6 @@ CRITICAL: Maintain consistent visual style, character appearance (if applicable)
     
     console.log(`[Prompt Validation] ✓ Agent prompt validated (${systemPrompt.length} chars)`);
     console.log(`[Agent Source] ${promptSource}`);
-        promptSource = 'database-short';
-      }
-    }
     
     console.log('[Orchestration] Agent selected:', {
       agentId: selectedAgent.id,

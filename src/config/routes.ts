@@ -183,8 +183,7 @@ export const navigationConfig: RouteConfig[] = [
     path: ROUTES.VIDEOS,
     name: 'Videos',
     icon: Video,
-    group: 'admin',
-    permission: { role: 'admin' },
+    group: 'main',
     activeMatch: { exact: true },
   },
 ];

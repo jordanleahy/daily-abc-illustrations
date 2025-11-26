@@ -186,8 +186,30 @@ export const useGoogleChat = (
         
         const suggestRegex = /\[SUGGEST\]([\s\S]*?)\[\/SUGGEST\]/;
         const match = cleanedText.match(suggestRegex);
+        const effectiveBookType = context?.bookType || bookType;
         
-        if (!match) return { cleanContent: cleanedText, suggestedActions: undefined };
+        // Fallback: ABC subject-theme question must ALWAYS have buttons, even if the model forgets [SUGGEST]
+        if (!match) {
+          if (
+            effectiveBookType === 'abc' &&
+            cleanedText.includes('What would you like each letter to feature?')
+          ) {
+            const actions: SuggestedAction[] = [
+              { id: 'around-the-mountain', label: '🏔️ Around the Mountain A-Z', value: '🏔️ Around the Mountain A-Z' },
+              { id: 'snowboarding', label: '🏂 Snowboarding A-Z', value: '🏂 Snowboarding A-Z' },
+              { id: 'animals', label: '🐾 Animals A-Z', value: '🐾 Animals A-Z' },
+              { id: 'food', label: '🍎 Food & Fruits A-Z', value: '🍎 Food & Fruits A-Z' },
+              { id: 'nature', label: '🌳 Nature A-Z', value: '🌳 Nature A-Z' },
+              { id: 'vehicles', label: '🚗 Things That Go A-Z', value: '🚗 Things That Go A-Z' },
+              { id: 'mixed', label: '🎨 Classic Mixed Objects', value: '🎨 Classic Mixed Objects' },
+              { id: 'custom', label: '✏️ Custom Theme', value: '' },
+            ];
+
+            return { cleanContent: cleanedText, suggestedActions: actions };
+          }
+
+          return { cleanContent: cleanedText, suggestedActions: undefined };
+        }
         
         const suggestionsText = match[1].trim();
         const cleanContent = cleanedText.replace(suggestRegex, '').trim();
@@ -208,7 +230,6 @@ export const useGoogleChat = (
         
         return { cleanContent, suggestedActions: actions.length > 0 ? actions : undefined };
       };
-
       const { cleanContent, suggestedActions: finalActions } = parseSuggestions(fullContent);
 
       // Final update with clean content and suggestions

@@ -702,6 +702,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         book_id: book.id,
         page_type: pageType,
         letter: sanitizeText(page.letter || `Page ${actualPageNumber}`, 10),
+        page_identifier: sanitizeText(page.letter || `Page ${actualPageNumber}`, 50),
         page_number: actualPageNumber,
         title: sanitizeText(page.title, 100),
         description: sanitizeText(page.description || '', 500),

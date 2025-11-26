@@ -991,7 +991,7 @@ export default function GoogleChat() {
         .map(m => m.content)
         .join('\n');
       
-      // Extract cover prompt
+      // Extract cover prompt with improved regex and fallback
       const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
       if (coverMatch) {
         let coverPrompt = coverMatch[0];
@@ -1010,32 +1010,47 @@ export default function GoogleChat() {
         }
         
         fullPrompts[1] = coverPrompt;
-        console.log('[Prompt Storage] Cover prompt length:', coverPrompt.length);
+        console.log('[Prompt Storage] Cover prompt extracted and stored (length:', coverPrompt.length, ')');
+      } else {
+        console.warn('[Prompt Storage] Cover prompt NOT found in conversation - regex did not match');
+        console.log('[Prompt Storage Debug] Conversation text preview:', conversationText.substring(0, 500));
       }
       
       // Extract educational focus prompt
       const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
       if (eduMatch) {
         fullPrompts[2] = eduMatch[0];
-        console.log('[Prompt Storage] Educational focus prompt length:', eduMatch[0].length);
+        console.log('[Prompt Storage] Educational focus prompt extracted and stored (length:', eduMatch[0].length, ')');
+      } else {
+        console.warn('[Prompt Storage] Educational focus prompt NOT found - regex did not match');
       }
       
       // Extract numbered page prompts
       const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi);
+      let pageMatchCount = 0;
       for (const match of pageMatches) {
         const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
         fullPrompts[pageNum] = match[0];
-        console.log(`[Prompt Storage] Page ${pageNum} prompt length:`, match[0].length);
+        pageMatchCount++;
+        console.log(`[Prompt Storage] Page ${pageNum} prompt extracted and stored (length: ${match[0].length})`);
+      }
+      
+      if (pageMatchCount === 0) {
+        console.warn('[Prompt Storage] No numbered page prompts found - regex did not match any pages');
       }
       
       // Store prompts in session for later use
       if (currentSessionId && Object.keys(fullPrompts).length > 0) {
-        console.log('[Prompt Storage] Storing', Object.keys(fullPrompts).length, 'prompts');
+        console.log('[Prompt Storage] Successfully extracted and storing', Object.keys(fullPrompts).length, 'total prompts:', Object.keys(fullPrompts).map(k => `Page ${k}`).join(', '));
         await updateQAPagePrompts({ 
           sessionId: currentSessionId, 
           qaPagePrompts: fullPrompts 
         });
         setEditorPagePrompts(fullPrompts);
+      } else {
+        console.error('[Prompt Storage] FAILED to extract any prompts from conversation. Check regex patterns.');
+        console.log('[Prompt Storage Debug] Full conversation text length:', conversationText.length);
+        console.log('[Prompt Storage Debug] First 1000 chars:', conversationText.substring(0, 1000));
       }
     } else {
       // Load existing prompts

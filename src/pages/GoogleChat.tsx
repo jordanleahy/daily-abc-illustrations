@@ -166,17 +166,19 @@ export default function GoogleChat() {
   const [selectedCharacterTheme, setSelectedCharacterTheme] = useState<CharacterThemeValue | null>(null);
   
   // Handle selection flow completion
-  const handleSelectionComplete = (bookType: BookTypeId, characterTheme: CharacterThemeValue) => {
+  const handleSelectionComplete = async (bookType: BookTypeId, characterTheme: CharacterThemeValue) => {
     setSelectedBookType(bookType);
     setSelectedCharacterTheme(characterTheme);
     setShowSelectionFlow(false);
     
     // Immediately send initial message to start specialized agent
-    setTimeout(() => {
+    setTimeout(async () => {
       const initialMessage = "Let's get started!";
-      handleSend(initialMessage, [], {
+      await sendMessage(initialMessage, undefined, messages, {
+        characterTheme,
         bookType,
-        characterTheme
+        outlineReady: false,
+        bookCreated: false
       });
     }, 100);
   };

@@ -38,6 +38,85 @@ const requestSchema = z.object({
   }).optional()
 });
 
+/**
+ * Parse markdown format from ABC agent into JSON book structure
+ */
+function parseMarkdownToBookStructure(content: string, bookType: string): any {
+  const result: any = {
+    bookName: '',
+    bookDescription: '',
+    pages: [],
+    metadata: { bookType }
+  };
+
+  // Extract Cover
+  const coverMatch = content.match(/\*\*Cover:\s*([^\n]+)\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|$)/i);
+  if (coverMatch) {
+    result.bookName = coverMatch[1].trim();
+    const coverPrompt = coverMatch[2].trim();
+    result.pages.push({
+      pageType: 'cover',
+      pageNumber: 0,
+      letter: '',
+      title: result.bookName,
+      description: coverPrompt,
+      content: { mainConcept: '', funFact: '', activity: '' }
+    });
+  }
+
+  // Extract Educational Focus
+  const eduFocusMatch = content.match(/\*\*Educational Focus:\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus Image:|$)/i);
+  const eduImageMatch = content.match(/\*\*Educational Focus Image:\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/i);
+  
+  if (eduFocusMatch && eduImageMatch) {
+    const eduText = eduFocusMatch[1];
+    const ageMatch = eduText.match(/Target Age:\s*([^\n]+)/i);
+    const typeMatch = eduText.match(/Learning Type:\s*([^\n]+)/i);
+    const skillMatch = eduText.match(/Specific Skill:\s*([^\n]+)/i);
+    
+    result.pages.push({
+      pageType: 'educational',
+      pageNumber: 1,
+      letter: '',
+      title: 'Educational Focus',
+      description: eduImageMatch[1].trim(),
+      content: {
+        mainConcept: ageMatch ? ageMatch[1].trim() : '',
+        funFact: typeMatch ? typeMatch[1].trim() : '',
+        activity: skillMatch ? skillMatch[1].trim() : ''
+      }
+    });
+  }
+
+  // Extract content pages
+  const pagePattern = /\*\*Page\s+(\d+):\s*([^\n]+)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi;
+  let match: RegExpExecArray | null;
+  
+  while ((match = pagePattern.exec(content)) !== null) {
+    const pageNum = parseInt(match[1], 10);
+    const title = match[2].trim();
+    const imagePrompt = match[3].trim();
+    
+    // Extract letter from title (e.g., "(a) is for apple" -> "a")
+    const letterMatch = title.match(/\(([a-z])\)/i);
+    const letter = letterMatch ? letterMatch[1].toLowerCase() : '';
+    
+    result.pages.push({
+      pageType: 'content',
+      pageNumber: pageNum + 1, // +1 because educational focus is page 1
+      letter: letter,
+      title: title,
+      description: imagePrompt,
+      content: { mainConcept: '', funFact: '', activity: '' }
+    });
+  }
+
+  // Generate description from book name
+  result.bookDescription = `An alphabet journey from A to Z. Perfect for young learners.`;
+
+  return result;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -439,8 +518,17 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     
     console.log('Cleaned content:', content.substring(0, 200));
 
-    // Parse JSON
-    const bookData = JSON.parse(content);
+    // Try to parse as JSON first, fall back to markdown parsing for ABC books
+    let bookData: any;
+    try {
+      bookData = JSON.parse(content);
+      console.log('Successfully parsed as JSON');
+    } catch (jsonError) {
+      console.log('JSON parse failed, attempting markdown parsing...');
+      // ABC agent outputs markdown format, parse it
+      bookData = parseMarkdownToBookStructure(content, bookType || 'abc');
+      console.log('Successfully parsed as markdown, pages:', bookData.pages.length);
+    }
 
     // Validate book data structure
     if (!bookData.bookName || !bookData.pages || !Array.isArray(bookData.pages)) {

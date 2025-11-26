@@ -187,23 +187,10 @@ serve(async (req) => {
       ? '\n\n📖 BOOK CREATED: The book has been successfully created in the database. User can now review pages, generate images, or make edits.'
       : '\n\n🎯 DISCOVERY PHASE: Guide the user through the book creation conversation to gather all requirements for generating a complete outline.';
 
-    // Fetch user's custom style templates for context
-    const { data: styleTemplates } = await supabase
-      .from('books')
-      .select('id, book_name, style_name')
-      .eq('user_id', user.id)
-      .eq('is_style_template', true)
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    const styleContext = styleTemplates && styleTemplates.length > 0
-      ? `\n\n📚 AVAILABLE STYLE TEMPLATES:\n${styleTemplates.map((t: any) => `- "${t.style_name || t.book_name}" (ID: ${t.id})`).join('\n')}\nYou can reference these when suggesting illustration styles.`
-      : '';
-
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + ageContext + themeContext + conversationStageContext + styleContext,
+      content: systemPromptContent + ageContext + themeContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
@@ -211,18 +198,8 @@ serve(async (req) => {
     console.log(`📊 Conversation stage: ${outlineReady ? 'Outline Ready' : bookCreated ? 'Book Created' : 'Discovery'}`);
     console.log(`👶 Kid age provided: ${kidAge ? `${kidAge.years}y ${kidAge.months}m` : 'No'}`);
     console.log(`🎨 Character theme: ${characterTheme || 'None'}`);
-    console.log(`🎨 Style templates available: ${styleTemplates?.length || 0}`);
 
-    // Format messages for Gemini (handles both text and multimodal content)
-    const formattedMessages = messages.map(msg => {
-      // If content is already an array (multimodal), return as-is
-      if (Array.isArray(msg.content)) {
-        return msg;
-      }
-      return msg;
-    });
-
-    const allMessages = [systemMessage, ...formattedMessages];
+    const allMessages = [systemMessage, ...messages];
 
     console.log('Calling Lovable AI with', allMessages.length, 'messages');
 
@@ -234,7 +211,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-3-pro-preview',
+        model: 'google/gemini-2.5-flash',
         messages: allMessages,
         stream: true,
       }),

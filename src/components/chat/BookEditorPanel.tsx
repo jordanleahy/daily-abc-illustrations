@@ -76,9 +76,16 @@ export function BookEditorPanel({
   bookStatus = PublicationStatus.DRAFT,
 }: BookEditorPanelProps) {
   const navigate = useNavigate();
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isEditingText, setIsEditingText] = useState(false);
+  const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
+  const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
+  const [isReplacing, setIsReplacing] = useState(false);
+  const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
+  const [hasRunQaAgent, setHasRunQaAgent] = useState(false);
   
-  // Derive hasClickedCopy from whether prompt exists for current page
-  const hasClickedCopy = !!editorPagePrompts[currentPageNumber];
+  // Derive hasClickedCopy from whether prompt exists for current page OR page was copied
+  const hasClickedCopy = !!editorPagePrompts[currentPageNumber] || copiedPages.has(currentPageNumber);
   
   // Handle close with context-aware navigation
   const handleClose = () => {
@@ -90,14 +97,7 @@ export function BookEditorPanel({
       onClose();
     }
   };
-  const [showConfirmation, setShowConfirmation] = useState(false);
-  const [isEditingText, setIsEditingText] = useState(false);
-  const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
-  const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
-  const [isReplacing, setIsReplacing] = useState(false);
   
-  const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
-  const [hasRunQaAgent, setHasRunQaAgent] = useState(false);
   const { generateMetadata, isGenerating } = useWordMetadata();
   const { isOverlayHidden, toggleOverlay, isToggling, isLoading: isPreferencesLoading } = useReadingPreferences();
   const { user } = useAuthContext();

@@ -125,6 +125,22 @@ CRITICAL ABC-SPECIFIC RULES:
 5. Each page should clearly show the letter and an object starting with that letter
 6. Use simple, recognizable objects that children know
 
+SUBJECT THEME DISCOVERY:
+After gathering letter case preference, ask: "What would you like each letter to feature?"
+
+[SUGGEST]
+🏔️ Around the Mountain - Mountain adventures and outdoor activities
+🏂 Snowboarding - Snowboard tricks, gear, and mountain culture
+🐾 Animals A-Z - Animal friends from different habitats
+🍎 Food & Fruits A-Z - Yummy foods kids love to eat
+🌳 Nature A-Z - Trees, flowers, weather, and natural wonders
+🚗 Things That Go A-Z - Vehicles, transportation, and machines
+🎨 Classic Mixed Objects - Traditional alphabet with varied everyday items
+✏️ Custom Theme - Tell me your own theme idea!
+[/SUGGEST]
+
+Extract the chosen subject theme and integrate it throughout all 26 pages for cohesive, themed content.
+
 LETTER CASE HANDLING:
 - Extract letterCase preference from conversation
 - Apply consistently across all 26 pages
@@ -141,9 +157,11 @@ OBJECT SELECTION:
 - Avoid obscure words (not "xylophone" for X unless absolutely necessary)
 - Use objects from children's daily lives
 - One clear object per letter
+- IMPORTANT: Match objects to chosen subject theme consistently
 
 METADATA REQUIREMENTS:
 - Include letterCase ("lowercase", "uppercase", or "both")
+- Include subjectTheme (e.g., "around-the-mountain", "snowboarding", "animals", "food", "nature", "vehicles", "mixed", "custom")
 - pageCount must equal 28 (cover + educational + 26 letters)
 - bookType must be "abc"
 

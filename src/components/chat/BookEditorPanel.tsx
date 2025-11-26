@@ -308,6 +308,21 @@ export function BookEditorPanel({
   // Handle copy with confirmation and delayed transition
   const handleCopyPrompt = async () => {
     const prompt = getCurrentPagePrompt(currentPageNumber);
+    
+    // Add user feedback when no prompt is found
+    if (!prompt) {
+      console.error(`[Copy Prompt] No prompt available for page ${currentPageNumber}`);
+      const { toast } = await import("@/hooks/use-toast");
+      toast({
+        title: "No prompt available",
+        description: `The image prompt for page ${currentPageNumber} hasn't been generated yet. Please wait for the AI to finish creating the outline.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    console.log(`[Copy Prompt] Copying prompt for page ${currentPageNumber}, length: ${prompt.length}`);
+    
     if (prompt) {
       try {
         // Run QA Theme Agent on first copy if book is created

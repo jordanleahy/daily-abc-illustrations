@@ -19,6 +19,7 @@ import { BookEditorPanel } from '@/components/chat/BookEditorPanel';
 import { MessageList } from '@/components/chat/MessageList';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { InputArea } from '@/components/chat/InputArea';
+import { BookTypeSelectionFlow } from '@/components/chat/BookTypeSelectionFlow';
 import { parsePageDetailsFromMessages, parseEducationalFocus, getBookMetadata } from '@/utils/chatHelpers';
 import { BOOK_TYPES } from '@/config/bookTypes';
 import { supabase } from '@/integrations/supabase/client';
@@ -47,6 +48,7 @@ export default function GoogleChat() {
   const [selectedBookType, setSelectedBookType] = useState<BookTypeId | null>(null);
   const [selectedAgeRange, setSelectedAgeRange] = useState<AgeRangeId | null>(null);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
+  const [showSelectionFlow, setShowSelectionFlow] = useState(true);
   
   // Get kid profiles
   const { data: kidProfiles = [] } = useKidProfiles();
@@ -162,6 +164,13 @@ export default function GoogleChat() {
   
   // Track selected character theme from user suggestions
   const [selectedCharacterTheme, setSelectedCharacterTheme] = useState<CharacterThemeValue | null>(null);
+  
+  // Handle selection flow completion
+  const handleSelectionComplete = (bookType: BookTypeId, characterTheme: CharacterThemeValue) => {
+    setSelectedBookType(bookType);
+    setSelectedCharacterTheme(characterTheme);
+    setShowSelectionFlow(false);
+  };
   
   // Track cover page ID for post-creation uploads
   const [coverPageId, setCoverPageId] = useState<string | null>(null);

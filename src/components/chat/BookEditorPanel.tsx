@@ -297,11 +297,28 @@ export function BookEditorPanel({
     );
   };
 
-  // Helper function to strip title headers from prompts before copying
+  // Helper function to extract only the image prompt content, removing instructional sections
   const stripTitleFromPrompt = (prompt: string): string => {
-    // Remove title patterns: **Page N: Title**, **Cover: Title**, **Educational Focus: Title**, etc.
+    // First, try to extract content after "**Image Prompt:**" marker
+    const imagePromptMatch = prompt.match(/\*\*Image Prompt:\*\*\s*([\s\S]*?)(?=\n\*\*|$)/i);
+    if (imagePromptMatch && imagePromptMatch[1].trim()) {
+      return imagePromptMatch[1].trim();
+    }
+    
+    // Fallback: Remove all instructional sections if no explicit Image Prompt marker
     return prompt
-      .replace(/^\*\*(?:Page\s+\d+|Cover|Educational Focus):[^\n*]*\*\*\s*/i, '')
+      // Remove title headers: **Page N: Title**, **Cover: Title**, etc.
+      .replace(/^\*\*(?:Page\s+\d+|Cover|Educational Focus):[^\n*]*\*\*\s*/gi, '')
+      // Remove character section: **Paw Patrol Character(s):** ...
+      .replace(/\*\*(?:Paw Patrol |Disney |Frozen |Peppa Pig |Bluey |Cocomelon |Moana |Mickey Mouse |Mario |Sesame Street |)Character\(?s?\)?:\*\*[^\n]*\n?/gi, '')
+      // Remove educational content section
+      .replace(/\*\*Educational Content:\*\*[\s\S]*?(?=\n\*\*|$)/gi, '')
+      // Remove activity section  
+      .replace(/\*\*Activity:\*\*[\s\S]*?(?=\n\*\*|$)/gi, '')
+      // Remove "Image Prompt:" label if present but keep the content
+      .replace(/\*\*Image Prompt:\*\*\s*/gi, '')
+      // Clean up bullet points and extra whitespace
+      .replace(/^\s*\*\s+/gm, '')
       .trim();
   };
 

@@ -32,6 +32,7 @@ export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: Messa
   if (typeof content === 'string') {
     content = content
       .replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '')
+      .replace(/\[INTAKE_COMPLETE\]/g, '')
       .replace(/\[SUGGEST\][\s\S]*?\[\/SUGGEST\]/g, '')
       .trim();
   }

@@ -236,7 +236,7 @@ export const useGoogleChat = (
             return { 
               cleanContent: cleanedText, 
               suggestedActions: [
-                { id: 'approve', label: '✅ Looks perfect! Create the book', value: 'Looks perfect! Create the book' },
+                { id: 'approve', label: '✅ Looks perfect! Create the book', value: 'create_book' },
                 { id: 'edit-title', label: '✏️ Change the title', value: 'Change the title' },
                 { id: 'edit-description', label: '📝 Update the description', value: 'Update the description' },
               ]

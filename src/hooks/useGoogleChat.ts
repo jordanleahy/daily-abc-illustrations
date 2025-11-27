@@ -298,9 +298,6 @@ export const useGoogleChat = (
           }
         ];
         
-        // Return metadata to caller for state management
-        return { messages: messagesWithResponse, metadata };
-        
         console.log('[useGoogleChat Debug] Message streaming complete:', {
           sessionId,
           totalMessages: messagesWithResponse.length,
@@ -318,6 +315,9 @@ export const useGoogleChat = (
           console.log('[useGoogleChat Debug] Calling onMessagesUpdate callback');
           onMessagesUpdate(messagesWithResponse, sessionId);
         }
+        
+        // Return metadata to caller for state management
+        return { messages: messagesWithResponse, metadata };
       }
 
     } catch (error) {

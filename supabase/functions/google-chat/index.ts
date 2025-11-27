@@ -221,7 +221,7 @@ serve(async (req) => {
       // Query database for specialized agent
       const { data: agent } = await supabase
         .from('agents')
-        .select('instructions, name')
+        .select('instructions, name, max_completion_tokens')
         .eq('type', agentType)
         .eq('is_latest', true)
         .single();
@@ -313,7 +313,9 @@ serve(async (req) => {
 
     const allMessages = [systemMessage, ...messages];
 
+    const maxTokens = agent?.max_completion_tokens || 8000;
     console.log('Calling Lovable AI with', allMessages.length, 'messages');
+    console.log('📊 Max tokens:', maxTokens);
 
     // Call Lovable AI Gateway with structured output enabled (non-streaming)
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -325,6 +327,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: allMessages,
+        max_tokens: maxTokens,
         stream: false, // Must be false for structured output
         response_format: {
           type: "json_schema",

@@ -362,6 +362,22 @@ serve(async (req) => {
                     required: ["id", "label"],
                     additionalProperties: false
                   }
+                },
+                metadata: {
+                  type: "object",
+                  description: "Optional metadata about the current conversation step",
+                  properties: {
+                    confirmedPageCount: {
+                      type: "number",
+                      description: "The confirmed/recommended page count for the book"
+                    },
+                    currentStep: {
+                      type: "string",
+                      description: "Current step in the conversation flow (e.g., 'page-count-confirmation')"
+                    }
+                  },
+                  required: [],
+                  additionalProperties: false
                 }
               },
               required: ["message", "suggestions"],
@@ -435,11 +451,12 @@ serve(async (req) => {
     const transformedContent = transformToSuggestBlock(structuredResponse);
     console.log('Transformed response:', transformedContent);
 
-    // Return the transformed text response
+    // Return the transformed text response with metadata
     return new Response(
       JSON.stringify({ 
         content: transformedContent,
-        role: 'assistant'
+        role: 'assistant',
+        metadata: structuredResponse.metadata || null
       }),
       {
         headers: { 

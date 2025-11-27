@@ -312,6 +312,8 @@ export function BookEditorPanel({
     
     // Fallback: Remove all instructional sections if no explicit Image Prompt marker
     return prompt
+      // Remove JSON metadata prefix: [pageType: "cover", pageNumber: 0]
+      .replace(/^\[pageType:\s*"[^"]*",\s*pageNumber:\s*\d+\]\s*/gi, '')
       // Remove pagetype metadata at the beginning
       .replace(/^pagetype:\s*"[^"]*"\s*/gi, '')
       // Remove title headers: **Page N: Title**, **Cover: Title**, etc.

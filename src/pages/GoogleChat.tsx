@@ -224,6 +224,15 @@ export default function GoogleChat() {
     // Check if we have all expected pages
     const hasAllPages = parsedPageDetails.length >= expectedPageCount;
     
+    console.log('[QA Panel Auto-Open] Page count check:', {
+      parsedPages: parsedPageDetails.length,
+      expectedPages: expectedPageCount,
+      confirmedPageCount,
+      selectedBookType,
+      hasAllPages,
+      willAutoOpen: hasAllPages && !isLoading
+    });
+    
     // Always show button if we have all pages, even after book creation
     return hasAllPages;
   }, [messages, isLoading, parsedPageDetails, selectedBookType, confirmedPageCount]);
@@ -399,6 +408,7 @@ export default function GoogleChat() {
     }
     
     if (outlineJustCompleted) {
+      console.log('[QA Panel Auto-Open] Opening QA panel automatically - outline complete');
       setCurrentEditorPage(1); // Start at cover page
       
       // Scroll to bottom to show the banner

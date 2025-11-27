@@ -685,12 +685,12 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     }
 
     // Process pages from AI response with explicit page types
-    // AI returns: pageNumber 0=cover, 1=educational (optional), 2+=content
-    // We store as: page_number 1, 2, 3... but preserve the page_type
+    // AI returns 1-based page numbers: pageNumber 1=cover, 2=educational (optional), 3+=content
+    // We store using the same 1-based numbering with page_type preservation
     
     const pages = sanitizedPages.map((page: any, index: number) => {
       const pageType = page.pageType || 'content'; // Default to content if not specified
-      const actualPageNumber = index + 1; // Database page numbers start at 1
+      const actualPageNumber = page.pageNumber; // Use AI's 1-based page number directly
       
       // Determine text overlay behavior based on page type
       let textOverlayEnabled = false;

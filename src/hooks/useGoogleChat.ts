@@ -262,7 +262,24 @@ export const useGoogleChat = (
             const id = line.substring(0, colonIndex).trim();
             const label = line.substring(colonIndex + 1).trim();
             
-            return { id, label, value: id === 'custom' ? '' : label };
+            // Set themeId for character theme suggestions
+            const action: SuggestedAction = { 
+              id, 
+              label, 
+              value: id === 'custom' ? '' : label 
+            };
+            
+            // Mark character themes explicitly
+            const characterThemes = [
+              'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon',
+              'moana', 'mickey-mouse', 'mario', 'sesame-street',
+              'benji-davies', 'black-and-white', 'bear-stories'
+            ];
+            if (characterThemes.includes(id)) {
+              action.themeId = id as CharacterThemeValue;
+            }
+            
+            return action;
           })
           .filter((action): action is SuggestedAction => action !== null);
         

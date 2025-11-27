@@ -228,7 +228,7 @@ export default function GoogleChat() {
     
     // Use confirmed page count if available (from Step 4.5), otherwise fallback to book type defaults
     const expectedPageCount = confirmedPageCount 
-      ?? (selectedBookType === 'abc' ? 26 : 10);
+      ?? (selectedBookType === 'abc' ? 28 : 12); // ABC: 28, others: default 10 content + 2 = 12
     
     // Check if we have all expected pages
     const hasAllPages = parsedPageDetails.length >= expectedPageCount;
@@ -860,6 +860,16 @@ export default function GoogleChat() {
         setSelectedAgeRange(action.ageRangeId as AgeRangeId);
       }
       
+      // Capture page count from button ID (e.g., "pages-10" → 10 content pages)
+      if (action.id.startsWith('pages-')) {
+        const contentPages = parseInt(action.id.replace('pages-', ''), 10);
+        if (!isNaN(contentPages)) {
+          console.log('[Page Count Selection] User selected content pages:', contentPages);
+          // Total = content + cover + education
+          setConfirmedPageCount(contentPages + 2);
+        }
+      }
+      
       // Send the predefined response
       const result = await sendMessage(action.value, undefined, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
@@ -868,7 +878,7 @@ export default function GoogleChat() {
         bookType: selectedBookType
       });
       
-      // Capture confirmed page count from metadata if present
+      // Also capture from metadata as confirmation (backup)
       if (result?.metadata?.confirmedPageCount) {
         console.log('[Page Count Confirmed] Agent returned page count:', result.metadata.confirmedPageCount);
         setConfirmedPageCount(result.metadata.confirmedPageCount);
@@ -899,6 +909,7 @@ export default function GoogleChat() {
         setSelectedBookType(null);
         setSelectedCharacterTheme(null); // Reset theme selection
         setSelectedAgeRange(null); // Reset age range selection
+        setConfirmedPageCount(null); // Reset confirmed page count
         setReplacePageMode({});
         // Close mobile sidebar when creating new session
         setIsMobileSidebarOpen(false);

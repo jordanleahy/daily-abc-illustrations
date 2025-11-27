@@ -312,6 +312,8 @@ export function BookEditorPanel({
     
     // Fallback: Remove all instructional sections if no explicit Image Prompt marker
     return prompt
+      // Remove pagetype metadata at the beginning
+      .replace(/^pagetype:\s*"[^"]*"\s*/gi, '')
       // Remove title headers: **Page N: Title**, **Cover: Title**, etc.
       .replace(/^\*\*(?:Page\s+\d+|Cover|Educational Focus):[^\n*]*\*\*\s*/gi, '')
       // Remove character section: **Paw Patrol Character(s):** ...
@@ -322,6 +324,8 @@ export function BookEditorPanel({
       .replace(/\*\*Activity:\*\*[\s\S]*?(?=\n\*\*|$)/gi, '')
       // Remove "Image Prompt:" label if present but keep the content
       .replace(/\*\*Image Prompt:\*\*\s*/gi, '')
+      // Remove DISPLAY TITLE instructions and everything after
+      .replace(/\n*DISPLAY TITLE:[\s\S]*$/gi, '')
       // Clean up bullet points and extra whitespace
       .replace(/^\s*\*\s+/gm, '')
       .trim();

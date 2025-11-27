@@ -221,12 +221,34 @@ export default function GoogleChat() {
       return false;
     }
     
-    // Show only when all 26 pages are complete (for ABC books)
-    const hasAllPages = parsedPageDetails !== null && parsedPageDetails.length === 26;
+    if (!parsedPageDetails || parsedPageDetails.length === 0) {
+      return false;
+    }
+    
+    // Determine expected page count based on book type
+    let expectedPageCount = 26; // Default for ABC books
+    
+    // Check if we have a selected book type to determine expected count
+    if (selectedBookType) {
+      const bookTypeConfig = BOOK_TYPES.find(bt => bt.id === selectedBookType);
+      // For most specialized agents, page count varies by age
+      // We check if outline has at least 10 pages (minimum content pages)
+      // Full validation happens: Cover (1) + Educational Focus (1) + Content Pages (10-18)
+      if (selectedBookType === 'abc') {
+        expectedPageCount = 26; // ABC books always have 26 letter pages
+      } else {
+        // For other book types (Rhyming, Numbers, Colors, etc.)
+        // Accept any outline with 10+ content pages as complete
+        expectedPageCount = 10;
+      }
+    }
+    
+    // Check if we have all expected pages
+    const hasAllPages = parsedPageDetails.length >= expectedPageCount;
     
     // Always show button if we have all pages, even after book creation
     return hasAllPages;
-  }, [messages, isLoading, parsedPageDetails]);
+  }, [messages, isLoading, parsedPageDetails, selectedBookType]);
 
   // Derive showEditor from whether outline is ready or book exists
   const showEditor = (shouldShowReviewButton || isBookCreated) && !forceEditorClosed;

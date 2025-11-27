@@ -190,8 +190,11 @@ export const useGoogleChat = (
         
         // Fallback: ABC agent questions must ALWAYS have buttons, even if the model forgets [SUGGEST]
         if (!match && effectiveBookType === 'abc') {
-          // Letter case fallback
-          if (cleanedText.includes('uppercase, lowercase, or mixed')) {
+          // Letter case fallback - match multiple phrasings
+          if (cleanedText.includes('letter case') || 
+              cleanedText.includes('uppercase, lowercase, or mixed') ||
+              cleanedText.includes('lowercase letters') ||
+              cleanedText.includes('Which option would you prefer')) {
             return { 
               cleanContent: cleanedText, 
               suggestedActions: [

@@ -119,64 +119,14 @@ export const useGoogleChat = (
         throw new Error(errorData.error || 'Request failed');
       }
 
-      if (!response.body) {
-        throw new Error('No response stream');
-      }
-
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = '';
-      let fullContent = '';
-
-      // Helper to strip suggest tags during streaming for clean display
-      const stripSuggestTags = (text: string) => {
-        return text.replace(/\[SUGGEST\][\s\S]*?(\[\/SUGGEST\])?$/g, '').trim();
-      };
-
+      // Parse JSON response (non-streaming)
+      const responseData = await response.json();
+      const fullContent = responseData.content || '';
+      
       // Add empty assistant message
-      let messagesWithResponse = [...updatedMessages, { role: 'assistant' as const, content: '' }];
+      let messagesWithResponse = [...updatedMessages, { role: 'assistant' as const, content: fullContent }];
       if (sessionId) {
         queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
-      }
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
-
-        for (let line of lines) {
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (line.startsWith(':') || line.trim() === '') continue;
-          if (!line.startsWith('data: ')) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') continue;
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const delta = parsed.choices?.[0]?.delta?.content;
-            if (delta) {
-              fullContent += delta;
-              
-              // Strip suggest tags during streaming for display
-              const displayContent = stripSuggestTags(fullContent);
-              
-              // Update the last message with cleaned content
-              messagesWithResponse = [
-                ...messagesWithResponse.slice(0, -1),
-                { role: 'assistant' as const, content: displayContent }
-              ];
-              if (sessionId) {
-                queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
-              }
-            }
-          } catch (e) {
-            console.error('Failed to parse SSE chunk:', e);
-          }
-        }
       }
 
       // Parse suggestions from final content and strip internal tags

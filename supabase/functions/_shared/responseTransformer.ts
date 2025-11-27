@@ -63,7 +63,7 @@ export function transformToSuggestBlock(response: StructuredAgentResponse): stri
  * @returns True if data matches schema, false otherwise
  */
 export function validateStructuredResponse(data: any): data is StructuredAgentResponse {
-  return (
+  const baseValid = (
     typeof data === 'object' &&
     data !== null &&
     typeof data.message === 'string' &&
@@ -75,6 +75,17 @@ export function validateStructuredResponse(data: any): data is StructuredAgentRe
         typeof s.label === 'string'
     )
   );
+  
+  if (!baseValid) return false;
+  
+  // Validate metadata if present (optional field)
+  if (data.metadata !== undefined && data.metadata !== null) {
+    if (typeof data.metadata !== 'object') return false;
+    if (data.metadata.confirmedPageCount !== undefined && typeof data.metadata.confirmedPageCount !== 'number') return false;
+    if (data.metadata.currentStep !== undefined && typeof data.metadata.currentStep !== 'string') return false;
+  }
+  
+  return true;
 }
 
 /**

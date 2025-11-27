@@ -232,7 +232,9 @@ export const useGoogleChat = (
           }
           
           // Title approval fallback
-          if (cleanedText.includes('Looks perfect') || cleanedText.includes('Create the book')) {
+        if (cleanedText.includes('Looks perfect') || 
+            cleanedText.includes('Create the book') || 
+            cleanedText.includes('Does this sound good')) {
             return { 
               cleanContent: cleanedText, 
               suggestedActions: [

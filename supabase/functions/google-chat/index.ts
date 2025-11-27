@@ -315,7 +315,7 @@ serve(async (req) => {
 
     console.log('Calling Lovable AI with', allMessages.length, 'messages');
 
-    // Call Lovable AI Gateway with structured output enabled
+    // Call Lovable AI Gateway with structured output enabled (non-streaming)
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -325,9 +325,44 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: allMessages,
-        stream: true,
-        // Note: structured output with streaming not yet supported
-        // Will enable when streaming + structured output becomes available
+        stream: false, // Must be false for structured output
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "agent_response",
+            strict: true,
+            schema: {
+              type: "object",
+              properties: {
+                message: {
+                  type: "string",
+                  description: "The conversational message to display to the user"
+                },
+                suggestions: {
+                  type: "array",
+                  description: "Optional array of clickable button suggestions. Empty array for open-ended questions.",
+                  items: {
+                    type: "object",
+                    properties: {
+                      id: {
+                        type: "string",
+                        description: "Machine-readable identifier (e.g., 'paw-patrol', 'lowercase', 'approve')"
+                      },
+                      label: {
+                        type: "string",
+                        description: "Human-readable display text (e.g., 'Paw Patrol', 'lowercase letters', 'Looks perfect!')"
+                      }
+                    },
+                    required: ["id", "label"],
+                    additionalProperties: false
+                  }
+                }
+              },
+              required: ["message", "suggestions"],
+              additionalProperties: false
+            }
+          }
+        }
       }),
     });
 
@@ -355,17 +390,58 @@ serve(async (req) => {
       );
     }
 
-    console.log('Lovable AI streaming response started');
+    console.log('Lovable AI response received');
 
-    // Return the stream directly with proper headers
-    return new Response(response.body, {
-      headers: { 
-        ...corsHeaders, 
-        'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
+    // Parse the structured JSON response
+    const aiResponse = await response.json();
+    const content = aiResponse.choices?.[0]?.message?.content;
+    
+    if (!content) {
+      console.error('No content in AI response:', aiResponse);
+      return new Response(
+        JSON.stringify({ error: 'Empty response from AI' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Parse and validate the structured response
+    let structuredResponse;
+    try {
+      structuredResponse = JSON.parse(content);
+    } catch (parseError) {
+      console.error('Failed to parse AI response as JSON:', parseError);
+      console.error('Raw content:', content);
+      return new Response(
+        JSON.stringify({ error: 'Invalid response format from AI' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    if (!validateStructuredResponse(structuredResponse)) {
+      console.error('Invalid structured response schema:', structuredResponse);
+      return new Response(
+        JSON.stringify({ error: 'Invalid response schema from AI' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Transform structured JSON to [SUGGEST] block format
+    const transformedContent = transformToSuggestBlock(structuredResponse);
+    console.log('Transformed response:', transformedContent);
+
+    // Return the transformed text response
+    return new Response(
+      JSON.stringify({ 
+        content: transformedContent,
+        role: 'assistant'
+      }),
+      {
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json'
+        }
       }
-    });
+    );
 
   } catch (error) {
     console.error('Error in google-chat function:', error);

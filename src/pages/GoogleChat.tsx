@@ -47,6 +47,7 @@ export default function GoogleChat() {
   const [selectedBookType, setSelectedBookType] = useState<BookTypeId | null>(null);
   const [selectedAgeRange, setSelectedAgeRange] = useState<AgeRangeId | null>(null);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
+  const [confirmedPageCount, setConfirmedPageCount] = useState<number | null>(null);
   
   // Get kid profiles
   const { data: kidProfiles = [] } = useKidProfiles();
@@ -225,30 +226,16 @@ export default function GoogleChat() {
       return false;
     }
     
-    // Determine expected page count based on book type
-    let expectedPageCount = 26; // Default for ABC books
-    
-    // Check if we have a selected book type to determine expected count
-    if (selectedBookType) {
-      const bookTypeConfig = BOOK_TYPES.find(bt => bt.id === selectedBookType);
-      // For most specialized agents, page count varies by age
-      // We check if outline has at least 10 pages (minimum content pages)
-      // Full validation happens: Cover (1) + Educational Focus (1) + Content Pages (10-18)
-      if (selectedBookType === 'abc') {
-        expectedPageCount = 26; // ABC books always have 26 letter pages
-      } else {
-        // For other book types (Rhyming, Numbers, Colors, etc.)
-        // Accept any outline with 10+ content pages as complete
-        expectedPageCount = 10;
-      }
-    }
+    // Use confirmed page count if available (from Step 4.5), otherwise fallback to book type defaults
+    const expectedPageCount = confirmedPageCount 
+      ?? (selectedBookType === 'abc' ? 26 : 10);
     
     // Check if we have all expected pages
     const hasAllPages = parsedPageDetails.length >= expectedPageCount;
     
     // Always show button if we have all pages, even after book creation
     return hasAllPages;
-  }, [messages, isLoading, parsedPageDetails, selectedBookType]);
+  }, [messages, isLoading, parsedPageDetails, selectedBookType, confirmedPageCount]);
 
   // Derive showEditor from whether outline is ready or book exists
   const showEditor = (shouldShowReviewButton || isBookCreated) && !forceEditorClosed;
@@ -874,12 +861,18 @@ export default function GoogleChat() {
       }
       
       // Send the predefined response
-      await sendMessage(action.value, undefined, messages, {
+      const result = await sendMessage(action.value, undefined, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
         bookCreated: !!createdBookId,
         characterTheme: selectedCharacterTheme,
         bookType: selectedBookType
       });
+      
+      // Capture confirmed page count from metadata if present
+      if (result?.metadata?.confirmedPageCount) {
+        console.log('[Page Count Confirmed] Agent returned page count:', result.metadata.confirmedPageCount);
+        setConfirmedPageCount(result.metadata.confirmedPageCount);
+      }
     } else {
       // "Custom" option - just focus the input field
       const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;

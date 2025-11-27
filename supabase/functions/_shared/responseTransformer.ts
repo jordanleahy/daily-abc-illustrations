@@ -7,6 +7,10 @@
 export interface StructuredAgentResponse {
   message: string;
   suggestions: Array<{ id: string; label: string }>;
+  metadata?: {
+    confirmedPageCount?: number;
+    currentStep?: string;
+  };
 }
 
 /**

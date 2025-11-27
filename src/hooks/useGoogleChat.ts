@@ -122,6 +122,7 @@ export const useGoogleChat = (
       // Parse JSON response (non-streaming)
       const responseData = await response.json();
       const fullContent = responseData.content || '';
+      const metadata = responseData.metadata || null;
       
       // Add empty assistant message
       let messagesWithResponse = [...updatedMessages, { role: 'assistant' as const, content: fullContent }];
@@ -279,6 +280,9 @@ export const useGoogleChat = (
             suggestedActions: finalActions
           }
         ];
+        
+        // Return metadata to caller for state management
+        return { messages: messagesWithResponse, metadata };
         
         console.log('[useGoogleChat Debug] Message streaming complete:', {
           sessionId,

@@ -72,10 +72,21 @@ export const parsePageDetailsFromMessages = (messages: any[]): PageDetail[] | nu
     });
   }
   
-  console.log('[Parse Debug] Parsed', pages.length, 'pages total');
+  console.log('[Parse Debug] Parsed', pages.length, 'pages total (before normalization)');
   if (pages.length > 0) {
-    console.log('[Parse Debug] First page:', pages[0]);
-    console.log('[Parse Debug] Last page:', pages[pages.length - 1]);
+    console.log('[Parse Debug] First page before normalization:', pages[0]);
+    console.log('[Parse Debug] Last page before normalization:', pages[pages.length - 1]);
+  }
+  
+  // Detect and normalize page numbering (handle backward compatibility)
+  // If first page is 0, assume 0-based numbering and convert to 1-based
+  if (pages.length > 0 && pages[0].pageNumber === 0) {
+    console.log('[Parse Debug] Detected 0-based page numbering - normalizing to 1-based');
+    pages.forEach(page => {
+      page.pageNumber = page.pageNumber + 1;
+    });
+    console.log('[Parse Debug] First page after normalization:', pages[0]);
+    console.log('[Parse Debug] Last page after normalization:', pages[pages.length - 1]);
   }
   
   return pages.length > 0 ? pages : null;

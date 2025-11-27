@@ -230,17 +230,65 @@ export const useGoogleChat = (
               ]
             };
           }
-          
-          // Title approval fallback
-        if (cleanedText.includes('Looks perfect') || 
-            cleanedText.includes('Create the book') || 
-            cleanedText.includes('Does this sound good')) {
+        }
+        
+        // UNIVERSAL FALLBACKS (work for ALL book types)
+        if (!match) {
+          // Title approval fallback - applies to all book types
+          if (cleanedText.includes('Looks perfect') || 
+              cleanedText.includes('Create the book') || 
+              cleanedText.includes('Does this sound good')) {
             return { 
               cleanContent: cleanedText, 
               suggestedActions: [
                 { id: 'approve', label: '✅ Looks perfect! Create the book', value: 'create_book' },
                 { id: 'edit-title', label: '✏️ Change the title', value: 'Change the title' },
                 { id: 'edit-description', label: '📝 Update the description', value: 'Update the description' },
+              ]
+            };
+          }
+        }
+        
+        // RHYMING-SPECIFIC FALLBACKS
+        if (!match && effectiveBookType === 'rhyming') {
+          // Age group fallback
+          if (cleanedText.includes("What's your child's age") || 
+              cleanedText.includes('What age is this rhyming book for')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: '0-2', label: '0-2 years (simple words & sounds)', value: '0-2 years' },
+                { id: '2-4', label: '2-4 years (familiar rhymes)', value: '2-4 years' },
+                { id: '4-6', label: '4-6 years (complex patterns)', value: '4-6 years' },
+              ]
+            };
+          }
+          
+          // Rhyme pattern fallback
+          if (cleanedText.includes('Which rhyme pattern') || 
+              cleanedText.includes('rhyme scheme')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'aabb', label: 'AABB (cat/hat, dog/log)', value: 'AABB' },
+                { id: 'abab', label: 'ABAB (cat/log, hat/dog)', value: 'ABAB' },
+                { id: 'limerick', label: 'Limerick (AABBA)', value: 'Limerick' },
+              ]
+            };
+          }
+          
+          // Rhyme theme fallback
+          if (cleanedText.includes('What should the rhymes be about') || 
+              cleanedText.includes('rhyme topic')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'adventures', label: '🗺️ Adventures & Exploration', value: 'Adventures & Exploration' },
+                { id: 'friendship', label: '🤝 Friendship & Playing Together', value: 'Friendship & Playing Together' },
+                { id: 'nature', label: '🌳 Nature & Animals', value: 'Nature & Animals' },
+                { id: 'bedtime', label: '🌙 Bedtime & Dreams', value: 'Bedtime & Dreams' },
+                { id: 'family', label: '👨‍👩‍👧 Family & Home', value: 'Family & Home' },
+                { id: 'custom', label: '✏️ Something else (I\'ll tell you)', value: '' },
               ]
             };
           }

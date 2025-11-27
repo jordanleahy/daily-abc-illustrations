@@ -212,6 +212,7 @@ serve(async (req) => {
     // Determine which agent and system prompt to use
     let systemPromptContent: string;
     let agentSource: string;
+    let agent: any = null; // Declare agent at function scope
 
     if (bookType) {
       // Book type selected - route to specialized agent
@@ -219,12 +220,14 @@ serve(async (req) => {
       console.log(`📚 Book type: ${bookType} → Agent: ${agentType}`);
       
       // Query database for specialized agent
-      const { data: agent } = await supabase
+      const { data: agentData } = await supabase
         .from('agents')
         .select('instructions, name, max_completion_tokens')
         .eq('type', agentType)
         .eq('is_latest', true)
         .single();
+      
+      agent = agentData; // Assign to function-scope variable
       
       if (agent?.instructions) {
         systemPromptContent = agent.instructions;

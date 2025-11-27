@@ -1,5 +1,6 @@
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
+import { HabitCardSkeleton, HabitCarouselSkeleton } from '@/components/habits/HabitCardSkeleton';
 import { CategorizedBookSections } from '@/components/library';
 import { BookFilterBar } from '@/components/filters';
 import { RewardsCarousel } from '@/components/rewards/RewardsCarousel';
@@ -132,16 +133,32 @@ const Index = () => {
             </div>
 
             {/* Habits list */}
-            {activeCompletions.length === 0 ? <div className="text-center py-12 bg-muted/50 rounded-lg space-y-2">
+            {isLoading ? (
+              isMobile ? (
+                <HabitCarouselSkeleton />
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <HabitCardSkeleton />
+                  <HabitCardSkeleton />
+                  <HabitCardSkeleton />
+                </div>
+              )
+            ) : activeCompletions.length === 0 ? (
+              <div className="text-center py-12 bg-muted/50 rounded-lg space-y-2">
                 <p className="text-lg text-muted-foreground">
                   No habits scheduled for today! 
                 </p>
                 <p className="text-sm text-muted-foreground">
                   Ask your parent to schedule habits from the Manage Habits page.
                 </p>
-              </div> : isMobile ? <HabitCarousel completions={activeCompletions} /> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              </div>
+            ) : isMobile ? (
+              <HabitCarousel completions={activeCompletions} />
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {activeCompletions.map(completion => <HabitTrackingCard key={completion.id} completion={completion} />)}
-              </div>}
+              </div>
+            )}
           </> : <>
             {/* Free tier: Welcome section */}
             <div className="space-y-6">

@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
+import { transformToSuggestBlock, validateStructuredResponse } from '../_shared/responseTransformer.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -314,7 +315,7 @@ serve(async (req) => {
 
     console.log('Calling Lovable AI with', allMessages.length, 'messages');
 
-    // Call Lovable AI Gateway with streaming
+    // Call Lovable AI Gateway with structured output enabled
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -325,6 +326,8 @@ serve(async (req) => {
         model: 'google/gemini-2.5-flash',
         messages: allMessages,
         stream: true,
+        // Note: structured output with streaming not yet supported
+        // Will enable when streaming + structured output becomes available
       }),
     });
 

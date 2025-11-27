@@ -103,18 +103,9 @@ export default function GoogleChat() {
   // Prefetch hook for hover optimization
   const { prefetchSession } = usePrefetchSession();
 
-  // Debounce message updates to avoid excessive database writes
-  const updateTimeoutRef = useRef<NodeJS.Timeout>();
+  // Persist messages immediately to prevent loss on refresh/navigation
   const handleMessagesUpdate = useCallback((messages: any[], sessionId: string) => {
-    // Clear any existing timeout
-    if (updateTimeoutRef.current) {
-      clearTimeout(updateTimeoutRef.current);
-    }
-    
-    // Set new timeout to update after 1 second of inactivity
-    updateTimeoutRef.current = setTimeout(() => {
-      updateSessionMessages({ sessionId, messages });
-    }, 1000);
+    updateSessionMessages({ sessionId, messages });
   }, [updateSessionMessages]);
 
   // Calculate kid age if selected

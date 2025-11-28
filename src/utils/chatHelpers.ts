@@ -106,8 +106,9 @@ export interface EducationalFocusDetail {
  * Parse educational focus section from chat messages
  */
 export const parseEducationalFocus = (messages: any[]): EducationalFocusDetail | null => {
+  // Look for Page 2 (What You'll Learn) in standardized format
   const lastMsg = [...messages].reverse().find(
-    msg => typeof msg.content === 'string' && /\*\*Educational Focus:\*\*/i.test(msg.content)
+    msg => typeof msg.content === 'string' && /\*\*Page\s+2:/i.test(msg.content)
   );
   
   if (!lastMsg || typeof lastMsg.content !== 'string') {

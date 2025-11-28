@@ -7,7 +7,11 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+console.log('🚀 generate-embeddings function starting...');
+
 serve(async (req) => {
+  console.log('📥 Request received:', req.method, req.url);
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -17,11 +21,26 @@ serve(async (req) => {
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
+    console.log('🔑 Environment check:', {
+      hasOpenAIKey: !!OPENAI_API_KEY,
+      hasSupabaseUrl: !!SUPABASE_URL,
+      hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY
+    });
+
     if (!OPENAI_API_KEY) {
-      throw new Error('OPENAI_API_KEY not configured');
+      console.error('❌ OPENAI_API_KEY not found in environment');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          error: 'OPENAI_API_KEY not configured. Please add it to your Supabase secrets.' 
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 500 }
+      );
     }
 
-    const { text, metadata = {}, storeInDB = true } = await req.json();
+    const body = await req.json();
+    const { text, metadata = {}, storeInDB = true } = body;
+    console.log('📝 Request body parsed:', { textLength: text?.length, storeInDB });
 
     if (!text || typeof text !== 'string') {
       return new Response(
@@ -94,7 +113,8 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Error in generate-embeddings function:', error);
+    console.error('❌ Error in generate-embeddings function:', error);
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return new Response(
       JSON.stringify({
         success: false,
@@ -107,3 +127,5 @@ serve(async (req) => {
     );
   }
 });
+
+console.log('✅ generate-embeddings function ready and listening...');

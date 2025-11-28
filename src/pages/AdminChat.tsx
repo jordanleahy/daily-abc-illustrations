@@ -55,13 +55,19 @@ export default function AdminChat() {
   // Auto-create first session if none exist
   useEffect(() => {
     if (!sessionsLoading && sessions.length === 0 && !currentSessionId) {
+      console.log('[AdminChat] Auto-creating first session');
       createSession().then((newSession) => {
+        console.log('[AdminChat] Session created:', newSession.id);
         setCurrentSessionId(newSession.id);
       }).catch(error => {
-        console.error('Error creating initial session:', error);
+        console.error('[AdminChat] Error creating initial session:', error);
       });
+    } else if (!sessionsLoading && sessions.length > 0 && !currentSessionId) {
+      // Auto-select first session if sessions exist but none selected
+      console.log('[AdminChat] Auto-selecting first session:', sessions[0].id);
+      setCurrentSessionId(sessions[0].id);
     }
-  }, [sessionsLoading, sessions.length, currentSessionId, createSession]);
+  }, [sessionsLoading, sessions.length, currentSessionId]);
 
   const handleCreateSession = async () => {
     try {
@@ -160,7 +166,13 @@ export default function AdminChat() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Ask about marketing strategies, content ideas..."
+                  placeholder={
+                    !currentSessionId 
+                      ? "Creating session..." 
+                      : isLoading 
+                        ? "Sending..." 
+                        : "Ask about marketing strategies, content ideas..."
+                  }
                   disabled={isLoading || !currentSessionId}
                   className="flex-1"
                 />

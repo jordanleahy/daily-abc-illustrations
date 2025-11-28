@@ -170,3 +170,6 @@ verify_jwt = true
 
 [functions.admin-chat]
 verify_jwt = true
+
+[functions.test-embeddings]
+verify_jwt = false

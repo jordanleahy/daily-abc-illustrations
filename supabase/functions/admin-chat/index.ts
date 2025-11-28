@@ -29,6 +29,47 @@ const tools = [
   {
     type: "function",
     function: {
+      name: "save_idea",
+      description: "Save marketing content, personas, messaging docs, strategies, or campaign ideas to the database for future reference.",
+      parameters: {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description: "A short title for this content (e.g., 'Grandma Gail Persona', 'Instagram Campaign Ideas')"
+          },
+          content: {
+            type: "string",
+            description: "The full content to save (can be markdown formatted)"
+          },
+          category: {
+            type: "string",
+            description: "Optional category: 'persona', 'messaging', 'strategy', 'campaign', or leave empty"
+          }
+        },
+        required: ["title", "content"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_ideas",
+      description: "List all saved marketing ideas and content. Optionally filter by category.",
+      parameters: {
+        type: "object",
+        properties: {
+          category: {
+            type: "string",
+            description: "Optional category filter: 'persona', 'messaging', 'strategy', 'campaign'"
+          }
+        }
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
       name: "search_codebase",
       description: "Search for patterns across the codebase using regex. Use this to find where specific functionality is implemented.",
       parameters: {
@@ -84,7 +125,7 @@ const tools = [
 ];
 
 // Execute tool calls
-async function executeTools(toolCalls: any[], supabase: any) {
+async function executeTools(toolCalls: any[], supabase: any, userId: string) {
   const results = [];
   
   for (const toolCall of toolCalls) {
@@ -101,6 +142,52 @@ async function executeTools(toolCalls: any[], supabase: any) {
             result = { error: error.message };
           } else {
             result = { data, rowCount: data?.length || 0 };
+          }
+          break;
+          
+        case "save_idea":
+          const { data: savedIdea, error: saveError } = await supabase
+            .from('admin_ideas')
+            .insert({
+              user_id: userId,
+              title: args.title,
+              content: args.content,
+              category: args.category || null
+            })
+            .select()
+            .single();
+          
+          if (saveError) {
+            result = { error: saveError.message };
+          } else {
+            result = { 
+              success: true, 
+              message: `Saved "${args.title}" successfully`,
+              id: savedIdea.id 
+            };
+          }
+          break;
+          
+        case "list_ideas":
+          let query = supabase
+            .from('admin_ideas')
+            .select('id, title, category, created_at')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false });
+          
+          if (args.category) {
+            query = query.eq('category', args.category);
+          }
+          
+          const { data: ideas, error: listError } = await query;
+          
+          if (listError) {
+            result = { error: listError.message };
+          } else {
+            result = { 
+              ideas,
+              count: ideas?.length || 0 
+            };
           }
           break;
           
@@ -217,13 +304,19 @@ RESPONSE APPROACH:
 - Focus on free or low-cost tactics
 - Keep responses conversational and brief
 
+CONTENT STORAGE:
+- You can save important marketing content using the save_idea tool
+- Use this for personas, messaging docs, campaign ideas, or strategies the founder wants to reference later
+- Suggest saving content when you create something valuable (e.g., "Want me to save this persona for future reference?")
+- You can list saved ideas with list_ideas tool to remind the founder what's been documented
+
 CRITICAL RESPONSE FORMAT:
 You MUST end EVERY response with 3-5 actionable next steps in [SUGGEST] blocks.
 
 Format: [SUGGEST]option-id: Option Label[/SUGGEST]
 - Each suggestion on its own line
-- IDs should be kebab-case (e.g., "refine-caption", "draft-post")
-- Labels should be clear actions (e.g., "Refine This Caption")
+- IDs should be kebab-case (e.g., "refine-caption", "draft-post", "save-this-content")
+- Labels should be clear actions (e.g., "Refine This Caption", "Save This Persona")
 - Make each option feel achievable RIGHT NOW
 
 Example:
@@ -231,8 +324,8 @@ Example:
 
 [SUGGEST]refine-caption: Refine This Caption
 draft-another: Draft Another Post Idea
+save-this-content: Save This for Later
 check-best-time: Check Best Time to Post
-see-hashtags: Get Hashtag Suggestions
 something-else: Try Something Different[/SUGGEST]"
 
 NEVER respond without including a [SUGGEST] block with actionable next steps.`;

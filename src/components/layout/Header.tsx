@@ -155,11 +155,11 @@ export function Header({
                     <span className="sr-only">Open menu</span>
                   </Button>
                 </SheetTrigger>
-                <SheetContent side="right" className="w-80">
+                <SheetContent side="right" className="w-80 flex flex-col">
                   <SheetHeader>
                     <SheetTitle>{title}</SheetTitle>
                   </SheetHeader>
-                  <div className="mt-6 space-y-2">
+                  <div className="mt-6 space-y-2 overflow-y-auto flex-1 pr-4">
                     <Link
                       to="/auth"
                       className="flex items-center rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
@@ -318,15 +318,15 @@ export function Header({
                   <span className="sr-only">Open menu</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-80">
+              <SheetContent side="right" className="w-80 flex flex-col">
                 <SheetHeader>
                   <SheetTitle>{title}</SheetTitle>
                 </SheetHeader>
-                <div className="flex items-center justify-between px-6 py-3 border-b">
+                <div className="flex items-center justify-between px-6 py-3 border-b shrink-0">
                   <span className="text-base font-semibold">{displayName}</span>
                   <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
                 </div>
-                <div className="mt-6 space-y-2">
+                <div className="mt-6 space-y-2 overflow-y-auto flex-1 pr-4">
                   {/* Navigation Links */}
                   {routes.map((route) => {
                     const isActive = isRouteActive(route);

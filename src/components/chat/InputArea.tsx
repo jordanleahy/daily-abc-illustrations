@@ -3,7 +3,6 @@ import { Send, Image as ImageIcon, BookOpen, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ImageUpload } from '@/components/ImageUpload';
-import { KidSelector } from '@/components/chat/KidSelector';
 import { cn } from '@/lib/utils';
 
 interface InputAreaProps {
@@ -13,7 +12,6 @@ interface InputAreaProps {
   createdBookId: string | null;
   isMobile: boolean;
   shouldShowReviewButton: boolean;
-  selectedKidId: string | null;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onKeyPress: (e: React.KeyboardEvent) => void;
@@ -21,7 +19,6 @@ interface InputAreaProps {
   onImageSelect: (file: File) => void;
   onViewBook: () => void;
   onOpenReview: () => void;
-  onKidChange: (kidId: string | null) => void;
 }
 
 export const InputArea = memo(({
@@ -31,15 +28,13 @@ export const InputArea = memo(({
   createdBookId,
   isMobile,
   shouldShowReviewButton,
-  selectedKidId,
   onInputChange,
   onSend,
   onKeyPress,
   onImageUploadToggle,
   onImageSelect,
   onViewBook,
-  onOpenReview,
-  onKidChange
+  onOpenReview
 }: InputAreaProps) => {
   console.log('[InputArea Debug] Render with:', {
     shouldShowReviewButton,
@@ -70,30 +65,27 @@ export const InputArea = memo(({
 
   return (
     <div className="border-t bg-background p-4">
-      <div className="mx-auto max-w-4xl mb-3 flex items-center justify-between gap-4">
-        <KidSelector selectedKidId={selectedKidId} onKidChange={onKidChange} />
-        {shouldShowReviewButton && (
-          <div className="grid grid-cols-2 gap-2 flex-1">
-            <Button
-              onClick={onViewBook}
-              variant={createdBookId ? "default" : "outline"}
-              disabled={!createdBookId}
-              className="w-full"
-            >
-              <Book className="h-4 w-4 mr-2" />
-              Read
-            </Button>
-            <Button
-              onClick={onOpenReview}
-              variant="outline"
-              className="w-full"
-            >
-              <BookOpen className="h-4 w-4 mr-2" />
-              Outline
-            </Button>
-          </div>
-        )}
-      </div>
+      {shouldShowReviewButton && (
+        <div className="mx-auto max-w-4xl mb-3 grid grid-cols-2 gap-2">
+          <Button
+            onClick={onViewBook}
+            variant={createdBookId ? "default" : "outline"}
+            disabled={!createdBookId}
+            className="w-full"
+          >
+            <Book className="h-4 w-4 mr-2" />
+            Read
+          </Button>
+          <Button
+            onClick={onOpenReview}
+            variant="outline"
+            className="w-full"
+          >
+            <BookOpen className="h-4 w-4 mr-2" />
+            Outline
+          </Button>
+        </div>
+      )}
       <div className="mx-auto flex max-w-4xl gap-2">
         <Input
           value={input}

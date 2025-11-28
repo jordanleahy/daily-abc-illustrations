@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { AdminOnly } from '@/components/AdminOnly';
+import { PageLayout } from '@/components/layout/PageLayout';
 import { MessageList } from '@/components/chat/MessageList';
 import { useAdminChat } from '@/hooks/useAdminChat';
 import { useAdminChatSessions } from '@/hooks/useAdminChatSessions';
@@ -7,7 +8,7 @@ import { AdminChatSessionSidebar } from '@/components/chat/AdminChatSessionSideb
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
-import { Send, Menu } from 'lucide-react';
+import { Send } from 'lucide-react';
 
 export default function AdminChat() {
   const [currentSessionId, setCurrentSessionId] = useState<string>();
@@ -96,95 +97,80 @@ export default function AdminChat() {
 
   return (
     <AdminOnly>
-      <div className="flex h-screen bg-background overflow-hidden">
-        {/* Desktop Sidebar */}
-        <div className="hidden md:block w-80">
-          <AdminChatSessionSidebar
-            sessions={sessions}
-            currentSessionId={currentSessionId}
-            onCreateSession={handleCreateSession}
-            onSelectSession={setCurrentSessionId}
-            onRenameSession={(sessionId, name) => updateSessionName({ sessionId, name })}
-            onDeleteSession={handleDeleteSession}
-            hasMore={hasMore}
-            onLoadMore={loadMore}
-          />
-        </div>
-
-        {/* Mobile Sidebar Sheet */}
-        <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
-          <SheetContent side="left" className="w-80 p-0">
+      <PageLayout title="Admin Chat" showHeader={true} fullHeight={true}>
+        <div className="flex h-full bg-background overflow-hidden">
+          {/* Desktop Sidebar */}
+          <div className="hidden md:block w-80">
             <AdminChatSessionSidebar
               sessions={sessions}
               currentSessionId={currentSessionId}
               onCreateSession={handleCreateSession}
-              onSelectSession={(sessionId) => {
-                setCurrentSessionId(sessionId);
-                setIsMobileSidebarOpen(false); // Close after selecting
-              }}
+              onSelectSession={setCurrentSessionId}
               onRenameSession={(sessionId, name) => updateSessionName({ sessionId, name })}
               onDeleteSession={handleDeleteSession}
               hasMore={hasMore}
               onLoadMore={loadMore}
             />
-          </SheetContent>
-        </Sheet>
-
-        {/* Chat Area */}
-        <div className="flex flex-col flex-1 min-w-0">
-          {/* Header */}
-          <div className="border-b px-4 md:px-6 py-4 flex items-center gap-3 shrink-0">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="md:hidden shrink-0"
-              onClick={() => setIsMobileSidebarOpen(true)}
-              aria-label="Open sidebar"
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-            <div className="flex-1 min-w-0">
-              <h1 className="text-xl md:text-2xl font-bold truncate">Marketing Intelligence Chat</h1>
-              <p className="text-xs md:text-sm text-muted-foreground truncate">AI-powered marketing assistant for content growth</p>
-            </div>
           </div>
 
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
-            {messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-center px-4">
-                <div className="max-w-md">
-                  <h2 className="text-xl font-semibold mb-2">Welcome to Marketing Intelligence</h2>
-                  <p className="text-sm text-muted-foreground">Ask me anything about content marketing strategies, growth ideas, or campaign suggestions.</p>
-                </div>
-              </div>
-            ) : (
-              <MessageList messages={messages} />
-            )}
-          </div>
-
-          {/* Sticky Footer */}
-          <div className="sticky bottom-0 border-t px-4 md:px-6 py-4 bg-background">
-            <div className="flex gap-2">
-              <Input
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask about marketing strategies, content ideas..."
-                disabled={isLoading || !currentSessionId}
-                className="flex-1"
+          {/* Mobile Sidebar Sheet */}
+          <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+            <SheetContent side="left" className="w-80 p-0">
+              <AdminChatSessionSidebar
+                sessions={sessions}
+                currentSessionId={currentSessionId}
+                onCreateSession={handleCreateSession}
+                onSelectSession={(sessionId) => {
+                  setCurrentSessionId(sessionId);
+                  setIsMobileSidebarOpen(false);
+                }}
+                onRenameSession={(sessionId, name) => updateSessionName({ sessionId, name })}
+                onDeleteSession={handleDeleteSession}
+                hasMore={hasMore}
+                onLoadMore={loadMore}
               />
-              <Button
-                onClick={handleSend}
-                disabled={isLoading || !input.trim() || !currentSessionId}
-                size="icon"
-              >
-                <Send className="h-4 w-4" />
-              </Button>
+            </SheetContent>
+          </Sheet>
+
+          {/* Chat Area */}
+          <div className="flex flex-col flex-1 min-w-0">
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
+              {messages.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-center px-4">
+                  <div className="max-w-md">
+                    <h2 className="text-xl font-semibold mb-2">Welcome to Marketing Intelligence</h2>
+                    <p className="text-sm text-muted-foreground">Ask me anything about content marketing strategies, growth ideas, or campaign suggestions.</p>
+                  </div>
+                </div>
+              ) : (
+                <MessageList messages={messages} />
+              )}
+            </div>
+
+            {/* Sticky Footer */}
+            <div className="sticky bottom-0 border-t px-4 md:px-6 py-4 bg-background">
+              <div className="flex gap-2">
+                <Input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="Ask about marketing strategies, content ideas..."
+                  disabled={isLoading || !currentSessionId}
+                  className="flex-1"
+                />
+                <Button
+                  onClick={handleSend}
+                  disabled={isLoading || !input.trim() || !currentSessionId}
+                  size="icon"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </PageLayout>
     </AdminOnly>
   );
 }

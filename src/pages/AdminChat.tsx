@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Zap } from 'lucide-react';
+import { Send, Zap, Search } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -182,6 +182,49 @@ export default function AdminChat() {
     }
   };
 
+  const handleTestSemanticSearch = async () => {
+    setIsGeneratingEmbeddings(true);
+    try {
+      // First generate embedding for the search query
+      const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke('generate-embeddings', {
+        body: { 
+          text: 'marketing strategies for parents with toddlers',
+          storeInDB: false // Don't store the query
+        }
+      });
+
+      if (embeddingError) throw embeddingError;
+
+      if (!embeddingData.success) {
+        throw new Error(embeddingData.error || 'Failed to generate query embedding');
+      }
+
+      // Then search for similar content
+      const { data: searchResults, error: searchError } = await supabase
+        .rpc('search_embeddings', {
+          query_embedding: embeddingData.embedding,
+          match_threshold: 0.5,
+          match_count: 5
+        });
+
+      if (searchError) throw searchError;
+
+      toast.success('✅ Semantic search complete!', {
+        description: `Found ${searchResults?.length || 0} similar items (check console for details)`,
+        duration: 5000,
+      });
+
+      console.log('Search results:', searchResults);
+    } catch (error) {
+      console.error('Search error:', error);
+      toast.error('Search failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } finally {
+      setIsGeneratingEmbeddings(false);
+    }
+  };
+
   return (
     <AdminOnly>
       <PageLayout 
@@ -296,6 +339,16 @@ export default function AdminChat() {
                   >
                     <Zap className="h-3 w-3 mr-2" />
                     {isGeneratingEmbeddings ? 'Generating...' : 'Generate Test Embedding'}
+                  </Button>
+                  <Button
+                    onClick={handleTestSemanticSearch}
+                    disabled={isGeneratingEmbeddings}
+                    variant="outline"
+                    size="sm"
+                    className="w-fit"
+                  >
+                    <Search className="h-3 w-3 mr-2" />
+                    {isGeneratingEmbeddings ? 'Searching...' : 'Test Semantic Search'}
                   </Button>
                 </div>
               </div>

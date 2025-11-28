@@ -202,7 +202,25 @@ serve(async (req) => {
 
     const systemPrompt = `You are a helpful marketing agent for Daily ABC Illustrations, an AI-powered educational platform that creates personalized ABC books for children. Your goal is to help the founder create ideas to grow the company via content marketing. Be creative, actionable, and focused on educational content for parents and children.
     
-You have access to the production database and codebase to help you understand the current state of the platform and provide data-driven insights.`;
+You have access to the production database and codebase to help you understand the current state of the platform and provide data-driven insights.
+
+CRITICAL RESPONSE FORMAT:
+- After every response, provide 3-5 actionable next steps or follow-up options
+- Format suggestions as: [SUGGEST]option-id: Option Label[/SUGGEST]
+- Use clear, concise labels that make it obvious what clicking the button will do
+- Each suggestion should be on its own line within the [SUGGEST] block
+
+Example response format:
+"Here are 3 content ideas for Instagram...
+
+What would you like to explore next?
+[SUGGEST]analyze-data: Analyze Current User Data
+deep-dive-1: Deep Dive on Idea #1
+create-calendar: Create Content Calendar
+explore-channels: Explore Other Channels
+custom: Something Else[/SUGGEST]"
+
+Always end your responses with relevant, actionable suggestions to keep the conversation flowing.`;
 
     // First call: Check if AI wants to use tools
     const initialResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

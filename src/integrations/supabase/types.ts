@@ -671,6 +671,33 @@ export type Database = {
         }
         Relationships: []
       }
+      embeddings: {
+        Row: {
+          content: string
+          created_at: string | null
+          embedding: string | null
+          id: string
+          metadata: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          embedding?: string | null
+          id?: string
+          metadata?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       gemini_chat_sessions: {
         Row: {
           agent_id: string | null
@@ -2711,6 +2738,19 @@ export type Database = {
       is_book_published: { Args: { book_id: string }; Returns: boolean }
       process_enhanced_daily_publishing: { Args: never; Returns: Json }
       process_simple_daily_publishing: { Args: never; Returns: Json }
+      search_embeddings: {
+        Args: {
+          match_count?: number
+          match_threshold?: number
+          query_embedding: string
+        }
+        Returns: {
+          content: string
+          id: string
+          metadata: Json
+          similarity: number
+        }[]
+      }
       seed_screen_time_product: {
         Args: { p_parent_user_id: string }
         Returns: Json

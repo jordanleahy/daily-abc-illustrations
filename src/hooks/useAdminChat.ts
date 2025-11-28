@@ -121,31 +121,42 @@ export function useAdminChat({ sessionId, onMessagesUpdate }: UseAdminChatProps)
 
       // Parse suggestions from final content
       const parseSuggestions = (text: string) => {
-        const suggestRegex = /\[SUGGEST\]([\s\S]*?)\[\/SUGGEST\]/;
-        const match = text.match(suggestRegex);
+        console.log('[useAdminChat] Parsing suggestions from text:', text);
+        const suggestRegex = /\[SUGGEST\]([\s\S]*?)\[\/SUGGEST\]/g;
+        let cleanContent = text;
+        const allActions: import('@/hooks/useGoogleChat').SuggestedAction[] = [];
+        let match;
         
-        if (!match) {
-          return { cleanContent: text, suggestedActions: undefined };
+        while ((match = suggestRegex.exec(text)) !== null) {
+          console.log('[useAdminChat] Found SUGGEST block:', match[1]);
+          const suggestionsText = match[1].trim();
+          
+          const actions = suggestionsText
+            .split('\n')
+            .filter(line => line.trim())
+            .map(line => {
+              const colonIndex = line.indexOf(':');
+              if (colonIndex === -1) return null;
+              
+              const id = line.substring(0, colonIndex).trim();
+              const label = line.substring(colonIndex + 1).trim();
+              
+              console.log('[useAdminChat] Parsed action:', { id, label });
+              return { id, label, value: label, themeId: id };
+            })
+            .filter((action): action is import('@/hooks/useGoogleChat').SuggestedAction => action !== null);
+          
+          allActions.push(...actions);
         }
         
-        const suggestionsText = match[1].trim();
-        const cleanContent = text.replace(suggestRegex, '').trim();
+        // Remove all SUGGEST blocks from content
+        cleanContent = text.replace(/\[SUGGEST\][\s\S]*?\[\/SUGGEST\]/g, '').trim();
         
-        const actions = suggestionsText
-          .split('\n')
-          .filter(line => line.trim())
-          .map(line => {
-            const colonIndex = line.indexOf(':');
-            if (colonIndex === -1) return null;
-            
-            const id = line.substring(0, colonIndex).trim();
-            const label = line.substring(colonIndex + 1).trim();
-            
-            return { id, label, value: label };
-          })
-          .filter((action): action is import('@/hooks/useGoogleChat').SuggestedAction => action !== null);
-        
-        return { cleanContent, suggestedActions: actions.length > 0 ? actions : undefined };
+        console.log('[useAdminChat] Total parsed actions:', allActions.length);
+        return { 
+          cleanContent, 
+          suggestedActions: allActions.length > 0 ? allActions : undefined 
+        };
       };
 
       const { cleanContent, suggestedActions } = parseSuggestions(fullResponse);

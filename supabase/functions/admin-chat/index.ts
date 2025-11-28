@@ -337,14 +337,15 @@ NEVER respond without including a [SUGGEST] block with actionable next steps.`;
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
-        body: JSON.stringify({
-          model: 'google/gemini-2.5-flash',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages,
-          ],
-          stream: true, // Stream directly without tool calls for faster responses
-        }),
+      body: JSON.stringify({
+        model: 'google/gemini-2.5-flash',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          ...messages,
+        ],
+        tools: tools,
+        tool_choice: 'auto',
+      }),
     });
 
     if (!initialResponse.ok) {
@@ -368,8 +369,66 @@ NEVER respond without including a [SUGGEST] block with actionable next steps.`;
       });
     }
 
-    // Stream the response directly
-    return new Response(initialResponse.body, {
+    const initialData = await initialResponse.json();
+    const choice = initialData.choices?.[0];
+    
+    // Check if AI wants to call tools
+    if (choice?.message?.tool_calls && choice.message.tool_calls.length > 0) {
+      console.log('AI requested tool calls:', choice.message.tool_calls);
+      
+      // Execute the tool calls
+      const toolResults = await executeTools(choice.message.tool_calls, supabase, user.id);
+      console.log('Tool execution results:', toolResults);
+      
+      // Second call with tool results
+      const finalResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages,
+            choice.message,
+            ...toolResults.map(tr => ({
+              role: 'tool',
+              tool_call_id: tr.tool_call_id,
+              content: tr.output
+            }))
+          ],
+          stream: true,
+        }),
+      });
+      
+      if (!finalResponse.ok) {
+        const errorText = await finalResponse.text();
+        console.error('Final AI gateway error:', finalResponse.status, errorText);
+        return new Response(JSON.stringify({ error: 'AI gateway error' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      return new Response(finalResponse.body, {
+        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+      });
+    }
+    
+    // No tool calls, stream the response directly
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream({
+      start(controller) {
+        const content = choice?.message?.content || '';
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\n`));
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+        controller.close();
+      }
+    });
+    
+    return new Response(stream, {
       headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
     });
   } catch (error) {

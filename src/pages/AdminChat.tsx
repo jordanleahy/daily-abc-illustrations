@@ -9,13 +9,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { Send } from 'lucide-react';
+import { Send, Zap } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function AdminChat() {
   const [currentSessionId, setCurrentSessionId] = useState<string>();
   const [input, setInput] = useState('');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const [isTestingEmbeddings, setIsTestingEmbeddings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -108,6 +111,38 @@ export default function AdminChat() {
     }
   };
 
+  const handleTestEmbeddings = async () => {
+    setIsTestingEmbeddings(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('test-embeddings', {
+        method: 'POST',
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success('✅ Lovable AI Gateway supports embeddings!', {
+          description: `Model: ${data.model}, Dimensions: ${data.dimensions}`,
+          duration: 5000,
+        });
+      } else {
+        toast.error('❌ Embeddings not supported', {
+          description: data.suggestion || 'Will need OpenAI API key',
+          duration: 5000,
+        });
+      }
+
+      console.log('Test results:', data);
+    } catch (error) {
+      console.error('Test failed:', error);
+      toast.error('Test failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } finally {
+      setIsTestingEmbeddings(false);
+    }
+  };
+
   return (
     <AdminOnly>
       <PageLayout 
@@ -176,29 +211,41 @@ export default function AdminChat() {
 
             {/* Sticky Footer */}
             <div className="border-t px-4 md:px-6 py-4 bg-background">
-              <div className="flex gap-2 items-end">
-                <Textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyDown}
-                  placeholder={
-                    !currentSessionId 
-                      ? "Creating session..." 
-                      : isLoading 
-                        ? "Sending..." 
-                        : "Ask about marketing strategies, content ideas... (Shift+Enter for new line)"
-                  }
-                  disabled={isLoading || !currentSessionId}
-                  className="flex-1 min-h-[44px] max-h-[200px] resize-none"
-                  rows={1}
-                />
+              <div className="flex flex-col gap-2">
+                <div className="flex gap-2 items-end">
+                  <Textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder={
+                      !currentSessionId 
+                        ? "Creating session..." 
+                        : isLoading 
+                          ? "Sending..." 
+                          : "Ask about marketing strategies, content ideas... (Shift+Enter for new line)"
+                    }
+                    disabled={isLoading || !currentSessionId}
+                    className="flex-1 min-h-[44px] max-h-[200px] resize-none"
+                    rows={1}
+                  />
+                  <Button
+                    onClick={handleSend}
+                    disabled={isLoading || !input.trim() || !currentSessionId}
+                    size="icon"
+                    className="h-[44px] w-[44px]"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
                 <Button
-                  onClick={handleSend}
-                  disabled={isLoading || !input.trim() || !currentSessionId}
-                  size="icon"
-                  className="h-[44px] w-[44px]"
+                  onClick={handleTestEmbeddings}
+                  disabled={isTestingEmbeddings}
+                  variant="outline"
+                  size="sm"
+                  className="w-fit"
                 >
-                  <Send className="h-4 w-4" />
+                  <Zap className="h-3 w-3 mr-2" />
+                  {isTestingEmbeddings ? 'Testing...' : 'Test Embeddings API'}
                 </Button>
               </div>
             </div>

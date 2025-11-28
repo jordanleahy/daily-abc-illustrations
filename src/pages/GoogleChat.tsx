@@ -221,8 +221,8 @@ export default function GoogleChat() {
       return false;
     }
     
-    // Show only when all 26 pages are complete (for ABC books)
-    const hasAllPages = parsedPageDetails !== null && parsedPageDetails.length === 26;
+    // Show only when all 28 pages are complete (for ABC books)
+    const hasAllPages = parsedPageDetails !== null && parsedPageDetails.length === 28;
     
     // Always show button if we have all pages, even after book creation
     return hasAllPages;

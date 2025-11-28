@@ -273,9 +273,6 @@ Always end responses with small, tangible suggestions.`;
       });
     }
 
-    const initialData = await initialResponse.json();
-    const choice = initialData.choices[0];
-    
     // Stream the response directly
     return new Response(initialResponse.body, {
       headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },

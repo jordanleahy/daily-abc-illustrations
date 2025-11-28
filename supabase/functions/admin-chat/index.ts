@@ -7,6 +7,137 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Define available tools for the AI agent
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "query_database",
+      description: "Execute read-only SQL queries on the Supabase database. Use this to fetch data about books, pages, users, agents, habits, kids, etc.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "The SQL SELECT query to execute (read-only)"
+          }
+        },
+        required: ["query"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_codebase",
+      description: "Search for patterns across the codebase using regex. Use this to find where specific functionality is implemented.",
+      parameters: {
+        type: "object",
+        properties: {
+          pattern: {
+            type: "string",
+            description: "The regex pattern to search for"
+          },
+          file_pattern: {
+            type: "string",
+            description: "Optional file pattern to limit search (e.g., '*.ts', '*.tsx')"
+          }
+        },
+        required: ["pattern"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "read_file",
+      description: "Read the contents of a specific file from the codebase",
+      parameters: {
+        type: "object",
+        properties: {
+          file_path: {
+            type: "string",
+            description: "The path to the file relative to project root"
+          }
+        },
+        required: ["file_path"]
+      }
+    }
+  },
+  {
+    type: "function",
+    function: {
+      name: "list_directory",
+      description: "List files and directories in a specific path",
+      parameters: {
+        type: "object",
+        properties: {
+          path: {
+            type: "string",
+            description: "The directory path to list"
+          }
+        },
+        required: ["path"]
+      }
+    }
+  }
+];
+
+// Execute tool calls
+async function executeTools(toolCalls: any[], supabase: any) {
+  const results = [];
+  
+  for (const toolCall of toolCalls) {
+    const { name, arguments: argsStr } = toolCall.function;
+    const args = JSON.parse(argsStr);
+    
+    try {
+      let result;
+      
+      switch (name) {
+        case "query_database":
+          const { data, error } = await supabase.rpc('execute_sql', { query_text: args.query });
+          if (error) {
+            result = { error: error.message };
+          } else {
+            result = { data, rowCount: data?.length || 0 };
+          }
+          break;
+          
+        case "search_codebase":
+          // Note: This would require additional implementation or API access
+          result = { message: "Code search not yet implemented - use read_file for specific files" };
+          break;
+          
+        case "read_file":
+          // Note: This would require additional implementation or API access
+          result = { message: "File reading not yet implemented - please describe what you need" };
+          break;
+          
+        case "list_directory":
+          // Note: This would require additional implementation or API access
+          result = { message: "Directory listing not yet implemented" };
+          break;
+          
+        default:
+          result = { error: "Unknown tool" };
+      }
+      
+      results.push({
+        tool_call_id: toolCall.id,
+        output: JSON.stringify(result)
+      });
+    } catch (error) {
+      results.push({
+        tool_call_id: toolCall.id,
+        output: JSON.stringify({ error: error.message })
+      });
+    }
+  }
+  
+  return results;
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -69,9 +200,12 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const systemPrompt = `You are a helpful marketing agent for Daily ABC Illustrations, an AI-powered educational platform that creates personalized ABC books for children. Your goal is to help the founder create ideas to grow the company via content marketing. Be creative, actionable, and focused on educational content for parents and children.`;
+    const systemPrompt = `You are a helpful marketing agent for Daily ABC Illustrations, an AI-powered educational platform that creates personalized ABC books for children. Your goal is to help the founder create ideas to grow the company via content marketing. Be creative, actionable, and focused on educational content for parents and children.
+    
+You have access to the production database and codebase to help you understand the current state of the platform and provide data-driven insights.`;
 
-    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+    // First call: Check if AI wants to use tools
+    const initialResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
@@ -83,33 +217,96 @@ serve(async (req) => {
           { role: 'system', content: systemPrompt },
           ...messages,
         ],
-        stream: true,
+        tools: tools,
+        stream: false, // Don't stream when waiting for tool calls
       }),
     });
 
-    if (!response.ok) {
-      if (response.status === 429) {
+    if (!initialResponse.ok) {
+      if (initialResponse.status === 429) {
         return new Response(JSON.stringify({ error: 'Rate limits exceeded, please try again later.' }), {
           status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      if (response.status === 402) {
+      if (initialResponse.status === 402) {
         return new Response(JSON.stringify({ error: 'Payment required, please add funds to your Lovable AI workspace.' }), {
           status: 402,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
-      const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
+      const errorText = await initialResponse.text();
+      console.error('AI gateway error:', initialResponse.status, errorText);
       return new Response(JSON.stringify({ error: 'AI gateway error' }), {
         status: 500,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    return new Response(response.body, {
-      headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+    const initialData = await initialResponse.json();
+    const choice = initialData.choices[0];
+    
+    // Check if AI wants to use tools
+    if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
+      console.log('AI requested tool calls:', choice.message.tool_calls);
+      
+      // Execute tools
+      const toolResults = await executeTools(choice.message.tool_calls, supabase);
+      
+      // Second call: Send tool results back to AI
+      const finalResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-3-pro-preview',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages,
+            choice.message, // Include the assistant's tool call message
+            ...toolResults.map(result => ({
+              role: 'tool',
+              tool_call_id: result.tool_call_id,
+              content: result.output
+            }))
+          ],
+          stream: true, // Now we can stream the final response
+        }),
+      });
+
+      if (!finalResponse.ok) {
+        if (finalResponse.status === 429) {
+          return new Response(JSON.stringify({ error: 'Rate limits exceeded, please try again later.' }), {
+            status: 429,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        if (finalResponse.status === 402) {
+          return new Response(JSON.stringify({ error: 'Payment required, please add funds to your Lovable AI workspace.' }), {
+            status: 402,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        const errorText = await finalResponse.text();
+        console.error('AI gateway error:', finalResponse.status, errorText);
+        return new Response(JSON.stringify({ error: 'AI gateway error' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      return new Response(finalResponse.body, {
+        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+      });
+    }
+    
+    // No tool calls - return initial response as text
+    return new Response(JSON.stringify({ 
+      message: choice.message.content 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   } catch (error) {
     console.error('Admin chat error:', error);

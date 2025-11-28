@@ -1557,12 +1557,14 @@ export default function GoogleChat() {
 
         {/* Book Editor Panel - Responsive: Bottom Sheet on Mobile, Sliding Div on Desktop */}
         {isMobile ? (
-          <Sheet 
-            open={showEditor && !createBookMutation.isSuccess} 
-            onOpenChange={(open) => {
-              // Editor state is derived, onOpenChange is no-op
-            }}
-          >
+        <Sheet 
+          open={showEditor} 
+          onOpenChange={(open) => {
+            if (!open) {
+              setForceEditorClosed(true);
+            }
+          }}
+        >
             <SheetContent 
               side="bottom" 
               className="w-full max-h-[90vh] p-0 overflow-hidden rounded-t-xl z-[100]"

@@ -497,6 +497,76 @@ something-else: Try Something Different[/SUGGEST]"
 
 NEVER respond without including a [SUGGEST] block with actionable next steps.`;
 
+    // Automatic codebase search detection and context injection
+    const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';
+    const codebaseKeywords = ['feature', 'how does', 'what is', 'tell me about', 'explain', 'database', 'table', 'component', 'work', 'function', 'what are', 'show me'];
+    const isCodebaseQuestion = codebaseKeywords.some(keyword => lastUserMessage.includes(keyword));
+    
+    let enrichedSystemPrompt = systemPrompt;
+    
+    if (isCodebaseQuestion && lastUserMessage.length > 10) {
+      console.log('🔍 Detected codebase question, auto-searching...');
+      
+      // Extract key terms for search (remove common words)
+      const searchTerms = lastUserMessage
+        .replace(/\b(how|does|what|is|tell|me|about|explain|the|our|in|a|an|and|or|but|for|to|from|with|can|you|show)\b/g, '')
+        .trim()
+        .split(/\s+/)
+        .filter(word => word.length > 3);
+      
+      // Try multiple search strategies
+      const searchQueries = [
+        searchTerms.slice(0, 3).join('|'), // Main terms
+        searchTerms[0], // First term alone
+        searchTerms.map(t => t + 's').join('|'), // Plural variations
+      ].filter(q => q && q.length > 3);
+      
+      let allResults: any[] = [];
+      const GITHUB_TOKEN = Deno.env.get('GITHUB_TOKEN');
+      
+      if (GITHUB_TOKEN && searchQueries.length > 0) {
+        for (const query of searchQueries.slice(0, 2)) { // Try first 2 strategies
+          try {
+            const searchQuery = `${query} repo:jordanleahy/daily-abc-illustrations path:*.tsx OR path:*.ts`;
+            const searchResponse = await fetch(
+              `https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=10`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                  'Accept': 'application/vnd.github.v3+json',
+                  'User-Agent': 'Supabase-Edge-Function',
+                }
+              }
+            );
+            
+            if (searchResponse.ok) {
+              const searchData = await searchResponse.json();
+              if (searchData.items && searchData.items.length > 0) {
+                allResults = allResults.concat(searchData.items.slice(0, 5));
+                console.log(`✅ Found ${searchData.items.length} results for query: ${query}`);
+                break; // Found results, stop searching
+              }
+            }
+          } catch (error) {
+            console.error('Auto-search error:', error);
+          }
+        }
+        
+        if (allResults.length > 0) {
+          const contextInjection = `\n\n[AUTOMATIC CODEBASE CONTEXT - Found ${allResults.length} relevant files]
+${allResults.map((item: any) => `- ${item.path} (${item.repository.full_name})`).join('\n')}
+
+These files were automatically found based on the user's question. You should use read_file() to examine the most relevant ones and synthesize the information to answer the question.
+[END AUTOMATIC CONTEXT]\n`;
+          
+          enrichedSystemPrompt = systemPrompt + contextInjection;
+          console.log('✅ Injected context from auto-search');
+        } else {
+          console.log('⚠️ No results from auto-search, agent will use tools manually');
+        }
+      }
+    }
+
     // First call: Check if AI wants to use tools
     const initialResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -507,7 +577,7 @@ NEVER respond without including a [SUGGEST] block with actionable next steps.`;
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: [
-          { role: 'system', content: systemPrompt },
+          { role: 'system', content: enrichedSystemPrompt },
           ...messages,
         ],
         tools: tools,
@@ -541,7 +611,7 @@ NEVER respond without including a [SUGGEST] block with actionable next steps.`;
     
     // Track conversation for multi-turn tool calling
     let conversationMessages = [
-      { role: 'system', content: systemPrompt },
+      { role: 'system', content: enrichedSystemPrompt },
       ...messages,
     ];
 

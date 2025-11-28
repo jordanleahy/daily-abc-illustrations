@@ -678,32 +678,11 @@ export default function GoogleChat() {
         .map(m => m.content)
         .join('\n');
       
-      // Extract cover prompt (page 1)
-      const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
-      if (coverMatch) {
-        let coverPrompt = coverMatch[0];
-        
-        // Normalize: Ensure title positioning is explicit
-        if (!coverPrompt.toLowerCase().includes('centered') && 
-            !coverPrompt.toLowerCase().includes('center')) {
-          const titleMatch = conversationText.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
-          const bookTitle = titleMatch ? titleMatch[1].trim() : '[TITLE]';
-          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
-        }
-        
-        fullPrompts[1] = coverPrompt;
-      }
-      
-      // Extract educational focus prompt (page 2)
-      const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
-      if (eduMatch) {
-        fullPrompts[2] = eduMatch[0];
-      }
-      
-      // Extract numbered page prompts (pages 3-28 = A-Z) - Stop after "Clean illustration only."
-      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?Clean illustration only\.)\s*(?=\n\*\*Page|\n\n|$)/gi);
+      // Extract all page prompts using unified **Page N:** format
+      // Captures prompts that may or may not end with "Clean illustration only."
+      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|\n\n\n|$)/gi);
       for (const match of pageMatches) {
-        const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
+        const pageNum = parseInt(match[1]); // Direct mapping: Page N → key N
         fullPrompts[pageNum] = match[0];
       }
       

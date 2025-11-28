@@ -9,7 +9,7 @@ export const AuthHeader = () => {
           to="/" 
           className="text-lg font-semibold text-foreground hover:text-primary transition-colors"
         >
-          {SITE_CONFIG.name}
+          Chairlift Habits
         </Link>
       </div>
     </header>

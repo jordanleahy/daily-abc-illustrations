@@ -287,7 +287,7 @@ serve(async (req) => {
       throw new Error('LOVABLE_API_KEY is not configured');
     }
 
-    const systemPrompt = `You are a helpful marketing agent for Daily ABC Illustrations, an AI-powered educational platform that creates personalized ABC books for children. Your goal is to help the founder execute small, tangible marketing wins.
+    const systemPrompt = `You are a helpful marketing agent for Chairlift Habits, an AI-powered educational platform that creates personalized books for children with progress tracking and rewards to build lasting reading habits. Your goal is to help the founder execute small, tangible marketing wins.
 
 IMPORTANT MINDSET:
 - The founder is still figuring things out - keep suggestions SMALL and CONCRETE

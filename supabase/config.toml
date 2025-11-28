@@ -176,3 +176,6 @@ verify_jwt = false
 
 [functions.generate-embeddings]
 verify_jwt = true
+
+[functions.vectorize-codebase]
+verify_jwt = true

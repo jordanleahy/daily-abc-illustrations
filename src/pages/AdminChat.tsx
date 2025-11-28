@@ -194,41 +194,23 @@ export default function AdminChat() {
         'src/components/BookEditorPanel.tsx'
       ];
 
-      let successCount = 0;
-      for (const filePath of filesToEmbed) {
-        // Call admin-chat to read the file from GitHub
-        const { data: chatData, error: chatError } = await supabase.functions.invoke('admin-chat', {
-          body: {
-            messages: [{
-              role: 'user',
-              content: `Read the file ${filePath} and return ONLY the file content, no explanation`
-            }]
-          }
-        });
-
-        if (chatError || !chatData?.content) {
-          console.error(`Failed to read ${filePath}:`, chatError);
-          continue;
-        }
-
-        // Generate embedding for the file content
-        const { data: embData, error: embError } = await supabase.functions.invoke('generate-embeddings', {
-          body: {
-            text: `File: ${filePath}\n\n${chatData.content}`,
-            metadata: { type: 'codebase', file: filePath },
-            storeInDB: true
-          }
-        });
-
-        if (!embError && embData.success) successCount++;
-      }
-
-      toast.success(`✅ Vectorized ${successCount} code files!`, {
-        description: 'Codebase is now searchable',
-        duration: 5000,
+      const { data, error } = await supabase.functions.invoke('vectorize-codebase', {
+        body: { filePaths: filesToEmbed }
       });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`✅ Vectorized ${data.succeeded} of ${data.processed} code files!`, {
+          description: 'Codebase is now searchable by marketing agent',
+          duration: 5000,
+        });
+        console.log('Vectorization results:', data.results);
+      } else {
+        throw new Error(data?.error || 'Vectorization failed');
+      }
     } catch (error) {
-      console.error('Seeding error:', error);
+      console.error('Vectorization error:', error);
       toast.error('Vectorization failed', {
         description: error instanceof Error ? error.message : 'Unknown error',
       });
@@ -240,6 +222,8 @@ export default function AdminChat() {
   const handleTestSemanticSearch = async () => {
     setIsGeneratingEmbeddings(true);
     try {
+      console.log('🔍 Generating search embedding for: "admin chat interface with message streaming and session management"');
+      
       // Search for code related to chat functionality
       const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke('generate-embeddings', {
         body: { 
@@ -248,11 +232,16 @@ export default function AdminChat() {
         }
       });
 
-      if (embeddingError) throw embeddingError;
+      if (embeddingError) {
+        console.error('❌ Embedding generation error:', embeddingError);
+        throw embeddingError;
+      }
 
       if (!embeddingData.success) {
         throw new Error(embeddingData.error || 'Failed to generate query embedding');
       }
+
+      console.log('✅ Search embedding generated, searching vectorized codebase...');
 
       const { data: searchResults, error: searchError } = await supabase
         .rpc('search_embeddings', {
@@ -261,16 +250,26 @@ export default function AdminChat() {
           match_count: 5
         });
 
-      if (searchError) throw searchError;
+      if (searchError) {
+        console.error('❌ Search error:', searchError);
+        throw searchError;
+      }
 
-      toast.success('✅ Semantic search complete!', {
-        description: `Found ${searchResults?.length || 0} similar items (check console for details)`,
-        duration: 5000,
+      console.log('🎯 SEARCH RESULTS:', {
+        totalFound: searchResults?.length || 0,
+        files: searchResults?.map((r: any) => ({
+          file: r.metadata?.file || 'unknown',
+          similarity: (r.similarity * 100).toFixed(1) + '%',
+          preview: r.content?.substring(0, 150) + '...'
+        }))
       });
 
-      console.log('Search results:', searchResults);
+      toast.success('✅ Semantic search complete!', {
+        description: `Found ${searchResults?.length || 0} matching files (see console for details)`,
+        duration: 5000,
+      });
     } catch (error) {
-      console.error('Search error:', error);
+      console.error('❌ Search failed:', error);
       toast.error('Search failed', {
         description: error instanceof Error ? error.message : 'Unknown error',
       });

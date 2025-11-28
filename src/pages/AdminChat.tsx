@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AdminOnly } from '@/components/AdminOnly';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { MessageList } from '@/components/chat/MessageList';
@@ -8,6 +8,7 @@ import { AdminChatSessionSidebar } from '@/components/chat/AdminChatSessionSideb
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Textarea } from '@/components/ui/textarea';
 import { Send } from 'lucide-react';
 
 export default function AdminChat() {
@@ -15,6 +16,7 @@ export default function AdminChat() {
   const [input, setInput] = useState('');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
     sessions,
@@ -37,6 +39,11 @@ export default function AdminChat() {
     sessionId: currentSessionId,
     onMessagesUpdate: handleMessagesUpdate,
   });
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
 
   // Detect mobile screen size
   useEffect(() => {
@@ -94,7 +101,7 @@ export default function AdminChat() {
     setInput('');
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -155,36 +162,41 @@ export default function AdminChat() {
                   </div>
                 </div>
               ) : (
-                <MessageList 
-                  messages={messages}
-                  onQuickReply={(action) => {
-                    sendMessage(action.value);
-                  }}
-                />
+                <>
+                  <MessageList 
+                    messages={messages}
+                    onQuickReply={(action) => {
+                      sendMessage(action.value);
+                    }}
+                  />
+                  <div ref={messagesEndRef} />
+                </>
               )}
             </div>
 
             {/* Sticky Footer */}
             <div className="border-t px-4 md:px-6 py-4 bg-background">
-              <div className="flex gap-2">
-                <Input
+              <div className="flex gap-2 items-end">
+                <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyPress={handleKeyPress}
+                  onKeyDown={handleKeyDown}
                   placeholder={
                     !currentSessionId 
                       ? "Creating session..." 
                       : isLoading 
                         ? "Sending..." 
-                        : "Ask about marketing strategies, content ideas..."
+                        : "Ask about marketing strategies, content ideas... (Shift+Enter for new line)"
                   }
                   disabled={isLoading || !currentSessionId}
-                  className="flex-1"
+                  className="flex-1 min-h-[44px] max-h-[200px] resize-none"
+                  rows={1}
                 />
                 <Button
                   onClick={handleSend}
                   disabled={isLoading || !input.trim() || !currentSessionId}
                   size="icon"
+                  className="h-[44px] w-[44px]"
                 >
                   <Send className="h-4 w-4" />
                 </Button>

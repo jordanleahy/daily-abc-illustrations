@@ -78,7 +78,23 @@ export function BookEditorPanel({
   const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
-  const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
+  // Get storage key for copiedPages persistence (book or session specific)
+  const storageKey = `qa-copied-pages-${bookId || createdBookId || 'session'}`;
+  
+  // Initialize copiedPages from localStorage
+  const [copiedPages, setCopiedPages] = useState<Set<number>>(() => {
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return new Set(parsed);
+      }
+    } catch (error) {
+      console.error('[QA Panel] Failed to load copiedPages from localStorage:', error);
+    }
+    return new Set();
+  });
+  
   const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
   const [isReplacing, setIsReplacing] = useState(false);
   const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
@@ -89,8 +105,17 @@ export function BookEditorPanel({
     return localStorage.getItem('qa-panel-onboarding-seen') === 'true';
   });
   
-  // Derive hasClickedCopy from whether prompt exists for current page OR page was copied
-  const hasClickedCopy = !!editorPagePrompts[currentPageNumber] || copiedPages.has(currentPageNumber);
+  // Persist copiedPages to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem(storageKey, JSON.stringify([...copiedPages]));
+    } catch (error) {
+      console.error('[QA Panel] Failed to save copiedPages to localStorage:', error);
+    }
+  }, [copiedPages, storageKey]);
+  
+  // Derive hasClickedCopy from copiedPages tracking only
+  const hasClickedCopy = copiedPages.has(currentPageNumber);
   
   // Handle close with context-aware navigation
   const handleClose = () => {

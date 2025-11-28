@@ -97,7 +97,12 @@ export default function AdminChat() {
 
   return (
     <AdminOnly>
-      <PageLayout title="Admin Chat" showHeader={true} fullHeight={true}>
+      <PageLayout 
+        title="Admin Chat" 
+        showHeader={true} 
+        fullHeight={true}
+        onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
+      >
         <div className="flex h-full bg-background overflow-hidden">
           {/* Desktop Sidebar */}
           <div className="hidden md:block w-80">

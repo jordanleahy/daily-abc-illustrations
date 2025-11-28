@@ -119,7 +119,41 @@ export function useAdminChat({ sessionId, onMessagesUpdate }: UseAdminChatProps)
         }
       }
 
-      const updatedMessages = [...newMessages, { role: 'assistant' as const, content: fullResponse }];
+      // Parse suggestions from final content
+      const parseSuggestions = (text: string) => {
+        const suggestRegex = /\[SUGGEST\]([\s\S]*?)\[\/SUGGEST\]/;
+        const match = text.match(suggestRegex);
+        
+        if (!match) {
+          return { cleanContent: text, suggestedActions: undefined };
+        }
+        
+        const suggestionsText = match[1].trim();
+        const cleanContent = text.replace(suggestRegex, '').trim();
+        
+        const actions = suggestionsText
+          .split('\n')
+          .filter(line => line.trim())
+          .map(line => {
+            const colonIndex = line.indexOf(':');
+            if (colonIndex === -1) return null;
+            
+            const id = line.substring(0, colonIndex).trim();
+            const label = line.substring(colonIndex + 1).trim();
+            
+            return { id, label, value: label };
+          })
+          .filter((action): action is import('@/hooks/useGoogleChat').SuggestedAction => action !== null);
+        
+        return { cleanContent, suggestedActions: actions.length > 0 ? actions : undefined };
+      };
+
+      const { cleanContent, suggestedActions } = parseSuggestions(fullResponse);
+      const updatedMessages = [...newMessages, { 
+        role: 'assistant' as const, 
+        content: cleanContent,
+        suggestedActions 
+      }];
       setMessages(updatedMessages);
       
       // Notify parent component about message updates

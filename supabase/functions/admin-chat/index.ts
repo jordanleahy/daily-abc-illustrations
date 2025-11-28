@@ -192,18 +192,124 @@ async function executeTools(toolCalls: any[], supabase: any, userId: string) {
           break;
           
         case "search_codebase":
-          // Note: This would require additional implementation or API access
-          result = { message: "Code search not yet implemented - use read_file for specific files" };
+          const GITHUB_TOKEN = Deno.env.get('GITHUB_TOKEN');
+          if (!GITHUB_TOKEN) {
+            result = { error: "GitHub token not configured" };
+            break;
+          }
+          
+          // Use GitHub Code Search API
+          const searchQuery = `${args.pattern} repo:jordanleahy/daily-abc-illustrations${args.file_pattern ? ` path:*${args.file_pattern}` : ''}`;
+          const searchResponse = await fetch(
+            `https://api.github.com/search/code?q=${encodeURIComponent(searchQuery)}&per_page=20`,
+            {
+              headers: {
+                'Authorization': `Bearer ${GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'Supabase-Edge-Function',
+              }
+            }
+          );
+          
+          if (!searchResponse.ok) {
+            const errorText = await searchResponse.text();
+            result = { error: `GitHub API error: ${searchResponse.status} - ${errorText}` };
+          } else {
+            const searchData = await searchResponse.json();
+            result = { 
+              matches: searchData.items?.map((item: any) => ({
+                path: item.path,
+                repository: item.repository.full_name,
+                url: item.html_url,
+                score: item.score
+              })) || [],
+              total_count: searchData.total_count || 0
+            };
+          }
           break;
           
         case "read_file":
-          // Note: This would require additional implementation or API access
-          result = { message: "File reading not yet implemented - please describe what you need" };
+          const githubToken = Deno.env.get('GITHUB_TOKEN');
+          if (!githubToken) {
+            result = { error: "GitHub token not configured" };
+            break;
+          }
+          
+          // Fetch file content from GitHub
+          const fileResponse = await fetch(
+            `https://api.github.com/repos/jordanleahy/daily-abc-illustrations/contents/${args.file_path}?ref=main`,
+            {
+              headers: {
+                'Authorization': `Bearer ${githubToken}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'Supabase-Edge-Function',
+              }
+            }
+          );
+          
+          if (!fileResponse.ok) {
+            const errorText = await fileResponse.text();
+            result = { error: `GitHub API error: ${fileResponse.status} - ${errorText}` };
+          } else {
+            const fileData = await fileResponse.json();
+            
+            // Check if it's a file (not a directory)
+            if (fileData.type === 'file' && fileData.content) {
+              // Decode base64 content
+              const decodedContent = atob(fileData.content.replace(/\n/g, ''));
+              result = { 
+                path: fileData.path,
+                content: decodedContent,
+                size: fileData.size,
+                url: fileData.html_url
+              };
+            } else {
+              result = { error: "Path is not a file or content not available" };
+            }
+          }
           break;
           
         case "list_directory":
-          // Note: This would require additional implementation or API access
-          result = { message: "Directory listing not yet implemented" };
+          const ghToken = Deno.env.get('GITHUB_TOKEN');
+          if (!ghToken) {
+            result = { error: "GitHub token not configured" };
+            break;
+          }
+          
+          // Fetch directory contents from GitHub
+          const dirResponse = await fetch(
+            `https://api.github.com/repos/jordanleahy/daily-abc-illustrations/contents/${args.path || ''}?ref=main`,
+            {
+              headers: {
+                'Authorization': `Bearer ${ghToken}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'Supabase-Edge-Function',
+              }
+            }
+          );
+          
+          if (!dirResponse.ok) {
+            const errorText = await dirResponse.text();
+            result = { error: `GitHub API error: ${dirResponse.status} - ${errorText}` };
+          } else {
+            const dirData = await dirResponse.json();
+            
+            // Check if it's an array (directory listing)
+            if (Array.isArray(dirData)) {
+              result = { 
+                path: args.path || '/',
+                items: dirData.map((item: any) => ({
+                  name: item.name,
+                  path: item.path,
+                  type: item.type,
+                  size: item.size,
+                  url: item.html_url
+                }))
+              };
+            } else {
+              result = { error: "Path is not a directory" };
+            }
+          }
           break;
           
         default:

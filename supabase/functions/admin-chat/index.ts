@@ -208,13 +208,14 @@ IMPORTANT MINDSET:
 - Prioritize quick wins over grand strategies
 - Think "what can we do TODAY?" not "what's the 6-month roadmap?"
 - Break down big ideas into tiny first steps
+- Don't query the database unless specifically asked - focus on actionable advice first
 
 RESPONSE APPROACH:
 - Start with the smallest possible action (e.g., "draft one Instagram caption" not "create Instagram strategy")
 - Provide specific examples, templates, or exact copy when possible
 - Suggest testing ONE thing before committing to a campaign
 - Focus on free or low-cost tactics
-- Validate ideas with data when available via database queries
+- Keep responses conversational and brief
 
 CRITICAL RESPONSE FORMAT:
 - After every response, provide 3-5 small, immediate next steps
@@ -232,7 +233,7 @@ check-best-time: Check Best Time to Post
 see-hashtags: Get Hashtag Suggestions
 something-else: Try Something Different[/SUGGEST]"
 
-You have access to the production database and codebase to provide data-driven insights. Always end responses with small, tangible suggestions.`;
+Always end responses with small, tangible suggestions.`;
 
     // First call: Check if AI wants to use tools
     const initialResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
@@ -241,15 +242,14 @@ You have access to the production database and codebase to provide data-driven i
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'google/gemini-3-pro-preview',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          ...messages,
-        ],
-        tools: tools,
-        stream: false, // Don't stream when waiting for tool calls
-      }),
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: [
+            { role: 'system', content: systemPrompt },
+            ...messages,
+          ],
+          stream: true, // Stream directly without tool calls for faster responses
+        }),
     });
 
     if (!initialResponse.ok) {
@@ -276,67 +276,9 @@ You have access to the production database and codebase to provide data-driven i
     const initialData = await initialResponse.json();
     const choice = initialData.choices[0];
     
-    // Check if AI wants to use tools
-    if (choice.message.tool_calls && choice.message.tool_calls.length > 0) {
-      console.log('AI requested tool calls:', choice.message.tool_calls);
-      
-      // Execute tools
-      const toolResults = await executeTools(choice.message.tool_calls, supabase);
-      
-      // Second call: Send tool results back to AI
-      const finalResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          model: 'google/gemini-3-pro-preview',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages,
-            choice.message, // Include the assistant's tool call message
-            ...toolResults.map(result => ({
-              role: 'tool',
-              tool_call_id: result.tool_call_id,
-              content: result.output
-            }))
-          ],
-          stream: true, // Now we can stream the final response
-        }),
-      });
-
-      if (!finalResponse.ok) {
-        if (finalResponse.status === 429) {
-          return new Response(JSON.stringify({ error: 'Rate limits exceeded, please try again later.' }), {
-            status: 429,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        if (finalResponse.status === 402) {
-          return new Response(JSON.stringify({ error: 'Payment required, please add funds to your Lovable AI workspace.' }), {
-            status: 402,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          });
-        }
-        const errorText = await finalResponse.text();
-        console.error('AI gateway error:', finalResponse.status, errorText);
-        return new Response(JSON.stringify({ error: 'AI gateway error' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
-
-      return new Response(finalResponse.body, {
-        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
-      });
-    }
-    
-    // No tool calls - return initial response as text
-    return new Response(JSON.stringify({ 
-      message: choice.message.content 
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // Stream the response directly
+    return new Response(initialResponse.body, {
+      headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
     });
   } catch (error) {
     console.error('Admin chat error:', error);

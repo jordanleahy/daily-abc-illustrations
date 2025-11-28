@@ -394,6 +394,9 @@ export default function Books() {
   const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
   
+  // Track books being deleted to hide them immediately
+  const [deletingBookIds, setDeletingBookIds] = useState<Set<string>>(new Set());
+  
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
@@ -778,7 +781,20 @@ export default function Books() {
   };
 
   const handleDeleteBook = (bookId: string, bookName: string) => {
-    deleteBook.mutate(bookId);
+    // Immediately add to deleting set to hide the card
+    setDeletingBookIds(prev => new Set(prev).add(bookId));
+    
+    // Start the deletion in background
+    deleteBook.mutate(bookId, {
+      onSettled: () => {
+        // Remove from deleting set when done (success or failure)
+        setDeletingBookIds(prev => {
+          const next = new Set(prev);
+          next.delete(bookId);
+          return next;
+        });
+      }
+    });
   };
 
   const pageTitle = "My Books";
@@ -841,10 +857,12 @@ export default function Books() {
         />
 
         {/* Books Grid */}
-        {books && books.length > 0 ? (
+        {books && books.filter(book => !deletingBookIds.has(book.id)).length > 0 ? (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {books.map((book, index) => (
+              {books
+                .filter(book => !deletingBookIds.has(book.id))
+                .map((book, index) => (
                 <UserBookCard
                   key={book.id}
                   book={book}
@@ -863,7 +881,7 @@ export default function Books() {
                   onDelete={handleDeleteBook}
                   isPublishing={schedulePublication.isPending && schedulePublication.variables?.bookId === book.id}
                   isUnpublishing={deletePublication.isPending && deletePublication.variables === book.daily_published?.[0]?.id}
-                  isDeleting={deleteBook.isPending && deleteBook.variables === book.id}
+                  isDeleting={false}
                   queryClient={queryClient}
                 />
               ))}

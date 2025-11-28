@@ -19,6 +19,7 @@ export default function AdminChat() {
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isTestingEmbeddings, setIsTestingEmbeddings] = useState(false);
+  const [isGeneratingEmbeddings, setIsGeneratingEmbeddings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -143,6 +144,44 @@ export default function AdminChat() {
     }
   };
 
+  const handleGenerateEmbeddings = async () => {
+    setIsGeneratingEmbeddings(true);
+    try {
+      const testText = 'Chairlift Habits is an educational platform for creating personalized ABC books for children.';
+      
+      const { data, error } = await supabase.functions.invoke('generate-embeddings', {
+        body: {
+          text: testText,
+          metadata: { source: 'admin-test', timestamp: new Date().toISOString() },
+          storeInDB: true,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.success) {
+        toast.success('✅ Embedding generated and stored!', {
+          description: `Dimensions: ${data.dimensions}, ID: ${data.id?.substring(0, 8)}...`,
+          duration: 5000,
+        });
+      } else {
+        toast.error('❌ Generation failed', {
+          description: data.error || 'Unknown error',
+          duration: 5000,
+        });
+      }
+
+      console.log('Generation results:', data);
+    } catch (error) {
+      console.error('Generation failed:', error);
+      toast.error('Generation failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } finally {
+      setIsGeneratingEmbeddings(false);
+    }
+  };
+
   return (
     <AdminOnly>
       <PageLayout 
@@ -237,16 +276,28 @@ export default function AdminChat() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-                <Button
-                  onClick={handleTestEmbeddings}
-                  disabled={isTestingEmbeddings}
-                  variant="outline"
-                  size="sm"
-                  className="w-fit"
-                >
-                  <Zap className="h-3 w-3 mr-2" />
-                  {isTestingEmbeddings ? 'Testing...' : 'Test Embeddings API'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={handleTestEmbeddings}
+                    disabled={isTestingEmbeddings}
+                    variant="outline"
+                    size="sm"
+                    className="w-fit"
+                  >
+                    <Zap className="h-3 w-3 mr-2" />
+                    {isTestingEmbeddings ? 'Testing...' : 'Test Embeddings API'}
+                  </Button>
+                  <Button
+                    onClick={handleGenerateEmbeddings}
+                    disabled={isGeneratingEmbeddings}
+                    variant="outline"
+                    size="sm"
+                    className="w-fit"
+                  >
+                    <Zap className="h-3 w-3 mr-2" />
+                    {isGeneratingEmbeddings ? 'Generating...' : 'Generate Test Embedding'}
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

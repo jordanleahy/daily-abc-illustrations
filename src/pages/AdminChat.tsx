@@ -103,7 +103,7 @@ export default function AdminChat() {
         fullHeight={true}
         onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
       >
-        <div className="flex h-full bg-background overflow-hidden">
+        <div className="fixed inset-0 top-[3.5rem] flex bg-background">
           {/* Desktop Sidebar */}
           <div className="hidden md:block w-80">
             <AdminChatSessionSidebar
@@ -154,7 +154,7 @@ export default function AdminChat() {
             </div>
 
             {/* Sticky Footer */}
-            <div className="sticky bottom-0 border-t px-4 md:px-6 py-4 bg-background">
+            <div className="border-t px-4 md:px-6 py-4 bg-background">
               <div className="flex gap-2">
                 <Input
                   value={input}

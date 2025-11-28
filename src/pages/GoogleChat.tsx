@@ -1527,7 +1527,6 @@ export default function GoogleChat() {
             createdBookId={isBookPublished ? createdBookId : null}
             isMobile={isMobile}
             shouldShowReviewButton={shouldShowReviewButton || isBookPublished}
-            selectedKidId={selectedKidId}
             onInputChange={setInput}
             onSend={handleSend}
             onKeyPress={handleKeyPress}
@@ -1535,7 +1534,6 @@ export default function GoogleChat() {
             onImageSelect={handleImageSelect}
             onViewBook={handleViewCreatedBook}
             onOpenReview={handleOpenEditorPanel}
-            onKidChange={setSelectedKidId}
           />
         </div>
 

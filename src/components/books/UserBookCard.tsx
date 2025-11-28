@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
 import { BookOpen, Trash2 } from 'lucide-react';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { getThemeDisplayName } from '@/types/characterTheme';
@@ -68,7 +67,6 @@ function UserBookCardComponent({
   isDeleting,
   queryClient
 }: UserBookCardProps) {
-  const { data: seoMetadata } = useBookSeoMetadata(book.id);
   // Use coverImageUrl from book object (already fetched by useBooks hook)
   const coverImageUrl = book.coverImageUrl;
   

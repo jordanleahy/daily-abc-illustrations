@@ -133,12 +133,13 @@ export default function AdminChat() {
         {/* Chat Area */}
         <div className="flex flex-col flex-1 min-w-0">
           {/* Header */}
-          <div className="border-b px-4 md:px-6 py-4 flex items-center gap-3">
+          <div className="border-b px-4 md:px-6 py-4 flex items-center gap-3 shrink-0">
             <Button
               variant="ghost"
               size="icon"
-              className="md:hidden"
+              className="md:hidden shrink-0"
               onClick={() => setIsMobileSidebarOpen(true)}
+              aria-label="Open sidebar"
             >
               <Menu className="h-5 w-5" />
             </Button>

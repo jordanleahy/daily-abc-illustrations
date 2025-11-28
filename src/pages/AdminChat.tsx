@@ -6,11 +6,14 @@ import { useAdminChatSessions } from '@/hooks/useAdminChatSessions';
 import { AdminChatSessionSidebar } from '@/components/chat/AdminChatSessionSidebar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send } from 'lucide-react';
+import { Sheet, SheetContent } from '@/components/ui/sheet';
+import { Send, Menu } from 'lucide-react';
 
 export default function AdminChat() {
   const [currentSessionId, setCurrentSessionId] = useState<string>();
   const [input, setInput] = useState('');
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const {
     sessions,
@@ -34,6 +37,20 @@ export default function AdminChat() {
     onMessagesUpdate: handleMessagesUpdate,
   });
 
+  // Detect mobile screen size
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setIsMobileSidebarOpen(false); // Auto-close on desktop
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Auto-create first session if none exist
   useEffect(() => {
     if (!sessionsLoading && sessions.length === 0 && !currentSessionId) {
@@ -49,6 +66,9 @@ export default function AdminChat() {
     try {
       const newSession = await createSession();
       setCurrentSessionId(newSession.id);
+      if (isMobile) {
+        setIsMobileSidebarOpen(false); // Close sidebar after creating on mobile
+      }
     } catch (error) {
       console.error('Error creating session:', error);
     }
@@ -76,7 +96,7 @@ export default function AdminChat() {
 
   return (
     <AdminOnly>
-      <div className="flex h-screen bg-background">
+      <div className="flex h-screen bg-background overflow-hidden">
         {/* Desktop Sidebar */}
         <div className="hidden md:block w-80">
           <AdminChatSessionSidebar
@@ -91,19 +111,50 @@ export default function AdminChat() {
           />
         </div>
 
+        {/* Mobile Sidebar Sheet */}
+        <Sheet open={isMobileSidebarOpen} onOpenChange={setIsMobileSidebarOpen}>
+          <SheetContent side="left" className="w-80 p-0">
+            <AdminChatSessionSidebar
+              sessions={sessions}
+              currentSessionId={currentSessionId}
+              onCreateSession={handleCreateSession}
+              onSelectSession={(sessionId) => {
+                setCurrentSessionId(sessionId);
+                setIsMobileSidebarOpen(false); // Close after selecting
+              }}
+              onRenameSession={(sessionId, name) => updateSessionName({ sessionId, name })}
+              onDeleteSession={handleDeleteSession}
+              hasMore={hasMore}
+              onLoadMore={loadMore}
+            />
+          </SheetContent>
+        </Sheet>
+
         {/* Chat Area */}
-        <div className="flex flex-col flex-1">
-          <div className="border-b px-6 py-4">
-            <h1 className="text-2xl font-bold">Marketing Intelligence Chat</h1>
-            <p className="text-sm text-muted-foreground">AI-powered marketing assistant for content growth</p>
+        <div className="flex flex-col flex-1 min-w-0">
+          {/* Header */}
+          <div className="border-b px-4 md:px-6 py-4 flex items-center gap-3">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="md:hidden"
+              onClick={() => setIsMobileSidebarOpen(true)}
+            >
+              <Menu className="h-5 w-5" />
+            </Button>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-xl md:text-2xl font-bold truncate">Marketing Intelligence Chat</h1>
+              <p className="text-xs md:text-sm text-muted-foreground truncate">AI-powered marketing assistant for content growth</p>
+            </div>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-6 py-4">
+          {/* Messages Area */}
+          <div className="flex-1 overflow-y-auto px-4 md:px-6 py-4">
             {messages.length === 0 ? (
-              <div className="flex items-center justify-center h-full text-center">
-                <div>
+              <div className="flex items-center justify-center h-full text-center px-4">
+                <div className="max-w-md">
                   <h2 className="text-xl font-semibold mb-2">Welcome to Marketing Intelligence</h2>
-                  <p className="text-muted-foreground">Ask me anything about content marketing strategies, growth ideas, or campaign suggestions.</p>
+                  <p className="text-sm text-muted-foreground">Ask me anything about content marketing strategies, growth ideas, or campaign suggestions.</p>
                 </div>
               </div>
             ) : (
@@ -111,7 +162,8 @@ export default function AdminChat() {
             )}
           </div>
 
-          <div className="border-t px-6 py-4">
+          {/* Sticky Footer */}
+          <div className="sticky bottom-0 border-t px-4 md:px-6 py-4 bg-background">
             <div className="flex gap-2">
               <Input
                 value={input}

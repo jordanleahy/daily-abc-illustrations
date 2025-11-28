@@ -3,7 +3,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
-import { transformToSuggestBlock, validateStructuredResponse } from '../_shared/responseTransformer.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -212,7 +211,6 @@ serve(async (req) => {
     // Determine which agent and system prompt to use
     let systemPromptContent: string;
     let agentSource: string;
-    let agent: any = null; // Declare agent at function scope
 
     if (bookType) {
       // Book type selected - route to specialized agent
@@ -220,14 +218,12 @@ serve(async (req) => {
       console.log(`📚 Book type: ${bookType} → Agent: ${agentType}`);
       
       // Query database for specialized agent
-      const { data: agentData } = await supabase
+      const { data: agent } = await supabase
         .from('agents')
-        .select('instructions, name, max_completion_tokens')
+        .select('instructions, name')
         .eq('type', agentType)
         .eq('is_latest', true)
         .single();
-      
-      agent = agentData; // Assign to function-scope variable
       
       if (agent?.instructions) {
         systemPromptContent = agent.instructions;
@@ -316,11 +312,9 @@ serve(async (req) => {
 
     const allMessages = [systemMessage, ...messages];
 
-    const maxTokens = agent?.max_completion_tokens || 8000;
     console.log('Calling Lovable AI with', allMessages.length, 'messages');
-    console.log('📊 Max tokens:', maxTokens);
 
-    // Call Lovable AI Gateway with structured output enabled (non-streaming)
+    // Call Lovable AI Gateway with streaming
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -330,61 +324,7 @@ serve(async (req) => {
       body: JSON.stringify({
         model: 'google/gemini-2.5-flash',
         messages: allMessages,
-        max_tokens: maxTokens,
-        stream: false, // Must be false for structured output
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "agent_response",
-            strict: true,
-            schema: {
-              type: "object",
-              properties: {
-                message: {
-                  type: "string",
-                  description: "The conversational message to display to the user"
-                },
-                suggestions: {
-                  type: "array",
-                  description: "Optional array of clickable button suggestions. Empty array for open-ended questions.",
-                  items: {
-                    type: "object",
-                    properties: {
-                      id: {
-                        type: "string",
-                        description: "Machine-readable identifier (e.g., 'paw-patrol', 'lowercase', 'approve')"
-                      },
-                      label: {
-                        type: "string",
-                        description: "Human-readable display text (e.g., 'Paw Patrol', 'lowercase letters', 'Looks perfect!')"
-                      }
-                    },
-                    required: ["id", "label"],
-                    additionalProperties: false
-                  }
-                },
-                metadata: {
-                  type: "object",
-                  description: "Optional metadata about the current conversation step",
-                  properties: {
-                    confirmedPageCount: {
-                      type: "number",
-                      description: "The confirmed/recommended page count for the book"
-                    },
-                    currentStep: {
-                      type: "string",
-                      description: "Current step in the conversation flow (e.g., 'page-count-confirmation')"
-                    }
-                  },
-                  required: [],
-                  additionalProperties: false
-                }
-              },
-              required: ["message", "suggestions"],
-              additionalProperties: false
-            }
-          }
-        }
+        stream: true,
       }),
     });
 
@@ -412,59 +352,17 @@ serve(async (req) => {
       );
     }
 
-    console.log('Lovable AI response received');
+    console.log('Lovable AI streaming response started');
 
-    // Parse the structured JSON response
-    const aiResponse = await response.json();
-    const content = aiResponse.choices?.[0]?.message?.content;
-    
-    if (!content) {
-      console.error('No content in AI response:', aiResponse);
-      return new Response(
-        JSON.stringify({ error: 'Empty response from AI' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Parse and validate the structured response
-    let structuredResponse;
-    try {
-      structuredResponse = JSON.parse(content);
-    } catch (parseError) {
-      console.error('Failed to parse AI response as JSON:', parseError);
-      console.error('Raw content:', content);
-      return new Response(
-        JSON.stringify({ error: 'Invalid response format from AI' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    if (!validateStructuredResponse(structuredResponse)) {
-      console.error('Invalid structured response schema:', structuredResponse);
-      return new Response(
-        JSON.stringify({ error: 'Invalid response schema from AI' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Transform structured JSON to [SUGGEST] block format
-    const transformedContent = transformToSuggestBlock(structuredResponse);
-    console.log('Transformed response:', transformedContent);
-
-    // Return the transformed text response with metadata
-    return new Response(
-      JSON.stringify({ 
-        content: transformedContent,
-        role: 'assistant',
-        metadata: structuredResponse.metadata || null
-      }),
-      {
-        headers: { 
-          ...corsHeaders, 
-          'Content-Type': 'application/json'
-        }
+    // Return the stream directly with proper headers
+    return new Response(response.body, {
+      headers: { 
+        ...corsHeaders, 
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
       }
-    );
+    });
 
   } catch (error) {
     console.error('Error in google-chat function:', error);

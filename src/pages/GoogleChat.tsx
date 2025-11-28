@@ -47,7 +47,6 @@ export default function GoogleChat() {
   const [selectedBookType, setSelectedBookType] = useState<BookTypeId | null>(null);
   const [selectedAgeRange, setSelectedAgeRange] = useState<AgeRangeId | null>(null);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
-  const [confirmedPageCount, setConfirmedPageCount] = useState<number | null>(null);
   
   // Get kid profiles
   const { data: kidProfiles = [] } = useKidProfiles();
@@ -103,9 +102,18 @@ export default function GoogleChat() {
   // Prefetch hook for hover optimization
   const { prefetchSession } = usePrefetchSession();
 
-  // Persist messages immediately to prevent loss on refresh/navigation
+  // Debounce message updates to avoid excessive database writes
+  const updateTimeoutRef = useRef<NodeJS.Timeout>();
   const handleMessagesUpdate = useCallback((messages: any[], sessionId: string) => {
-    updateSessionMessages({ sessionId, messages });
+    // Clear any existing timeout
+    if (updateTimeoutRef.current) {
+      clearTimeout(updateTimeoutRef.current);
+    }
+    
+    // Set new timeout to update after 1 second of inactivity
+    updateTimeoutRef.current = setTimeout(() => {
+      updateSessionMessages({ sessionId, messages });
+    }, 1000);
   }, [updateSessionMessages]);
 
   // Calculate kid age if selected
@@ -213,29 +221,12 @@ export default function GoogleChat() {
       return false;
     }
     
-    if (!parsedPageDetails || parsedPageDetails.length === 0) {
-      return false;
-    }
-    
-    // Use confirmed page count if available (from Step 4.5), otherwise fallback to book type defaults
-    const expectedPageCount = confirmedPageCount 
-      ?? (selectedBookType === 'abc' ? 28 : 12); // ABC: 28, others: default 10 content + 2 = 12
-    
-    // Check if we have all expected pages
-    const hasAllPages = parsedPageDetails.length >= expectedPageCount;
-    
-    console.log('[QA Panel Auto-Open] Page count check:', {
-      parsedPages: parsedPageDetails.length,
-      expectedPages: expectedPageCount,
-      confirmedPageCount,
-      selectedBookType,
-      hasAllPages,
-      willAutoOpen: hasAllPages && !isLoading
-    });
+    // Show only when all 26 pages are complete (for ABC books)
+    const hasAllPages = parsedPageDetails !== null && parsedPageDetails.length === 26;
     
     // Always show button if we have all pages, even after book creation
     return hasAllPages;
-  }, [messages, isLoading, parsedPageDetails, selectedBookType, confirmedPageCount]);
+  }, [messages, isLoading, parsedPageDetails]);
 
   // Derive showEditor from whether outline is ready or book exists
   const showEditor = (shouldShowReviewButton || isBookCreated) && !forceEditorClosed;
@@ -310,71 +301,40 @@ export default function GoogleChat() {
     
     // PRIORITY 3: Pre-creation - parse from messages
     if (pageNum === 1) {
-      // Cover page (Page 1) - prioritize standardized **Page 1: Title** format
-      const lastPage1Msg = [...messages].reverse().find(
-        (msg) => typeof msg.content === 'string' && /\*\*Page\s+1:/i.test(msg.content)
-      );
-      
-      if (lastPage1Msg && typeof lastPage1Msg.content === 'string') {
-        const content = lastPage1Msg.content as string;
-        // Extract title from **Page 1: Title** format
-        const titleMatch = content.match(/\*\*Page\s+1:\s*([^*\n]+?)\*\*/i);
-        // Extract full page 1 content including **Page 1: Title** and description
-        const descMatch = content.match(/\*\*Page\s+1:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
-        
-        if (descMatch) {
-          const bookTitle = titleMatch ? titleMatch[1].trim() : '';
-          let description = descMatch[1].trim();
-          
-          // Replace "book cover" with "square card cover" to ensure 1:1 aspect ratio
-          description = description.replace(/\bbook cover\b/gi, 'square card cover');
-          
-          // Ensure centered title instruction exists (safety net)
-          if (!description.toLowerCase().includes('centered') && 
-              !description.toLowerCase().includes('center')) {
-            description = `${description}\n\nDISPLAY TITLE: Centered, large, bold letters taking up 50-60% of space.`;
-          }
-          
-          return `${description}`;
-        }
-      }
-      
-      // Fallback to old **Cover:** format for backwards compatibility
+      // Cover page (Page 1)
       const lastCoverMsg = [...messages].reverse().find(
         (msg) => typeof msg.content === 'string' && /\*\*Cover:/i.test(msg.content)
       );
       
-      if (lastCoverMsg && typeof lastCoverMsg.content === 'string') {
-        const content = lastCoverMsg.content as string;
-        const descMatch = content.match(/\*\*Cover:\*\*\s*([\s\S]*?)(?=\n\*\*|$)/i);
-        if (descMatch) {
-          return descMatch[1].trim();
-        }
+      if (!lastCoverMsg || typeof lastCoverMsg.content !== 'string') {
+        return null;
       }
       
-      return null;
+      // Extract cover description and title
+      const content = lastCoverMsg.content as string;
+      const titleMatch = content.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
+      const descMatch = content.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
+      
+      if (!descMatch) return null;
+      
+      const bookTitle = titleMatch ? titleMatch[1].trim() : '';
+      let description = descMatch[1].trim();
+      
+      // Replace "book cover" with "square card cover" to ensure 1:1 aspect ratio
+      description = description.replace(/\bbook cover\b/gi, 'square card cover');
+      
+      // Ensure centered title instruction exists (safety net)
+      if (!description.toLowerCase().includes('centered') && 
+          !description.toLowerCase().includes('center')) {
+        description = `${description}\n\nDISPLAY TITLE: Centered, large, bold letters taking up 50-60% of space.`;
+      }
+      
+      return `${description}`;
     }
     
-    if (pageNum === 2) {
-      // Educational focus page (Page 2) - prioritize standardized **Page 2: Title** format
-      const lastPage2Msg = [...messages].reverse().find(
-        (msg) => typeof msg.content === 'string' && /\*\*Page\s+2:/i.test(msg.content)
-      );
-      
-      if (lastPage2Msg && typeof lastPage2Msg.content === 'string') {
-        const content = lastPage2Msg.content as string;
-        const descMatch = content.match(/\*\*Page\s+2:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
-        if (descMatch) {
-          return descMatch[1].trim();
-        }
-      }
-      
-      // Fallback to old educationalFocus.imagePrompt for backwards compatibility
-      if (educationalFocus?.imagePrompt) {
-        return educationalFocus.imagePrompt;
-      }
-      
-      return null;
+    if (pageNum === 2 && educationalFocus) {
+      // Educational focus page (Page 2) - return just the image prompt without title
+      return educationalFocus.imagePrompt;
     }
     
     // Regular content pages (Page 3+)
@@ -439,7 +399,6 @@ export default function GoogleChat() {
     }
     
     if (outlineJustCompleted) {
-      console.log('[QA Panel Auto-Open] Opening QA panel automatically - outline complete');
       setCurrentEditorPage(1); // Start at cover page
       
       // Scroll to bottom to show the banner
@@ -542,18 +501,28 @@ export default function GoogleChat() {
       const hasPrompts = selectedSession.qa_page_prompts && Object.keys(selectedSession.qa_page_prompts).length > 0;
       
       if (!hasPrompts) {
-        // Extract all prompts using standardized **Page N: Title** format
+        // Extract prompts from conversation history
         const fullPrompts: Record<number, string> = {};
         const conversationText = messages
           .filter(m => m.role === 'assistant')
           .map(m => m.content)
           .join('\n');
         
-        // Pattern matches: **Page N: Title** followed by description/prompt text up to next **Page N or end
-        const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/gi);
-        for (const match of pageMatches) {
-          const pageNum = parseInt(match[1]); // Use page number directly (1-based)
-          fullPrompts[pageNum] = match[0]; // Store full match including **Page N: Title** header
+        // Extract prompts for each page (A-Z = pages 1-26)
+        for (let i = 1; i <= 26; i++) {
+          const letter = String.fromCharCode(64 + i);
+          const patterns = [
+            new RegExp(`<qa_page_${i}>([\\s\\S]*?)</qa_page_${i}>`, 'i'),
+            new RegExp(`Page ${i}[:\\s-]+${letter}[:\\s-]+([\\s\\S]*?)(?=Page ${i + 1}|$)`, 'i')
+          ];
+          
+          for (const pattern of patterns) {
+            const match = conversationText.match(pattern);
+            if (match) {
+              fullPrompts[i] = match[1].trim();
+              break;
+            }
+          }
         }
         
         // Save extracted prompts to database
@@ -705,12 +674,33 @@ export default function GoogleChat() {
         .map(m => m.content)
         .join('\n');
       
-      // Extract all pages using standardized **Page N: Title** format
-      // Pattern matches: **Page 1: Title** followed by description/prompt text up to next **Page N or end
-      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/gi);
+      // Extract cover prompt (page 1)
+      const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
+      if (coverMatch) {
+        let coverPrompt = coverMatch[0];
+        
+        // Normalize: Ensure title positioning is explicit
+        if (!coverPrompt.toLowerCase().includes('centered') && 
+            !coverPrompt.toLowerCase().includes('center')) {
+          const titleMatch = conversationText.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
+          const bookTitle = titleMatch ? titleMatch[1].trim() : '[TITLE]';
+          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
+        }
+        
+        fullPrompts[1] = coverPrompt;
+      }
+      
+      // Extract educational focus prompt (page 2)
+      const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
+      if (eduMatch) {
+        fullPrompts[2] = eduMatch[0];
+      }
+      
+      // Extract numbered page prompts (pages 3-28 = A-Z) - Stop after "Clean illustration only."
+      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?Clean illustration only\.)\s*(?=\n\*\*Page|\n\n|$)/gi);
       for (const match of pageMatches) {
-        const pageNum = parseInt(match[1]); // Use page number directly (1-based)
-        fullPrompts[pageNum] = match[0]; // Store full match including **Page N: Title** header
+        const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
+        fullPrompts[pageNum] = match[0];
       }
       
       if (Object.keys(fullPrompts).length > 0) {
@@ -861,29 +851,13 @@ export default function GoogleChat() {
         setSelectedAgeRange(action.ageRangeId as AgeRangeId);
       }
       
-      // Capture page count from button ID (e.g., "pages-10" → 10 content pages)
-      if (action.id.startsWith('pages-')) {
-        const contentPages = parseInt(action.id.replace('pages-', ''), 10);
-        if (!isNaN(contentPages)) {
-          console.log('[Page Count Selection] User selected content pages:', contentPages);
-          // Total = content + cover + education
-          setConfirmedPageCount(contentPages + 2);
-        }
-      }
-      
       // Send the predefined response
-      const result = await sendMessage(action.value, undefined, messages, {
+      await sendMessage(action.value, undefined, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
         bookCreated: !!createdBookId,
         characterTheme: selectedCharacterTheme,
         bookType: selectedBookType
       });
-      
-      // Also capture from metadata as confirmation (backup)
-      if (result?.metadata?.confirmedPageCount) {
-        console.log('[Page Count Confirmed] Agent returned page count:', result.metadata.confirmedPageCount);
-        setConfirmedPageCount(result.metadata.confirmedPageCount);
-      }
     } else {
       // "Custom" option - just focus the input field
       const inputElement = document.querySelector('input[type="text"]') as HTMLInputElement;
@@ -910,7 +884,6 @@ export default function GoogleChat() {
         setSelectedBookType(null);
         setSelectedCharacterTheme(null); // Reset theme selection
         setSelectedAgeRange(null); // Reset age range selection
-        setConfirmedPageCount(null); // Reset confirmed page count
         setReplacePageMode({});
         // Close mobile sidebar when creating new session
         setIsMobileSidebarOpen(false);
@@ -950,15 +923,49 @@ export default function GoogleChat() {
         .map(m => m.content)
         .join('\n');
       
-      // Extract all prompts using standardized **Page N: Title** format
-      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/gi);
+      // Extract cover prompt with improved regex and fallback
+      const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
+      if (coverMatch) {
+        let coverPrompt = coverMatch[0];
+        
+        // Normalize: Ensure title positioning is explicit
+        if (!coverPrompt.toLowerCase().includes('centered') && 
+            !coverPrompt.toLowerCase().includes('center')) {
+          console.log('[Prompt Normalization] Adding centered title instruction to cover prompt');
+          
+          // Extract book title if available
+          const titleMatch = conversationText.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
+          const bookTitle = titleMatch ? titleMatch[1].trim() : '[TITLE]';
+          
+          // Append title positioning instruction
+          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
+        }
+        
+        fullPrompts[1] = coverPrompt;
+        console.log('[Prompt Storage] Cover prompt extracted and stored (length:', coverPrompt.length, ')');
+      } else {
+        console.warn('[Prompt Storage] Cover prompt NOT found in conversation - regex did not match');
+        console.log('[Prompt Storage Debug] Conversation text preview:', conversationText.substring(0, 500));
+      }
+      
+      // Extract educational focus prompt
+      const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
+      if (eduMatch) {
+        fullPrompts[2] = eduMatch[0];
+        console.log('[Prompt Storage] Educational focus prompt extracted and stored (length:', eduMatch[0].length, ')');
+      } else {
+        console.warn('[Prompt Storage] Educational focus prompt NOT found - regex did not match');
+      }
+      
+      // Extract numbered page prompts
+      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi);
       let pageMatchCount = 0;
       for (const match of pageMatches) {
-        const pageNum = parseInt(match[1]); // Use page number directly (1-based)
-        fullPrompts[pageNum] = match[0]; // Store full match including **Page N: Title** header
+        const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
+        fullPrompts[pageNum] = match[0];
         pageMatchCount++;
+        console.log(`[Prompt Storage] Page ${pageNum} prompt extracted and stored (length: ${match[0].length})`);
       }
-      console.log(`[Prompt Storage] Extracted ${pageMatchCount} page prompts using standardized format`);
       
       if (pageMatchCount === 0) {
         console.warn('[Prompt Storage] No numbered page prompts found - regex did not match any pages');

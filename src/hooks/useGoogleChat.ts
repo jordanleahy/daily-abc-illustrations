@@ -119,15 +119,64 @@ export const useGoogleChat = (
         throw new Error(errorData.error || 'Request failed');
       }
 
-      // Parse JSON response (non-streaming)
-      const responseData = await response.json();
-      const fullContent = responseData.content || '';
-      const metadata = responseData.metadata || null;
-      
+      if (!response.body) {
+        throw new Error('No response stream');
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let fullContent = '';
+
+      // Helper to strip suggest tags during streaming for clean display
+      const stripSuggestTags = (text: string) => {
+        return text.replace(/\[SUGGEST\][\s\S]*?(\[\/SUGGEST\])?$/g, '').trim();
+      };
+
       // Add empty assistant message
-      let messagesWithResponse = [...updatedMessages, { role: 'assistant' as const, content: fullContent }];
+      let messagesWithResponse = [...updatedMessages, { role: 'assistant' as const, content: '' }];
       if (sessionId) {
         queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
+      }
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (let line of lines) {
+          if (line.endsWith('\r')) line = line.slice(0, -1);
+          if (line.startsWith(':') || line.trim() === '') continue;
+          if (!line.startsWith('data: ')) continue;
+
+          const jsonStr = line.slice(6).trim();
+          if (jsonStr === '[DONE]') continue;
+
+          try {
+            const parsed = JSON.parse(jsonStr);
+            const delta = parsed.choices?.[0]?.delta?.content;
+            if (delta) {
+              fullContent += delta;
+              
+              // Strip suggest tags during streaming for display
+              const displayContent = stripSuggestTags(fullContent);
+              
+              // Update the last message with cleaned content
+              messagesWithResponse = [
+                ...messagesWithResponse.slice(0, -1),
+                { role: 'assistant' as const, content: displayContent }
+              ];
+              if (sessionId) {
+                queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
+              }
+            }
+          } catch (e) {
+            console.error('Failed to parse SSE chunk:', e);
+          }
+        }
       }
 
       // Parse suggestions from final content and strip internal tags
@@ -181,65 +230,15 @@ export const useGoogleChat = (
               ]
             };
           }
-        }
-        
-        // UNIVERSAL FALLBACKS (work for ALL book types)
-        if (!match) {
-          // Title approval fallback - applies to all book types
-          if (cleanedText.includes('Looks perfect') || 
-              cleanedText.includes('Create the book') || 
-              cleanedText.includes('Does this sound good')) {
+          
+          // Title approval fallback
+          if (cleanedText.includes('Looks perfect') || cleanedText.includes('Create the book')) {
             return { 
               cleanContent: cleanedText, 
               suggestedActions: [
                 { id: 'approve', label: '✅ Looks perfect! Create the book', value: 'create_book' },
                 { id: 'edit-title', label: '✏️ Change the title', value: 'Change the title' },
                 { id: 'edit-description', label: '📝 Update the description', value: 'Update the description' },
-              ]
-            };
-          }
-        }
-        
-        // RHYMING-SPECIFIC FALLBACKS
-        if (!match && effectiveBookType === 'rhyming') {
-          // Age group fallback
-          if (cleanedText.includes("What's your child's age") || 
-              cleanedText.includes('What age is this rhyming book for')) {
-            return { 
-              cleanContent: cleanedText, 
-              suggestedActions: [
-                { id: '0-2', label: '0-2 years (simple words & sounds)', value: '0-2 years' },
-                { id: '2-4', label: '2-4 years (familiar rhymes)', value: '2-4 years' },
-                { id: '4-6', label: '4-6 years (complex patterns)', value: '4-6 years' },
-              ]
-            };
-          }
-          
-          // Rhyme pattern fallback
-          if (cleanedText.includes('Which rhyme pattern') || 
-              cleanedText.includes('rhyme scheme')) {
-            return { 
-              cleanContent: cleanedText, 
-              suggestedActions: [
-                { id: 'aabb', label: 'AABB (cat/hat, dog/log)', value: 'AABB' },
-                { id: 'abab', label: 'ABAB (cat/log, hat/dog)', value: 'ABAB' },
-                { id: 'limerick', label: 'Limerick (AABBA)', value: 'Limerick' },
-              ]
-            };
-          }
-          
-          // Rhyme theme fallback
-          if (cleanedText.includes('What should the rhymes be about') || 
-              cleanedText.includes('rhyme topic')) {
-            return { 
-              cleanContent: cleanedText, 
-              suggestedActions: [
-                { id: 'adventures', label: '🗺️ Adventures & Exploration', value: 'Adventures & Exploration' },
-                { id: 'friendship', label: '🤝 Friendship & Playing Together', value: 'Friendship & Playing Together' },
-                { id: 'nature', label: '🌳 Nature & Animals', value: 'Nature & Animals' },
-                { id: 'bedtime', label: '🌙 Bedtime & Dreams', value: 'Bedtime & Dreams' },
-                { id: 'family', label: '👨‍👩‍👧 Family & Home', value: 'Family & Home' },
-                { id: 'custom', label: '✏️ Something else (I\'ll tell you)', value: '' },
               ]
             };
           }
@@ -262,24 +261,7 @@ export const useGoogleChat = (
             const id = line.substring(0, colonIndex).trim();
             const label = line.substring(colonIndex + 1).trim();
             
-            // Set themeId for character theme suggestions
-            const action: SuggestedAction = { 
-              id, 
-              label, 
-              value: id === 'custom' ? '' : label 
-            };
-            
-            // Mark character themes explicitly
-            const characterThemes = [
-              'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon',
-              'moana', 'mickey-mouse', 'mario', 'sesame-street',
-              'benji-davies', 'black-and-white', 'bear-stories'
-            ];
-            if (characterThemes.includes(id)) {
-              action.themeId = id as CharacterThemeValue;
-            }
-            
-            return action;
+            return { id, label, value: id === 'custom' ? '' : label };
           })
           .filter((action): action is SuggestedAction => action !== null);
         
@@ -315,9 +297,6 @@ export const useGoogleChat = (
           console.log('[useGoogleChat Debug] Calling onMessagesUpdate callback');
           onMessagesUpdate(messagesWithResponse, sessionId);
         }
-        
-        // Return metadata to caller for state management
-        return { messages: messagesWithResponse, metadata };
       }
 
     } catch (error) {

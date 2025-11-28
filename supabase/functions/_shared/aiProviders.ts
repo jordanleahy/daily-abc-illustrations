@@ -28,7 +28,6 @@ export function buildRequestBody(
   options: {
     stream?: boolean;
     temperature?: number;
-    useStructuredOutput?: boolean;
   } = {}
 ): Record<string, any> {
   const body: Record<string, any> = {
@@ -46,41 +45,6 @@ export function buildRequestBody(
     body.stream = true;
   }
 
-  // Add structured output for non-streaming requests
-  if (options.useStructuredOutput && !options.stream) {
-    body.response_format = {
-      type: "json_schema",
-      json_schema: {
-        name: "agent_response",
-        strict: true,
-        schema: {
-          type: "object",
-          properties: {
-            message: {
-              type: "string",
-              description: "The conversational message to display to the user"
-            },
-            suggestions: {
-              type: "array",
-              description: "Optional array of clickable button suggestions. Empty array for open-ended questions.",
-              items: {
-                type: "object",
-                properties: {
-                  id: { type: "string" },
-                  label: { type: "string" }
-                },
-                required: ["id", "label"],
-                additionalProperties: false
-              }
-            }
-          },
-          required: ["message", "suggestions"],
-          additionalProperties: false
-        }
-      }
-    };
-  }
-
   return body;
 }
 
@@ -94,7 +58,6 @@ export async function callAIProvider(
   options: {
     stream?: boolean;
     temperature?: number;
-    useStructuredOutput?: boolean;
   } = {}
 ): Promise<Response> {
   const apiKey = getLovableApiKey();

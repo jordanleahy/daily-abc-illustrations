@@ -124,6 +124,15 @@ const tools = [
   }
 ];
 
+// Sanitize paths for GitHub API
+function sanitizePath(path: string | undefined): string {
+  if (!path || path === './' || path === '.' || path === '/') {
+    return '';
+  }
+  // Strip leading ./ if present
+  return path.replace(/^\.\//, '');
+}
+
 // Execute tool calls
 async function executeTools(toolCalls: any[], supabase: any, userId: string) {
   const results = [];
@@ -235,9 +244,12 @@ async function executeTools(toolCalls: any[], supabase: any, userId: string) {
             break;
           }
           
+          // Sanitize path for GitHub API
+          const cleanFilePath = sanitizePath(args.file_path);
+          
           // Fetch file content from GitHub
           const fileResponse = await fetch(
-            `https://api.github.com/repos/jordanleahy/daily-abc-illustrations/contents/${args.file_path}?ref=main`,
+            `https://api.github.com/repos/jordanleahy/daily-abc-illustrations/contents/${cleanFilePath}?ref=main`,
             {
               headers: {
                 'Authorization': `Bearer ${githubToken}`,
@@ -276,9 +288,12 @@ async function executeTools(toolCalls: any[], supabase: any, userId: string) {
             break;
           }
           
+          // Sanitize path for GitHub API
+          const cleanDirPath = sanitizePath(args.path);
+          
           // Fetch directory contents from GitHub
           const dirResponse = await fetch(
-            `https://api.github.com/repos/jordanleahy/daily-abc-illustrations/contents/${args.path || ''}?ref=main`,
+            `https://api.github.com/repos/jordanleahy/daily-abc-illustrations/contents/${cleanDirPath}?ref=main`,
             {
               headers: {
                 'Authorization': `Bearer ${ghToken}`,

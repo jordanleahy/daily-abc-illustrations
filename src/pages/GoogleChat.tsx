@@ -299,9 +299,19 @@ export default function GoogleChat() {
       return null;
     }
     
-    // PRIORITY 3: Pre-creation - parse from messages
+    // PRIORITY 3: Pre-creation - parse from messages using unified **Page N:** format
+    if (parsedPageDetails && parsedPageDetails.length > 0) {
+      // With new **Page N:** format, parsedPageDetails[0] = Page 1, [1] = Page 2, etc.
+      const pageIndex = pageNum - 1; // Page 1 = index 0, Page 2 = index 1, etc.
+      const pageDetail = parsedPageDetails[pageIndex];
+      if (pageDetail?.description) {
+        return pageDetail.description;
+      }
+    }
+    
+    // Fallback: Legacy format support for backward compatibility
     if (pageNum === 1) {
-      // Cover page (Page 1)
+      // Cover page (Page 1) - old **Cover:** format
       const lastCoverMsg = [...messages].reverse().find(
         (msg) => typeof msg.content === 'string' && /\*\*Cover:/i.test(msg.content)
       );
@@ -310,7 +320,6 @@ export default function GoogleChat() {
         return null;
       }
       
-      // Extract cover description and title
       const content = lastCoverMsg.content as string;
       const titleMatch = content.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
       const descMatch = content.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
@@ -320,10 +329,8 @@ export default function GoogleChat() {
       const bookTitle = titleMatch ? titleMatch[1].trim() : '';
       let description = descMatch[1].trim();
       
-      // Replace "book cover" with "square card cover" to ensure 1:1 aspect ratio
       description = description.replace(/\bbook cover\b/gi, 'square card cover');
       
-      // Ensure centered title instruction exists (safety net)
       if (!description.toLowerCase().includes('centered') && 
           !description.toLowerCase().includes('center')) {
         description = `${description}\n\nDISPLAY TITLE: Centered, large, bold letters taking up 50-60% of space.`;
@@ -333,17 +340,8 @@ export default function GoogleChat() {
     }
     
     if (pageNum === 2 && educationalFocus) {
-      // Educational focus page (Page 2) - return just the image prompt without title
+      // Educational focus page (Page 2) - old format
       return educationalFocus.imagePrompt;
-    }
-    
-    // Regular content pages (Page 3+)
-    if (parsedPageDetails && pageNum > 2) {
-      const pageIndex = pageNum - 3; // Page 3 = index 0, Page 4 = index 1, etc.
-      const pageDetail = parsedPageDetails[pageIndex];
-      if (pageDetail?.description) {
-        return pageDetail.description;
-      }
     }
     
     return null;

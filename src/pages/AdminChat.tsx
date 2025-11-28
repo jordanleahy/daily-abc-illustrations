@@ -182,14 +182,67 @@ export default function AdminChat() {
     }
   };
 
+  const handleSeedEmbeddings = async () => {
+    setIsGeneratingEmbeddings(true);
+    try {
+      const contentSamples = [
+        {
+          text: "Chairlift Habits: Create personalized educational ABC books for children with AI-powered illustrations and character themes like Paw Patrol and Frozen",
+          metadata: { type: 'product-overview', source: 'main-feature' }
+        },
+        {
+          text: "Parent rewards system with habits tracking and coin-based rewards store for toddlers and preschoolers",
+          metadata: { type: 'feature', source: 'habits-rewards' }
+        },
+        {
+          text: "Snowboarding trick tracking app for kids with progress photos, video uploads, and goal completion milestones",
+          metadata: { type: 'feature', source: 'tricks-tracking' }
+        },
+        {
+          text: "Specialized AI agents for different book types: ABC, Numbers, Rhyming, Colors, Shapes, Emotions with type-specific educational content",
+          metadata: { type: 'feature', source: 'book-creation-agents' }
+        },
+        {
+          text: "Marketing intelligence chat interface for growth strategies and content ideas targeting parents of young children",
+          metadata: { type: 'feature', source: 'admin-chat' }
+        }
+      ];
+
+      let successCount = 0;
+      for (const sample of contentSamples) {
+        const { data, error } = await supabase.functions.invoke('generate-embeddings', {
+          body: {
+            text: sample.text,
+            metadata: sample.metadata,
+            storeInDB: true
+          }
+        });
+
+        if (!error && data.success) successCount++;
+      }
+
+      toast.success(`✅ Seeded ${successCount} embeddings!`, {
+        description: 'Database is ready for semantic search',
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error('Seeding error:', error);
+      toast.error('Seeding failed', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      });
+    } finally {
+      setIsGeneratingEmbeddings(false);
+    }
+  };
+
   const handleTestSemanticSearch = async () => {
     setIsGeneratingEmbeddings(true);
     try {
-      // First generate embedding for the search query
+      // Search for content about educational features
       const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke('generate-embeddings', {
         body: { 
-          text: 'marketing strategies for parents with toddlers',
-          storeInDB: false // Don't store the query
+          text: 'educational books for kids with illustrations',
+          storeInDB: false
         }
       });
 
@@ -199,7 +252,6 @@ export default function AdminChat() {
         throw new Error(embeddingData.error || 'Failed to generate query embedding');
       }
 
-      // Then search for similar content
       const { data: searchResults, error: searchError } = await supabase
         .rpc('search_embeddings', {
           query_embedding: embeddingData.embedding,
@@ -319,26 +371,16 @@ export default function AdminChat() {
                     <Send className="h-4 w-4" />
                   </Button>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
-                    onClick={handleTestEmbeddings}
-                    disabled={isTestingEmbeddings}
-                    variant="outline"
-                    size="sm"
-                    className="w-fit"
-                  >
-                    <Zap className="h-3 w-3 mr-2" />
-                    {isTestingEmbeddings ? 'Testing...' : 'Test Embeddings API'}
-                  </Button>
-                  <Button
-                    onClick={handleGenerateEmbeddings}
+                    onClick={handleSeedEmbeddings}
                     disabled={isGeneratingEmbeddings}
                     variant="outline"
                     size="sm"
                     className="w-fit"
                   >
                     <Zap className="h-3 w-3 mr-2" />
-                    {isGeneratingEmbeddings ? 'Generating...' : 'Generate Test Embedding'}
+                    {isGeneratingEmbeddings ? 'Seeding...' : 'Seed Database (5 items)'}
                   </Button>
                   <Button
                     onClick={handleTestSemanticSearch}
@@ -348,7 +390,7 @@ export default function AdminChat() {
                     className="w-fit"
                   >
                     <Search className="h-3 w-3 mr-2" />
-                    {isGeneratingEmbeddings ? 'Searching...' : 'Test Semantic Search'}
+                    {isGeneratingEmbeddings ? 'Searching...' : 'Search: "educational books"'}
                   </Button>
                 </div>
               </div>

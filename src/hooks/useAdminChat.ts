@@ -1,153 +1,141 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import type { Message } from '@/hooks/useGoogleChat';
+import type { Message } from './useGoogleChat';
 
-export function useAdminChat() {
+interface UseAdminChatProps {
+  sessionId: string | undefined;
+  onMessagesUpdate?: (messages: Message[]) => void;
+}
+
+export function useAdminChat({ sessionId, onMessagesUpdate }: UseAdminChatProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
+
+  // Load messages from session when sessionId changes
+  useEffect(() => {
+    if (!sessionId) {
+      setMessages([]);
+      return;
+    }
+
+    const loadSession = async () => {
+      const { data, error } = await supabase
+        .from('admin_chat_sessions')
+        .select('messages')
+        .eq('id', sessionId)
+        .single();
+
+      if (error) {
+        console.error('Error loading session:', error);
+        return;
+      }
+
+      const loadedMessages = (data?.messages as unknown as Message[]) || [];
+      setMessages(loadedMessages);
+    };
+
+    loadSession();
+  }, [sessionId]);
 
   const sendMessage = async (content: string) => {
-    const userMessage: Message = { role: 'user', content };
-    setMessages(prev => [...prev, userMessage]);
-    setIsLoading(true);
+    if (!content.trim() || isLoading || !sessionId) return;
 
-    let assistantContent = '';
+    const userMessage: Message = { role: 'user', content };
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    setIsLoading(true);
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) {
-        throw new Error('Not authenticated');
+        throw new Error('No active session');
       }
 
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-chat`,
+        `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/admin-chat`,
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${session.access_token}`,
           },
-          body: JSON.stringify({ messages: [...messages, userMessage] }),
+          body: JSON.stringify({ messages: newMessages }),
         }
       );
 
+      if (response.status === 401) {
+        throw new Error('Unauthorized. Admin access required.');
+      }
+
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again in a moment.');
+      }
+
+      if (response.status === 402) {
+        throw new Error('Payment required. Please check your subscription.');
+      }
+
+      if (response.status === 403) {
+        throw new Error('Access denied. Admin privileges required.');
+      }
+
       if (!response.ok) {
-        if (response.status === 429) {
-          toast({
-            title: "Rate Limit Exceeded",
-            description: "Please try again in a moment.",
-            variant: "destructive",
-          });
-          setMessages(prev => prev.slice(0, -1));
-          return;
-        }
-        if (response.status === 402) {
-          toast({
-            title: "Payment Required",
-            description: "Please add funds to your Lovable AI workspace.",
-            variant: "destructive",
-          });
-          setMessages(prev => prev.slice(0, -1));
-          return;
-        }
-        if (response.status === 403) {
-          toast({
-            title: "Access Denied",
-            description: "Admin access required.",
-            variant: "destructive",
-          });
-          setMessages(prev => prev.slice(0, -1));
-          return;
-        }
-        throw new Error(`Failed to send message: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const reader = response.body?.getReader();
       const decoder = new TextDecoder();
+      let fullResponse = '';
+
+      if (reader) {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          const lines = chunk.split('\n');
+
+          for (const line of lines) {
+            if (line.startsWith('data: ')) {
+              const data = line.slice(6);
+              if (data === '[DONE]') continue;
+
+              try {
+                const parsed = JSON.parse(data);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) {
+                  fullResponse += content;
+                  const streamingMessages = [...newMessages, { 
+                    role: 'assistant' as const, 
+                    content: fullResponse 
+                  }];
+                  setMessages(streamingMessages);
+                }
+              } catch (e) {
+                console.error('Error parsing SSE data:', e);
+              }
+            }
+          }
+        }
+      }
+
+      const updatedMessages = [...newMessages, { role: 'assistant' as const, content: fullResponse }];
+      setMessages(updatedMessages);
       
-      if (!reader) throw new Error('No response body');
-
-      let buffer = '';
-      let streamDone = false;
-
-      while (!streamDone) {
-        const { done, value } = await reader.read();
-        if (done) break;
-        
-        buffer += decoder.decode(value, { stream: true });
-
-        let newlineIndex: number;
-        while ((newlineIndex = buffer.indexOf('\n')) !== -1) {
-          let line = buffer.slice(0, newlineIndex);
-          buffer = buffer.slice(newlineIndex + 1);
-
-          if (line.endsWith('\r')) line = line.slice(0, -1);
-          if (line.startsWith(':') || line.trim() === '') continue;
-          if (!line.startsWith('data: ')) continue;
-
-          const jsonStr = line.slice(6).trim();
-          if (jsonStr === '[DONE]') {
-            streamDone = true;
-            break;
-          }
-
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) {
-              assistantContent += content;
-              setMessages(prev => {
-                const last = prev[prev.length - 1];
-                if (last?.role === 'assistant') {
-                  return prev.map((m, i) => 
-                    i === prev.length - 1 ? { ...m, content: assistantContent } : m
-                  );
-                }
-                return [...prev, { role: 'assistant', content: assistantContent }];
-              });
-            }
-          } catch {
-            buffer = line + '\n' + buffer;
-            break;
-          }
-        }
+      // Notify parent component about message updates
+      if (onMessagesUpdate) {
+        onMessagesUpdate(updatedMessages);
       }
-
-      // Final flush
-      if (buffer.trim()) {
-        for (let raw of buffer.split('\n')) {
-          if (!raw || raw.startsWith(':') || !raw.startsWith('data: ')) continue;
-          const jsonStr = raw.slice(6).trim();
-          if (jsonStr === '[DONE]') continue;
-          try {
-            const parsed = JSON.parse(jsonStr);
-            const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-            if (content) {
-              assistantContent += content;
-              setMessages(prev => {
-                const last = prev[prev.length - 1];
-                if (last?.role === 'assistant') {
-                  return prev.map((m, i) => 
-                    i === prev.length - 1 ? { ...m, content: assistantContent } : m
-                  );
-                }
-                return [...prev, { role: 'assistant', content: assistantContent }];
-              });
-            }
-          } catch { /* ignore */ }
-        }
-      }
+      
+      setIsLoading(false);
     } catch (error) {
       console.error('Error sending message:', error);
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "Failed to send message",
-        variant: "destructive",
-      });
-      setMessages(prev => prev.slice(0, -1));
-    } finally {
+      const errorMessage = error instanceof Error ? error.message : 'Failed to send message';
+      const errorMessages = [...newMessages, { 
+        role: 'assistant' as const, 
+        content: `Error: ${errorMessage}` 
+      }];
+      setMessages(errorMessages);
       setIsLoading(false);
     }
   };

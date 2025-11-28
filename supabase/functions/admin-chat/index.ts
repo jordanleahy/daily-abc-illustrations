@@ -402,7 +402,8 @@ serve(async (req) => {
     }
 
     const { messages } = await req.json();
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+const MAX_TOOL_ITERATIONS = 5; // Safety limit to prevent infinite loops
     
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
@@ -493,15 +494,75 @@ NEVER respond without including a [SUGGEST] block with actionable next steps.`;
     const initialData = await initialResponse.json();
     const choice = initialData.choices?.[0];
     
-    // Check if AI wants to call tools
-    if (choice?.message?.tool_calls && choice.message.tool_calls.length > 0) {
-      console.log('AI requested tool calls:', choice.message.tool_calls);
+    // Track conversation for multi-turn tool calling
+    let conversationMessages = [
+      { role: 'system', content: systemPrompt },
+      ...messages,
+    ];
+
+    let iteration = 0;
+    let lastChoice = choice;
+
+    // Multi-turn tool calling loop
+    while (
+      lastChoice?.message?.tool_calls && 
+      lastChoice.message.tool_calls.length > 0 && 
+      iteration < MAX_TOOL_ITERATIONS
+    ) {
+      iteration++;
+      console.log(`Tool calling iteration ${iteration}:`, lastChoice.message.tool_calls.map(tc => tc.function.name));
       
       // Execute the tool calls
-      const toolResults = await executeTools(choice.message.tool_calls, supabase, user.id);
-      console.log('Tool execution results:', toolResults);
+      const toolResults = await executeTools(lastChoice.message.tool_calls, supabase, user.id);
+      console.log(`Iteration ${iteration} tool results:`, toolResults);
       
-      // Second call with tool results
+      // Add assistant message and tool results to conversation
+      conversationMessages = [
+        ...conversationMessages,
+        lastChoice.message, // Assistant's tool call request
+        ...toolResults.map(tr => ({
+          role: 'tool',
+          tool_call_id: tr.tool_call_id,
+          content: tr.output
+        }))
+      ];
+      
+      // Make next call WITH tools enabled (non-streaming to check for more tool calls)
+      const nextResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${LOVABLE_API_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model: 'google/gemini-2.5-flash',
+          messages: conversationMessages,
+          tools: tools,        // Include tools to allow more calls
+          tool_choice: 'auto',
+        }),
+      });
+      
+      if (!nextResponse.ok) {
+        const errorText = await nextResponse.text();
+        console.error(`AI gateway error at iteration ${iteration}:`, nextResponse.status, errorText);
+        return new Response(JSON.stringify({ error: 'AI gateway error' }), {
+          status: 500,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+      
+      const nextData = await nextResponse.json();
+      lastChoice = nextData.choices?.[0];
+    }
+
+    // Log if we hit the iteration limit
+    if (iteration >= MAX_TOOL_ITERATIONS) {
+      console.warn(`Hit max tool iterations (${MAX_TOOL_ITERATIONS})`);
+    }
+
+    // Now stream the final response (no more tool calls)
+    if (iteration > 0) {
+      // We went through tool loop, need to stream the final content
       const finalResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -510,16 +571,7 @@ NEVER respond without including a [SUGGEST] block with actionable next steps.`;
         },
         body: JSON.stringify({
           model: 'google/gemini-2.5-flash',
-          messages: [
-            { role: 'system', content: systemPrompt },
-            ...messages,
-            choice.message,
-            ...toolResults.map(tr => ({
-              role: 'tool',
-              tool_call_id: tr.tool_call_id,
-              content: tr.output
-            }))
-          ],
+          messages: conversationMessages.concat([lastChoice.message]),
           stream: true,
         }),
       });

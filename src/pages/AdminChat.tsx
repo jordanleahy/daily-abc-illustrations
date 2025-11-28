@@ -185,49 +185,51 @@ export default function AdminChat() {
   const handleSeedEmbeddings = async () => {
     setIsGeneratingEmbeddings(true);
     try {
-      const contentSamples = [
-        {
-          text: "Chairlift Habits: Create personalized educational ABC books for children with AI-powered illustrations and character themes like Paw Patrol and Frozen",
-          metadata: { type: 'product-overview', source: 'main-feature' }
-        },
-        {
-          text: "Parent rewards system with habits tracking and coin-based rewards store for toddlers and preschoolers",
-          metadata: { type: 'feature', source: 'habits-rewards' }
-        },
-        {
-          text: "Snowboarding trick tracking app for kids with progress photos, video uploads, and goal completion milestones",
-          metadata: { type: 'feature', source: 'tricks-tracking' }
-        },
-        {
-          text: "Specialized AI agents for different book types: ABC, Numbers, Rhyming, Colors, Shapes, Emotions with type-specific educational content",
-          metadata: { type: 'feature', source: 'book-creation-agents' }
-        },
-        {
-          text: "Marketing intelligence chat interface for growth strategies and content ideas targeting parents of young children",
-          metadata: { type: 'feature', source: 'admin-chat' }
-        }
+      // Key files to vectorize from the codebase
+      const filesToEmbed = [
+        'src/pages/AdminChat.tsx',
+        'src/hooks/useAdminChat.ts',
+        'supabase/functions/admin-chat/index.ts',
+        'src/pages/Index.tsx',
+        'src/components/BookEditorPanel.tsx'
       ];
 
       let successCount = 0;
-      for (const sample of contentSamples) {
-        const { data, error } = await supabase.functions.invoke('generate-embeddings', {
+      for (const filePath of filesToEmbed) {
+        // Call admin-chat to read the file from GitHub
+        const { data: chatData, error: chatError } = await supabase.functions.invoke('admin-chat', {
           body: {
-            text: sample.text,
-            metadata: sample.metadata,
+            messages: [{
+              role: 'user',
+              content: `Read the file ${filePath} and return ONLY the file content, no explanation`
+            }]
+          }
+        });
+
+        if (chatError || !chatData?.content) {
+          console.error(`Failed to read ${filePath}:`, chatError);
+          continue;
+        }
+
+        // Generate embedding for the file content
+        const { data: embData, error: embError } = await supabase.functions.invoke('generate-embeddings', {
+          body: {
+            text: `File: ${filePath}\n\n${chatData.content}`,
+            metadata: { type: 'codebase', file: filePath },
             storeInDB: true
           }
         });
 
-        if (!error && data.success) successCount++;
+        if (!embError && embData.success) successCount++;
       }
 
-      toast.success(`✅ Seeded ${successCount} embeddings!`, {
-        description: 'Database is ready for semantic search',
+      toast.success(`✅ Vectorized ${successCount} code files!`, {
+        description: 'Codebase is now searchable',
         duration: 5000,
       });
     } catch (error) {
       console.error('Seeding error:', error);
-      toast.error('Seeding failed', {
+      toast.error('Vectorization failed', {
         description: error instanceof Error ? error.message : 'Unknown error',
       });
     } finally {
@@ -238,10 +240,10 @@ export default function AdminChat() {
   const handleTestSemanticSearch = async () => {
     setIsGeneratingEmbeddings(true);
     try {
-      // Search for content about educational features
+      // Search for code related to chat functionality
       const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke('generate-embeddings', {
         body: { 
-          text: 'educational books for kids with illustrations',
+          text: 'admin chat interface with message streaming and session management',
           storeInDB: false
         }
       });
@@ -380,7 +382,7 @@ export default function AdminChat() {
                     className="w-fit"
                   >
                     <Zap className="h-3 w-3 mr-2" />
-                    {isGeneratingEmbeddings ? 'Seeding...' : 'Seed Database (5 items)'}
+                    {isGeneratingEmbeddings ? 'Vectorizing...' : 'Vectorize Codebase (5 files)'}
                   </Button>
                   <Button
                     onClick={handleTestSemanticSearch}
@@ -390,7 +392,7 @@ export default function AdminChat() {
                     className="w-fit"
                   >
                     <Search className="h-3 w-3 mr-2" />
-                    {isGeneratingEmbeddings ? 'Searching...' : 'Search: "educational books"'}
+                    {isGeneratingEmbeddings ? 'Searching...' : 'Search: "chat interface"'}
                   </Button>
                 </div>
               </div>

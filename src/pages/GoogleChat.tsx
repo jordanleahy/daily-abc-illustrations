@@ -321,8 +321,10 @@ export default function GoogleChat() {
       
       // Extract cover description and title
       const content = lastCoverMsg.content as string;
-      const titleMatch = content.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
-      const descMatch = content.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
+      // Extract title from **Page 1: Title** format
+      const titleMatch = content.match(/\*\*Page\s+1:\s*([^*\n]+?)\*\*/i);
+      // Extract full page 1 content including **Page 1: Title** and description
+      const descMatch = content.match(/\*\*Page\s+1:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
       
       if (!descMatch) return null;
       
@@ -511,28 +513,18 @@ export default function GoogleChat() {
       const hasPrompts = selectedSession.qa_page_prompts && Object.keys(selectedSession.qa_page_prompts).length > 0;
       
       if (!hasPrompts) {
-        // Extract prompts from conversation history
+        // Extract all prompts using standardized **Page N: Title** format
         const fullPrompts: Record<number, string> = {};
         const conversationText = messages
           .filter(m => m.role === 'assistant')
           .map(m => m.content)
           .join('\n');
         
-        // Extract prompts for each page (A-Z = pages 1-26)
-        for (let i = 1; i <= 26; i++) {
-          const letter = String.fromCharCode(64 + i);
-          const patterns = [
-            new RegExp(`<qa_page_${i}>([\\s\\S]*?)</qa_page_${i}>`, 'i'),
-            new RegExp(`Page ${i}[:\\s-]+${letter}[:\\s-]+([\\s\\S]*?)(?=Page ${i + 1}|$)`, 'i')
-          ];
-          
-          for (const pattern of patterns) {
-            const match = conversationText.match(pattern);
-            if (match) {
-              fullPrompts[i] = match[1].trim();
-              break;
-            }
-          }
+        // Pattern matches: **Page N: Title** followed by description/prompt text up to next **Page N or end
+        const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/gi);
+        for (const match of pageMatches) {
+          const pageNum = parseInt(match[1]); // Use page number directly (1-based)
+          fullPrompts[pageNum] = match[0]; // Store full match including **Page N: Title** header
         }
         
         // Save extracted prompts to database
@@ -684,33 +676,12 @@ export default function GoogleChat() {
         .map(m => m.content)
         .join('\n');
       
-      // Extract cover prompt (page 1)
-      const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
-      if (coverMatch) {
-        let coverPrompt = coverMatch[0];
-        
-        // Normalize: Ensure title positioning is explicit
-        if (!coverPrompt.toLowerCase().includes('centered') && 
-            !coverPrompt.toLowerCase().includes('center')) {
-          const titleMatch = conversationText.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
-          const bookTitle = titleMatch ? titleMatch[1].trim() : '[TITLE]';
-          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
-        }
-        
-        fullPrompts[1] = coverPrompt;
-      }
-      
-      // Extract educational focus prompt (page 2)
-      const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
-      if (eduMatch) {
-        fullPrompts[2] = eduMatch[0];
-      }
-      
-      // Extract numbered page prompts (pages 3-28 = A-Z) - Stop after "Clean illustration only."
-      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?Clean illustration only\.)\s*(?=\n\*\*Page|\n\n|$)/gi);
+      // Extract all pages using standardized **Page N: Title** format
+      // Pattern matches: **Page 1: Title** followed by description/prompt text up to next **Page N or end
+      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/gi);
       for (const match of pageMatches) {
-        const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
-        fullPrompts[pageNum] = match[0];
+        const pageNum = parseInt(match[1]); // Use page number directly (1-based)
+        fullPrompts[pageNum] = match[0]; // Store full match including **Page N: Title** header
       }
       
       if (Object.keys(fullPrompts).length > 0) {
@@ -950,49 +921,15 @@ export default function GoogleChat() {
         .map(m => m.content)
         .join('\n');
       
-      // Extract cover prompt with improved regex and fallback
-      const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
-      if (coverMatch) {
-        let coverPrompt = coverMatch[0];
-        
-        // Normalize: Ensure title positioning is explicit
-        if (!coverPrompt.toLowerCase().includes('centered') && 
-            !coverPrompt.toLowerCase().includes('center')) {
-          console.log('[Prompt Normalization] Adding centered title instruction to cover prompt');
-          
-          // Extract book title if available
-          const titleMatch = conversationText.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
-          const bookTitle = titleMatch ? titleMatch[1].trim() : '[TITLE]';
-          
-          // Append title positioning instruction
-          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
-        }
-        
-        fullPrompts[1] = coverPrompt;
-        console.log('[Prompt Storage] Cover prompt extracted and stored (length:', coverPrompt.length, ')');
-      } else {
-        console.warn('[Prompt Storage] Cover prompt NOT found in conversation - regex did not match');
-        console.log('[Prompt Storage Debug] Conversation text preview:', conversationText.substring(0, 500));
-      }
-      
-      // Extract educational focus prompt
-      const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
-      if (eduMatch) {
-        fullPrompts[2] = eduMatch[0];
-        console.log('[Prompt Storage] Educational focus prompt extracted and stored (length:', eduMatch[0].length, ')');
-      } else {
-        console.warn('[Prompt Storage] Educational focus prompt NOT found - regex did not match');
-      }
-      
-      // Extract numbered page prompts
-      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi);
+      // Extract all prompts using standardized **Page N: Title** format
+      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/gi);
       let pageMatchCount = 0;
       for (const match of pageMatches) {
-        const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
-        fullPrompts[pageNum] = match[0];
+        const pageNum = parseInt(match[1]); // Use page number directly (1-based)
+        fullPrompts[pageNum] = match[0]; // Store full match including **Page N: Title** header
         pageMatchCount++;
-        console.log(`[Prompt Storage] Page ${pageNum} prompt extracted and stored (length: ${match[0].length})`);
       }
+      console.log(`[Prompt Storage] Extracted ${pageMatchCount} page prompts using standardized format`);
       
       if (pageMatchCount === 0) {
         console.warn('[Prompt Storage] No numbered page prompts found - regex did not match any pages');

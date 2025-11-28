@@ -155,7 +155,12 @@ export default function AdminChat() {
                   </div>
                 </div>
               ) : (
-                <MessageList messages={messages} />
+                <MessageList 
+                  messages={messages}
+                  onQuickReply={(action) => {
+                    sendMessage(action.value);
+                  }}
+                />
               )}
             </div>
 

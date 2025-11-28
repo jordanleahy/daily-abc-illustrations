@@ -2524,6 +2524,7 @@ export type Database = {
         Args: { p_completion_id: string }
         Returns: Json
       }
+      execute_sql: { Args: { query_text: string }; Returns: Json }
       extract_colors_from_style_guide: {
         Args: {
           p_book_id: string

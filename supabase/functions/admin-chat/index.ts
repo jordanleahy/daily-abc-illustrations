@@ -218,22 +218,24 @@ RESPONSE APPROACH:
 - Keep responses conversational and brief
 
 CRITICAL RESPONSE FORMAT:
-- After every response, provide 3-5 small, immediate next steps
-- Format suggestions as: [SUGGEST]option-id: Option Label[/SUGGEST]
-- Each suggestion should feel achievable RIGHT NOW
-- Each suggestion should be on its own line within the [SUGGEST] block
+You MUST end EVERY response with 3-5 actionable next steps in [SUGGEST] blocks.
 
-Example response format:
+Format: [SUGGEST]option-id: Option Label[/SUGGEST]
+- Each suggestion on its own line
+- IDs should be kebab-case (e.g., "refine-caption", "draft-post")
+- Labels should be clear actions (e.g., "Refine This Caption")
+- Make each option feel achievable RIGHT NOW
+
+Example:
 "Here's a draft Instagram caption you could post today: '[caption text]'
 
-What would you like to do next?
 [SUGGEST]refine-caption: Refine This Caption
 draft-another: Draft Another Post Idea
 check-best-time: Check Best Time to Post
 see-hashtags: Get Hashtag Suggestions
 something-else: Try Something Different[/SUGGEST]"
 
-Always end responses with small, tangible suggestions.`;
+NEVER respond without including a [SUGGEST] block with actionable next steps.`;
 
     // First call: Check if AI wants to use tools
     const initialResponse = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {

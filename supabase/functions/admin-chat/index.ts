@@ -291,9 +291,13 @@ async function executeTools(toolCalls: any[], supabase: any, userId: string) {
           // Sanitize path for GitHub API
           const cleanDirPath = sanitizePath(args.path);
           
+          // Build correct GitHub API URL - root directory needs special handling
+          // Empty path means root, which should be 'contents' not 'contents/'
+          const githubPath = cleanDirPath ? `contents/${cleanDirPath}` : 'contents';
+          
           // Fetch directory contents from GitHub
           const dirResponse = await fetch(
-            `https://api.github.com/repos/jordanleahy/daily-abc-illustrations/contents/${cleanDirPath}?ref=main`,
+            `https://api.github.com/repos/jordanleahy/daily-abc-illustrations/${githubPath}?ref=main`,
             {
               headers: {
                 'Authorization': `Bearer ${ghToken}`,

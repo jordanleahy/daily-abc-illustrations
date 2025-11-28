@@ -861,9 +861,9 @@ export default function Books() {
                   onPublish={handlePublish}
                   onUnpublish={handleUnpublish}
                   onDelete={handleDeleteBook}
-                  isPublishing={schedulePublication.isPending}
-                  isUnpublishing={deletePublication.isPending}
-                  isDeleting={deleteBook.isPending}
+                  isPublishing={schedulePublication.isPending && schedulePublication.variables?.bookId === book.id}
+                  isUnpublishing={deletePublication.isPending && deletePublication.variables === book.daily_published?.[0]?.id}
+                  isDeleting={deleteBook.isPending && deleteBook.variables === book.id}
                   queryClient={queryClient}
                 />
               ))}

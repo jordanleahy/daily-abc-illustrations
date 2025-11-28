@@ -310,42 +310,71 @@ export default function GoogleChat() {
     
     // PRIORITY 3: Pre-creation - parse from messages
     if (pageNum === 1) {
-      // Cover page (Page 1)
+      // Cover page (Page 1) - prioritize standardized **Page 1: Title** format
+      const lastPage1Msg = [...messages].reverse().find(
+        (msg) => typeof msg.content === 'string' && /\*\*Page\s+1:/i.test(msg.content)
+      );
+      
+      if (lastPage1Msg && typeof lastPage1Msg.content === 'string') {
+        const content = lastPage1Msg.content as string;
+        // Extract title from **Page 1: Title** format
+        const titleMatch = content.match(/\*\*Page\s+1:\s*([^*\n]+?)\*\*/i);
+        // Extract full page 1 content including **Page 1: Title** and description
+        const descMatch = content.match(/\*\*Page\s+1:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
+        
+        if (descMatch) {
+          const bookTitle = titleMatch ? titleMatch[1].trim() : '';
+          let description = descMatch[1].trim();
+          
+          // Replace "book cover" with "square card cover" to ensure 1:1 aspect ratio
+          description = description.replace(/\bbook cover\b/gi, 'square card cover');
+          
+          // Ensure centered title instruction exists (safety net)
+          if (!description.toLowerCase().includes('centered') && 
+              !description.toLowerCase().includes('center')) {
+            description = `${description}\n\nDISPLAY TITLE: Centered, large, bold letters taking up 50-60% of space.`;
+          }
+          
+          return `${description}`;
+        }
+      }
+      
+      // Fallback to old **Cover:** format for backwards compatibility
       const lastCoverMsg = [...messages].reverse().find(
         (msg) => typeof msg.content === 'string' && /\*\*Cover:/i.test(msg.content)
       );
       
-      if (!lastCoverMsg || typeof lastCoverMsg.content !== 'string') {
-        return null;
+      if (lastCoverMsg && typeof lastCoverMsg.content === 'string') {
+        const content = lastCoverMsg.content as string;
+        const descMatch = content.match(/\*\*Cover:\*\*\s*([\s\S]*?)(?=\n\*\*|$)/i);
+        if (descMatch) {
+          return descMatch[1].trim();
+        }
       }
       
-      // Extract cover description and title
-      const content = lastCoverMsg.content as string;
-      // Extract title from **Page 1: Title** format
-      const titleMatch = content.match(/\*\*Page\s+1:\s*([^*\n]+?)\*\*/i);
-      // Extract full page 1 content including **Page 1: Title** and description
-      const descMatch = content.match(/\*\*Page\s+1:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
-      
-      if (!descMatch) return null;
-      
-      const bookTitle = titleMatch ? titleMatch[1].trim() : '';
-      let description = descMatch[1].trim();
-      
-      // Replace "book cover" with "square card cover" to ensure 1:1 aspect ratio
-      description = description.replace(/\bbook cover\b/gi, 'square card cover');
-      
-      // Ensure centered title instruction exists (safety net)
-      if (!description.toLowerCase().includes('centered') && 
-          !description.toLowerCase().includes('center')) {
-        description = `${description}\n\nDISPLAY TITLE: Centered, large, bold letters taking up 50-60% of space.`;
-      }
-      
-      return `${description}`;
+      return null;
     }
     
-    if (pageNum === 2 && educationalFocus) {
-      // Educational focus page (Page 2) - return just the image prompt without title
-      return educationalFocus.imagePrompt;
+    if (pageNum === 2) {
+      // Educational focus page (Page 2) - prioritize standardized **Page 2: Title** format
+      const lastPage2Msg = [...messages].reverse().find(
+        (msg) => typeof msg.content === 'string' && /\*\*Page\s+2:/i.test(msg.content)
+      );
+      
+      if (lastPage2Msg && typeof lastPage2Msg.content === 'string') {
+        const content = lastPage2Msg.content as string;
+        const descMatch = content.match(/\*\*Page\s+2:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
+        if (descMatch) {
+          return descMatch[1].trim();
+        }
+      }
+      
+      // Fallback to old educationalFocus.imagePrompt for backwards compatibility
+      if (educationalFocus?.imagePrompt) {
+        return educationalFocus.imagePrompt;
+      }
+      
+      return null;
     }
     
     // Regular content pages (Page 3+)

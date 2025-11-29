@@ -182,7 +182,11 @@ export const useGoogleChat = (
       // Parse suggestions from final content and strip internal tags
       const parseSuggestions = (text: string) => {
         // First, strip out [CLARIFICATION_NEEDED: ...] tags that should never be shown
-        let cleanedText = text.replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '').trim();
+        let cleanedText = text
+          .replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '')
+          .replace(/```json[\s\S]*?```/g, '')           // Strip markdown JSON blocks
+          .replace(/\{\s*"metadata"\s*:[\s\S]*?\}\s*\}/g, '') // Strip inline JSON metadata
+          .trim();
         
         const suggestRegex = /\[SUGGEST\]([\s\S]*?)\[\/SUGGEST\]/;
         const match = cleanedText.match(suggestRegex);

@@ -41,7 +41,7 @@ const TermsOfService = () => {
                 <p>
                   These Terms of Service ("Terms") are a legally binding agreement between Van7, LLC d/b/a Chairlift Habits 
                   ("Chairlift Habits," "Company," "we," "us," or "our") and you ("you," "User") governing your access to and use of
-                  dailyabcillustrations.com and related apps, services, and APIs (the "Service"). Our Privacy Policy is incorporated by reference.
+                  chairlifthabits.com and related apps, services, and APIs (the "Service"). Our Privacy Policy is incorporated by reference.
                 </p>
                 <p>
                   By using the Service, you agree to these Terms. If you do not agree, do not use the Service.
@@ -359,7 +359,7 @@ const TermsOfService = () => {
                 <div className="bg-muted p-6 rounded-lg">
                   <p className="font-semibold">Van7, LLC (DBA Chairlift Habits)</p>
                   <p><strong>Email:</strong> support@chairlifthabits.com</p>
-                  <p><strong>Website:</strong> https://dailyabcillustrations.com</p>
+                  <p><strong>Website:</strong> https://chairlifthabits.com</p>
                 </div>
                 <div className="bg-muted p-4 rounded-lg mt-4">
                   <p className="font-semibold">

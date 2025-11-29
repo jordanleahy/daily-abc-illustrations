@@ -59,8 +59,8 @@ image_transformation = { enabled = true }
 [auth]
 enabled = true
 port = 54329
-site_url = "https://dailyabcillustrations.com"
-additional_redirect_urls = ["http://localhost:3000", "https://dailyabcillustrations.com", "http://127.0.0.1:3000"]
+site_url = "https://chairlifthabits.com"
+additional_redirect_urls = ["http://localhost:3000", "https://chairlifthabits.com", "http://127.0.0.1:3000"]
 jwt_expiry = 3600
 enable_signup = true
 enable_email_confirmations = true

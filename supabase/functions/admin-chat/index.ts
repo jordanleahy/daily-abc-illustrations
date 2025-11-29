@@ -635,7 +635,7 @@ These files were automatically found based on the user's question. You should us
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
+        model: 'google/gemini-2.5-flash-lite',
         messages: [
           { role: 'system', content: enrichedSystemPrompt },
           ...messages,

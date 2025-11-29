@@ -720,6 +720,24 @@ These files were automatically found based on the user's question. You should us
       if (!nextResponse.ok) {
         const errorText = await nextResponse.text();
         console.error(`AI gateway error at iteration ${iteration}:`, nextResponse.status, errorText);
+        
+        // If gateway fails after tools executed, try to salvage with a final response
+        if (iteration > 0) {
+          console.log('Gateway failed after tool execution, streaming fallback response');
+          const encoder = new TextEncoder();
+          const stream = new ReadableStream({
+            start(controller) {
+              const fallbackMsg = 'I encountered an error processing the tool results. The tools executed successfully, but I had trouble generating a response. Please try your question again.';
+              controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: fallbackMsg } }] })}\n\n`));
+              controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+              controller.close();
+            }
+          });
+          return new Response(stream, {
+            headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+          });
+        }
+        
         return new Response(JSON.stringify({ error: 'AI gateway error' }), {
           status: 500,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -754,9 +772,19 @@ These files were automatically found based on the user's question. You should us
       if (!finalResponse.ok) {
         const errorText = await finalResponse.text();
         console.error('Final AI gateway error:', finalResponse.status, errorText);
-        return new Response(JSON.stringify({ error: 'AI gateway error' }), {
-          status: 500,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        
+        // Stream a fallback message instead of failing completely
+        const encoder = new TextEncoder();
+        const stream = new ReadableStream({
+          start(controller) {
+            const fallbackMsg = `I successfully executed the tools, but encountered an error generating the final response. Please try asking your question in a simpler way or break it into smaller questions.`;
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: fallbackMsg } }] })}\n\n`));
+            controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+            controller.close();
+          }
+        });
+        return new Response(stream, {
+          headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
         });
       }
       

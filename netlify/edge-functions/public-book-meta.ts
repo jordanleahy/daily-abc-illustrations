@@ -107,7 +107,7 @@ export default async (request: Request, context: Context) => {
     const title = seoMetadata?.seo_title || dailyPublished.title || 'ChairLift';
     const description = seoMetadata?.seo_description || dailyPublished.description || 'Explore educational ABC illustrations';
     const imageUrl = seoMetadata?.og_image_url || `${SUPABASE_URL}/storage/v1/object/public/page-images/default-book-cover.jpg`;
-    const canonicalUrl = `https://dailyabcillustrations.com/book/${slug}`;
+    const canonicalUrl = `https://chairlifthabits.com/book/${slug}`;
 
     // Generate HTML with OpenGraph tags
     const html = `<!DOCTYPE html>

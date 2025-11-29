@@ -41,7 +41,7 @@ const PrivacyPolicy = () => {
                 <p>
                   Welcome to Chairlift Habits, operated by <strong>Van7, LLC</strong> ("Chairlift Habits," "we," "us," or "our").
                   We are committed to protecting your privacy and the privacy of your children. This Privacy Policy explains how we collect, use, 
-                  disclose, and safeguard <strong>Personal Data</strong> when you use our educational platform at dailyabcillustrations.com and 
+                  disclose, and safeguard <strong>Personal Data</strong> when you use our educational platform at chairlifthabits.com and 
                   related applications (the "Service").
                 </p>
                 <p>
@@ -279,7 +279,7 @@ const PrivacyPolicy = () => {
                 <div className="bg-muted p-6 rounded-lg">
                   <p className="font-semibold">Van7, LLC (DBA Chairlift Habits)</p>
                   <p>Email: support@chairlifthabits.com</p>
-                  <p>Website: https://dailyabcillustrations.com</p>
+                  <p>Website: https://chairlifthabits.com</p>
                 </div>
               </section>
 

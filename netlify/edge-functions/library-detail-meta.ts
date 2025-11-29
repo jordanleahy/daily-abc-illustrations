@@ -140,7 +140,7 @@ function generatePrerenderedHTML(
   const title = seoMetadata?.seo_title || dailyPublished.title;
   const description = seoMetadata?.seo_description || dailyPublished.description || 'ChairLift';
   const imageUrl = seoMetadata?.og_image_url || '';
-  const pageUrl = `https://chairlifthabits.com/library/${dailyId}/detail`;
+  const pageUrl = `https://dailyabcillustrations.com/library/${dailyId}/detail`;
 
   return `<!DOCTYPE html>
 <html lang="en">

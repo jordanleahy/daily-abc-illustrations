@@ -39,9 +39,9 @@ const TermsOfService = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">1) Agreement to Terms</h2>
                 <p>
-                  These Terms of Service ("Terms") are a legally binding agreement between Van7, LLC d/b/a Chairlift Habits 
-                  ("Chairlift Habits," "Company," "we," "us," or "our") and you ("you," "User") governing your access to and use of
-                  chairlifthabits.com and related apps, services, and APIs (the "Service"). Our Privacy Policy is incorporated by reference.
+                  These Terms of Service ("Terms") are a legally binding agreement between Van7, LLC d/b/a ChairLift 
+                  ("ChairLift," "Company," "we," "us," or "our") and you ("you," "User") governing your access to and use of
+                  dailyabcillustrations.com and related apps, services, and APIs (the "Service"). Our Privacy Policy is incorporated by reference.
                 </p>
                 <p>
                   By using the Service, you agree to these Terms. If you do not agree, do not use the Service.
@@ -53,8 +53,8 @@ const TermsOfService = () => {
                 
                 <h3 className="text-xl font-semibold mb-3">2.1 Overview</h3>
                 <p>
-                  Chairlift Habits is an AI-powered educational platform that helps adults create personalized books and
-                  illustrations for children, with progress tracking and reward systems to build lasting reading habits.
+                  ChairLift is an AI-powered educational platform that helps adults create personalized ABC books and
+                  illustrations for children.
                 </p>
                 <p>Features may include:</p>
                 <ul>
@@ -96,7 +96,7 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-3 mt-6">3.3 Termination by You</h3>
                 <p>
-                  You may delete your account at any time in Settings or by contacting support@chairlifthabits.com. Export your content 
+                  You may delete your account at any time in Settings or by contacting dailyabcillustrations@gmail.com. Export your content 
                   before deletion.
                 </p>
 
@@ -173,7 +173,7 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-3 mt-6">5.5 DMCA / Takedowns</h3>
                 <p>
-                  We respond to notices under the DMCA and analogous regimes. Submit notices to support@chairlifthabits.com with 
+                  We respond to notices under the DMCA and analogous regimes. Submit notices to dailyabcillustrations@gmail.com with 
                   required details. We may remove content and/or terminate repeat infringers.
                 </p>
               </section>
@@ -268,7 +268,7 @@ const TermsOfService = () => {
                 
                 <h3 className="text-xl font-semibold mb-3">13.1 Informal Resolution</h3>
                 <p>
-                  Contact support@chairlifthabits.com first. We will attempt to resolve disputes in good faith within 30 days.
+                  Contact dailyabcillustrations@gmail.com first. We will attempt to resolve disputes in good faith within 30 days.
                 </p>
 
                 <h3 className="text-xl font-semibold mb-3 mt-6">13.2 Binding Arbitration</h3>
@@ -287,7 +287,7 @@ const TermsOfService = () => {
 
                 <h3 className="text-xl font-semibold mb-3 mt-6">13.4 30-Day Arbitration Opt-Out</h3>
                 <p>
-                  You may opt out of arbitration by emailing support@chairlifthabits.com within 30 days of creating your account or first 
+                  You may opt out of arbitration by emailing dailyabcillustrations@gmail.com within 30 days of creating your account or first 
                   becoming subject to this clause, with subject "Arbitration Opt-Out," and including your full name, account email, and a 
                   statement that you opt out.
                 </p>
@@ -357,9 +357,9 @@ const TermsOfService = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">20) Contact</h2>
                 <div className="bg-muted p-6 rounded-lg">
-                  <p className="font-semibold">Van7, LLC (DBA Chairlift Habits)</p>
-                  <p><strong>Email:</strong> support@chairlifthabits.com</p>
-                  <p><strong>Website:</strong> https://chairlifthabits.com</p>
+                  <p className="font-semibold">Van7, LLC (DBA ChairLift)</p>
+                  <p><strong>Email:</strong> dailyabcillustrations@gmail.com</p>
+                  <p><strong>Website:</strong> https://dailyabcillustrations.com</p>
                 </div>
                 <div className="bg-muted p-4 rounded-lg mt-4">
                   <p className="font-semibold">

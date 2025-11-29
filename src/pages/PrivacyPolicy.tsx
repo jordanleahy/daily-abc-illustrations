@@ -39,9 +39,9 @@ const PrivacyPolicy = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">1. Introduction</h2>
                 <p>
-                  Welcome to Chairlift Habits, operated by <strong>Van7, LLC</strong> ("Chairlift Habits," "we," "us," or "our").
+                  Welcome to ChairLift, operated by <strong>Van7, LLC</strong> ("ChairLift," "we," "us," or "our").
                   We are committed to protecting your privacy and the privacy of your children. This Privacy Policy explains how we collect, use, 
-                  disclose, and safeguard <strong>Personal Data</strong> when you use our educational platform at chairlifthabits.com and 
+                  disclose, and safeguard <strong>Personal Data</strong> when you use our educational platform at dailyabcillustrations.com and 
                   related applications (the "Service").
                 </p>
                 <p>
@@ -173,18 +173,18 @@ const PrivacyPolicy = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">5. Children's Privacy (COPPA)</h2>
                 <p>
-                  Chairlift Habits is designed for <strong>parents, teachers, and caregivers</strong> to provide educational content to children.
+                  ChairLift is designed for <strong>parents, teachers, and caregivers</strong> to provide educational content to children.
                   We comply with the <strong>Children's Online Privacy Protection Act (COPPA)</strong>.
                 </p>
                 <ul>
                   <li><strong>No Direct Accounts for Children Under 13:</strong> Only a parent/guardian may create an account and set up child profiles</li>
                   <li><strong>Verifiable Parental Consent:</strong> We use email verification to obtain verifiable parental consent before enabling child features</li>
                   <li><strong>Data Minimization:</strong> Kid profiles store first name and reward coins solely for personalization and progress. No public sharing or direct messaging features are provided to children</li>
-                  <li><strong>Parental Rights:</strong> Parents can review, correct, or delete child data via Settings → Kid Profiles or by contacting support@chairlifthabits.com</li>
+                  <li><strong>Parental Rights:</strong> Parents can review, correct, or delete child data via Settings → Kid Profiles or by contacting dailyabcillustrations@gmail.com</li>
                   <li><strong>Schools/Teachers (if applicable):</strong> If used in a classroom, we rely on school authorization as permitted by COPPA. Schools must provide required notices/consents to parents</li>
                 </ul>
                 <p>
-                  If you believe we collected data from a child under 13 without parental consent, contact us immediately at support@chairlifthabits.com.
+                  If you believe we collected data from a child under 13 without parental consent, contact us immediately at dailyabcillustrations@gmail.com.
                 </p>
               </section>
 
@@ -216,13 +216,13 @@ const PrivacyPolicy = () => {
                   <li><strong>Deletion:</strong> Request deletion of your account and associated data (subject to legal retention)</li>
                   <li><strong>Opt-Out:</strong> Opt out of marketing communications and, where applicable, analytics/targeting cookies</li>
                   <li><strong>Object/Restrict (EEA/UK):</strong> Object to or request restriction of processing, and withdraw consent where processing is based on consent</li>
-                  <li><strong>Appeal (certain US states):</strong> If we deny your request, you may appeal by emailing support@chairlifthabits.com; we will respond within 45 days</li>
+                  <li><strong>Appeal (certain US states):</strong> If we deny your request, you may appeal by emailing dailyabcillustrations@gmail.com; we will respond within 45 days</li>
                 </ul>
                 <p className="mt-4">
                   <strong>Verification:</strong> We may verify your identity (e.g., email confirmation, request metadata) before fulfilling rights requests.
                 </p>
                 <p>
-                  To exercise rights, contact support@chairlifthabits.com. We generally respond within 30 days (extendable where permitted by law).
+                  To exercise rights, contact dailyabcillustrations@gmail.com. We generally respond within 30 days (extendable where permitted by law).
                 </p>
               </section>
 
@@ -277,9 +277,9 @@ const PrivacyPolicy = () => {
               <section className="mb-8">
                 <h2 className="text-2xl font-semibold mb-4">12. Contact Us</h2>
                 <div className="bg-muted p-6 rounded-lg">
-                  <p className="font-semibold">Van7, LLC (DBA Chairlift Habits)</p>
-                  <p>Email: support@chairlifthabits.com</p>
-                  <p>Website: https://chairlifthabits.com</p>
+                  <p className="font-semibold">Van7, LLC (DBA ChairLift)</p>
+                  <p>Email: dailyabcillustrations@gmail.com</p>
+                  <p>Website: https://dailyabcillustrations.com</p>
                 </div>
               </section>
 

@@ -34,8 +34,6 @@ export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: Messa
       .replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '')
       .replace(/\[INTAKE_COMPLETE\]/g, '')
       .replace(/\[SUGGEST\][\s\S]*?\[\/SUGGEST\]/g, '')
-      .replace(/```json[\s\S]*?```/g, '')           // Strip markdown JSON blocks
-      .replace(/\{\s*"metadata"\s*:[\s\S]*?\}\s*\}/g, '') // Strip inline JSON metadata
       .trim();
   }
 

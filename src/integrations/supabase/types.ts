@@ -14,69 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      admin_chat_sessions: {
-        Row: {
-          created_at: string
-          id: string
-          is_active: boolean | null
-          last_message_at: string | null
-          messages: Json
-          session_name: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          last_message_at?: string | null
-          messages?: Json
-          session_name?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          is_active?: boolean | null
-          last_message_at?: string | null
-          messages?: Json
-          session_name?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      admin_ideas: {
-        Row: {
-          category: string | null
-          content: string
-          created_at: string
-          id: string
-          title: string
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          category?: string | null
-          content: string
-          created_at?: string
-          id?: string
-          title: string
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          category?: string | null
-          content?: string
-          created_at?: string
-          id?: string
-          title?: string
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       agent_performance_metrics: {
         Row: {
           agent_id: string | null
@@ -668,33 +605,6 @@ export type Database = {
           started_at?: string
           status?: string
           updated_at?: string
-        }
-        Relationships: []
-      }
-      embeddings: {
-        Row: {
-          content: string
-          created_at: string | null
-          embedding: string | null
-          id: string
-          metadata: Json | null
-          updated_at: string | null
-        }
-        Insert: {
-          content: string
-          created_at?: string | null
-          embedding?: string | null
-          id?: string
-          metadata?: Json | null
-          updated_at?: string | null
-        }
-        Update: {
-          content?: string
-          created_at?: string | null
-          embedding?: string | null
-          id?: string
-          metadata?: Json | null
-          updated_at?: string | null
         }
         Relationships: []
       }
@@ -2581,7 +2491,6 @@ export type Database = {
         Args: { p_completion_id: string }
         Returns: Json
       }
-      execute_sql: { Args: { query_text: string }; Returns: Json }
       extract_colors_from_style_guide: {
         Args: {
           p_book_id: string
@@ -2738,19 +2647,6 @@ export type Database = {
       is_book_published: { Args: { book_id: string }; Returns: boolean }
       process_enhanced_daily_publishing: { Args: never; Returns: Json }
       process_simple_daily_publishing: { Args: never; Returns: Json }
-      search_embeddings: {
-        Args: {
-          match_count?: number
-          match_threshold?: number
-          query_embedding: string
-        }
-        Returns: {
-          content: string
-          id: string
-          metadata: Json
-          similarity: number
-        }[]
-      }
       seed_screen_time_product: {
         Args: { p_parent_user_id: string }
         Returns: Json

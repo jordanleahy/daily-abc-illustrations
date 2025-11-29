@@ -6,14 +6,14 @@
 export const SITE_CONFIG = {
   // Basic site information
   name: 'Chairlift Habits',
-  tagline: 'Build reading habits that stick',
-  description: 'AI-powered books, progress tracking, and kid-friendly rewards to make reading a daily adventure',
-  subheading: 'Create personalized books for your child and build lasting reading habits together',
+  tagline: 'The modern way to grow young readers',
+  description: 'My daughter loves digital learning, so I build her a new book every day',
+  subheading: 'Everyday I create a brand new book for DanDan and now you can as well.',
   author: 'Lovable',
   
   // URLs and social
   url: typeof window !== 'undefined' ? window.location.origin : '',
-  productionUrl: 'https://chairlifthabits.com',
+  productionUrl: 'https://dailyabcillustrations.com',
   twitter: {
     handle: '@lovable_dev',
     creator: '@lovable_dev',

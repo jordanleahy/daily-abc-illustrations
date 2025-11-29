@@ -61,7 +61,7 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <a href="mailto:support@chairlifthabits.com" className="text-muted-foreground hover:text-foreground transition-colors">
+                <a href="mailto:support@dailyabcillustrations.com" className="text-muted-foreground hover:text-foreground transition-colors">
                   Contact Us
                 </a>
               </li>

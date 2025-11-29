@@ -76,7 +76,7 @@ serve(async (req) => {
     console.log('Found daily published entry:', dailyPublished.id, 'status:', dailyPublished.status);
 
     // Generate public URL for the daily published content
-    const publicUrl = `https://chairlifthabits.com/daily-published/${dailyPublished.id}`;
+    const publicUrl = `https://dailyabcillustrations.com/daily-published/${dailyPublished.id}`;
 
     // Generate QR code configuration
     const qrCodeConfig = {

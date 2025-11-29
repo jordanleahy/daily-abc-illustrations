@@ -63,7 +63,7 @@ async function getRedditToken(): Promise<string> {
   
   const clientId = Deno.env.get('REDDIT_CLIENT_ID');
   const clientSecret = Deno.env.get('REDDIT_CLIENT_SECRET');
-  const userAgent = Deno.env.get('REDDIT_USER_AGENT') || 'chairlifthabits/1.0';
+  const userAgent = Deno.env.get('REDDIT_USER_AGENT') || 'dailyabcillustrations/1.0';
   
   if (!clientId || !clientSecret) {
     throw new Error('Reddit API credentials not configured');
@@ -179,7 +179,7 @@ async function searchReddit(
   limit: number = 10,
   timeFilter?: string
 ): Promise<RedditPostWithRelevance[]> {
-  const userAgent = Deno.env.get('REDDIT_USER_AGENT') || 'chairlifthabits/1.0';
+  const userAgent = Deno.env.get('REDDIT_USER_AGENT') || 'dailyabcillustrations/1.0';
   
   // Construct search URL - get more results initially to allow for filtering
   let searchUrl = 'https://oauth.reddit.com/search';

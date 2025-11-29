@@ -104,7 +104,7 @@ serve(async (req) => {
       logStep("No existing customer found");
     }
 
-    const origin = req.headers.get("origin") || "https://chairlifthabits.com";
+    const origin = req.headers.get("origin") || "https://dailyabcillustrations.com";
     
     // Prepare checkout session configuration
     const sessionConfig = {

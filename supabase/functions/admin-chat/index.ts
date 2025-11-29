@@ -121,6 +121,27 @@ const tools = [
         required: ["path"]
       }
     }
+  },
+  {
+    type: "function",
+    function: {
+      name: "semantic_search",
+      description: "Search the vectorized codebase using semantic similarity. Use this when you need to find code related to a concept or feature, not just exact text matches.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "Natural language description of what you're looking for (e.g., 'chat message streaming', 'user authentication flow')"
+          },
+          threshold: {
+            type: "number",
+            description: "Similarity threshold (0.0-1.0). Default 0.3. Lower = more results but less relevant."
+          }
+        },
+        required: ["query"]
+      }
+    }
   }
 ];
 
@@ -328,6 +349,45 @@ async function executeTools(toolCalls: any[], supabase: any, userId: string) {
             } else {
               result = { error: "Path is not a directory" };
             }
+          }
+          break;
+          
+        case "semantic_search":
+          // Generate embedding for the search query
+          const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke('generate-embeddings', {
+            body: { 
+              text: args.query,
+              storeInDB: false
+            }
+          });
+
+          if (embeddingError || !embeddingData.success) {
+            result = { error: embeddingError?.message || 'Failed to generate query embedding' };
+            break;
+          }
+
+          // Search vectorized codebase
+          const threshold = args.threshold || 0.3;
+          const { data: searchResults, error: searchError } = await supabase
+            .rpc('search_embeddings', {
+              query_embedding: embeddingData.embedding,
+              match_threshold: threshold,
+              match_count: 5
+            });
+
+          if (searchError) {
+            result = { error: searchError.message };
+          } else {
+            result = { 
+              query: args.query,
+              threshold,
+              matches: searchResults?.map((r: any) => ({
+                file: r.metadata?.file || 'unknown',
+                similarity: Math.round(r.similarity * 100) + '%',
+                preview: r.content?.substring(0, 200) + '...'
+              })) || [],
+              total_found: searchResults?.length || 0
+            };
           }
           break;
           

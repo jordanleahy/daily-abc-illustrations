@@ -467,7 +467,15 @@ serve(async (req) => {
 
     const { messages } = await req.json();
 const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
-const MAX_TOOL_ITERATIONS = 5; // Safety limit to prevent infinite loops
+const MAX_TOOL_ITERATIONS = 3; // Safety limit to prevent infinite loops
+const MAX_CONVERSATION_MESSAGES = 10; // Keep only recent messages for performance
+    
+    // Truncate conversation history to last N messages for performance
+    const truncatedMessages = messages.slice(-MAX_CONVERSATION_MESSAGES);
+    if (messages.length > truncatedMessages.length) {
+      console.log(`📉 Conversation truncated: ${messages.length} → ${truncatedMessages.length} messages`);
+    }
+    
     
     if (!LOVABLE_API_KEY) {
       throw new Error('LOVABLE_API_KEY is not configured');
@@ -638,7 +646,7 @@ These files were automatically found based on the user's question. You should us
         model: 'google/gemini-2.5-flash-lite',
         messages: [
           { role: 'system', content: enrichedSystemPrompt },
-          ...messages,
+          ...truncatedMessages,
         ],
         tools: tools,
         tool_choice: 'auto',
@@ -672,7 +680,7 @@ These files were automatically found based on the user's question. You should us
     // Track conversation for multi-turn tool calling
     let conversationMessages = [
       { role: 'system', content: enrichedSystemPrompt },
-      ...messages,
+      ...truncatedMessages,
     ];
 
     let iteration = 0;

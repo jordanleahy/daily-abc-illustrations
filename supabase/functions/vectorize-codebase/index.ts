@@ -44,7 +44,7 @@ serve(async (req) => {
       try {
         // Read file from GitHub
         const fileResponse = await fetch(
-          `https://api.github.com/repos/jordanleahy/chairlift-habits/contents/${filePath}?ref=main`,
+          `https://api.github.com/repos/jordanleahy/daily-abc-illustrations/contents/${filePath}?ref=main`,
           {
             headers: {
               'Authorization': `Bearer ${GITHUB_TOKEN}`,

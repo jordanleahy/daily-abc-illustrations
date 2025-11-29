@@ -489,18 +489,14 @@ CORE RULES:
 - Provide examples/templates when possible
 - Keep responses brief
 
-TOOLS (use immediately when asked about features/code):
-- list_directory, read_file, search_codebase, query_database
+TOOLS (use when helpful):
+- list_directory, read_file, search_codebase, query_database for exploring code
 - save_idea/list_ideas for storing marketing content
+- If tools don't find what you need, answer from your general knowledge
 
-RESPONSE FORMAT (REQUIRED):
-Always end with [SUGGEST] blocks:
-[SUGGEST]option-id: Action Label[/SUGGEST]
-
-Example:
-[SUGGEST]refine-caption: Refine This
-draft-another: Draft Another
-save-content: Save for Later[/SUGGEST]`;
+RESPONSE FORMAT:
+You may optionally end responses with [SUGGEST] blocks for actionable next steps:
+[SUGGEST]option-id: Action Label[/SUGGEST]`;
 
     // Automatic codebase search detection and context injection
     const lastUserMessage = messages[messages.length - 1]?.content?.toLowerCase() || '';

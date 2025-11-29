@@ -618,23 +618,36 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     
     // Sanitize all page data before database insertion
     // CRITICAL: Regular content pages should NOT have text overlays by default
-    const sanitizedPages = bookData.pages.map((page: any) => ({
-      ...page,
-      letter: sanitizeText(page.letter || '', 10),
-      title: sanitizeText(page.title, 100),
-      description: sanitizeText(page.description || '', 2000), // Increased for detailed Bear Stories prompts
-      content: {
-        mainConcept: sanitizeText(page.content?.mainConcept || '', 500),
-        funFact: sanitizeText(page.content?.funFact || '', 500),
-        activity: sanitizeText(page.content?.activity || '', 500),
-        textOverlay: {
-          enabled: showTextOverlay, // Use user preference
-          text: sanitizeText(page.title, 100),
-          position: 'bottom-center' as const,
-          createdAt: new Date().toISOString()
-        }
+    // COVER PAGES: Remove "No text overlays" to allow titles
+    const sanitizedPages = bookData.pages.map((page: any) => {
+      let description = page.description || '';
+      
+      // For cover pages only: remove "No text overlays" restrictions to allow titles
+      if (page.pageType === 'cover') {
+        description = description
+          .replace(/No text overlays\./gi, '')
+          .replace(/Clean illustration only\./gi, 'Clean illustration with book title.')
+          .trim();
       }
-    }));
+      
+      return {
+        ...page,
+        letter: sanitizeText(page.letter || '', 10),
+        title: sanitizeText(page.title, 100),
+        description: sanitizeText(description, 2000), // Increased for detailed Bear Stories prompts
+        content: {
+          mainConcept: sanitizeText(page.content?.mainConcept || '', 500),
+          funFact: sanitizeText(page.content?.funFact || '', 500),
+          activity: sanitizeText(page.content?.activity || '', 500),
+          textOverlay: {
+            enabled: showTextOverlay, // Use user preference
+            text: sanitizeText(page.title, 100),
+            position: 'bottom-center' as const,
+            createdAt: new Date().toISOString()
+          }
+        }
+      };
+    });
 
     // Insert book with sanitized data and metadata
     const { data: book, error: bookError } = await supabase
@@ -804,7 +817,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       // Get created pages with their IDs
       const { data: createdPages, error: fetchPagesError } = await supabase
         .from('pages')
-        .select('id, page_number, title')
+        .select('id, page_number, page_type, title')
         .eq('book_id', book.id)
         .order('page_number');
       
@@ -855,12 +868,22 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
             continue;
           }
           
+          // For cover pages only: remove "No text overlays" to allow titles
+          let finalContent = trimmedContent;
+          if (page.page_type === 'cover') {
+            finalContent = trimmedContent
+              .replace(/No text overlays\./gi, '')
+              .replace(/Clean illustration only\./gi, 'Clean illustration with book title.')
+              .trim();
+            console.log(`[COVER PAGE] Removed "No text overlays" restriction for page ${pageNumber}`);
+          }
+          
           // Log prompt metrics for monitoring
-          totalPromptLength += trimmedContent.length;
+          totalPromptLength += finalContent.length;
           promptMetrics.push({
             page: pageNumber,
             title: page.title,
-            length: trimmedContent.length
+            length: finalContent.length
           });
           
           try {
@@ -876,7 +899,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
             
             const versionNumber = versionData || 1;
             
-            // Insert the full prompt from chat - EXACTLY AS PROVIDED
+            // Insert the full prompt from chat - with cover page title allowance
             const { error: insertError } = await supabase
               .from('page_system_prompts')
               .insert({
@@ -884,7 +907,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
                 book_id: book.id,
                 user_id: userId,
                 version_number: versionNumber,
-                content: trimmedContent, // Store full prompt with no modifications
+                content: finalContent, // Store full prompt (cover pages allow titles)
                 is_latest: true,
                 is_deployed: true,
                 deployed_at: new Date().toISOString(),

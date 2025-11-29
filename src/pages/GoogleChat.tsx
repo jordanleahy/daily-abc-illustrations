@@ -221,12 +221,37 @@ export default function GoogleChat() {
       return false;
     }
     
-    // Show only when all 26 pages are complete (for ABC books)
-    const hasAllPages = parsedPageDetails !== null && parsedPageDetails.length === 26;
+    // HARDENING: Use expectedPageCount from book type config
+    const expectedCount = selectedBookType 
+      ? BOOK_TYPES[selectedBookType]?.expectedPageCount 
+      : 28;
+    
+    // For ABC books, we expect exactly 26 content pages (28 total with cover + education)
+    // Use dynamic page count with fallback to 26 for ABC
+    const targetPageCount = selectedBookType === 'abc' ? 26 : expectedCount - 2;
+    
+    const hasAllPages = parsedPageDetails !== null && 
+      parsedPageDetails.length === targetPageCount;
+    
+    // HARDENING: Additional validation for ABC books
+    if (selectedBookType === 'abc' && hasAllPages) {
+      // Verify we have the expected letters A-Z
+      const letters = parsedPageDetails.map(p => {
+        const match = p.title.match(/\(([A-Za-z])\)/);
+        return match ? match[1].toUpperCase() : null;
+      }).filter(Boolean);
+      
+      const hasCompleteAlphabet = letters.length === 26 &&
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').every(letter => 
+          letters.includes(letter)
+        );
+      
+      return hasCompleteAlphabet;
+    }
     
     // Always show button if we have all pages, even after book creation
     return hasAllPages;
-  }, [messages, isLoading, parsedPageDetails]);
+  }, [messages, isLoading, parsedPageDetails, selectedBookType]);
 
   // Derive showEditor from whether outline is ready or book exists
   const showEditor = (shouldShowReviewButton || isBookCreated) && !forceEditorClosed;

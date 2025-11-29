@@ -126,6 +126,9 @@ serve(async (req) => {
 
     console.log('Creating book using Lovable AI for user:', userId);
     console.log('Book type specified:', bookType);
+    
+    // Import validation utilities
+    const { validateABCBookStructure, sanitizeUserInput, retryWithBackoff } = await import('../_shared/validation.ts');
 
     // Fetch style guide if referenceBookId is provided
     let styleGuide: string | null = null;
@@ -535,6 +538,33 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
+    }
+
+    // HARDENING: ABC-specific validation
+    if (bookType === 'abc' && bookData.pages) {
+      console.log('[ABC Validation] Running comprehensive structure validation...');
+      
+      // Extract letter case from metadata
+      const letterCase = bookData.metadata?.letterCase || 'lowercase';
+      
+      // Validate complete ABC structure
+      const { validateABCBookStructure } = await import('../_shared/validation.ts');
+      const validation = validateABCBookStructure(bookData.pages, letterCase);
+      
+      if (!validation.valid) {
+        console.error('[ABC Validation] Structure validation failed:', validation.errors);
+        
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: 'ABC book validation failed',
+            details: validation.errors.join('; ')
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log('[ABC Validation] ✓ All validations passed - 28 pages, proper format, complete alphabet');
     }
 
     // If this is a color book, ensure colors are extracted

@@ -9,17 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Zap, Search } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { Send } from 'lucide-react';
 
 export default function AdminChat() {
   const [currentSessionId, setCurrentSessionId] = useState<string>();
   const [input, setInput] = useState('');
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
-  const [isTestingEmbeddings, setIsTestingEmbeddings] = useState(false);
-  const [isGeneratingEmbeddings, setIsGeneratingEmbeddings] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -112,172 +108,6 @@ export default function AdminChat() {
     }
   };
 
-  const handleTestEmbeddings = async () => {
-    setIsTestingEmbeddings(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('test-embeddings', {
-        method: 'POST',
-      });
-
-      if (error) throw error;
-
-      if (data.success) {
-        toast.success('✅ Lovable AI Gateway supports embeddings!', {
-          description: `Model: ${data.model}, Dimensions: ${data.dimensions}`,
-          duration: 5000,
-        });
-      } else {
-        toast.error('❌ Embeddings not supported', {
-          description: data.suggestion || 'Will need OpenAI API key',
-          duration: 5000,
-        });
-      }
-
-      console.log('Test results:', data);
-    } catch (error) {
-      console.error('Test failed:', error);
-      toast.error('Test failed', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-      });
-    } finally {
-      setIsTestingEmbeddings(false);
-    }
-  };
-
-  const handleGenerateEmbeddings = async () => {
-    setIsGeneratingEmbeddings(true);
-    try {
-      const testText = 'Chairlift Habits is an educational platform for creating personalized ABC books for children.';
-      
-      const { data, error } = await supabase.functions.invoke('generate-embeddings', {
-        body: {
-          text: testText,
-          metadata: { source: 'admin-test', timestamp: new Date().toISOString() },
-          storeInDB: true,
-        },
-      });
-
-      if (error) throw error;
-
-      if (data.success) {
-        toast.success('✅ Embedding generated and stored!', {
-          description: `Dimensions: ${data.dimensions}, ID: ${data.id?.substring(0, 8)}...`,
-          duration: 5000,
-        });
-      } else {
-        toast.error('❌ Generation failed', {
-          description: data.error || 'Unknown error',
-          duration: 5000,
-        });
-      }
-
-      console.log('Generation results:', data);
-    } catch (error) {
-      console.error('Generation failed:', error);
-      toast.error('Generation failed', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-      });
-    } finally {
-      setIsGeneratingEmbeddings(false);
-    }
-  };
-
-  const handleSeedEmbeddings = async () => {
-    setIsGeneratingEmbeddings(true);
-    try {
-      // Key files to vectorize from the codebase
-      const filesToEmbed = [
-        'src/pages/AdminChat.tsx',
-        'src/hooks/useAdminChat.ts',
-        'supabase/functions/admin-chat/index.ts',
-        'src/pages/Index.tsx',
-        'src/components/BookEditorPanel.tsx'
-      ];
-
-      const { data, error } = await supabase.functions.invoke('vectorize-codebase', {
-        body: { filePaths: filesToEmbed }
-      });
-
-      if (error) throw error;
-
-      if (data?.success) {
-        toast.success(`✅ Vectorized ${data.succeeded} of ${data.processed} code files!`, {
-          description: 'Codebase is now searchable by marketing agent',
-          duration: 5000,
-        });
-        console.log('Vectorization results:', data.results);
-      } else {
-        throw new Error(data?.error || 'Vectorization failed');
-      }
-    } catch (error) {
-      console.error('Vectorization error:', error);
-      toast.error('Vectorization failed', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-      });
-    } finally {
-      setIsGeneratingEmbeddings(false);
-    }
-  };
-
-  const handleTestSemanticSearch = async () => {
-    setIsGeneratingEmbeddings(true);
-    try {
-      console.log('🔍 Generating search embedding for: "admin chat interface with message streaming and session management"');
-      
-      // Search for code related to chat functionality
-      const { data: embeddingData, error: embeddingError } = await supabase.functions.invoke('generate-embeddings', {
-        body: { 
-          text: 'admin chat interface with message streaming and session management',
-          storeInDB: false
-        }
-      });
-
-      if (embeddingError) {
-        console.error('❌ Embedding generation error:', embeddingError);
-        throw embeddingError;
-      }
-
-      if (!embeddingData.success) {
-        throw new Error(embeddingData.error || 'Failed to generate query embedding');
-      }
-
-      console.log('✅ Search embedding generated, searching vectorized codebase...');
-
-      const { data: searchResults, error: searchError } = await supabase
-        .rpc('search_embeddings', {
-          query_embedding: embeddingData.embedding,
-          match_threshold: 0.5,
-          match_count: 5
-        });
-
-      if (searchError) {
-        console.error('❌ Search error:', searchError);
-        throw searchError;
-      }
-
-      console.log('🎯 SEARCH RESULTS:', {
-        totalFound: searchResults?.length || 0,
-        files: searchResults?.map((r: any) => ({
-          file: r.metadata?.file || 'unknown',
-          similarity: (r.similarity * 100).toFixed(1) + '%',
-          preview: r.content?.substring(0, 150) + '...'
-        }))
-      });
-
-      toast.success('✅ Semantic search complete!', {
-        description: `Found ${searchResults?.length || 0} matching files (see console for details)`,
-        duration: 5000,
-      });
-    } catch (error) {
-      console.error('❌ Search failed:', error);
-      toast.error('Search failed', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-      });
-    } finally {
-      setIsGeneratingEmbeddings(false);
-    }
-  };
-
   return (
     <AdminOnly>
       <PageLayout 
@@ -346,54 +176,30 @@ export default function AdminChat() {
 
             {/* Sticky Footer */}
             <div className="border-t px-4 md:px-6 py-4 bg-background">
-              <div className="flex flex-col gap-2">
-                <div className="flex gap-2 items-end">
-                  <Textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={
-                      !currentSessionId 
-                        ? "Creating session..." 
-                        : isLoading 
-                          ? "Sending..." 
-                          : "Ask about marketing strategies, content ideas... (Shift+Enter for new line)"
-                    }
-                    disabled={isLoading || !currentSessionId}
-                    className="flex-1 min-h-[44px] max-h-[200px] resize-none"
-                    rows={1}
-                  />
-                  <Button
-                    onClick={handleSend}
-                    disabled={isLoading || !input.trim() || !currentSessionId}
-                    size="icon"
-                    className="h-[44px] w-[44px]"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex gap-2 flex-wrap">
-                  <Button
-                    onClick={handleSeedEmbeddings}
-                    disabled={isGeneratingEmbeddings}
-                    variant="outline"
-                    size="sm"
-                    className="w-fit"
-                  >
-                    <Zap className="h-3 w-3 mr-2" />
-                    {isGeneratingEmbeddings ? 'Vectorizing...' : 'Vectorize Codebase (5 files)'}
-                  </Button>
-                  <Button
-                    onClick={handleTestSemanticSearch}
-                    disabled={isGeneratingEmbeddings}
-                    variant="outline"
-                    size="sm"
-                    className="w-fit"
-                  >
-                    <Search className="h-3 w-3 mr-2" />
-                    {isGeneratingEmbeddings ? 'Searching...' : 'Search: "chat interface"'}
-                  </Button>
-                </div>
+              <div className="flex gap-2 items-end">
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={
+                    !currentSessionId 
+                      ? "Creating session..." 
+                      : isLoading 
+                        ? "Sending..." 
+                        : "Ask about marketing strategies, content ideas... (Shift+Enter for new line)"
+                  }
+                  disabled={isLoading || !currentSessionId}
+                  className="flex-1 min-h-[44px] max-h-[200px] resize-none"
+                  rows={1}
+                />
+                <Button
+                  onClick={handleSend}
+                  disabled={isLoading || !input.trim() || !currentSessionId}
+                  size="icon"
+                  className="h-[44px] w-[44px]"
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
               </div>
             </div>
           </div>

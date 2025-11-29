@@ -33,6 +33,7 @@ import { AgeRangeId } from '@/types/ageRange';
 import type { CharacterThemeValue } from '@/types/characterTheme';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { differenceInYears, differenceInMonths } from 'date-fns';
+import { AdminOnly } from '@/components/AdminOnly';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
@@ -1487,12 +1488,13 @@ export default function GoogleChat() {
   }, [createdBookId]);
 
   return (
-    <PageLayout 
-      title="Chat with Google Gemini"
-      showHeader={true}
-      fullHeight={true}
-      onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
-    >
+    <AdminOnly showMessage={true}>
+      <PageLayout 
+        title="Chat with Google Gemini"
+        showHeader={true}
+        fullHeight={true}
+        onMobileMenuToggle={() => setIsMobileSidebarOpen(true)}
+      >
       <div className="fixed inset-0 top-[3.5rem] flex">
 
         {/* Desktop: Always-visible Sidebar */}
@@ -1659,5 +1661,6 @@ export default function GoogleChat() {
         )}
       </div>
     </PageLayout>
+    </AdminOnly>
   );
 }

@@ -26,6 +26,7 @@ export const PreviewNav = () => {
 
   const familyItems = [
     { title: 'For Families', href: '/preview/for-families', description: 'Collaborate on reading' },
+    { title: 'For Grandparents', href: '/preview/for-grandparents', description: 'Stay connected' },
     { title: 'For Toddlers', href: '/preview/for-families#toddlers', description: 'Ages 2-4' },
     { title: 'For Early Readers', href: '/preview/for-families#early-readers', description: 'Ages 5-7' }
   ];

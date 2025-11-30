@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Upload, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
@@ -29,6 +29,8 @@ export const BlogEditor = ({ postId, onBack }: BlogEditorProps) => {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [featuredImageUrl, setFeaturedImageUrl] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: post } = useQuery({
     queryKey: ['blog-post', postId],
@@ -73,6 +75,69 @@ export const BlogEditor = ({ postId, onBack }: BlogEditorProps) => {
     setTitle(value);
     if (!postId && !slug) {
       setSlug(generateSlug(value));
+    }
+  };
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast({ 
+        title: 'Invalid file type', 
+        description: 'Please upload an image file',
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    // Validate file size (5MB limit)
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ 
+        title: 'File too large', 
+        description: 'Image must be less than 5MB',
+        variant: 'destructive' 
+      });
+      return;
+    }
+
+    setIsUploading(true);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Not authenticated');
+
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { data, error: uploadError } = await supabase.storage
+        .from('blog-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('blog-images')
+        .getPublicUrl(data.path);
+
+      setFeaturedImageUrl(publicUrl);
+      toast({ title: 'Image uploaded successfully' });
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      toast({ 
+        title: 'Upload failed', 
+        description: error.message,
+        variant: 'destructive' 
+      });
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
@@ -205,13 +270,57 @@ export const BlogEditor = ({ postId, onBack }: BlogEditorProps) => {
           <h3 className="font-semibold">Media & Tags</h3>
           
           <div>
-            <Label htmlFor="featured-image">Featured Image URL</Label>
-            <Input
-              id="featured-image"
-              value={featuredImageUrl}
-              onChange={(e) => setFeaturedImageUrl(e.target.value)}
-              placeholder="https://example.com/image.jpg"
-            />
+            <Label>Featured Image</Label>
+            <div className="space-y-3">
+              {featuredImageUrl && (
+                <div className="relative inline-block">
+                  <img 
+                    src={featuredImageUrl} 
+                    alt="Featured" 
+                    className="h-32 w-auto rounded-lg border object-cover"
+                  />
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    className="absolute -top-2 -right-2"
+                    onClick={() => setFeaturedImageUrl('')}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  id="image-upload"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={isUploading}
+                  className="flex-1"
+                >
+                  <Upload className="h-4 w-4 mr-2" />
+                  {isUploading ? 'Uploading...' : 'Upload Image'}
+                </Button>
+              </div>
+              <div>
+                <Label htmlFor="featured-image-url" className="text-xs text-muted-foreground">
+                  Or enter image URL
+                </Label>
+                <Input
+                  id="featured-image-url"
+                  value={featuredImageUrl}
+                  onChange={(e) => setFeaturedImageUrl(e.target.value)}
+                  placeholder="https://example.com/image.jpg"
+                />
+              </div>
+            </div>
           </div>
 
           <div>

@@ -228,9 +228,8 @@ export default function GoogleChat() {
       : null;
     const expectedCount = bookTypeConfig?.expectedPageCount ?? 28;
     
-    // For ABC books, we expect exactly 26 content pages (28 total with cover + education)
-    // Use dynamic page count with fallback to 26 for ABC
-    const targetPageCount = selectedBookType === 'abc' ? 26 : expectedCount - 2;
+    // Parser returns ALL pages including cover + education, so use expectedCount directly
+    const targetPageCount = expectedCount;
     
     const hasAllPages = parsedPageDetails !== null && 
       parsedPageDetails.length === targetPageCount;

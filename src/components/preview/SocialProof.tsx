@@ -3,16 +3,16 @@ import { PreviewSection } from './layout/PreviewSection';
 export const SocialProof = () => {
   const testimonials = [
     {
-      quote: "Reading finally feels consistent in our house.",
-      author: "Parent of two"
+      quote: "Even though we live 800 miles apart, I feel part of their daily reading routine.",
+      author: "Grandmother of two"
     },
     {
-      quote: "Our daughter asks how many coins she earns after each book.",
-      author: "Parent of a 6-year-old"
+      quote: "My grandson calls me every week to tell me about his new books. It's our special connection.",
+      author: "Grandpa in Florida"
     },
     {
-      quote: "I feel clear on who read what and when. No guessing.",
-      author: "Dad of three"
+      quote: "Finally, a gift that doesn't clutter their house but means so much more.",
+      author: "Nana of three grandchildren"
     }
   ];
 
@@ -20,7 +20,7 @@ export const SocialProof = () => {
     <PreviewSection variant="feature" className="bg-muted/30">
       <div className="max-w-5xl mx-auto">
         <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-12 text-center">
-          What parents say
+          What grandparents are saying
         </h2>
         
         <div className="grid md:grid-cols-3 gap-8">
@@ -41,7 +41,7 @@ export const SocialProof = () => {
 
         <div className="mt-12 text-center">
           <p className="text-lg text-muted-foreground italic">
-            "Chairlift brings reading, habits, and rewards into one dashboard for families."
+            "The perfect gift for grandparents who want to stay connected and nurture a love of reading from anywhere."
           </p>
         </div>
       </div>

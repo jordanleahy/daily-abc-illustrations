@@ -12,6 +12,7 @@ import Auth from "./pages/Auth";
 import AuthConfirm from "./pages/AuthConfirm";
 import ResetPassword from "./pages/ResetPassword";
 import Agents from "./pages/Agents";
+import AdminChat from "./pages/AdminChat";
 import Books from "./pages/Books";
 import AllBooksPage from "./pages/AllBooksPage";
 import BookDetail from "./pages/BookDetail";
@@ -137,7 +138,8 @@ const App = () => {
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/confirm" element={<AuthConfirm />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
-               <Route path="/agents" element={<Agents />} />
+                <Route path="/agents" element={<Agents />} />
+                <Route path="/admin-chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
                {/* User book routes - Own books only */}
                 <Route path="/books" element={<ProtectedRoute requireSubscription={false}><Books /></ProtectedRoute>} />
                 <Route path="/books/:id" element={<ProtectedRoute requireSubscription={false}><BookDetail /></ProtectedRoute>} />

@@ -19,6 +19,8 @@ export default function AdminChat() {
   const queryClient = useQueryClient();
   const [input, setInput] = useState('');
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [isCreatingPost, setIsCreatingPost] = useState(false);
+  const [showCreateButton, setShowCreateButton] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const updateTimeoutRef = useRef<NodeJS.Timeout>();
 
@@ -52,6 +54,14 @@ export default function AdminChat() {
     enabled: !!currentSessionId && sessions.length > 0,
   });
 
+  // Show create button when conversation has meaningful content
+  useEffect(() => {
+    const hasContent = messages.length > 4 && messages.some(m => 
+      m.role === 'assistant' && m.content.length > 300
+    );
+    setShowCreateButton(hasContent);
+  }, [messages]);
+
   // Debounce message updates to avoid excessive database writes
   const handleMessagesUpdate = useCallback((messages: Message[], sessionId: string) => {
     if (updateTimeoutRef.current) {
@@ -79,7 +89,29 @@ export default function AdminChat() {
 
   const { isLoading, sendMessage } = useAdminChat(
     currentSessionId || undefined,
-    handleMessagesUpdate
+    handleMessagesUpdate,
+    (result) => {
+      setIsCreatingPost(false);
+      if (result.success) {
+        toast.success(
+          <div>
+            <div className="font-semibold">Blog post created!</div>
+            <div className="text-sm text-muted-foreground mt-1">
+              Ready to edit and publish
+            </div>
+          </div>,
+          {
+            duration: 5000,
+            action: {
+              label: 'View',
+              onClick: () => navigate('/blog/admin')
+            }
+          }
+        );
+      } else {
+        toast.error(`Failed to create post: ${result.error}`);
+      }
+    }
   );
 
   // Create initial session on mount if none exists
@@ -131,7 +163,20 @@ export default function AdminChat() {
     const messageText = input.trim();
     setInput('');
     
-    await sendMessage(messageText, messages);
+    await sendMessage(messageText, messages, false);
+  };
+
+  const handleCreatePost = async () => {
+    if (!currentSessionId || isLoading || isCreatingPost) return;
+    
+    setIsCreatingPost(true);
+    setInput('');
+    
+    await sendMessage(
+      'Create a blog post from our conversation. Extract the key points and format them into a complete, ready-to-publish blog post with proper structure, SEO optimization, and engaging content.',
+      messages,
+      true
+    );
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -214,23 +259,47 @@ export default function AdminChat() {
 
             {/* Input */}
             <div className="border-t bg-background p-4">
-              <div className="max-w-4xl mx-auto flex gap-2">
-                <Textarea
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKeyPress}
-                  placeholder="Ask about marketing strategies, content ideas, growth tactics..."
-                  className="min-h-[60px] resize-none"
-                  disabled={isLoading}
-                />
-                <Button
-                  onClick={handleSend}
-                  disabled={!input.trim() || isLoading}
-                  size="icon"
-                  className="h-[60px] w-[60px] shrink-0"
-                >
-                  <Send className="h-5 w-5" />
-                </Button>
+              <div className="max-w-4xl mx-auto space-y-3">
+                {showCreateButton && (
+                  <div className="flex justify-center">
+                    <Button
+                      onClick={handleCreatePost}
+                      disabled={isLoading || isCreatingPost}
+                      variant="default"
+                      className="gap-2"
+                    >
+                      {isCreatingPost ? (
+                        <>
+                          <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                          Creating blog post...
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-4 w-4" />
+                          Create Post from Conversation
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Textarea
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={handleKeyPress}
+                    placeholder="Ask about marketing strategies, content ideas, growth tactics..."
+                    className="min-h-[60px] resize-none"
+                    disabled={isLoading}
+                  />
+                  <Button
+                    onClick={handleSend}
+                    disabled={!input.trim() || isLoading}
+                    size="icon"
+                    className="h-[60px] w-[60px] shrink-0"
+                  >
+                    <Send className="h-5 w-5" />
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

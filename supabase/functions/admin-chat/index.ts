@@ -135,7 +135,7 @@ serve(async (req) => {
     }
 
     // Parse request
-    const { messages } = await req.json();
+    const { messages, enableTools } = await req.json();
 
     if (!messages || !Array.isArray(messages)) {
       return new Response(JSON.stringify({ error: 'Invalid messages format' }), {
@@ -152,21 +152,74 @@ serve(async (req) => {
       });
     }
 
+    // Define blog post creation tool
+    const tools = enableTools ? [
+      {
+        type: 'function',
+        function: {
+          name: 'create_blog_post',
+          description: 'Create a new blog post from conversation content. Use this when the user asks to create a blog post.',
+          parameters: {
+            type: 'object',
+            properties: {
+              title: {
+                type: 'string',
+                description: 'The blog post title'
+              },
+              slug: {
+                type: 'string',
+                description: 'URL-friendly slug (lowercase, hyphenated)'
+              },
+              content: {
+                type: 'string',
+                description: 'Full blog post content in Markdown format'
+              },
+              excerpt: {
+                type: 'string',
+                description: 'Brief excerpt or summary (2-3 sentences)'
+              },
+              seo_title: {
+                type: 'string',
+                description: 'SEO-optimized title (50-60 characters)'
+              },
+              seo_description: {
+                type: 'string',
+                description: 'SEO meta description (150-160 characters)'
+              },
+              tags: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Array of relevant tags'
+              }
+            },
+            required: ['title', 'slug', 'content', 'excerpt', 'seo_title', 'seo_description']
+          }
+        }
+      }
+    ] : undefined;
+
     // Call Lovable AI Gateway with marketing system prompt
+    const requestBody: any = {
+      model: 'google/gemini-2.5-flash',
+      messages: [
+        { role: 'system', content: MARKETING_SYSTEM_PROMPT },
+        ...messages
+      ],
+      stream: true,
+    };
+
+    if (tools) {
+      requestBody.tools = tools;
+      requestBody.tool_choice = 'auto';
+    }
+
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        model: 'google/gemini-2.5-flash',
-        messages: [
-          { role: 'system', content: MARKETING_SYSTEM_PROMPT },
-          ...messages
-        ],
-        stream: true,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -190,7 +243,112 @@ serve(async (req) => {
       });
     }
 
-    // Stream response directly back to client
+    // If tools are enabled, we need to process the stream for tool calls
+    if (enableTools && response.body) {
+      const reader = response.body.getReader();
+      const encoder = new TextEncoder();
+      const decoder = new TextDecoder();
+
+      const stream = new ReadableStream({
+        async start(controller) {
+          let buffer = '';
+          let toolCallId = '';
+          let toolName = '';
+          let toolArgs = '';
+
+          try {
+            while (true) {
+              const { done, value } = await reader.read();
+              if (done) break;
+
+              buffer += decoder.decode(value, { stream: true });
+              const lines = buffer.split('\n');
+              buffer = lines.pop() || '';
+
+              for (const line of lines) {
+                if (!line.trim() || line.startsWith(':')) continue;
+                if (!line.startsWith('data: ')) continue;
+
+                const data = line.slice(6).trim();
+                if (data === '[DONE]') continue;
+
+                try {
+                  const parsed = JSON.parse(data);
+                  const choice = parsed.choices?.[0];
+
+                  // Handle tool call chunks
+                  if (choice?.delta?.tool_calls) {
+                    const toolCall = choice.delta.tool_calls[0];
+                    if (toolCall.id) toolCallId = toolCall.id;
+                    if (toolCall.function?.name) toolName = toolCall.function.name;
+                    if (toolCall.function?.arguments) toolArgs += toolCall.function.arguments;
+                  }
+
+                  // Forward the original stream chunk
+                  controller.enqueue(encoder.encode(`data: ${data}\n\n`));
+
+                  // When tool call is complete, execute it
+                  if (choice?.finish_reason === 'tool_calls' && toolName === 'create_blog_post') {
+                    try {
+                      const params = JSON.parse(toolArgs);
+                      console.log('Executing create_blog_post tool with params:', params);
+                      
+                      const blogPost = await createBlogPost(supabase, user.id, params);
+                      
+                      // Send tool execution result as a special event
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                        type: 'tool_result',
+                        tool_call_id: toolCallId,
+                        tool_name: toolName,
+                        result: {
+                          success: true,
+                          post_id: blogPost.id,
+                          post_slug: blogPost.slug,
+                          message: 'Blog post created successfully'
+                        }
+                      })}\n\n`));
+                    } catch (error) {
+                      console.error('Tool execution failed:', error);
+                      controller.enqueue(encoder.encode(`data: ${JSON.stringify({
+                        type: 'tool_result',
+                        tool_call_id: toolCallId,
+                        tool_name: toolName,
+                        result: {
+                          success: false,
+                          error: error instanceof Error ? error.message : 'Unknown error'
+                        }
+                      })}\n\n`));
+                    }
+                  }
+                } catch (e) {
+                  // Ignore JSON parse errors for partial chunks
+                  continue;
+                }
+              }
+            }
+
+            // Process any remaining buffer
+            if (buffer.trim()) {
+              const line = buffer.trim();
+              if (line.startsWith('data: ')) {
+                controller.enqueue(encoder.encode(`${line}\n\n`));
+              }
+            }
+
+            controller.close();
+          } catch (error) {
+            console.error('Stream processing error:', error);
+            controller.error(error);
+          }
+        }
+      });
+
+      return new Response(stream, {
+        headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
+      });
+    }
+
+    // Stream response directly back to client (no tools)
     return new Response(response.body, {
       headers: { ...corsHeaders, 'Content-Type': 'text/event-stream' },
     });

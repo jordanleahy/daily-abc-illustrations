@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { AdminOnly } from '@/components/AdminOnly';
 import { MessageList } from '@/components/chat/MessageList';
 import { useAdminChat, type Message } from '@/hooks/useAdminChat';
@@ -140,11 +141,11 @@ export default function AdminChat() {
 
   return (
     <AdminOnly>
-      <PageLayout title="Marketing Intelligence">
-        <div className="flex h-[calc(100vh-12rem)] gap-4">
+      <PageLayout title="Marketing Intelligence" fullHeight={true}>
+        <div className="fixed inset-0 top-[3.5rem] flex">
           {/* Sidebar with sessions */}
-          <div className="w-64 border-r border-border pr-4 overflow-y-auto hidden md:block">
-            <div className="flex items-center justify-between mb-4">
+          <div className="w-64 border-r border-border bg-muted/30 hidden md:flex md:flex-col h-full">
+            <div className="p-4 border-b border-border flex items-center justify-between">
               <h3 className="font-semibold">Chat Sessions</h3>
               <Button
                 size="sm"
@@ -154,49 +155,53 @@ export default function AdminChat() {
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <div className="space-y-2">
-              {sessions.map((session) => (
-                <button
-                  key={session.id}
-                  onClick={() => setCurrentSessionId(session.id)}
-                  className={`w-full text-left p-3 rounded-lg transition-colors ${
-                    currentSessionId === session.id
-                      ? 'bg-primary text-primary-foreground'
-                      : 'hover:bg-muted'
-                  }`}
-                >
-                  <div className="text-sm font-medium truncate">
-                    {session.session_name || 'Untitled Chat'}
-                  </div>
-                  <div className="text-xs opacity-70 mt-1">
-                    {new Date(session.updated_at).toLocaleDateString()}
-                  </div>
-                </button>
-              ))}
-            </div>
+            <ScrollArea className="flex-1">
+              <div className="p-2 space-y-1">
+                {sessions.map((session) => (
+                  <button
+                    key={session.id}
+                    onClick={() => setCurrentSessionId(session.id)}
+                    className={`w-full text-left p-3 rounded-lg transition-colors cursor-pointer ${
+                      currentSessionId === session.id
+                        ? 'bg-accent'
+                        : 'hover:bg-accent/50'
+                    }`}
+                  >
+                    <div className="text-sm font-medium truncate">
+                      {session.session_name || 'Untitled Chat'}
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {new Date(session.updated_at).toLocaleDateString()}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </ScrollArea>
           </div>
 
           {/* Main chat area */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col relative">
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto mb-4 space-y-4">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full text-center p-8">
-                  <h3 className="text-xl font-semibold mb-2">Marketing Intelligence Assistant</h3>
-                  <p className="text-muted-foreground max-w-md">
-                    Ask me for marketing ideas, content strategies, or growth tactics. 
-                    I'll provide small, actionable steps you can implement today.
-                  </p>
-                </div>
-              ) : (
-                <MessageList messages={messages} />
-              )}
-              <div ref={scrollRef} />
+            <div className="flex-1 overflow-y-auto">
+              <div className="max-w-4xl mx-auto px-4 py-6 pb-24">
+                {messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
+                    <h3 className="text-xl font-semibold mb-2">Marketing Intelligence Assistant</h3>
+                    <p className="text-muted-foreground max-w-md">
+                      Ask me for marketing ideas, content strategies, or growth tactics. 
+                      I'll provide small, actionable steps you can implement today.
+                    </p>
+                  </div>
+                ) : (
+                  <MessageList messages={messages} />
+                )}
+                <div ref={scrollRef} />
+              </div>
             </div>
 
             {/* Input */}
-            <div className="border-t border-border pt-4">
-              <div className="flex gap-2">
+            <div className="border-t bg-background p-4">
+              <div className="max-w-4xl mx-auto flex gap-2">
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}

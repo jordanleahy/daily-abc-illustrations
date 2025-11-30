@@ -19,7 +19,8 @@ export const PreviewFooter = () => {
       links: [
         { label: 'For toddlers', href: '/preview/for-families#toddlers' },
         { label: 'For early readers', href: '/preview/for-families#early-readers' },
-        { label: 'For busy parents', href: '/preview/for-families' }
+        { label: 'For busy parents', href: '/preview/for-families' },
+        { label: 'For grandparents', href: '/preview/for-grandparents' }
       ]
     },
     {

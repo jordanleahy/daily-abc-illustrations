@@ -13,6 +13,7 @@ import AuthConfirm from "./pages/AuthConfirm";
 import ResetPassword from "./pages/ResetPassword";
 import Agents from "./pages/Agents";
 import AdminChat from "./pages/AdminChat";
+import AdminPersonas from "./pages/admin/Personas";
 import Blog from "./pages/Blog";
 import BlogPost from "./pages/BlogPost";
 import BlogAdmin from "./pages/BlogAdmin";
@@ -143,6 +144,7 @@ const App = () => {
           <Route path="/auth/reset-password" element={<ResetPassword />} />
                 <Route path="/agents" element={<Agents />} />
                 <Route path="/admin-chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
+                <Route path="/admin/personas" element={<ProtectedRoute requireRole="admin"><AdminPersonas /></ProtectedRoute>} />
                 <Route path="/blog/admin" element={<ProtectedRoute requireRole="admin"><BlogAdmin /></ProtectedRoute>} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />

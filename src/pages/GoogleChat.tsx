@@ -223,9 +223,10 @@ export default function GoogleChat() {
     }
     
     // HARDENING: Use expectedPageCount from book type config
-    const expectedCount = selectedBookType 
-      ? BOOK_TYPES[selectedBookType]?.expectedPageCount 
-      : 28;
+    const bookTypeConfig = selectedBookType 
+      ? BOOK_TYPES.find(bt => bt.id === selectedBookType)
+      : null;
+    const expectedCount = bookTypeConfig?.expectedPageCount ?? 28;
     
     // For ABC books, we expect exactly 26 content pages (28 total with cover + education)
     // Use dynamic page count with fallback to 26 for ABC

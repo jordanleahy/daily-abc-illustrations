@@ -94,18 +94,31 @@ export default function AdminChat() {
       setIsCreatingPost(false);
       if (result.success) {
         toast.success(
-          <div>
-            <div className="font-semibold">Blog post created!</div>
-            <div className="text-sm text-muted-foreground mt-1">
-              Ready to edit and publish
+          <div className="space-y-3">
+            <div>
+              <div className="font-semibold">Blog post created!</div>
+              <div className="text-sm text-muted-foreground mt-1">
+                Ready to edit and publish
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => navigate(`/blog/${result.post_slug}`)}
+              >
+                View Post
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => navigate('/blog/admin')}
+              >
+                Edit Post
+              </Button>
             </div>
           </div>,
           {
-            duration: 5000,
-            action: {
-              label: 'View',
-              onClick: () => navigate('/blog/admin')
-            }
+            duration: 8000,
           }
         );
       } else {

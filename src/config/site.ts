@@ -6,9 +6,9 @@
 export const SITE_CONFIG = {
   // Basic site information
   name: 'Chairlift Habits',
-  tagline: 'The modern way to grow young readers',
-  description: 'My daughter loves digital learning, so I build her a new book every day',
-  subheading: 'Everyday I create a brand new book for DanDan and now you can as well.',
+  tagline: 'The gift that grows with your grandchildren',
+  description: 'Stay connected through daily personalized books designed just for your grandchild',
+  subheading: 'The perfect gift from grandparents who want to nurture a love of reading from anywhere in the world.',
   author: 'Lovable',
   
   // URLs and social

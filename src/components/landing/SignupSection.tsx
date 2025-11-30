@@ -8,10 +8,10 @@ export const SignupSection = () => {
     <section className="w-full py-16 md:py-24 bg-primary text-primary-foreground">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-3xl md:text-5xl font-bold mb-6">
-          Start Your Daily Story Tradition
+          Give the Gift of Reading
         </h2>
         <p className="text-xl mb-8 opacity-90">
-          Subscribe to Plus for full library access, Habits & Rewards
+          A meaningful subscription that keeps giving, every single day
         </p>
         
         <div className="flex flex-col sm:flex-row gap-4 justify-center">

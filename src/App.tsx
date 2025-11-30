@@ -53,6 +53,7 @@ import ParentDashboard from "./pages/preview/ParentDashboard";
 import ForFamilies from "./pages/preview/ForFamilies";
 import PreviewPricing from "./pages/preview/PreviewPricing";
 import BlogHome from "./pages/preview/BlogHome";
+import About from "./pages/About";
 import { useEffect } from "react";
 import { scheduleCacheCleanup } from "./utils/cacheCleanup";
 import { initializeCacheWarming } from "./utils/cacheWarming";
@@ -127,6 +128,7 @@ const App = () => {
                 <Route path="/preview/for-families" element={<ForFamilies />} />
                 <Route path="/preview/pricing" element={<PreviewPricing />} />
                 <Route path="/preview/blog" element={<BlogHome />} />
+                <Route path="/about" element={<About />} />
                 
                 <Route path="/home" element={<ProtectedRoute requireSubscription={false}><Index /></ProtectedRoute>} />
                 <Route path="/google-chat" element={<ProtectedRoute requireSubscription={false}><GoogleChat /></ProtectedRoute>} />

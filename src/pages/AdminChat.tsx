@@ -9,11 +9,13 @@ import { useAdminChat, type Message } from '@/hooks/useAdminChat';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Send, Plus } from 'lucide-react';
+import { Send, Plus, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 export default function AdminChat() {
   const { user } = useAuthContext();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [input, setInput] = useState('');
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -145,14 +147,25 @@ export default function AdminChat() {
         <div className="fixed inset-0 top-[3.5rem] flex">
           {/* Sidebar with sessions */}
           <div className="w-64 border-r border-border bg-muted/30 hidden md:flex md:flex-col h-full">
-            <div className="p-4 border-b border-border flex items-center justify-between">
-              <h3 className="font-semibold">Chat Sessions</h3>
+            <div className="p-4 border-b border-border space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold">Chat Sessions</h3>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleCreateNewSession}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
               <Button
                 size="sm"
-                variant="ghost"
-                onClick={handleCreateNewSession}
+                variant="outline"
+                className="w-full justify-start"
+                onClick={() => navigate('/admin/personas')}
               >
-                <Plus className="h-4 w-4" />
+                <Users className="h-4 w-4 mr-2" />
+                View Personas
               </Button>
             </div>
             <ScrollArea className="flex-1">

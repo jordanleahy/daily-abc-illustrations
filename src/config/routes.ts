@@ -42,6 +42,7 @@ export const ROUTES = {
   MY_BOOKS: '/books',
   ALL_BOOKS: '/all-books',
   GOOGLE_CHAT: '/google-chat',
+  ADMIN_CHAT: '/admin-chat',
   REWARDS: '/rewards',
   MANAGE_HABITS: '/habits/manage',
   MY_TRICKS: '/my-tricks',
@@ -146,6 +147,14 @@ export const navigationConfig: RouteConfig[] = [
       }
       return false;
     },
+  },
+  {
+    path: ROUTES.ADMIN_CHAT,
+    name: 'Marketing Chat',
+    icon: MessageSquare,
+    group: 'admin',
+    permission: { role: 'admin' },
+    activeMatch: { exact: true },
   },
   {
     path: ROUTES.AGENTS,

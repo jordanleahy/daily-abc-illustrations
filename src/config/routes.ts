@@ -160,14 +160,6 @@ export const navigationConfig: RouteConfig[] = [
     activeMatch: { exact: true },
   },
   {
-    path: ROUTES.BLOG_ADMIN,
-    name: 'Blog',
-    icon: BookOpen,
-    group: 'admin',
-    permission: { role: 'admin' },
-    activeMatch: { startsWith: true },
-  },
-  {
     path: ROUTES.AGENTS,
     name: 'Agents',
     icon: Users,

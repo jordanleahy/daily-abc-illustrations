@@ -13,6 +13,9 @@ import AuthConfirm from "./pages/AuthConfirm";
 import ResetPassword from "./pages/ResetPassword";
 import Agents from "./pages/Agents";
 import AdminChat from "./pages/AdminChat";
+import Blog from "./pages/Blog";
+import BlogPost from "./pages/BlogPost";
+import BlogAdmin from "./pages/BlogAdmin";
 import Books from "./pages/Books";
 import AllBooksPage from "./pages/AllBooksPage";
 import BookDetail from "./pages/BookDetail";
@@ -140,6 +143,9 @@ const App = () => {
           <Route path="/auth/reset-password" element={<ResetPassword />} />
                 <Route path="/agents" element={<Agents />} />
                 <Route path="/admin-chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
+                <Route path="/blog/admin" element={<ProtectedRoute requireRole="admin"><BlogAdmin /></ProtectedRoute>} />
+                <Route path="/blog" element={<Blog />} />
+                <Route path="/blog/:slug" element={<BlogPost />} />
                {/* User book routes - Own books only */}
                 <Route path="/books" element={<ProtectedRoute requireSubscription={false}><Books /></ProtectedRoute>} />
                 <Route path="/books/:id" element={<ProtectedRoute requireSubscription={false}><BookDetail /></ProtectedRoute>} />

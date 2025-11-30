@@ -8,9 +8,18 @@ export interface Message {
   content: string;
 }
 
+export interface ToolResult {
+  success: boolean;
+  post_id?: string;
+  post_slug?: string;
+  message?: string;
+  error?: string;
+}
+
 export const useAdminChat = (
   sessionId?: string,
-  onMessagesUpdate?: (messages: Message[], sessionId: string) => void
+  onMessagesUpdate?: (messages: Message[], sessionId: string) => void,
+  onToolResult?: (result: ToolResult) => void
 ) => {
   const queryClient = useQueryClient();
   const { user, session } = useAuthContext();
@@ -18,7 +27,8 @@ export const useAdminChat = (
 
   const sendMessage = async (
     content: string,
-    currentMessages: Message[] = []
+    currentMessages: Message[] = [],
+    enableTools: boolean = false
   ) => {
     if (!user?.id) {
       console.error('Please sign in to use admin chat');
@@ -56,7 +66,10 @@ export const useAdminChat = (
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ messages: updatedMessages })
+          body: JSON.stringify({ 
+            messages: updatedMessages,
+            enableTools 
+          })
         }
       );
 
@@ -99,6 +112,16 @@ export const useAdminChat = (
 
           try {
             const parsed = JSON.parse(jsonStr);
+            
+            // Handle tool result events
+            if (parsed.type === 'tool_result') {
+              console.log('Tool result received:', parsed.result);
+              if (onToolResult) {
+                onToolResult(parsed.result);
+              }
+              continue;
+            }
+            
             const delta = parsed.choices?.[0]?.delta?.content;
             if (delta) {
               fullContent += delta;

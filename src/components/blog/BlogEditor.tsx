@@ -26,6 +26,9 @@ export const BlogEditor = ({ postId, onBack }: BlogEditorProps) => {
   const [status, setStatus] = useState<'draft' | 'published' | 'archived'>('draft');
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const [featuredImageUrl, setFeaturedImageUrl] = useState('');
 
   const { data: post } = useQuery({
     queryKey: ['blog-post', postId],
@@ -52,6 +55,8 @@ export const BlogEditor = ({ postId, onBack }: BlogEditorProps) => {
       setStatus(post.status as 'draft' | 'published' | 'archived');
       setSeoTitle(post.seo_title || '');
       setSeoDescription(post.seo_description || '');
+      setTags(post.tags || []);
+      setFeaturedImageUrl(post.featured_image_url || '');
     }
   }, [post]);
 
@@ -84,6 +89,8 @@ export const BlogEditor = ({ postId, onBack }: BlogEditorProps) => {
         status,
         seo_title: seoTitle || null,
         seo_description: seoDescription || null,
+        tags: tags.length > 0 ? tags : null,
+        featured_image_url: featuredImageUrl || null,
         author_id: user.id,
         published_at: status === 'published' ? new Date().toISOString() : null,
       };
@@ -193,6 +200,62 @@ export const BlogEditor = ({ postId, onBack }: BlogEditorProps) => {
             </div>
           </TabsContent>
         </Tabs>
+
+        <div className="space-y-4 pt-4 border-t">
+          <h3 className="font-semibold">Media & Tags</h3>
+          
+          <div>
+            <Label htmlFor="featured-image">Featured Image URL</Label>
+            <Input
+              id="featured-image"
+              value={featuredImageUrl}
+              onChange={(e) => setFeaturedImageUrl(e.target.value)}
+              placeholder="https://example.com/image.jpg"
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="tags">Tags</Label>
+            <div className="space-y-2">
+              <div className="flex gap-2">
+                <Input
+                  id="tags"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      const newTag = tagInput.trim();
+                      if (newTag && !tags.includes(newTag)) {
+                        setTags([...tags, newTag]);
+                        setTagInput('');
+                      }
+                    }
+                  }}
+                  placeholder="Type a tag and press Enter"
+                />
+              </div>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <div
+                      key={tag}
+                      className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm flex items-center gap-2"
+                    >
+                      {tag}
+                      <button
+                        onClick={() => setTags(tags.filter((t) => t !== tag))}
+                        className="hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
 
         <div className="space-y-4 pt-4 border-t">
           <h3 className="font-semibold">SEO</h3>

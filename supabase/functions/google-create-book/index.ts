@@ -19,7 +19,7 @@ const pageDetailSchema = z.object({
 
 const requestSchema = z.object({
   conversationHistory: z.array(conversationMessageSchema),
-  userId: z.string().uuid(),
+  // userId is now extracted from JWT token, not from request body
   pageDetails: z.array(pageDetailSchema).optional(),
   qaImages: z.record(z.string()).optional(),
   bookType: z.string().optional(),
@@ -84,9 +84,44 @@ serve(async (req) => {
   }
 
   try {
+    // Extract and verify JWT token
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Missing authorization header' 
+        }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = authHeader.replace('Bearer ', '');
+    
+    // Initialize Supabase client with service role for user verification
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Verify JWT and extract user
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    
+    if (authError || !user) {
+      console.error('Authentication failed:', authError);
+      return new Response(
+        JSON.stringify({ 
+          success: false,
+          error: 'Invalid authentication token' 
+        }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const userId = user.id; // Extract userId from verified JWT
+
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, userId, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId } = validatedData;
+    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId } = validatedData;
     
     // Normalize and validate book type
     const bookType = normalizeBookType(rawBookType);
@@ -106,10 +141,7 @@ serve(async (req) => {
         .trim();
     };
 
-    // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    // Supabase client already initialized above for auth verification
 
     // Get Lovable AI key
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');

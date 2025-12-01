@@ -162,32 +162,29 @@ export function UnifiedReadingControls({
       )}
 
       {/* Row 2: Page Navigation */}
-      <div className="flex items-center h-14 rounded-full bg-muted/30 overflow-hidden">
+      <div className="flex items-center h-14 rounded-full bg-muted/30 overflow-hidden max-w-md mx-auto w-full">
         {/* Previous/Left Arrow */}
         <button
           onClick={onPreviousPage}
           disabled={disablePreviousPage || !onPreviousPage}
-          className={`flex items-center justify-center h-full rounded-l-full transition-all active:scale-[0.98] shrink-0 ${
+          className={`flex items-center justify-center h-full rounded-l-full transition-all active:scale-[0.98] shrink-0 w-1/2 ${
             disablePreviousPage || !onPreviousPage
-              ? 'opacity-30 cursor-not-allowed pointer-events-none w-[48%]'
-              : 'hover:bg-muted/50 cursor-pointer w-[48%]'
+              ? 'opacity-30 cursor-not-allowed pointer-events-none'
+              : 'hover:bg-muted/50 cursor-pointer'
           }`}
           aria-label="Previous page"
         >
           <ChevronLeft className="w-6 h-6 text-foreground flex-shrink-0" />
         </button>
 
-        {/* Center spacer */}
-        <div className="flex-1" />
-
         {/* Next/Right Arrow - Wide button with dark background */}
         <button
           onClick={onNextPage}
           disabled={disableNextPage || !onNextPage}
-          className={`flex items-center justify-center h-full rounded-r-full transition-all active:scale-[0.98] shrink-0 ${
+          className={`flex items-center justify-center h-full rounded-r-full transition-all active:scale-[0.98] shrink-0 w-1/2 ${
             disableNextPage || !onNextPage
-              ? 'opacity-30 cursor-not-allowed pointer-events-none w-[48%]'
-              : 'hover:opacity-90 cursor-pointer w-[48%] bg-[hsl(220,40%,15%)]'
+              ? 'opacity-30 cursor-not-allowed pointer-events-none'
+              : 'hover:opacity-90 cursor-pointer bg-[hsl(220,40%,15%)]'
           }`}
           aria-label="Next page"
         >

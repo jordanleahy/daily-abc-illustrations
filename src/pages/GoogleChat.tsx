@@ -331,6 +331,20 @@ export default function GoogleChat() {
     return prompt;
   }, [isBookCreated, dbPages, editorPagePrompts, bookOutline]);
 
+  // Helper to get current page title - mirrors getCurrentPagePrompt pattern
+  const getCurrentPageTitle = useCallback((pageNum: number): string | null => {
+    // Before book creation - use parsed outline
+    if (bookOutline) {
+      return bookOutline.allPages.get(pageNum)?.title || null;
+    }
+    // After book creation - use database
+    if (isBookCreated && dbPages && dbPages.length > 0) {
+      const page = dbPages.find(p => p.page_number === pageNum);
+      return page?.title || null;
+    }
+    return null;
+  }, [bookOutline, isBookCreated, dbPages]);
+
   // Create initial session on mount if none exists
   useEffect(() => {
     if (sessionsLoading) return;
@@ -1521,6 +1535,7 @@ export default function GoogleChat() {
                 editorPageImages={editorPageImages}
                 editorPagePrompts={editorPagePrompts}
                 getCurrentPagePrompt={getCurrentPagePrompt}
+                getCurrentPageTitle={getCurrentPageTitle}
                 createBookMutation={createBookMutation}
                 onClose={() => setForceEditorClosed(true)}
                 onNavigate={handleEditorPageNavigation}
@@ -1558,6 +1573,7 @@ export default function GoogleChat() {
               editorPageImages={editorPageImages}
               editorPagePrompts={editorPagePrompts}
               getCurrentPagePrompt={getCurrentPagePrompt}
+              getCurrentPageTitle={getCurrentPageTitle}
               createBookMutation={createBookMutation}
               onClose={() => setForceEditorClosed(true)}
               onNavigate={handleEditorPageNavigation}

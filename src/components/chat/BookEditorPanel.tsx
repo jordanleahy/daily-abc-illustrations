@@ -31,6 +31,7 @@ interface BookEditorPanelProps {
   editorPageImages: Record<number, string>;
   editorPagePrompts: Record<number, string>;
   getCurrentPagePrompt: (pageNum: number) => string | null;
+  getCurrentPageTitle?: (pageNum: number) => string | null;
   createBookMutation: any;
   onClose: () => void;
   onNavigate: (direction: 'prev' | 'next') => void;
@@ -60,6 +61,7 @@ export function BookEditorPanel({
   editorPageImages,
   editorPagePrompts,
   getCurrentPagePrompt,
+  getCurrentPageTitle,
   createBookMutation,
   onClose,
   onNavigate,
@@ -408,8 +410,8 @@ export function BookEditorPanel({
               {currentPageNumber === 1 
                 ? 'Page 1: Cover' 
                 : currentPageNumber === 2
-                ? 'Page 2: Focus'
-                : pages?.find(p => p.page_number === currentPageNumber)?.title || `Page ${currentPageNumber}`
+                ? 'Page 2: Educational Focus'
+                : getCurrentPageTitle?.(currentPageNumber) || `Page ${currentPageNumber}`
               }
             </h3>
             <p className="text-xs text-muted-foreground line-clamp-1">

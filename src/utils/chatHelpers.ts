@@ -18,6 +18,7 @@ const sanitizeTitle = (title: string): string => {
 };
 
 /**
+ * @deprecated Use parseBookOutline from pageHelpers.ts instead
  * Parse page details from chat messages containing book outline
  */
 export const parsePageDetailsFromMessages = (messages: any[]): PageDetail[] | null => {

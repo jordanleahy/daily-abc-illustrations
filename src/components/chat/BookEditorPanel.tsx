@@ -153,7 +153,7 @@ export function BookEditorPanel({
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
 
-  const currentCoverPrompt = editorPagePrompts[0] || null;
+  const currentCoverPrompt = editorPagePrompts[1] || null;
   
   // Check if all pages have images uploaded
   const allImagesUploaded = useMemo(() => {

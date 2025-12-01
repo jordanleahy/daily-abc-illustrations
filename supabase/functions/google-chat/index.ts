@@ -301,7 +301,7 @@ serve(async (req) => {
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + ageContext + curatedItemsContext + themeContext + conversationStageContext,
+      content: systemPromptContent + curatedItemsContext + themeContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

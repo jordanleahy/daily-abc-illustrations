@@ -330,9 +330,9 @@ CRITICAL INSTRUCTIONS FOR THIS REQUEST:
 - The user has already designed specific pages in our conversation
 - You MUST use the exact page titles and descriptions provided below
 - You MUST include pageType field for EVERY page
-- Cover page is ALWAYS pageNumber: 0, pageType: "cover"
-- Educational focus (if present) is ALWAYS pageNumber: 1, pageType: "educational"
-- Content pages start at pageNumber: 2, pageType: "content"
+- Cover page is ALWAYS pageNumber: 1, pageType: "cover"
+- Educational focus (if present) is ALWAYS pageNumber: 2, pageType: "educational"
+- Content pages start at pageNumber: 3, pageType: "content"
 - Do NOT include aspect ratio specs in titles/descriptions
 - NEVER use quotes or apostrophes in titles (plain text only)
 - EXTRACT metadata from the conversation
@@ -355,36 +355,36 @@ Return ONLY valid JSON with this structure:
     "targetAge": "toddler|preschool|early-reader"
   },
   "pages": [
-    {
-      "pageNumber": 0,
-      "pageType": "cover",
-      "letter": "COVER",
-      "title": "Book Title",
-      "description": "Cover description with title-focused layout",
-      "content": {
-        "mainConcept": "Book title",
-        "funFact": "Book description",
-        "activity": ""
-      }
-    },
-    {
-      "pageNumber": 1,
-      "pageType": "educational",
-      "letter": "FOCUS",
-      "title": "Educational Focus",
-      "description": "Age and learning objectives",
-      "content": {
-        "mainConcept": "Target age",
-        "funFact": "Learning approach",
-        "activity": "Specific skills"
-      }
-    },
-    {
-      "pageNumber": 2,
-      "pageType": "content",
-      "letter": "a (or appropriate - WITHOUT parentheses in this field)",
-      "title": "EXACT TITLE FROM PROVIDED LIST - FOR ABC: use format '(a) is for apple'",
-      "description": "EXACT DESCRIPTION FROM PROVIDED LIST",
+     {
+       "pageNumber": 1,
+       "pageType": "cover",
+       "letter": "COVER",
+       "title": "Book Title",
+       "description": "Cover description with title-focused layout",
+       "content": {
+         "mainConcept": "Book title",
+         "funFact": "Book description",
+         "activity": ""
+       }
+     },
+     {
+       "pageNumber": 2,
+       "pageType": "educational",
+       "letter": "FOCUS",
+       "title": "Educational Focus",
+       "description": "Age and learning objectives",
+       "content": {
+         "mainConcept": "Target age",
+         "funFact": "Learning approach",
+         "activity": "Specific skills"
+       }
+     },
+     {
+       "pageNumber": 3,
+       "pageType": "content",
+       "letter": "a (or appropriate - WITHOUT parentheses in this field)",
+       "title": "EXACT TITLE FROM PROVIDED LIST - FOR ABC: use format '(a) is for apple'",
+       "description": "EXACT DESCRIPTION FROM PROVIDED LIST",
       "content": {
         "mainConcept": "string",
         "funFact": "string",
@@ -567,6 +567,75 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       console.log('[ABC Validation] ✓ All validations passed - 28 pages, proper format, complete alphabet');
     }
 
+    // HARDENING: Non-ABC book validation (12-page structure)
+    if (bookType && bookType !== 'abc' && bookType !== 'other' && bookData.pages) {
+      console.log(`[${bookType.toUpperCase()} Validation] Running 12-page structure validation...`);
+      
+      const errors: string[] = [];
+      const EXPECTED_PAGE_COUNT = 12;
+      
+      // Validate page count
+      if (bookData.pages.length !== EXPECTED_PAGE_COUNT) {
+        errors.push(`Expected exactly ${EXPECTED_PAGE_COUNT} pages, got ${bookData.pages.length}`);
+      }
+      
+      // Validate page types and numbering (1-based)
+      const pageNumbers = bookData.pages.map((p: any) => p.pageNumber);
+      const pageTypes = bookData.pages.map((p: any) => ({ num: p.pageNumber, type: p.pageType }));
+      
+      // Check Page 1 is cover
+      const page1 = bookData.pages.find((p: any) => p.pageNumber === 1);
+      if (!page1) {
+        errors.push('Page 1 (cover) is missing');
+      } else if (page1.pageType !== 'cover') {
+        errors.push(`Page 1 must be type "cover", got "${page1.pageType}"`);
+      }
+      
+      // Check Page 2 is educational focus
+      const page2 = bookData.pages.find((p: any) => p.pageNumber === 2);
+      if (!page2) {
+        errors.push('Page 2 (educational focus) is missing');
+      } else if (page2.pageType !== 'educational') {
+        errors.push(`Page 2 must be type "educational", got "${page2.pageType}"`);
+      }
+      
+      // Check Pages 3-12 are content pages
+      for (let i = 3; i <= EXPECTED_PAGE_COUNT; i++) {
+        const page = bookData.pages.find((p: any) => p.pageNumber === i);
+        if (!page) {
+          errors.push(`Page ${i} (content) is missing`);
+        } else if (page.pageType !== 'content') {
+          errors.push(`Page ${i} must be type "content", got "${page.pageType}"`);
+        }
+      }
+      
+      // Check for duplicate page numbers
+      const uniquePageNumbers = new Set(pageNumbers);
+      if (uniquePageNumbers.size !== pageNumbers.length) {
+        errors.push('Duplicate page numbers detected');
+      }
+      
+      // Check for 0-based indexing (common mistake)
+      if (pageNumbers.includes(0)) {
+        errors.push('Pages use 0-based numbering. Must use 1-based (Page 1, Page 2, etc.)');
+      }
+      
+      if (errors.length > 0) {
+        console.error(`[${bookType.toUpperCase()} Validation] Structure validation failed:`, errors);
+        
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: `${bookType} book validation failed`,
+            details: errors.join('; ')
+          }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+      
+      console.log(`[${bookType.toUpperCase()} Validation] ✓ All validations passed - 12 pages, proper format (1 cover + 1 education + 10 content)`);
+    }
+
     // If this is a color book, ensure colors are extracted
     if (bookType === 'colors' && bookData.pages) {
       const extractedColors: string[] = [];
@@ -715,12 +784,12 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     }
 
     // Process pages from AI response with explicit page types
-    // AI returns: pageNumber 0=cover, 1=educational (optional), 2+=content
-    // We store as: page_number 1, 2, 3... but preserve the page_type
+    // AI returns 1-based page numbering: pageNumber 1=cover, 2=educational (optional), 3+=content
+    // We store using page.pageNumber directly (already 1-based)
     
-    const pages = sanitizedPages.map((page: any, index: number) => {
+    const pages = sanitizedPages.map((page: any) => {
       const pageType = page.pageType || 'content'; // Default to content if not specified
-      const actualPageNumber = index + 1; // Database page numbers start at 1
+      const actualPageNumber = page.pageNumber; // Use AI-provided 1-based page number directly
       
       // Determine text overlay behavior based on page type
       let textOverlayEnabled = false;

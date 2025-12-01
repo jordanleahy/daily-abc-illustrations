@@ -217,10 +217,7 @@ export default function GoogleChat() {
     return parseBookOutline(messages);
   }, [messages]);
   
-  // Legacy: Keep parsedPageDetails for backward compatibility during migration
-  const parsedPageDetails = useMemo(() => {
-    return parsePageDetailsFromMessages(messages);
-  }, [messages]);
+  // DEPRECATED: parsedPageDetails removed - use bookOutline instead
 
   // Detect when book outline is ready for Book Editor Panel
   const shouldShowReviewButton = useMemo(() => {
@@ -261,17 +258,17 @@ export default function GoogleChat() {
       return;
     }
     
-    if (parsedPageDetails && parsedPageDetails.length > 0) {
+    if (bookOutline && bookOutline.totalPages > 0) {
       // Check if this is a new/different outline by comparing page count
       const currentPageCount = Object.keys(editorPagePrompts).length;
-      const newPageCount = parsedPageDetails.length + (educationalFocus ? 2 : 1);
+      const newPageCount = bookOutline.totalPages;
       
       // If page count changed, or if we have parsed details but empty cache, clear the cache
       if (currentPageCount !== newPageCount || currentPageCount === 0) {
         setEditorPagePrompts({});
       }
     }
-  }, [parsedPageDetails, educationalFocus, createdBookId, bookData?.status]);
+  }, [bookOutline, createdBookId, bookData?.status]);
 
   const pageCount = useMemo(() => {
     if (isBookCreated && dbPages) return dbPages.length;
@@ -641,10 +638,10 @@ export default function GoogleChat() {
       return;
     }
 
-    const pageDetails = parsedPageDetails;
+    const outline = parseBookOutline(messages);
     
-    if (pageDetails) {
-      console.log(`Extracted ${pageDetails.length} page details from conversation`);
+    if (outline) {
+      console.log(`Extracted ${outline.totalPages} pages from conversation outline`);
     }
 
     // ✅ CRITICAL: Extract prompts BEFORE book creation if not already extracted
@@ -653,7 +650,6 @@ export default function GoogleChat() {
     if (Object.keys(promptsToStore).length === 0) {
       console.log('[Book Creation] No prompts found, extracting from conversation...');
       
-      const fullPrompts: Record<number, string> = {};
       const conversationText = messages
         .filter(m => m.role === 'assistant')
         .map(m => m.content)
@@ -661,6 +657,10 @@ export default function GoogleChat() {
       
       // Extract cover prompt (page 1) - Handle both "**Cover:**" and "**Page 1: Cover**" formats
       const coverMatch = conversationText.match(/\*\*(?:Cover:[^\n*]*|Page\s+1:\s*Cover)\*\*\s*([\s\S]*?)(?=\n\*\*(?:Educational Focus:|Page\s+2:)|\n\*\*Page\s+\d+|$)/i);
+      
+      // Use new helper to extract all prompts with correct page numbers
+      const extractedPrompts: Record<number, string> = {};
+      
       if (coverMatch) {
         let coverPrompt = coverMatch[0];
         
@@ -672,34 +672,31 @@ export default function GoogleChat() {
           coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
         }
         
-        fullPrompts[1] = coverPrompt;
+        extractedPrompts[1] = coverPrompt;
       }
       
       // Extract educational focus prompt (page 2) - Handle both "**Educational Focus:**" and "**Page 2: Focus**" formats
       const eduMatch = conversationText.match(/\*\*(?:Educational Focus:[^\n*]*|Page\s+2:\s*(?:Educational\s+)?Focus)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
       if (eduMatch) {
-        fullPrompts[2] = eduMatch[0];
+        extractedPrompts[2] = eduMatch[0];
       }
       
-      // Extract numbered page prompts (pages 3-28 = A-Z) - Stop after "Clean illustration only."
-      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?Clean illustration only\.)\s*(?=\n\*\*Page|\n\n|$)/gi);
-      for (const match of pageMatches) {
-        const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
-        fullPrompts[pageNum] = match[0];
-      }
+      // Extract all page prompts using the new helper
+      const allPrompts = extractPromptsRecord(outline);
+      Object.assign(extractedPrompts, allPrompts);
       
-      if (Object.keys(fullPrompts).length > 0) {
-        console.log(`[Book Creation] Extracted ${Object.keys(fullPrompts).length} prompts, saving to session...`);
+      if (Object.keys(extractedPrompts).length > 0) {
+        console.log(`[Book Creation] Extracted ${Object.keys(extractedPrompts).length} prompts, saving to session...`);
         
         // Save prompts to session database
         await updateQAPagePrompts({ 
           sessionId: currentSessionId, 
-          qaPagePrompts: fullPrompts 
+          qaPagePrompts: extractedPrompts 
         });
         
         // Update local state
-        setEditorPagePrompts(fullPrompts);
-        promptsToStore = fullPrompts;
+        setEditorPagePrompts(extractedPrompts);
+        promptsToStore = extractedPrompts;
       } else {
         console.warn('[Book Creation] No prompts extracted from conversation');
       }
@@ -736,7 +733,7 @@ export default function GoogleChat() {
     try {
       const result = await createBookMutation.mutateAsync({
         conversationHistory: textMessages,
-        pageDetails: pageDetails || undefined,
+        pageDetails: outline?.contentPages || undefined,
         qaImages: Object.keys(editorPageImages).length > 0 ? editorPageImages : undefined,
         bookType: selectedBookType || undefined,
         characterTheme: selectedCharacterTheme || undefined, // Pass validated theme from suggestions
@@ -784,7 +781,7 @@ export default function GoogleChat() {
       console.error('Book creation error:', error);
       // Error toast is handled by the mutation
     }
-  }, [currentSessionId, messages, parsedPageDetails, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, selectedCharacterTheme, selectedAgeRange, targetWords]);
+  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, selectedCharacterTheme, selectedAgeRange, targetWords]);
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
     // Handle special actions
@@ -1128,14 +1125,14 @@ export default function GoogleChat() {
     }
     
     // Pre-creation navigation with educational focus
-    const maxPage = (parsedPageDetails?.length || 0) + (educationalFocus ? 2 : 1);
+    const maxPage = bookOutline?.totalPages || 0;
     
     if (direction === 'next' && currentEditorPage < maxPage) {
       setCurrentEditorPage(currentEditorPage + 1);
     } else if (direction === 'prev' && currentEditorPage > 1) {
       setCurrentEditorPage(Math.max(1, currentEditorPage - 1));
     }
-  }, [parsedPageDetails, currentEditorPage, educationalFocus, isBookCreated, dbPages]);
+  }, [bookOutline, currentEditorPage, isBookCreated, dbPages]);
 
   const handleRemoveEditorImage = useCallback(async (pageNumber: number) => {
     if (createdBookId) {

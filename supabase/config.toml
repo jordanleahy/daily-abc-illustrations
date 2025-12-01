@@ -82,7 +82,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.google-create-book]
-verify_jwt = false
+verify_jwt = true
 
 [functions.generate-page-image]
 verify_jwt = true

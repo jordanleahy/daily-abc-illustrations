@@ -84,7 +84,7 @@ export const useGoogleCreateBook = () => {
       const { data, error } = await supabase.functions.invoke('google-create-book', {
         body: {
           conversationHistory: params.conversationHistory,
-          userId: user.id,
+          // userId is now automatically extracted from JWT token on the server
           pageDetails: params.pageDetails || undefined,
           qaImages: params.qaImages || undefined,
           bookType: params.bookType || undefined,

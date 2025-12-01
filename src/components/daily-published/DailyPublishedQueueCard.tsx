@@ -5,6 +5,7 @@ import { BookImage } from '@/components/ui/book-image';
 import { formatTimeRemaining, formatFixedScheduleTime } from '@/utils/timeUtils';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
+import { useBookCoverImage } from '@/hooks/useBookCoverImage';
 import { useDeleteDailyPublished } from '@/hooks/useDeleteDailyPublished';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Clock, Calendar, Hash, Image, Trash2 } from 'lucide-react';
@@ -41,9 +42,10 @@ export function DailyPublishedQueueCard({
   const effectiveStatus = isExpiredClientSide && item.status !== 'expired' ? 'expired' : item.status;
 
   // Fetch SEO metadata for this specific daily published item
-  const {
-    data: seoMetadata
-  } = useSeoMetadata(item.id);
+  const { data: seoMetadata } = useSeoMetadata(item.id);
+  
+  // Fetch the cover page image for the book
+  const { data: coverImageUrl } = useBookCoverImage(item.book_id);
 
   // Show lock icon for premium-gated content (but not for admins/teachers)
   const hasFullAccess = userRole?.isAdmin || userRole?.isTeacher;
@@ -130,12 +132,12 @@ export function DailyPublishedQueueCard({
   return <Card className={`overflow-hidden border-l-4 transition-all cursor-pointer hover:shadow-lg ${effectiveStatus === 'active' ? 'border-l-green-500 hover:border-l-green-600' : 'border-l-primary/20 hover:border-l-primary/50'} ${isPremiumGated ? 'opacity-75 hover:opacity-100' : ''}`} onClick={handleCardClick}>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between gap-4">
-          {/* SEO Thumbnail Image */}
-          <div className="flex-shrink-0 w-32 h-16 rounded-md overflow-hidden bg-muted flex items-center justify-center">
-            {seoMetadata?.og_image_url ? (
+          {/* Cover Page Image - Square */}
+          <div className="flex-shrink-0 w-24 aspect-square rounded-md overflow-hidden bg-muted flex items-center justify-center">
+            {coverImageUrl ? (
               <BookImage 
-                src={seoMetadata.og_image_url} 
-                alt={`${item.title} preview`} 
+                src={coverImageUrl} 
+                alt={`${item.title} cover`} 
                 className="w-full h-full object-cover"
               />
             ) : (

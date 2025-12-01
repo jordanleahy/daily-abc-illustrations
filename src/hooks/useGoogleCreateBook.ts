@@ -73,10 +73,10 @@ export const useGoogleCreateBook = () => {
           fullPrompts[2] = eduMatch[0];
         }
         
-        // Extract numbered page prompts
+        // Extract numbered page prompts - use page numbers directly from agent output
         const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi);
         for (const match of pageMatches) {
-          const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
+          const pageNum = parseInt(match[1]); // Use actual page number from agent
           fullPrompts[pageNum] = match[0];
         }
       }

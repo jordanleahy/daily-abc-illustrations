@@ -87,6 +87,17 @@ export const getPagePrompt = (
 };
 
 /**
+ * Get page title by page number - direct lookup, no math
+ */
+export const getPageTitle = (
+  outline: ParsedOutline | null,
+  pageNum: number
+): string | null => {
+  if (!outline) return null;
+  return outline.allPages.get(pageNum)?.title || null;
+};
+
+/**
  * Extract all prompts as Record for book creation
  * Keys are page numbers (1-based), values are full prompts
  */

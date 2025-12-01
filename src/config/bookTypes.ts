@@ -130,9 +130,11 @@ export const BOOK_TYPES = [
     id: 'cvc',
     label: 'CVC Words Book',
     icon: BookOpen,
-    description: 'Consonant-Vowel-Consonant words (10 content pages)',
-    prompt: 'I want to create a CVC (Consonant-Vowel-Consonant) words book for toddlers learning to read. Focus on simple three-letter words like cat, dog, sun, bat, pig. Include phonics and word family patterns.',
+    description: 'CVC contrast sentence pairs for decoding practice (10 content pages)',
+    prompt: 'I want to create a CVC contrast sentence book that teaches reading through sentence pairs where one CVC word is swapped. Example: "The cat sat." → "The bat sat." This helps children connect decoding to comprehension.',
     color: 'text-emerald-500',
+    needsClarification: true,
+    clarificationContext: 'Ask about vowel focus preference: short-a words (cat/bat, hat/rat), short-o words (mop/top, hop/pop), short-i words (pin/win, sit/hit), short-u words (sun/fun, bug/hug), short-e words (pet/wet, hen/pen), or mixed vowels. Each page will show two contrasting sentences where one CVC word changes meaning.',
     expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
   },
   {

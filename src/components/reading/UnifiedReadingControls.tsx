@@ -67,7 +67,7 @@ export function UnifiedReadingControls({
       {/* Text Overlay Section - Above all controls */}
       {showOverlay && overlayText && pageType === 'content' && (
         <div 
-          className={`mb-3 bg-muted/30 rounded-lg py-2 min-h-[48px] flex items-center justify-start transition-colors ${
+          className={`mb-3 bg-muted/30 rounded-lg py-2 min-h-[48px] flex items-center justify-start transition-colors max-w-md mx-auto w-full ${
             onToggleReadMode && overlayWords && overlayWords.length > 0 
               ? 'cursor-pointer hover:bg-muted/40 active:bg-muted/50' 
               : ''
@@ -107,7 +107,7 @@ export function UnifiedReadingControls({
       
       {/* Row 1: Word Learning Controls */}
       {showWordControls && hasWords && totalWords > 0 && (
-        <div className="flex items-center justify-between mb-2 px-2">
+        <div className="flex items-center justify-between mb-2 px-2 max-w-md mx-auto w-full">
           {/* Left: Word Learning Buttons */}
           <div className="flex items-center gap-3">
             {/* Red Button - Mark Difficult */}

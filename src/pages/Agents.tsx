@@ -10,9 +10,13 @@ import { AgentConfig } from '@/types/agent';
 import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { Wand2 } from 'lucide-react';
 
 const Agents = () => {
   const [selectedAgentType, setSelectedAgentType] = useState<AgentConfig['type']>('book-creation-abc');
+  const [isStandardizing, setIsStandardizing] = useState(false);
   const { data: userRole } = useUserRole();
   
   const {
@@ -27,6 +31,37 @@ const Agents = () => {
     saveConfigWithOverrides,
     clearChangeDescription,
   } = useAgentConfig(selectedAgentType);
+
+  const handleStandardizeAgents = async () => {
+    if (!userRole?.isAdmin) {
+      toast.error('Admin access required');
+      return;
+    }
+
+    setIsStandardizing(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('standardize-agents');
+      
+      if (error) throw error;
+      
+      const successCount = data.results.filter((r: any) => r.status === 'success').length;
+      const errorCount = data.results.filter((r: any) => r.status === 'error').length;
+      
+      if (errorCount === 0) {
+        toast.success(`Successfully standardized ${successCount} agents with 12-page structure`);
+      } else {
+        toast.warning(`Standardized ${successCount} agents. ${errorCount} failed.`);
+      }
+      
+      // Refresh current agent config
+      window.location.reload();
+    } catch (error: any) {
+      console.error('Standardization error:', error);
+      toast.error(error.message || 'Failed to standardize agents');
+    } finally {
+      setIsStandardizing(false);
+    }
+  };
 
   const agentTypes: Array<{
     type: AgentConfig['type'];
@@ -155,6 +190,18 @@ const Agents = () => {
                 Configure and manage your ABC Cards agent settings, instructions, and model parameters.
               </p>
             </div>
+            {userRole?.isAdmin && (
+              <Button
+                onClick={handleStandardizeAgents}
+                disabled={isStandardizing}
+                variant="outline"
+                size="sm"
+                className="gap-2"
+              >
+                <Wand2 className="h-4 w-4" />
+                {isStandardizing ? 'Standardizing...' : 'Standardize All Agents'}
+              </Button>
+            )}
           </div>
         </div>
 

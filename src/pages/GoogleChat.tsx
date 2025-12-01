@@ -327,9 +327,9 @@ export default function GoogleChat() {
     
     // PRIORITY 3: Pre-creation - parse from messages
     if (pageNum === 1) {
-      // Cover page (Page 1)
+      // Cover page (Page 1) - Handle both "**Cover:**" and "**Page 1: Cover**" formats
       const lastCoverMsg = [...messages].reverse().find(
-        (msg) => typeof msg.content === 'string' && /\*\*Cover:/i.test(msg.content)
+        (msg) => typeof msg.content === 'string' && /\*\*(?:Cover:|Page\s+1:\s*Cover)/i.test(msg.content)
       );
       
       if (!lastCoverMsg || typeof lastCoverMsg.content !== 'string') {
@@ -338,12 +338,12 @@ export default function GoogleChat() {
       
       // Extract cover description and title
       const content = lastCoverMsg.content as string;
-      const titleMatch = content.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
-      const descMatch = content.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
+      const titleMatch = content.match(/\*\*(?:Cover:\s*([^*\n]+?)|Page\s+1:\s*Cover)\*\*/i);
+      const descMatch = content.match(/\*\*(?:Cover:[^\n*]*|Page\s+1:\s*Cover)\*\*\s*([\s\S]*?)(?=\n\*\*(?:Educational Focus:|Page\s+2:)|\n\*\*Page\s+\d+|$)/i);
       
       if (!descMatch) return null;
       
-      const bookTitle = titleMatch ? titleMatch[1].trim() : '';
+      const bookTitle = titleMatch ? (titleMatch[1]?.trim() || '') : '';
       let description = descMatch[1].trim();
       
       // Replace "book cover" with "square card cover" to ensure 1:1 aspect ratio

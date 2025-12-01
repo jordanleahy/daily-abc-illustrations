@@ -95,9 +95,9 @@ export interface EducationalFocusDetail {
  * Parse educational focus section from chat messages
  */
 export const parseEducationalFocus = (messages: any[]): EducationalFocusDetail | null => {
-  // Handle both "**Educational Focus:**" and "**Page 2: Focus**" formats
+  // Standard format: **Page 2: Educational Focus**
   const lastMsg = [...messages].reverse().find(
-    msg => typeof msg.content === 'string' && /\*\*(?:Educational Focus:|Page\s+2:\s*(?:Educational\s+)?Focus)/i.test(msg.content)
+    msg => typeof msg.content === 'string' && /\*\*Page\s+2:/i.test(msg.content)
   );
   
   if (!lastMsg || typeof lastMsg.content !== 'string') {

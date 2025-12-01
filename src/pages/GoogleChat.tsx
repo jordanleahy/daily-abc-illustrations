@@ -700,24 +700,24 @@ export default function GoogleChat() {
         .map(m => m.content)
         .join('\n');
       
-      // Extract cover prompt (page 1)
-      const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
+      // Extract cover prompt (page 1) - Handle both "**Cover:**" and "**Page 1: Cover**" formats
+      const coverMatch = conversationText.match(/\*\*(?:Cover:[^\n*]*|Page\s+1:\s*Cover)\*\*\s*([\s\S]*?)(?=\n\*\*(?:Educational Focus:|Page\s+2:)|\n\*\*Page\s+\d+|$)/i);
       if (coverMatch) {
         let coverPrompt = coverMatch[0];
         
         // Normalize: Ensure title positioning is explicit
         if (!coverPrompt.toLowerCase().includes('centered') && 
             !coverPrompt.toLowerCase().includes('center')) {
-          const titleMatch = conversationText.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
-          const bookTitle = titleMatch ? titleMatch[1].trim() : '[TITLE]';
+          const titleMatch = conversationText.match(/\*\*(?:Cover:\s*([^*\n]+?)|Page\s+1:\s*Cover)\*\*/i);
+          const bookTitle = titleMatch ? (titleMatch[1]?.trim() || '[TITLE]') : '[TITLE]';
           coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
         }
         
         fullPrompts[1] = coverPrompt;
       }
       
-      // Extract educational focus prompt (page 2)
-      const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
+      // Extract educational focus prompt (page 2) - Handle both "**Educational Focus:**" and "**Page 2: Focus**" formats
+      const eduMatch = conversationText.match(/\*\*(?:Educational Focus:[^\n*]*|Page\s+2:\s*(?:Educational\s+)?Focus)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
       if (eduMatch) {
         fullPrompts[2] = eduMatch[0];
       }
@@ -949,8 +949,8 @@ export default function GoogleChat() {
         .map(m => m.content)
         .join('\n');
       
-      // Extract cover prompt with improved regex and fallback
-      const coverMatch = conversationText.match(/\*\*Cover:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Educational Focus:|\n\*\*Page\s+\d+|$)/i);
+      // Extract cover prompt with improved regex - Handle both "**Cover:**" and "**Page 1: Cover**" formats
+      const coverMatch = conversationText.match(/\*\*(?:Cover:[^\n*]*|Page\s+1:\s*Cover)\*\*\s*([\s\S]*?)(?=\n\*\*(?:Educational Focus:|Page\s+2:)|\n\*\*Page\s+\d+|$)/i);
       if (coverMatch) {
         let coverPrompt = coverMatch[0];
         
@@ -959,9 +959,9 @@ export default function GoogleChat() {
             !coverPrompt.toLowerCase().includes('center')) {
           console.log('[Prompt Normalization] Adding centered title instruction to cover prompt');
           
-          // Extract book title if available
-          const titleMatch = conversationText.match(/\*\*Cover:\s*([^*\n]+?)\*\*/i);
-          const bookTitle = titleMatch ? titleMatch[1].trim() : '[TITLE]';
+          // Extract book title if available - Handle both formats
+          const titleMatch = conversationText.match(/\*\*(?:Cover:\s*([^*\n]+?)|Page\s+1:\s*Cover)\*\*/i);
+          const bookTitle = titleMatch ? (titleMatch[1]?.trim() || '[TITLE]') : '[TITLE]';
           
           // Append title positioning instruction
           coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
@@ -974,8 +974,8 @@ export default function GoogleChat() {
         console.log('[Prompt Storage Debug] Conversation text preview:', conversationText.substring(0, 500));
       }
       
-      // Extract educational focus prompt
-      const eduMatch = conversationText.match(/\*\*Educational Focus:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
+      // Extract educational focus prompt - Handle both "**Educational Focus:**" and "**Page 2: Focus**" formats
+      const eduMatch = conversationText.match(/\*\*(?:Educational Focus:[^\n*]*|Page\s+2:\s*(?:Educational\s+)?Focus)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
       if (eduMatch) {
         fullPrompts[2] = eduMatch[0];
         console.log('[Prompt Storage] Educational focus prompt extracted and stored (length:', eduMatch[0].length, ')');

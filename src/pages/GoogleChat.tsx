@@ -20,6 +20,7 @@ import { MessageList } from '@/components/chat/MessageList';
 import { EmptyState } from '@/components/chat/EmptyState';
 import { InputArea } from '@/components/chat/InputArea';
 import { parsePageDetailsFromMessages, parseEducationalFocus, getBookMetadata } from '@/utils/chatHelpers';
+import { parseBookOutline, getPagePrompt, extractPromptsRecord } from '@/utils/pageHelpers';
 import { BOOK_TYPES } from '@/config/bookTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -211,48 +212,39 @@ export default function GoogleChat() {
   }, [createdBookId, bookPageImages, editorPageImages, replacePageMode]);
   const isBookCreated = !!createdBookId;
 
-  // Memoize parsed page details to avoid re-parsing on every render
+  // Parse book outline using new structured parser
+  const bookOutline = useMemo(() => {
+    return parseBookOutline(messages);
+  }, [messages]);
+  
+  // Legacy: Keep parsedPageDetails for backward compatibility during migration
   const parsedPageDetails = useMemo(() => {
     return parsePageDetailsFromMessages(messages);
   }, [messages]);
 
   // Detect when book outline is ready for Book Editor Panel
   const shouldShowReviewButton = useMemo(() => {
-    if (isLoading || messages.length === 0) {
-      return false;
-    }
+    if (isLoading || !bookOutline) return false;
     
-    // HARDENING: Use expectedPageCount from book type config
     const bookTypeConfig = selectedBookType 
       ? BOOK_TYPES.find(bt => bt.id === selectedBookType)
       : null;
     const expectedCount = bookTypeConfig?.expectedPageCount ?? 28;
     
-    // Parser returns ALL pages including cover + education, so use expectedCount directly
-    const targetPageCount = expectedCount;
+    const hasAllPages = bookOutline.totalPages === expectedCount;
     
-    const hasAllPages = parsedPageDetails !== null && 
-      parsedPageDetails.length === targetPageCount;
-    
-    // HARDENING: Additional validation for ABC books
+    // ABC validation: verify A-Z letters present
     if (selectedBookType === 'abc' && hasAllPages) {
-      // Verify we have the expected letters A-Z
-      const letters = parsedPageDetails.map(p => {
-        const match = p.title.match(/\(([A-Za-z])\)/);
-        return match ? match[1].toUpperCase() : null;
-      }).filter(Boolean);
+      const letters = bookOutline.contentPages
+        .map(p => p.title.match(/\(([A-Za-z])\)/)?.[1]?.toUpperCase())
+        .filter(Boolean);
       
-      const hasCompleteAlphabet = letters.length === 26 &&
-        'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').every(letter => 
-          letters.includes(letter)
-        );
-      
-      return hasCompleteAlphabet;
+      return letters.length === 26 && 
+        'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').every(l => letters.includes(l));
     }
     
-    // Always show button if we have all pages, even after book creation
     return hasAllPages;
-  }, [messages, isLoading, parsedPageDetails, selectedBookType]);
+  }, [isLoading, bookOutline, selectedBookType]);
 
   // Derive showEditor from whether outline is ready or book exists
   const showEditor = (shouldShowReviewButton || isBookCreated) && !forceEditorClosed;
@@ -282,14 +274,9 @@ export default function GoogleChat() {
   }, [parsedPageDetails, educationalFocus, createdBookId, bookData?.status]);
 
   const pageCount = useMemo(() => {
-    // If book is created, use database pages count
-    if (isBookCreated && dbPages) {
-      return dbPages.length;
-    }
-    // Pre-creation: Cover + Educational Focus (if exists) + parsed pages
-    const contentPages = parsedPageDetails?.length || 0;
-    return educationalFocus ? contentPages + 2 : contentPages + 1;
-  }, [isBookCreated, dbPages, parsedPageDetails, educationalFocus]);
+    if (isBookCreated && dbPages) return dbPages.length;
+    return bookOutline?.totalPages || 0;
+  }, [isBookCreated, dbPages, bookOutline]);
   
   // Get the max page number for navigation boundaries
   const maxPageNumber = useMemo(() => {
@@ -325,53 +312,27 @@ export default function GoogleChat() {
       return null;
     }
     
-    // PRIORITY 3: Pre-creation - parse from messages
-    if (pageNum === 1) {
-      // Cover page (Page 1) - Standard format only
-      const lastCoverMsg = [...messages].reverse().find(
-        (msg) => typeof msg.content === 'string' && /\*\*Page\s+1:/i.test(msg.content)
-      );
+    // PRIORITY 3: Pre-creation - use new structured outline with direct lookup
+    const prompt = getPagePrompt(bookOutline, pageNum);
+    
+    // Special handling for cover page - ensure centered title
+    if (pageNum === 1 && prompt) {
+      let description = prompt;
       
-      if (!lastCoverMsg || typeof lastCoverMsg.content !== 'string') {
-        return null;
-      }
-      
-      // Extract cover description
-      const content = lastCoverMsg.content as string;
-      const descMatch = content.match(/\*\*Page\s+1:[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+2:|\n\*\*Page\s+\d+|$)/i);
-      
-      if (!descMatch) return null;
-      
-      let description = descMatch[1].trim();
-      
-      // Replace "book cover" with "square card cover" to ensure 1:1 aspect ratio
+      // Replace "book cover" with "square card cover"
       description = description.replace(/\bbook cover\b/gi, 'square card cover');
       
-      // Ensure centered title instruction exists (safety net)
+      // Ensure centered title instruction exists
       if (!description.toLowerCase().includes('centered') && 
           !description.toLowerCase().includes('center')) {
         description = `${description}\n\nDISPLAY TITLE: Centered, large, bold letters taking up 50-60% of space.`;
       }
       
-      return `${description}`;
+      return description;
     }
     
-    if (pageNum === 2 && educationalFocus) {
-      // Educational focus page (Page 2) - return just the image prompt without title
-      return educationalFocus.imagePrompt;
-    }
-    
-    // Regular content pages (Page 3+)
-    if (parsedPageDetails && pageNum > 2) {
-      const pageIndex = pageNum - 3; // Page 3 = index 0, Page 4 = index 1, etc.
-      const pageDetail = parsedPageDetails[pageIndex];
-      if (pageDetail?.description) {
-        return pageDetail.description;
-      }
-    }
-    
-    return null;
-  }, [isBookCreated, dbPages, editorPagePrompts, educationalFocus, parsedPageDetails, messages]);
+    return prompt;
+  }, [isBookCreated, dbPages, editorPagePrompts, bookOutline]);
 
   // Create initial session on mount if none exists
   useEffect(() => {
@@ -940,73 +901,33 @@ export default function GoogleChat() {
     if (!selectedSession?.qa_page_prompts || Object.keys(selectedSession.qa_page_prompts).length === 0) {
       console.log('[Prompt Storage] Extracting prompts on View Outline click');
       
-      // Extract full prompts from conversation
-      const fullPrompts: Record<number, string> = {};
-      const conversationText = messages
-        .filter(m => m.role === 'assistant')
-        .map(m => m.content)
-        .join('\n');
+      // Use new helper to extract prompts - direct page numbers, no offset
+      const outline = parseBookOutline(messages);
+      const fullPrompts = extractPromptsRecord(outline);
       
-      // Extract cover prompt with improved regex - Handle both "**Cover:**" and "**Page 1: Cover**" formats
-      const coverMatch = conversationText.match(/\*\*(?:Cover:[^\n*]*|Page\s+1:\s*Cover)\*\*\s*([\s\S]*?)(?=\n\*\*(?:Educational Focus:|Page\s+2:)|\n\*\*Page\s+\d+|$)/i);
-      if (coverMatch) {
-        let coverPrompt = coverMatch[0];
-        
-        // Normalize: Ensure title positioning is explicit
+      // Add centered title instruction to cover prompt if needed
+      if (fullPrompts[1]) {
+        let coverPrompt = fullPrompts[1];
         if (!coverPrompt.toLowerCase().includes('centered') && 
             !coverPrompt.toLowerCase().includes('center')) {
           console.log('[Prompt Normalization] Adding centered title instruction to cover prompt');
           
-          // Extract book title if available - Handle both formats
-          const titleMatch = conversationText.match(/\*\*(?:Cover:\s*([^*\n]+?)|Page\s+1:\s*Cover)\*\*/i);
-          const bookTitle = titleMatch ? (titleMatch[1]?.trim() || '[TITLE]') : '[TITLE]';
-          
-          // Append title positioning instruction
+          const bookTitle = bookOutline?.coverPage?.title || '[TITLE]';
           coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
+          fullPrompts[1] = coverPrompt;
         }
-        
-        fullPrompts[1] = coverPrompt;
-        console.log('[Prompt Storage] Cover prompt extracted and stored (length:', coverPrompt.length, ')');
-      } else {
-        console.warn('[Prompt Storage] Cover prompt NOT found in conversation - regex did not match');
-        console.log('[Prompt Storage Debug] Conversation text preview:', conversationText.substring(0, 500));
-      }
-      
-      // Extract educational focus prompt - Handle both "**Educational Focus:**" and "**Page 2: Focus**" formats
-      const eduMatch = conversationText.match(/\*\*(?:Educational Focus:[^\n*]*|Page\s+2:\s*(?:Educational\s+)?Focus)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
-      if (eduMatch) {
-        fullPrompts[2] = eduMatch[0];
-        console.log('[Prompt Storage] Educational focus prompt extracted and stored (length:', eduMatch[0].length, ')');
-      } else {
-        console.warn('[Prompt Storage] Educational focus prompt NOT found - regex did not match');
-      }
-      
-      // Extract numbered page prompts
-      const pageMatches = conversationText.matchAll(/\*\*Page\s+(\d+):[^\n*]*\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+:|$)/gi);
-      let pageMatchCount = 0;
-      for (const match of pageMatches) {
-        const pageNum = parseInt(match[1]) + 2; // +2 because cover=1, edu=2
-        fullPrompts[pageNum] = match[0];
-        pageMatchCount++;
-        console.log(`[Prompt Storage] Page ${pageNum} prompt extracted and stored (length: ${match[0].length})`);
-      }
-      
-      if (pageMatchCount === 0) {
-        console.warn('[Prompt Storage] No numbered page prompts found - regex did not match any pages');
       }
       
       // Store prompts in session for later use
       if (currentSessionId && Object.keys(fullPrompts).length > 0) {
-        console.log('[Prompt Storage] Successfully extracted and storing', Object.keys(fullPrompts).length, 'total prompts:', Object.keys(fullPrompts).map(k => `Page ${k}`).join(', '));
+        console.log('[Prompt Storage] Successfully extracted and storing', Object.keys(fullPrompts).length, 'total prompts');
         await updateQAPagePrompts({ 
           sessionId: currentSessionId, 
           qaPagePrompts: fullPrompts 
         });
         setEditorPagePrompts(fullPrompts);
       } else {
-        console.error('[Prompt Storage] FAILED to extract any prompts from conversation. Check regex patterns.');
-        console.log('[Prompt Storage Debug] Full conversation text length:', conversationText.length);
-        console.log('[Prompt Storage Debug] First 1000 chars:', conversationText.substring(0, 1000));
+        console.error('[Prompt Storage] FAILED to extract any prompts from conversation');
       }
     } else {
       // Load existing prompts

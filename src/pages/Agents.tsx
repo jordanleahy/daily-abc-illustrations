@@ -7,16 +7,26 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { AgentConfig } from '@/types/agent';
-import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye } from 'lucide-react';
+import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye, AlertTriangle } from 'lucide-react';
 import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { Wand2 } from 'lucide-react';
-
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 const Agents = () => {
   const [selectedAgentType, setSelectedAgentType] = useState<AgentConfig['type']>('book-creation-abc');
   const [isStandardizing, setIsStandardizing] = useState(false);
+  const [showAbcWarning, setShowAbcWarning] = useState(false);
   const { data: userRole } = useUserRole();
   
   const {
@@ -294,7 +304,13 @@ const Agents = () => {
                 </p>
               </div>
               <button
-                onClick={saveConfig}
+                onClick={() => {
+                  if (selectedAgentType === 'book-creation-abc') {
+                    setShowAbcWarning(true);
+                  } else {
+                    saveConfig();
+                  }
+                }}
                 disabled={isLoading}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
@@ -303,6 +319,42 @@ const Agents = () => {
             </div>
           </div>
         )}
+
+        {/* ABC Agent Warning Dialog */}
+        <AlertDialog open={showAbcWarning} onOpenChange={setShowAbcWarning}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                ABC Agent Warning
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-2">
+                <p>
+                  <strong>The ABC Agent is currently working well and has been carefully tuned.</strong>
+                </p>
+                <p>
+                  Changes to this agent may break the 28-page book structure, cover/education page formatting, 
+                  or letter case enforcement. Please ensure you've tested your changes thoroughly.
+                </p>
+                <p className="text-amber-600 font-medium">
+                  Are you sure you want to save these changes?
+                </p>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() => {
+                  saveConfig();
+                  setShowAbcWarning(false);
+                }}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                Yes, Save Changes
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </StandardPageLayout>
   );

@@ -9,7 +9,7 @@ import { CreateTrickModal } from '@/components/tricks/CreateTrickModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
-import { CoinCounter } from '@/components/ui/coin-counter';
+import { PennyCounter } from '@/components/ui/penny-counter';
 import { Edit, Plus, ArrowLeft } from 'lucide-react';
 import { Trick } from '@/types/trick';
 
@@ -74,7 +74,7 @@ export default function MyTricks() {
                   </SelectContent>
                 </Select>
                 {selectedKid && !isEditMode && (
-                  <CoinCounter coins={selectedKid.earned_coins} size="sm" />
+                  <PennyCounter pennies={selectedKid.earned_coins} size="sm" />
                 )}
               </>
             )}

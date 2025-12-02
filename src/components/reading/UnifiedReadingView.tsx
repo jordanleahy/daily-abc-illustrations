@@ -62,7 +62,7 @@ import { reorderPagesFromStartingLetter } from '@/utils/pageNavigation';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
 import { useReadingProgressTracking } from '@/hooks/useReadingProgressTracking';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { useKidCoins } from '@/hooks/useKidCoins';
+import { useKidPennies } from '@/hooks/useKidPennies';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 // Toast notifications removed
@@ -233,7 +233,7 @@ export function UnifiedReadingView({
     }
   }, [kidProfiles, selectedKidId]);
   
-  const { addCoins, isAddingCoins } = useKidCoins(selectedKidId);
+  const { addPennies, isAddingPennies } = useKidPennies(selectedKidId);
   
   // Get current page and related data
   const currentPage = reorderedPages[currentPageIndex];
@@ -332,15 +332,15 @@ export function UnifiedReadingView({
         });
       }
 
-      // User finished the book - ONLY deposit coins for Plus tier users
+      // User finished the book - ONLY deposit pennies for Plus tier users
       if (hasHabitsRewards && selectedKidId && earnedRewards > 0) {
         try {
-          await addCoins({ 
+          await addPennies({ 
             kidId: selectedKidId, 
-            coinsToAdd: earnedRewards 
+            penniesToAdd: earnedRewards 
           });
           
-          console.log(`You earned ${earnedRewards} coins! 🎉 - Great job reading!`);
+          console.log(`You earned ${earnedRewards} pennies! 🎉 - Great job reading!`);
           
           endSession('book_completed');
           onBack();
@@ -475,7 +475,7 @@ export function UnifiedReadingView({
           onPreviousPage={handlePrevious}
           onNextPage={handleNext}
           disablePreviousPage={currentPageIndex === 0}
-          disableNextPage={isAddingCoins}
+          disableNextPage={isAddingPennies}
           overlayText={currentPage.title || ''}
           overlayWords={currentPageWords}
           overlayCurrentWordIndex={readingState.currentWordIndex}

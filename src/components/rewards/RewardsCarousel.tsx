@@ -80,7 +80,7 @@ export const RewardsCarousel = memo(({
         open={!!selectedProduct}
         onOpenChange={(open) => !open && setSelectedProduct(null)}
         product={selectedProduct}
-        currentCoins={currentCoins}
+        currentPennies={currentCoins}
         onConfirm={handlePurchase}
       />
     </section>

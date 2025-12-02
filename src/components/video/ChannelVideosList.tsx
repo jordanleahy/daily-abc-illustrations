@@ -388,7 +388,7 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
             quantity_available: null,
             product_video_url: null,
           } : null}
-          currentCoins={availableScreenTime?.availableCoins || 0}
+          currentPennies={availableScreenTime?.availableCoins || 0}
           onConfirm={handleConfirmWatch}
         />
       ) : (

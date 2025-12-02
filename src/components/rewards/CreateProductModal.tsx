@@ -13,7 +13,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useCreateRewardsProduct } from '@/hooks/useCreateRewardsProduct';
 import { useUpdateRewardsProduct } from '@/hooks/useUpdateRewardsProduct';
-import { formatCoinsAsCurrency } from '@/utils/currency';
+import { formatPenniesAsCurrency } from '@/utils/currency';
 import type { RewardsProduct } from '@/types/rewardsProduct';
 import { ModalProps } from '@/types/shared';
 import { BookImage } from '@/components/ui/book-image';
@@ -211,7 +211,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  {coins > 0 && `${coins} coins = ${formatCoinsAsCurrency(coins)}`}
+                  {coins > 0 && `${coins} pennies = ${formatPenniesAsCurrency(coins)}`}
                 </p>
               </div>
 
@@ -298,7 +298,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    {coins > 0 && `${coins} coins = ${formatCoinsAsCurrency(coins)}`}
+                    {coins > 0 && `${coins} pennies = ${formatPenniesAsCurrency(coins)}`}
                   </p>
                 </div>
 

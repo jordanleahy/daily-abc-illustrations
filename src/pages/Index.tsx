@@ -13,7 +13,7 @@ import { useTrickGoals } from '@/hooks/useTrickGoals';
 import { useHomeImagePreloader } from '@/hooks/useHomeImagePreloader';
 import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { LoadingState } from '@/components/ui/loading-state';
-import { CoinCounter } from '@/components/ui/coin-counter';
+import { PennyCounter } from '@/components/ui/penny-counter';
 import { getTimeBasedGreeting } from '@/utils/timeUtils';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';

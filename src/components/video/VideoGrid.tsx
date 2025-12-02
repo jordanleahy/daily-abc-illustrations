@@ -300,7 +300,7 @@ export const VideoGrid = () => {
             quantity_available: null,
             product_video_url: null,
           }}
-          currentCoins={availableTime?.availableCoins || 0}
+          currentPennies={availableTime?.availableCoins || 0}
           onConfirm={handleConfirmWatch}
         />
       )}

@@ -95,7 +95,7 @@ export const useScheduleBookPublication = () => {
     },
     onError: (error) => {
       console.error('Error scheduling book:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to schedule book');
+      toast.error(error instanceof Error ? error.message : 'Need more images');
     },
   });
 };

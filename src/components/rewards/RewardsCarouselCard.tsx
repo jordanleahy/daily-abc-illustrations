@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Badge } from '@/components/ui/badge';
 import { RewardsProduct } from '@/types/rewardsProduct';
-import { formatCoinsAsCurrency } from '@/utils/currency';
+import { formatPenniesAsCurrency } from '@/utils/currency';
 
 interface RewardsCarouselCardProps {
   product: RewardsProduct;
@@ -36,7 +36,7 @@ export const RewardsCarouselCard = memo(({ product, onClick }: RewardsCarouselCa
           </h3>
           <div className="flex items-center justify-between">
             <Badge variant="secondary" className="text-xs">
-              {formatCoinsAsCurrency(product.coin_price)}
+              {formatPenniesAsCurrency(product.coin_price)}
             </Badge>
             {product.quantity_available !== null && (
               <span className="text-sm font-medium">

@@ -4,9 +4,9 @@ import { Circle, QrCode, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { useKidCoins } from '@/hooks/useKidCoins';
+import { useKidPennies } from '@/hooks/useKidPennies';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
-import { formatCoinsAsCurrency } from '@/utils/currency';
+import { formatPenniesAsCurrency } from '@/utils/currency';
 
 /**
  * ReadingHeader Component
@@ -97,7 +97,7 @@ export function ReadingHeader({
   const { qrCodeData } = useBookQRCode(showQRCode ? (bookId || undefined) : undefined);
   const navigate = useNavigate();
   const { data: kidProfiles } = useKidProfiles();
-  const { kidCoins } = useKidCoins(kidId || '');
+  const { kidPennies } = useKidPennies(kidId || '');
   const { hasHabitsRewards } = useFeatureAccess();
   
   // Find the kid to display
@@ -138,7 +138,7 @@ export function ReadingHeader({
             <span className="text-muted-foreground">•</span>
             <div className="flex items-center gap-1">
               <Circle className="w-3 h-3 fill-amber-600 text-amber-700" />
-              <span className="text-amber-700 font-medium">{formatCoinsAsCurrency(kidCoins)}</span>
+              <span className="text-amber-700 font-medium">{formatPenniesAsCurrency(kidPennies)}</span>
             </div>
           </>
         )}

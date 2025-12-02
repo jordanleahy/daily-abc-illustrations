@@ -2,7 +2,7 @@ import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { CoinCounter } from '@/components/ui/coin-counter';
+import { PennyCounter } from '@/components/ui/penny-counter';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useDeleteHabit } from '@/hooks/useDeleteHabit';
@@ -55,7 +55,7 @@ export default function MyHabits() {
       <div className="container mx-auto py-8 space-y-6">
         <div className="text-center space-y-4">
           <h1 className="text-3xl font-bold">My Habits for Today</h1>
-          <CoinCounter coins={selectedKid.earned_coins} size="lg" />
+          <PennyCounter pennies={selectedKid.earned_coins} size="lg" />
           <p className="text-muted-foreground">
             Complete your habits to keep your coins!
           </p>

@@ -3,13 +3,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
-export const useKidCoins = (kidId?: string) => {
+export const useKidPennies = (kidId?: string) => {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
 
-  // Get coin balance for a specific kid
-  const { data: kidCoins, isLoading } = useQuery({
-    queryKey: ['kid-coins', kidId],
+  // Get penny balance for a specific kid
+  const { data: kidPennies, isLoading } = useQuery({
+    queryKey: ['kid-pennies', kidId],
     queryFn: async () => {
       if (!user?.id || !kidId) throw new Error('User not authenticated or kid not specified');
       
@@ -27,11 +27,11 @@ export const useKidCoins = (kidId?: string) => {
     enabled: !!user?.id && !!kidId,
   });
 
-  // Add coins to a kid's balance
-  const addCoinsMutation = useMutation({
-    mutationFn: async ({ kidId, coinsToAdd }: { kidId: string; coinsToAdd: number }) => {
+  // Add pennies to a kid's balance
+  const addPenniesMutation = useMutation({
+    mutationFn: async ({ kidId, penniesToAdd }: { kidId: string; penniesToAdd: number }) => {
       if (!user?.id) throw new Error('User not authenticated');
-      if (coinsToAdd <= 0) throw new Error('Coins to add must be positive');
+      if (penniesToAdd <= 0) throw new Error('Pennies to add must be positive');
       
       // Fetch current balance
       const { data: kidData, error: fetchError } = await supabase
@@ -44,7 +44,7 @@ export const useKidCoins = (kidId?: string) => {
       
       if (fetchError) throw fetchError;
       
-      const newBalance = (kidData?.earned_coins || 0) + coinsToAdd;
+      const newBalance = (kidData?.earned_coins || 0) + penniesToAdd;
       
       // Update with new balance
       const { data, error } = await supabase
@@ -61,26 +61,31 @@ export const useKidCoins = (kidId?: string) => {
     },
     onSuccess: () => {
       toast({
-        title: "Coins Added!",
+        title: "Pennies Added!",
         description: "Great job reading!",
       });
-      queryClient.invalidateQueries({ queryKey: ['kid-coins'] });
+      queryClient.invalidateQueries({ queryKey: ['kid-pennies'] });
       queryClient.invalidateQueries({ queryKey: ['kid-profiles'] });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to add coins. Please try again.",
+        description: "Failed to add pennies. Please try again.",
         variant: "destructive",
       });
-      console.error('Failed to add coins:', error);
+      console.error('Failed to add pennies:', error);
     },
   });
 
   return {
-    kidCoins,
+    kidPennies,
     isLoading,
-    addCoins: addCoinsMutation.mutate,
-    isAddingCoins: addCoinsMutation.isPending,
+    addPennies: addPenniesMutation.mutate,
+    isAddingPennies: addPenniesMutation.isPending,
   };
 };
+
+/**
+ * @deprecated Use useKidPennies instead
+ */
+export const useKidCoins = useKidPennies;

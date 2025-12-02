@@ -1,5 +1,4 @@
 import { RewardContainer } from '@/components/ui/reward-container';
-import { CoinCounter } from '@/components/ui/coin-counter';
 import { Card, CardContent } from '@/components/ui/card';
 
 export const RewardsFeature = () => {

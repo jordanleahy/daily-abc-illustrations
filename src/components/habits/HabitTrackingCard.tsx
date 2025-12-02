@@ -22,7 +22,7 @@ import { useDeleteHabitCompletion } from '@/hooks/useDeleteHabitCompletion';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
-import { formatCoinsAsCurrency } from '@/utils/currency';
+import { formatPenniesAsCurrency } from '@/utils/currency';
 
 interface HabitTrackingCardProps {
   completion: HabitCompletionWithDetails;
@@ -155,7 +155,7 @@ export function HabitTrackingCard({ completion }: HabitTrackingCardProps) {
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-1">
             <Coins className="h-5 w-5 text-amber-500" />
-            <span className="font-semibold text-lg">{formatCoinsAsCurrency(habit.coin_amount)}</span>
+            <span className="font-semibold text-lg">{formatPenniesAsCurrency(habit.coin_amount)}</span>
           </div>
           
           {isPending && (

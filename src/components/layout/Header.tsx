@@ -20,12 +20,12 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useNavigation } from '@/hooks/useNavigation';
 import { useProfile } from '@/hooks/useProfile';
-import { useParentTotalCoins } from '@/hooks/useParentTotalCoins';
+import { useParentTotalPennies } from '@/hooks/useParentTotalPennies';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
 import { UserProfileModal } from '@/components/profile/UserProfileModal';
-import { CoinCounter } from '@/components/ui/coin-counter';
+import { PennyCounter } from '@/components/ui/penny-counter';
 import { getDefaultRouteForRole } from '@/config/routes';
 
 /**
@@ -101,7 +101,7 @@ export function Header({
   const { routes, isRouteActive, navigateToRoute, isAdmin } = useNavigation();
   const { qrCodeData } = useBookQRCode(bookId || '');
   const { data: profile } = useProfile();
-  const { totalCoins } = useParentTotalCoins();
+  const { totalPennies } = useParentTotalPennies();
   const { data: kidProfiles } = useKidProfiles();
   const navigate = useNavigate();
   const location = useLocation();
@@ -239,7 +239,7 @@ export function Header({
                   {displayName}
                 </Link>
                 <span className="text-muted-foreground text-xs">·</span>
-                <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
+                <PennyCounter pennies={totalPennies} size="sm" showLabel={false} />
               </div>
             )}
             
@@ -324,7 +324,7 @@ export function Header({
                 </SheetHeader>
                 <div className="flex items-center justify-between px-6 py-3 border-b">
                   <span className="text-base font-semibold">{displayName}</span>
-                  <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
+                  <PennyCounter pennies={totalPennies} size="sm" showLabel={false} />
                 </div>
                 <div className="mt-6 space-y-2">
                   {/* Navigation Links */}
@@ -412,7 +412,7 @@ export function Header({
                 <Button variant="ghost" size="sm" className="relative hidden md:flex items-center gap-2 px-3">
                   <span className="text-sm font-medium">{displayName}</span>
                   <span className="text-muted-foreground text-sm">·</span>
-                  <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
+                  <PennyCounter pennies={totalPennies} size="sm" showLabel={false} />
                   <span className="sr-only">User menu</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -422,7 +422,7 @@ export function Header({
                     <p className="font-medium text-sm">{displayName}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
-                  <CoinCounter coins={totalCoins} size="sm" showLabel={false} />
+                  <PennyCounter pennies={totalPennies} size="sm" showLabel={false} />
                 </div>
                 <DropdownMenuSeparator />
                 <AdminOnly>

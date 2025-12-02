@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { BookImage } from '@/components/ui/book-image';
 import { Coins, BookOpen, Star, ShoppingBag, Package, Plus, UserPlus } from 'lucide-react';
 import { RewardContainer } from '@/components/ui/reward-container';
-import { CoinCounter } from '@/components/ui/coin-counter';
+import { PennyCounter } from '@/components/ui/penny-counter';
 import { ProductCard } from '@/components/rewards/ProductCard';
 import { PurchaseConfirmDialog } from '@/components/rewards/PurchaseConfirmDialog';
 import { useRewardsProducts } from '@/hooks/useRewardsProducts';
@@ -251,7 +251,7 @@ export default function Rewards() {
                       <p className="text-muted-foreground">Reading Champion</p>
                     </div>
                   </div>
-                  <CoinCounter coins={currentKid.earned_coins || 0} size="md" />
+                  <PennyCounter pennies={currentKid.earned_coins || 0} size="md" />
                 </div>
               </CardContent>
             </Card>
@@ -400,7 +400,7 @@ export default function Rewards() {
           open={!!purchaseProduct}
           onOpenChange={(open) => !open && setPurchaseProduct(null)}
           product={purchaseProduct}
-          currentCoins={currentKid?.earned_coins || 0}
+          currentPennies={currentKid?.earned_coins || 0}
           onConfirm={handleConfirmPurchase}
         />
       </div>

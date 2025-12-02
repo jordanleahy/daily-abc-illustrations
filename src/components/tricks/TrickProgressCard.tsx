@@ -114,7 +114,7 @@ export function TrickProgressCard({ goal }: TrickProgressCardProps) {
         )}
 
         <p className="text-xs text-muted-foreground">
-          Earn {goal.tricks?.points_per_completion} {goal.tricks?.points_per_completion === 1 ? 'coin' : 'coins'} per completion
+          Earn {goal.tricks?.points_per_completion} {goal.tricks?.points_per_completion === 1 ? 'penny' : 'pennies'} per completion
         </p>
       </div>
     </Card>

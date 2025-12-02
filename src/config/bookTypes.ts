@@ -40,6 +40,15 @@ export const BOOK_TYPES = [
     expectedPageCount: 28 // 1 cover + 1 education + 26 letter pages
   },
   {
+    id: 'rhyming',
+    label: 'Rhyming Book',
+    icon: Music,
+    description: 'Phonemic awareness and sound patterns (10 content pages)',
+    prompt: 'I want to create a rhyming book for toddlers that builds phonemic awareness through fun rhymes and sound patterns. Make it musical and memorable.',
+    color: 'text-orange-500',
+    expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
+  },
+  {
     id: 'numbers',
     label: 'Numbers Book',
     icon: Hash,
@@ -68,15 +77,6 @@ export const BOOK_TYPES = [
     description: 'Primary and secondary colors (10 content pages)',
     prompt: 'I want to create a colors book for toddlers that teaches primary and secondary colors. Each page should focus on one color with vibrant illustrations and real-world examples.',
     color: 'text-pink-500',
-    expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
-  },
-  {
-    id: 'rhyming',
-    label: 'Rhyming Book',
-    icon: Music,
-    description: 'Phonemic awareness and sound patterns (10 content pages)',
-    prompt: 'I want to create a rhyming book for toddlers that builds phonemic awareness through fun rhymes and sound patterns. Make it musical and memorable.',
-    color: 'text-orange-500',
     expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
   },
   {

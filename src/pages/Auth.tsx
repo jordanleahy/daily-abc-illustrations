@@ -34,10 +34,10 @@ const Auth = () => {
   const [acceptTerms, setAcceptTerms] = useState(true);
 
 
-  // Redirect authenticated users to chat
+  // Redirect authenticated users to home
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/google-chat');
+      navigate('/');
     }
   }, [isAuthenticated, navigate]);
 
@@ -47,7 +47,7 @@ const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/google-chat`,
+          redirectTo: `${window.location.origin}/`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

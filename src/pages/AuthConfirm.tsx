@@ -20,7 +20,7 @@ export default function AuthConfirm() {
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           setStatus("success");
-          setTimeout(() => navigate("/google-chat", { replace: true }), 1500);
+          setTimeout(() => navigate("/", { replace: true }), 1500);
           return;
         }
 
@@ -45,7 +45,7 @@ export default function AuthConfirm() {
           window.history.replaceState(null, '', window.location.pathname);
 
           setStatus("success");
-          setTimeout(() => navigate("/google-chat", { replace: true }), 1500);
+          setTimeout(() => navigate("/", { replace: true }), 1500);
           return;
         }
 
@@ -71,7 +71,7 @@ export default function AuthConfirm() {
         }
 
         setStatus("success");
-        setTimeout(() => navigate("/google-chat", { replace: true }), 1500);
+        setTimeout(() => navigate("/", { replace: true }), 1500);
       } catch (error) {
         setStatus("error");
         setErrorMessage("An unexpected error occurred");

@@ -11,7 +11,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useBooks } from '@/hooks/useBooks';
 import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
-import { useBookSeoMetadata } from '@/hooks/useBookSeoMetadata';
+
 import { BookOpen, Calendar, Trash2 } from 'lucide-react';
 import { 
   Pagination, 
@@ -80,7 +80,6 @@ function UserBookCard({
   isDeleting,
   queryClient
 }: UserBookCardProps) {
-  const { data: seoMetadata } = useBookSeoMetadata(book.id);
   const coverImageUrl = book.coverImageUrl;
   
   const { ref, inView } = useIntersectionObserver({
@@ -286,10 +285,6 @@ export default function Books() {
   }, [currentPage, totalPages]);
   
   useEditorImagePreloader(books);
-  
-  useEffect(() => {
-    queryClient.invalidateQueries({ queryKey: ['books'] });
-  }, [location.pathname, queryClient]);
 
   const handleViewBook = async (bookId: string) => {
     const kidId = kidProfiles.length > 0 ? kidProfiles[0].id : undefined;

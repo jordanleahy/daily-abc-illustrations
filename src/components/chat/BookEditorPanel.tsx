@@ -18,7 +18,6 @@ import { useReadingPreferences } from '@/hooks/useReadingPreferences';
 import { BookImage } from '@/components/ui/book-image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { isContentPage } from '@/types/book';
-import { useBookCoverImage } from '@/hooks/useBookCoverImage';
 
 
 interface BookEditorPanelProps {
@@ -112,20 +111,16 @@ export function BookEditorPanel({
   // Fetch pages data
   const { pages } = useBookPages(bookId || undefined);
   
-  // Fetch cover image using page_type='cover'
-  const { data: coverImageUrl } = useBookCoverImage(bookId || undefined);
-  
   // Helper function to get image for current page
   const currentPageImage = useMemo(() => {
-    // For page 1 (cover), use the cover image hook which queries by page_type='cover'
+    // For page 1 (cover), use the passed thumbnailUrl from parent
     if (currentPageNumber === 1) {
-      return coverImageUrl || null;
+      return thumbnailUrl || displayImages[1] || null;
     }
     // For all other pages, use the displayImages map by page_number
-    // Explicitly check if the key exists to avoid stale data
     const image = displayImages[currentPageNumber];
     return image !== undefined ? image : null;
-  }, [currentPageNumber, coverImageUrl, displayImages]);
+  }, [currentPageNumber, thumbnailUrl, displayImages]);
   
   // Handle saving overlay text
   const handleSaveOverlayText = async (newText: string) => {
@@ -161,8 +156,8 @@ export function BookEditorPanel({
   const allImagesUploaded = useMemo(() => {
     if (!isBookCreated) return false;
     
-    // Check cover page separately using cover image hook
-    const hasCoverImage = coverImageUrl !== null && coverImageUrl !== undefined;
+    // Check cover page using thumbnailUrl or displayImages[1]
+    const hasCoverImage = !!(thumbnailUrl || displayImages[1]);
     if (!hasCoverImage) return false;
     
     // Check other pages (2 through pageCount)
@@ -172,7 +167,7 @@ export function BookEditorPanel({
       }
     }
     return true;
-  }, [isBookCreated, pageCount, displayImages, coverImageUrl]);
+  }, [isBookCreated, pageCount, displayImages, thumbnailUrl]);
   
   // Get current page text from page.title or extract from prompt
   const currentPageText = currentPage?.title || pageTextOverlays[currentPageNumber] || (() => {

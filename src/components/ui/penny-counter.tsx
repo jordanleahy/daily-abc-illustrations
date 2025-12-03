@@ -34,12 +34,13 @@ export function PennyCounter({
   };
 
   const sizes = sizeClasses[size];
+  const isNegative = pennies < 0;
 
   return (
     <div className={cn("text-right", className)}>
       <div className="flex items-center gap-2 justify-end mb-1">
-        <Coins className={cn(sizes.icon, "text-amber-500")} />
-        <span className={cn(sizes.text, "font-bold")}>{formatPenniesAsCurrency(pennies)}</span>
+        <Coins className={cn(sizes.icon, isNegative ? "text-red-500" : "text-amber-500")} />
+        <span className={cn(sizes.text, "font-bold", isNegative ? "text-red-500" : "text-foreground")}>{formatPenniesAsCurrency(pennies)}</span>
       </div>
       {showLabel && (
         <p className={cn(sizes.label, "text-muted-foreground")}>Total Earned</p>

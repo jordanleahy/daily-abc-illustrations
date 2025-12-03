@@ -8,7 +8,7 @@ export const PreviewHero = () => {
     <div className="relative">
       <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 py-20 md:py-28">
         <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 tracking-tight">
-          The gift that grows with your grandchildren
+          Chairlift Habits
         </h1>
         <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
           Stay connected from anywhere with personalized AI picture books created just for your grandchild. Build reading habits, share special moments, and watch them grow—even from miles away.

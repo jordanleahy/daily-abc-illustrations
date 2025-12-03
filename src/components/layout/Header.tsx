@@ -368,18 +368,20 @@ export function Header({
                   </AdminOnly>
                   
                   {/* User Section */}
-                  <button
-                    onClick={() => {
-                      setTimeout(() => {
-                        setIsSheetOpen(false);
-                        navigate('/word-progress');
-                      }, 100);
-                    }}
-                    className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 active:scale-[0.98] active:bg-muted/80"
-                  >
-                    <Activity className="mr-2 h-4 w-4" />
-                    Word Progress
-                  </button>
+                  <AdminOnly>
+                    <button
+                      onClick={() => {
+                        setTimeout(() => {
+                          setIsSheetOpen(false);
+                          navigate('/word-progress');
+                        }, 100);
+                      }}
+                      className="flex items-center w-full text-left rounded-md px-3 py-2 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted transition-all duration-150 active:scale-[0.98] active:bg-muted/80"
+                    >
+                      <Activity className="mr-2 h-4 w-4" />
+                      Word Progress
+                    </button>
+                  </AdminOnly>
                   <button
                     onClick={() => {
                       setTimeout(() => {
@@ -432,10 +434,12 @@ export function Header({
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                 </AdminOnly>
-                <DropdownMenuItem onClick={() => navigate('/word-progress')}>
-                  <Activity className="mr-2 h-4 w-4" />
-                  Word Progress
-                </DropdownMenuItem>
+                <AdminOnly>
+                  <DropdownMenuItem onClick={() => navigate('/word-progress')}>
+                    <Activity className="mr-2 h-4 w-4" />
+                    Word Progress
+                  </DropdownMenuItem>
+                </AdminOnly>
                 <DropdownMenuItem onClick={() => setIsProfileModalOpen(true)}>
                   <User className="mr-2 h-4 w-4" />
                   Profile

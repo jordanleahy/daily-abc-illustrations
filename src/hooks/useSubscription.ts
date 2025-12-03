@@ -1,5 +1,5 @@
-import { useCallback, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useRef } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -183,6 +183,75 @@ export const useSubscription = () => {
     window.addEventListener('auth-subscription-check', handleAuthCheck);
     return () => window.removeEventListener('auth-subscription-check', handleAuthCheck);
   }, [query]);
+
+  // Real-time subscription to user_subscription_cache table
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    if (!user?.id) return;
+
+    console.log('[SUBSCRIPTION] Setting up real-time subscription for user:', user.id);
+    
+    const channel = supabase
+      .channel(`subscription-${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // Listen for INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'user_subscription_cache',
+          filter: `user_id=eq.${user.id}`,
+        },
+        (payload) => {
+          console.log('[SUBSCRIPTION] Real-time update received:', payload);
+          // Clear cache and invalidate query to fetch fresh data
+          SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+          queryClient.invalidateQueries({ queryKey: ['subscription', user.id] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('[SUBSCRIPTION] Real-time subscription status:', status);
+      });
+
+    return () => {
+      console.log('[SUBSCRIPTION] Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, queryClient]);
+
+  // Refresh subscription when returning from Stripe checkout (window focus)
+  const lastFocusCheck = useRef<number>(0);
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && user) {
+        const now = Date.now();
+        // Only check if more than 5 seconds since last check (debounce)
+        if (now - lastFocusCheck.current > 5000) {
+          lastFocusCheck.current = now;
+          
+          // Check URL for checkout success indicator
+          const urlParams = new URLSearchParams(window.location.search);
+          if (urlParams.has('checkout_success') || urlParams.has('session_id')) {
+            console.log('[SUBSCRIPTION] Post-checkout refresh triggered');
+            SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+            query.refetch();
+            // Clean up URL params
+            urlParams.delete('checkout_success');
+            urlParams.delete('session_id');
+            const newUrl = urlParams.toString() 
+              ? `${window.location.pathname}?${urlParams.toString()}`
+              : window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    // Also check on mount in case user just returned from checkout
+    handleVisibilityChange();
+    
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [user, query]);
 
   const { toast } = useToast();
 

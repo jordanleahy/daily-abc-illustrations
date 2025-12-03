@@ -133,7 +133,7 @@ const Index = () => {
                 Chairlift Habits
               </h1>
               <p className="text-xl text-muted-foreground">
-                where habits are developed and curiosity creates education
+                where habits are developed and curiosity cultures educational moments
               </p>
             </div>
 

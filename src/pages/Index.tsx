@@ -128,12 +128,12 @@ const Index = () => {
               </div>}
           </> : <>
             {/* Free tier: Welcome section */}
-            <div className="space-y-6">
+            <div className="space-y-2">
               <h1 className="text-4xl font-bold">
-                Good {timeOfDay}!
+                Chairlift Habits
               </h1>
               <p className="text-xl text-muted-foreground">
-                Welcome to your reading library
+                where habits are developed and curiosity creates education
               </p>
             </div>
 

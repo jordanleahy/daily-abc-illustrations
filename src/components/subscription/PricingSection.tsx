@@ -3,9 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Crown, Zap } from "lucide-react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
+import { CheckoutOverlay } from "./CheckoutOverlay";
 
 export const PricingSection = () => {
-  const { createCheckoutSession, hasActiveSubscription, getSubscriptionTier, loading } = useSubscription();
+  const { createCheckoutSession, hasActiveSubscription, getSubscriptionTier, loading, isOpeningCheckout } = useSubscription();
   const currentTier = getSubscriptionTier();
 
   const freeFeatures = [
@@ -23,6 +24,8 @@ export const PricingSection = () => {
   ];
 
   return (
+    <>
+    <CheckoutOverlay isOpen={isOpeningCheckout} />
     <div className="py-12 px-4">
       <div className="max-w-6xl mx-auto">
         <div className="text-center mb-12">
@@ -173,5 +176,6 @@ export const PricingSection = () => {
         )}
       </div>
     </div>
+    </>
   );
 };

@@ -16,6 +16,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { CheckoutOverlay } from "./CheckoutOverlay";
 
 interface SubscriptionStatusProps {
   showActions?: boolean;
@@ -32,7 +33,8 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
     openCustomerPortal, 
     getSubscriptionTier,
     updateAutoRenewal,
-    isRefreshing
+    isRefreshing,
+    isOpeningCheckout
   } = useSubscription();
 
   const [isUpdatingRenewal, setIsUpdatingRenewal] = useState(false);
@@ -79,6 +81,8 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
     };
 
     return (
+      <>
+      <CheckoutOverlay isOpen={isOpeningCheckout} />
       <div className="space-y-4">
         <div className="grid md:grid-cols-2 gap-6">
           {/* Monthly Plan */}
@@ -169,6 +173,7 @@ export const SubscriptionStatus = ({ showActions = true }: SubscriptionStatusPro
           </Button>
         )}
       </div>
+      </>
     );
   }
 

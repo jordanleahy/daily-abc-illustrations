@@ -6,9 +6,10 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { ActiveSubscriptionView } from "./ActiveSubscriptionView";
 import { useRole } from "@/contexts/RoleContext";
+import { CheckoutOverlay } from "./CheckoutOverlay";
 
 export const WireframePricing = () => {
-  const { createCheckoutSession, hasActiveSubscription, getSubscriptionTier, loading, openCustomerPortal } = useSubscription();
+  const { createCheckoutSession, hasActiveSubscription, getSubscriptionTier, loading, openCustomerPortal, isOpeningCheckout } = useSubscription();
   const { user } = useAuthContext();
   const { hasRole } = useRole();
   const navigate = useNavigate();
@@ -88,6 +89,8 @@ export const WireframePricing = () => {
   ];
 
   return (
+    <>
+    <CheckoutOverlay isOpen={isOpeningCheckout} />
     <div className="max-w-6xl mx-auto p-8">
       {/* Simple header */}
       <div className="text-center mb-12">
@@ -152,5 +155,6 @@ export const WireframePricing = () => {
         </div>
       )}
     </div>
+    </>
   );
 };

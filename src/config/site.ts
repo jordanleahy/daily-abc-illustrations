@@ -6,7 +6,7 @@
 export const SITE_CONFIG = {
   // Basic site information
   name: 'Chairlift Habits',
-  tagline: 'The gift that grows with your grandchildren',
+  tagline: 'Chairlift Habits',
   description: 'Stay connected through daily personalized books designed just for your grandchild',
   subheading: 'where habits are developed and curiosity cultures educational moments',
   author: 'Lovable',

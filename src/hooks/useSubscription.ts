@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -255,6 +255,8 @@ export const useSubscription = () => {
 
   const { toast } = useToast();
 
+  const [isOpeningCheckout, setIsOpeningCheckout] = useState(false);
+
   const createCheckoutSession = useCallback(async (price_id: string, coupon_code?: string) => {
     // Wait for auth to be ready - don't show error if still loading
     if (authLoading) {
@@ -271,6 +273,8 @@ export const useSubscription = () => {
       return;
     }
 
+    setIsOpeningCheckout(true);
+
     try {
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { price_id, coupon_code }
@@ -284,8 +288,12 @@ export const useSubscription = () => {
         if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
           // Popup was blocked, redirect in same window
           window.location.href = data.url;
+        } else {
+          // Successfully opened in new tab, hide overlay after a moment
+          setTimeout(() => setIsOpeningCheckout(false), 1500);
         }
       } else {
+        setIsOpeningCheckout(false);
         toast({
           title: "Checkout unavailable",
           description: "Unable to start checkout. Please try again.",
@@ -293,6 +301,7 @@ export const useSubscription = () => {
         });
       }
     } catch (error) {
+      setIsOpeningCheckout(false);
       console.error('Error creating checkout session:', error);
       toast({
         title: "Checkout failed",
@@ -393,6 +402,7 @@ export const useSubscription = () => {
     // State
     loading: effectiveLoading,
     isRefreshing: query.isFetching,
+    isOpeningCheckout,
     
     // Single source of truth for subscription status
     hasActiveSubscription: isSubscriptionActive(finalData),

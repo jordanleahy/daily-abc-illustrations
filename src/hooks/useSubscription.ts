@@ -184,9 +184,15 @@ export const useSubscription = () => {
     return () => window.removeEventListener('auth-subscription-check', handleAuthCheck);
   }, [query]);
 
+  const { toast } = useToast();
+
   const createCheckoutSession = useCallback(async (price_id: string, coupon_code?: string) => {
     if (!user) {
-      console.error("Please sign in to subscribe");
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to subscribe",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -198,18 +204,36 @@ export const useSubscription = () => {
       if (error) throw error;
 
       if (data.url) {
-        // Open checkout in new tab
-        window.open(data.url, '_blank');
+        // Try to open checkout in new tab, fall back to same window if blocked
+        const newWindow = window.open(data.url, '_blank');
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          // Popup was blocked, redirect in same window
+          window.location.href = data.url;
+        }
+      } else {
+        toast({
+          title: "Checkout unavailable",
+          description: "Unable to start checkout. Please try again.",
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error creating checkout session:', error);
-      console.error(error instanceof Error ? error.message : 'Failed to create checkout session');
+      toast({
+        title: "Checkout failed",
+        description: error instanceof Error ? error.message : 'Failed to create checkout session',
+        variant: "destructive",
+      });
     }
-  }, [user]);
+  }, [user, toast]);
 
   const openCustomerPortal = useCallback(async () => {
     if (!user) {
-      console.error("Please sign in to manage your subscription");
+      toast({
+        title: "Sign in required",
+        description: "Please sign in to manage your subscription",
+        variant: "destructive",
+      });
       return;
     }
 
@@ -219,14 +243,21 @@ export const useSubscription = () => {
       if (error) throw error;
 
       if (data.url) {
-        // Open portal in new tab
-        window.open(data.url, '_blank');
+        // Try to open portal in new tab, fall back to same window if blocked
+        const newWindow = window.open(data.url, '_blank');
+        if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+          window.location.href = data.url;
+        }
       }
     } catch (error) {
       console.error('Error opening customer portal:', error);
-      console.error(error instanceof Error ? error.message : 'Failed to open customer portal');
+      toast({
+        title: "Portal unavailable",
+        description: error instanceof Error ? error.message : 'Failed to open customer portal',
+        variant: "destructive",
+      });
     }
-  }, [user]);
+  }, [user, toast]);
 
   // Get subscription tier info
   const getSubscriptionTier = useCallback(() => {

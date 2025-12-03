@@ -1,4 +1,5 @@
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
+import { AdminOnly } from '@/components/AdminOnly';
 import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
 import { CategorizedBookSections } from '@/components/library';
 import { BookFilterBar } from '@/components/filters';
@@ -136,36 +137,38 @@ const Index = () => {
               </p>
             </div>
 
-            {/* Upgrade prompt card */}
-            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 rounded-lg p-6 space-y-4">
-              <div className="space-y-2">
-                <h2 className="text-2xl font-bold">Unlock Habits & Rewards</h2>
-                <p className="text-muted-foreground">
-                  Track reading progress, earn coins, and motivate your kids with our interactive rewards system.
-                </p>
+            {/* Upgrade prompt card - Admin only */}
+            <AdminOnly>
+              <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border-2 border-primary/20 rounded-lg p-6 space-y-4">
+                <div className="space-y-2">
+                  <h2 className="text-2xl font-bold">Unlock Habits & Rewards</h2>
+                  <p className="text-muted-foreground">
+                    Track reading progress, earn coins, and motivate your kids with our interactive rewards system.
+                  </p>
+                </div>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold mt-0.5">✓</span>
+                    <span>Create custom reading habits for your children</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold mt-0.5">✓</span>
+                    <span>Reward completed habits with coins</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold mt-0.5">✓</span>
+                    <span>Set up a rewards store for kids to spend coins</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-primary font-bold mt-0.5">✓</span>
+                    <span>Track progress and build reading consistency</span>
+                  </li>
+                </ul>
+                <button onClick={() => navigate('/pricing')} className="w-full sm:w-auto px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors">
+                  Upgrade to Plus
+                </button>
               </div>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-start gap-2">
-                  <span className="text-primary font-bold mt-0.5">✓</span>
-                  <span>Create custom reading habits for your children</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary font-bold mt-0.5">✓</span>
-                  <span>Reward completed habits with coins</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary font-bold mt-0.5">✓</span>
-                  <span>Set up a rewards store for kids to spend coins</span>
-                </li>
-                <li className="flex items-start gap-2">
-                  <span className="text-primary font-bold mt-0.5">✓</span>
-                  <span>Track progress and build reading consistency</span>
-                </li>
-              </ul>
-              <button onClick={() => navigate('/pricing')} className="w-full sm:w-auto px-6 py-3 bg-primary text-primary-foreground font-semibold rounded-lg hover:bg-primary/90 transition-colors">
-                Upgrade to Plus
-              </button>
-            </div>
+            </AdminOnly>
           </>}
 
         {/* Search and filter removed from home page */}

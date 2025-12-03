@@ -8,7 +8,7 @@ export const SITE_CONFIG = {
   name: 'Chairlift Habits',
   tagline: 'The gift that grows with your grandchildren',
   description: 'Stay connected through daily personalized books designed just for your grandchild',
-  subheading: 'The perfect gift from grandparents who want to nurture a love of reading from anywhere in the world.',
+  subheading: 'where habits are developed and curiosity cultures educational moments',
   author: 'Lovable',
   
   // URLs and social

@@ -75,7 +75,7 @@ const isSubscriptionActive = (status: SubscriptionStatus): boolean => {
 };
 
 export const useSubscription = () => {
-  const { user } = useAuthContext();
+  const { user, loading: authLoading } = useAuthContext();
 
   // Use React Query with 90-day localStorage caching + strict deduplication
   const query = useQuery<SubscriptionStatus>({
@@ -163,7 +163,7 @@ export const useSubscription = () => {
     refetchOnMount: false, // Don't refetch on mount - use cache
   });
 
-  const effectiveLoading = query.isLoading;
+  const effectiveLoading = authLoading || query.isLoading;
 
   const checkSubscription = useCallback(async () => {
     // Clear cache to force fresh API call
@@ -187,6 +187,12 @@ export const useSubscription = () => {
   const { toast } = useToast();
 
   const createCheckoutSession = useCallback(async (price_id: string, coupon_code?: string) => {
+    // Wait for auth to be ready - don't show error if still loading
+    if (authLoading) {
+      console.log('[SUBSCRIPTION] Auth still loading, waiting...');
+      return;
+    }
+    
     if (!user) {
       toast({
         title: "Sign in required",
@@ -225,9 +231,15 @@ export const useSubscription = () => {
         variant: "destructive",
       });
     }
-  }, [user, toast]);
+  }, [user, authLoading, toast]);
 
   const openCustomerPortal = useCallback(async () => {
+    // Wait for auth to be ready
+    if (authLoading) {
+      console.log('[SUBSCRIPTION] Auth still loading, waiting...');
+      return;
+    }
+    
     if (!user) {
       toast({
         title: "Sign in required",
@@ -257,7 +269,7 @@ export const useSubscription = () => {
         variant: "destructive",
       });
     }
-  }, [user, toast]);
+  }, [user, authLoading, toast]);
 
   // Get subscription tier info
   const getSubscriptionTier = useCallback(() => {

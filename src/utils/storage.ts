@@ -87,6 +87,10 @@ export const ROLE_CACHE_DAYS = 90;
 export const TODAY_HABITS_CACHE_KEY = 'today_habits_cache';
 export const TODAY_HABITS_CACHE_HOURS = 4; // 4-hour cache for habits
 
+// Kid profiles caching constants
+export const KID_PROFILES_CACHE_KEY = 'kid_profiles_cache';
+export const KID_PROFILES_CACHE_DAYS = 90; // 90-day cache for stable kid profile data
+
 // Visitor tracking for non-authenticated users
 const VISITOR_ID_KEY = 'visitor_id';
 const VISITOR_STATS_KEY = 'visitor_stats';

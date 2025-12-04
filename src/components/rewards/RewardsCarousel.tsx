@@ -1,4 +1,5 @@
 import { memo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ShoppingBag } from 'lucide-react';
 import {
   Carousel,
@@ -27,11 +28,14 @@ export const RewardsCarousel = memo(({
 }: RewardsCarouselProps) => {
   const [selectedProduct, setSelectedProduct] = useState<RewardsProduct | null>(null);
   const { mutate: purchaseReward, isPending } = usePurchaseReward();
+  const navigate = useNavigate();
 
   if (products.length === 0) return null;
 
   const handlePurchase = () => {
     if (!selectedProduct) return;
+    
+    const isScreenTimeProduct = selectedProduct.screen_time_minutes && selectedProduct.screen_time_minutes > 0;
     
     purchaseReward({
       kidProfileId: kidId,
@@ -39,6 +43,9 @@ export const RewardsCarousel = memo(({
     }, {
       onSuccess: () => {
         setSelectedProduct(null);
+        if (isScreenTimeProduct) {
+          navigate('/videos');
+        }
       },
     });
   };

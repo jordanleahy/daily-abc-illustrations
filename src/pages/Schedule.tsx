@@ -54,12 +54,12 @@ const formatScheduleDate = (dateString: string, options?: {
   }) + ' at 7:01 AM ET';
 };
 
-// Helper function to get day name for queue position
+// Helper function to get full date for queue position
 const getPublishDayName = (position: number): string => {
   const tomorrow = new Date();
   tomorrow.setDate(tomorrow.getDate() + position);
   const easternTime = toEasternTime(tomorrow);
-  return format(easternTime, 'EEEE'); // Full day name like "Monday"
+  return format(easternTime, "EEEE, MMMM do, yyyy"); // Full date like "Wednesday, December 12th, 2025"
 };
 export default function Schedule() {
   const {

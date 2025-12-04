@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useBatchSeoMetadata } from '@/hooks/useBatchSeoMetadata';
+import { useBatchBookCoverImages } from '@/hooks/useBatchBookCoverImages';
 import { useDailyPublishedPrefetch } from '@/hooks/useDailyPublishedPrefetch';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { MetaHead } from '@/components/common/MetaHead';
@@ -74,6 +75,10 @@ export default function Schedule() {
   const dailyPublishedIds = scheduleItems?.map(item => item.id) || [];
   const { data: seoMetadataMap = {} } = useBatchSeoMetadata(dailyPublishedIds);
   
+  // Batch fetch all cover images at once (reduces N×2 queries to 2)
+  const bookIds = scheduleItems?.map(item => item.book_id) || [];
+  const { data: coverImageMap = {} } = useBatchBookCoverImages(bookIds);
+  
   // Preload schedule images for instant display
   useScheduleImagePreloader(scheduleItems);
   if (isLoading) {
@@ -140,6 +145,7 @@ export default function Schedule() {
                     item={item} 
                     position="active" 
                     seoMetadata={seoMetadataMap[item.id]}
+                    coverImageUrl={coverImageMap[item.book_id]}
                     onHover={() => prefetchDailyPublished(item.id, item.book_id)} 
                   />
                 ))}
@@ -158,6 +164,7 @@ export default function Schedule() {
                     item={item} 
                     position={index + 1}
                     seoMetadata={seoMetadataMap[item.id]}
+                    coverImageUrl={coverImageMap[item.book_id]}
                     onHover={() => prefetchDailyPublished(item.id, item.book_id)} 
                   />
                 ))}
@@ -190,6 +197,7 @@ export default function Schedule() {
                         item={item}
                         position="expired"
                         seoMetadata={seoMetadataMap[item.id]}
+                        coverImageUrl={coverImageMap[item.book_id]}
                         onHover={() => prefetchDailyPublished(item.id, item.book_id)}
                       />
                     ))}
@@ -225,9 +233,9 @@ function ScheduleThumbnail({
   title: string;
 }) {
   return <>
-      {/* Mobile: Full width with aspect ratio */}
-      <div className="md:hidden w-full">
-        <AspectRatio ratio={16/9} className="rounded-lg overflow-hidden bg-muted">
+      {/* Mobile: Square 1:1 aspect ratio */}
+      <div className="md:hidden w-24">
+        <AspectRatio ratio={1} className="rounded-lg overflow-hidden bg-muted">
           {imageUrl ? (
             <BookImage src={imageUrl} alt={title} className="w-full h-full object-cover" />
           ) : (
@@ -238,8 +246,8 @@ function ScheduleThumbnail({
         </AspectRatio>
       </div>
       
-      {/* Desktop: Fixed size */}
-      <div className="hidden md:block w-32 h-16 rounded-lg overflow-hidden bg-muted flex items-center justify-center flex-shrink-0">
+      {/* Desktop: Square 1:1 */}
+      <div className="hidden md:flex w-20 h-20 rounded-lg overflow-hidden bg-muted items-center justify-center flex-shrink-0">
         {imageUrl ? (
           <BookImage src={imageUrl} alt={title} className="w-full h-full object-cover" />
         ) : (
@@ -252,13 +260,15 @@ type ScheduleCardItem = DailyPublishedWithBook;
 interface PublicScheduleCardProps {
   item: ScheduleCardItem;
   position: number | "active" | "expired";
-  seoMetadata?: any; // PHASE 3: Passed from parent batch fetch
+  seoMetadata?: any;
+  coverImageUrl?: string;
   onHover?: () => void;
 }
 function PublicScheduleCard({
   item,
   position,
   seoMetadata,
+  coverImageUrl,
   onHover
 }: PublicScheduleCardProps) {
   const navigate = useNavigate();
@@ -298,7 +308,7 @@ function PublicScheduleCard({
       <CardHeader className="pb-3">
         <div className="flex flex-col md:flex-row gap-3 md:items-center">
           {/* Thumbnail */}
-          <ScheduleThumbnail imageUrl={seoMetadata?.og_image_url} title={item.title} />
+          <ScheduleThumbnail imageUrl={coverImageUrl} title={item.title} />
 
           {/* Content */}
           <div className="flex-1 min-w-0">

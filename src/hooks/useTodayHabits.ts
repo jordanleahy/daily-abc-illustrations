@@ -1,9 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { format } from 'date-fns';
 import { HabitCompletionWithDetails } from '@/types/habit';
+import { SafeLocalStorage, TODAY_HABITS_CACHE_KEY, TODAY_HABITS_CACHE_HOURS } from '@/utils/storage';
 
 /**
  * Hook to fetch TODAY'S habit completions (the actual checklist).
@@ -19,6 +20,12 @@ export function useTodayHabits(kidProfileId?: string) {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
   const todayDate = format(new Date(), 'yyyy-MM-dd');
+
+  // Generate cache key including user, kid, and date
+  const cacheKey = useMemo(() => {
+    if (!user?.id) return null;
+    return `${TODAY_HABITS_CACHE_KEY}_${user.id}_${kidProfileId || 'all'}_${todayDate}`;
+  }, [user?.id, kidProfileId, todayDate]);
 
   // Real-time subscription for habit completions
   useEffect(() => {
@@ -36,6 +43,10 @@ export function useTodayHabits(kidProfileId?: string) {
         },
         (payload) => {
           console.log('Habit completion changed:', payload);
+          // Clear cache to ensure fresh data on next fetch
+          if (cacheKey) {
+            SafeLocalStorage.remove(cacheKey);
+          }
           queryClient.invalidateQueries({ queryKey: ['today-habits', user.id] });
         }
       )
@@ -44,7 +55,7 @@ export function useTodayHabits(kidProfileId?: string) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user?.id, queryClient]);
+  }, [user?.id, queryClient, cacheKey]);
 
   return useQuery({
     queryKey: ['today-habits', user?.id, kidProfileId, todayDate],
@@ -93,11 +104,21 @@ export function useTodayHabits(kidProfileId?: string) {
 
       const { data, error } = await query;
       if (error) throw error;
+
+      // Save to cache after successful fetch
+      if (cacheKey && data) {
+        SafeLocalStorage.set(cacheKey, data, TODAY_HABITS_CACHE_HOURS);
+      }
+
       return data as HabitCompletionWithDetails[];
     },
     enabled: !!user?.id,
-    // Uses global 7-day staleTime from App.tsx for instant loading
-    refetchOnMount: false, // Use cached data for returning users
-    refetchOnWindowFocus: false, // Prevent unnecessary refetches (realtime handles updates)
+    // Use cached data as placeholder for instant display while fetching
+    placeholderData: () => {
+      if (!cacheKey) return undefined;
+      return SafeLocalStorage.get<HabitCompletionWithDetails[]>(cacheKey) ?? undefined;
+    },
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 }

@@ -83,6 +83,10 @@ export const SUBSCRIPTION_CACHE_DAYS = 90; // 90-day cache for game app
 export const ROLE_CACHE_KEY = 'user_roles_cache';
 export const ROLE_CACHE_DAYS = 90;
 
+// Habits caching constants
+export const TODAY_HABITS_CACHE_KEY = 'today_habits_cache';
+export const TODAY_HABITS_CACHE_HOURS = 4; // 4-hour cache for habits
+
 // Visitor tracking for non-authenticated users
 const VISITOR_ID_KEY = 'visitor_id';
 const VISITOR_STATS_KEY = 'visitor_stats';

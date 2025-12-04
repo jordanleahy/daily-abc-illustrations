@@ -69,8 +69,8 @@ export async function assertPerformanceTargets(): Promise<{
   try {
     // Check cache statistics
     const cacheStats = await getCacheStats();
-    if (cacheStats.count < 10) {
-      failures.push(`Cache appears empty (${cacheStats.count} items). Service worker may not be working.`);
+    if (cacheStats.total < 10) {
+      failures.push(`Cache appears empty (${cacheStats.total} items). Service worker may not be working.`);
     }
     
     // Check for optimized images in network

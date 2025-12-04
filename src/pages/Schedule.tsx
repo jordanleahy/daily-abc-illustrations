@@ -233,25 +233,25 @@ function ScheduleThumbnail({
   title: string;
 }) {
   return <>
-      {/* Mobile: Square 1:1 aspect ratio - larger size */}
-      <div className="md:hidden w-40">
+      {/* Mobile: Full width square */}
+      <div className="md:hidden w-full">
         <AspectRatio ratio={1} className="rounded-lg overflow-hidden bg-muted">
           {imageUrl ? (
             <BookImage src={imageUrl} alt={title} className="w-full h-full object-cover" />
           ) : (
             <div className="w-full h-full flex items-center justify-center">
-              <Image className="h-10 w-10 text-muted-foreground" />
+              <Image className="h-12 w-12 text-muted-foreground" />
             </div>
           )}
         </AspectRatio>
       </div>
       
       {/* Desktop: Square 1:1 - larger size */}
-      <div className="hidden md:flex w-32 h-32 rounded-lg overflow-hidden bg-muted items-center justify-center flex-shrink-0">
+      <div className="hidden md:flex w-40 h-40 rounded-lg overflow-hidden bg-muted items-center justify-center flex-shrink-0">
         {imageUrl ? (
           <BookImage src={imageUrl} alt={title} className="w-full h-full object-cover" />
         ) : (
-          <Image className="h-8 w-8 text-muted-foreground" />
+          <Image className="h-10 w-10 text-muted-foreground" />
         )}
       </div>
     </>;

@@ -14,6 +14,13 @@ import { useLastViewedBookWithCover } from "@/hooks/useLastViewedBookWithCover";
 import { useKidProfiles } from "@/hooks/useKidProfiles";
 import { AlertDialog, AlertDialogAction, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { PurchaseConfirmDialog } from "@/components/rewards/PurchaseConfirmDialog";
+import { 
+  saveVideoListToCache, 
+  getCachedVideoList, 
+  prefetchThumbnailsToCache,
+  trackVideoAccess,
+  performStorageCleanupIfNeeded
+} from "@/utils/videoCaching";
 
 interface Video {
   videoId: string;
@@ -42,6 +49,9 @@ export const VideoGrid = () => {
   const consumeScreenTime = useConsumeScreenTime();
   const autoPurchase = useAutoPurchaseScreenTime();
   const { data: lastBook } = useLastViewedBookWithCover(kidId);
+
+  // Phase 1: Get cached video list as placeholder data for instant display
+  const cachedVideos = getCachedVideoList();
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ['youtube-videos'],
@@ -83,11 +93,25 @@ export const VideoGrid = () => {
         }
       }
 
-      // Shuffle videos for variety
-      return allVideos.sort(() => Math.random() - 0.5);
+      // Shuffle videos for variety (but use a seeded shuffle based on date for consistency)
+      const shuffled = allVideos.sort(() => Math.random() - 0.5);
+      
+      // Phase 1: Save to LocalStorage cache
+      saveVideoListToCache(shuffled);
+      
+      // Phase 1: Prefetch thumbnails in background
+      const thumbnailUrls = shuffled.map(v => v.thumbnailUrl);
+      prefetchThumbnailsToCache(thumbnailUrls).catch(console.error);
+      
+      // Phase 4: Check storage quota and cleanup if needed
+      performStorageCleanupIfNeeded().catch(console.error);
+      
+      return shuffled;
     },
-    staleTime: 60 * 60 * 1000,
-    gcTime: 24 * 60 * 60 * 1000,
+    staleTime: 60 * 60 * 1000, // 1 hour
+    gcTime: 24 * 60 * 60 * 1000, // 24 hours
+    // Phase 1: Use cached data as placeholder for instant display
+    placeholderData: cachedVideos || undefined,
   });
 
   // Consume screen time on unmount
@@ -141,6 +165,9 @@ export const VideoGrid = () => {
 
   const handleVideoClick = (video: Video) => {
     if (!kidId) return;
+
+    // Phase 4: Track video access for LRU eviction
+    trackVideoAccess(video.videoId);
 
     const currentBalance = screenTime || 0;
     const totalAvailable = availableTime?.totalAvailableSeconds || 0;

@@ -1,5 +1,8 @@
 const CACHE_NAME = 'dailyabc-images-v1';
+const VIDEO_CACHE_NAME = 'dailyabc-videos-v1';
+const THUMBNAIL_CACHE_NAME = 'dailyabc-thumbnails-v1';
 const CACHE_DURATION = 90 * 24 * 60 * 60 * 1000; // 90 days in milliseconds
+const VIDEO_CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days for videos
 
 // Install event - setup cache
 self.addEventListener('install', (event) => {
@@ -14,7 +17,7 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME) {
+          if (cacheName !== CACHE_NAME && cacheName !== VIDEO_CACHE_NAME && cacheName !== THUMBNAIL_CACHE_NAME) {
             console.log('[Service Worker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -25,27 +28,109 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// Fetch event - cache-first strategy for images
+// Helper: Check if URL is a YouTube thumbnail
+function isYouTubeThumbnail(url) {
+  return url.includes('i.ytimg.com') || url.includes('ytimg.com');
+}
+
+// Helper: Check if URL is a video file (self-hosted)
+function isVideoFile(url) {
+  return url.includes('supabase.co/storage') && 
+    (url.endsWith('.mp4') || url.endsWith('.webm') || url.endsWith('.mov') || url.includes('/videos/'));
+}
+
+// Helper: Check if URL should be cached as an image
+function isImageToCaching(url) {
+  return url.includes('supabase.co/storage') || 
+         url.includes('foxdnspwzhjxjxuicute.supabase.co/storage') ||
+         url.includes('/themes/') ||
+         url.includes('/assets/book-covers/') ||
+         (url.includes('/assets/') && (url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.webp')));
+}
+
+// Fetch event - cache-first strategy with special handling for different content types
 self.addEventListener('fetch', (event) => {
   const url = event.request.url;
   
-  // Cache Supabase storage images, local theme images, and book cover assets
-  const shouldCache = url.includes('supabase.co/storage') || 
-                      url.includes('foxdnspwzhjxjxuicute.supabase.co/storage') ||
-                      url.includes('/themes/') ||
-                      url.includes('/assets/book-covers/') ||
-                      (url.includes('/assets/') && (url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.webp')));
+  // Phase 1: Cache YouTube thumbnails
+  if (isYouTubeThumbnail(url)) {
+    event.respondWith(
+      caches.open(THUMBNAIL_CACHE_NAME).then((cache) => {
+        return cache.match(event.request).then((cachedResponse) => {
+          if (cachedResponse) {
+            console.log('[Service Worker] Serving thumbnail from cache:', url);
+            return cachedResponse;
+          }
+          
+          return fetch(event.request).then((response) => {
+            if (response && response.status === 200) {
+              cache.put(event.request, response.clone());
+              console.log('[Service Worker] Cached thumbnail:', url);
+            }
+            return response;
+          }).catch(() => cachedResponse);
+        });
+      })
+    );
+    return;
+  }
   
-  if (shouldCache) {
+  // Phase 2: Cache self-hosted videos with range request support
+  if (isVideoFile(url)) {
+    event.respondWith(
+      caches.open(VIDEO_CACHE_NAME).then((cache) => {
+        return cache.match(event.request).then((cachedResponse) => {
+          // Handle range requests for video seeking
+          const rangeHeader = event.request.headers.get('range');
+          
+          if (cachedResponse && !rangeHeader) {
+            // Check if cache is still fresh
+            const cachedDate = new Date(cachedResponse.headers.get('sw-cache-date'));
+            const now = new Date();
+            
+            if (now - cachedDate < VIDEO_CACHE_DURATION) {
+              console.log('[Service Worker] Serving video from cache:', url);
+              return cachedResponse;
+            }
+          }
+          
+          // For range requests or cache miss, fetch from network
+          return fetch(event.request).then((response) => {
+            // Only cache full responses (status 200), not partial (206)
+            if (response && response.status === 200 && !rangeHeader) {
+              const responseToCache = response.clone();
+              const headers = new Headers(responseToCache.headers);
+              headers.append('sw-cache-date', new Date().toISOString());
+              
+              const modifiedResponse = new Response(responseToCache.body, {
+                status: responseToCache.status,
+                statusText: responseToCache.statusText,
+                headers: headers
+              });
+              
+              cache.put(event.request, modifiedResponse);
+              console.log('[Service Worker] Cached video:', url);
+            }
+            return response;
+          }).catch((error) => {
+            console.error('[Service Worker] Video fetch failed:', error);
+            return cachedResponse || new Response('Video unavailable', { status: 503 });
+          });
+        });
+      })
+    );
+    return;
+  }
+  
+  // Original image caching logic
+  if (isImageToCaching(url)) {
     event.respondWith(
       caches.open(CACHE_NAME).then((cache) => {
         return cache.match(event.request).then((cachedResponse) => {
-          // Check if we have a cached response and if it's still fresh
           if (cachedResponse) {
             const cachedDate = new Date(cachedResponse.headers.get('sw-cache-date'));
             const now = new Date();
             
-            // If cache is still fresh (within 90 days), return it immediately
             if (now - cachedDate < CACHE_DURATION) {
               console.log('[Service Worker] Serving from cache:', url);
               return cachedResponse;
@@ -54,13 +139,9 @@ self.addEventListener('fetch', (event) => {
             }
           }
           
-          // Fetch from network
           return fetch(event.request).then((response) => {
-            // Only cache successful responses
             if (response && response.status === 200) {
               const responseToCache = response.clone();
-              
-              // Add cache date header
               const headers = new Headers(responseToCache.headers);
               headers.append('sw-cache-date', new Date().toISOString());
               
@@ -77,7 +158,6 @@ self.addEventListener('fetch', (event) => {
             return response;
           }).catch((error) => {
             console.error('[Service Worker] Fetch failed:', error);
-            // If we have any cached version (even expired), return it as fallback
             return cachedResponse || new Response('Network error', { status: 503 });
           });
         });
@@ -90,14 +170,20 @@ self.addEventListener('fetch', (event) => {
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'CLEAR_CACHE') {
     event.waitUntil(
-      caches.delete(CACHE_NAME).then(() => {
-        console.log('[Service Worker] Cache cleared');
-        event.ports[0].postMessage({ success: true });
+      Promise.all([
+        caches.delete(CACHE_NAME),
+        caches.delete(VIDEO_CACHE_NAME),
+        caches.delete(THUMBNAIL_CACHE_NAME)
+      ]).then(() => {
+        console.log('[Service Worker] All caches cleared');
+        if (event.ports[0]) {
+          event.ports[0].postMessage({ success: true });
+        }
       })
     );
   }
   
-  // PHASE 3: Delete cache for specific book
+  // Delete cache for specific book
   if (event.data && event.data.type === 'DELETE_BOOK_CACHE') {
     const bookId = event.data.bookId;
     console.log('[Service Worker] Deleting cache for book:', bookId);
@@ -121,7 +207,7 @@ self.addEventListener('message', (event) => {
     );
   }
   
-  // PHASE 3: Delete cache for multiple books (batch operation)
+  // Delete cache for multiple books (batch operation)
   if (event.data && event.data.type === 'DELETE_BOOKS_CACHE') {
     const bookIds = event.data.bookIds || [];
     console.log('[Service Worker] Batch deleting cache for', bookIds.length, 'books');
@@ -183,6 +269,103 @@ self.addEventListener('message', (event) => {
           if (event.ports[0]) {
             event.ports[0].postMessage({ success: true, count: urls.length });
           }
+        });
+      })
+    );
+  }
+  
+  // Phase 2: Prefetch videos
+  if (event.data && event.data.type === 'PREFETCH_VIDEOS') {
+    const urls = event.data.urls || [];
+    console.log('[Service Worker] Prefetching', urls.length, 'videos');
+    
+    event.waitUntil(
+      caches.open(VIDEO_CACHE_NAME).then((cache) => {
+        return Promise.allSettled(
+          urls.map((url) => {
+            return fetch(url)
+              .then((response) => {
+                if (response && response.status === 200) {
+                  const headers = new Headers(response.headers);
+                  headers.append('sw-cache-date', new Date().toISOString());
+                  
+                  const modifiedResponse = new Response(response.clone().body, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    headers: headers
+                  });
+                  
+                  cache.put(url, modifiedResponse);
+                  console.log('[Service Worker] Prefetched video:', url);
+                }
+                return response;
+              })
+              .catch((error) => {
+                console.error('[Service Worker] Video prefetch failed for:', url, error);
+              });
+          })
+        ).then(() => {
+          if (event.ports[0]) {
+            event.ports[0].postMessage({ success: true, count: urls.length });
+          }
+        });
+      })
+    );
+  }
+  
+  // Phase 1: Prefetch YouTube thumbnails
+  if (event.data && event.data.type === 'PREFETCH_THUMBNAILS') {
+    const urls = event.data.urls || [];
+    console.log('[Service Worker] Prefetching', urls.length, 'thumbnails');
+    
+    event.waitUntil(
+      caches.open(THUMBNAIL_CACHE_NAME).then((cache) => {
+        return Promise.allSettled(
+          urls.map((url) => {
+            return fetch(url)
+              .then((response) => {
+                if (response && response.status === 200) {
+                  cache.put(url, response.clone());
+                  console.log('[Service Worker] Prefetched thumbnail:', url);
+                }
+                return response;
+              })
+              .catch((error) => {
+                console.error('[Service Worker] Thumbnail prefetch failed for:', url, error);
+              });
+          })
+        ).then(() => {
+          if (event.ports[0]) {
+            event.ports[0].postMessage({ success: true, count: urls.length });
+          }
+        });
+      })
+    );
+  }
+  
+  // Phase 4: Cleanup video cache (LRU eviction)
+  if (event.data && event.data.type === 'CLEANUP_VIDEO_CACHE') {
+    const videoIds = event.data.videoIds || [];
+    console.log('[Service Worker] Cleaning up cache for', videoIds.length, 'videos');
+    
+    event.waitUntil(
+      caches.open(VIDEO_CACHE_NAME).then((cache) => {
+        return cache.keys().then((requests) => {
+          let deletedCount = 0;
+          const deletions = requests
+            .filter((req) => {
+              return videoIds.some((videoId) => req.url.includes(videoId));
+            })
+            .map((req) => {
+              deletedCount++;
+              return cache.delete(req);
+            });
+          return Promise.all(deletions).then(() => {
+            console.log('[Service Worker] Cleaned up', deletedCount, 'cached videos');
+            if (event.ports[0]) {
+              event.ports[0].postMessage({ success: true, deletedCount });
+            }
+          });
         });
       })
     );

@@ -52,7 +52,7 @@ export function TrickTrackingCard({ goal }: TrickTrackingCardProps) {
       isCompleted && 'border-primary bg-primary/5'
     )}>
       {displayImage && (
-        <div className="w-full h-48 overflow-hidden rounded-t-lg">
+        <div className="w-full aspect-square overflow-hidden rounded-t-lg">
           <img 
             src={displayImage} 
             alt={goal.tricks?.name}

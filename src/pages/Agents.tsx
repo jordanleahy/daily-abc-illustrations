@@ -3,6 +3,7 @@ import { AgentIdentityCard } from '@/components/agents/AgentIdentityCard';
 import { ConfigurationTabs } from '@/components/agents/ConfigurationTabs';
 import { AgentDocumentation } from '@/components/agents/AgentDocumentation';
 import { AgeGroupsManager } from '@/components/agents/AgeGroupsManager';
+import { TypeDiscoveriesManager } from '@/components/agents/TypeDiscoveriesManager';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
@@ -10,7 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AgentConfig } from '@/types/agent';
-import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye, AlertTriangle, FileText, Users } from 'lucide-react';
+import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye, AlertTriangle, FileText, Users, ListChecks } from 'lucide-react';
 import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { supabase } from '@/integrations/supabase/client';
@@ -221,7 +222,7 @@ const Agents = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="agent" className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3">
+          <TabsList className="grid w-full max-w-xl grid-cols-4">
             <TabsTrigger value="agent" className="gap-2">
               <MessageCircle className="h-4 w-4" />
               Agent
@@ -230,9 +231,13 @@ const Agents = () => {
               <Users className="h-4 w-4" />
               Age Groups
             </TabsTrigger>
+            <TabsTrigger value="discoveries" className="gap-2">
+              <ListChecks className="h-4 w-4" />
+              Discoveries
+            </TabsTrigger>
             <TabsTrigger value="documentation" className="gap-2">
               <FileText className="h-4 w-4" />
-              Documentation
+              Docs
             </TabsTrigger>
           </TabsList>
 
@@ -316,6 +321,10 @@ const Agents = () => {
 
           <TabsContent value="age-groups" className="mt-6">
             <AgeGroupsManager />
+          </TabsContent>
+
+          <TabsContent value="discoveries" className="mt-6">
+            <TypeDiscoveriesManager />
           </TabsContent>
 
           <TabsContent value="documentation" className="mt-6">

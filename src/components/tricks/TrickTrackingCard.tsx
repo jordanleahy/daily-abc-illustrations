@@ -97,7 +97,7 @@ export function TrickTrackingCard({ goal }: TrickTrackingCardProps) {
               <Button
                 onClick={handleSuccess}
                 disabled={addCompletion.isPending}
-                className="bg-green-600 hover:bg-green-700 text-white"
+                className="bg-green-600 hover:bg-green-700 text-white h-14"
                 size="lg"
               >
                 <ThumbsUp className="mr-2 h-5 w-5" />
@@ -108,6 +108,7 @@ export function TrickTrackingCard({ goal }: TrickTrackingCardProps) {
                 disabled={addCompletion.isPending}
                 variant="destructive"
                 size="lg"
+                className="h-14"
               >
                 <ThumbsDown className="mr-2 h-5 w-5" />
                 Failed

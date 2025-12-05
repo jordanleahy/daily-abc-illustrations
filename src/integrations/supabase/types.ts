@@ -1962,6 +1962,42 @@ export type Database = {
         }
         Relationships: []
       }
+      type_specific_discoveries: {
+        Row: {
+          agent_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          options: Json
+          question_key: string
+          question_text: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          agent_type: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          options?: Json
+          question_key: string
+          question_text: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          agent_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          options?: Json
+          question_key?: string
+          question_text?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_book_activity: {
         Row: {
           book_id: string | null

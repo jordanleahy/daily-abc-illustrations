@@ -5,6 +5,8 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { HelmetProvider } from "react-helmet-async";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { NetworkStatusProvider } from "@/contexts/NetworkStatusContext";
+import { WeakNetworkBanner } from "@/components/ui/WeakNetworkBanner";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
 import GoogleChat from "./pages/GoogleChat";
@@ -116,6 +118,8 @@ const App = () => {
       <HelmetProvider>
         <AuthProvider>
           <RoleProvider>
+            <NetworkStatusProvider>
+              <WeakNetworkBanner />
               <Toaster />
               <Sonner />
               <BrowserRouter>
@@ -193,11 +197,12 @@ const App = () => {
                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
-          </BrowserRouter>
+              </BrowserRouter>
+            </NetworkStatusProvider>
           </RoleProvider>
         </AuthProvider>
-    </HelmetProvider>
-  </QueryClientProvider>
+      </HelmetProvider>
+    </QueryClientProvider>
   );
 };
 

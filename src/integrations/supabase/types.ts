@@ -77,6 +77,39 @@ export type Database = {
         }
         Relationships: []
       }
+      age_groups: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          max_age: number
+          min_age: number
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          is_active?: boolean
+          label: string
+          max_age: number
+          min_age: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          max_age?: number
+          min_age?: number
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       agent_performance_metrics: {
         Row: {
           agent_id: string | null

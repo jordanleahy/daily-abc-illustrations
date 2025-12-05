@@ -1,6 +1,7 @@
-import { AGE_RANGE_IDS, getAgeRangeDisplayName, AgeRangeId } from '@/types/ageRange';
+import { useAgeGroups } from '@/hooks/useAgeGroups';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
+import { Loader2 } from 'lucide-react';
 
 interface AgeRangeSelectorProps {
   value?: string;
@@ -13,7 +14,7 @@ interface AgeRangeSelectorProps {
 /**
  * Age Range Selector Component
  * Provides a dropdown for selecting standardized age ranges
- * Enforces enum values to prevent invalid age range names
+ * Fetches age groups from centralized database table
  */
 export const AgeRangeSelector = ({ 
   value, 
@@ -22,6 +23,8 @@ export const AgeRangeSelector = ({
   placeholder = "Select age range...",
   required = false
 }: AgeRangeSelectorProps) => {
+  const { data: ageGroups, isLoading } = useAgeGroups();
+
   return (
     <div className="space-y-2">
       {label && (
@@ -30,14 +33,21 @@ export const AgeRangeSelector = ({
           {required && <span className="text-destructive ml-1">*</span>}
         </Label>
       )}
-      <Select value={value || ''} onValueChange={onValueChange}>
+      <Select value={value || ''} onValueChange={onValueChange} disabled={isLoading}>
         <SelectTrigger id="age-range-selector" className="h-9">
-          <SelectValue placeholder={placeholder} />
+          {isLoading ? (
+            <div className="flex items-center gap-2">
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span className="text-muted-foreground">Loading...</span>
+            </div>
+          ) : (
+            <SelectValue placeholder={placeholder} />
+          )}
         </SelectTrigger>
         <SelectContent>
-          {AGE_RANGE_IDS.filter(id => id !== 'other').map((ageRangeId) => (
-            <SelectItem key={ageRangeId} value={ageRangeId}>
-              {getAgeRangeDisplayName(ageRangeId)}
+          {ageGroups?.map((ageGroup) => (
+            <SelectItem key={ageGroup.id} value={ageGroup.id}>
+              {ageGroup.label}
             </SelectItem>
           ))}
           <SelectItem value="other">Other</SelectItem>

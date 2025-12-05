@@ -45,7 +45,7 @@ export function TrickCard({ trick, goals, onEdit, onDelete }: TrickCardProps) {
           <img 
             src={displayImage} 
             alt={trick.name}
-            className="w-full h-48 object-cover rounded-t-lg"
+            className="w-full aspect-square object-cover rounded-t-lg"
           />
           {hasVideos && (
             <Badge className="absolute bottom-2 right-2 bg-background/80 backdrop-blur-sm">

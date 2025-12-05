@@ -1,13 +1,15 @@
 import { StandardPageLayout } from '@/components/layout';
 import { AgentIdentityCard } from '@/components/agents/AgentIdentityCard';
 import { ConfigurationTabs } from '@/components/agents/ConfigurationTabs';
+import { AgentDocumentation } from '@/components/agents/AgentDocumentation';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AgentConfig } from '@/types/agent';
-import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye, AlertTriangle } from 'lucide-react';
+import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye, AlertTriangle, FileText } from 'lucide-react';
 import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { supabase } from '@/integrations/supabase/client';
@@ -23,6 +25,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+
 const Agents = () => {
   const [selectedAgentType, setSelectedAgentType] = useState<AgentConfig['type']>('book-creation-abc');
   const [isStandardizing, setIsStandardizing] = useState(false);
@@ -190,7 +193,7 @@ const Agents = () => {
 
   return (
     <StandardPageLayout showHeader={true} containerSize="xl" containerClassName="py-8">
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Header */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
@@ -215,8 +218,22 @@ const Agents = () => {
           </div>
         </div>
 
-        {/* Agent Type Selection */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {/* Main Tabs */}
+        <Tabs defaultValue="agent" className="w-full">
+          <TabsList className="grid w-full max-w-md grid-cols-2">
+            <TabsTrigger value="agent" className="gap-2">
+              <MessageCircle className="h-4 w-4" />
+              Agent
+            </TabsTrigger>
+            <TabsTrigger value="documentation" className="gap-2">
+              <FileText className="h-4 w-4" />
+              Documentation
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="agent" className="mt-6 space-y-8">
+            {/* Agent Type Selection */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {agentTypes.map((agent) => {
             const Icon = agent.icon;
             const isSelected = selectedAgentType === agent.type;
@@ -257,39 +274,45 @@ const Agents = () => {
               </Card>
             );
           })}
-        </div>
-
-        {/* Agent Configuration Content */}
-        {config ? (
-          <>
-            <AgentIdentityCard
-              config={config}
-              onUpdate={updateConfig}
-              lastChangeDescription={lastChangeDescription}
-              onClearChangeDescription={clearChangeDescription}
-              isAdmin={userRole?.isAdmin ?? false}
-            />
-            
-            <ConfigurationTabs
-              config={config}
-              onUpdate={updateConfig}
-              onUpdateModelSettings={updateModelSettings}
-              onSaveWithOverrides={saveConfigWithOverrides}
-              isLoading={isLoading}
-              hasUnsavedChanges={hasUnsavedChanges}
-              agentType={selectedAgentType}
-            />
-          </>
-        ) : (
-          <div className="text-center space-y-4 py-8">
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold">No Agent Configuration Found</h3>
-              <p className="text-muted-foreground">
-                No {selectedAgentType} agent exists in your database.
-              </p>
             </div>
-          </div>
-        )}
+
+            {/* Agent Configuration Content */}
+            {config ? (
+              <>
+                <AgentIdentityCard
+                  config={config}
+                  onUpdate={updateConfig}
+                  lastChangeDescription={lastChangeDescription}
+                  onClearChangeDescription={clearChangeDescription}
+                  isAdmin={userRole?.isAdmin ?? false}
+                />
+                
+                <ConfigurationTabs
+                  config={config}
+                  onUpdate={updateConfig}
+                  onUpdateModelSettings={updateModelSettings}
+                  onSaveWithOverrides={saveConfigWithOverrides}
+                  isLoading={isLoading}
+                  hasUnsavedChanges={hasUnsavedChanges}
+                  agentType={selectedAgentType}
+                />
+              </>
+            ) : (
+              <div className="text-center space-y-4 py-8">
+                <div className="space-y-2">
+                  <h3 className="text-xl font-semibold">No Agent Configuration Found</h3>
+                  <p className="text-muted-foreground">
+                    No {selectedAgentType} agent exists in your database.
+                  </p>
+                </div>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="documentation" className="mt-6">
+            <AgentDocumentation />
+          </TabsContent>
+        </Tabs>
 
         {/* Status Footer - Fixed save button */}
         {hasUnsavedChanges && (

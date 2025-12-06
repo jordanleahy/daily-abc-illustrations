@@ -224,30 +224,30 @@ const Agents = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="agent" className="w-full">
-          <TabsList className="grid w-full max-w-4xl grid-cols-6">
-            <TabsTrigger value="agent" className="gap-2">
-              <MessageCircle className="h-4 w-4" />
-              Agent
+          <TabsList className="flex w-full max-w-4xl overflow-x-auto scrollbar-hide touch-pan-x">
+            <TabsTrigger value="agent" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
+              <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Agent</span>
             </TabsTrigger>
-            <TabsTrigger value="book-types" className="gap-2">
-              <Layers className="h-4 w-4" />
-              Book Types
+            <TabsTrigger value="book-types" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
+              <Layers className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Types</span>
             </TabsTrigger>
-            <TabsTrigger value="age-groups" className="gap-2">
-              <Users className="h-4 w-4" />
-              Age Groups
+            <TabsTrigger value="age-groups" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
+              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Ages</span>
             </TabsTrigger>
-            <TabsTrigger value="characters" className="gap-2">
-              <Sparkles className="h-4 w-4" />
-              Characters
+            <TabsTrigger value="characters" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
+              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Chars</span>
             </TabsTrigger>
-            <TabsTrigger value="discoveries" className="gap-2">
-              <ListChecks className="h-4 w-4" />
-              Discoveries
+            <TabsTrigger value="discoveries" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
+              <ListChecks className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Discover</span>
             </TabsTrigger>
-            <TabsTrigger value="documentation" className="gap-2">
-              <FileText className="h-4 w-4" />
-              Docs
+            <TabsTrigger value="documentation" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
+              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Docs</span>
             </TabsTrigger>
           </TabsList>
 

@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { toast } from 'sonner';
-import { Plus, Pencil, GripVertical } from 'lucide-react';
+import { Plus, Pencil, GripVertical, Sparkles, Copy, Download, Loader2 } from 'lucide-react';
 import { getIconComponent, getAvailableIconNames } from '@/utils/iconMapping';
 import type { DatabaseBookType } from '@/hooks/useBookTypes';
 
@@ -20,6 +20,10 @@ export function BookTypesManager() {
   const queryClient = useQueryClient();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingType, setEditingType] = useState<DatabaseBookType | null>(null);
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [generatedImage, setGeneratedImage] = useState<string | null>(null);
+  const [imageDialogOpen, setImageDialogOpen] = useState(false);
+  const [imageLabel, setImageLabel] = useState('');
 
   const { data: bookTypes, isLoading } = useQuery({
     queryKey: ['book-types-admin'],
@@ -71,6 +75,47 @@ export function BookTypesManager() {
     },
   });
 
+  const handleGenerateImage = async (bookType: DatabaseBookType) => {
+    setGeneratingId(bookType.id);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-book-type-image', {
+        body: { label: bookType.label, description: bookType.description },
+      });
+
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+
+      setGeneratedImage(data.imageUrl);
+      setImageLabel(bookType.label);
+      setImageDialogOpen(true);
+    } catch (error: any) {
+      console.error('Image generation error:', error);
+      toast.error(error.message || 'Failed to generate image');
+    } finally {
+      setGeneratingId(null);
+    }
+  };
+
+  const handleCopyImage = async () => {
+    if (!generatedImage) return;
+    try {
+      await navigator.clipboard.writeText(generatedImage);
+      toast.success('Image URL copied to clipboard');
+    } catch {
+      toast.error('Failed to copy');
+    }
+  };
+
+  const handleDownloadImage = () => {
+    if (!generatedImage) return;
+    const link = document.createElement('a');
+    link.href = generatedImage;
+    link.download = `${imageLabel.toLowerCase().replace(/\s+/g, '-')}-icon.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const openEditDialog = (bookType: DatabaseBookType) => {
     setEditingType(bookType);
     setIsDialogOpen(true);
@@ -86,90 +131,137 @@ export function BookTypesManager() {
   }
 
   return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <CardTitle>Book Types</CardTitle>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm" onClick={openCreateDialog}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add Book Type
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>{editingType ? 'Edit Book Type' : 'Add Book Type'}</DialogTitle>
-            </DialogHeader>
-            <BookTypeForm
-              initialData={editingType}
-              onSave={(data) => saveMutation.mutate(data)}
-              isSaving={saveMutation.isPending}
-            />
-          </DialogContent>
-        </Dialog>
-      </CardHeader>
-      <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-12"></TableHead>
-              <TableHead>Type</TableHead>
-              <TableHead>Label</TableHead>
-              <TableHead>Pages</TableHead>
-              <TableHead>Clarification</TableHead>
-              <TableHead>Active</TableHead>
-              <TableHead className="w-12"></TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {bookTypes?.map((bt) => {
-              const Icon = getIconComponent(bt.icon_name);
-              return (
-                <TableRow key={bt.id}>
-                  <TableCell>
-                    <GripVertical className="h-4 w-4 text-muted-foreground" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      <Icon className={`h-4 w-4 ${bt.color || ''}`} />
-                      <code className="text-xs bg-muted px-1 rounded">{bt.id}</code>
-                    </div>
-                  </TableCell>
-                  <TableCell className="font-medium">{bt.label}</TableCell>
-                  <TableCell>
-                    {bt.expected_page_count ? (
-                      <Badge variant="outline">{bt.expected_page_count}</Badge>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell>
-                    {bt.needs_clarification ? (
-                      <Badge variant="secondary">Yes</Badge>
-                    ) : '-'}
-                  </TableCell>
-                  <TableCell>
-                    <Switch
-                      checked={bt.is_active}
-                      onCheckedChange={(checked) => 
-                        toggleActiveMutation.mutate({ id: bt.id, is_active: checked })
-                      }
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => openEditDialog(bt)}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              );
-            })}
-          </TableBody>
-        </Table>
-      </CardContent>
-    </Card>
+    <>
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle>Book Types</CardTitle>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm" onClick={openCreateDialog}>
+                <Plus className="h-4 w-4 mr-2" />
+                Add Book Type
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingType ? 'Edit Book Type' : 'Add Book Type'}</DialogTitle>
+              </DialogHeader>
+              <BookTypeForm
+                initialData={editingType}
+                onSave={(data) => saveMutation.mutate(data)}
+                isSaving={saveMutation.isPending}
+              />
+            </DialogContent>
+          </Dialog>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-12"></TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Label</TableHead>
+                <TableHead>Pages</TableHead>
+                <TableHead>Clarification</TableHead>
+                <TableHead>Active</TableHead>
+                <TableHead className="w-24">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {bookTypes?.map((bt) => {
+                const Icon = getIconComponent(bt.icon_name);
+                const isGenerating = generatingId === bt.id;
+                return (
+                  <TableRow key={bt.id}>
+                    <TableCell>
+                      <GripVertical className="h-4 w-4 text-muted-foreground" />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <Icon className={`h-4 w-4 ${bt.color || ''}`} />
+                        <code className="text-xs bg-muted px-1 rounded">{bt.id}</code>
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-medium">{bt.label}</TableCell>
+                    <TableCell>
+                      {bt.expected_page_count ? (
+                        <Badge variant="outline">{bt.expected_page_count}</Badge>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {bt.needs_clarification ? (
+                        <Badge variant="secondary">Yes</Badge>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Switch
+                        checked={bt.is_active}
+                        onCheckedChange={(checked) => 
+                          toggleActiveMutation.mutate({ id: bt.id, is_active: checked })
+                        }
+                      />
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleGenerateImage(bt)}
+                          disabled={isGenerating}
+                          title="Generate Image"
+                        >
+                          {isGenerating ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                          ) : (
+                            <Sparkles className="h-4 w-4" />
+                          )}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => openEditDialog(bt)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Dialog open={imageDialogOpen} onOpenChange={setImageDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Generated Image: {imageLabel}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {generatedImage && (
+              <div className="flex justify-center">
+                <img 
+                  src={generatedImage} 
+                  alt={imageLabel}
+                  className="max-w-full max-h-80 rounded-lg border"
+                />
+              </div>
+            )}
+            <div className="flex justify-center gap-2">
+              <Button variant="outline" onClick={handleCopyImage}>
+                <Copy className="h-4 w-4 mr-2" />
+                Copy URL
+              </Button>
+              <Button variant="outline" onClick={handleDownloadImage}>
+                <Download className="h-4 w-4 mr-2" />
+                Download
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 

@@ -129,6 +129,7 @@ export default function BookReadingView() {
           showUploadButton={false}
           isFirstImage={page.id === pages[startingPageIndex]?.id}
           disableHoverEffects={true}
+          enableVisibilityToggle={true}
         />
       )}
     />

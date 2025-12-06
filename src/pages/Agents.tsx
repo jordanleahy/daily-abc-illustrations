@@ -5,15 +5,12 @@ import { AgentDocumentation } from '@/components/agents/AgentDocumentation';
 import { AgeGroupsManager } from '@/components/agents/AgeGroupsManager';
 import { TypeDiscoveriesManager } from '@/components/agents/TypeDiscoveriesManager';
 import { CharacterThemesManager } from '@/components/agents/CharacterThemesManager';
-import { BookTypesManager } from '@/components/agents/BookTypesManager';
+import { BookAgentsManager } from '@/components/agents/BookAgentsManager';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AgentConfig } from '@/types/agent';
-import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye, AlertTriangle, FileText, Users, ListChecks, Sparkles, Layers } from 'lucide-react';
+import { BookOpen, MessageCircle, AlertTriangle, FileText, Users, ListChecks, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { supabase } from '@/integrations/supabase/client';
@@ -31,23 +28,23 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const Agents = () => {
-  const [selectedAgentType, setSelectedAgentType] = useState<AgentConfig['type']>('book-creation-abc');
   const [isStandardizing, setIsStandardizing] = useState(false);
   const [showAbcWarning, setShowAbcWarning] = useState(false);
   const { data: userRole } = useUserRole();
   
+  // Chat agent config for the dedicated Chat Agent tab
   const {
-    config,
-    isLoading,
+    config: chatConfig,
+    isLoading: isChatLoading,
     isInitialLoading,
-    hasUnsavedChanges,
-    lastChangeDescription,
-    updateConfig,
-    updateModelSettings,
-    saveConfig,
-    saveConfigWithOverrides,
-    clearChangeDescription,
-  } = useAgentConfig(selectedAgentType);
+    hasUnsavedChanges: chatHasUnsavedChanges,
+    lastChangeDescription: chatLastChangeDescription,
+    updateConfig: updateChatConfig,
+    updateModelSettings: updateChatModelSettings,
+    saveConfig: saveChatConfig,
+    saveConfigWithOverrides: saveChatConfigWithOverrides,
+    clearChangeDescription: clearChatChangeDescription,
+  } = useAgentConfig('chat');
 
   const handleStandardizeAgents = async () => {
     if (!userRole?.isAdmin) {
@@ -80,113 +77,6 @@ const Agents = () => {
     }
   };
 
-  const agentTypes: Array<{
-    type: AgentConfig['type'];
-    title: string;
-    description: string;
-    icon: any;
-    badge?: string;
-  }> = [
-    {
-      type: 'chat',
-      title: 'Chat Agent',
-      description: 'Universal planning assistant that gathers requirements and creates structured outlines for all 13 book types (ages 2-7).',
-      icon: MessageCircle,
-      badge: 'Active'
-    },
-    {
-      type: 'book-creation',
-      title: 'Generic Book Creation Agent',
-      description: 'Fallback agent for creating educational ABC books when no specialized agent is available.',
-      icon: BookOpen,
-      badge: 'Fallback'
-    },
-    {
-      type: 'book-creation-numbers',
-      title: 'Numbers Book Agent',
-      description: 'Specialized in creating number books with consistent counting objects and numeric digits.',
-      icon: Hash,
-      badge: 'Specialized'
-    },
-    {
-      type: 'book-creation-rhyming',
-      title: 'Rhyming Book Agent',
-      description: 'Expert in creating rhyming books with rhythmic language and consistent rhyme schemes.',
-      icon: Music,
-      badge: 'Specialized'
-    },
-    {
-      type: 'book-creation-colors',
-      title: 'Colors Book Agent',
-      description: 'Focused on color education with one color per page and child-friendly associations.',
-      icon: Palette,
-      badge: 'Specialized'
-    },
-    {
-      type: 'book-creation-abc',
-      title: 'ABC Book Agent',
-      description: 'Specialized in alphabet books with letter-focused educational content.',
-      icon: BookText,
-      badge: 'Specialized'
-    },
-    {
-      type: 'book-creation-shapes',
-      title: 'Shapes Book Agent',
-      description: 'Expert at creating shape books teaching geometric recognition and spatial awareness.',
-      icon: Shapes,
-      badge: 'Specialized'
-    },
-    {
-      type: 'book-creation-opposites',
-      title: 'Opposites Book Agent',
-      description: 'Focused on teaching opposite concepts with clear visual comparisons.',
-      icon: ArrowLeftRight,
-      badge: 'Specialized'
-    },
-    {
-      type: 'book-creation-emotions',
-      title: 'Emotions Book Agent',
-      description: 'Specialized in emotional intelligence with relatable characters and scenarios.',
-      icon: Heart,
-      badge: 'Specialized'
-    },
-    {
-      type: 'book-creation-animals',
-      title: 'Animals Book Agent',
-      description: 'Expert in animal books with descriptions, habitats, sounds, and fun facts.',
-      icon: PawPrint,
-      badge: 'Specialized'
-    },
-    {
-      type: 'book-creation-first-words',
-      title: 'First Words Book Agent',
-      description: 'Builds foundational vocabulary with high-frequency words and clear illustrations.',
-      icon: Type,
-      badge: 'Specialized'
-    },
-    {
-      type: 'book-creation-bedtime',
-      title: 'Bedtime Book Agent',
-      description: 'Creates calming bedtime routines with soothing language and sequences.',
-      icon: Moon,
-      badge: 'Specialized'
-    },
-    {
-      type: 'book-creation-cvc',
-      title: 'CVC Words Book Agent',
-      description: 'Focused on early phonics with CVC word families and decodable words.',
-      icon: Blocks,
-      badge: 'Specialized'
-    },
-    {
-      type: 'book-creation-sight-words',
-      title: 'Sight Words Book Agent',
-      description: 'Develops reading fluency with prominent sight word display and context.',
-      icon: Eye,
-      badge: 'Specialized'
-    }
-  ];
-
   if (isInitialLoading) {
     return (
       <StandardPageLayout showHeader={true} containerSize="xl" containerClassName="py-8">
@@ -204,7 +94,7 @@ const Agents = () => {
             <div>
               <h1 className="text-3xl font-bold tracking-tight">Agent Configuration</h1>
               <p className="text-muted-foreground">
-                Configure and manage your ABC Cards agent settings, instructions, and model parameters.
+                Configure and manage your AI agents, book types, and shared configuration.
               </p>
             </div>
             {userRole?.isAdmin && (
@@ -222,16 +112,16 @@ const Agents = () => {
           </div>
         </div>
 
-        {/* Main Tabs */}
-        <Tabs defaultValue="agent" className="w-full">
+        {/* Main Tabs - Consolidated from 6 to 6 with better organization */}
+        <Tabs defaultValue="book-agents" className="w-full">
           <TabsList className="flex w-full max-w-4xl overflow-x-auto scrollbar-hide touch-pan-x">
-            <TabsTrigger value="agent" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
-              <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Agent</span>
+            <TabsTrigger value="book-agents" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
+              <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Books</span>
             </TabsTrigger>
-            <TabsTrigger value="book-types" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
-              <Layers className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Types</span>
+            <TabsTrigger value="chat-agent" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
+              <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden xs:inline">Chat</span>
             </TabsTrigger>
             <TabsTrigger value="age-groups" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
               <Users className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -239,11 +129,11 @@ const Agents = () => {
             </TabsTrigger>
             <TabsTrigger value="characters" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
               <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Chars</span>
+              <span className="hidden xs:inline">Themes</span>
             </TabsTrigger>
             <TabsTrigger value="discoveries" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
               <ListChecks className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Discover</span>
+              <span className="hidden xs:inline">Questions</span>
             </TabsTrigger>
             <TabsTrigger value="documentation" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
               <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
@@ -251,86 +141,43 @@ const Agents = () => {
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="agent" className="mt-6 space-y-8">
-            {/* Agent Type Selection */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {agentTypes.map((agent) => {
-            const Icon = agent.icon;
-            const isSelected = selectedAgentType === agent.type;
-            
-            return (
-              <Card 
-                key={agent.type}
-                className={`cursor-pointer transition-all hover:shadow-md ${isSelected ? 'ring-2 ring-primary' : ''}`}
-                onClick={() => setSelectedAgentType(agent.type)}
-              >
-                <CardHeader className="pb-3">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-full bg-primary/10">
-                      <Icon className="h-4 w-4 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <CardTitle className="text-sm truncate">{agent.title}</CardTitle>
-                      {agent.badge && (
-                        <Badge variant="secondary" className="text-xs mt-1">
-                          {agent.badge}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent className="pt-0">
-                  <p className="text-xs text-muted-foreground mb-3 line-clamp-2">
-                    {agent.description}
-                  </p>
-                  <Button 
-                    variant={isSelected ? 'default' : 'outline'} 
-                    size="sm" 
-                    className="w-full"
-                  >
-                    {isSelected ? 'Selected' : 'Select'}
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-            </div>
+          {/* Book Agents Tab - Unified view of book types + their linked agents */}
+          <TabsContent value="book-agents" className="mt-6">
+            <BookAgentsManager />
+          </TabsContent>
 
-            {/* Agent Configuration Content */}
-            {config ? (
+          {/* Chat Agent Tab - Standalone configuration for the universal chat agent */}
+          <TabsContent value="chat-agent" className="mt-6 space-y-8">
+            {chatConfig ? (
               <>
                 <AgentIdentityCard
-                  config={config}
-                  onUpdate={updateConfig}
-                  lastChangeDescription={lastChangeDescription}
-                  onClearChangeDescription={clearChangeDescription}
+                  config={chatConfig}
+                  onUpdate={updateChatConfig}
+                  lastChangeDescription={chatLastChangeDescription}
+                  onClearChangeDescription={clearChatChangeDescription}
                   isAdmin={userRole?.isAdmin ?? false}
                 />
                 
                 <ConfigurationTabs
-                  config={config}
-                  onUpdate={updateConfig}
-                  onUpdateModelSettings={updateModelSettings}
-                  onSaveWithOverrides={saveConfigWithOverrides}
-                  isLoading={isLoading}
-                  hasUnsavedChanges={hasUnsavedChanges}
-                  agentType={selectedAgentType}
+                  config={chatConfig}
+                  onUpdate={updateChatConfig}
+                  onUpdateModelSettings={updateChatModelSettings}
+                  onSaveWithOverrides={saveChatConfigWithOverrides}
+                  isLoading={isChatLoading}
+                  hasUnsavedChanges={chatHasUnsavedChanges}
+                  agentType="chat"
                 />
               </>
             ) : (
               <div className="text-center space-y-4 py-8">
                 <div className="space-y-2">
-                  <h3 className="text-xl font-semibold">No Agent Configuration Found</h3>
+                  <h3 className="text-xl font-semibold">No Chat Agent Found</h3>
                   <p className="text-muted-foreground">
-                    No {selectedAgentType} agent exists in your database.
+                    The universal Chat Agent doesn't exist in your database.
                   </p>
                 </div>
               </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="book-types" className="mt-6">
-            <BookTypesManager />
           </TabsContent>
 
           <TabsContent value="age-groups" className="mt-6">
@@ -350,8 +197,8 @@ const Agents = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Status Footer - Fixed save button */}
-        {hasUnsavedChanges && (
+        {/* Status Footer - Fixed save button for Chat Agent tab */}
+        {chatHasUnsavedChanges && (
           <div className="fixed bottom-6 right-6 p-5 bg-background border-2 border-primary rounded-xl shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300 z-50">
             <div className="flex items-start gap-3">
               <div className="flex-1">
@@ -359,27 +206,21 @@ const Agents = () => {
                   💾 Unsaved Changes
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  Click save to persist changes to database
+                  Click save to persist Chat Agent changes
                 </p>
               </div>
               <button
-                onClick={() => {
-                  if (selectedAgentType === 'book-creation-abc') {
-                    setShowAbcWarning(true);
-                  } else {
-                    saveConfig();
-                  }
-                }}
-                disabled={isLoading}
+                onClick={() => saveChatConfig()}
+                disabled={isChatLoading}
                 className="px-4 py-2 bg-primary text-primary-foreground rounded-lg font-medium text-sm hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
               >
-                {isLoading ? 'Saving...' : 'Save All Changes'}
+                {isChatLoading ? 'Saving...' : 'Save All Changes'}
               </button>
             </div>
           </div>
         )}
 
-        {/* ABC Agent Warning Dialog */}
+        {/* ABC Agent Warning Dialog - kept for future use if needed */}
         <AlertDialog open={showAbcWarning} onOpenChange={setShowAbcWarning}>
           <AlertDialogContent>
             <AlertDialogHeader>
@@ -404,7 +245,6 @@ const Agents = () => {
               <AlertDialogCancel>Cancel</AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
-                  saveConfig();
                   setShowAbcWarning(false);
                 }}
                 className="bg-amber-600 hover:bg-amber-700"

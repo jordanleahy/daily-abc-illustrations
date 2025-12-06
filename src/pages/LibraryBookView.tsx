@@ -132,6 +132,7 @@ export default function LibraryBookView() {
           priority={page.id === pages[startingPageIndex]?.id}
           className="rounded-lg w-full h-full object-contain"
           disableHoverEffects={true}
+          enableVisibilityToggle={true}
         />
       )}
     />

@@ -79,10 +79,10 @@ export function BookImage({
     }
   }
 
-  // Handle first tap to reveal eye icon
+  // Toggle eye icon visibility on container tap
   const handleContainerTap = () => {
-    if (enableVisibilityToggle && !hasBeenTapped) {
-      setHasBeenTapped(true);
+    if (enableVisibilityToggle) {
+      setHasBeenTapped(prev => !prev);
     }
   };
 

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -8,7 +8,11 @@ import { SafeLocalStorage, SUBSCRIPTION_CACHE_KEY, SUBSCRIPTION_CACHE_DAYS } fro
 // Global request lock to prevent concurrent API calls
 let pendingRequest: Promise<SubscriptionStatus> | null = null;
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 2000; // Minimum 2 seconds between requests
+const MIN_REQUEST_INTERVAL = 5000; // Minimum 5 seconds between requests (increased from 2s)
+
+// Module-level flags to prevent multiple instances from checking
+let globalMountCheckDone = false;
+let globalLastFocusCheck = 0;
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -222,17 +226,13 @@ export const useSubscription = () => {
   }, [user?.id, queryClient]);
 
   // Refresh subscription when returning from Stripe checkout (window focus)
-  // Use ref to track if initial mount check was done
-  const hasCheckedOnMount = useRef(false);
-  const lastFocusCheck = useRef<number>(0);
-  
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && user) {
         const now = Date.now();
-        // Only check if more than 10 seconds since last check (stronger debounce)
-        if (now - lastFocusCheck.current > 10000) {
-          lastFocusCheck.current = now;
+        // Only check if more than 30 seconds since last global check (strong debounce)
+        if (now - globalLastFocusCheck > 30000) {
+          globalLastFocusCheck = now;
           
           // Check URL for checkout success indicator
           const urlParams = new URLSearchParams(window.location.search);
@@ -254,16 +254,16 @@ export const useSubscription = () => {
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
     
-    // Only check on mount ONCE globally, not per component instance
-    if (!hasCheckedOnMount.current) {
-      hasCheckedOnMount.current = true;
+    // Only check on mount ONCE globally across all component instances
+    if (!globalMountCheckDone) {
+      globalMountCheckDone = true;
       // Delay check to let React Query settle first
       const timer = setTimeout(() => {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('checkout_success') || urlParams.has('session_id')) {
           handleVisibilityChange();
         }
-      }, 500);
+      }, 1000);
       return () => {
         clearTimeout(timer);
         document.removeEventListener('visibilitychange', handleVisibilityChange);

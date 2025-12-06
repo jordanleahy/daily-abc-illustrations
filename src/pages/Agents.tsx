@@ -5,6 +5,7 @@ import { AgentDocumentation } from '@/components/agents/AgentDocumentation';
 import { AgeGroupsManager } from '@/components/agents/AgeGroupsManager';
 import { TypeDiscoveriesManager } from '@/components/agents/TypeDiscoveriesManager';
 import { CharacterThemesManager } from '@/components/agents/CharacterThemesManager';
+import { BookTypesManager } from '@/components/agents/BookTypesManager';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AgentConfig } from '@/types/agent';
-import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye, AlertTriangle, FileText, Users, ListChecks, Sparkles } from 'lucide-react';
+import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye, AlertTriangle, FileText, Users, ListChecks, Sparkles, Layers } from 'lucide-react';
 import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { supabase } from '@/integrations/supabase/client';
@@ -223,10 +224,14 @@ const Agents = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="agent" className="w-full">
-          <TabsList className="grid w-full max-w-3xl grid-cols-5">
+          <TabsList className="grid w-full max-w-4xl grid-cols-6">
             <TabsTrigger value="agent" className="gap-2">
               <MessageCircle className="h-4 w-4" />
               Agent
+            </TabsTrigger>
+            <TabsTrigger value="book-types" className="gap-2">
+              <Layers className="h-4 w-4" />
+              Book Types
             </TabsTrigger>
             <TabsTrigger value="age-groups" className="gap-2">
               <Users className="h-4 w-4" />
@@ -322,6 +327,10 @@ const Agents = () => {
                 </div>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="book-types" className="mt-6">
+            <BookTypesManager />
           </TabsContent>
 
           <TabsContent value="age-groups" className="mt-6">

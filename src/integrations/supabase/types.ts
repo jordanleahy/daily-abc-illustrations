@@ -431,6 +431,54 @@ export type Database = {
           },
         ]
       }
+      book_types: {
+        Row: {
+          clarification_context: string | null
+          color: string | null
+          created_at: string | null
+          description: string | null
+          expected_page_count: number | null
+          icon_name: string
+          id: string
+          is_active: boolean | null
+          label: string
+          needs_clarification: boolean | null
+          prompt: string | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          clarification_context?: string | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          expected_page_count?: number | null
+          icon_name?: string
+          id: string
+          is_active?: boolean | null
+          label: string
+          needs_clarification?: boolean | null
+          prompt?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          clarification_context?: string | null
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          expected_page_count?: number | null
+          icon_name?: string
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          needs_clarification?: boolean | null
+          prompt?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       books: {
         Row: {
           book_description: string | null

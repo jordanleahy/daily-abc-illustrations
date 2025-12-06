@@ -74,7 +74,13 @@ export function BookImage({
   }
 
   return (
-    <div className="relative w-full h-full">
+    <div 
+      className="relative w-full h-full"
+      style={{
+        userSelect: 'none',
+        WebkitUserSelect: 'none'
+      }}
+    >
       {/* Gradient placeholder - prevents layout shift, fades out when image loads */}
       <div 
         className="absolute inset-0 bg-gradient-to-br from-muted via-muted/50 to-muted"
@@ -102,10 +108,12 @@ export function BookImage({
           crossOrigin="anonymous"
           data-optimized="true"
           className={`transition-all duration-300 ease-out ${disableHoverEffects ? '' : 'hover:scale-110 hover:rotate-2'} ${className}`}
-          style={enableMobileSave ? { 
-            touchAction: 'auto', 
-            WebkitTouchCallout: 'default' 
-          } : undefined}
+          style={{ 
+            userSelect: 'none',
+            WebkitUserSelect: 'none',
+            WebkitTouchCallout: 'default',
+            touchAction: 'manipulation'
+          }}
           onLoad={() => {
             setImageLoaded(true);
             performanceTracker.onLoad(); // Track performance

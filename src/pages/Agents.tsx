@@ -115,29 +115,29 @@ const Agents = () => {
         {/* Main Tabs - Consolidated from 6 to 6 with better organization */}
         <Tabs defaultValue="book-agents" className="w-full">
           <TabsList className="flex w-full max-w-4xl overflow-x-auto scrollbar-hide touch-pan-x">
-            <TabsTrigger value="book-agents" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
-              <BookOpen className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Books</span>
+            <TabsTrigger value="book-agents" className="flex items-center gap-1.5 flex-shrink-0 px-3 text-xs min-h-[44px] whitespace-nowrap">
+              <BookOpen className="h-3.5 w-3.5" />
+              Books
             </TabsTrigger>
-            <TabsTrigger value="chat-agent" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
-              <MessageCircle className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Chat</span>
+            <TabsTrigger value="chat-agent" className="flex items-center gap-1.5 flex-shrink-0 px-3 text-xs min-h-[44px] whitespace-nowrap">
+              <MessageCircle className="h-3.5 w-3.5" />
+              Chat
             </TabsTrigger>
-            <TabsTrigger value="age-groups" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
-              <Users className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Ages</span>
+            <TabsTrigger value="age-groups" className="flex items-center gap-1.5 flex-shrink-0 px-3 text-xs min-h-[44px] whitespace-nowrap">
+              <Users className="h-3.5 w-3.5" />
+              Ages
             </TabsTrigger>
-            <TabsTrigger value="characters" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
-              <Sparkles className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Themes</span>
+            <TabsTrigger value="characters" className="flex items-center gap-1.5 flex-shrink-0 px-3 text-xs min-h-[44px] whitespace-nowrap">
+              <Sparkles className="h-3.5 w-3.5" />
+              Themes
             </TabsTrigger>
-            <TabsTrigger value="discoveries" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
-              <ListChecks className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Questions</span>
+            <TabsTrigger value="discoveries" className="flex items-center gap-1.5 flex-shrink-0 px-3 text-xs min-h-[44px] whitespace-nowrap">
+              <ListChecks className="h-3.5 w-3.5" />
+              Questions
             </TabsTrigger>
-            <TabsTrigger value="documentation" className="flex-shrink-0 gap-1 sm:gap-2 px-2 sm:px-3 text-xs sm:text-sm min-h-[44px]">
-              <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-              <span className="hidden xs:inline">Docs</span>
+            <TabsTrigger value="documentation" className="flex items-center gap-1.5 flex-shrink-0 px-3 text-xs min-h-[44px] whitespace-nowrap">
+              <FileText className="h-3.5 w-3.5" />
+              Docs
             </TabsTrigger>
           </TabsList>
 

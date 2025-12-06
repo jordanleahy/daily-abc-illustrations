@@ -163,7 +163,7 @@ export function BookImage({
       {enableVisibilityToggle && hasBeenTapped && imageLoaded && (
         <button
           onClick={handleToggleVisibility}
-          className="absolute top-3 left-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 z-10"
+          className="absolute top-3 right-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 z-10"
           aria-label={isImageHidden ? "Show image" : "Hide image"}
         >
           {isImageHidden ? (

@@ -74,93 +74,96 @@ const isSubscriptionActive = (status: SubscriptionStatus): boolean => {
   return status.subscribed;
 };
 
+// Singleton fetch function - guaranteed to only run once at a time globally
+const fetchSubscription = async (userId: string): Promise<SubscriptionStatus> => {
+  // Check 90-day cache first
+  const cached = SafeLocalStorage.get<SubscriptionStatus>(SUBSCRIPTION_CACHE_KEY);
+  if (cached) {
+    console.log('[SUBSCRIPTION] Using 90-day cached data');
+    return { ...cached, loading: false };
+  }
+
+  // If there's already a pending request, wait for it
+  if (pendingRequest) {
+    console.log('[SUBSCRIPTION] Request already in progress, waiting...');
+    return pendingRequest;
+  }
+
+  // Enforce minimum time between requests
+  const now = Date.now();
+  const timeSinceLastRequest = now - lastRequestTime;
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
+    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
+    console.log(`[SUBSCRIPTION] Rate limiting - waiting ${waitTime}ms before next request`);
+    await new Promise(resolve => setTimeout(resolve, waitTime));
+  }
+
+  // Create and store the pending request
+  pendingRequest = (async () => {
+    try {
+      console.log('[SUBSCRIPTION] Fetching fresh subscription from API');
+      lastRequestTime = Date.now();
+      
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      if (error) throw error;
+
+      const subscriptionData: SubscriptionStatus = {
+        subscribed: data.subscribed || false,
+        product_id: data.product_id,
+        price_id: data.price_id,
+        interval: data.interval,
+        subscription_end: data.subscription_end,
+        cancel_at_period_end: data.cancel_at_period_end,
+        loading: false,
+      };
+
+      // Cache for 90 days - instant loads for game app users
+      SafeLocalStorage.set(
+        SUBSCRIPTION_CACHE_KEY,
+        subscriptionData,
+        90 * 24
+      );
+
+      return subscriptionData;
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+      SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+      return {
+        subscribed: false,
+        loading: false,
+        error: error instanceof Error ? error.message : 'Failed to check subscription',
+      };
+    } finally {
+      // Clear the pending request after completion
+      pendingRequest = null;
+    }
+  })();
+
+  return pendingRequest;
+};
+
 export const useSubscription = () => {
   const { user, loading: authLoading } = useAuthContext();
 
-  // Use React Query with 90-day localStorage caching + strict deduplication
+  // Use React Query with strict deduplication - queryFn just calls singleton
   const query = useQuery<SubscriptionStatus>({
     queryKey: ['subscription', user?.id],
-    // CRITICAL: Ensure only ONE request happens across all components
-    queryKeyHashFn: (queryKey) => JSON.stringify(queryKey),
-    retry: 3, // Retry 3 times on connection errors
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000), // Exponential backoff
-    networkMode: 'online', // Only fetch when online
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
+    networkMode: 'online',
     queryFn: async (): Promise<SubscriptionStatus> => {
       if (!user) {
         SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
         return { subscribed: false, loading: false };
       }
-
-      // Check 90-day cache first
-      const cached = SafeLocalStorage.get<SubscriptionStatus>(SUBSCRIPTION_CACHE_KEY);
-      if (cached) {
-        console.log('[SUBSCRIPTION] Using 90-day cached data');
-        return { ...cached, loading: false };
-      }
-
-      // If there's already a pending request, wait for it
-      if (pendingRequest) {
-        console.log('[SUBSCRIPTION] Request already in progress, waiting...');
-        return pendingRequest;
-      }
-
-      // Enforce minimum time between requests
-      const now = Date.now();
-      const timeSinceLastRequest = now - lastRequestTime;
-      if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-        const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-        console.log(`[SUBSCRIPTION] Rate limiting - waiting ${waitTime}ms before next request`);
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-
-      // Create and store the pending request
-      pendingRequest = (async () => {
-        try {
-          console.log('[SUBSCRIPTION] Fetching fresh subscription from API');
-          lastRequestTime = Date.now();
-          
-          const { data, error } = await supabase.functions.invoke('check-subscription');
-          if (error) throw error;
-
-          const subscriptionData: SubscriptionStatus = {
-            subscribed: data.subscribed || false,
-            product_id: data.product_id,
-            price_id: data.price_id,
-            interval: data.interval,
-            subscription_end: data.subscription_end,
-            cancel_at_period_end: data.cancel_at_period_end,
-            loading: false,
-          };
-
-          // Cache for 90 days - instant loads for game app users
-          SafeLocalStorage.set(
-            SUBSCRIPTION_CACHE_KEY,
-            subscriptionData,
-            90 * 24
-          );
-
-          return subscriptionData;
-        } catch (error) {
-          console.error('Error checking subscription:', error);
-          SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
-          return {
-            subscribed: false,
-            loading: false,
-            error: error instanceof Error ? error.message : 'Failed to check subscription',
-          };
-        } finally {
-          // Clear the pending request after completion
-          pendingRequest = null;
-        }
-      })();
-
-      return pendingRequest;
+      return fetchSubscription(user.id);
     },
     enabled: !!user,
-    staleTime: SUBSCRIPTION_CACHE_DAYS * 24 * 60 * 60 * 1000, // 30 days in ms
-    gcTime: SUBSCRIPTION_CACHE_DAYS * 24 * 60 * 60 * 1000, // 30 days in ms
-    refetchOnWindowFocus: false, // Don't refetch on focus
-    refetchOnMount: false, // Don't refetch on mount - use cache
+    staleTime: SUBSCRIPTION_CACHE_DAYS * 24 * 60 * 60 * 1000,
+    gcTime: SUBSCRIPTION_CACHE_DAYS * 24 * 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+    refetchOnReconnect: false,
   });
 
   const effectiveLoading = authLoading || query.isLoading;
@@ -219,13 +222,16 @@ export const useSubscription = () => {
   }, [user?.id, queryClient]);
 
   // Refresh subscription when returning from Stripe checkout (window focus)
+  // Use ref to track if initial mount check was done
+  const hasCheckedOnMount = useRef(false);
   const lastFocusCheck = useRef<number>(0);
+  
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible' && user) {
         const now = Date.now();
-        // Only check if more than 5 seconds since last check (debounce)
-        if (now - lastFocusCheck.current > 5000) {
+        // Only check if more than 10 seconds since last check (stronger debounce)
+        if (now - lastFocusCheck.current > 10000) {
           lastFocusCheck.current = now;
           
           // Check URL for checkout success indicator
@@ -247,8 +253,22 @@ export const useSubscription = () => {
     };
 
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    // Also check on mount in case user just returned from checkout
-    handleVisibilityChange();
+    
+    // Only check on mount ONCE globally, not per component instance
+    if (!hasCheckedOnMount.current) {
+      hasCheckedOnMount.current = true;
+      // Delay check to let React Query settle first
+      const timer = setTimeout(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('checkout_success') || urlParams.has('session_id')) {
+          handleVisibilityChange();
+        }
+      }, 500);
+      return () => {
+        clearTimeout(timer);
+        document.removeEventListener('visibilitychange', handleVisibilityChange);
+      };
+    }
     
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [user, query]);

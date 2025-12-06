@@ -535,6 +535,42 @@ export type Database = {
           },
         ]
       }
+      character_themes: {
+        Row: {
+          alt_text: string
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          is_special: boolean
+          sort_order: number
+          thumbnail_url: string
+          updated_at: string
+        }
+        Insert: {
+          alt_text: string
+          created_at?: string
+          display_name: string
+          id: string
+          is_active?: boolean
+          is_special?: boolean
+          sort_order?: number
+          thumbnail_url: string
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          is_special?: boolean
+          sort_order?: number
+          thumbnail_url?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       color_palettes: {
         Row: {
           accent_hex: string

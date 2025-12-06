@@ -4,6 +4,7 @@ import { ConfigurationTabs } from '@/components/agents/ConfigurationTabs';
 import { AgentDocumentation } from '@/components/agents/AgentDocumentation';
 import { AgeGroupsManager } from '@/components/agents/AgeGroupsManager';
 import { TypeDiscoveriesManager } from '@/components/agents/TypeDiscoveriesManager';
+import { CharacterThemesManager } from '@/components/agents/CharacterThemesManager';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
@@ -11,7 +12,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AgentConfig } from '@/types/agent';
-import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye, AlertTriangle, FileText, Users, ListChecks } from 'lucide-react';
+import { BookOpen, MessageCircle, Hash, Music, Palette, BookText, Shapes, ArrowLeftRight, Heart, PawPrint, Type, Moon, Blocks, Eye, AlertTriangle, FileText, Users, ListChecks, Sparkles } from 'lucide-react';
 import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { supabase } from '@/integrations/supabase/client';
@@ -222,7 +223,7 @@ const Agents = () => {
 
         {/* Main Tabs */}
         <Tabs defaultValue="agent" className="w-full">
-          <TabsList className="grid w-full max-w-xl grid-cols-4">
+          <TabsList className="grid w-full max-w-3xl grid-cols-5">
             <TabsTrigger value="agent" className="gap-2">
               <MessageCircle className="h-4 w-4" />
               Agent
@@ -230,6 +231,10 @@ const Agents = () => {
             <TabsTrigger value="age-groups" className="gap-2">
               <Users className="h-4 w-4" />
               Age Groups
+            </TabsTrigger>
+            <TabsTrigger value="characters" className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              Characters
             </TabsTrigger>
             <TabsTrigger value="discoveries" className="gap-2">
               <ListChecks className="h-4 w-4" />
@@ -321,6 +326,10 @@ const Agents = () => {
 
           <TabsContent value="age-groups" className="mt-6">
             <AgeGroupsManager />
+          </TabsContent>
+
+          <TabsContent value="characters" className="mt-6">
+            <CharacterThemesManager />
           </TabsContent>
 
           <TabsContent value="discoveries" className="mt-6">

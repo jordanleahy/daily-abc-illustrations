@@ -15,6 +15,7 @@
  */
 
 import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 import { createImageLoadTracker } from '@/utils/performanceMonitoring';
 
@@ -28,6 +29,8 @@ interface BookImageProps {
   onError?: () => void;
   enableMobileSave?: boolean;
   disableHoverEffects?: boolean;
+  /** Enable parent toggle to hide/show image (tap once to reveal eye, tap eye to toggle) */
+  enableVisibilityToggle?: boolean;
 }
 
 /**
@@ -43,9 +46,12 @@ export function BookImage({
   onLoad,
   onError,
   enableMobileSave = false,
-  disableHoverEffects = false
+  disableHoverEffects = false,
+  enableVisibilityToggle = false
 }: BookImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
+  const [hasBeenTapped, setHasBeenTapped] = useState(false);
+  const [isImageHidden, setIsImageHidden] = useState(false);
   
   // Runtime validation (development only)
   if (process.env.NODE_ENV === 'development') {
@@ -73,6 +79,19 @@ export function BookImage({
     }
   }
 
+  // Handle first tap to reveal eye icon
+  const handleContainerTap = () => {
+    if (enableVisibilityToggle && !hasBeenTapped) {
+      setHasBeenTapped(true);
+    }
+  };
+
+  // Toggle visibility when eye icon is tapped
+  const handleToggleVisibility = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    setIsImageHidden(prev => !prev);
+  };
+
   return (
     <div 
       className="relative w-full h-full"
@@ -80,6 +99,7 @@ export function BookImage({
         userSelect: 'none',
         WebkitUserSelect: 'none'
       }}
+      onClick={handleContainerTap}
     >
       {/* Gradient placeholder - prevents layout shift, fades out when image loads */}
       <div 
@@ -90,11 +110,11 @@ export function BookImage({
         }}
       />
       
-      {/* Main image with crossfade */}
+      {/* Main image with crossfade and visibility toggle */}
       <div
         className="absolute inset-0"
         style={{
-          opacity: imageLoaded ? 1 : 0,
+          opacity: imageLoaded && !isImageHidden ? 1 : 0,
           transition: 'opacity 300ms ease-out'
         }}
       >
@@ -128,6 +148,31 @@ export function BookImage({
           } : undefined}
         />
       </div>
+
+      {/* Hidden state placeholder - shows when image is hidden */}
+      {enableVisibilityToggle && isImageHidden && imageLoaded && (
+        <div 
+          className="absolute inset-0 bg-muted/80 rounded-lg flex items-center justify-center"
+          style={{ transition: 'opacity 300ms ease-out' }}
+        >
+          <EyeOff className="w-12 h-12 text-muted-foreground/40" />
+        </div>
+      )}
+
+      {/* Eye icon toggle - appears after first tap */}
+      {enableVisibilityToggle && hasBeenTapped && imageLoaded && (
+        <button
+          onClick={handleToggleVisibility}
+          className="absolute top-3 left-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 z-10"
+          aria-label={isImageHidden ? "Show image" : "Hide image"}
+        >
+          {isImageHidden ? (
+            <Eye className="w-5 h-5" />
+          ) : (
+            <EyeOff className="w-5 h-5" />
+          )}
+        </button>
+      )}
     </div>
   );
 }

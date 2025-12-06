@@ -117,6 +117,7 @@ export function DailyPublishedPageView({
           bookId={bookId}
           isFirstImage={pageNumber === 1}
           disableHoverEffects={true}
+          enableVisibilityToggle={true}
         />
       )}
     />

@@ -1,11 +1,10 @@
 /**
  * Word and Letter Parsing Utilities
  * Provides functions to parse text into educational metadata
- * Uses 'syllable' package for syllable counts and 'hyphen' for segmentation
+ * Uses 'syllable' package for accurate syllable counts
  */
 
 import { syllable } from 'syllable';
-import { hyphenateSync } from 'hyphen/en';
 
 export interface LetterMetadata {
   letter: string;
@@ -26,8 +25,11 @@ export interface WordMetadata {
 
 const VOWELS = ['a', 'e', 'i', 'o', 'u'];
 
-// Soft hyphen character used by the hyphen package
-const SOFT_HYPHEN = '\u00AD';
+// Common consonant digraphs that should stay together
+const DIGRAPHS = ['ch', 'sh', 'th', 'wh', 'ph', 'gh', 'ck', 'ng', 'qu'];
+
+// Common consonant blends that start syllables
+const BLENDS = ['bl', 'br', 'cl', 'cr', 'dr', 'fl', 'fr', 'gl', 'gr', 'pl', 'pr', 'sc', 'sk', 'sl', 'sm', 'sn', 'sp', 'st', 'sw', 'tr', 'tw', 'scr', 'spl', 'spr', 'str', 'thr'];
 
 /**
  * Check if a character is a vowel
@@ -68,8 +70,22 @@ export function getSyllableCount(word: string): number {
 }
 
 /**
- * Segment a word into syllables using the hyphen package
- * Uses Franklin M. Liang's hyphenation algorithm with linguistic patterns
+ * Check if a string is a consonant digraph
+ */
+function isDigraph(str: string): boolean {
+  return DIGRAPHS.includes(str.toLowerCase());
+}
+
+/**
+ * Check if a string starts a syllable (blend)
+ */
+function isBlend(str: string): boolean {
+  return BLENDS.includes(str.toLowerCase());
+}
+
+/**
+ * Segment a word into syllables using phonetic rules
+ * Based on standard English syllabification patterns
  */
 export function segmentIntoSyllables(word: string): string[] {
   if (!word || word.length === 0) return [];
@@ -77,17 +93,200 @@ export function segmentIntoSyllables(word: string): string[] {
   const cleanWord = word.toLowerCase().replace(/[^a-z]/g, '');
   if (cleanWord.length === 0) return [word];
   
-  try {
-    // hyphenateSync inserts soft hyphens (\u00AD) at syllable boundaries
-    const hyphenated = hyphenateSync(cleanWord);
-    const segments = hyphenated.split(SOFT_HYPHEN);
-    
-    // Filter out empty segments and return
-    return segments.filter(s => s.length > 0);
-  } catch {
-    // Fallback: return the word as a single segment
+  const targetCount = getSyllableCount(cleanWord);
+  
+  // Single syllable words
+  if (targetCount === 1) {
     return [cleanWord];
   }
+  
+  // Handle consonant-le endings (ble, dle, gle, ple, tle, etc.)
+  // These always form their own syllable
+  const cleMatch = cleanWord.match(/^(.+?)([bcdfgkpstvz]le)$/);
+  if (cleMatch && cleMatch[1].length > 0) {
+    const base = cleMatch[1];
+    const ending = cleMatch[2];
+    
+    if (targetCount === 2) {
+      return [base, ending];
+    } else {
+      const baseSegments = segmentIntoSyllables(base);
+      // Adjust to target count
+      while (baseSegments.length + 1 > targetCount && baseSegments.length > 1) {
+        baseSegments[baseSegments.length - 2] += baseSegments[baseSegments.length - 1];
+        baseSegments.pop();
+      }
+      return [...baseSegments, ending];
+    }
+  }
+  
+  // Handle -tion, -sion endings
+  const tionMatch = cleanWord.match(/^(.+?)(tion|sion)$/);
+  if (tionMatch && tionMatch[1].length > 0) {
+    const base = tionMatch[1];
+    const ending = tionMatch[2];
+    
+    if (targetCount === 2) {
+      return [base, ending];
+    } else {
+      const baseSegments = segmentIntoSyllables(base);
+      while (baseSegments.length + 1 > targetCount && baseSegments.length > 1) {
+        baseSegments[baseSegments.length - 2] += baseSegments[baseSegments.length - 1];
+        baseSegments.pop();
+      }
+      return [...baseSegments, ending];
+    }
+  }
+  
+  // Find all vowel positions (treating consecutive vowels as one unit)
+  const vowelGroups: { start: number; end: number }[] = [];
+  let i = 0;
+  while (i < cleanWord.length) {
+    if (isVowel(cleanWord[i])) {
+      const start = i;
+      while (i < cleanWord.length && isVowel(cleanWord[i])) {
+        i++;
+      }
+      vowelGroups.push({ start, end: i - 1 });
+    } else {
+      i++;
+    }
+  }
+  
+  if (vowelGroups.length === 0) {
+    return [cleanWord];
+  }
+  
+  if (vowelGroups.length === 1) {
+    return [cleanWord];
+  }
+  
+  // Find split points between vowel groups
+  const splitPoints: number[] = [];
+  
+  for (let v = 0; v < vowelGroups.length - 1; v++) {
+    const currentEnd = vowelGroups[v].end;
+    const nextStart = vowelGroups[v + 1].start;
+    const consonants = cleanWord.substring(currentEnd + 1, nextStart);
+    const numConsonants = consonants.length;
+    
+    if (numConsonants === 0) {
+      // VV pattern - split between vowels
+      splitPoints.push(currentEnd + 1);
+    } else if (numConsonants === 1) {
+      // VCV pattern - consonant usually goes with second syllable
+      splitPoints.push(currentEnd + 1);
+    } else if (numConsonants === 2) {
+      // VCCV pattern
+      const pair = consonants;
+      
+      // Double consonants split between them (lad-der, ap-ple)
+      if (pair[0] === pair[1]) {
+        splitPoints.push(currentEnd + 2);
+      }
+      // Digraphs stay together with second syllable
+      else if (isDigraph(pair)) {
+        splitPoints.push(currentEnd + 1);
+      }
+      // Blends stay together with second syllable
+      else if (isBlend(pair)) {
+        splitPoints.push(currentEnd + 1);
+      }
+      // Otherwise split between consonants
+      else {
+        splitPoints.push(currentEnd + 2);
+      }
+    } else {
+      // VCCCV or more - find where to split
+      // Check if last 2-3 consonants form a blend
+      let splitAt = currentEnd + 2; // Default after first consonant
+      
+      for (let len = Math.min(3, numConsonants); len >= 2; len--) {
+        const endPart = consonants.substring(numConsonants - len);
+        if (isBlend(endPart) || isDigraph(endPart)) {
+          splitAt = currentEnd + 1 + (numConsonants - len);
+          break;
+        }
+      }
+      
+      splitPoints.push(splitAt);
+    }
+  }
+  
+  // Build segments from split points
+  const segments: string[] = [];
+  let lastSplit = 0;
+  
+  for (const splitPoint of splitPoints) {
+    if (splitPoint > lastSplit && splitPoint < cleanWord.length) {
+      segments.push(cleanWord.substring(lastSplit, splitPoint));
+      lastSplit = splitPoint;
+    }
+  }
+  
+  if (lastSplit < cleanWord.length) {
+    segments.push(cleanWord.substring(lastSplit));
+  }
+  
+  // Adjust to match target syllable count
+  return adjustToTarget(segments, targetCount);
+}
+
+/**
+ * Adjust segment count to match target
+ */
+function adjustToTarget(segments: string[], target: number): string[] {
+  if (segments.length === target) {
+    return segments;
+  }
+  
+  const result = [...segments];
+  
+  // If too many segments, merge smallest adjacent pairs
+  while (result.length > target && result.length > 1) {
+    let minIdx = 0;
+    let minLen = result[0].length + result[1].length;
+    
+    for (let i = 1; i < result.length - 1; i++) {
+      const combined = result[i].length + result[i + 1].length;
+      if (combined < minLen) {
+        minLen = combined;
+        minIdx = i;
+      }
+    }
+    
+    result[minIdx] = result[minIdx] + result[minIdx + 1];
+    result.splice(minIdx + 1, 1);
+  }
+  
+  // If too few segments, split largest segment
+  while (result.length < target) {
+    let maxIdx = 0;
+    let maxLen = 0;
+    
+    for (let i = 0; i < result.length; i++) {
+      if (result[i].length > maxLen) {
+        maxLen = result[i].length;
+        maxIdx = i;
+      }
+    }
+    
+    const seg = result[maxIdx];
+    if (seg.length < 2) break;
+    
+    // Try to split at a consonant-vowel boundary
+    let splitAt = Math.floor(seg.length / 2);
+    for (let i = 1; i < seg.length; i++) {
+      if (isConsonant(seg[i - 1]) && isVowel(seg[i])) {
+        splitAt = i;
+        break;
+      }
+    }
+    
+    result.splice(maxIdx, 1, seg.substring(0, splitAt), seg.substring(splitAt));
+  }
+  
+  return result;
 }
 
 /**
@@ -109,32 +308,25 @@ export function estimateSyllables(word: string): number {
 
 /**
  * Basic part of speech detection (very simplified)
- * This can be enhanced with NLP libraries or AI later
  */
 export function detectPartOfSpeech(word: string): string | undefined {
   const lower = word.toLowerCase();
   
-  // Common prepositions
   const prepositions = ['for', 'to', 'in', 'on', 'at', 'by', 'with', 'from', 'of', 'about'];
   if (prepositions.includes(lower)) return 'preposition';
   
-  // Common articles
   const articles = ['a', 'an', 'the'];
   if (articles.includes(lower)) return 'article';
   
-  // Common conjunctions
   const conjunctions = ['and', 'but', 'or', 'so', 'yet'];
   if (conjunctions.includes(lower)) return 'conjunction';
   
-  // Common pronouns
   const pronouns = ['i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them'];
   if (pronouns.includes(lower)) return 'pronoun';
   
-  // Common verbs (to be)
   const beVerbs = ['is', 'are', 'was', 'were', 'am', 'be', 'been', 'being'];
   if (beVerbs.includes(lower)) return 'verb';
   
-  // Default to noun for most other words
   return 'noun';
 }
 

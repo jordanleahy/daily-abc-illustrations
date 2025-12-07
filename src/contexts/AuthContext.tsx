@@ -1,8 +1,7 @@
 import { createContext, useContext, ReactNode, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
-import { SafeLocalStorage, SUBSCRIPTION_CACHE_KEY, ROLE_CACHE_KEY } from '@/utils/storage';
-import { ACCESS_STATE_CACHE_KEY } from '@/hooks/useAccessResolver';
+import { SafeLocalStorage, SUBSCRIPTION_CACHE_KEY, ROLE_CACHE_KEY, ACCESS_STATE_CACHE_KEY } from '@/utils/storage';
 
 interface AuthContextValue {
   user: User | null;

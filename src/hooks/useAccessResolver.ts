@@ -1,12 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRole } from '@/contexts/RoleContext';
 import { useSubscription } from '@/hooks/useSubscription';
-import { SafeLocalStorage } from '@/utils/storage';
-
-// Cache key for unified access state
-export const ACCESS_STATE_CACHE_KEY = 'access_state_cache';
-const ACCESS_CACHE_HOURS = 90 * 24; // 90 days in hours
+import { SafeLocalStorage, ACCESS_STATE_CACHE_KEY, ACCESS_STATE_CACHE_HOURS } from '@/utils/storage';
 
 export type AccessState = 'loading' | 'unlocked' | 'locked';
 
@@ -71,8 +67,8 @@ export const useAccessResolver = (): AccessResolverResult => {
     return hasActiveSubscription;
   }, [isPrivileged, hasActiveSubscription]);
 
-  // Step 5: Update cache when we have fresh data
-  useMemo(() => {
+  // Step 5: Update cache when we have fresh data (useEffect for side effects)
+  useEffect(() => {
     if (!user?.id || isLoading) return;
     
     const newCacheState: CachedAccessState = {
@@ -84,7 +80,7 @@ export const useAccessResolver = (): AccessResolverResult => {
       cachedAt: Date.now(),
     };
     
-    SafeLocalStorage.set(ACCESS_STATE_CACHE_KEY, newCacheState, ACCESS_CACHE_HOURS);
+    SafeLocalStorage.set(ACCESS_STATE_CACHE_KEY, newCacheState, ACCESS_STATE_CACHE_HOURS);
   }, [user?.id, isLoading, isUnlocked, isAdmin, isTeacher, hasActiveSubscription]);
 
   // Step 6: Determine access state with cache-first approach

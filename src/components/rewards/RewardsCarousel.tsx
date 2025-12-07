@@ -35,17 +35,16 @@ export const RewardsCarousel = memo(({
   const handlePurchase = () => {
     if (!selectedProduct) return;
     
-    const isScreenTimeProduct = selectedProduct.screen_time_minutes && selectedProduct.screen_time_minutes > 0;
-    
     purchaseReward({
       kidProfileId: kidId,
       productId: selectedProduct.id,
     }, {
       onSuccess: () => {
         setSelectedProduct(null);
-        if (isScreenTimeProduct) {
-          navigate('/videos');
-        }
+        // Store return time (10 minutes from now) and navigate to videos
+        const returnTime = Date.now() + 10 * 60 * 1000; // 10 minutes
+        localStorage.setItem('returnHomeAt', returnTime.toString());
+        navigate('/videos');
       },
     });
   };

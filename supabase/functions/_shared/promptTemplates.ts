@@ -13,6 +13,35 @@ import {
 import { stripHexCodes, enforceBearStoriesSnowboarding } from './templateProcessor.ts';
 
 /**
+ * Generate a style header line based on character theme
+ * This MUST be the first line of every page image prompt for consistency
+ */
+function generateStyleHeader(characterTheme?: string): string {
+  const themeStyles: Record<string, string> = {
+    'paw-patrol': 'Paw Patrol style, bright and playful, clean CGI lighting',
+    'frozen': 'Frozen style, whimsical, clean icy lighting with soft sparkles',
+    'peppa-pig': 'Peppa Pig style, flat simple shapes, soft pastel colors',
+    'bluey': 'Bluey style, flat color and soft shadows, warm Australian tones',
+    'cocomelon': 'CoComelon style, 3D CGI, bright saturated colors, soft lighting',
+    'moana': 'Moana style, Disney animation, tropical warm lighting, oceanic tones',
+    'mickey-mouse': 'Mickey Mouse style, classic Disney, bold outlines, primary colors',
+    'mario': 'Mario style, Nintendo bright colors, playful cartoon, clean edges',
+    'sesame-street': 'Sesame Street style, friendly Muppet aesthetic, soft textures',
+    'benji-davies': 'Benji Davies style, watercolor illustration, gentle muted tones',
+    'black-and-white': 'Black and white style, high contrast, clean graphic illustration',
+    'bear-stories': 'Bear Stories style, cozy illustrated bears, warm storybook aesthetic',
+    'custom': 'Custom illustrated style, child-friendly, bright engaging colors',
+    'no-theme': 'Classic children\'s book illustration, clean and educational',
+  };
+
+  const styleDesc = characterTheme && themeStyles[characterTheme.toLowerCase()]
+    ? themeStyles[characterTheme.toLowerCase()]
+    : 'Classic children\'s book illustration, bright colors, clean style';
+
+  return `[STYLE]: ${styleDesc}`;
+}
+
+/**
  * LAYERED PROMPT ARCHITECTURE
  * Strategically organizes prompt information into 5 layers for maximum AI effectiveness
  */
@@ -333,6 +362,7 @@ function getLearningDetails(bookType: string): { learningType: string; specificS
 /**
  * Generate template-based prompt for specific book types
  * Now uses layered architecture when styleGuideKey is provided
+ * CRITICAL: Every prompt starts with a style header for consistency
  */
 export function generateSpecializedPrompt(
   book: BookContext, 
@@ -341,6 +371,9 @@ export function generateSpecializedPrompt(
   textOverlayEnabled: boolean = true,
   styleGuideKey?: string
 ): string {
+  // Generate style header - MUST be first line of every prompt
+  const styleHeader = generateStyleHeader(book.characterTheme || styleGuideKey);
+  
   // Generate base prompt based on book type - NOW passing styleGuideKey
   let prompt = '';
   
@@ -373,8 +406,11 @@ export function generateSpecializedPrompt(
     }
   }
   
+  // Prepend style header to prompt (CRITICAL: style header must be first line)
+  let finalPrompt = `${styleHeader}\n\n${prompt}`;
+  
   // Strip hex codes from final prompt
-  let finalPrompt = stripHexCodes(prompt);
+  finalPrompt = stripHexCodes(finalPrompt);
   
   // For Bear Stories, enforce snowboarding context
   if (styleGuideKey === 'bear-stories') {

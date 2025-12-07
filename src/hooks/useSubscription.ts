@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { SafeLocalStorage, SUBSCRIPTION_CACHE_KEY, SUBSCRIPTION_CACHE_DAYS } from '@/utils/storage';
+import { ACCESS_STATE_CACHE_KEY } from '@/hooks/useAccessResolver';
 
 // Global request lock to prevent concurrent API calls
 let pendingRequest: Promise<SubscriptionStatus> | null = null;
@@ -210,8 +211,9 @@ export const useSubscription = () => {
         },
         (payload) => {
           console.log('[SUBSCRIPTION] Real-time update received:', payload);
-          // Clear cache and invalidate query to fetch fresh data
+          // Clear all access caches and invalidate query to fetch fresh data
           SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+          SafeLocalStorage.remove(ACCESS_STATE_CACHE_KEY);
           queryClient.invalidateQueries({ queryKey: ['subscription', user.id] });
         }
       )

@@ -2,6 +2,7 @@ import { createContext, useContext, ReactNode, useState, useEffect } from 'react
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
 import { SafeLocalStorage, SUBSCRIPTION_CACHE_KEY, ROLE_CACHE_KEY } from '@/utils/storage';
+import { ACCESS_STATE_CACHE_KEY } from '@/hooks/useAccessResolver';
 
 interface AuthContextValue {
   user: User | null;
@@ -73,9 +74,10 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     await supabase.auth.signOut({ scope: 'local' });
     setSession(null);
     setUser(null);
-    // Clear 90-day caches on logout
+    // Clear all access-related caches on logout
     SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
     SafeLocalStorage.remove(ROLE_CACHE_KEY);
+    SafeLocalStorage.remove(ACCESS_STATE_CACHE_KEY);
   };
 
   const authData: AuthContextValue = {

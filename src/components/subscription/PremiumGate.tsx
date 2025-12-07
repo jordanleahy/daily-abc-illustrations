@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Crown, Lock } from "lucide-react";
 import { useSubscription, SUBSCRIPTION_TIERS } from "@/hooks/useSubscription";
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useAccessResolver } from '@/hooks/useAccessResolver';
 
 interface PremiumGateProps {
   children: ReactNode;
@@ -18,10 +19,12 @@ export const PremiumGate = ({
   description = "This feature requires a premium subscription.",
   showUpgrade = true 
 }: PremiumGateProps) => {
-  const { hasActiveSubscription, loading, createCheckoutSession } = useSubscription();
+  const { accessState, isReady } = useAccessResolver();
+  const { createCheckoutSession } = useSubscription();
   const { user } = useAuthContext();
 
-  if (loading) {
+  // Only show loading if we have no cached state
+  if (!isReady && accessState === 'loading') {
     return (
       <div className="flex items-center justify-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -29,7 +32,7 @@ export const PremiumGate = ({
     );
   }
 
-  if (!hasActiveSubscription) {
+  if (accessState === 'locked') {
     return (
       <Card className="border-orange-200 bg-orange-50/50">
         <CardHeader>

@@ -1,51 +1,28 @@
 import { useMemo } from 'react';
-import { useAuthContext } from '@/contexts/AuthContext';
-import { useRole } from '@/contexts/RoleContext';
+import { useAccessResolver } from '@/hooks/useAccessResolver';
 import { useSubscription, SUBSCRIPTION_TIERS } from '@/hooks/useSubscription';
 
 /**
  * Feature access control hook for subscription-based features.
  * 
- * Determines which features a user can access based on:
- * - Their subscription tier (Basic vs Plus)
- * - Their role (Admin/Teacher bypass subscription checks)
- * - Authentication status
+ * Delegates core access resolution to useAccessResolver for consistency.
+ * Adds feature-specific logic for habits vs library access.
  * 
  * Features:
  * - habits_rewards: Access to habits, rewards, and coin earning (Plus tier only)
  * - library_access: Access to library books (All subscription tiers)
  */
 export const useFeatureAccess = () => {
-  const { user } = useAuthContext();
-  const { hasRole } = useRole();
-  const { product_id, hasActiveSubscription, loading } = useSubscription();
-  
-  // Admin/Teacher bypass all subscription checks
-  const isPrivilegedUser = hasRole('admin') || hasRole('teacher');
-  
-  // Debug logging
-  console.log('[FEATURE ACCESS] Debug:', {
-    user_id: user?.id,
-    product_id,
-    hasActiveSubscription,
-    isAdmin: hasRole('admin'),
-    isTeacher: hasRole('teacher'),
-    isPrivilegedUser,
-  });
+  const { isReady, isUnlocked, isPrivileged, hasSubscription } = useAccessResolver();
+  const { product_id } = useSubscription();
   
   /**
    * Check if user has access to Habits & Rewards features
    * Plus tier required (or privileged role)
    */
   const hasHabitsRewards = useMemo(() => {
-    if (isPrivilegedUser) {
-      console.log('[FEATURE ACCESS] User is privileged (admin/teacher) - granting habits_rewards access');
-      return true;
-    }
-    if (!hasActiveSubscription) {
-      console.log('[FEATURE ACCESS] No active subscription - denying habits_rewards access');
-      return false;
-    }
+    if (isPrivileged) return true;
+    if (!hasSubscription) return false;
     
     // Check if product_id matches Plus tier
     const plusProductIds: string[] = [
@@ -53,33 +30,17 @@ export const useFeatureAccess = () => {
       SUBSCRIPTION_TIERS.plus_annual.product_id,
     ];
     
-    const hasAccess = product_id ? plusProductIds.includes(product_id) : false;
-    console.log('[FEATURE ACCESS] Checking product_id:', {
-      product_id,
-      plusProductIds,
-      hasAccess,
-    });
-    
-    return hasAccess;
-  }, [product_id, hasActiveSubscription, isPrivilegedUser]);
+    return product_id ? plusProductIds.includes(product_id) : false;
+  }, [product_id, hasSubscription, isPrivileged]);
   
   /**
    * Check if user has access to Library features
    * Requires active subscription (any tier) or privileged role
    */
   const hasLibraryAccess = useMemo(() => {
-    if (isPrivilegedUser) {
-      console.log('[FEATURE ACCESS] User is privileged (admin/teacher) - granting library access');
-      return true;
-    }
-    if (!hasActiveSubscription) {
-      console.log('[FEATURE ACCESS] No active subscription - denying library access');
-      return false;
-    }
-    
-    console.log('[FEATURE ACCESS] Active subscription found - granting library access');
-    return true;
-  }, [hasActiveSubscription, isPrivilegedUser]);
+    // Delegated to useAccessResolver - isUnlocked already handles this
+    return isUnlocked;
+  }, [isUnlocked]);
   
   /**
    * Get current subscription tier info
@@ -94,8 +55,8 @@ export const useFeatureAccess = () => {
   return {
     hasHabitsRewards,
     hasLibraryAccess,
-    loading,
+    loading: !isReady,
     currentTier,
-    isPrivilegedUser,
+    isPrivilegedUser: isPrivileged,
   };
 };

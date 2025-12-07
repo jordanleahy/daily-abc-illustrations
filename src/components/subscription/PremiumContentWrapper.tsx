@@ -2,6 +2,7 @@ import { ReactNode } from "react";
 import { Lock, Crown } from "lucide-react";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { useAccessResolver } from "@/hooks/useAccessResolver";
 import { Button } from "@/components/ui/button";
 
 interface PremiumContentWrapperProps {
@@ -15,11 +16,12 @@ export const PremiumContentWrapper = ({
   showOverlay = true,
   className = ""
 }: PremiumContentWrapperProps) => {
-  const { hasActiveSubscription, loading, createCheckoutSession } = useSubscription();
+  const { accessState, isReady } = useAccessResolver();
+  const { createCheckoutSession } = useSubscription();
   const { isAuthenticated } = useAuthContext();
 
-  // If loading or user has subscription, show content normally
-  if (loading || hasActiveSubscription) {
+  // If user is unlocked (has subscription or is privileged), show content
+  if (accessState === 'unlocked') {
     return <>{children}</>;
   }
 
@@ -28,7 +30,12 @@ export const PremiumContentWrapper = ({
     return <>{children}</>;
   }
 
-  // User is authenticated but doesn't have subscription
+  // Still loading with no cache - show content to avoid flicker
+  if (!isReady && accessState === 'loading') {
+    return <>{children}</>;
+  }
+
+  // User is authenticated but doesn't have subscription (accessState === 'locked')
   if (showOverlay) {
     return (
       <div className={`relative ${className}`}>

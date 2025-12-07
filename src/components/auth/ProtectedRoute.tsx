@@ -1,8 +1,8 @@
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useSubscription } from '@/hooks/useSubscription';
 import { useRole } from '@/contexts/RoleContext';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { useAccessResolver } from '@/hooks/useAccessResolver';
 import { LoadingState } from '@/components/ui/loading-state';
 
 type AppRole = 'user' | 'teacher' | 'moderator' | 'admin';
@@ -26,15 +26,15 @@ export const ProtectedRoute = ({
   redirectTo
 }: ProtectedRouteProps) => {
   const { isAuthenticated, loading: authLoading } = useAuthContext();
-  const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
+  const { accessState, isReady } = useAccessResolver();
   const { hasRole, isLoading: roleLoading } = useRole();
-  const { hasHabitsRewards, hasLibraryAccess, loading: featureLoading } = useFeatureAccess();
+  const { hasHabitsRewards, hasLibraryAccess } = useFeatureAccess();
   const location = useLocation();
 
+  // Use unified isReady from access resolver, only add role loading if needed
   const loading = authLoading || 
-    (requireSubscription ? subscriptionLoading : false) || 
-    (requireRole ? roleLoading : false) ||
-    (requireFeature ? featureLoading : false);
+    (!isReady && requireSubscription) || 
+    (requireRole ? roleLoading : false);
 
   if (loading) {
     return (
@@ -64,8 +64,8 @@ export const ProtectedRoute = ({
     }
   }
 
-  // Check subscription requirement (legacy support)
-  if (requireSubscription && !hasActiveSubscription) {
+  // Check subscription requirement using unified access state
+  if (requireSubscription && accessState === 'locked') {
     // Prevent redirect loop
     if (location.pathname === '/pricing') {
       return <>{children}</>;

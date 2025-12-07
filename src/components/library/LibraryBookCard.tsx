@@ -6,7 +6,7 @@ import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { trackBookView } from '@/utils/bookViewTracking';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useSubscription } from '@/hooks/useSubscription';
+import { useAccessResolver } from '@/hooks/useAccessResolver';
 import { LibraryUpgradeModal } from './LibraryUpgradeModal';
 import type { LibraryBook } from '@/types/library';
 import type { LandingLibraryBook } from '@/types/book-extended';
@@ -25,7 +25,7 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
   const navigate = useNavigate();
   const { user } = useAuthContext();
   const { data: kidProfiles = [] } = useKidProfiles();
-  const { hasActiveSubscription } = useSubscription();
+  const { accessState } = useAccessResolver();
   const { ref: cardRef, inView: isInView } = useIntersectionObserver({
     threshold: LIBRARY_CONFIG.INTERSECTION_THRESHOLD,
     rootMargin: LIBRARY_CONFIG.INTERSECTION_ROOT_MARGIN,
@@ -41,7 +41,8 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
       return;
     }
 
-    if (!hasActiveSubscription) {
+    // Use unified access state - 'locked' means show upgrade modal
+    if (accessState === 'locked') {
       setShowUpgradeModal(true);
       return;
     }

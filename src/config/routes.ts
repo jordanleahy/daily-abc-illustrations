@@ -43,6 +43,7 @@ export const ROUTES = {
   ALL_BOOKS: '/all-books',
   GOOGLE_CHAT: '/google-chat',
   ADMIN_CHAT: '/admin-chat',
+  AGENT_CREATOR: '/agents/create',
   BLOG_ADMIN: '/blog/admin',
   BLOG: '/blog',
   BLOG_POST: '/blog/:slug',

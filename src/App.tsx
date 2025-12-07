@@ -14,6 +14,7 @@ import Auth from "./pages/Auth";
 import AuthConfirm from "./pages/AuthConfirm";
 import ResetPassword from "./pages/ResetPassword";
 import Agents from "./pages/Agents";
+import AgentCreator from "./pages/AgentCreator";
 import AdminChat from "./pages/AdminChat";
 import AdminPersonas from "./pages/admin/Personas";
 import Blog from "./pages/Blog";
@@ -147,6 +148,7 @@ const App = () => {
           <Route path="/auth/confirm" element={<AuthConfirm />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
                 <Route path="/agents" element={<Agents />} />
+                <Route path="/agents/create" element={<ProtectedRoute requireRole="admin"><AgentCreator /></ProtectedRoute>} />
                 <Route path="/admin-chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
                 <Route path="/admin/personas" element={<ProtectedRoute requireRole="admin"><AdminPersonas /></ProtectedRoute>} />
                 <Route path="/blog/admin" element={<ProtectedRoute requireRole="admin"><BlogAdmin /></ProtectedRoute>} />

@@ -28,20 +28,7 @@ export const CategorizedBookSections = memo(({
 }: CategorizedBookSectionsProps) => {
   const { bookTypes } = useBookTypes();
   
-  // Show loading shimmer while fetching
-  if (isLoading) {
-    return (
-      <div className={LIBRARY_STYLES.page.content}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(6)].map((_, i) => (
-            <LibraryBookSkeleton key={i} />
-          ))}
-        </div>
-      </div>
-    );
-  }
-  
-  // Group books by category type
+  // Group books by category type - must be before any early returns
   const booksByCategory = useMemo(() => {
     const grouped: Record<string, typeof books> = {};
     
@@ -78,6 +65,19 @@ export const CategorizedBookSections = memo(({
       return showAllCategories || hasBooks;
     });
   }, [bookTypes, booksByCategory, showAllCategories]);
+  
+  // Show loading shimmer while fetching - after all hooks
+  if (isLoading) {
+    return (
+      <div className={LIBRARY_STYLES.page.content}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <LibraryBookSkeleton key={i} />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   // Early return for completely empty state
   if (books.length === 0) {

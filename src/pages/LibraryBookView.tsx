@@ -125,7 +125,7 @@ export default function LibraryBookView() {
       onBack={handleBack}
       showUploadButton={false}
       entryPoint={entryPoint}
-      imageComponent={(page) => (
+      imageComponent={(page, pageIndex, currentWordData) => (
         <BookImage
           src={imageMap[page.page_number]}
           alt={`Letter ${page.letter} - ${page.title}`}
@@ -133,6 +133,7 @@ export default function LibraryBookView() {
           className="rounded-lg w-full h-full object-contain"
           disableHoverEffects={true}
           enableVisibilityToggle={true}
+          currentWordData={currentWordData}
         />
       )}
     />

@@ -284,73 +284,84 @@ serve(async (req) => {
 
     console.log('🔄 Starting syllable backfill migration...');
 
-    // Fetch all pages with titles
+    // Fetch pages that don't have segments yet (check for missing or empty segments in first word)
     const { data: pages, error: fetchError } = await supabase
       .from('pages')
       .select('id, title, content, book_id')
-      .order('created_at', { ascending: true });
+      .not('title', 'is', null)
+      .order('created_at', { ascending: true })
+      .limit(500); // Process in smaller batches
 
     if (fetchError) {
       throw new Error(`Failed to fetch pages: ${fetchError.message}`);
     }
 
-    console.log(`📚 Found ${pages?.length || 0} pages to process`);
+    // Filter to only pages that need processing (no segments in content.words)
+    const pagesToProcess = (pages || []).filter(page => {
+      if (!page.content || typeof page.content !== 'object') return true;
+      const content = page.content as Record<string, unknown>;
+      if (!content.words || !Array.isArray(content.words)) return true;
+      const words = content.words as Array<{ segments?: string[] }>;
+      // Check if first word has segments
+      if (words.length === 0) return true;
+      return !words[0].segments || words[0].segments.length === 0;
+    });
 
-    let processed = 0;
+    console.log(`📚 Found ${pagesToProcess.length} pages needing syllable segments`);
+
     let updated = 0;
     let errors = 0;
 
-    for (const page of pages || []) {
-      try {
-        processed++;
-        
-        if (!page.title || page.title.trim().length === 0) {
-          continue;
+    // Process in parallel batches of 50
+    const batchSize = 50;
+    for (let i = 0; i < pagesToProcess.length; i += batchSize) {
+      const batch = pagesToProcess.slice(i, i + batchSize);
+      
+      const updates = await Promise.all(batch.map(async (page) => {
+        try {
+          if (!page.title || page.title.trim().length === 0) {
+            return { success: true, skipped: true };
+          }
+
+          const words = parseWordsFromTitle(page.title);
+          const existingContent = (page.content && typeof page.content === 'object') 
+            ? page.content 
+            : {};
+          
+          const updatedContent = {
+            ...existingContent,
+            words
+          };
+
+          const { error: updateError } = await supabase
+            .from('pages')
+            .update({ 
+              content: updatedContent,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', page.id);
+
+          if (updateError) {
+            return { success: false, error: updateError.message };
+          }
+          return { success: true };
+        } catch (err) {
+          return { success: false, error: String(err) };
         }
+      }));
 
-        // Parse words with new syllable segments
-        const words = parseWordsFromTitle(page.title);
-        
-        // Merge with existing content
-        const existingContent = (page.content && typeof page.content === 'object') 
-          ? page.content 
-          : {};
-        
-        const updatedContent = {
-          ...existingContent,
-          words
-        };
+      updates.forEach(result => {
+        if (result.success && !result.skipped) updated++;
+        if (!result.success) errors++;
+      });
 
-        // Update the page
-        const { error: updateError } = await supabase
-          .from('pages')
-          .update({ 
-            content: updatedContent,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', page.id);
-
-        if (updateError) {
-          console.error(`❌ Failed to update page ${page.id}: ${updateError.message}`);
-          errors++;
-        } else {
-          updated++;
-        }
-
-        // Log progress every 100 pages
-        if (processed % 100 === 0) {
-          console.log(`📊 Progress: ${processed}/${pages?.length} pages processed, ${updated} updated`);
-        }
-      } catch (pageError) {
-        console.error(`❌ Error processing page ${page.id}:`, pageError);
-        errors++;
-      }
+      console.log(`📊 Progress: ${Math.min(i + batchSize, pagesToProcess.length)}/${pagesToProcess.length} pages, ${updated} updated`);
     }
 
     const result = {
       success: true,
-      totalPages: pages?.length || 0,
-      processed,
+      totalChecked: pages?.length || 0,
+      neededProcessing: pagesToProcess.length,
       updated,
       errors,
       message: `Backfill complete. Updated ${updated} pages with syllable segments.`

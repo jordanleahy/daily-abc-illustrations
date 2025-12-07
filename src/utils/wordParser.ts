@@ -101,10 +101,11 @@ function findVowelPositions(word: string): number[] {
 
 /**
  * Segment a word into syllables using English phonetic patterns
- * This is a deterministic algorithm based on:
- * 1. Vowel-consonant-vowel (VCV) patterns
- * 2. Consonant digraphs and blends
- * 3. Common syllabic endings
+ * Uses improved algorithm with special handling for:
+ * 1. Consonant-le endings (ble, dle, gle, etc.)
+ * 2. Double consonants (split between them)
+ * 3. Consonant digraphs and blends
+ * 4. VCV patterns
  */
 export function segmentIntoSyllables(word: string, targetCount?: number): string[] {
   if (!word || word.length === 0) return [];
@@ -118,6 +119,21 @@ export function segmentIntoSyllables(word: string, targetCount?: number): string
   // Single syllable words
   if (syllableCount === 1) {
     return [cleanWord];
+  }
+  
+  // Check for consonant-le endings first (ble, cle, dle, fle, gle, kle, ple, tle, zle)
+  const consonantLeMatch = cleanWord.match(/([bcdfgkptz])le$/);
+  if (consonantLeMatch && cleanWord.length > 3) {
+    const ending = consonantLeMatch[0]; // e.g., "gle" from "dangle"
+    const base = cleanWord.slice(0, -ending.length);
+    
+    if (syllableCount === 2) {
+      return [base, ending];
+    } else {
+      // Recursively handle the base for words with more syllables
+      const baseSegments = segmentIntoSyllables(base, syllableCount - 1);
+      return [...baseSegments, ending];
+    }
   }
   
   // Find vowel positions (these are syllable nuclei)
@@ -142,8 +158,14 @@ export function segmentIntoSyllables(word: string, targetCount?: number): string
   }
   vowelGroups.push(currentGroup);
   
-  // If we have fewer vowel groups than syllables, just split evenly
+  // If we have fewer vowel groups than syllables, handle special cases
   if (vowelGroups.length < syllableCount) {
+    // Check if word ends in silent-e pattern that makes a syllable
+    if (cleanWord.endsWith('le') && cleanWord.length > 2 && isConsonant(cleanWord[cleanWord.length - 3])) {
+      const base = cleanWord.slice(0, -2);
+      const baseSegments = segmentIntoSyllables(base, syllableCount - 1);
+      return [...baseSegments, 'le'];
+    }
     return splitEvenly(cleanWord, syllableCount);
   }
   
@@ -159,14 +181,21 @@ export function segmentIntoSyllables(word: string, targetCount?: number): string
       // No consonants between vowels - split after first vowel group
       splitPoints.push(currentEnd + 1);
     } else if (consonantsBetween === 1) {
-      // One consonant - it goes with the next syllable (open syllable pattern)
+      // One consonant - check if it should go with next syllable (open) or stay (closed)
+      // Default to open syllable pattern
       splitPoints.push(currentEnd + 1);
     } else if (consonantsBetween === 2) {
-      // Two consonants - check for digraphs and blends
+      // Two consonants - check for double letters, digraphs, and blends
       const consonantPair = cleanWord.substring(currentEnd + 1, nextStart);
       
-      if (isDigraph(consonantPair) || isInitialBlend(consonantPair)) {
-        // Keep the pair together with the next syllable
+      // Double consonants split between them (lad-der, ap-ple)
+      if (consonantPair[0] === consonantPair[1]) {
+        splitPoints.push(currentEnd + 2);
+      } else if (isDigraph(consonantPair)) {
+        // Keep digraphs together with next syllable
+        splitPoints.push(currentEnd + 1);
+      } else if (isInitialBlend(consonantPair)) {
+        // Keep blends together with next syllable
         splitPoints.push(currentEnd + 1);
       } else {
         // Split between the consonants

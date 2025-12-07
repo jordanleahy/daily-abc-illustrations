@@ -16,7 +16,7 @@ import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Wand2 } from 'lucide-react';
+
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +30,6 @@ import {
 
 const Agents = () => {
   const navigate = useNavigate();
-  const [isStandardizing, setIsStandardizing] = useState(false);
   const [showAbcWarning, setShowAbcWarning] = useState(false);
   const { data: userRole } = useUserRole();
   
@@ -47,37 +46,6 @@ const Agents = () => {
     saveConfigWithOverrides: saveChatConfigWithOverrides,
     clearChangeDescription: clearChatChangeDescription,
   } = useAgentConfig('chat');
-
-  const handleStandardizeAgents = async () => {
-    if (!userRole?.isAdmin) {
-      toast.error('Admin access required');
-      return;
-    }
-
-    setIsStandardizing(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('standardize-agents');
-      
-      if (error) throw error;
-      
-      const successCount = data.results.filter((r: any) => r.status === 'success').length;
-      const errorCount = data.results.filter((r: any) => r.status === 'error').length;
-      
-      if (errorCount === 0) {
-        toast.success(`Successfully standardized ${successCount} agents with 12-page structure`);
-      } else {
-        toast.warning(`Standardized ${successCount} agents. ${errorCount} failed.`);
-      }
-      
-      // Refresh current agent config
-      window.location.reload();
-    } catch (error: any) {
-      console.error('Standardization error:', error);
-      toast.error(error.message || 'Failed to standardize agents');
-    } finally {
-      setIsStandardizing(false);
-    }
-  };
 
   if (isInitialLoading) {
     return (
@@ -100,27 +68,15 @@ const Agents = () => {
               </p>
             </div>
             {userRole?.isAdmin && (
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={() => navigate('/agents/create')}
-                  variant="default"
-                  size="sm"
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  Create Agent
-                </Button>
-                <Button
-                  onClick={handleStandardizeAgents}
-                  disabled={isStandardizing}
-                  variant="outline"
-                  size="sm"
-                  className="gap-2"
-                >
-                  <Wand2 className="h-4 w-4" />
-                  {isStandardizing ? 'Standardizing...' : 'Standardize All Agents'}
-                </Button>
-              </div>
+              <Button
+                onClick={() => navigate('/agents/create')}
+                variant="default"
+                size="sm"
+                className="gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Create Agent
+              </Button>
             )}
           </div>
         </div>

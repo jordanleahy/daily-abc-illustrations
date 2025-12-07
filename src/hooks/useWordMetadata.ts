@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { parseWordsFromTitle, WordMetadata } from "@/utils/wordParser";
+import { parseWordsFromTitleAsync, WordMetadata } from "@/utils/wordParser";
 
 interface GenerateWordMetadataParams {
   pageId: string;
@@ -24,14 +24,14 @@ export function useWordMetadata() {
 
       if (fetchError) throw fetchError;
 
-      // Step 2: Parse words directly from the title field (single source of truth)
-      const words = parseWordsFromTitle(title);
+      // Step 2: Parse words with accurate syllable data from API
+      const words = await parseWordsFromTitleAsync(title);
       
       const baseContent = (freshPage?.content && typeof freshPage.content === 'object') 
         ? freshPage.content 
         : {};
       
-      // Step 4: Merge with FRESH content (preserves concurrent updates like textOverlay)
+      // Step 3: Merge with FRESH content (preserves concurrent updates like textOverlay)
       const updatedContent = {
         ...baseContent,
         words

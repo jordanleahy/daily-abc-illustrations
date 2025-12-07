@@ -83,6 +83,10 @@ export const SUBSCRIPTION_CACHE_DAYS = 90; // 90-day cache for game app
 export const ROLE_CACHE_KEY = 'user_roles_cache';
 export const ROLE_CACHE_DAYS = 90;
 
+// Unified access state caching
+export const ACCESS_STATE_CACHE_KEY = 'access_state_cache';
+export const ACCESS_STATE_CACHE_HOURS = 90 * 24; // 90 days in hours
+
 // Habits caching constants
 export const TODAY_HABITS_CACHE_KEY = 'today_habits_cache';
 export const TODAY_HABITS_CACHE_HOURS = 4; // 4-hour cache for habits

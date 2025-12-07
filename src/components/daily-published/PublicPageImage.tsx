@@ -4,6 +4,7 @@ import { BookImage } from '@/components/ui/book-image';
 import { Button } from '@/components/ui/button';
 import { Camera } from 'lucide-react';
 import { getImageAspect } from '@/config/imageAspects';
+import type { WordMetadata } from '@/utils/wordParser';
 
 interface PublicPageImageProps {
   pageId: string;
@@ -19,6 +20,8 @@ interface PublicPageImageProps {
   disableHoverEffects?: boolean;
   /** Enable parent toggle to hide/show image */
   enableVisibilityToggle?: boolean;
+  /** Current word metadata for word detail view */
+  currentWordData?: WordMetadata;
 }
 
 export function PublicPageImage({ 
@@ -29,7 +32,8 @@ export function PublicPageImage({
   onUploadClick,
   isFirstImage = false,
   disableHoverEffects = false,
-  enableVisibilityToggle = false
+  enableVisibilityToggle = false,
+  currentWordData,
 }: PublicPageImageProps) {
   const { data: imageData, isLoading } = usePublicPageImage(pageId);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -61,6 +65,7 @@ export function PublicPageImage({
           onLoad={() => setImageLoaded(true)}
           disableHoverEffects={disableHoverEffects}
           enableVisibilityToggle={enableVisibilityToggle}
+          currentWordData={currentWordData}
         />
       </div>
       

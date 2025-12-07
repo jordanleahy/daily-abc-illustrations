@@ -18,6 +18,8 @@ import { useState } from 'react';
 import { Eye, EyeOff, BookOpen } from 'lucide-react';
 import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 import { createImageLoadTracker } from '@/utils/performanceMonitoring';
+import { WordDetailView } from '@/components/reading/WordDetailView';
+import type { WordMetadata } from '@/utils/wordParser';
 
 interface BookImageProps {
   src: string | undefined;
@@ -31,6 +33,8 @@ interface BookImageProps {
   disableHoverEffects?: boolean;
   /** Enable parent toggle to hide/show image (tap once to reveal eye, tap eye to toggle) */
   enableVisibilityToggle?: boolean;
+  /** Current word metadata for word detail view */
+  currentWordData?: WordMetadata;
 }
 
 /**
@@ -47,11 +51,13 @@ export function BookImage({
   onError,
   enableMobileSave = false,
   disableHoverEffects = false,
-  enableVisibilityToggle = false
+  enableVisibilityToggle = false,
+  currentWordData,
 }: BookImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasBeenTapped, setHasBeenTapped] = useState(false);
   const [isImageHidden, setIsImageHidden] = useState(false);
+  const [showWordDetail, setShowWordDetail] = useState(false);
   
   // Runtime validation (development only)
   if (process.env.NODE_ENV === 'development') {
@@ -92,6 +98,12 @@ export function BookImage({
     setIsImageHidden(prev => !prev);
   };
 
+  // Toggle word detail view when book icon is tapped
+  const handleToggleWordDetail = (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    setShowWordDetail(prev => !prev);
+  };
+
   return (
     <div 
       className="relative w-full h-full"
@@ -114,7 +126,7 @@ export function BookImage({
       <div
         className="absolute inset-0"
         style={{
-          opacity: imageLoaded && !isImageHidden ? 1 : 0,
+          opacity: imageLoaded && !isImageHidden && !showWordDetail ? 1 : 0,
           transition: 'opacity 300ms ease-out'
         }}
       >
@@ -150,13 +162,18 @@ export function BookImage({
       </div>
 
       {/* Hidden state placeholder - shows when image is hidden */}
-      {enableVisibilityToggle && isImageHidden && imageLoaded && (
+      {enableVisibilityToggle && isImageHidden && imageLoaded && !showWordDetail && (
         <div 
           className="absolute inset-0 bg-muted/80 rounded-lg flex items-center justify-center"
           style={{ transition: 'opacity 300ms ease-out' }}
         >
           <EyeOff className="w-12 h-12 text-muted-foreground/40" />
         </div>
+      )}
+
+      {/* Word Detail View - shows when book icon is clicked and word data is available */}
+      {showWordDetail && currentWordData && (
+        <WordDetailView wordData={currentWordData} />
       )}
 
       {/* Eye icon toggle - appears after first tap */}
@@ -173,16 +190,17 @@ export function BookImage({
               <EyeOff className="w-5 h-5" />
             )}
           </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              // No-op for now
-            }}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95"
-            aria-label="Book action"
-          >
-            <BookOpen className="w-5 h-5" />
-          </button>
+          {currentWordData && (
+            <button
+              onClick={handleToggleWordDetail}
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full backdrop-blur-sm text-white shadow-lg transition-all duration-200 active:scale-95 ${
+                showWordDetail ? 'bg-primary/70 hover:bg-primary/80' : 'bg-black/50 hover:bg-black/70'
+              }`}
+              aria-label={showWordDetail ? "Hide word details" : "Show word details"}
+            >
+              <BookOpen className="w-5 h-5" />
+            </button>
+          )}
         </div>
       )}
     </div>

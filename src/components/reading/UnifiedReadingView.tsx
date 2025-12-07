@@ -126,7 +126,7 @@ export interface UnifiedReadingViewConfig {
   customHeader?: ReactNode;
   
   /** Custom image renderer. All views pass PublicPageImage component */
-  imageComponent?: (page: Page, pageIndex: number) => ReactNode;
+  imageComponent?: (page: Page, pageIndex: number, currentWordData?: import('@/utils/wordParser').WordMetadata) => ReactNode;
   
   /** Custom drawer content. Currently unused (showSwipeDrawer is false) */
   drawerContent?: (page: Page) => ReactNode;
@@ -452,7 +452,7 @@ export function UnifiedReadingView({
               onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
               isPreferencesLoading={readingState.isPreferencesLoading}
               showDismissButton={false}
-              imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex) : undefined}
+              imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex, currentPageWords?.[readingState.currentWordIndex]) : undefined}
               hideBottomOverlay={true}
             />
             </div>

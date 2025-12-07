@@ -111,13 +111,14 @@ export function DailyPublishedPageView({
       expiresAt={expiresAt}
       onTapToAdvance={true}
       contentId={contentId}
-      imageComponent={(currentPage) => (
+      imageComponent={(currentPage, pageIndex, currentWordData) => (
         <PublicPageImage 
           pageId={currentPage.id} 
           bookId={bookId}
           isFirstImage={pageNumber === 1}
           disableHoverEffects={true}
           enableVisibilityToggle={true}
+          currentWordData={currentWordData}
         />
       )}
     />

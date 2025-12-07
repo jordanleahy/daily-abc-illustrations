@@ -11,4 +11,5 @@ export { useReadingPageState } from './useReadingPageState';
 export { UnifiedReadingControls } from './UnifiedReadingControls';
 export { UnifiedReadingView } from './UnifiedReadingView';
 export { WordCarousel } from './WordCarousel';
+export { WordDetailView } from './WordDetailView';
 export type { UnifiedReadingViewConfig } from './UnifiedReadingView';

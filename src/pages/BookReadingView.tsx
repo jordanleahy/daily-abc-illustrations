@@ -121,7 +121,7 @@ export default function BookReadingView() {
       showUploadButton={false}
       showSwipeDrawer={false}
       entryPoint={entryPoint}
-      imageComponent={(page) => (
+      imageComponent={(page, pageIndex, currentWordData) => (
         <PublicPageImage 
           pageId={page.id}
           bookId={book.id}
@@ -130,6 +130,7 @@ export default function BookReadingView() {
           isFirstImage={page.id === pages[startingPageIndex]?.id}
           disableHoverEffects={true}
           enableVisibilityToggle={true}
+          currentWordData={currentWordData}
         />
       )}
     />

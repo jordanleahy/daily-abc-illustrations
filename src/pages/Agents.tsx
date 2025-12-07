@@ -10,7 +10,8 @@ import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, MessageCircle, AlertTriangle, FileText, Users, ListChecks, Sparkles } from 'lucide-react';
+import { BookOpen, MessageCircle, AlertTriangle, FileText, Users, ListChecks, Sparkles, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
 import { supabase } from '@/integrations/supabase/client';
@@ -28,6 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const Agents = () => {
+  const navigate = useNavigate();
   const [isStandardizing, setIsStandardizing] = useState(false);
   const [showAbcWarning, setShowAbcWarning] = useState(false);
   const { data: userRole } = useUserRole();
@@ -98,16 +100,27 @@ const Agents = () => {
               </p>
             </div>
             {userRole?.isAdmin && (
-              <Button
-                onClick={handleStandardizeAgents}
-                disabled={isStandardizing}
-                variant="outline"
-                size="sm"
-                className="gap-2"
-              >
-                <Wand2 className="h-4 w-4" />
-                {isStandardizing ? 'Standardizing...' : 'Standardize All Agents'}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={() => navigate('/agents/create')}
+                  variant="default"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Agent
+                </Button>
+                <Button
+                  onClick={handleStandardizeAgents}
+                  disabled={isStandardizing}
+                  variant="outline"
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Wand2 className="h-4 w-4" />
+                  {isStandardizing ? 'Standardizing...' : 'Standardize All Agents'}
+                </Button>
+              </div>
             )}
           </div>
         </div>

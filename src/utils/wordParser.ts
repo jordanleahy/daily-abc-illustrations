@@ -1,10 +1,11 @@
 /**
  * Word and Letter Parsing Utilities
  * Provides functions to parse text into educational metadata
- * Uses 'syllable' package for accurate syllable counts
+ * Uses 'syllable' package for syllable counts and 'hyphen' for segmentation
  */
 
 import { syllable } from 'syllable';
+import { hyphenateSync } from 'hyphen/en';
 
 export interface LetterMetadata {
   letter: string;
@@ -25,14 +26,8 @@ export interface WordMetadata {
 
 const VOWELS = ['a', 'e', 'i', 'o', 'u'];
 
-// Common consonant digraphs that should not be split
-const CONSONANT_DIGRAPHS = ['ch', 'sh', 'th', 'wh', 'ph', 'gh', 'ck', 'ng', 'qu'];
-
-// Common consonant blends at the start of syllables
-const INITIAL_BLENDS = ['bl', 'br', 'cl', 'cr', 'dr', 'fl', 'fr', 'gl', 'gr', 'pl', 'pr', 'sc', 'sk', 'sl', 'sm', 'sn', 'sp', 'st', 'sw', 'tr', 'tw', 'scr', 'spl', 'spr', 'str', 'thr'];
-
-// Common endings that form their own syllable
-const SYLLABIC_ENDINGS = ['ble', 'cle', 'dle', 'fle', 'gle', 'kle', 'ple', 'tle', 'zle', 'tion', 'sion'];
+// Soft hyphen character used by the hyphen package
+const SOFT_HYPHEN = '\u00AD';
 
 /**
  * Check if a character is a vowel
@@ -73,241 +68,26 @@ export function getSyllableCount(word: string): number {
 }
 
 /**
- * Check if a substring is a consonant digraph
+ * Segment a word into syllables using the hyphen package
+ * Uses Franklin M. Liang's hyphenation algorithm with linguistic patterns
  */
-function isDigraph(str: string): boolean {
-  return CONSONANT_DIGRAPHS.includes(str.toLowerCase());
-}
-
-/**
- * Check if a substring is an initial blend
- */
-function isInitialBlend(str: string): boolean {
-  return INITIAL_BLENDS.includes(str.toLowerCase());
-}
-
-/**
- * Find vowel positions in a word
- */
-function findVowelPositions(word: string): number[] {
-  const positions: number[] = [];
-  for (let i = 0; i < word.length; i++) {
-    if (isVowel(word[i])) {
-      positions.push(i);
-    }
-  }
-  return positions;
-}
-
-/**
- * Segment a word into syllables using English phonetic patterns
- * Uses improved algorithm with special handling for:
- * 1. Consonant-le endings (ble, dle, gle, etc.)
- * 2. Double consonants (split between them)
- * 3. Consonant digraphs and blends
- * 4. VCV patterns
- */
-export function segmentIntoSyllables(word: string, targetCount?: number): string[] {
+export function segmentIntoSyllables(word: string): string[] {
   if (!word || word.length === 0) return [];
   
   const cleanWord = word.toLowerCase().replace(/[^a-z]/g, '');
   if (cleanWord.length === 0) return [word];
   
-  // Get the target syllable count
-  const syllableCount = targetCount ?? getSyllableCount(cleanWord);
-  
-  // Single syllable words
-  if (syllableCount === 1) {
+  try {
+    // hyphenateSync inserts soft hyphens (\u00AD) at syllable boundaries
+    const hyphenated = hyphenateSync(cleanWord);
+    const segments = hyphenated.split(SOFT_HYPHEN);
+    
+    // Filter out empty segments and return
+    return segments.filter(s => s.length > 0);
+  } catch {
+    // Fallback: return the word as a single segment
     return [cleanWord];
   }
-  
-  // Check for consonant-le endings first (ble, cle, dle, fle, gle, kle, ple, tle, zle)
-  const consonantLeMatch = cleanWord.match(/([bcdfgkptz])le$/);
-  if (consonantLeMatch && cleanWord.length > 3) {
-    const ending = consonantLeMatch[0]; // e.g., "gle" from "dangle"
-    const base = cleanWord.slice(0, -ending.length);
-    
-    if (syllableCount === 2) {
-      return [base, ending];
-    } else {
-      // Recursively handle the base for words with more syllables
-      const baseSegments = segmentIntoSyllables(base, syllableCount - 1);
-      return [...baseSegments, ending];
-    }
-  }
-  
-  // Find vowel positions (these are syllable nuclei)
-  const vowelPositions = findVowelPositions(cleanWord);
-  
-  if (vowelPositions.length === 0) {
-    return [cleanWord];
-  }
-  
-  // Merge consecutive vowels (diphthongs/vowel teams)
-  const vowelGroups: { start: number; end: number }[] = [];
-  let currentGroup = { start: vowelPositions[0], end: vowelPositions[0] };
-  
-  for (let i = 1; i < vowelPositions.length; i++) {
-    if (vowelPositions[i] === currentGroup.end + 1) {
-      // Consecutive vowel - extend the group
-      currentGroup.end = vowelPositions[i];
-    } else {
-      vowelGroups.push({ ...currentGroup });
-      currentGroup = { start: vowelPositions[i], end: vowelPositions[i] };
-    }
-  }
-  vowelGroups.push(currentGroup);
-  
-  // If we have fewer vowel groups than syllables, handle special cases
-  if (vowelGroups.length < syllableCount) {
-    // Check if word ends in silent-e pattern that makes a syllable
-    if (cleanWord.endsWith('le') && cleanWord.length > 2 && isConsonant(cleanWord[cleanWord.length - 3])) {
-      const base = cleanWord.slice(0, -2);
-      const baseSegments = segmentIntoSyllables(base, syllableCount - 1);
-      return [...baseSegments, 'le'];
-    }
-    return splitEvenly(cleanWord, syllableCount);
-  }
-  
-  // Find split points between vowel groups
-  const splitPoints: number[] = [];
-  
-  for (let i = 0; i < vowelGroups.length - 1; i++) {
-    const currentEnd = vowelGroups[i].end;
-    const nextStart = vowelGroups[i + 1].start;
-    const consonantsBetween = nextStart - currentEnd - 1;
-    
-    if (consonantsBetween === 0) {
-      // No consonants between vowels - split after first vowel group
-      splitPoints.push(currentEnd + 1);
-    } else if (consonantsBetween === 1) {
-      // One consonant - check if it should go with next syllable (open) or stay (closed)
-      // Default to open syllable pattern
-      splitPoints.push(currentEnd + 1);
-    } else if (consonantsBetween === 2) {
-      // Two consonants - check for double letters, digraphs, and blends
-      const consonantPair = cleanWord.substring(currentEnd + 1, nextStart);
-      
-      // Double consonants split between them (lad-der, ap-ple)
-      if (consonantPair[0] === consonantPair[1]) {
-        splitPoints.push(currentEnd + 2);
-      } else if (isDigraph(consonantPair)) {
-        // Keep digraphs together with next syllable
-        splitPoints.push(currentEnd + 1);
-      } else if (isInitialBlend(consonantPair)) {
-        // Keep blends together with next syllable
-        splitPoints.push(currentEnd + 1);
-      } else {
-        // Split between the consonants
-        splitPoints.push(currentEnd + 2);
-      }
-    } else {
-      // Three or more consonants - find the best split point
-      const consonants = cleanWord.substring(currentEnd + 1, nextStart);
-      let splitAt = currentEnd + 2; // Default: after first consonant
-      
-      // Check if the last 2-3 consonants form a blend
-      for (let len = 3; len >= 2; len--) {
-        if (consonants.length >= len) {
-          const endBlend = consonants.substring(consonants.length - len);
-          if (isInitialBlend(endBlend) || isDigraph(endBlend)) {
-            splitAt = currentEnd + 1 + (consonants.length - len);
-            break;
-          }
-        }
-      }
-      
-      splitPoints.push(splitAt);
-    }
-  }
-  
-  // Build segments from split points
-  const segments: string[] = [];
-  let lastSplit = 0;
-  
-  for (const splitPoint of splitPoints) {
-    if (splitPoint > lastSplit && splitPoint < cleanWord.length) {
-      segments.push(cleanWord.substring(lastSplit, splitPoint));
-      lastSplit = splitPoint;
-    }
-  }
-  
-  // Add the remaining part
-  if (lastSplit < cleanWord.length) {
-    segments.push(cleanWord.substring(lastSplit));
-  }
-  
-  // Adjust segment count to match target syllable count
-  return adjustSegmentCount(segments, syllableCount);
-}
-
-/**
- * Split a word evenly into N parts
- */
-function splitEvenly(word: string, count: number): string[] {
-  if (count <= 1) return [word];
-  
-  const segments: string[] = [];
-  const partLength = Math.ceil(word.length / count);
-  
-  for (let i = 0; i < count; i++) {
-    const start = i * partLength;
-    const end = Math.min(start + partLength, word.length);
-    if (start < word.length) {
-      segments.push(word.substring(start, end));
-    }
-  }
-  
-  return segments;
-}
-
-/**
- * Adjust the number of segments to match the target count
- */
-function adjustSegmentCount(segments: string[], targetCount: number): string[] {
-  if (segments.length === targetCount) {
-    return segments;
-  }
-  
-  if (segments.length > targetCount) {
-    // Merge smallest adjacent segments
-    while (segments.length > targetCount) {
-      let minIndex = 0;
-      let minLength = Infinity;
-      
-      for (let i = 0; i < segments.length - 1; i++) {
-        const combined = segments[i].length + segments[i + 1].length;
-        if (combined < minLength) {
-          minLength = combined;
-          minIndex = i;
-        }
-      }
-      
-      segments[minIndex] = segments[minIndex] + segments[minIndex + 1];
-      segments.splice(minIndex + 1, 1);
-    }
-  } else {
-    // Split largest segments
-    while (segments.length < targetCount) {
-      let maxIndex = 0;
-      let maxLength = 0;
-      
-      for (let i = 0; i < segments.length; i++) {
-        if (segments[i].length > maxLength) {
-          maxLength = segments[i].length;
-          maxIndex = i;
-        }
-      }
-      
-      const seg = segments[maxIndex];
-      if (seg.length < 2) break; // Can't split further
-      
-      const mid = Math.ceil(seg.length / 2);
-      segments.splice(maxIndex, 1, seg.substring(0, mid), seg.substring(mid));
-    }
-  }
-  
-  return segments;
 }
 
 /**
@@ -369,7 +149,7 @@ export function parseWordsFromTitle(title: string): WordMetadata[] {
   return words.map((word, index) => {
     const cleanWord = word.replace(/[.,!?;:'"]/g, '');
     const syllableCount = getSyllableCount(cleanWord);
-    const segments = segmentIntoSyllables(cleanWord, syllableCount);
+    const segments = segmentIntoSyllables(cleanWord);
     
     return {
       word: cleanWord,

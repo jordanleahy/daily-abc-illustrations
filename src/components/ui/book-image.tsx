@@ -15,7 +15,7 @@
  */
 
 import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, BookOpen } from 'lucide-react';
 import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 import { createImageLoadTracker } from '@/utils/performanceMonitoring';
 
@@ -161,17 +161,29 @@ export function BookImage({
 
       {/* Eye icon toggle - appears after first tap */}
       {enableVisibilityToggle && hasBeenTapped && imageLoaded && (
-        <button
-          onClick={handleToggleVisibility}
-          className="absolute top-3 right-3 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 z-10"
-          aria-label={isImageHidden ? "Show image" : "Hide image"}
-        >
-          {isImageHidden ? (
-            <Eye className="w-5 h-5" />
-          ) : (
-            <EyeOff className="w-5 h-5" />
-          )}
-        </button>
+        <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
+          <button
+            onClick={handleToggleVisibility}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95"
+            aria-label={isImageHidden ? "Show image" : "Hide image"}
+          >
+            {isImageHidden ? (
+              <Eye className="w-5 h-5" />
+            ) : (
+              <EyeOff className="w-5 h-5" />
+            )}
+          </button>
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              // No-op for now
+            }}
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95"
+            aria-label="Book action"
+          >
+            <BookOpen className="w-5 h-5" />
+          </button>
+        </div>
       )}
     </div>
   );

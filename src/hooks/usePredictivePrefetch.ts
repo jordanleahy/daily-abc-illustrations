@@ -2,9 +2,10 @@ import { useEffect, useMemo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useFavorites } from './useFavorites';
-import { useLibraryBooksDecoupled } from './useLibraryBooksDecoupled';
+import { useLibraryBooks } from './useLibraryBooks';
 import { LibraryBook } from '@/types/library';
 import { Page } from '@/types/book';
+import { queryKeys } from '@/hooks/queryKeys';
 
 /**
  * Predictive prefetch hook that anticipates which books users will view next
@@ -13,7 +14,7 @@ import { Page } from '@/types/book';
 export function usePredictivePrefetch(currentBookId?: string) {
   const queryClient = useQueryClient();
   const { favorites, favoriteIds } = useFavorites();
-  const { data: libraryBooks = [] } = useLibraryBooksDecoupled();
+  const { data: libraryBooks = [] } = useLibraryBooks();
 
   // Calculate the top 3 most likely books the user will view next
   const predictedBooks = useMemo(() => {
@@ -117,9 +118,9 @@ export function usePredictivePrefetch(currentBookId?: string) {
     try {
       console.log('[PredictivePrefetch] Prefetching:', book.book_name);
 
-      // Prefetch library book metadata (already cached by useLibraryBooksDecoupled)
+      // Prefetch library book metadata
       await queryClient.prefetchQuery({
-        queryKey: ['library-book-decoupled', book.id],
+        queryKey: queryKeys.library.bookById(book.id),
         queryFn: async () => {
           const { data, error } = await supabase
             .from('books')
@@ -136,7 +137,7 @@ export function usePredictivePrefetch(currentBookId?: string) {
 
       // Prefetch pages data
       await queryClient.prefetchQuery({
-        queryKey: ['library-book-pages', book.id],
+        queryKey: queryKeys.library.bookPages(book.id),
         queryFn: async () => {
           const { data, error } = await supabase
             .from('pages')

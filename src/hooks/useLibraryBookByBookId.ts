@@ -2,8 +2,13 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { isValidUUID } from '@/utils/uuid';
 import { queryKeys } from '@/hooks/queryKeys';
+import type { LibraryBook } from '@/types/library';
 
-export const useLibraryBookByIdDecoupled = (bookId: string | undefined) => {
+/**
+ * Fetch a library book directly by book_id (not daily_published_id)
+ * Use this for routes like /library/:bookId/read
+ */
+export const useLibraryBookById = (bookId: string | undefined) => {
   return useQuery({
     queryKey: queryKeys.library.bookById(bookId || ''),
     queryFn: async () => {
@@ -17,15 +22,20 @@ export const useLibraryBookByIdDecoupled = (bookId: string | undefined) => {
           book_description,
           total_pages,
           created_at,
-          updated_at
+          updated_at,
+          is_highlighted,
+          metadata
         `)
         .eq('id', bookId)
         .eq('is_library_book', true)
         .single();
 
       if (error) throw error;
-      return data;
+      return data as LibraryBook;
     },
     enabled: !!bookId && isValidUUID(bookId),
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
+

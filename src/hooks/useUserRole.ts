@@ -173,8 +173,3 @@ export const useUserRole = () => {
     error
   };
 };
-
-export const useHasRole = (role: AppRole) => {
-  const { data: userRole } = useUserRole();
-  return userRole?.roles.includes(role) ?? false;
-};

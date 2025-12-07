@@ -18,8 +18,10 @@ const AgentCreatorContent = () => {
   const {
     messages,
     isLoading,
+    isSaving,
     sendMessage,
     generatedConfig,
+    saveAgent,
     resetChat
   } = useAgentCreatorChat();
 
@@ -42,6 +44,17 @@ const AgentCreatorContent = () => {
 
   const handleQuickReply = async (action: { value: string }) => {
     if (isLoading) return;
+    
+    // Handle "Create Agent" button
+    if (action.value === '🚀 Create Agent' || action.value.toLowerCase().includes('create agent')) {
+      const success = await saveAgent();
+      if (success) {
+        // Navigate to agents page after successful save
+        setTimeout(() => navigate('/agents'), 1500);
+      }
+      return;
+    }
+    
     await sendMessage(action.value);
   };
 
@@ -85,7 +98,7 @@ const AgentCreatorContent = () => {
         </div>
         <div className="flex-1" />
         {messages.length > 1 && (
-          <Button variant="outline" size="sm" onClick={resetChat}>
+          <Button variant="outline" size="sm" onClick={resetChat} disabled={isSaving}>
             Start Over
           </Button>
         )}
@@ -117,7 +130,25 @@ const AgentCreatorContent = () => {
       {generatedConfig && (
         <div className="border-t border-border bg-muted/30 p-4">
           <div className="max-w-3xl mx-auto">
-            <h3 className="text-sm font-medium mb-2">Generated Agent Config</h3>
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-sm font-medium">Generated Agent Config</h3>
+              <Button 
+                size="sm" 
+                onClick={() => saveAgent().then(success => {
+                  if (success) setTimeout(() => navigate('/agents'), 1500);
+                })}
+                disabled={isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Agent'
+                )}
+              </Button>
+            </div>
             <pre className="text-xs bg-card p-3 rounded-md overflow-auto max-h-40 border border-border">
               {JSON.stringify(generatedConfig, null, 2)}
             </pre>

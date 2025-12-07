@@ -15,32 +15,29 @@ export interface AgentCreatorMessage {
 }
 
 export interface GeneratedAgentConfig {
-  bookTypeId: string;
-  bookTypeLabel: string;
-  bookTypeDescription: string;
-  bookTypeColor: string;
-  iconName: string;
-  agentType: string;
-  targetAgeRange: string;
+  typeName: string;
+  typeId: string;
+  typeDescription: string;
+  learningType: string;
+  skillFocus: string;
   pageTitleFormat: string;
   pageTitleExamples: string[];
   discoveryQuestions: Array<{
     questionKey: string;
     questionText: string;
-    options: Array<{ id: string; label: string }>;
+    options: Array<{ key: string; label: string }>;
   }>;
   validationRules: string[];
-  educationalBadges: {
-    ageRange: string;
-    learningType: string;
-    skillFocus: string;
-  };
+  contentPageGuidelines: string;
 }
+
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-creator`;
 
 export const useAgentCreatorChat = () => {
   const { session } = useAuthContext();
   const [messages, setMessages] = useState<AgentCreatorMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [generatedConfig, setGeneratedConfig] = useState<GeneratedAgentConfig | null>(null);
 
   const sendMessage = useCallback(async (content: string) => {
@@ -56,19 +53,16 @@ export const useAgentCreatorChat = () => {
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/agent-creator`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            messages: updatedMessages.map(m => ({ role: m.role, content: m.content }))
-          })
-        }
-      );
+      const response = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: updatedMessages.map(m => ({ role: m.role, content: m.content }))
+        })
+      });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
@@ -140,6 +134,49 @@ export const useAgentCreatorChat = () => {
     }
   }, [messages, session]);
 
+  const saveAgent = useCallback(async (): Promise<boolean> => {
+    if (!session?.access_token) {
+      toast.error('Please sign in to continue');
+      return false;
+    }
+
+    if (!generatedConfig) {
+      toast.error('Complete the discovery flow first to generate a configuration.');
+      return false;
+    }
+
+    setIsSaving(true);
+    try {
+      const response = await fetch(CHAT_URL, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'save',
+          config: generatedConfig
+        })
+      });
+
+      const result = await response.json();
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to save agent');
+      }
+
+      toast.success(`Successfully created "${generatedConfig.typeName}" book type and agent.`);
+      return true;
+
+    } catch (error) {
+      console.error('Save agent error:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to save agent');
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [session, generatedConfig]);
+
   const resetChat = useCallback(() => {
     setMessages([]);
     setGeneratedConfig(null);
@@ -148,8 +185,10 @@ export const useAgentCreatorChat = () => {
   return {
     messages,
     isLoading,
+    isSaving,
     sendMessage,
     generatedConfig,
+    saveAgent,
     resetChat
   };
 };

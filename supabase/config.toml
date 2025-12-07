@@ -182,3 +182,6 @@ verify_jwt = true
 
 [functions.get-word-syllables]
 verify_jwt = false
+
+[functions.regenerate-word-metadata]
+verify_jwt = false

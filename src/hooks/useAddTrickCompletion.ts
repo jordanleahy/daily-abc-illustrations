@@ -2,6 +2,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { AddTrickCompletionParams } from '@/types/trick';
+import { useAuthContext } from '@/contexts/AuthContext';
+import { SafeLocalStorage, KID_PROFILES_CACHE_KEY } from '@/utils/storage';
 
 /**
  * Hook to add a trick completion and update progress
@@ -18,6 +20,7 @@ interface TrickCompletionResult {
 
 export function useAddTrickCompletion() {
   const queryClient = useQueryClient();
+  const { user } = useAuthContext();
 
   return useMutation({
     mutationFn: async ({ goalId, count_increment, notes }: AddTrickCompletionParams) => {
@@ -31,8 +34,18 @@ export function useAddTrickCompletion() {
       return data as unknown as TrickCompletionResult;
     },
     onSuccess: (data) => {
+      // Clear LocalStorage cache for immediate fresh data
+      if (user?.id) {
+        const cacheKey = `${KID_PROFILES_CACHE_KEY}_${user.id}`;
+        SafeLocalStorage.remove(cacheKey);
+      }
+      
+      // Invalidate with predicate to match all kid-profiles queries
+      queryClient.invalidateQueries({ 
+        predicate: (query) => query.queryKey[0] === 'kid-profiles' 
+      });
       queryClient.invalidateQueries({ queryKey: ['trick-goals'] });
-      queryClient.invalidateQueries({ queryKey: ['kid-profiles'] });
+      queryClient.invalidateQueries({ queryKey: ['kid-coins'] });
       
       if (data.goal_completed) {
         toast.success(`🎉 Goal completed! ${data.trick_name} mastered!`, {

@@ -2,28 +2,25 @@ import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { AdminOnly } from '@/components/AdminOnly';
 import { HabitTrackingCard, HabitCarousel } from '@/components/habits';
 import { CategorizedBookSections } from '@/components/library';
-import { BookFilterBar } from '@/components/filters';
 import { RewardsCarousel } from '@/components/rewards/RewardsCarousel';
 import { TricksCarousel } from '@/components/tricks/TricksCarousel';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { useLibraryBooks } from '@/hooks/useLibraryBooks';
+import { useLandingPageData } from '@/hooks/useLandingPageData';
 import { useRewardsProducts } from '@/hooks/useRewardsProducts';
 import { useTricks } from '@/hooks/useTricks';
 import { useTrickGoals } from '@/hooks/useTrickGoals';
 import { useHomeImagePreloader } from '@/hooks/useHomeImagePreloader';
 import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { LoadingState } from '@/components/ui/loading-state';
-import { PennyCounter } from '@/components/ui/penny-counter';
-import { getTimeBasedGreeting } from '@/utils/timeUtils';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { format } from 'date-fns';
 import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/themeFilters';
 import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
+import type { LibraryBook } from '@/types/library';
 const Index = () => {
   const {
     isAuthenticated
@@ -60,18 +57,33 @@ const Index = () => {
     data: trickGoals = []
   } = useTrickGoals(firstKid?.id);
 
-  // Fetch library books
+  // ⚡ PERFORMANCE: Use landing page data (single edge function) instead of useLibraryBooks (3 queries)
   const {
-    data: libraryItems = [],
+    data: landingData,
     isLoading: isLoadingBooks
-  } = useLibraryBooks();
+  } = useLandingPageData();
+
+  // Map LandingLibraryBook[] to LibraryBook[] for component compatibility
+  const libraryItems: LibraryBook[] = useMemo(() => {
+    if (!landingData?.libraryBooks) return [];
+    return landingData.libraryBooks.map(book => ({
+      id: book.id,
+      book_name: book.book_name,
+      book_description: book.book_description,
+      created_at: book.created_at,
+      updated_at: book.updated_at,
+      is_highlighted: book.is_highlighted,
+      total_pages: 0, // Not available in landing data, not used for display
+      cover_image: book.image_url,
+      last_viewed_at: null,
+      view_count: 0,
+      metadata: book.metadata,
+    }));
+  }, [landingData?.libraryBooks]);
 
   // ⚡ PERFORMANCE OPTIMIZATION: Debounced search for instant feel
   const {
-    rawQuery,
     activeQuery,
-    setSearchQuery,
-    isSearching
   } = useOptimizedSearch('debounced', 300);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
 
@@ -85,10 +97,7 @@ const Index = () => {
   useHomeImagePreloader(libraryItems);
 
   // 🚀 Predictive prefetching: Anticipate which books user will view next
-  // Prefetches the top 3 most likely books based on favorites and viewing history
-  const {
-    predictedBooks
-  } = usePredictivePrefetch();
+  usePredictivePrefetch();
 
   // Only show pending habits - acted-upon habits disappear immediately
   const activeCompletions = completions.filter(c => c.status === 'pending');
@@ -96,7 +105,6 @@ const Index = () => {
   // Limit books to top 5 per category for performance
   const limitedLibraryItems = filteredLibraryItems.slice(0, 30);
   const isLoading = isLoadingKids || isLoadingHabits;
-  const timeOfDay = getTimeBasedGreeting();
   const isMobile = useIsMobile();
   if (subscriptionLoading || isLoadingBooks) {
     return <StandardPageLayout>

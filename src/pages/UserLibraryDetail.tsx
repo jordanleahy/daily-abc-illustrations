@@ -9,7 +9,7 @@ import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useBookPublicationStatus } from '@/hooks/useBookPublicationStatus';
-import { useHasRole } from '@/hooks/useUserRole';
+import { useHasRole } from '@/contexts/RoleContext';
 import { MetaHead } from '@/components/common';
 import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';

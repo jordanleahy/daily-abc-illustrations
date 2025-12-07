@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { 
+  assembleAgentInstructions, 
+  generateBookTypeRecord, 
+  generateAgentRecord,
+  AgentConfig 
+} from "../_shared/instructionTemplates.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -76,13 +82,11 @@ Summarize all collected information and generate the agent configuration.
 
 Output the final config in a [CONFIG]...[/CONFIG] block as JSON with this structure:
 {
-  "bookTypeId": "kebab-case-id",
-  "bookTypeLabel": "Display Name",
-  "bookTypeDescription": "Brief description",
-  "bookTypeColor": "text-color-500",
-  "iconName": "LucideIconName",
-  "agentType": "book-creation-type",
-  "targetAgeRange": "X-Y years",
+  "typeName": "Display Name",
+  "typeId": "kebab-case-id",
+  "typeDescription": "Brief description for book type",
+  "learningType": "Learning Type Badge Text",
+  "skillFocus": "Skill Badge Text",
   "pageTitleFormat": "Format description",
   "pageTitleExamples": ["Example 1", "Example 2", "Example 3"],
   "discoveryQuestions": [
@@ -90,7 +94,7 @@ Output the final config in a [CONFIG]...[/CONFIG] block as JSON with this struct
       "questionKey": "key_name",
       "questionText": "Question to ask user?",
       "options": [
-        { "id": "option-id", "label": "Option Label" }
+        { "key": "option-id", "label": "Option Label" }
       ]
     }
   ],
@@ -98,11 +102,7 @@ Output the final config in a [CONFIG]...[/CONFIG] block as JSON with this struct
     "Rule 1",
     "Rule 2"
   ],
-  "educationalBadges": {
-    "ageRange": "For ages X-Y",
-    "learningType": "Learning Type Name",
-    "skillFocus": "Primary Skill"
-  }
+  "contentPageGuidelines": "Specific guidelines for how content pages should be structured"
 }
 
 [SUGGEST]
@@ -124,6 +124,93 @@ At the end of each response, mentally track:
 - Current step (1-6)
 - Information gathered so far
 - Next action needed`;
+
+// Handle saving the agent to database
+async function saveAgentToDatabase(
+  supabase: any, 
+  config: AgentConfig, 
+  userId: string
+): Promise<{ success: boolean; error?: string; bookTypeId?: string; agentId?: string }> {
+  try {
+    console.log('[agent-creator] Saving agent config:', config.typeId);
+
+    // 1. Generate assembled instructions
+    const instructions = assembleAgentInstructions(config);
+    console.log('[agent-creator] Generated instructions length:', instructions.length);
+
+    // 2. Check if book type already exists
+    const { data: existingType } = await supabase
+      .from('book_types')
+      .select('id')
+      .eq('id', config.typeId)
+      .single();
+
+    if (existingType) {
+      return { success: false, error: `Book type "${config.typeId}" already exists` };
+    }
+
+    // 3. Insert book_types record
+    const bookTypeRecord = generateBookTypeRecord(config);
+    const { error: bookTypeError } = await supabase
+      .from('book_types')
+      .insert(bookTypeRecord);
+
+    if (bookTypeError) {
+      console.error('[agent-creator] Book type insert error:', bookTypeError);
+      return { success: false, error: `Failed to create book type: ${bookTypeError.message}` };
+    }
+
+    // 4. Insert agents record
+    const agentRecord = generateAgentRecord(config, instructions, userId);
+    const { data: agentData, error: agentError } = await supabase
+      .from('agents')
+      .insert(agentRecord)
+      .select('id')
+      .single();
+
+    if (agentError) {
+      console.error('[agent-creator] Agent insert error:', agentError);
+      // Rollback book type
+      await supabase.from('book_types').delete().eq('id', config.typeId);
+      return { success: false, error: `Failed to create agent: ${agentError.message}` };
+    }
+
+    // 5. Insert discovery questions if any
+    if (config.discoveryQuestions.length > 0) {
+      const discoveryRecords = config.discoveryQuestions.map((q, i) => ({
+        agent_type: `book-creation-${config.typeId}`,
+        question_key: q.questionKey,
+        question_text: q.questionText,
+        options: q.options,
+        sort_order: i + 1,
+        is_active: true
+      }));
+
+      const { error: discoveryError } = await supabase
+        .from('type_specific_discoveries')
+        .insert(discoveryRecords);
+
+      if (discoveryError) {
+        console.error('[agent-creator] Discovery insert error:', discoveryError);
+        // Non-fatal, continue
+      }
+    }
+
+    console.log('[agent-creator] Successfully created agent:', agentData.id);
+    return { 
+      success: true, 
+      bookTypeId: config.typeId, 
+      agentId: agentData.id 
+    };
+
+  } catch (error) {
+    console.error('[agent-creator] Save error:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown error' 
+    };
+  }
+}
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -169,8 +256,18 @@ serve(async (req) => {
       });
     }
 
-    const { messages } = await req.json();
+    const { messages, action, config } = await req.json();
 
+    // Handle save action
+    if (action === 'save' && config) {
+      const result = await saveAgentToDatabase(supabase, config as AgentConfig, user.id);
+      return new Response(JSON.stringify(result), {
+        status: result.success ? 200 : 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    // Handle chat flow
     if (!LOVABLE_API_KEY) {
       return new Response(JSON.stringify({ error: 'LOVABLE_API_KEY not configured' }), {
         status: 500,

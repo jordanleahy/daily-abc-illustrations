@@ -1,6 +1,6 @@
 import { memo, useMemo } from 'react';
 import { BookOpen } from 'lucide-react';
-import { BOOK_TYPES } from '@/config/bookTypes';
+import { useBookTypes } from '@/hooks/useBookTypes';
 import { CategoryBookCarousel } from './CategoryBookCarousel';
 import { Card } from '@/components/ui/card';
 import type { LibraryBook } from '@/types/library';
@@ -26,6 +26,7 @@ export const CategorizedBookSections = memo(({
   showViewAllLinks = LIBRARY_CONFIG.SHOW_VIEW_ALL_LINKS,
   isLoading = false,
 }: CategorizedBookSectionsProps) => {
+  const { bookTypes } = useBookTypes();
   
   // Show loading shimmer while fetching
   if (isLoading) {
@@ -72,11 +73,11 @@ export const CategorizedBookSections = memo(({
 
   // Filter book types that have books (or show all if showAllCategories is true)
   const categoriesToShow = useMemo(() => {
-    return BOOK_TYPES.filter(bookType => {
+    return bookTypes.filter(bookType => {
       const hasBooks = booksByCategory[bookType.id]?.length > 0;
       return showAllCategories || hasBooks;
     });
-  }, [booksByCategory, showAllCategories]);
+  }, [bookTypes, booksByCategory, showAllCategories]);
 
   // Early return for completely empty state
   if (books.length === 0) {

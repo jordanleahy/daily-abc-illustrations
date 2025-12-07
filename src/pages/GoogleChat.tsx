@@ -21,7 +21,7 @@ import { EmptyState } from '@/components/chat/EmptyState';
 import { InputArea } from '@/components/chat/InputArea';
 import { parsePageDetailsFromMessages, parseEducationalFocus, getBookMetadata } from '@/utils/chatHelpers';
 import { parseBookOutline, getPagePrompt, extractPromptsRecord } from '@/utils/pageHelpers';
-import { BOOK_TYPES } from '@/config/bookTypes';
+import { BOOK_TYPES, BookType } from '@/config/bookTypes';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -620,7 +620,7 @@ export default function GoogleChat() {
     console.log('Cover prompt generation skipped - using external image generation');
   }, []);
 
-  const handleBookTypeSelect = useCallback(async (bookType: typeof BOOK_TYPES[0]) => {
+  const handleBookTypeSelect = useCallback(async (bookType: BookType) => {
     // Store the book type ID for later use  
     setSelectedBookType(bookType.id as BookTypeId);
     

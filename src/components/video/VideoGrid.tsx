@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
@@ -32,6 +33,7 @@ interface Video {
 }
 
 export const VideoGrid = () => {
+  const navigate = useNavigate();
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<number | null>(null);
   const [timerExpired, setTimerExpired] = useState(false);
@@ -39,6 +41,30 @@ export const VideoGrid = () => {
   const [showPurchaseDialog, setShowPurchaseDialog] = useState(false);
   const [showNoTimeDialog, setShowNoTimeDialog] = useState(false);
   const [pendingVideo, setPendingVideo] = useState<Video | null>(null);
+
+  // Check for return-home timer from reward purchase
+  useEffect(() => {
+    const returnHomeAt = localStorage.getItem('returnHomeAt');
+    if (!returnHomeAt) return;
+
+    const returnTime = parseInt(returnHomeAt, 10);
+    const timeRemaining = returnTime - Date.now();
+
+    if (timeRemaining <= 0) {
+      // Timer already expired, clear and redirect
+      localStorage.removeItem('returnHomeAt');
+      navigate('/');
+      return;
+    }
+
+    // Set timer to redirect home
+    const timer = setTimeout(() => {
+      localStorage.removeItem('returnHomeAt');
+      navigate('/');
+    }, timeRemaining);
+
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   const { data: kidProfiles } = useKidProfiles();
   const selectedKid = kidProfiles?.find(k => k.is_active);

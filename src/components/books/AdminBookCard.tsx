@@ -8,17 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import { getBookTypeDisplayName } from '@/types/bookType';
 import { getThemeDisplayName } from '@/types/characterTheme';
 import { useToggleBookHighlight } from '@/hooks/useToggleBookHighlight';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 
 interface AdminBookCardProps {
   book: any;
@@ -93,8 +83,12 @@ export function AdminBookCard({ book, onDelete, isDeleting }: AdminBookCardProps
             </Button>
             
             {onDelete && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
+              <DeleteConfirmDialog
+                title="Delete Book"
+                description={`Are you sure you want to delete "${book.book_name}"? This action cannot be undone.`}
+                onConfirm={() => onDelete(book.id, book.book_name)}
+                isDeleting={isDeleting}
+                trigger={
                   <Button
                     variant="ghost"
                     size="icon"
@@ -108,28 +102,8 @@ export function AdminBookCard({ book, onDelete, isDeleting }: AdminBookCardProps
                       <Trash2 className="w-3.5 h-3.5" />
                     )}
                   </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Book</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Are you sure you want to delete "{book.book_name}"? This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete(book.id, book.book_name);
-                      }}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Delete
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                }
+              />
             )}
           </div>
         </div>

@@ -1,8 +1,9 @@
 import { memo } from 'react';
 import { Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { BOOK_TYPES } from '@/config/bookTypes';
+import { useBookTypes } from '@/hooks/useBookTypes';
 import { cn } from '@/lib/utils';
+import { BookType } from '@/config/bookTypes';
 import abcBookCover from '@/assets/book-covers/abc-cover.png';
 import numbersBookCover from '@/assets/book-covers/numbers-cover.png';
 import colorsBookCover from '@/assets/book-covers/colors-cover.png';
@@ -14,10 +15,24 @@ import sightWordsBookCover from '@/assets/book-covers/sight-words-cover.png';
 import animalsBookCover from '@/assets/book-covers/animals-cover.png';
 
 interface EmptyStateProps {
-  onBookTypeSelect: (bookType: typeof BOOK_TYPES[0]) => void;
+  onBookTypeSelect: (bookType: BookType) => void;
 }
 
+const coverImages: Record<string, string> = {
+  abc: abcBookCover,
+  numbers: numbersBookCover,
+  colors: colorsBookCover,
+  shapes: shapesBookCover,
+  emotions: emotionsBookCover,
+  opposites: oppositesBookCover,
+  rhyming: rhymingBookCover,
+  'sight-words': sightWordsBookCover,
+  animals: animalsBookCover,
+};
+
 export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
+  const { bookTypes } = useBookTypes();
+
   return (
     <div className="flex h-full flex-col items-center justify-start p-4 sm:p-8 pt-8 sm:pt-16 overflow-y-auto">
       <div className="mb-6 sm:mb-8 flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-primary/10 flex-shrink-0">
@@ -29,19 +44,8 @@ export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {
       </p>
       
       <div className="grid w-full max-w-2xl gap-2 sm:gap-4 grid-cols-2 pb-8">
-        {BOOK_TYPES.map((bookType) => {
+        {bookTypes.map((bookType) => {
           const IconComponent = bookType.icon;
-          const coverImages: Record<string, string> = {
-            abc: abcBookCover,
-            numbers: numbersBookCover,
-            colors: colorsBookCover,
-            shapes: shapesBookCover,
-            emotions: emotionsBookCover,
-            opposites: oppositesBookCover,
-            rhyming: rhymingBookCover,
-            'sight-words': sightWordsBookCover,
-            animals: animalsBookCover,
-          };
           const coverImage = coverImages[bookType.id];
           
           return (

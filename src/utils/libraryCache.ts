@@ -4,13 +4,13 @@
  * Works alongside image caching and 7-day LRU cleanup system
  */
 
-import { DailyPublishedWithBook } from '@/types/dailyPublished';
+import { LibraryBook } from '@/types/library';
 
 const LIBRARY_CACHE_KEY = 'library-books-cache';
 const CACHE_DURATION = 30 * 60 * 1000; // 30 minutes in milliseconds
 
 interface LibraryCacheData {
-  books: DailyPublishedWithBook[];
+  books: LibraryBook[];
   timestamp: number;
   userId: string;
 }
@@ -18,7 +18,7 @@ interface LibraryCacheData {
 /**
  * Store library books in localStorage for instant loading
  */
-export function cacheLibraryBooks(books: DailyPublishedWithBook[], userId: string): void {
+export function cacheLibraryBooks(books: LibraryBook[], userId: string): void {
   try {
     const cacheData: LibraryCacheData = {
       books,
@@ -37,7 +37,7 @@ export function cacheLibraryBooks(books: DailyPublishedWithBook[], userId: strin
  * Get cached library books if still fresh
  * Returns null if cache is stale or invalid
  */
-export function getCachedLibraryBooks(userId: string): DailyPublishedWithBook[] | null {
+export function getCachedLibraryBooks(userId: string): LibraryBook[] | null {
   try {
     const cached = localStorage.getItem(LIBRARY_CACHE_KEY);
     if (!cached) return null;
@@ -94,3 +94,4 @@ export function getLibraryCacheAge(userId: string): number | null {
     return null;
   }
 }
+

@@ -13,8 +13,8 @@
  */
 
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { useLibraryBookByIdDecoupled } from '@/hooks/useLibraryBookByIdDecoupled';
-import { useLibraryBookPagesDecoupled } from '@/hooks/useLibraryBookPagesDecoupled';
+import { useLibraryBookById } from '@/hooks/useLibraryBookByBookId';
+import { useLibraryBookPages } from '@/hooks/useLibraryBookPages';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { useLibraryBookImagePreloader } from '@/hooks/useLibraryBookImagePreloader';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -36,8 +36,8 @@ export default function LibraryBookView() {
   const { data: kidProfiles = [] } = useKidProfiles();
   const safeBookId = bookId && isValidUUID(bookId) ? bookId : undefined;
   
-  const { data: book, isLoading: isLoadingBook, error: bookError } = useLibraryBookByIdDecoupled(safeBookId);
-  const { data: pages = [], isLoading: isLoadingPages } = useLibraryBookPagesDecoupled(safeBookId);
+  const { data: book, isLoading: isLoadingBook, error: bookError } = useLibraryBookById(safeBookId);
+  const { data: pages = [], isLoading: isLoadingPages } = useLibraryBookPages(safeBookId);
   const { data: imageMap = {} } = useBookPageImages(safeBookId);
   
   // Preload library images with optimization and caching

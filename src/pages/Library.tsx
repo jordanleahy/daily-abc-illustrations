@@ -1,6 +1,6 @@
 import { memo, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
+import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useFavorites } from '@/hooks/useFavorites';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { MetaHead } from '@/components/common';
@@ -17,7 +17,7 @@ import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
 const Library = memo(() => {
   const navigate = useNavigate();
   
-  const { data: libraryBooks = [], isLoading: isLoadingBooks } = useLibraryBooksDecoupled();
+  const { data: libraryBooks = [], isLoading: isLoadingBooks } = useLibraryBooks();
   const { favorites } = useFavorites();
   
   // ⚡ PERFORMANCE OPTIMIZATION: Three strategies available

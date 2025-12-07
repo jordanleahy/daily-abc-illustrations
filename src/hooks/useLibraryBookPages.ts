@@ -4,9 +4,13 @@ import { isValidUUID } from '@/utils/uuid';
 import type { Page } from '@/types/book';
 import { queryKeys } from '@/hooks/queryKeys';
 
-export const useLibraryBookPagesDecoupled = (bookId: string | undefined) => {
+/**
+ * Fetch pages for a library book by book_id
+ * Use this for routes like /library/:bookId/read
+ */
+export const useLibraryBookPages = (bookId: string | undefined) => {
   return useQuery({
-    queryKey: queryKeys.pages.byBook(bookId || ''),
+    queryKey: queryKeys.library.bookPages(bookId || ''),
     queryFn: async () => {
       if (!bookId || !isValidUUID(bookId)) return [];
 
@@ -31,5 +35,8 @@ export const useLibraryBookPagesDecoupled = (bookId: string | undefined) => {
       return (data || []) as Page[];
     },
     enabled: !!bookId && isValidUUID(bookId),
+    refetchOnMount: false,
+    refetchOnWindowFocus: false,
   });
 };
+

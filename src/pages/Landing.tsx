@@ -5,13 +5,13 @@ import { SignupSection } from '@/components/landing/SignupSection';
 import { useLandingPageData } from '@/hooks/useLandingPageData';
 import { useLandingPageImagePreloader } from '@/hooks/useLandingPageImagePreloader';
 import { useLandingPageSubscription } from '@/hooks/useLandingPageSubscription';
-import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
+import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { MetaHead } from '@/components/common/MetaHead';
 import { SITE_CONFIG, getSiteTitle } from '@/config/site';
 
 const Landing = () => {
   const { data: landingData } = useLandingPageData();
-  const { data: libraryBooks = [], isLoading: isLoadingBooks } = useLibraryBooksDecoupled();
+  const { data: libraryBooks = [], isLoading: isLoadingBooks } = useLibraryBooks();
   
   // Enable real-time updates for all landing page content
   useLandingPageSubscription();

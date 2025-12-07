@@ -7,7 +7,7 @@ import { RewardsCarousel } from '@/components/rewards/RewardsCarousel';
 import { TricksCarousel } from '@/components/tricks/TricksCarousel';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { useLibraryBooksDecoupled } from '@/hooks/useLibraryBooksDecoupled';
+import { useLibraryBooks } from '@/hooks/useLibraryBooks';
 import { useRewardsProducts } from '@/hooks/useRewardsProducts';
 import { useTricks } from '@/hooks/useTricks';
 import { useTrickGoals } from '@/hooks/useTrickGoals';
@@ -60,11 +60,11 @@ const Index = () => {
     data: trickGoals = []
   } = useTrickGoals(firstKid?.id);
 
-  // Fetch library books using decoupled architecture
+  // Fetch library books
   const {
     data: libraryItems = [],
     isLoading: isLoadingBooks
-  } = useLibraryBooksDecoupled();
+  } = useLibraryBooks();
 
   // ⚡ PERFORMANCE OPTIMIZATION: Debounced search for instant feel
   const {

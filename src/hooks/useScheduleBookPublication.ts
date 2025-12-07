@@ -91,7 +91,7 @@ export const useScheduleBookPublication = () => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['book-publication-status'] });
       queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
-      queryClient.invalidateQueries({ queryKey: ['library-books-decoupled'] });
+      queryClient.invalidateQueries({ queryKey: ['library-books'] });
     },
     onError: (error) => {
       console.error('Error scheduling book:', error);

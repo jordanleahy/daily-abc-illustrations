@@ -3,8 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { StandardPageLayout } from '@/components/layout';
-import { useLibraryBookByIdDecoupled } from '@/hooks/useLibraryBookByIdDecoupled';
-import { useLibraryBookPagesDecoupled } from '@/hooks/useLibraryBookPagesDecoupled';
+import { useLibraryBookById } from '@/hooks/useLibraryBookByBookId';
+import { useLibraryBookPages } from '@/hooks/useLibraryBookPages';
 import { usePredictivePrefetch } from '@/hooks/usePredictivePrefetch';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -90,8 +90,8 @@ export default function LibraryDetail() {
   const navigate = useNavigate();
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   
-  const { data: book, isLoading: bookLoading, error: bookError } = useLibraryBookByIdDecoupled(bookId);
-  const { data: pages = [], isLoading: pagesLoading } = useLibraryBookPagesDecoupled(bookId);
+  const { data: book, isLoading: bookLoading, error: bookError } = useLibraryBookById(bookId);
+  const { data: pages = [], isLoading: pagesLoading } = useLibraryBookPages(bookId);
   
   // Progressive image preloading - priority images load first
   const { priorityCount, totalCount } = useLibraryDetailImagePreloader(bookId);

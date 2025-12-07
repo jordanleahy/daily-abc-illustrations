@@ -1,4 +1,4 @@
-import { useImagePreloader } from './useImagePreloader';
+import { useTypedImagePreloader } from './useTypedImagePreloader';
 import type { DailyPublishedWithBook } from '@/types/dailyPublished';
 
 /**
@@ -6,13 +6,9 @@ import type { DailyPublishedWithBook } from '@/types/dailyPublished';
  * Uses unified image preloader with service worker caching
  */
 export function useScheduleImagePreloader(scheduleItems: DailyPublishedWithBook[] | undefined) {
-  const imageUrls = scheduleItems?.map(item => item.og_image_url).filter(Boolean) || [];
-  
-  useImagePreloader(imageUrls, {
-    priority: false,
-    width: 800,
-    quality: 85,
-    batchSize: 5,
-    batchDelay: 200
-  });
+  useTypedImagePreloader(
+    scheduleItems,
+    item => item.og_image_url,
+    { priorityCount: 0, width: 800, batchSize: 5, batchDelay: 200 }
+  );
 }

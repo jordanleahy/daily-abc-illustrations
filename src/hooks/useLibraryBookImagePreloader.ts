@@ -1,7 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useBookPageImages } from './useBookPageImages';
-import { useImagePreloader } from './useImagePreloader';
-import { prefetchImagesToCache } from '@/utils/imageCaching';
+import { useTypedImagePreloader } from './useTypedImagePreloader';
 import type { Page } from '@/types/book';
 
 /**
@@ -12,42 +11,18 @@ import type { Page } from '@/types/book';
 export function useLibraryBookImagePreloader(bookId: string | undefined, pages: Page[] | undefined) {
   const { data: imageMap = {} } = useBookPageImages(bookId);
   
-  // Extract URLs in page order
-  const imageUrls = useMemo(() => {
+  // Create array of pages with their image URLs
+  const pagesWithImages = useMemo(() => {
     if (!pages || !imageMap) return [];
-    return pages
-      .map(page => imageMap[page.page_number])
-      .filter((url): url is string => !!url);
+    return pages.map(page => ({
+      ...page,
+      imageUrl: imageMap[page.page_number]
+    }));
   }, [pages, imageMap]);
-  
-  // Split into priority (first 3) and remaining batches
-  const priorityUrls = imageUrls.slice(0, 3);
-  const remainingUrls = imageUrls.slice(3);
-  
-  // Preload priority images immediately
-  useImagePreloader(priorityUrls, {
-    priority: true,
-    width: 1200,
-    quality: 85,
-    batchSize: 3,
-    batchDelay: 0
-  });
-  
-  // Preload remaining images with batching
-  useImagePreloader(remainingUrls, {
-    priority: false,
-    width: 1200,
-    quality: 85,
-    batchSize: 6,
-    batchDelay: 200
-  });
-  
-  // Cache all images to service worker for instant repeat loads
-  useEffect(() => {
-    if (imageUrls.length > 0) {
-      prefetchImagesToCache(imageUrls).catch(error => {
-        console.warn('[Library Image Preloader] Service worker cache failed:', error);
-      });
-    }
-  }, [imageUrls.length]);
+
+  useTypedImagePreloader(
+    pagesWithImages,
+    page => page.imageUrl,
+    { priorityCount: 3, width: 1200, batchSize: 6, batchDelay: 200 }
+  );
 }

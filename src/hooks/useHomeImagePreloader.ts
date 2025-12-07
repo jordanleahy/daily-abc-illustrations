@@ -1,4 +1,4 @@
-import { useImagePreloader } from './useImagePreloader';
+import { useTypedImagePreloader } from './useTypedImagePreloader';
 import type { LibraryBook } from '@/types/library';
 
 /**
@@ -7,27 +7,9 @@ import type { LibraryBook } from '@/types/library';
  * Prioritizes first 3 visible books for immediate display
  */
 export function useHomeImagePreloader(books: LibraryBook[] | undefined) {
-  const imageUrls = books?.map(book => book.cover_image).filter(Boolean) || [];
-  
-  // Split into priority (first 3 visible in carousel) and remaining batches
-  const priorityUrls = imageUrls.slice(0, 3);
-  const remainingUrls = imageUrls.slice(3);
-  
-  // Preload priority images immediately
-  useImagePreloader(priorityUrls, {
-    priority: true,
-    width: 800,
-    quality: 85,
-    batchSize: 3,
-    batchDelay: 0
-  });
-  
-  // Preload remaining images with batching
-  useImagePreloader(remainingUrls, {
-    priority: false,
-    width: 800,
-    quality: 85,
-    batchSize: 6,
-    batchDelay: 200
-  });
+  useTypedImagePreloader(
+    books,
+    book => book.cover_image,
+    { priorityCount: 3, width: 800, batchSize: 6, batchDelay: 200 }
+  );
 }

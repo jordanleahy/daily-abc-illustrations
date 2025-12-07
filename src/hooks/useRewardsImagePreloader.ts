@@ -1,4 +1,4 @@
-import { useImagePreloader } from './useImagePreloader';
+import { useTypedImagePreloader } from './useTypedImagePreloader';
 import type { RewardsProduct } from '@/types/rewardsProduct';
 
 /**
@@ -6,13 +6,9 @@ import type { RewardsProduct } from '@/types/rewardsProduct';
  * Uses unified image preloader with service worker caching
  */
 export function useRewardsImagePreloader(products: RewardsProduct[] | undefined) {
-  const imageUrls = products?.map(p => p.product_image_url).filter(Boolean) || [];
-  
-  useImagePreloader(imageUrls, {
-    priority: false,
-    width: 600,
-    quality: 85,
-    batchSize: 3,
-    batchDelay: 300
-  });
+  useTypedImagePreloader(
+    products,
+    p => p.product_image_url,
+    { priorityCount: 0, width: 600, batchSize: 3, batchDelay: 300 }
+  );
 }

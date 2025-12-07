@@ -156,8 +156,8 @@ const AgentCreatorContent = () => {
         </div>
       )}
 
-      {/* Input Area */}
-      <div className="border-t border-border bg-card p-4">
+      {/* Input Area - Sticky at bottom */}
+      <div className="sticky bottom-0 border-t border-border bg-card p-4 z-10">
         <div className="max-w-3xl mx-auto flex gap-2">
           <Textarea
             ref={inputRef}

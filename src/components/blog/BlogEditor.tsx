@@ -82,7 +82,6 @@ export const BlogEditor = ({ postId, onBack }: BlogEditorProps) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate file type
     if (!file.type.startsWith('image/')) {
       toast({ 
         title: 'Invalid file type', 
@@ -92,7 +91,6 @@ export const BlogEditor = ({ postId, onBack }: BlogEditorProps) => {
       return;
     }
 
-    // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
       toast({ 
         title: 'File too large', 
@@ -108,18 +106,15 @@ export const BlogEditor = ({ postId, onBack }: BlogEditorProps) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
-      // Create unique filename
       const fileExt = file.name.split('.').pop();
       const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
-      // Upload to Supabase Storage
       const { data, error: uploadError } = await supabase.storage
         .from('blog-images')
         .upload(fileName, file);
 
       if (uploadError) throw uploadError;
 
-      // Get public URL
       const { data: { publicUrl } } = supabase.storage
         .from('blog-images')
         .getPublicUrl(data.path);
@@ -189,210 +184,217 @@ export const BlogEditor = ({ postId, onBack }: BlogEditorProps) => {
   });
 
   return (
-    <div className="space-y-6">
-      <Button variant="ghost" onClick={onBack}>
-        <ArrowLeft className="w-4 h-4 mr-2" />
-        Back
-      </Button>
+    <div className="space-y-4 pb-24 sm:pb-6">
+      {/* Header with back button */}
+      <div className="flex items-center gap-3">
+        <Button variant="ghost" size="sm" onClick={onBack} className="shrink-0">
+          <ArrowLeft className="w-4 h-4 mr-1" />
+          Back
+        </Button>
+        <h2 className="text-lg font-semibold truncate">
+          {postId ? 'Edit Post' : 'New Post'}
+        </h2>
+      </div>
 
       <div className="space-y-4">
-        <div>
-          <Label htmlFor="title">Title</Label>
-          <Input
-            id="title"
-            value={title}
-            onChange={(e) => handleTitleChange(e.target.value)}
-            placeholder="Post title"
-          />
+        {/* Title and Slug - side by side on desktop, stacked on mobile */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="title">Title</Label>
+            <Input
+              id="title"
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+              placeholder="Post title"
+              className="h-11 sm:h-10"
+            />
+          </div>
+          <div>
+            <Label htmlFor="slug">Slug</Label>
+            <Input
+              id="slug"
+              value={slug}
+              onChange={(e) => setSlug(generateSlug(e.target.value))}
+              placeholder="post-slug"
+              className="h-11 sm:h-10"
+            />
+          </div>
         </div>
 
-        <div>
-          <Label htmlFor="slug">Slug</Label>
-          <Input
-            id="slug"
-            value={slug}
-            onChange={(e) => setSlug(generateSlug(e.target.value))}
-            placeholder="post-slug"
-          />
+        {/* Excerpt and Status - side by side on desktop */}
+        <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
+          <div>
+            <Label htmlFor="excerpt">Excerpt</Label>
+            <Input
+              id="excerpt"
+              value={excerpt}
+              onChange={(e) => setExcerpt(e.target.value)}
+              placeholder="Brief description"
+              className="h-11 sm:h-10"
+            />
+          </div>
+          <div className="sm:w-32">
+            <Label htmlFor="status">Status</Label>
+            <Select value={status} onValueChange={(v) => setStatus(v as 'draft' | 'published' | 'archived')}>
+              <SelectTrigger className="h-11 sm:h-10">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
-        <div>
-          <Label htmlFor="excerpt">Excerpt</Label>
-          <Textarea
-            id="excerpt"
-            value={excerpt}
-            onChange={(e) => setExcerpt(e.target.value)}
-            placeholder="Brief description"
-            rows={2}
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="status">Status</Label>
-          <Select value={status} onValueChange={(v) => setStatus(v as 'draft' | 'published' | 'archived')}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="draft">Draft</SelectItem>
-              <SelectItem value="published">Published</SelectItem>
-              <SelectItem value="archived">Archived</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
+        {/* Content editor with Write/Preview tabs */}
         <Tabs defaultValue="write" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 h-11 sm:h-10">
             <TabsTrigger value="write">Write</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
           </TabsList>
-          <TabsContent value="write" className="space-y-4">
-            <div>
-              <Label htmlFor="content">Content (Markdown)</Label>
-              <Textarea
-                id="content"
-                value={content}
-                onChange={(e) => setContent(e.target.value)}
-                placeholder="Write your content in Markdown..."
-                rows={20}
-                className="font-mono"
-              />
-            </div>
+          <TabsContent value="write" className="mt-2">
+            <Textarea
+              id="content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="Write your content in Markdown..."
+              className="font-mono text-sm min-h-[200px] sm:min-h-[300px] resize-y"
+            />
           </TabsContent>
-          <TabsContent value="preview">
-            <div className="prose prose-sm max-w-none p-4 border rounded-md min-h-[500px]">
+          <TabsContent value="preview" className="mt-2">
+            <div className="prose prose-sm max-w-none p-4 border rounded-md min-h-[200px] sm:min-h-[300px] overflow-auto">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
             </div>
           </TabsContent>
         </Tabs>
 
-        <div className="space-y-4 pt-4 border-t">
-          <h3 className="font-semibold">Media & Tags</h3>
-          
-          <div>
-            <Label>Featured Image</Label>
-            <div className="space-y-3">
-              {featuredImageUrl && (
-                <div className="relative inline-block">
-                  <img 
-                    src={featuredImageUrl} 
-                    alt="Featured" 
-                    className="h-32 w-auto rounded-lg border object-cover"
-                  />
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    className="absolute -top-2 -right-2"
-                    onClick={() => setFeaturedImageUrl('')}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-              )}
-              <div className="flex gap-2">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                  id="image-upload"
+        {/* Featured Image - compact for mobile */}
+        <div className="space-y-3 pt-2 border-t">
+          <Label>Featured Image</Label>
+          <div className="flex flex-wrap gap-3 items-start">
+            {featuredImageUrl && (
+              <div className="relative">
+                <img 
+                  src={featuredImageUrl} 
+                  alt="Featured" 
+                  className="h-20 w-auto rounded-lg border object-cover"
                 />
                 <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  className="flex-1"
+                  size="icon"
+                  variant="destructive"
+                  className="absolute -top-2 -right-2 h-6 w-6"
+                  onClick={() => setFeaturedImageUrl('')}
                 >
-                  <Upload className="h-4 w-4 mr-2" />
-                  {isUploading ? 'Uploading...' : 'Upload Image'}
+                  <X className="h-3 w-3" />
                 </Button>
               </div>
-              <div>
-                <Label htmlFor="featured-image-url" className="text-xs text-muted-foreground">
-                  Or enter image URL
-                </Label>
-                <Input
-                  id="featured-image-url"
-                  value={featuredImageUrl}
-                  onChange={(e) => setFeaturedImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="tags">Tags</Label>
-            <div className="space-y-2">
-              <div className="flex gap-2">
-                <Input
-                  id="tags"
-                  value={tagInput}
-                  onChange={(e) => setTagInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      const newTag = tagInput.trim();
-                      if (newTag && !tags.includes(newTag)) {
-                        setTags([...tags, newTag]);
-                        setTagInput('');
-                      }
-                    }
-                  }}
-                  placeholder="Type a tag and press Enter"
-                />
-              </div>
-              {tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {tags.map((tag) => (
-                    <div
-                      key={tag}
-                      className="bg-accent text-accent-foreground px-3 py-1 rounded-full text-sm flex items-center gap-2"
-                    >
-                      {tag}
-                      <button
-                        onClick={() => setTags(tags.filter((t) => t !== tag))}
-                        className="hover:text-destructive"
-                      >
-                        ×
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
+            )}
+            <div className="flex-1 min-w-[200px] space-y-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+                id="image-upload"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="w-full h-11 sm:h-10"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {isUploading ? 'Uploading...' : 'Upload'}
+              </Button>
+              <Input
+                value={featuredImageUrl}
+                onChange={(e) => setFeaturedImageUrl(e.target.value)}
+                placeholder="Or paste image URL"
+                className="h-11 sm:h-10 text-sm"
+              />
             </div>
           </div>
         </div>
 
-        <div className="space-y-4 pt-4 border-t">
-          <h3 className="font-semibold">SEO</h3>
-          <div>
-            <Label htmlFor="seoTitle">SEO Title</Label>
-            <Input
-              id="seoTitle"
-              value={seoTitle}
-              onChange={(e) => setSeoTitle(e.target.value)}
-              placeholder="SEO optimized title"
-            />
-          </div>
-          <div>
-            <Label htmlFor="seoDescription">SEO Description</Label>
-            <Textarea
-              id="seoDescription"
-              value={seoDescription}
-              onChange={(e) => setSeoDescription(e.target.value)}
-              placeholder="SEO meta description"
-              rows={2}
-            />
-          </div>
+        {/* Tags - horizontal scroll on mobile */}
+        <div className="space-y-2">
+          <Label htmlFor="tags">Tags</Label>
+          <Input
+            id="tags"
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault();
+                const newTag = tagInput.trim();
+                if (newTag && !tags.includes(newTag)) {
+                  setTags([...tags, newTag]);
+                  setTagInput('');
+                }
+              }
+            }}
+            placeholder="Type tag + Enter"
+            className="h-11 sm:h-10"
+          />
+          {tags.length > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="bg-accent text-accent-foreground px-3 py-1.5 rounded-full text-sm flex items-center gap-2"
+                >
+                  {tag}
+                  <button
+                    onClick={() => setTags(tags.filter((t) => t !== tag))}
+                    className="hover:text-destructive text-base leading-none"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
+        {/* SEO Section - collapsed by default on mobile would be nice, but keeping simple */}
+        <details className="border-t pt-3">
+          <summary className="font-semibold cursor-pointer py-2">SEO Settings</summary>
+          <div className="space-y-3 pt-2">
+            <div>
+              <Label htmlFor="seoTitle">SEO Title</Label>
+              <Input
+                id="seoTitle"
+                value={seoTitle}
+                onChange={(e) => setSeoTitle(e.target.value)}
+                placeholder="SEO optimized title"
+                className="h-11 sm:h-10"
+              />
+            </div>
+            <div>
+              <Label htmlFor="seoDescription">SEO Description</Label>
+              <Textarea
+                id="seoDescription"
+                value={seoDescription}
+                onChange={(e) => setSeoDescription(e.target.value)}
+                placeholder="SEO meta description"
+                rows={2}
+                className="resize-none"
+              />
+            </div>
+          </div>
+        </details>
+      </div>
+
+      {/* Sticky save button on mobile */}
+      <div className="fixed bottom-0 left-0 right-0 p-4 bg-background border-t sm:relative sm:p-0 sm:border-0 sm:bg-transparent">
         <Button 
           onClick={() => saveMutation.mutate()} 
           disabled={!title || !slug || !content || saveMutation.isPending}
-          className="w-full"
+          className="w-full h-12 sm:h-10 text-base sm:text-sm"
         >
           {saveMutation.isPending ? 'Saving...' : (postId ? 'Update Post' : 'Create Post')}
         </Button>

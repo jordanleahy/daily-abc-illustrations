@@ -1,7 +1,8 @@
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, ExternalLink } from 'lucide-react';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
 
 interface BlogPost {
   id: string;
@@ -34,42 +35,70 @@ export const BlogList = ({ posts, isLoading, onEdit, onDelete }: BlogListProps) 
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {posts.map((post) => (
         <Card key={post.id} className="p-4">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              <h3 className="text-xl font-semibold mb-1">{post.title}</h3>
-              {post.excerpt && (
-                <p className="text-muted-foreground mb-2">{post.excerpt}</p>
-              )}
-              <div className="flex gap-4 text-sm text-muted-foreground">
-                <span className={`px-2 py-1 rounded ${
-                  post.status === 'published' ? 'bg-green-500/10 text-green-600' :
-                  post.status === 'draft' ? 'bg-yellow-500/10 text-yellow-600' :
-                  'bg-gray-500/10 text-gray-600'
-                }`}>
-                  {post.status}
-                </span>
-                <span>
-                  {post.published_at 
-                    ? `Published: ${format(new Date(post.published_at), 'MMM d, yyyy')}`
-                    : `Created: ${format(new Date(post.created_at), 'MMM d, yyyy')}`
-                  }
-                </span>
-                <span>Slug: /{post.slug}</span>
-              </div>
+          {/* Mobile-first stacked layout */}
+          <div className="space-y-3">
+            {/* Title and status row */}
+            <div className="flex items-start justify-between gap-2">
+              <h3 className="text-lg font-semibold line-clamp-2 flex-1">{post.title}</h3>
+              <span className={`shrink-0 text-xs px-2 py-1 rounded font-medium ${
+                post.status === 'published' ? 'bg-green-500/10 text-green-600' :
+                post.status === 'draft' ? 'bg-yellow-500/10 text-yellow-600' :
+                'bg-gray-500/10 text-gray-600'
+              }`}>
+                {post.status}
+              </span>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={() => onEdit(post.id)}>
-                <Edit className="w-4 h-4" />
+
+            {/* Excerpt - truncated on mobile */}
+            {post.excerpt && (
+              <p className="text-sm text-muted-foreground line-clamp-2">{post.excerpt}</p>
+            )}
+
+            {/* Meta info - stacked on mobile, inline on larger screens */}
+            <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+              <span>
+                {post.published_at 
+                  ? format(new Date(post.published_at), 'MMM d, yyyy')
+                  : `Draft: ${format(new Date(post.created_at), 'MMM d, yyyy')}`
+                }
+              </span>
+              <span className="truncate max-w-[150px] sm:max-w-none">/{post.slug}</span>
+            </div>
+
+            {/* Action buttons - larger touch targets for mobile */}
+            <div className="flex gap-2 pt-1">
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => onEdit(post.id)}
+                className="flex-1 sm:flex-none h-10 sm:h-9"
+              >
+                <Edit className="w-4 h-4 mr-2" />
+                Edit
               </Button>
+              {post.status === 'published' && (
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  asChild
+                  className="flex-1 sm:flex-none h-10 sm:h-9"
+                >
+                  <Link to={`/blog/${post.slug}`} target="_blank">
+                    <ExternalLink className="w-4 h-4 mr-2" />
+                    View
+                  </Link>
+                </Button>
+              )}
               <Button 
                 size="sm" 
                 variant="outline" 
                 onClick={() => {
                   if (confirm('Delete this post?')) onDelete(post.id);
                 }}
+                className="h-10 sm:h-9 px-3"
               >
                 <Trash2 className="w-4 h-4" />
               </Button>

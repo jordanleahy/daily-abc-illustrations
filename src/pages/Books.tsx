@@ -6,11 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { BookFilterBar } from '@/components/filters';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useRole } from '@/contexts/RoleContext';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useBooks } from '@/hooks/useBooks';
 import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
-import { BookOpen, Calendar } from 'lucide-react';
+import { BookOpen, Calendar, CheckCircle, Circle } from 'lucide-react';
 import { 
   Pagination, 
   PaginationContent, 
@@ -33,6 +35,7 @@ import { UserBookCard } from '@/components/books/UserBookCard';
 import { cn } from '@/lib/utils';
 export default function Books() {
   const { user, loading: authLoading } = useAuthContext();
+  const { isAdmin } = useRole();
   const { data: kidProfiles = [] } = useKidProfiles();
   const isMobile = useIsMobile();
   
@@ -50,21 +53,26 @@ export default function Books() {
   
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
+  const [completionFilter, setCompletionFilter] = useState<'completed' | 'not-completed'>('completed');
   const PAGE_SIZE = 24;
   
   const { rawQuery: searchQuery, activeQuery: debouncedSearchQuery, setSearchQuery } = useOptimizedSearch('debounced', 300);
+  
+  // Admin-only completion filter, undefined for non-admins
+  const activeCompletionFilter = isAdmin ? completionFilter : undefined;
   
   const { books, totalCount, loading } = useBooks(
     'my-books',
     { page: currentPage, pageSize: PAGE_SIZE },
     debouncedSearchQuery,
-    selectedThemes.length > 0 ? selectedThemes : undefined
+    selectedThemes.length > 0 ? selectedThemes : undefined,
+    activeCompletionFilter
   );
   
   const availableThemes = useMemo(() => extractAvailableThemes([]), []);
   const totalPages = Math.ceil(totalCount / PAGE_SIZE) || 1;
   
-  useEffect(() => { setCurrentPage(1); }, [searchQuery, selectedThemes]);
+  useEffect(() => { setCurrentPage(1); }, [searchQuery, selectedThemes, completionFilter]);
   useEffect(() => {
     if (currentPage > totalPages && totalPages > 0) setCurrentPage(totalPages);
   }, [currentPage, totalPages]);
@@ -126,6 +134,22 @@ export default function Books() {
                 placeholder="Search your books..."
                 showSearch={true}
               />
+
+              {/* Admin-only completion filter toggle */}
+              {isAdmin && (
+                <Tabs value={completionFilter} onValueChange={(v) => setCompletionFilter(v as 'completed' | 'not-completed')} className="w-full">
+                  <TabsList className="grid w-full max-w-md grid-cols-2">
+                    <TabsTrigger value="completed" className="gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Completed
+                    </TabsTrigger>
+                    <TabsTrigger value="not-completed" className="gap-2">
+                      <Circle className="h-4 w-4" />
+                      Not Completed
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              )}
 
               {books && books.length > 0 ? (
                 <>

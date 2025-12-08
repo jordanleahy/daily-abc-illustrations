@@ -59,21 +59,22 @@ export const useBooks = (
   viewMode: 'my-books' | 'all-books' = 'my-books',
   pagination?: { page: number; pageSize: number },
   searchQuery?: string,
-  themeFilter?: string[] // New: Server-side theme filtering
+  themeFilter?: string[], // Server-side theme filtering
+  completionFilter?: 'completed' | 'not-completed' // Admin-only: filter by image completion status
 ) => {
   const { user } = useAuthContext();
   const { isAdmin, isTeacher } = useRole();
   const queryClient = useQueryClient();
 
   const { data: booksResult, isLoading, error } = useQuery({
-    queryKey: ['books', user?.id, isAdmin, isTeacher, viewMode, pagination?.page, pagination?.pageSize, searchQuery, themeFilter],
+    queryKey: ['books', user?.id, isAdmin, isTeacher, viewMode, pagination?.page, pagination?.pageSize, searchQuery, themeFilter, completionFilter],
     queryFn: async () => {
       if (!user?.id) return { books: [], totalCount: 0 };
       
       // Determine if we should show all books
       const showAllBooks = viewMode === 'all-books' && (isAdmin || isTeacher);
       
-      // ⚡ OPTIMIZED: Single query with JOIN including cover images
+      // ⚡ OPTIMIZED: Single query with JOIN including cover images and ALL pages for completion check
       let query = supabase
         .from('books')
         .select(`
@@ -93,7 +94,6 @@ export const useBooks = (
             )
           )
         `, { count: 'exact' })
-        .eq('pages.page_type', 'cover') // Only fetch cover pages to reduce payload
         .neq('status', 'archived')
         .order('updated_at', { ascending: false }); // ⚡ Explicit sort for consistent pagination
       
@@ -135,13 +135,21 @@ export const useBooks = (
         };
       }
 
-      // Map activity and cover image data directly from JOIN
+      // Map activity and cover image data directly from JOIN, calculate completion
       const booksWithActivity = booksData.map(book => {
         const activityArr = Array.isArray(book.activity) ? book.activity : [book.activity].filter(Boolean);
         const userActivity = activityArr.find((a: any) => a?.user_id === user.id);
         
-        // Extract cover image from pages with page_type = 'cover' and is_latest = true
+        // Extract all pages and calculate completion
         const pagesArr = Array.isArray(book.pages) ? book.pages : [book.pages].filter(Boolean);
+        const totalPageCount = pagesArr.length;
+        const pagesWithImages = pagesArr.filter((p: any) => {
+          const imageUrls = Array.isArray(p?.page_image_urls) ? p.page_image_urls : [p?.page_image_urls].filter(Boolean);
+          return imageUrls.some((img: any) => img?.is_latest === true && img?.image_url);
+        }).length;
+        const isComplete = totalPageCount > 0 && pagesWithImages === totalPageCount;
+        
+        // Extract cover image from pages with page_type = 'cover' and is_latest = true
         const coverPage = pagesArr.find((p: any) => p?.page_type === 'cover');
         const coverImageUrls = coverPage?.page_image_urls || [];
         const coverImageArr = Array.isArray(coverImageUrls) ? coverImageUrls : [coverImageUrls].filter(Boolean);
@@ -157,10 +165,21 @@ export const useBooks = (
           last_viewed_at: userActivity?.last_viewed_at,
           view_count: userActivity?.view_count || 0,
           coverImageUrl,
+          isComplete,
+          totalPageCount,
+          pagesWithImages,
         };
       });
 
-      const sortedBooks = booksWithActivity.sort((a, b) => 
+      // Apply completion filter if specified (client-side since it requires computed values)
+      let filteredBooks = booksWithActivity;
+      if (completionFilter === 'completed') {
+        filteredBooks = booksWithActivity.filter(book => book.isComplete);
+      } else if (completionFilter === 'not-completed') {
+        filteredBooks = booksWithActivity.filter(book => !book.isComplete);
+      }
+
+      const sortedBooks = filteredBooks.sort((a, b) => 
         new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
       );
 

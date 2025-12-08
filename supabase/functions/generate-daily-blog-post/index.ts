@@ -204,7 +204,7 @@ serve(async (req) => {
       result = { ...data, action: 'updated' };
       console.log(`Updated existing blog post: ${slug}`);
     } else {
-      // Create new post
+      // Create new post and publish it
       const { data, error } = await supabase
         .from('blog_posts')
         .insert({
@@ -214,7 +214,8 @@ serve(async (req) => {
           excerpt: `${booksWithImages.length} new books created on ${formattedDate}`,
           featured_image_url: booksWithImages[0]?.coverImage || null,
           author_id: authorId,
-          status: 'draft',
+          status: 'published',
+          published_at: new Date().toISOString(),
           tags: ['daily-update', ...Object.keys(categories)],
           seo_title: title,
           seo_description: `Daily update from Chairlift Habits: ${booksWithImages.length} new educational books created on ${formattedDate}`,

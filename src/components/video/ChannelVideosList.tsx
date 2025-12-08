@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock } from "lucide-react";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
+import { ScreenTimeExpiredModal } from "./ScreenTimeExpiredModal";
+import { ScreenTimeWarningBanner } from "./ScreenTimeWarningBanner";
+import { useScreenTimeTimer } from "@/hooks/useScreenTimeTimer";
 
 interface Channel {
   channelId: string;
@@ -31,30 +32,9 @@ interface ChannelVideosListProps {
 }
 
 export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListProps) => {
-  const navigate = useNavigate();
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
-
-  // Check for return-home timer from reward purchase
-  useEffect(() => {
-    const returnHomeAt = localStorage.getItem('returnHomeAt');
-    if (!returnHomeAt) return;
-
-    const returnTime = parseInt(returnHomeAt, 10);
-    const timeRemaining = returnTime - Date.now();
-
-    if (timeRemaining <= 0) {
-      localStorage.removeItem('returnHomeAt');
-      navigate('/');
-      return;
-    }
-
-    const timer = setTimeout(() => {
-      localStorage.removeItem('returnHomeAt');
-      navigate('/');
-    }, timeRemaining);
-
-    return () => clearTimeout(timer);
-  }, [navigate]);
+  
+  const { timeRemaining, showWarning, showExpiredModal, dismissExpiredModal } = useScreenTimeTimer();
 
   const { data: videos, isLoading } = useQuery({
     queryKey: ['channel-videos', channel.channelId],
@@ -95,57 +75,64 @@ export const ChannelVideosList = ({ channel, onVideoSelect }: ChannelVideosListP
   };
 
   return (
-    <div className="space-y-6">
-      {isLoading && (
-        <div className="text-center py-8 text-muted-foreground">
-          Loading videos...
-        </div>
+    <>
+      {showWarning && timeRemaining !== null && timeRemaining > 0 && (
+        <ScreenTimeWarningBanner timeRemaining={timeRemaining} />
       )}
+      <ScreenTimeExpiredModal open={showExpiredModal} onDismiss={dismissExpiredModal} />
+      
+      <div className={`space-y-6 ${showWarning ? 'mt-12' : ''}`}>
+        {isLoading && (
+          <div className="text-center py-8 text-muted-foreground">
+            Loading videos...
+          </div>
+        )}
 
-      {videos && videos.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {videos.map((video) => {
-            const isPlaying = playingVideoId === video.videoId;
-            
-            return (
-              <Card 
-                key={video.videoId} 
-                className="overflow-hidden hover:shadow-lg transition-shadow"
-              >
-                {isPlaying ? (
-                  <div className="aspect-video">
-                    <YouTubeVideoPlayer videoId={video.videoId} />
-                  </div>
-                ) : (
-                  <div 
-                    className="aspect-video relative cursor-pointer"
-                    onClick={() => handleVideoClick(video)}
-                  >
-                    <img 
-                      src={video.thumbnailUrl} 
-                      alt={video.title}
-                      className="w-full h-full object-cover"
-                    />
-                    <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                      <Clock className="w-3 h-3" />
-                      {formatDuration(video.durationSeconds)}
+        {videos && videos.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {videos.map((video) => {
+              const isPlaying = playingVideoId === video.videoId;
+              
+              return (
+                <Card 
+                  key={video.videoId} 
+                  className="overflow-hidden hover:shadow-lg transition-shadow"
+                >
+                  {isPlaying ? (
+                    <div className="aspect-video">
+                      <YouTubeVideoPlayer videoId={video.videoId} />
                     </div>
-                  </div>
-                )}
-                <CardHeader>
-                  <CardTitle className="text-base line-clamp-2">{video.title}</CardTitle>
-                </CardHeader>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+                  ) : (
+                    <div 
+                      className="aspect-video relative cursor-pointer"
+                      onClick={() => handleVideoClick(video)}
+                    >
+                      <img 
+                        src={video.thumbnailUrl} 
+                        alt={video.title}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute bottom-2 right-2 bg-black/80 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {formatDuration(video.durationSeconds)}
+                      </div>
+                    </div>
+                  )}
+                  <CardHeader>
+                    <CardTitle className="text-base line-clamp-2">{video.title}</CardTitle>
+                  </CardHeader>
+                </Card>
+              );
+            })}
+          </div>
+        )}
 
-      {videos && videos.length === 0 && !isLoading && (
-        <div className="text-center py-8 text-muted-foreground">
-          No videos found for this channel.
-        </div>
-      )}
-    </div>
+        {videos && videos.length === 0 && !isLoading && (
+          <div className="text-center py-8 text-muted-foreground">
+            No videos found for this channel.
+          </div>
+        )}
+      </div>
+    </>
   );
 };

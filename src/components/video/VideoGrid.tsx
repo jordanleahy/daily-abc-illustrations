@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { Play } from "lucide-react";
 import { LoadingState } from "@/components/ui/loading-state";
 import { YouTubeVideoPlayer } from "./YouTubeVideoPlayer";
+import { ScreenTimeExpiredModal } from "./ScreenTimeExpiredModal";
+import { ScreenTimeWarningBanner } from "./ScreenTimeWarningBanner";
+import { useScreenTimeTimer } from "@/hooks/useScreenTimeTimer";
 import { 
   saveVideoListToCache, 
   getCachedVideoList, 
@@ -27,30 +30,8 @@ interface Video {
 export const VideoGrid = () => {
   const navigate = useNavigate();
   const [playingVideoId, setPlayingVideoId] = useState<string | null>(null);
-
-  // Check for return-home timer from reward purchase
-  useEffect(() => {
-    const returnHomeAt = localStorage.getItem('returnHomeAt');
-    if (!returnHomeAt) return;
-
-    const returnTime = parseInt(returnHomeAt, 10);
-    const timeRemaining = returnTime - Date.now();
-
-    if (timeRemaining <= 0) {
-      // Timer already expired, clear and redirect
-      localStorage.removeItem('returnHomeAt');
-      navigate('/');
-      return;
-    }
-
-    // Set timer to redirect home
-    const timer = setTimeout(() => {
-      localStorage.removeItem('returnHomeAt');
-      navigate('/');
-    }, timeRemaining);
-
-    return () => clearTimeout(timer);
-  }, [navigate]);
+  
+  const { timeRemaining, showWarning, showExpiredModal, dismissExpiredModal } = useScreenTimeTimer();
 
   // Phase 1: Get cached video list as placeholder data for instant display
   const cachedVideos = getCachedVideoList();
@@ -146,42 +127,49 @@ export const VideoGrid = () => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {videos.map((video) => (
-        <Card
-          key={video.videoId}
-          className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
-          onClick={() => playingVideoId !== video.videoId && handleVideoClick(video)}
-        >
-          {playingVideoId === video.videoId ? (
-            <div className="space-y-2">
-              <YouTubeVideoPlayer videoId={video.videoId} title={video.title} />
-              <div className="p-4">
-                <h3 className="font-semibold line-clamp-2">{video.title}</h3>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="aspect-video relative">
-                <img 
-                  src={video.thumbnailUrl} 
-                  alt={video.title}
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
-                  <Play className="w-16 h-16 text-white" />
+    <>
+      {showWarning && timeRemaining !== null && timeRemaining > 0 && (
+        <ScreenTimeWarningBanner timeRemaining={timeRemaining} />
+      )}
+      <ScreenTimeExpiredModal open={showExpiredModal} onDismiss={dismissExpiredModal} />
+      
+      <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 ${showWarning ? 'mt-12' : ''}`}>
+        {videos.map((video) => (
+          <Card
+            key={video.videoId}
+            className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => playingVideoId !== video.videoId && handleVideoClick(video)}
+          >
+            {playingVideoId === video.videoId ? (
+              <div className="space-y-2">
+                <YouTubeVideoPlayer videoId={video.videoId} title={video.title} />
+                <div className="p-4">
+                  <h3 className="font-semibold line-clamp-2">{video.title}</h3>
                 </div>
-                <Badge className="absolute bottom-2 right-2 bg-black/80">
-                  {formatDuration(video.durationSeconds)}
-                </Badge>
               </div>
-              <div className="p-4">
-                <h3 className="font-semibold line-clamp-2">{video.title}</h3>
-              </div>
-            </>
-          )}
-        </Card>
-      ))}
-    </div>
+            ) : (
+              <>
+                <div className="aspect-video relative">
+                  <img 
+                    src={video.thumbnailUrl} 
+                    alt={video.title}
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                    <Play className="w-16 h-16 text-white" />
+                  </div>
+                  <Badge className="absolute bottom-2 right-2 bg-black/80">
+                    {formatDuration(video.durationSeconds)}
+                  </Badge>
+                </div>
+                <div className="p-4">
+                  <h3 className="font-semibold line-clamp-2">{video.title}</h3>
+                </div>
+              </>
+            )}
+          </Card>
+        ))}
+      </div>
+    </>
   );
 };

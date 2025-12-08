@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, Sparkles } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BlogEditor } from '@/components/blog/BlogEditor';
 import { BlogList } from '@/components/blog/BlogList';
@@ -46,6 +46,21 @@ export default function BlogAdmin() {
     },
   });
 
+  const generateMutation = useMutation({
+    mutationFn: async () => {
+      const { data, error } = await supabase.functions.invoke('generate-daily-blog-post');
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['blog-posts-admin'] });
+      toast({ title: data?.message || 'Blog post generated!' });
+    },
+    onError: (error: Error) => {
+      toast({ title: error.message || 'Failed to generate post', variant: 'destructive' });
+    },
+  });
+
   const handleCreate = () => {
     setSelectedPostId(null);
     setIsCreating(true);
@@ -74,13 +89,23 @@ export default function BlogAdmin() {
 
   return (
     <PageLayout title="Blog Admin">
-      <div className="container max-w-6xl mx-auto py-8">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold">Blog Posts</h1>
-          <Button onClick={handleCreate}>
-            <Plus className="w-4 h-4 mr-2" />
-            New Post
-          </Button>
+      <div className="container max-w-6xl mx-auto py-8 px-4">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+          <h1 className="text-2xl sm:text-3xl font-bold">Blog Posts</h1>
+          <div className="flex flex-wrap gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => generateMutation.mutate()}
+              disabled={generateMutation.isPending}
+            >
+              <Sparkles className="w-4 h-4 mr-2" />
+              {generateMutation.isPending ? 'Generating...' : 'Generate Daily Post'}
+            </Button>
+            <Button onClick={handleCreate}>
+              <Plus className="w-4 h-4 mr-2" />
+              New Post
+            </Button>
+          </div>
         </div>
 
         <BlogList

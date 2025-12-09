@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
+import { useLastFinishedBook } from "./useLastFinishedBook";
 
 const WARNING_THRESHOLD_MS = 60 * 1000; // Show warning at 1 minute remaining
 
@@ -7,20 +8,27 @@ interface ScreenTimeTimerState {
   timeRemaining: number | null; // in milliseconds
   showWarning: boolean;
   showExpiredModal: boolean;
-  dismissExpiredModal: (navigateTo: '/' | '/habits') => void;
+  dismissExpiredModal: (action: 'home' | 'habits') => void;
+  lastBookId: string | null;
 }
 
 export const useScreenTimeTimer = (): ScreenTimeTimerState => {
   const navigate = useNavigate();
+  const { data: lastBookId } = useLastFinishedBook();
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const [showWarning, setShowWarning] = useState(false);
   const [showExpiredModal, setShowExpiredModal] = useState(false);
 
-  const dismissExpiredModal = useCallback((navigateTo: '/' | '/habits') => {
+  const dismissExpiredModal = useCallback((action: 'home' | 'habits') => {
     localStorage.removeItem('returnHomeAt');
     setShowExpiredModal(false);
-    navigate(navigateTo);
-  }, [navigate]);
+    
+    if (action === 'habits' && lastBookId) {
+      navigate(`/library/book/${lastBookId}/read`);
+    } else {
+      navigate('/');
+    }
+  }, [navigate, lastBookId]);
 
   useEffect(() => {
     const returnHomeAt = localStorage.getItem('returnHomeAt');
@@ -70,5 +78,6 @@ export const useScreenTimeTimer = (): ScreenTimeTimerState => {
     showWarning,
     showExpiredModal,
     dismissExpiredModal,
+    lastBookId: lastBookId ?? null,
   };
 };

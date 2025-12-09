@@ -60,6 +60,7 @@ export const useDuplicateBook = () => {
           letter: page.letter,
           page_identifier: page.page_identifier || page.letter,
           page_number: page.page_number,
+          page_type: page.page_type,
           title: page.title,
           description: page.description,
           content: page.content,

@@ -11,7 +11,7 @@ import { Clock, Sparkles } from "lucide-react";
 
 interface ScreenTimeExpiredModalProps {
   open: boolean;
-  onDismiss: (navigateTo: '/' | '/habits') => void;
+  onDismiss: (action: 'home' | 'habits') => void;
 }
 
 export const ScreenTimeExpiredModal = ({ open, onDismiss }: ScreenTimeExpiredModalProps) => {
@@ -29,7 +29,7 @@ export const ScreenTimeExpiredModal = ({ open, onDismiss }: ScreenTimeExpiredMod
         </DialogHeader>
         <DialogFooter className="flex-col gap-2 sm:flex-col">
           <Button 
-            onClick={() => onDismiss('/habits')} 
+            onClick={() => onDismiss('habits')} 
             className="w-full gap-2"
           >
             <Sparkles className="h-4 w-4" />
@@ -37,7 +37,7 @@ export const ScreenTimeExpiredModal = ({ open, onDismiss }: ScreenTimeExpiredMod
           </Button>
           <Button 
             variant="outline" 
-            onClick={() => onDismiss('/')}
+            onClick={() => onDismiss('home')}
             className="w-full"
           >
             Go Home

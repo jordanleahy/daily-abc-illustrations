@@ -146,6 +146,7 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
   const [isProductDescriptionSaved, setIsProductDescriptionSaved] = useState(true);
   const [isSavingProductDescription, setIsSavingProductDescription] = useState(false);
   const [isRefreshingLinkedInPost, setIsRefreshingLinkedInPost] = useState(false);
+  const [isRegeneratingSlug, setIsRegeneratingSlug] = useState(false);
 
   /**
    * Handles client-side PDF generation for the content
@@ -1203,7 +1204,47 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
                   SEO-optimized public landing page
                 </p>
               </div>
-              <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="flex items-center gap-2 w-full md:w-auto flex-wrap">
+                {existingPublication.status === 'queued' && (
+                  <Button 
+                    onClick={async () => {
+                      if (!existingPublication) return;
+                      setIsRegeneratingSlug(true);
+                      try {
+                        const newSlug = await generateUniqueSlug(contentName, contentId);
+                        
+                        const { error } = await supabase
+                          .from('daily_published')
+                          .update({ slug: newSlug, updated_at: new Date().toISOString() })
+                          .eq('id', existingPublication.id);
+                        
+                        if (error) throw error;
+                        
+                        setExistingPublication({ ...existingPublication, slug: newSlug });
+                        queryClient.invalidateQueries({ queryKey: ['daily-published-schedule'] });
+                        toast({
+                          title: "URL Updated",
+                          description: "Public URL has been regenerated from the current title."
+                        });
+                      } catch (error) {
+                        console.error('Failed to regenerate slug:', error);
+                        toast({
+                          title: "Update Failed",
+                          description: "Unable to update the URL.",
+                          variant: "destructive"
+                        });
+                      } finally {
+                        setIsRegeneratingSlug(false);
+                      }
+                    }}
+                    variant="outline"
+                    disabled={isRegeneratingSlug}
+                    className="flex items-center gap-2 flex-1 md:flex-none"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isRegeneratingSlug ? 'animate-spin' : ''}`} />
+                    <span>{isRegeneratingSlug ? 'Updating...' : 'Update URL'}</span>
+                  </Button>
+                )}
                 <Button 
                   onClick={async () => {
                     const publicBookUrl = `${SITE_CONFIG.productionUrl}/book/${existingPublication.slug}`;

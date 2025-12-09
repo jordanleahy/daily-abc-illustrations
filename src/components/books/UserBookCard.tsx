@@ -8,10 +8,12 @@ import { BookImage } from '@/components/ui/book-image';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { AdminOnly } from '@/components/AdminOnly';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
+import { useDuplicateBook } from '@/hooks/useDuplicateBook';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { getThemeDisplayName } from '@/types/characterTheme';
 import { getBookTypeDisplayName } from '@/types/bookType';
 import { supabase } from '@/integrations/supabase/client';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Copy } from 'lucide-react';
 import type { DailyPublished } from '@/types/dailyPublished';
 
 export interface UserBookCardProps {
@@ -42,6 +44,8 @@ export function UserBookCard({
   isDeleting,
 }: UserBookCardProps) {
   const queryClient = useQueryClient();
+  const { user } = useAuthContext();
+  const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
   const coverImageUrl = book.coverImageUrl;
   
   const { ref, inView } = useIntersectionObserver({
@@ -135,6 +139,19 @@ export function UserBookCard({
             </div>
           </div>
         </AspectRatio>
+
+        <Button 
+          variant="outline" 
+          className="w-full gap-2"
+          onClick={(e) => {
+            e.stopPropagation();
+            if (user) duplicateBook({ bookId: book.id, userId: user.id });
+          }}
+          disabled={isDuplicating}
+        >
+          <Copy className="h-4 w-4" />
+          {isDuplicating ? 'Duplicating...' : 'Duplicate'}
+        </Button>
 
         <Button 
           variant="outline" 

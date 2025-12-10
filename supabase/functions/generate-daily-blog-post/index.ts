@@ -40,12 +40,38 @@ serve(async (req) => {
 
     console.log(`Generating daily blog post for date: ${targetDate}`);
 
-    // Get books created on the target date
+    // SAFETY: Only get books that are ACTIVELY published in daily_published
+    // This ensures we only blog about books users can actually see in the library
+    const { data: activePublished, error: publishedError } = await supabase
+      .from('daily_published')
+      .select('book_id')
+      .eq('status', 'active');
+
+    if (publishedError) {
+      console.error('Error fetching active published books:', publishedError);
+      throw new Error(`Failed to fetch active published: ${publishedError.message}`);
+    }
+
+    const activeBookIds = (activePublished || []).map(p => p.book_id);
+    
+    if (activeBookIds.length === 0) {
+      console.log('No actively published books found');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'No actively published books in the library' 
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`Found ${activeBookIds.length} actively published book(s)`);
+
+    // Get full book details for the active published books
     const { data: books, error: booksError } = await supabase
       .from('books')
       .select('id, book_name, book_description, category, created_at')
-      .gte('created_at', `${targetDate}T00:00:00`)
-      .lt('created_at', `${targetDate}T23:59:59`)
+      .in('id', activeBookIds)
       .order('created_at', { ascending: true });
 
     if (booksError) {
@@ -54,22 +80,47 @@ serve(async (req) => {
     }
 
     if (!books || books.length === 0) {
-      console.log('No books found for this date');
+      console.log('No books found for active published entries');
       return new Response(JSON.stringify({ 
         success: false, 
-        message: 'No books created on this date' 
+        message: 'No books found for active published entries' 
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`Found ${books.length} books`);
+    console.log(`Processing ${books.length} books`);
+
+    // DEDUPLICATION: Check if a blog post with the same title already exists
+    const bookTitles = books.map(b => b.book_name);
+    const { data: existingPosts } = await supabase
+      .from('blog_posts')
+      .select('title')
+      .in('title', bookTitles);
+
+    const existingTitles = new Set((existingPosts || []).map(p => p.title));
+    
+    // Filter out books that already have blog posts
+    const newBooks = books.filter(b => !existingTitles.has(b.book_name));
+    
+    if (newBooks.length === 0) {
+      console.log('All books already have blog posts');
+      return new Response(JSON.stringify({ 
+        success: false, 
+        message: 'All actively published books already have blog posts' 
+      }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
+    console.log(`${newBooks.length} new books to create posts for (${books.length - newBooks.length} already have posts)`);
 
     // Get images for each book (pages 1, 2, 3)
     const booksWithImages: BookWithImages[] = [];
 
-    for (const book of books) {
+    for (const book of newBooks) {
       // Get pages for this book
       const { data: pages, error: pagesError } = await supabase
         .from('pages')
@@ -114,15 +165,50 @@ serve(async (req) => {
       day: 'numeric',
     });
 
-    // Generate blog post content
-    const title = `Daily Update: ${formattedDate}`;
-    const slug = `daily-update-${targetDate}`;
+    // Get admin user for author_id
+    const { data: adminRole } = await supabase
+      .from('user_roles')
+      .select('user_id')
+      .eq('role', 'admin')
+      .limit(1)
+      .single();
 
-    let content = `# 📚 ${booksWithImages.length} Books Created Today\n\n`;
-    content += `*${formattedDate}*\n\n---\n\n`;
+    const authorId = adminRole?.user_id;
+
+    if (!authorId) {
+      throw new Error('No admin user found to set as author');
+    }
+
+    // Create individual blog posts for each new book
+    const createdPosts = [];
 
     for (const book of booksWithImages) {
-      content += `## ${book.book_name}\n\n`;
+      // Generate unique slug from book name
+      const baseSlug = book.book_name
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .substring(0, 60)
+        .replace(/-$/, '');
+
+      // Check for slug uniqueness
+      let slug = baseSlug;
+      let counter = 1;
+      while (true) {
+        const { data: existing } = await supabase
+          .from('blog_posts')
+          .select('id')
+          .eq('slug', slug)
+          .single();
+        
+        if (!existing) break;
+        slug = `${baseSlug}-${counter}`;
+        counter++;
+      }
+
+      // Build content for this book
+      let content = `## ${book.book_name}\n\n`;
       
       if (book.book_description) {
         content += `${book.book_description}\n\n`;
@@ -145,93 +231,39 @@ serve(async (req) => {
         content += `| ${images.map(img => `![${img.label}](${img.url})`).join(' | ')} |\n\n`;
       }
 
-      content += `---\n\n`;
-    }
-
-    // Summary stats
-    const categories = booksWithImages.reduce((acc, book) => {
-      const cat = book.category || 'Uncategorized';
-      acc[cat] = (acc[cat] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
-
-    content += `## 📊 Summary\n\n`;
-    content += `- **Total Books:** ${booksWithImages.length}\n`;
-    for (const [cat, count] of Object.entries(categories)) {
-      content += `- **${cat}:** ${count}\n`;
-    }
-
-    // Get admin user for author_id
-    const { data: adminRole } = await supabase
-      .from('user_roles')
-      .select('user_id')
-      .eq('role', 'admin')
-      .limit(1)
-      .single();
-
-    const authorId = adminRole?.user_id;
-
-    if (!authorId) {
-      throw new Error('No admin user found to set as author');
-    }
-
-    // Check if post already exists for this date
-    const { data: existingPost } = await supabase
-      .from('blog_posts')
-      .select('id')
-      .eq('slug', slug)
-      .single();
-
-    let result;
-
-    if (existingPost) {
-      // Update existing post
-      const { data, error } = await supabase
-        .from('blog_posts')
-        .update({
-          title,
-          content,
-          excerpt: `${booksWithImages.length} new books created on ${formattedDate}`,
-          featured_image_url: booksWithImages[0]?.coverImage || null,
-          tags: ['daily-update', ...Object.keys(categories)],
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existingPost.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      result = { ...data, action: 'updated' };
-      console.log(`Updated existing blog post: ${slug}`);
-    } else {
-      // Create new post and publish it
-      const { data, error } = await supabase
+      // Insert blog post
+      const { data: post, error: insertError } = await supabase
         .from('blog_posts')
         .insert({
-          title,
+          title: book.book_name,
           slug,
           content,
-          excerpt: `${booksWithImages.length} new books created on ${formattedDate}`,
-          featured_image_url: booksWithImages[0]?.coverImage || null,
+          excerpt: book.book_description || `New educational book: ${book.book_name}`,
+          featured_image_url: book.coverImage || null,
           author_id: authorId,
           status: 'published',
           published_at: new Date().toISOString(),
-          tags: ['daily-update', ...Object.keys(categories)],
-          seo_title: title,
-          seo_description: `Daily update from Chairlift Habits: ${booksWithImages.length} new educational books created on ${formattedDate}`,
+          tags: ['library', book.category || 'educational'].filter(Boolean),
+          seo_title: book.book_name,
+          seo_description: book.book_description || `Explore ${book.book_name} - an educational book from Chairlift Habits`,
         })
         .select()
         .single();
 
-      if (error) throw error;
-      result = { ...data, action: 'created' };
-      console.log(`Created new blog post: ${slug}`);
+      if (insertError) {
+        console.error(`Error creating blog post for ${book.book_name}:`, insertError);
+        continue;
+      }
+
+      createdPosts.push(post);
+      console.log(`Created blog post: ${book.book_name} (${slug})`);
     }
 
     return new Response(JSON.stringify({ 
       success: true, 
-      post: result,
-      booksProcessed: booksWithImages.length,
+      postsCreated: createdPosts.length,
+      posts: createdPosts,
+      skippedDuplicates: books.length - newBooks.length,
     }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

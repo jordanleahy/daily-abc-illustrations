@@ -8,6 +8,39 @@ interface DuplicateBookParams {
   userId: string;
 }
 
+// Text replacements to apply when duplicating
+const TEXT_REPLACEMENTS: [RegExp, string][] = [
+  [/Bluey/gi, 'Artic'],
+  [/Bandit/gi, 'Glacier'],
+];
+
+const applyReplacements = (text: string | null): string | null => {
+  if (!text) return text;
+  let result = text;
+  for (const [pattern, replacement] of TEXT_REPLACEMENTS) {
+    result = result.replace(pattern, replacement);
+  }
+  return result;
+};
+
+const applyReplacementsToJson = (content: any): any => {
+  if (!content) return content;
+  if (typeof content === 'string') {
+    return applyReplacements(content);
+  }
+  if (Array.isArray(content)) {
+    return content.map(applyReplacementsToJson);
+  }
+  if (typeof content === 'object') {
+    const result: any = {};
+    for (const key of Object.keys(content)) {
+      result[key] = applyReplacementsToJson(content[key]);
+    }
+    return result;
+  }
+  return content;
+};
+
 export const useDuplicateBook = () => {
   const queryClient = useQueryClient();
 
@@ -35,14 +68,14 @@ export const useDuplicateBook = () => {
         throw new Error('Failed to fetch book pages');
       }
 
-      // Create new book with (Copy) suffix and draft status
+      // Create new book with replacements applied
       const { data: newBook, error: newBookError } = await supabase
         .from('books')
         .insert({
           user_id: userId,
-          book_name: `${originalBook.book_name} (Copy)`,
+          book_name: applyReplacements(`${originalBook.book_name} (Copy)`),
           category: originalBook.category,
-          book_description: originalBook.book_description,
+          book_description: applyReplacements(originalBook.book_description),
           total_pages: originalBook.total_pages,
           status: 'draft',
         })
@@ -53,7 +86,7 @@ export const useDuplicateBook = () => {
         throw new Error('Failed to create duplicate book');
       }
 
-      // Duplicate all pages if there are any
+      // Duplicate all pages with replacements applied
       if (originalPages && originalPages.length > 0) {
         const pagesToInsert = originalPages.map((page) => ({
           book_id: newBook.id,
@@ -61,9 +94,9 @@ export const useDuplicateBook = () => {
           page_identifier: page.page_identifier || page.letter,
           page_number: page.page_number,
           page_type: page.page_type,
-          title: page.title,
-          description: page.description,
-          content: page.content,
+          title: applyReplacements(page.title),
+          description: applyReplacements(page.description),
+          content: applyReplacementsToJson(page.content),
         }));
 
         const { error: insertPagesError } = await supabase
@@ -80,10 +113,8 @@ export const useDuplicateBook = () => {
       return newBook;
     },
     onSuccess: (newBook) => {
-      // Invalidate books queries to refresh the list
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['book', newBook.id] });
-      
       toast.success('Book duplicated successfully');
     },
     onError: (error: Error) => {

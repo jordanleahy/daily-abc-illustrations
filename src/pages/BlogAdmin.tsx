@@ -92,18 +92,22 @@ export default function BlogAdmin() {
       <div className="container max-w-6xl mx-auto py-8 px-4">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
           <h1 className="text-2xl sm:text-3xl font-bold">Blog Posts</h1>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2 w-full sm:w-auto">
             <Button 
               variant="outline" 
               onClick={() => generateMutation.mutate()}
               disabled={generateMutation.isPending}
+              className="flex-1 sm:flex-none"
+              size="sm"
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              {generateMutation.isPending ? 'Generating...' : 'Generate Daily Post'}
+              <Sparkles className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">{generateMutation.isPending ? 'Generating...' : 'Generate Daily Post'}</span>
+              <span className="sm:hidden">{generateMutation.isPending ? '...' : 'Generate'}</span>
             </Button>
-            <Button onClick={handleCreate}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Post
+            <Button onClick={handleCreate} className="flex-1 sm:flex-none" size="sm">
+              <Plus className="w-4 h-4 sm:mr-2" />
+              <span className="hidden sm:inline">New Post</span>
+              <span className="sm:hidden">New</span>
             </Button>
           </div>
         </div>

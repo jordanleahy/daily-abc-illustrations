@@ -69,11 +69,11 @@ export const BlogList = ({ posts, isLoading, onEdit, onDelete }: BlogListProps) 
       {posts.map((post) => (
         <Card 
           key={post.id} 
-          className="group p-5 hover:shadow-md transition-all duration-200 border-border/50 hover:border-border"
+          className="group p-4 sm:p-5 hover:shadow-md transition-all duration-200 border-border/50 hover:border-border"
         >
-          <div className="flex gap-4">
-            {/* Thumbnail placeholder */}
-            <div className="w-24 h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            {/* Thumbnail */}
+            <div className="w-full sm:w-24 h-32 sm:h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
               {post.featured_image_url ? (
                 <img 
                   src={post.featured_image_url} 
@@ -87,20 +87,20 @@ export const BlogList = ({ posts, isLoading, onEdit, onDelete }: BlogListProps) 
 
             {/* Content */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-start justify-between gap-3 mb-2">
-                <h3 className="text-lg font-semibold line-clamp-1 group-hover:text-primary transition-colors">
+              <div className="flex items-start justify-between gap-2 mb-2">
+                <h3 className="text-base sm:text-lg font-semibold line-clamp-2 sm:line-clamp-1 group-hover:text-primary transition-colors">
                   {post.title}
                 </h3>
                 {getStatusBadge(post.status)}
               </div>
 
               {post.excerpt && (
-                <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
+                <p className="text-sm text-muted-foreground line-clamp-2 mb-3 hidden sm:block">
                   {post.excerpt}
                 </p>
               )}
 
-              <div className="flex flex-wrap items-center gap-4 text-xs text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs text-muted-foreground mb-3 sm:mb-0">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="w-3.5 h-3.5" />
                   {post.published_at 
@@ -108,15 +108,49 @@ export const BlogList = ({ posts, isLoading, onEdit, onDelete }: BlogListProps) 
                     : format(new Date(post.created_at), 'MMM d, yyyy')
                   }
                 </span>
-                <span className="text-muted-foreground/50">•</span>
-                <span className="font-mono text-xs truncate max-w-[200px]">
+                <span className="text-muted-foreground/50 hidden sm:inline">•</span>
+                <span className="font-mono text-xs truncate max-w-[180px] sm:max-w-[200px] hidden sm:inline">
                   /blog/{post.slug}
                 </span>
               </div>
+
+              {/* Mobile Actions - always visible */}
+              <div className="flex gap-2 sm:hidden">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => onEdit(post.id)}
+                  className="flex-1"
+                >
+                  <Edit className="w-4 h-4 mr-1.5" />
+                  Edit
+                </Button>
+                {post.status === 'published' && (
+                  <Button 
+                    size="sm" 
+                    variant="outline" 
+                    asChild
+                  >
+                    <Link to={`/blog/${post.slug}`} target="_blank">
+                      <ExternalLink className="w-4 h-4" />
+                    </Link>
+                  </Button>
+                )}
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  onClick={() => {
+                    if (confirm('Delete this post?')) onDelete(post.id);
+                  }}
+                  className="text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
             </div>
 
-            {/* Actions */}
-            <div className="flex flex-col gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+            {/* Desktop Actions - hover to show */}
+            <div className="hidden sm:flex flex-col gap-2 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
               <Button 
                 size="icon" 
                 variant="ghost" 

@@ -73,7 +73,7 @@ export const BlogList = ({ posts, isLoading, onEdit, onDelete }: BlogListProps) 
         >
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
             {/* Thumbnail */}
-            <div className="w-full sm:w-24 h-32 sm:h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
+            <div className="w-full aspect-square sm:w-24 sm:aspect-auto sm:h-24 bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg shrink-0 flex items-center justify-center overflow-hidden">
               {post.featured_image_url ? (
                 <img 
                   src={post.featured_image_url} 

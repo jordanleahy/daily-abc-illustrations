@@ -18,19 +18,51 @@ export const useWinterThemedBooks = () => {
       if (error) throw error;
       if (!books || books.length === 0) return [];
 
-      // Get cover images for these books
+      // Get cover page IDs for these books
       const bookIds = books.map(b => b.id);
+      const { data: coverPages } = await supabase
+        .from('pages')
+        .select('id, book_id')
+        .in('book_id', bookIds)
+        .eq('page_type', 'cover');
+
+      if (!coverPages || coverPages.length === 0) {
+        // No cover pages found, return books without images
+        return books.map(book => ({
+          id: book.id,
+          book_id: book.id,
+          title: book.book_name,
+          description: book.book_description,
+          published_at: book.created_at,
+          expires_at: '',
+          is_active: true,
+          created_at: book.created_at,
+          updated_at: book.updated_at,
+          status: 'active' as const,
+          publish_date: book.created_at,
+          book: {
+            book_name: book.book_name,
+            book_description: book.book_description,
+            user_id: book.user_id,
+            created_at: book.created_at,
+          },
+          og_image_url: null,
+        })) as unknown as DailyPublishedWithBook[];
+      }
+
+      // Get cover images for cover pages
+      const coverPageIds = coverPages.map(p => p.id);
       const { data: coverImages } = await supabase
         .from('page_image_urls')
-        .select('book_id, image_url')
-        .in('book_id', bookIds)
+        .select('page_id, book_id, image_url')
+        .in('page_id', coverPageIds)
         .eq('is_latest', true)
-        .order('created_at', { ascending: true });
+        .not('image_url', 'is', null);
 
-      // Map book_id to first (cover) image
+      // Map book_id to cover image
       const coverImageMap = new Map<string, string>();
       coverImages?.forEach(img => {
-        if (!coverImageMap.has(img.book_id) && img.image_url) {
+        if (img.image_url) {
           coverImageMap.set(img.book_id, img.image_url);
         }
       });

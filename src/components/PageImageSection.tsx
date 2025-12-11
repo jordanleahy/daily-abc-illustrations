@@ -5,11 +5,12 @@ import { usePageImageUrls } from "@/hooks/usePageImageUrls";
 import { usePageSystemPrompt } from "@/hooks/usePageSystemPrompt";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuthContext } from "@/contexts/AuthContext";
-// Toast notifications removed
+import { useToast } from "@/hooks/use-toast";
 import { ProcessStatus } from "@/types/shared";
 import { useState, useEffect } from "react";
 import { Loader2, Upload, Clipboard, Copy, ArrowLeft, DollarSign, Sparkles } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
+import { compositeTextOnImage } from "@/utils/imageTextCompositor";
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 import {
   DropdownMenu,
@@ -32,11 +33,13 @@ interface PageImageSectionProps {
 
 export function PageImageSection({ pageId, bookId, showUpload: externalShowUpload, onCloseUpload, enableMobileSave = false, preloadedImageUrl, priority = false }: PageImageSectionProps) {
   const { user } = useAuthContext();
+  const { toast } = useToast();
   const { currentImage, versions, isLoading, createImageRecord, uploadImage, refreshData } = usePageImageUrls(pageId);
   const { currentPrompt } = usePageSystemPrompt(pageId);
   
   const [internalShowUpload, setInternalShowUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const [showPromptViewer, setShowPromptViewer] = useState(false);
 
   // Use external upload state if provided, otherwise use internal state
@@ -163,6 +166,83 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     } catch (error) {
       console.error('Error copying prompt:', error);
       console.error('Failed to copy prompt');
+    }
+  };
+
+  // Generate text image by compositing title onto existing color image
+  const handleGenerateTextImage = async () => {
+    if (!user || !currentImage?.image_url) {
+      toast({
+        title: "No image available",
+        description: "Please upload a color image first before generating text overlay.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      // Get page title from database
+      const { data: pageData, error: pageError } = await supabase
+        .from('pages')
+        .select('title')
+        .eq('id', pageId)
+        .single();
+
+      if (pageError || !pageData?.title) {
+        throw new Error('Could not fetch page title');
+      }
+
+      // Fetch the color image and convert to data URL
+      const response = await fetch(currentImage.image_url);
+      const blob = await response.blob();
+      const imageDataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      // Composite text onto image
+      const { blob: compositedBlob } = await compositeTextOnImage(imageDataUrl, pageData.title);
+
+      // Upload the composited image
+      const fileName = `page-${pageId}-text-${Date.now()}.png`;
+      const filePath = `${user.id}/${bookId}/text/${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('page-images')
+        .upload(filePath, compositedBlob, { contentType: 'image/png' });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('page-images')
+        .getPublicUrl(filePath);
+
+      // Update page_image_urls with text_image_url
+      const { error: updateError } = await supabase
+        .from('page_image_urls')
+        .update({ text_image_url: urlData.publicUrl })
+        .eq('id', currentImage.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Text image generated",
+        description: "Title overlay has been added to the image.",
+      });
+      
+      refreshData();
+    } catch (error: any) {
+      console.error('Error generating text image:', error);
+      toast({
+        title: "Generation failed",
+        description: error.message || "Failed to generate text image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -319,16 +399,20 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               </p>
             </div>
             
-            {/* Generate button */}
+            {/* Generate text overlay button */}
             <Button 
-              onClick={handlePasteFromClipboard}
+              onClick={handleGenerateTextImage}
               size="sm"
               variant="default"
               className="w-full max-w-xs"
-              disabled={isUploading}
+              disabled={isUploading || isGenerating || !currentImage?.image_url}
             >
-              <Sparkles className="w-4 h-4 mr-2" />
-              Generate
+              {isGenerating ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Sparkles className="w-4 h-4 mr-2" />
+              )}
+              {isGenerating ? 'Generating...' : 'Generate'}
             </Button>
 
             {/* View Prompt button */}

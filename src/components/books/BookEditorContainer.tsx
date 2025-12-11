@@ -9,6 +9,7 @@ import { Sheet, SheetContent } from '@/components/ui/sheet';
 import { supabase } from '@/integrations/supabase/client';
 import { PublicationStatus } from '@/types/shared/status';
 import { cn } from '@/lib/utils';
+import { compositeTextOnImage } from '@/utils/imageTextCompositor';
 
 interface BookEditorContainerProps {
   bookId: string;
@@ -52,17 +53,34 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
     }
   }, [editorData?.pages, currentEditorPage]);
 
-  const handleEditorImageUpload = useCallback(async (imageDataUrl: string, imageMode: 'color' | 'bw' = 'color') => {
+  const handleEditorImageUpload = useCallback(async (imageDataUrl: string, imageMode: 'color' | 'bw' | 'text' = 'color') => {
     if (!user || !editorData?.pages) return;
 
     const currentPage = editorData.pages.find(p => p.page_number === currentEditorPage);
     if (!currentPage) return;
 
     try {
-      const base64Response = await fetch(imageDataUrl);
-      const blob = await base64Response.blob();
-      const modePrefix = imageMode === 'bw' ? 'coloring-' : '';
-      const file = new File([blob], `${modePrefix}page-${currentEditorPage}-${Date.now()}.webp`, { type: blob.type });
+      let finalImageDataUrl = imageDataUrl;
+      let finalBlob: Blob;
+
+      // If text mode, composite text onto image first
+      if (imageMode === 'text') {
+        const pageText = editorData.pageTextOverlays[currentEditorPage] || currentPage.title || '';
+        if (pageText) {
+          const composited = await compositeTextOnImage(imageDataUrl, pageText);
+          finalImageDataUrl = composited.dataUrl;
+          finalBlob = composited.blob;
+        } else {
+          const base64Response = await fetch(imageDataUrl);
+          finalBlob = await base64Response.blob();
+        }
+      } else {
+        const base64Response = await fetch(imageDataUrl);
+        finalBlob = await base64Response.blob();
+      }
+
+      const modePrefix = imageMode === 'bw' ? 'coloring-' : imageMode === 'text' ? 'text-' : '';
+      const file = new File([finalBlob], `${modePrefix}page-${currentEditorPage}-${Date.now()}.webp`, { type: finalBlob.type });
 
       const { data: versionData } = await supabase.rpc('get_next_page_image_version_number', {
         p_page_id: currentPage.id
@@ -71,7 +89,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
       // Check if a record already exists for this page
       const { data: existingRecord } = await supabase
         .from('page_image_urls')
-        .select('id, image_url, coloring_image_url')
+        .select('id, image_url, coloring_image_url, text_image_url')
         .eq('page_id', currentPage.id)
         .eq('is_latest', true)
         .single();
@@ -89,6 +107,8 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
         // Update existing record with the appropriate image URL
         const updateData = imageMode === 'bw' 
           ? { coloring_image_url: publicUrlData.publicUrl }
+          : imageMode === 'text'
+          ? { text_image_url: publicUrlData.publicUrl }
           : { image_url: publicUrlData.publicUrl };
         
         await supabase
@@ -106,6 +126,8 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
           source_type: 'user_uploaded',
           ...(imageMode === 'bw' 
             ? { coloring_image_url: publicUrlData.publicUrl }
+            : imageMode === 'text'
+            ? { text_image_url: publicUrlData.publicUrl }
             : { image_url: publicUrlData.publicUrl }
           )
         };
@@ -117,6 +139,8 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
 
       if (imageMode === 'bw') {
         // Store coloring image override separately (we'd need separate state, but for now just invalidate)
+      } else if (imageMode === 'text') {
+        // Text images don't need local override, just invalidate to refetch
       } else {
         setLocalImageOverrides(prev => ({ ...prev, [currentEditorPage]: publicUrlData.publicUrl }));
       }
@@ -225,6 +249,10 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
     return editorData?.pageColoringImages || {};
   }, [editorData?.pageColoringImages]);
 
+  const displayTextImages = useMemo(() => {
+    return editorData?.pageTextImages || {};
+  }, [editorData?.pageTextImages]);
+
   const pageTextOverlays = useMemo(() => {
     return { ...(editorData?.pageTextOverlays || {}), ...localTextOverrides };
   }, [editorData?.pageTextOverlays, localTextOverrides]);
@@ -251,6 +279,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
       editorPageImages={localImageOverrides}
       editorPagePrompts={editorData.sessionPrompts}
       displayColoringImages={displayColoringImages}
+      displayTextImages={displayTextImages}
       getCurrentPagePrompt={getCurrentPagePrompt}
       createBookMutation={{ isSuccess: false } as any}
       onClose={onClose}

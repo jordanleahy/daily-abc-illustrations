@@ -33,6 +33,9 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { BookEditorContainer } from '@/components/books/BookEditorContainer';
 import { UserBookCard } from '@/components/books/UserBookCard';
 import { cn } from '@/lib/utils';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+
 export default function Books() {
   const { user, loading: authLoading } = useAuthContext();
   const { isAdmin } = useRole();
@@ -137,18 +140,35 @@ export default function Books() {
 
               {/* Admin-only completion filter toggle */}
               {isAdmin && (
-                <Tabs value={completionFilter} onValueChange={(v) => setCompletionFilter(v as 'completed' | 'not-completed')} className="w-full">
-                  <TabsList className="grid w-full max-w-md grid-cols-2">
-                    <TabsTrigger value="completed" className="gap-2">
-                      <CheckCircle className="h-4 w-4" />
-                      Completed
-                    </TabsTrigger>
-                    <TabsTrigger value="not-completed" className="gap-2">
-                      <Circle className="h-4 w-4" />
-                      Not Completed
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <div className="flex items-center gap-4">
+                  <Tabs value={completionFilter} onValueChange={(v) => setCompletionFilter(v as 'completed' | 'not-completed')} className="flex-1 max-w-md">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="completed" className="gap-2">
+                        <CheckCircle className="h-4 w-4" />
+                        Completed
+                      </TabsTrigger>
+                      <TabsTrigger value="not-completed" className="gap-2">
+                        <Circle className="h-4 w-4" />
+                        Not Completed
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      toast.info('Running backfill...');
+                      const { data, error } = await supabase.functions.invoke('backfill-text-images');
+                      if (error) {
+                        toast.error('Backfill failed: ' + error.message);
+                      } else {
+                        toast.success(`Backfill complete: ${data?.processed || 0} images processed`);
+                      }
+                    }}
+                  >
+                    Backfill Text Images
+                  </Button>
+                </div>
               )}
 
               {books && books.length > 0 ? (

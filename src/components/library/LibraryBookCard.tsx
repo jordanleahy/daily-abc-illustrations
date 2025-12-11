@@ -98,8 +98,7 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
               alt={book.book_name}
               priority={priority}
               className={LIBRARY_STYLES.bookCard.image}
-              enableMobileSave={true}
-              enableCopyButton={true}
+              interceptCopyAsImage={true}
             />
           ) : (
             <div className={LIBRARY_STYLES.bookCard.placeholder.container}>

@@ -37,6 +37,8 @@ interface BookImageProps {
   enableVisibilityToggle?: boolean;
   /** Enable copy image button that copies actual image data to clipboard */
   enableCopyButton?: boolean;
+  /** Intercept long-press/right-click and copy actual image data instead of URL */
+  interceptCopyAsImage?: boolean;
   /** Current word metadata for word detail view */
   currentWordData?: WordMetadata;
 }
@@ -57,6 +59,7 @@ export function BookImage({
   disableHoverEffects = false,
   enableVisibilityToggle = false,
   enableCopyButton = false,
+  interceptCopyAsImage = false,
   currentWordData,
 }: BookImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -135,6 +138,31 @@ export function BookImage({
     }
   };
 
+  // Intercept context menu (long-press / right-click) and copy image data
+  const handleContextMenu = async (e: React.MouseEvent<HTMLImageElement>) => {
+    if (!interceptCopyAsImage || !src) return;
+    
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (isCopyingImage) return;
+    
+    setIsCopyingImage(true);
+    try {
+      await copyImageToClipboard(src);
+      toast({ title: "Image copied! Paste it anywhere." });
+    } catch (error) {
+      console.error('Failed to copy image on long-press:', error);
+      toast({ 
+        title: "Couldn't copy image", 
+        description: "Your browser may not support this feature",
+        variant: "destructive" 
+      });
+    } finally {
+      setIsCopyingImage(false);
+    }
+  };
+
   return (
     <div 
       className="relative w-full h-full"
@@ -186,9 +214,7 @@ export function BookImage({
             performanceTracker.onError(); // Track errors
             onError?.();
           }}
-          onContextMenu={enableMobileSave ? (e) => {
-            // Allow default context menu for mobile save
-          } : undefined}
+          onContextMenu={interceptCopyAsImage ? handleContextMenu : (enableMobileSave ? undefined : undefined)}
         />
       </div>
 

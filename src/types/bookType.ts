@@ -15,6 +15,7 @@ export const BOOK_TYPE_IDS = [
   'bedtime',
   'cvc',
   'sight-words',
+  'general',
   'other'
 ] as const;
 

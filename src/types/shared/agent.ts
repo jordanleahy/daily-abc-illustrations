@@ -19,7 +19,8 @@ export type AgentType =
   | 'book-creation-cvc'
   | 'book-creation-opposites'
   | 'book-creation-first-words'
-  | 'book-creation-bedtime';
+  | 'book-creation-bedtime'
+  | 'book-creation-general';         // Custom topic books
 
 /**
  * Maps book types to specialized agent types for orchestration
@@ -37,6 +38,7 @@ export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
   'opposites': 'book-creation-opposites',
   'first-words': 'book-creation-first-words',
   'bedtime': 'book-creation-bedtime',
+  'general': 'book-creation-general',
   // Fallback for unknown types
   'other': 'book-creation'
 } as const;

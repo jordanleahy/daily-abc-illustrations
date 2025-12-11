@@ -149,6 +149,17 @@ export const BOOK_TYPES = [
     expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
   },
   {
+    id: 'general' as const,
+    label: 'Custom Topic',
+    icon: Sparkles,
+    description: 'Create a book about any topic (manners, routines, life skills)',
+    prompt: 'I want to create a custom educational book on a specific topic. Help me choose a character theme, age group, topic focus, and environment to create a personalized learning experience.',
+    color: 'text-emerald-500',
+    needsClarification: true,
+    clarificationContext: 'Guide the user through topic selection (manners, routines, life skills, etc.) and environment setting (home, school, mountain, etc.) to create a personalized educational book.',
+    expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
+  },
+  {
     id: 'other',
     label: 'Other',
     icon: Package,

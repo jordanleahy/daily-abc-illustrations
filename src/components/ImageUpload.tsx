@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Upload, AlertCircle, Clipboard, Copy } from "lucide-react";
+import { Upload, AlertCircle, Clipboard, Copy, Sparkles } from "lucide-react";
 // Toast notifications removed
 import { processImage, formatFileSize } from "@/utils/imageProcessor";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -320,8 +320,8 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                 className="w-full mx-auto"
                 disabled={isProcessing}
               >
-                <Clipboard className="h-5 w-5 mr-2" />
-                Paste from Clipboard
+                <Sparkles className="h-5 w-5 mr-2" />
+                Generate
               </Button>
               
               {showCopyPrompt && onCopyPrompt && (

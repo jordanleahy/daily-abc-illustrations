@@ -47,6 +47,7 @@ import { GA4Tracker } from "./components/GA4Tracker";
 import HabitsManage from "./pages/HabitsManage";
 import MyHabits from "./pages/MyHabits";
 import MyTricks from "./pages/MyTricks";
+import Snow from "./pages/Snow";
 import Profile from "./pages/Profile";
 import WordProgress from "./pages/WordProgress";
 import AdminCategorizeBooks from "./pages/AdminCategorizeBooks";
@@ -171,6 +172,9 @@ const App = () => {
                 
                 {/* Public book landing page (no auth required) */}
                 <Route path="/book/:slug" element={<PublicBook />} />
+                
+                {/* Snow trick game (public) */}
+                <Route path="/snow" element={<Snow />} />
                 
                 {/* Habits & Rewards routes - Plus tier only */}
                 <Route path="/rewards" element={<ProtectedRoute requireFeature="habits_rewards"><Rewards /></ProtectedRoute>} />

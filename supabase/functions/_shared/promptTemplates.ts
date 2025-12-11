@@ -38,7 +38,7 @@ function generateStyleHeader(characterTheme?: string): string {
     ? themeStyles[characterTheme.toLowerCase()]
     : 'Classic children\'s book illustration, bright colors, clean style';
 
-  return `[STYLE]: ${styleDesc}`;
+  return styleDesc;
 }
 
 /**

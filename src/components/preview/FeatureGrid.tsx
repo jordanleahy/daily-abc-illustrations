@@ -9,8 +9,8 @@ export const FeatureGrid = () => {
     {
       icon: Target,
       title: 'Habits',
-      subtitle: 'Make reading a daily routine',
-      description: 'Set simple reading habits that match your family\'s schedule. Mark habits done from any device in a few taps. Turn streaks into coins so kids feel proud of progress.',
+      subtitle: 'Build habits that stick',
+      description: 'Create daily habits for reading, chores, brushing teeth, or anything else. Mark them done from any device in a few taps. Turn streaks into coins so kids feel proud of their progress.',
       link: '/preview/habits'
     },
     {

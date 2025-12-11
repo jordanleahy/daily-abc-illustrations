@@ -71,12 +71,12 @@ const PreviewHome = () => {
 
       {/* Deep Dive: Family Collaboration */}
       <DeepDiveSection
-        title="Reading, shared across your household"
-        description="Chairlift supports multiple kids and caregivers. Everyone sees the same reading status, habits, and rewards, so you stay aligned without long check-ins."
+        title="Made for families with multiple kids"
+        description="Chairlift supports as many kid profiles as you need. Each child gets their own reading history, habits, and rewards—all in one place."
         features={[
-          'Kid profiles with age, reading level, and preferences',
-          'Parent dashboard with per-child progress and activity',
-          'Invite partners or grandparents to view reading progress at no extra cost'
+          'Separate profiles for each child with age, reading level, and preferences',
+          'Track progress and activity per kid from a single dashboard',
+          'Switch between kids instantly without logging out'
         ]}
         ctaText="View the parent dashboard"
         ctaLink="/preview/dashboard"

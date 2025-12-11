@@ -67,11 +67,11 @@ export const useAllUsersWithActivity = () => {
       return (data || []).map((row: any) => ({
         user_id: row.user_id,
         user_email: row.user_email,
-        user_name: `${row.first_name} ${row.last_name}`.trim(),
-        total_books_accessed: row.books_created || 0,
-        total_reading_sessions: 0, // Not returned by this function
+        user_name: `${row.first_name || ''} ${row.last_name || ''}`.trim() || 'Unknown User',
+        total_books_accessed: row.books_accessed || 0,
+        total_reading_sessions: row.reading_sessions || 0,
         last_activity_at: row.last_activity,
-        kids_count: 0, // Not returned by this function
+        kids_count: row.kids_count || 0,
       })) as UserWithActivity[];
     },
   });

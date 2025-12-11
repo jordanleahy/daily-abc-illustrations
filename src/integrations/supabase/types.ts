@@ -2804,10 +2804,12 @@ export type Database = {
       get_all_users_with_activity: {
         Args: never
         Returns: {
-          books_created: number
+          books_accessed: number
           first_name: string
+          kids_count: number
           last_activity: string
           last_name: string
+          reading_sessions: number
           user_email: string
           user_id: string
         }[]

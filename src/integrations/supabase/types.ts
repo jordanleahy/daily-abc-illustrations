@@ -2801,12 +2801,12 @@ export type Database = {
       get_all_users_with_activity: {
         Args: never
         Returns: {
-          kids_count: number
-          last_activity_at: string
-          total_books_accessed: number
-          total_reading_sessions: number
+          books_created: number
+          first_name: string
+          last_activity: string
+          last_name: string
+          user_email: string
           user_id: string
-          user_name: string
         }[]
       }
       get_current_user_role: {

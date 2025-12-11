@@ -13,10 +13,12 @@ interface ImageUploadProps {
   requireSquare?: boolean;
   showCopyPrompt?: boolean;
   onCopyPrompt?: () => void;
+  onGenerate?: () => void;
+  isGenerating?: boolean;
   existingImageUrl?: string;
 }
 
-export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false, requireSquare = true, showCopyPrompt = false, onCopyPrompt, existingImageUrl }: ImageUploadProps) {
+export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false, requireSquare = true, showCopyPrompt = false, onCopyPrompt, onGenerate, isGenerating = false, existingImageUrl }: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState<string | null>(existingImageUrl || null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -305,26 +307,29 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                 Browse Files
               </Button>
             </div>
-            <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t">
-              <p className="text-xs text-muted-foreground text-center mb-3">
-                Or use AI
-              </p>
-              <Button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handlePasteFromClipboard();
-                }}
-                variant="outline"
-                size="lg"
-                className="w-full mx-auto"
-                disabled={isProcessing}
-              >
-                <Sparkles className="h-5 w-5 mr-2" />
-                Generate
-              </Button>
-              
-              {showCopyPrompt && onCopyPrompt && (
+            {onGenerate && (
+              <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t">
+                <p className="text-xs text-muted-foreground text-center mb-3">
+                  Or add text overlay
+                </p>
+                <Button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onGenerate();
+                  }}
+                  variant="outline"
+                  size="lg"
+                  className="w-full mx-auto"
+                  disabled={isProcessing || isGenerating}
+                >
+                  <Sparkles className="h-5 w-5 mr-2" />
+                  {isGenerating ? 'Generating...' : 'Generate'}
+                </Button>
+              </div>
+            )}
+            {showCopyPrompt && onCopyPrompt && (
+              <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t">
                 <Button
                   type="button"
                   onClick={(e) => {
@@ -333,14 +338,14 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                   }}
                   variant="outline"
                   size="lg"
-                  className="w-full mx-auto mt-2"
+                  className="w-full mx-auto"
                   disabled={isProcessing}
                 >
                   <Copy className="h-5 w-5 mr-2" />
                   Copy Prompt
                 </Button>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         )}
     </div>

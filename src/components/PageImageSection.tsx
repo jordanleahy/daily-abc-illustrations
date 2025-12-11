@@ -278,6 +278,8 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             className="w-full h-full"
             showCopyPrompt={true}
             onCopyPrompt={handleCopyPrompt}
+            onGenerate={handleGenerateTextImage}
+            isGenerating={isGenerating}
           />
           {isUploading && (
             <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center">

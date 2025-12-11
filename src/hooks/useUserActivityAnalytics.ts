@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface UserWithActivity {
   user_id: string;
+  user_email: string | null;
   user_name: string;
   total_books_accessed: number;
   total_reading_sessions: number;
@@ -61,7 +62,17 @@ export const useAllUsersWithActivity = () => {
         .rpc('get_all_users_with_activity');
       
       if (error) throw error;
-      return data as UserWithActivity[];
+      
+      // Map database columns to interface properties
+      return (data || []).map((row: any) => ({
+        user_id: row.user_id,
+        user_email: row.user_email,
+        user_name: `${row.first_name} ${row.last_name}`.trim(),
+        total_books_accessed: row.books_created || 0,
+        total_reading_sessions: 0, // Not returned by this function
+        last_activity_at: row.last_activity,
+        kids_count: 0, // Not returned by this function
+      })) as UserWithActivity[];
     },
   });
 };

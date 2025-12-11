@@ -25,7 +25,8 @@ export const UserSelector = ({ users, selectedUserId, onSelectUser }: UserSelect
     if (!searchQuery) return users;
     const query = searchQuery.toLowerCase();
     return users.filter(user => 
-      user.user_name.toLowerCase().includes(query)
+      user.user_name.toLowerCase().includes(query) ||
+      (user.user_email && user.user_email.toLowerCase().includes(query))
     );
   }, [users, searchQuery]);
 
@@ -71,7 +72,12 @@ export const UserSelector = ({ users, selectedUserId, onSelectUser }: UserSelect
           {filteredUsers.map((user) => (
             <SelectItem key={user.user_id} value={user.user_id}>
               <div className="flex flex-col py-1">
-                <span className="font-medium">{user.user_name}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{user.user_name}</span>
+                  {user.user_email && (
+                    <span className="text-xs text-muted-foreground">({user.user_email})</span>
+                  )}
+                </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground">
                   <span>{user.total_books_accessed} books</span>
                   <span>·</span>

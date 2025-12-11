@@ -1303,6 +1303,7 @@ export type Database = {
       page_image_urls: {
         Row: {
           book_id: string
+          coloring_image_url: string | null
           created_at: string
           error_message: string | null
           generation_cost_cents: number | null
@@ -1320,6 +1321,7 @@ export type Database = {
         }
         Insert: {
           book_id: string
+          coloring_image_url?: string | null
           created_at?: string
           error_message?: string | null
           generation_cost_cents?: number | null
@@ -1337,6 +1339,7 @@ export type Database = {
         }
         Update: {
           book_id?: string
+          coloring_image_url?: string | null
           created_at?: string
           error_message?: string | null
           generation_cost_cents?: number | null

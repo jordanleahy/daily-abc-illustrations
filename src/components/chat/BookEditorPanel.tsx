@@ -644,6 +644,22 @@ export function BookEditorPanel({
           </div>
         </div>
 
+        {/* Coloring Book Image Upload */}
+        <div className="space-y-2" key={`coloring-page-${currentPageNumber}`}>
+          <p className="text-xs font-medium text-muted-foreground">Coloring Book Image (Optional)</p>
+          <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground/30 bg-muted/20">
+            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+                <FileUp className="h-6 w-6 text-muted-foreground" />
+              </div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Coming Soon</p>
+              <p className="text-xs text-muted-foreground/70">
+                Upload a coloring book version
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* Words Analysis Card */}
         {SHOW_WORDS_SECTION && currentPageWords && currentPageWords.length > 0 && (
           <>

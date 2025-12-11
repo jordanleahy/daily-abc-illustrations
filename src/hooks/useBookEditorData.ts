@@ -27,16 +27,15 @@ export function useBookEditorData(bookId: string | null | undefined) {
           .eq('book_id', bookId)
           .order('page_number', { ascending: true }),
         
-        // All latest images with deployed prompts
+        // All latest images with deployed prompts (including coloring images)
         supabase
           .from('page_image_urls')
           .select(`
-            id, image_url, page_id,
+            id, image_url, coloring_image_url, page_id,
             pages!inner(page_number, page_type)
           `)
           .eq('book_id', bookId)
           .eq('is_latest', true)
-          .not('image_url', 'is', null)
       ]);
 
       if (bookResult.error) throw bookResult.error;
@@ -45,11 +44,17 @@ export function useBookEditorData(bookId: string | null | undefined) {
       const pages = pagesResult.data || [];
       const images = imagesResult.data || [];
 
-      // Build image map
+      // Build image maps (color and coloring/B&W)
       const pageImages: Record<number, string> = {};
+      const pageColoringImages: Record<number, string> = {};
       images.forEach((item: any) => {
-        if (item.image_url && item.pages?.page_number !== undefined) {
-          pageImages[item.pages.page_number] = item.image_url;
+        if (item.pages?.page_number !== undefined) {
+          if (item.image_url) {
+            pageImages[item.pages.page_number] = item.image_url;
+          }
+          if (item.coloring_image_url) {
+            pageColoringImages[item.pages.page_number] = item.coloring_image_url;
+          }
         }
       });
 
@@ -90,6 +95,7 @@ export function useBookEditorData(bookId: string | null | undefined) {
         book,
         pages,
         pageImages,
+        pageColoringImages,
         coverPage,
         coverImageUrl,
         pageTextOverlays,

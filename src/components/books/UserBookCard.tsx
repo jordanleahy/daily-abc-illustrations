@@ -10,10 +10,13 @@ import { AdminOnly } from '@/components/AdminOnly';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 import { getThemeDisplayName } from '@/types/characterTheme';
 import { getBookTypeDisplayName } from '@/types/bookType';
 import { supabase } from '@/integrations/supabase/client';
-import { BookOpen, Copy } from 'lucide-react';
+import { copyToClipboard } from '@/utils/clipboardHelpers';
+import { SITE_CONFIG } from '@/config/site';
+import { BookOpen, Copy, Link2 } from 'lucide-react';
 import type { DailyPublished } from '@/types/dailyPublished';
 
 export interface UserBookCardProps {
@@ -45,6 +48,7 @@ export function UserBookCard({
 }: UserBookCardProps) {
   const queryClient = useQueryClient();
   const { user } = useAuthContext();
+  const { toast } = useToast();
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
   const coverImageUrl = book.coverImageUrl;
   
@@ -202,6 +206,27 @@ export function UserBookCard({
             >
               {publicationStatus ? 'Remove from Library' : 'Add to Library'}
             </Button>
+            
+            {publicationStatus && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  const libraryLink = `${SITE_CONFIG.productionUrl}/library/${book.id}`;
+                  try {
+                    await copyToClipboard(libraryLink);
+                    toast({ title: "Link copied" });
+                  } catch (error) {
+                    console.error('Failed to copy link:', error);
+                  }
+                }}
+              >
+                <Link2 className="h-4 w-4" />
+                Copy Link
+              </Button>
+            )}
           </div>
         </AdminOnly>
       </CardContent>

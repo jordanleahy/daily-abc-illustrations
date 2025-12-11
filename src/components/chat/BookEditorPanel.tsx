@@ -198,8 +198,6 @@ export function BookEditorPanel({
       
       // Upload the composited image
       onImageUpload(result.dataUrl, 'text');
-      
-      toast({ title: "Text image generated", description: "Text overlay added to image" });
     } catch (error) {
       console.error('Error generating text image:', error);
       toast({ title: "Generation failed", description: "Could not create text image", variant: "destructive" });

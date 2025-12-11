@@ -150,7 +150,7 @@ export function Header({
                 className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 <Snowflake className="h-4 w-4" />
-                Snow
+                Game of Snow
               </Link>
             </div>
 

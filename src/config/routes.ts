@@ -83,7 +83,7 @@ export const navigationConfig: RouteConfig[] = [
   },
   {
     path: ROUTES.SNOW,
-    name: 'Snow',
+    name: 'Game of Snow',
     icon: Snowflake,
     group: 'main',
     activeMatch: { exact: true },

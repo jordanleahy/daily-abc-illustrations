@@ -138,6 +138,9 @@ verify_jwt = false
 [functions.generate-daily-blog-post]
 verify_jwt = true
 
+[functions.backfill-text-images]
+verify_jwt = true
+
 [api]
 enabled = true
 port = 54321

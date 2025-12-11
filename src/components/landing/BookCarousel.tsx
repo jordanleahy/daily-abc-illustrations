@@ -1,16 +1,25 @@
+import { useState } from "react";
 import {
   Carousel,
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
 import { BookCarouselCard } from "./BookCarouselCard";
-import { DailyPublishedWithBook } from "@/types/dailyPublished";
+import { LibraryBookWithImages } from "@/hooks/useWinterThemedBooks";
+
+type ViewMode = 'cover' | 'educational';
 
 interface BookCarouselProps {
-  books: DailyPublishedWithBook[];
+  books: LibraryBookWithImages[];
 }
 
 export function BookCarousel({ books }: BookCarouselProps) {
+  const [viewMode, setViewMode] = useState<ViewMode>('cover');
+
+  const handleToggle = () => {
+    setViewMode(prev => prev === 'cover' ? 'educational' : 'cover');
+  };
+
   return (
     <div className="-mx-4 md:-mx-6">
       <Carousel
@@ -24,7 +33,11 @@ export function BookCarousel({ books }: BookCarouselProps) {
         <CarouselContent className="-ml-4">
           {books.map((book) => (
             <CarouselItem key={book.id} className="pl-4 basis-[85vw] sm:basis-[70vw] md:basis-[45vw] lg:basis-[30vw]">
-              <BookCarouselCard book={book} />
+              <BookCarouselCard 
+                book={book} 
+                viewMode={viewMode}
+                onImageClick={handleToggle}
+              />
             </CarouselItem>
           ))}
         </CarouselContent>

@@ -54,9 +54,9 @@ const Snow = () => {
   };
 
   return (
-    <PageLayout title="Snow" showHeader={false}>
+    <div className="h-screen flex flex-col overflow-hidden bg-background">
       {/* Share Nav Bar */}
-      <div className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex-shrink-0 w-full border-b border-border/40 bg-background/95 backdrop-blur">
         <div className="flex h-14 items-center justify-center">
           <Drawer>
             <DrawerTrigger asChild>
@@ -85,7 +85,7 @@ const Snow = () => {
       </div>
 
       {/* Main Content */}
-      <div className="flex flex-col items-center flex-1 px-4 py-8 min-h-[calc(100vh-200px)]">
+      <div className="flex-1 flex flex-col items-center justify-between px-4 py-6 overflow-hidden">
         {/* Trick Display */}
         <div className="flex-1 flex items-center justify-center w-full">
           <h1 className="text-4xl md:text-6xl font-bold text-center text-foreground">
@@ -94,7 +94,7 @@ const Snow = () => {
         </div>
         
         {/* Next Button */}
-        <div className="w-full max-w-md pb-8">
+        <div className="w-full max-w-md flex-shrink-0">
           <Button 
             onClick={handleNext}
             className="w-full h-[168px] text-xl font-semibold"
@@ -104,7 +104,7 @@ const Snow = () => {
           </Button>
         </div>
       </div>
-    </PageLayout>
+    </div>
   );
 };
 

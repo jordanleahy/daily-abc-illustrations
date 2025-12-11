@@ -4,9 +4,9 @@ import type { DailyPublishedWithBook } from '@/types/dailyPublished';
 
 export const useWinterThemedBooks = () => {
   return useQuery({
-    queryKey: ['winter-themed-books'],
+    queryKey: ['all-published-books'],
     queryFn: async (): Promise<DailyPublishedWithBook[]> => {
-      // First get winter-themed books
+      // Get all published books
       const { data: publishedBooks, error } = await supabase
         .from('daily_published')
         .select(`
@@ -22,7 +22,6 @@ export const useWinterThemedBooks = () => {
             created_at
           )
         `)
-        .or('title.ilike.%snow%,title.ilike.%winter%,title.ilike.%ski%,title.ilike.%mountain%,title.ilike.%snowboard%,title.ilike.%chairlift%')
         .in('status', ['active', 'expired'])
         .order('published_at', { ascending: false })
         .limit(50);

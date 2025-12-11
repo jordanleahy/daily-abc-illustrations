@@ -69,20 +69,6 @@ const PreviewHome = () => {
         imagePosition="right"
       />
 
-      {/* Deep Dive: AI Book Studio */}
-      <DeepDiveSection
-        title="AI Book Studio for personalized stories"
-        description="Bring a few details about your child, and Chairlift creates a story that feels personal. The AI book agents build new ABC books and educational stories every day, then you adjust details through a simple chat."
-        features={[
-          'AI agents generate new daily books at 7:01 AM Eastern Time',
-          'Parents guide themes, characters, and difficulty through a chat flow',
-          'Books stay in your family library for re-reading and habit tracking'
-        ]}
-        ctaText="Create your first AI book"
-        ctaLink="/preview/ai-studio"
-        imagePosition="left"
-      />
-
       {/* Deep Dive: Family Collaboration */}
       <DeepDiveSection
         title="Reading, shared across your household"

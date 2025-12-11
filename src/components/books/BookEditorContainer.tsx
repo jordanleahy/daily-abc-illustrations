@@ -103,20 +103,45 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
 
       const { data: publicUrlData } = supabase.storage.from('page-images').getPublicUrl(fileName);
 
+      // Prepare update/insert data
+      let updateData: Record<string, string> = {};
+      if (imageMode === 'bw') {
+        updateData = { coloring_image_url: publicUrlData.publicUrl };
+      } else if (imageMode === 'text') {
+        updateData = { text_image_url: publicUrlData.publicUrl };
+      } else {
+        updateData = { image_url: publicUrlData.publicUrl };
+      }
+
+      // Auto-generate text image when uploading color image
+      if (imageMode === 'color') {
+        const pageText = editorData.pageTextOverlays[currentEditorPage] || currentPage.title || '';
+        if (pageText) {
+          try {
+            const composited = await compositeTextOnImage(imageDataUrl, pageText);
+            const textFile = new File([composited.blob], `text-page-${currentEditorPage}-${Date.now()}.png`, { type: 'image/png' });
+            const textFileName = `${user.id}/pages/${currentPage.id}/text-auto-${Date.now()}.png`;
+            
+            const { error: textUploadError } = await supabase.storage
+              .from('page-images')
+              .upload(textFileName, textFile, { contentType: 'image/png', upsert: false });
+            
+            if (!textUploadError) {
+              const { data: textPublicUrl } = supabase.storage.from('page-images').getPublicUrl(textFileName);
+              updateData.text_image_url = textPublicUrl.publicUrl;
+            }
+          } catch (err) {
+            console.error('Auto text image generation failed:', err);
+          }
+        }
+      }
+
       if (existingRecord) {
-        // Update existing record with the appropriate image URL
-        const updateData = imageMode === 'bw' 
-          ? { coloring_image_url: publicUrlData.publicUrl }
-          : imageMode === 'text'
-          ? { text_image_url: publicUrlData.publicUrl }
-          : { image_url: publicUrlData.publicUrl };
-        
         await supabase
           .from('page_image_urls')
           .update(updateData)
           .eq('id', existingRecord.id);
       } else {
-        // Create new record
         const insertData = {
           page_id: currentPage.id,
           book_id: bookId,
@@ -124,12 +149,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
           version_number: versionData || 1,
           prompt_used: `User uploaded via editor: ${file.name}`,
           source_type: 'user_uploaded',
-          ...(imageMode === 'bw' 
-            ? { coloring_image_url: publicUrlData.publicUrl }
-            : imageMode === 'text'
-            ? { text_image_url: publicUrlData.publicUrl }
-            : { image_url: publicUrlData.publicUrl }
-          )
+          ...updateData
         };
 
         await supabase
@@ -137,11 +157,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
           .insert(insertData);
       }
 
-      if (imageMode === 'bw') {
-        // Store coloring image override separately (we'd need separate state, but for now just invalidate)
-      } else if (imageMode === 'text') {
-        // Text images don't need local override, just invalidate to refetch
-      } else {
+      if (imageMode === 'color') {
         setLocalImageOverrides(prev => ({ ...prev, [currentEditorPage]: publicUrlData.publicUrl }));
       }
       setReplacePageMode(prev => ({ ...prev, [currentEditorPage]: false }));
@@ -151,7 +167,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
     } catch (error) {
       console.error('Error handling image upload:', error);
     }
-  }, [bookId, currentEditorPage, editorData?.pages, user, queryClient]);
+  }, [bookId, currentEditorPage, editorData?.pages, editorData?.pageTextOverlays, user, queryClient]);
 
   const handleRemoveEditorImage = useCallback((pageNumber: number) => {
     setReplacePageMode(prev => ({ ...prev, [pageNumber]: true }));

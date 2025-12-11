@@ -15,10 +15,12 @@
  */
 
 import { useState } from 'react';
-import { Eye, EyeOff, BookOpen } from 'lucide-react';
+import { Eye, EyeOff, BookOpen, Copy, Check } from 'lucide-react';
 import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 import { createImageLoadTracker } from '@/utils/performanceMonitoring';
 import { WordDetailView } from '@/components/reading/WordDetailView';
+import { copyImageToClipboard } from '@/utils/clipboardHelpers';
+import { useToast } from '@/hooks/use-toast';
 import type { WordMetadata } from '@/utils/wordParser';
 
 interface BookImageProps {
@@ -33,6 +35,8 @@ interface BookImageProps {
   disableHoverEffects?: boolean;
   /** Enable parent toggle to hide/show image (tap once to reveal eye, tap eye to toggle) */
   enableVisibilityToggle?: boolean;
+  /** Enable copy image button that copies actual image data to clipboard */
+  enableCopyButton?: boolean;
   /** Current word metadata for word detail view */
   currentWordData?: WordMetadata;
 }
@@ -52,12 +56,16 @@ export function BookImage({
   enableMobileSave = false,
   disableHoverEffects = false,
   enableVisibilityToggle = false,
+  enableCopyButton = false,
   currentWordData,
 }: BookImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasBeenTapped, setHasBeenTapped] = useState(false);
   const [isImageHidden, setIsImageHidden] = useState(false);
   const [showWordDetail, setShowWordDetail] = useState(false);
+  const [isCopyingImage, setIsCopyingImage] = useState(false);
+  const [imageCopied, setImageCopied] = useState(false);
+  const { toast } = useToast();
   
   // Runtime validation (development only)
   if (process.env.NODE_ENV === 'development') {
@@ -102,6 +110,29 @@ export function BookImage({
   const handleToggleWordDetail = (e: React.MouseEvent | React.TouchEvent) => {
     e.stopPropagation();
     setShowWordDetail(prev => !prev);
+  };
+
+  // Copy image to clipboard
+  const handleCopyImage = async (e: React.MouseEvent | React.TouchEvent) => {
+    e.stopPropagation();
+    if (!src || isCopyingImage) return;
+    
+    setIsCopyingImage(true);
+    try {
+      await copyImageToClipboard(src);
+      setImageCopied(true);
+      toast({ title: "Image copied to clipboard" });
+      setTimeout(() => setImageCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy image:', error);
+      toast({ 
+        title: "Failed to copy image", 
+        description: "Try long-pressing the image instead",
+        variant: "destructive" 
+      });
+    } finally {
+      setIsCopyingImage(false);
+    }
   };
 
   return (
@@ -176,20 +207,39 @@ export function BookImage({
         <WordDetailView wordData={currentWordData} />
       )}
 
-      {/* Eye icon toggle - appears after first tap */}
-      {enableVisibilityToggle && hasBeenTapped && imageLoaded && (
+      {/* Control buttons - appear after first tap */}
+      {(enableVisibilityToggle || enableCopyButton) && hasBeenTapped && imageLoaded && (
         <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
-          <button
-            onClick={handleToggleVisibility}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95"
-            aria-label={isImageHidden ? "Show image" : "Hide image"}
-          >
-            {isImageHidden ? (
-              <Eye className="w-5 h-5" />
-            ) : (
-              <EyeOff className="w-5 h-5" />
-            )}
-          </button>
+          {/* Copy button */}
+          {enableCopyButton && (
+            <button
+              onClick={handleCopyImage}
+              disabled={isCopyingImage}
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 disabled:opacity-50"
+              aria-label="Copy image"
+            >
+              {imageCopied ? (
+                <Check className="w-5 h-5" />
+              ) : (
+                <Copy className="w-5 h-5" />
+              )}
+            </button>
+          )}
+          {/* Visibility toggle */}
+          {enableVisibilityToggle && (
+            <button
+              onClick={handleToggleVisibility}
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95"
+              aria-label={isImageHidden ? "Show image" : "Hide image"}
+            >
+              {isImageHidden ? (
+                <Eye className="w-5 h-5" />
+              ) : (
+                <EyeOff className="w-5 h-5" />
+              )}
+            </button>
+          )}
+          {/* Word detail toggle */}
           {currentWordData && (
             <button
               onClick={handleToggleWordDetail}

@@ -54,7 +54,7 @@ const Snow = () => {
         <div className="w-full max-w-md pb-8">
           <Button 
             onClick={handleNext}
-            className="w-full h-14 text-xl font-semibold"
+            className="w-full h-[168px] text-xl font-semibold"
             size="lg"
           >
             Next

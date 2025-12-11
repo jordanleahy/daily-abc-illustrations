@@ -1,5 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft, BookOpen, Book, MessageSquare } from 'lucide-react';
+import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft, BookOpen, Book, MessageSquare, Snowflake } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { 
@@ -140,10 +140,19 @@ export function Header({
       <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
         <Container>
           <div className="flex h-14 items-center justify-between">
-            {/* Logo */}
-            <Link to="/" className="flex items-center space-x-2">
-              <span className="text-xl font-bold text-foreground">{title}</span>
-            </Link>
+            {/* Logo and Nav */}
+            <div className="flex items-center space-x-6">
+              <Link to="/" className="flex items-center space-x-2">
+                <span className="text-xl font-bold text-foreground">{title}</span>
+              </Link>
+              <Link 
+                to="/snow" 
+                className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <Snowflake className="h-4 w-4" />
+                Snow
+              </Link>
+            </div>
 
             {/* Mobile Menu / Auth Buttons */}
             <div className="flex items-center space-x-4">

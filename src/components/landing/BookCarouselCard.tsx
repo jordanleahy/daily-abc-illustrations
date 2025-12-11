@@ -52,6 +52,7 @@ export const BookCarouselCard = memo(({ book, viewMode, onImageClick }: BookCaro
               src={imageUrl || undefined}
               alt={bookData?.book_name || 'Book cover'}
               priority={false}
+              disableHoverEffects={true}
               className="w-full h-full object-cover transition-opacity duration-300"
             />
           </AspectRatio>

@@ -4,6 +4,60 @@
  */
 
 /**
+ * Copy actual image data to clipboard (not URL text)
+ * Fetches the image, converts to PNG, and copies to clipboard
+ * 
+ * @param imageUrl - The URL of the image to copy
+ * @returns Promise that resolves when copy is complete
+ */
+export async function copyImageToClipboard(imageUrl: string): Promise<void> {
+  // Store current scroll position
+  const scrollX = window.scrollX || window.pageXOffset;
+  const scrollY = window.scrollY || window.pageYOffset;
+
+  try {
+    // Fetch the image as a blob
+    const response = await fetch(imageUrl);
+    const blob = await response.blob();
+    
+    // Convert to PNG via canvas (clipboard requires PNG format)
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    
+    await new Promise<void>((resolve, reject) => {
+      img.onload = () => resolve();
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = imageUrl;
+    });
+    
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx?.drawImage(img, 0, 0);
+    
+    const pngBlob = await new Promise<Blob>((resolve, reject) => {
+      canvas.toBlob((b) => {
+        if (b) resolve(b);
+        else reject(new Error('Failed to create blob'));
+      }, 'image/png');
+    });
+    
+    // Copy to clipboard using ClipboardItem API
+    await navigator.clipboard.write([
+      new ClipboardItem({ 'image/png': pngBlob })
+    ]);
+    
+    // Restore scroll position
+    window.scrollTo(scrollX, scrollY);
+  } catch (error) {
+    // Restore scroll position on error
+    window.scrollTo(scrollX, scrollY);
+    throw error;
+  }
+}
+
+/**
  * Copy text to clipboard without causing scroll jump on mobile
  * This fixes the issue where mobile browsers scroll to hidden input elements during copy operations
  * 

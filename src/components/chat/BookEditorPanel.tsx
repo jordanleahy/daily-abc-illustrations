@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
-import { copyToClipboard } from '@/utils/clipboardHelpers';
+import { copyToClipboard, copyImageToClipboard } from '@/utils/clipboardHelpers';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
 import { WordsCard } from './WordsCard';
@@ -92,6 +92,7 @@ export function BookEditorPanel({
   const [hasRunQaAgent, setHasRunQaAgent] = useState(false);
   const [imageMode, setImageMode] = useState<'color' | 'bw' | 'text'>('color');
   const [isGeneratingTextImage, setIsGeneratingTextImage] = useState(false);
+  const [isCopyingImage, setIsCopyingImage] = useState(false);
   const { toast } = useToast();
   
   // Check if user has seen the onboarding (one-time only)
@@ -618,14 +619,41 @@ export function BookEditorPanel({
                   </>
                 )}
                 
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setIsReplacing(true)}
-                  className="absolute top-2 right-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity text-xs h-7"
-                >
-                  Replace
-                </Button>
+                <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={async () => {
+                      if (!currentPageImage) return;
+                      setIsCopyingImage(true);
+                      try {
+                        await copyImageToClipboard(currentPageImage);
+                        toast({ title: "Image copied!", description: "Paste it anywhere" });
+                      } catch (error) {
+                        console.error('Failed to copy image:', error);
+                        toast({ title: "Copy failed", description: "Could not copy image to clipboard", variant: "destructive" });
+                      } finally {
+                        setIsCopyingImage(false);
+                      }
+                    }}
+                    disabled={isCopyingImage}
+                    className="text-xs h-7"
+                  >
+                    {isCopyingImage ? (
+                      <span className="animate-pulse">...</span>
+                    ) : (
+                      <><Copy className="h-3 w-3 mr-1" />Copy</>
+                    )}
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsReplacing(true)}
+                    className="text-xs h-7"
+                  >
+                    Replace
+                  </Button>
+                </div>
                 
                 
                 {/* Show/Hide Overlay buttons - only for content pages and NOT in text mode */}

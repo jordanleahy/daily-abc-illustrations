@@ -7,25 +7,35 @@ import { PreviewPricingSection } from '@/components/preview/PreviewPricingSectio
 import { PreviewSection } from '@/components/preview/layout/PreviewSection';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useWinterThemedBooks } from '@/hooks/useWinterThemedBooks';
+import { BookCarousel } from '@/components/landing/BookCarousel';
 
 const PreviewHome = () => {
   const navigate = useNavigate();
+  const { data: winterBooks } = useWinterThemedBooks();
 
   return (
     <PreviewPageLayout>
       {/* Hero Section */}
       <PreviewHero />
 
-      {/* What is Chairlift? Explainer */}
+      {/* Your new chairlift habit */}
       <PreviewSection variant="explainer" id="what-is-chairlift">
         <div className="max-w-3xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
-            Your home base for reading clarity
+            Your new chairlift habit
           </h2>
-          <p className="text-lg text-muted-foreground leading-relaxed">
-            Chairlift brings all your family's reading into one clear view. See which books your child finishes, what words they learn, and how often they read. Stay on top of habits and rewards without juggling apps, spreadsheets, or paper charts.
+          <p className="text-lg text-muted-foreground leading-relaxed mb-8">
+            The largest collection of winter based books that YOU get excited to read again.
           </p>
         </div>
+        
+        {/* Winter Books Carousel */}
+        {winterBooks && winterBooks.length > 0 && (
+          <div className="mt-8">
+            <BookCarousel books={winterBooks} />
+          </div>
+        )}
       </PreviewSection>
 
       {/* Everything in one app - Feature Grid */}

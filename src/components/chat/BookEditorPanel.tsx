@@ -28,6 +28,7 @@ interface BookEditorPanelProps {
   pageCount: number;
   displayImages: Record<number, string>;
   displayColoringImages?: Record<number, string>;
+  displayTextImages?: Record<number, string>;
   editorPageImages: Record<number, string>;
   editorPagePrompts: Record<number, string>;
   getCurrentPagePrompt: (pageNum: number) => string | null;
@@ -35,7 +36,7 @@ interface BookEditorPanelProps {
   createBookMutation: any;
   onClose: () => void;
   onNavigate: (direction: 'prev' | 'next') => void;
-  onImageUpload: (base64: string, imageMode: 'color' | 'bw') => void;
+  onImageUpload: (base64: string, imageMode: 'color' | 'bw' | 'text') => void;
   onRemoveImage: (pageNumber: number) => void;
   onCreateBook: () => void;
   coverPageId?: string | null;
@@ -59,6 +60,7 @@ export function BookEditorPanel({
   pageCount,
   displayImages,
   displayColoringImages = {},
+  displayTextImages = {},
   editorPageImages,
   editorPagePrompts,
   getCurrentPagePrompt,
@@ -86,7 +88,7 @@ export function BookEditorPanel({
   const [isReplacing, setIsReplacing] = useState(false);
   const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
   const [hasRunQaAgent, setHasRunQaAgent] = useState(false);
-  const [imageMode, setImageMode] = useState<'color' | 'bw'>('color');
+  const [imageMode, setImageMode] = useState<'color' | 'bw' | 'text'>('color');
   
   // Check if user has seen the onboarding (one-time only)
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
@@ -116,6 +118,10 @@ export function BookEditorPanel({
   
   // Helper function to get image for current page based on image mode
   const currentPageImage = useMemo(() => {
+    if (imageMode === 'text') {
+      // Text mode - show text image
+      return displayTextImages[currentPageNumber] || null;
+    }
     if (imageMode === 'bw') {
       // B&W mode - show coloring image
       return displayColoringImages[currentPageNumber] || null;
@@ -127,7 +133,7 @@ export function BookEditorPanel({
     // For all other pages, use the displayImages map by page_number
     const image = displayImages[currentPageNumber];
     return image !== undefined ? image : null;
-  }, [currentPageNumber, thumbnailUrl, displayImages, displayColoringImages, imageMode]);
+  }, [currentPageNumber, thumbnailUrl, displayImages, displayColoringImages, displayTextImages, imageMode]);
 
   // Check if each image type exists for current page
   const hasColorImage = useMemo(() => {
@@ -140,6 +146,10 @@ export function BookEditorPanel({
   const hasBwImage = useMemo(() => {
     return !!displayColoringImages[currentPageNumber];
   }, [currentPageNumber, displayColoringImages]);
+
+  const hasTextImage = useMemo(() => {
+    return !!displayTextImages[currentPageNumber];
+  }, [currentPageNumber, displayTextImages]);
   
   // Handle saving overlay text
   const handleSaveOverlayText = async (newText: string) => {
@@ -469,8 +479,19 @@ export function BookEditorPanel({
             <p className="text-xs font-medium text-muted-foreground">Page Image</p>
             <div className="flex items-center gap-1 bg-muted rounded-full p-0.5">
               <button 
+                onClick={() => setImageMode('text')}
+                className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
+                  imageMode === 'text' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                📝 Text
+                {hasTextImage && <span className="text-green-500 ml-0.5">✓</span>}
+              </button>
+              <button 
                 onClick={() => setImageMode('color')}
-                className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
+                className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
                   imageMode === 'color' 
                     ? 'bg-primary text-primary-foreground' 
                     : 'text-muted-foreground hover:text-foreground'
@@ -481,7 +502,7 @@ export function BookEditorPanel({
               </button>
               <button 
                 onClick={() => setImageMode('bw')}
-                className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
+                className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
                   imageMode === 'bw' 
                     ? 'bg-primary text-primary-foreground' 
                     : 'text-muted-foreground hover:text-foreground'
@@ -504,8 +525,8 @@ export function BookEditorPanel({
                   disableHoverEffects={true}
                 />
                 
-                {/* Interactive Text Overlay - only show for content pages when not hidden */}
-                {shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && currentPageText && (
+                {/* Interactive Text Overlay - only show for content pages when not hidden and NOT in text image mode */}
+                {imageMode !== 'text' && shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && currentPageText && (
                   <>
                     {isEditingOverlayText && onUpdatePageText ? (
                       <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">
@@ -560,8 +581,8 @@ export function BookEditorPanel({
                 </Button>
                 
                 
-                {/* Show/Hide Overlay buttons - only for content pages */}
-                {shouldShowTextOverlay && currentPageId && isOverlayHidden(currentPageId) && (
+                {/* Show/Hide Overlay buttons - only for content pages and NOT in text mode */}
+                {imageMode !== 'text' && shouldShowTextOverlay && currentPageId && isOverlayHidden(currentPageId) && (
                   <Button
                     variant="secondary"
                     size="sm"
@@ -577,8 +598,8 @@ export function BookEditorPanel({
                   </Button>
                 )}
                 
-                {/* Hide Overlay button when overlay is shown - only for content pages */}
-                {shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && (
+                {/* Hide Overlay button when overlay is shown - only for content pages and NOT in text mode */}
+                {imageMode !== 'text' && shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && (
                   <Button
                     variant="secondary"
                     size="sm"

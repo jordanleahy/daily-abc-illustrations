@@ -35,6 +35,7 @@ import type { CharacterThemeValue } from '@/types/characterTheme';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { differenceInYears, differenceInMonths } from 'date-fns';
 import { AdminOnly } from '@/components/AdminOnly';
+import { compositeTextOnImage } from '@/utils/imageTextCompositor';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
@@ -995,7 +996,7 @@ export default function GoogleChat() {
     await updateSessionName({ sessionId, name });
   }, [updateSessionName]);
 
-  const handleEditorImageUpload = useCallback(async (imageDataUrl: string, imageMode: 'color' | 'bw' = 'color') => {
+  const handleEditorImageUpload = useCallback(async (imageDataUrl: string, imageMode: 'color' | 'bw' | 'text' = 'color') => {
     // If book is created, update actual page image
     if (createdBookId && dbPages) {
       const currentPage = dbPages.find(p => p.page_number === currentEditorPage);

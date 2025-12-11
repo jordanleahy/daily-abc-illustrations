@@ -23,9 +23,9 @@ export const useWinterThemedBooks = () => {
           )
         `)
         .or('title.ilike.%snow%,title.ilike.%winter%,title.ilike.%ski%,title.ilike.%mountain%,title.ilike.%snowboard%,title.ilike.%chairlift%')
-        .eq('status', 'active')
+        .in('status', ['active', 'expired'])
         .order('published_at', { ascending: false })
-        .limit(20);
+        .limit(50);
 
       if (error) throw error;
       if (!publishedBooks || publishedBooks.length === 0) return [];

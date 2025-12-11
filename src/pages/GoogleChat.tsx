@@ -995,7 +995,7 @@ export default function GoogleChat() {
     await updateSessionName({ sessionId, name });
   }, [updateSessionName]);
 
-  const handleEditorImageUpload = useCallback(async (imageDataUrl: string) => {
+  const handleEditorImageUpload = useCallback(async (imageDataUrl: string, imageMode: 'color' | 'bw' = 'color') => {
     // If book is created, update actual page image
     if (createdBookId && dbPages) {
       const currentPage = dbPages.find(p => p.page_number === currentEditorPage);

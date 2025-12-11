@@ -4,33 +4,22 @@ import type { DailyPublishedWithBook } from '@/types/dailyPublished';
 
 export const useWinterThemedBooks = () => {
   return useQuery({
-    queryKey: ['all-published-books'],
+    queryKey: ['all-library-books'],
     queryFn: async (): Promise<DailyPublishedWithBook[]> => {
-      // Get all published books
-      const { data: publishedBooks, error } = await supabase
-        .from('daily_published')
-        .select(`
-          *,
-          book:books!inner(
-            id,
-            book_name,
-            book_description,
-            category,
-            total_pages,
-            status,
-            user_id,
-            created_at
-          )
-        `)
-        .in('status', ['active', 'expired'])
-        .order('published_at', { ascending: false })
+      // Get all library books
+      const { data: books, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('is_library_book', true)
+        .eq('status', 'published')
+        .order('created_at', { ascending: false })
         .limit(50);
 
       if (error) throw error;
-      if (!publishedBooks || publishedBooks.length === 0) return [];
+      if (!books || books.length === 0) return [];
 
       // Get cover images for these books
-      const bookIds = publishedBooks.map(p => p.book_id);
+      const bookIds = books.map(b => b.id);
       const { data: coverImages } = await supabase
         .from('page_image_urls')
         .select('book_id, image_url')
@@ -46,10 +35,26 @@ export const useWinterThemedBooks = () => {
         }
       });
 
-      // Combine data
-      return publishedBooks.map(pub => ({
-        ...pub,
-        og_image_url: coverImageMap.get(pub.book_id) || null,
+      // Transform to match DailyPublishedWithBook structure
+      return books.map(book => ({
+        id: book.id,
+        book_id: book.id,
+        title: book.book_name,
+        description: book.book_description,
+        published_at: book.created_at,
+        expires_at: '',
+        is_active: true,
+        created_at: book.created_at,
+        updated_at: book.updated_at,
+        status: 'active' as const,
+        publish_date: book.created_at,
+        book: {
+          book_name: book.book_name,
+          book_description: book.book_description,
+          user_id: book.user_id,
+          created_at: book.created_at,
+        },
+        og_image_url: coverImageMap.get(book.id) || null,
       })) as unknown as DailyPublishedWithBook[];
     },
     staleTime: 1000 * 60 * 10, // 10 minutes

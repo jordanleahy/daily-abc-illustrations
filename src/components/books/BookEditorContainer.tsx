@@ -52,7 +52,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
     }
   }, [editorData?.pages, currentEditorPage]);
 
-  const handleEditorImageUpload = useCallback(async (imageDataUrl: string) => {
+  const handleEditorImageUpload = useCallback(async (imageDataUrl: string, imageMode: 'color' | 'bw' = 'color') => {
     if (!user || !editorData?.pages) return;
 
     const currentPage = editorData.pages.find(p => p.page_number === currentEditorPage);
@@ -61,45 +61,65 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
     try {
       const base64Response = await fetch(imageDataUrl);
       const blob = await base64Response.blob();
-      const file = new File([blob], `page-${currentEditorPage}-${Date.now()}.webp`, { type: blob.type });
+      const modePrefix = imageMode === 'bw' ? 'coloring-' : '';
+      const file = new File([blob], `${modePrefix}page-${currentEditorPage}-${Date.now()}.webp`, { type: blob.type });
 
       const { data: versionData } = await supabase.rpc('get_next_page_image_version_number', {
         p_page_id: currentPage.id
       });
 
-      const { data: record, error: recordError } = await supabase
+      // Check if a record already exists for this page
+      const { data: existingRecord } = await supabase
         .from('page_image_urls')
-        .insert({
+        .select('id, image_url, coloring_image_url')
+        .eq('page_id', currentPage.id)
+        .eq('is_latest', true)
+        .single();
+
+      const fileName = `${user.id}/pages/${currentPage.id}/${modePrefix}uploaded-${Date.now()}.${file.name.split('.').pop()}`;
+      const { error: uploadError } = await supabase.storage
+        .from('page-images')
+        .upload(fileName, file, { contentType: file.type, upsert: false });
+
+      if (uploadError) return;
+
+      const { data: publicUrlData } = supabase.storage.from('page-images').getPublicUrl(fileName);
+
+      if (existingRecord) {
+        // Update existing record with the appropriate image URL
+        const updateData = imageMode === 'bw' 
+          ? { coloring_image_url: publicUrlData.publicUrl }
+          : { image_url: publicUrlData.publicUrl };
+        
+        await supabase
+          .from('page_image_urls')
+          .update(updateData)
+          .eq('id', existingRecord.id);
+      } else {
+        // Create new record
+        const insertData = {
           page_id: currentPage.id,
           book_id: bookId,
           user_id: user.id,
           version_number: versionData || 1,
           prompt_used: `User uploaded via editor: ${file.name}`,
-          source_type: 'user_uploaded'
-        })
-        .select()
-        .single();
+          source_type: 'user_uploaded',
+          ...(imageMode === 'bw' 
+            ? { coloring_image_url: publicUrlData.publicUrl }
+            : { image_url: publicUrlData.publicUrl }
+          )
+        };
 
-      if (recordError) return;
-
-      const fileName = `${user.id}/pages/${currentPage.id}/uploaded-${Date.now()}.${file.name.split('.').pop()}`;
-      const { error: uploadError } = await supabase.storage
-        .from('page-images')
-        .upload(fileName, file, { contentType: file.type, upsert: false });
-
-      if (uploadError) {
-        await supabase.from('page_image_urls').delete().eq('id', record.id);
-        return;
+        await supabase
+          .from('page_image_urls')
+          .insert(insertData);
       }
 
-      const { data: publicUrlData } = supabase.storage.from('page-images').getPublicUrl(fileName);
-
-      await supabase
-        .from('page_image_urls')
-        .update({ image_url: publicUrlData.publicUrl })
-        .eq('id', record.id);
-
-      setLocalImageOverrides(prev => ({ ...prev, [currentEditorPage]: publicUrlData.publicUrl }));
+      if (imageMode === 'bw') {
+        // Store coloring image override separately (we'd need separate state, but for now just invalidate)
+      } else {
+        setLocalImageOverrides(prev => ({ ...prev, [currentEditorPage]: publicUrlData.publicUrl }));
+      }
       setReplacePageMode(prev => ({ ...prev, [currentEditorPage]: false }));
 
       queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
@@ -201,6 +221,10 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
     return filtered;
   }, [editorData?.pageImages, localImageOverrides, replacePageMode]);
 
+  const displayColoringImages = useMemo(() => {
+    return editorData?.pageColoringImages || {};
+  }, [editorData?.pageColoringImages]);
+
   const pageTextOverlays = useMemo(() => {
     return { ...(editorData?.pageTextOverlays || {}), ...localTextOverrides };
   }, [editorData?.pageTextOverlays, localTextOverrides]);
@@ -226,6 +250,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
       displayImages={displayImages}
       editorPageImages={localImageOverrides}
       editorPagePrompts={editorData.sessionPrompts}
+      displayColoringImages={displayColoringImages}
       getCurrentPagePrompt={getCurrentPagePrompt}
       createBookMutation={{ isSuccess: false } as any}
       onClose={onClose}

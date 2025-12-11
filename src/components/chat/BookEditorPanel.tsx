@@ -27,6 +27,7 @@ interface BookEditorPanelProps {
   currentPageNumber: number;
   pageCount: number;
   displayImages: Record<number, string>;
+  displayColoringImages?: Record<number, string>;
   editorPageImages: Record<number, string>;
   editorPagePrompts: Record<number, string>;
   getCurrentPagePrompt: (pageNum: number) => string | null;
@@ -34,7 +35,7 @@ interface BookEditorPanelProps {
   createBookMutation: any;
   onClose: () => void;
   onNavigate: (direction: 'prev' | 'next') => void;
-  onImageUpload: (base64: string) => void;
+  onImageUpload: (base64: string, imageMode: 'color' | 'bw') => void;
   onRemoveImage: (pageNumber: number) => void;
   onCreateBook: () => void;
   coverPageId?: string | null;
@@ -57,6 +58,7 @@ export function BookEditorPanel({
   currentPageNumber,
   pageCount,
   displayImages,
+  displayColoringImages = {},
   editorPageImages,
   editorPagePrompts,
   getCurrentPagePrompt,
@@ -84,6 +86,7 @@ export function BookEditorPanel({
   const [isReplacing, setIsReplacing] = useState(false);
   const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
   const [hasRunQaAgent, setHasRunQaAgent] = useState(false);
+  const [imageMode, setImageMode] = useState<'color' | 'bw'>('color');
   
   // Check if user has seen the onboarding (one-time only)
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
@@ -111,16 +114,32 @@ export function BookEditorPanel({
   // Fetch pages data
   const { pages } = useBookPages(bookId || undefined);
   
-  // Helper function to get image for current page
+  // Helper function to get image for current page based on image mode
   const currentPageImage = useMemo(() => {
-    // For page 1 (cover), use the passed thumbnailUrl from parent
+    if (imageMode === 'bw') {
+      // B&W mode - show coloring image
+      return displayColoringImages[currentPageNumber] || null;
+    }
+    // Color mode - For page 1 (cover), use the passed thumbnailUrl from parent
     if (currentPageNumber === 1) {
       return thumbnailUrl || displayImages[1] || null;
     }
     // For all other pages, use the displayImages map by page_number
     const image = displayImages[currentPageNumber];
     return image !== undefined ? image : null;
+  }, [currentPageNumber, thumbnailUrl, displayImages, displayColoringImages, imageMode]);
+
+  // Check if each image type exists for current page
+  const hasColorImage = useMemo(() => {
+    if (currentPageNumber === 1) {
+      return !!(thumbnailUrl || displayImages[1]);
+    }
+    return !!displayImages[currentPageNumber];
   }, [currentPageNumber, thumbnailUrl, displayImages]);
+
+  const hasBwImage = useMemo(() => {
+    return !!displayColoringImages[currentPageNumber];
+  }, [currentPageNumber, displayColoringImages]);
   
   // Handle saving overlay text
   const handleSaveOverlayText = async (newText: string) => {
@@ -445,8 +464,34 @@ export function BookEditorPanel({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {/* Image Upload/Display Area */}
-        <div className="space-y-2" key={`page-${currentPageNumber}`}>
-          <p className="text-xs font-medium text-muted-foreground">Page Image</p>
+        <div className="space-y-2" key={`page-${currentPageNumber}-${imageMode}`}>
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-medium text-muted-foreground">Page Image</p>
+            <div className="flex items-center gap-1 bg-muted rounded-full p-0.5">
+              <button 
+                onClick={() => setImageMode('color')}
+                className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
+                  imageMode === 'color' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                🎨 Color
+                {hasColorImage && <span className="text-green-500 ml-0.5">✓</span>}
+              </button>
+              <button 
+                onClick={() => setImageMode('bw')}
+                className={`px-3 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
+                  imageMode === 'bw' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                ⬜ B&W
+                {hasBwImage && <span className="text-green-500 ml-0.5">✓</span>}
+              </button>
+            </div>
+          </div>
           <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
             {currentPageImage && !isReplacing ? (
               <div className="relative w-full h-full group">
@@ -558,7 +603,7 @@ export function BookEditorPanel({
                     
                     const reader = new FileReader();
                     reader.onloadend = () => {
-                      onImageUpload(reader.result as string);
+                      onImageUpload(reader.result as string, imageMode);
                       setIsReplacing(false);
                       
                       requestAnimationFrame(() => {
@@ -569,7 +614,7 @@ export function BookEditorPanel({
                   }}
                   disabled={createBookMutation.isPending}
                   className="h-full"
-                  showCopyPrompt={true}
+                  showCopyPrompt={imageMode === 'color'}
                   onCopyPrompt={handleCopyPrompt}
                 />
                 <Button
@@ -626,7 +671,7 @@ export function BookEditorPanel({
                   
                   const reader = new FileReader();
                   reader.onloadend = () => {
-                    onImageUpload(reader.result as string);
+                    onImageUpload(reader.result as string, imageMode);
                     
                     // Restore scroll position after upload
                     requestAnimationFrame(() => {
@@ -637,28 +682,13 @@ export function BookEditorPanel({
                 }}
                 disabled={createBookMutation.isPending}
                 className="h-full"
-                showCopyPrompt={hasClickedCopy}
+                showCopyPrompt={imageMode === 'color' && hasClickedCopy}
                 onCopyPrompt={handleCopyPrompt}
               />
             )}
           </div>
         </div>
 
-        {/* Coloring Book Image Upload */}
-        <div className="space-y-2" key={`coloring-page-${currentPageNumber}`}>
-          <p className="text-xs font-medium text-muted-foreground">Coloring Book Image (Optional)</p>
-          <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground/30 bg-muted/20">
-            <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-              <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
-                <FileUp className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <p className="text-sm font-medium text-muted-foreground mb-1">Coming Soon</p>
-              <p className="text-xs text-muted-foreground/70">
-                Upload a coloring book version
-              </p>
-            </div>
-          </div>
-        </div>
 
         {/* Words Analysis Card */}
         {SHOW_WORDS_SECTION && currentPageWords && currentPageWords.length > 0 && (

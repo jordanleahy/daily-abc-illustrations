@@ -6,6 +6,8 @@ import { useLandingPageData } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { useLazyCarouselImages } from '@/hooks/useLazyCarouselImages';
+import { format } from 'date-fns';
+import { toZonedTime } from 'date-fns-tz';
 
 export const PreviewHero = () => {
   const navigate = useNavigate();
@@ -61,10 +63,10 @@ export const PreviewHero = () => {
             <div className="space-y-4">
               <div className="text-center">
                 <h3 className="text-lg font-semibold text-foreground mb-2">
-                  Today's Book
+                  Daily Free Book
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  Published at 7:01 AM Eastern Time
+                  Expires {dailyPublished.expires_at ? format(toZonedTime(new Date(dailyPublished.expires_at), 'America/New_York'), "MMM d 'at' h:mm a") + ' ET' : 'tomorrow at 7:01 AM ET'}
                 </p>
               </div>
 

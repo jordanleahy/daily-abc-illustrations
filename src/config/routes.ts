@@ -1,4 +1,4 @@
-import { LucideIcon, Home, BookOpen, Book, MessageSquare, Gift, Calendar, Users, Search, Video, BarChart, Target } from 'lucide-react';
+import { LucideIcon, Home, BookOpen, Book, MessageSquare, Gift, Calendar, Users, Search, Video, BarChart, Target, Snowflake } from 'lucide-react';
 import { NavigateFunction } from 'react-router-dom';
 
 /**
@@ -38,6 +38,7 @@ export type RouteConfig = {
  */
 export const ROUTES = {
   HOME: '/home',
+  SNOW: '/snow',
   LIBRARY: '/library',
   MY_BOOKS: '/books',
   ALL_BOOKS: '/all-books',
@@ -77,6 +78,13 @@ export const navigationConfig: RouteConfig[] = [
     path: ROUTES.HOME,
     name: 'Home',
     icon: Home,
+    group: 'main',
+    activeMatch: { exact: true },
+  },
+  {
+    path: ROUTES.SNOW,
+    name: 'Snow',
+    icon: Snowflake,
     group: 'main',
     activeMatch: { exact: true },
   },

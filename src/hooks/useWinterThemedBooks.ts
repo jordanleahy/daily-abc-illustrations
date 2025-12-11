@@ -6,7 +6,8 @@ export const useWinterThemedBooks = () => {
   return useQuery({
     queryKey: ['winter-themed-books'],
     queryFn: async (): Promise<DailyPublishedWithBook[]> => {
-      const { data, error } = await supabase
+      // First get winter-themed books
+      const { data: publishedBooks, error } = await supabase
         .from('daily_published')
         .select(`
           *,
@@ -17,10 +18,8 @@ export const useWinterThemedBooks = () => {
             category,
             total_pages,
             status,
-            user_id
-          ),
-          seo_metadata:seo_metadata(
-            og_image_url
+            user_id,
+            created_at
           )
         `)
         .or('title.ilike.%snow%,title.ilike.%winter%,title.ilike.%ski%,title.ilike.%mountain%,title.ilike.%snowboard%,title.ilike.%chairlift%')
@@ -29,8 +28,30 @@ export const useWinterThemedBooks = () => {
         .limit(20);
 
       if (error) throw error;
-      
-      return (data || []) as unknown as DailyPublishedWithBook[];
+      if (!publishedBooks || publishedBooks.length === 0) return [];
+
+      // Get cover images for these books
+      const bookIds = publishedBooks.map(p => p.book_id);
+      const { data: coverImages } = await supabase
+        .from('page_image_urls')
+        .select('book_id, image_url')
+        .in('book_id', bookIds)
+        .eq('is_latest', true)
+        .order('created_at', { ascending: true });
+
+      // Map book_id to first (cover) image
+      const coverImageMap = new Map<string, string>();
+      coverImages?.forEach(img => {
+        if (!coverImageMap.has(img.book_id) && img.image_url) {
+          coverImageMap.set(img.book_id, img.image_url);
+        }
+      });
+
+      // Combine data
+      return publishedBooks.map(pub => ({
+        ...pub,
+        og_image_url: coverImageMap.get(pub.book_id) || null,
+      })) as unknown as DailyPublishedWithBook[];
     },
     staleTime: 1000 * 60 * 10, // 10 minutes
   });

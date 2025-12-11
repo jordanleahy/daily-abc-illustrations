@@ -43,7 +43,7 @@ const Snow = () => {
   };
 
   return (
-    <PageLayout title="Snow" showHeader={true}>
+    <PageLayout title="Snow" showHeader={false}>
       <div className="flex flex-col items-center justify-center flex-1 px-4 py-8 min-h-[calc(100vh-200px)]">
         <div className="flex-1 flex items-center justify-center w-full">
           <h1 className="text-4xl md:text-6xl font-bold text-center text-foreground">

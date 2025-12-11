@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { PageLayout } from '@/components/layout/PageLayout';
 import {
   Drawer,
   DrawerContent,
@@ -9,6 +8,8 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from '@/components/ui/drawer';
+import { MetaHead } from '@/components/common/MetaHead';
+import type { SEOMetadata } from '@/types/openGraph';
 
 const TRICKS = [
   '50-50',
@@ -37,6 +38,27 @@ const TRICKS = [
 const SHARE_URL = 'https://chairlifthabits.com/snow';
 const QR_CODE_URL = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(SHARE_URL)}`;
 
+const seoMetadata: SEOMetadata = {
+  title: 'Game of SNOW | Snowboard Trick Generator',
+  description: 'Random snowboard trick generator for playing Game of SNOW on the mountain. Get your next trick challenge with one tap!',
+  type: 'website',
+  url: SHARE_URL,
+  siteName: 'Chairlift Habits',
+  image: {
+    url: 'https://chairlifthabits.com/og-snow.png',
+    width: 1200,
+    height: 630,
+    alt: 'Game of SNOW - Snowboard Trick Generator'
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Game of SNOW | Snowboard Trick Generator',
+    description: 'Random snowboard trick generator for playing Game of SNOW on the mountain.',
+    image: 'https://chairlifthabits.com/og-snow.png'
+  },
+  keywords: ['snowboard', 'game of snow', 'trick generator', 'snowboarding tricks', 'rail tricks']
+};
+
 const Snow = () => {
   const [currentTrick, setCurrentTrick] = useState<string>(() => {
     const randomIndex = Math.floor(Math.random() * TRICKS.length);
@@ -45,7 +67,6 @@ const Snow = () => {
 
   const handleNext = () => {
     let newTrick = currentTrick;
-    // Ensure we don't show the same trick twice in a row
     while (newTrick === currentTrick && TRICKS.length > 1) {
       const randomIndex = Math.floor(Math.random() * TRICKS.length);
       newTrick = TRICKS[randomIndex];
@@ -54,7 +75,9 @@ const Snow = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background">
+    <>
+      <MetaHead metadata={seoMetadata} />
+      <div className="h-screen flex flex-col overflow-hidden bg-background">
       {/* Share Nav Bar */}
       <div className="flex-shrink-0 w-full border-b border-border/40 bg-background/95 backdrop-blur">
         <div className="flex h-14 items-center justify-center">
@@ -104,7 +127,8 @@ const Snow = () => {
           </Button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

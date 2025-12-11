@@ -8,7 +8,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 // Toast notifications removed
 import { ProcessStatus } from "@/types/shared";
 import { useState, useEffect } from "react";
-import { Loader2, Upload, Clipboard, Copy, ArrowLeft, DollarSign } from "lucide-react";
+import { Loader2, Upload, Clipboard, Copy, ArrowLeft, DollarSign, Sparkles } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 import {
@@ -319,7 +319,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               </p>
             </div>
             
-            {/* Paste button for mobile */}
+            {/* Generate button */}
             <Button 
               onClick={handlePasteFromClipboard}
               size="sm"
@@ -327,8 +327,8 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               className="w-full max-w-xs"
               disabled={isUploading}
             >
-              <Clipboard className="w-4 h-4 mr-2" />
-              Paste from Clipboard
+              <Sparkles className="w-4 h-4 mr-2" />
+              Generate
             </Button>
 
             {/* View Prompt button */}

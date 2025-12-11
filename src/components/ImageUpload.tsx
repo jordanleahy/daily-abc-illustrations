@@ -307,7 +307,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
             </div>
             <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t">
               <p className="text-xs text-muted-foreground text-center mb-3">
-                Or use clipboard
+                Or use AI
               </p>
               <Button
                 type="button"

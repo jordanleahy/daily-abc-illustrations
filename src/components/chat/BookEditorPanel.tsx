@@ -3,7 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
 import { Shimmer } from '@/components/ui/shimmer';
-import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX, ChevronDown } from 'lucide-react';
+import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX, ChevronDown, Sparkles } from 'lucide-react';
+import { compositeTextOnImage } from '@/utils/imageTextCompositor';
+import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
@@ -89,6 +91,8 @@ export function BookEditorPanel({
   const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
   const [hasRunQaAgent, setHasRunQaAgent] = useState(false);
   const [imageMode, setImageMode] = useState<'color' | 'bw' | 'text'>('color');
+  const [isGeneratingTextImage, setIsGeneratingTextImage] = useState(false);
+  const { toast } = useToast();
   
   // Check if user has seen the onboarding (one-time only)
   const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => {
@@ -157,6 +161,51 @@ export function BookEditorPanel({
       onUpdatePageText(currentPageNumber, newText);
     }
     setIsEditingOverlayText(false);
+  };
+
+  // Handle generating text image from color image
+  const handleGenerateTextImage = async () => {
+    // Get the color image URL
+    const colorImageUrl = currentPageNumber === 1 
+      ? (thumbnailUrl || displayImages[1]) 
+      : displayImages[currentPageNumber];
+    
+    if (!colorImageUrl) {
+      toast({ title: "No color image", description: "Upload a color image first", variant: "destructive" });
+      return;
+    }
+
+    // Get the page title/text
+    const pageText = pageTextOverlays[currentPageNumber] || getCurrentPageTitle?.(currentPageNumber) || '';
+    if (!pageText) {
+      toast({ title: "No text available", description: "This page has no text overlay", variant: "destructive" });
+      return;
+    }
+
+    setIsGeneratingTextImage(true);
+    try {
+      // Fetch the image and convert to data URL
+      const response = await fetch(colorImageUrl);
+      const blob = await response.blob();
+      const dataUrl = await new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(blob);
+      });
+
+      // Composite text onto image
+      const result = await compositeTextOnImage(dataUrl, pageText);
+      
+      // Upload the composited image
+      onImageUpload(result.dataUrl, 'text');
+      
+      toast({ title: "Text image generated", description: "Text overlay added to image" });
+    } catch (error) {
+      console.error('Error generating text image:', error);
+      toast({ title: "Generation failed", description: "Could not create text image", variant: "destructive" });
+    } finally {
+      setIsGeneratingTextImage(false);
+    }
   };
   
   // Get current page ID for overlay toggle
@@ -683,18 +732,30 @@ export function BookEditorPanel({
                   Click to copy prompt for AI Studio
                 </p>
               </button>
+            ) : imageMode === 'text' && hasColorImage ? (
+              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+                <Button
+                  onClick={handleGenerateTextImage}
+                  size="lg"
+                  className="gap-2"
+                  disabled={isGeneratingTextImage}
+                >
+                  <Sparkles className="h-5 w-5" />
+                  {isGeneratingTextImage ? 'Generating...' : 'Generate Text Image'}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Adds text overlay to your color image
+                </p>
+              </div>
             ) : (
               <ImageUpload 
                 onImageSelect={(file) => {
-                  // Store scroll position before processing
                   const scrollX = window.scrollX || window.pageXOffset;
                   const scrollY = window.scrollY || window.pageYOffset;
                   
                   const reader = new FileReader();
                   reader.onloadend = () => {
                     onImageUpload(reader.result as string, imageMode);
-                    
-                    // Restore scroll position after upload
                     requestAnimationFrame(() => {
                       window.scrollTo(scrollX, scrollY);
                     });

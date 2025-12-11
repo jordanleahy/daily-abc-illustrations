@@ -11,7 +11,7 @@ export const PreviewHero = () => {
           Chairlift Habits
         </h1>
         <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto leading-relaxed">
-          Helping toddlers grow one habit at a time. Personalized AI picture books shaped around your child—their interests, their struggles, their world. One story. One moment. One habit each day.
+          Helping toddlers grow one habit at a time. One story. One moment. One habit each day.
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-6">
           <Button 

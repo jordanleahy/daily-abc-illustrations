@@ -40,38 +40,56 @@ serve(async (req) => {
 
     console.log(`Generating daily blog post for date: ${targetDate}`);
 
-    // SAFETY: Only get books that are ACTIVELY published in daily_published
-    // This ensures we only blog about books users can actually see in the library
-    const { data: activePublished, error: publishedError } = await supabase
+    // Calculate date 7 days ago for expired book filtering
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString();
+
+    // SAFETY: Get books that are ACTIVELY published OR recently expired (within 7 days)
+    // This ensures we catch books even if the cron runs after they expire
+    const { data: activePublished, error: activeError } = await supabase
       .from('daily_published')
-      .select('book_id')
+      .select('book_id, status, updated_at')
       .eq('status', 'active');
 
-    if (publishedError) {
-      console.error('Error fetching active published books:', publishedError);
-      throw new Error(`Failed to fetch active published: ${publishedError.message}`);
+    const { data: expiredPublished, error: expiredError } = await supabase
+      .from('daily_published')
+      .select('book_id, status, updated_at')
+      .eq('status', 'expired')
+      .gte('updated_at', sevenDaysAgoStr);
+
+    if (activeError) {
+      console.error('Error fetching active published books:', activeError);
+      throw new Error(`Failed to fetch active published: ${activeError.message}`);
     }
 
-    const activeBookIds = (activePublished || []).map(p => p.book_id);
+    if (expiredError) {
+      console.error('Error fetching expired published books:', expiredError);
+      throw new Error(`Failed to fetch expired published: ${expiredError.message}`);
+    }
+
+    // Combine active and recently expired books
+    const allPublished = [...(activePublished || []), ...(expiredPublished || [])];
+    const allBookIds = [...new Set(allPublished.map(p => p.book_id))]; // Dedupe
     
-    if (activeBookIds.length === 0) {
-      console.log('No actively published books found');
+    console.log(`Found ${activePublished?.length || 0} active + ${expiredPublished?.length || 0} recently expired = ${allBookIds.length} unique books`);
+
+    if (allBookIds.length === 0) {
+      console.log('No published books found (active or recently expired)');
       return new Response(JSON.stringify({ 
         success: false, 
-        message: 'No actively published books in the library' 
+        message: 'No published books in the library' 
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`Found ${activeBookIds.length} actively published book(s)`);
-
-    // Get full book details for the active published books
+    // Get full book details for the published books
     const { data: books, error: booksError } = await supabase
       .from('books')
       .select('id, book_name, book_description, category, created_at')
-      .in('id', activeBookIds)
+      .in('id', allBookIds)
       .order('created_at', { ascending: true });
 
     if (booksError) {
@@ -80,10 +98,10 @@ serve(async (req) => {
     }
 
     if (!books || books.length === 0) {
-      console.log('No books found for active published entries');
+      console.log('No books found for published entries');
       return new Response(JSON.stringify({ 
         success: false, 
-        message: 'No books found for active published entries' 
+        message: 'No books found for published entries' 
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -108,7 +126,7 @@ serve(async (req) => {
       console.log('All books already have blog posts');
       return new Response(JSON.stringify({ 
         success: false, 
-        message: 'All actively published books already have blog posts' 
+        message: 'All published books already have blog posts' 
       }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

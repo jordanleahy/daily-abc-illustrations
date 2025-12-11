@@ -55,9 +55,9 @@ const Snow = () => {
 
   return (
     <PageLayout title="Snow" showHeader={false}>
-      <div className="flex flex-col items-center flex-1 px-4 py-8 min-h-[calc(100vh-200px)]">
-        {/* Share Button */}
-        <div className="w-full flex justify-end mb-4">
+      {/* Share Nav Bar */}
+      <div className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="flex h-14 items-center justify-center">
           <Drawer>
             <DrawerTrigger asChild>
               <Button variant="ghost" size="sm" className="gap-2">
@@ -82,7 +82,10 @@ const Snow = () => {
             </DrawerContent>
           </Drawer>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="flex flex-col items-center flex-1 px-4 py-8 min-h-[calc(100vh-200px)]">
         {/* Trick Display */}
         <div className="flex-1 flex items-center justify-center w-full">
           <h1 className="text-4xl md:text-6xl font-bold text-center text-foreground">

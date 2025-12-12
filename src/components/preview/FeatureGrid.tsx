@@ -1,4 +1,4 @@
-import { BookOpen, Target, Gift, Users, Snowflake } from 'lucide-react';
+import { BookOpen, Target, Gift, Users, Snowflake, Palette } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -19,6 +19,13 @@ export const FeatureGrid = () => {
       subtitle: 'Know what your child reads',
       description: 'See every finished book in one timeline. Track streaks, minutes, and pages per session. Spot which book types your child returns to again and again.',
       link: '/preview/tracking'
+    },
+    {
+      icon: Palette,
+      title: 'Coloring Books',
+      subtitle: 'Print each book as a coloring book',
+      description: 'Take the joy on the road and print out each book. Keep kids entertained with screen-free activities that reinforce what they learned.',
+      link: '/library'
     },
     {
       icon: Snowflake,

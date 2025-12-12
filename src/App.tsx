@@ -60,6 +60,7 @@ import HabitsRewards from "./pages/preview/HabitsRewards";
 import PreviewRewards from "./pages/preview/PreviewRewards";
 import PreviewTricks from "./pages/preview/PreviewTricks";
 import PreviewPrintouts from "./pages/preview/PreviewPrintouts";
+import PreviewFamily from "./pages/preview/PreviewFamily";
 import AIStudio from "./pages/preview/AIStudio";
 import ParentDashboard from "./pages/preview/ParentDashboard";
 import ForFamilies from "./pages/preview/ForFamilies";
@@ -145,6 +146,7 @@ const App = () => {
                 <Route path="/preview/dashboard" element={<ParentDashboard />} />
         <Route path="/preview/for-families" element={<ForFamilies />} />
         <Route path="/preview/for-grandparents" element={<ForGrandparents />} />
+                <Route path="/preview/family" element={<PreviewFamily />} />
                 <Route path="/preview/pricing" element={<PreviewPricing />} />
                 <Route path="/preview/blog" element={<BlogHome />} />
                 <Route path="/about" element={<About />} />

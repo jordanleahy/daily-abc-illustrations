@@ -15,7 +15,7 @@ export const FeatureGrid = () => {
     },
     {
       icon: BookOpen,
-      title: 'Read',
+      title: 'Early Phonics',
       subtitle: 'Know what your child reads',
       description: 'See every finished book in one timeline. Track streaks, minutes, and pages per session. Spot which book types your child returns to again and again.',
       link: '/preview/tracking'

@@ -3,8 +3,9 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
 import { Shimmer } from '@/components/ui/shimmer';
-import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX, ChevronDown, Sparkles } from 'lucide-react';
+import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX, ChevronDown, Sparkles, Loader2, Wand2 } from 'lucide-react';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { useNavigate } from 'react-router-dom';
@@ -49,6 +50,9 @@ interface BookEditorPanelProps {
   onUpdatePageText?: (pageNumber: number, newText: string) => void;
   onToggleStatus?: () => void;
   bookStatus?: PublicationStatus;
+  bookTitle?: string;
+  bookDescription?: string;
+  characterTheme?: string;
 }
 
 // Feature flag to show/hide the Words learning section
@@ -81,6 +85,9 @@ export function BookEditorPanel({
   onUpdatePageText,
   onToggleStatus,
   bookStatus = PublicationStatus.DRAFT,
+  bookTitle,
+  bookDescription,
+  characterTheme,
 }: BookEditorPanelProps) {
   const navigate = useNavigate();
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -93,6 +100,7 @@ export function BookEditorPanel({
   const [imageMode, setImageMode] = useState<'color' | 'bw' | 'text'>('color');
   const [isGeneratingTextImage, setIsGeneratingTextImage] = useState(false);
   const [isCopyingImage, setIsCopyingImage] = useState(false);
+  const [isGeneratingThumbnail, setIsGeneratingThumbnail] = useState(false);
   const { toast } = useToast();
   
   // Check if user has seen the onboarding (one-time only)
@@ -227,7 +235,56 @@ export function BookEditorPanel({
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
 
-  
+  // Generate thumbnail using AI
+  const handleGenerateThumbnail = async () => {
+    if (!bookTitle) {
+      toast({
+        title: "Missing title",
+        description: "Book title is required to generate a thumbnail",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsGeneratingThumbnail(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-thumbnail', {
+        body: {
+          bookTitle,
+          bookDescription,
+          characterTheme,
+        },
+      });
+
+      if (error) throw error;
+      
+      if (data?.imageUrl) {
+        // Convert base64 to File and call onCoverUpload
+        const response = await fetch(data.imageUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'generated-thumbnail.webp', { type: 'image/webp' });
+        
+        if (onCoverUpload) {
+          onCoverUpload(file);
+        }
+        
+        toast({
+          title: "Thumbnail generated",
+          description: "AI-generated thumbnail has been applied",
+        });
+      }
+    } catch (error) {
+      console.error('Error generating thumbnail:', error);
+      toast({
+        title: "Generation failed",
+        description: error instanceof Error ? error.message : "Failed to generate thumbnail",
+        variant: "destructive",
+      });
+    } finally {
+      setIsGeneratingThumbnail(false);
+    }
+  };
+
   
   // Check if all pages have images uploaded
   const allImagesUploaded = useMemo(() => {
@@ -891,6 +948,24 @@ export function BookEditorPanel({
                   />
                 )}
               </div>
+              
+              {/* Generate Thumbnail Button */}
+              {bookTitle && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleGenerateThumbnail}
+                  disabled={isGeneratingThumbnail || createBookMutation.isPending}
+                  className="w-full flex items-center justify-center gap-2"
+                >
+                  {isGeneratingThumbnail ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-4 w-4" />
+                  )}
+                  {isGeneratingThumbnail ? 'Generating...' : 'Generate Image'}
+                </Button>
+              )}
             </CollapsibleContent>
           </Collapsible>
         )}

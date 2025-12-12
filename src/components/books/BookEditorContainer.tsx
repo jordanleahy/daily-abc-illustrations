@@ -311,6 +311,9 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
       onUpdatePageText={handleUpdatePageText}
       onToggleStatus={handleToggleBookStatus}
       bookStatus={(editorData.book.status as PublicationStatus) || PublicationStatus.DRAFT}
+      bookTitle={editorData.book.book_name}
+      bookDescription={editorData.book.book_description || undefined}
+      characterTheme={(editorData.book.metadata as any)?.characterTheme}
     />
   );
 

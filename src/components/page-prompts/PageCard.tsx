@@ -105,53 +105,13 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
 
 
 
-  const validateImage = async (file: File): Promise<{ valid: boolean; error?: string }> => {
-    if (!file.type.startsWith('image/')) {
-      return { valid: false, error: 'Please select an image file' };
-    }
-    
-    const supportedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-    if (!supportedTypes.includes(file.type)) {
-      return { valid: false, error: 'Supported formats: PNG, JPG, WEBP' };
-    }
-    
-    const maxSize = 5 * 1024 * 1024;
-    if (file.size > maxSize) {
-      return { valid: false, error: 'Image must be smaller than 5MB' };
-    }
-    
-    const isSquare = await checkAspectRatio(file);
-    if (!isSquare) {
-      return { valid: false, error: 'Image must have a 1:1 aspect ratio (square)' };
-    }
-    
-    return { valid: true };
-  };
-
-  const checkAspectRatio = (file: File): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new window.Image();
-      img.onload = () => {
-        const aspectRatio = img.width / img.height;
-        const isSquare = Math.abs(aspectRatio - 1) < 0.1;
-        URL.revokeObjectURL(img.src);
-        resolve(isSquare);
-      };
-      img.onerror = () => {
-        URL.revokeObjectURL(img.src);
-        resolve(false);
-      };
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
   const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
     
-    const validation = await validateImage(file);
-    if (!validation.valid) {
-      console.error(validation.error);
+    // Only check file type, skip size/aspect ratio - processImage handles compression
+    if (!file.type.startsWith('image/')) {
+      console.error('Please select an image file');
       e.target.value = '';
       return;
     }

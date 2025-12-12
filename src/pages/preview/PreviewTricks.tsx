@@ -2,7 +2,7 @@ import { PreviewPageLayout } from '@/components/preview/layout/PreviewPageLayout
 import { PreviewSection } from '@/components/preview/layout/PreviewSection';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { Mountain, Target, Camera, Trophy, TrendingUp, Medal } from 'lucide-react';
+import { Mountain, Target, Camera, Trophy, TrendingUp, Medal, Sparkles, User } from 'lucide-react';
 
 const PreviewTricks = () => {
   const navigate = useNavigate();
@@ -190,6 +190,84 @@ const PreviewTricks = () => {
             <div className="bg-card border border-border rounded-xl p-6 text-center">
               <p className="text-3xl mb-2">🎁</p>
               <p className="font-medium text-foreground">Get rewards</p>
+            </div>
+          </div>
+        </div>
+      </PreviewSection>
+
+      {/* AI Visualization Feature */}
+      <PreviewSection variant="feature">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+                <Sparkles className="w-4 h-4" />
+                AI-Powered
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+                See themselves doing it
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Upload a photo of your child and we'll place them into trick images. Kids can visualize themselves landing each trick before they even try it.
+              </p>
+              <div className="space-y-4">
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <User className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Upload once</p>
+                    <p className="text-muted-foreground text-sm">Add your child's photo and it applies to all trick cards automatically.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">AI visualization</p>
+                    <p className="text-muted-foreground text-sm">See themselves on the rail, in the air, or landing the trick.</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Target className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">Build confidence</p>
+                    <p className="text-muted-foreground text-sm">Visualization is a proven technique for learning new skills.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Visual mockup */}
+            <div className="relative">
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-lg">
+                <div className="aspect-[4/3] bg-gradient-to-br from-blue-100 to-blue-50 flex items-center justify-center relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="h-24 w-24 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4 border-4 border-primary/30">
+                        <span className="text-4xl">🏂</span>
+                      </div>
+                      <p className="text-sm text-muted-foreground font-medium">Your child here</p>
+                    </div>
+                  </div>
+                  <div className="absolute bottom-4 left-4 bg-card/90 backdrop-blur rounded-lg px-3 py-2 border border-border">
+                    <p className="text-xs font-medium text-foreground">Boardslide</p>
+                    <p className="text-xs text-muted-foreground">Round Rail</p>
+                  </div>
+                </div>
+                <div className="p-4 border-t border-border">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-foreground">AI Visualization Active</span>
+                    </div>
+                    <span className="text-xs text-primary font-medium">Personalized</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </div>

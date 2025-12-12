@@ -1,4 +1,4 @@
-import { BookOpen, Target, Gift, Users } from 'lucide-react';
+import { BookOpen, Target, Gift, Users, Snowflake } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -19,6 +19,13 @@ export const FeatureGrid = () => {
       subtitle: 'Know what your child reads',
       description: 'See every finished book in one timeline. Track streaks, minutes, and pages per session. Spot which book types your child returns to again and again.',
       link: '/preview/tracking'
+    },
+    {
+      icon: Snowflake,
+      title: 'Snowboard Tricks',
+      subtitle: 'Track each attempt',
+      description: "Your patience is key to building a confident rider. Track each trick attempt so they can see how far they've come.",
+      link: '/my-tricks'
     },
     {
       icon: Gift,

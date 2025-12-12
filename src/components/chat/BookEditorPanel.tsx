@@ -778,8 +778,6 @@ export function BookEditorPanel({
                   }}
                   disabled={createBookMutation.isPending}
                   className="h-full"
-                  showCopyPrompt={imageMode === 'color'}
-                  onCopyPrompt={handleCopyPrompt}
                 />
                 <Button
                   variant="secondary"
@@ -858,8 +856,6 @@ export function BookEditorPanel({
                 }}
                 disabled={createBookMutation.isPending}
                 className="h-full"
-                showCopyPrompt={imageMode === 'color' && hasClickedCopy}
-                onCopyPrompt={handleCopyPrompt}
               />
             )}
           </div>

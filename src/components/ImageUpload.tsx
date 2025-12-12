@@ -1,9 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Upload, AlertCircle, Clipboard, Copy, Sparkles } from "lucide-react";
-import { processImage, formatFileSize } from "@/utils/imageProcessor";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useClipboard } from "@/contexts/ClipboardContext";
+import { Upload, Sparkles } from "lucide-react";
+import { processImage } from "@/utils/imageProcessor";
 import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
@@ -11,34 +9,34 @@ interface ImageUploadProps {
   disabled?: boolean;
   className?: string;
   autoTrigger?: boolean;
-  showCopyPrompt?: boolean;
-  onCopyPrompt?: () => void;
   onGenerate?: () => void;
   isGenerating?: boolean;
   existingImageUrl?: string;
 }
 
-export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false, showCopyPrompt = false, onCopyPrompt, onGenerate, isGenerating = false, existingImageUrl }: ImageUploadProps) {
-  const [dragActive, setDragActive] = useState(false);
+export function ImageUpload({ 
+  onImageSelect, 
+  disabled = false, 
+  className = "", 
+  autoTrigger = false, 
+  onGenerate, 
+  isGenerating = false, 
+  existingImageUrl 
+}: ImageUploadProps) {
   const [preview, setPreview] = useState<string | null>(existingImageUrl || null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
-  const { consumeClipboardImage, isIOS } = useClipboard();
   const { toast } = useToast();
 
-  // Update preview when existingImageUrl changes
   useEffect(() => {
     if (existingImageUrl) {
       setPreview(existingImageUrl);
     }
   }, [existingImageUrl]);
 
-  // Auto-trigger file picker when autoTrigger is true
   useEffect(() => {
     if (autoTrigger && !disabled && fileInputRef.current) {
-      // Small delay to ensure modal animation completes
       const timer = setTimeout(() => {
         fileInputRef.current?.click();
       }, 100);
@@ -46,106 +44,30 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
     }
   }, [autoTrigger, disabled]);
 
-  const validateImage = (file: File): string | null => {
+  const handleFile = async (file: File) => {
     const isImage = file.type.startsWith('image/');
     const isVideo = file.type.startsWith('video/');
     
     if (!isImage && !isVideo) {
-      return 'Please select an image or video file';
-    }
-
-    if (isImage) {
-      const supportedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
-      if (!supportedTypes.includes(file.type)) {
-        return 'Supported formats: PNG, JPG, WEBP';
-      }
-      const maxSize = 5 * 1024 * 1024; // 5MB for images
-      if (file.size > maxSize) {
-        return 'Image must be smaller than 5MB';
-      }
-    }
-
-    if (isVideo) {
-      const maxSize = 50 * 1024 * 1024; // 50MB for videos
-      if (file.size > maxSize) {
-        return 'Video must be smaller than 50MB';
-      }
-    }
-
-    return null;
-  };
-
-  const handleFile = async (file: File, isPasted: boolean = false) => {
-    const validationError = validateImage(file);
-    if (validationError) {
-      toast({ title: "Invalid file", description: validationError, variant: "destructive" });
+      toast({ title: "Invalid file", description: "Please select an image or video", variant: "destructive" });
       return;
     }
-
-    const isVideo = file.type.startsWith('video/');
 
     setIsProcessing(true);
     try {
       if (isVideo) {
-        // For videos, just pass the file directly without processing
         onImageSelect(file);
       } else {
-        // Process and compress images
-        const processingOptions = {
-          maxWidth: 1200,
-          maxHeight: 1200,
-          quality: 0.88,
-        };
-
-        const processed = await processImage(file, processingOptions);
-
-        // Set preview from processed image
+        const processed = await processImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.88 });
         setPreview(processed.dataUrl);
-
-        // Create a File object from the compressed blob
-        const compressedFile = new File(
-          [processed.blob],
-          file.name.replace(/\.[^.]+$/, '.webp'),
-          { type: processed.blob.type }
-        );
-
+        const compressedFile = new File([processed.blob], file.name.replace(/\.[^.]+$/, '.webp'), { type: processed.blob.type });
         onImageSelect(compressedFile);
       }
     } catch (error) {
       console.error('File processing error:', error);
-      console.error('Failed to process file. Please try another file.');
+      toast({ title: "Processing failed", description: "Please try another file", variant: "destructive" });
     } finally {
       setIsProcessing(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-
-    if (disabled) return;
-
-    const files = Array.from(e.dataTransfer.files);
-    if (files.length > 0) {
-      handleFile(files[0]);
-    }
-  };
-
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleFile(files[0]);
     }
   };
 
@@ -156,79 +78,21 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
     const items = e.clipboardData?.items;
     if (!items) return;
 
-    // Find the first image in clipboard
     for (let i = 0; i < items.length; i++) {
       if (items[i].type.startsWith('image/')) {
         const file = items[i].getAsFile();
         if (file) {
-          await handleFile(file, true); // Mark as pasted
+          await handleFile(file);
           return;
         }
       }
     }
-
-    console.error('No image found in clipboard');
   };
 
-  const handlePasteFromClipboard = async () => {
-    if (disabled || isProcessing) return;
-
-    // First, try to consume cached clipboard image from global context
-    const cachedFile = await consumeClipboardImage();
-    if (cachedFile) {
-      await handleFile(cachedFile, true);
-      return;
-    }
-
-    // iOS Safari has strict clipboard limitations
-    if (isIOS) {
-      toast({
-        title: "Paste on iOS",
-        description: "Long-press in this area and select Paste",
-      });
-      // Focus the container to enable paste
-      containerRef.current?.focus();
-      return;
-    }
-
-    try {
-      // Request clipboard permission and read
-      const clipboardItems = await navigator.clipboard.read();
-      
-      for (const clipboardItem of clipboardItems) {
-        for (const type of clipboardItem.types) {
-          if (type.startsWith('image/')) {
-            const blob = await clipboardItem.getType(type);
-            const file = new File([blob], `clipboard-image.${type.split('/')[1]}`, { type });
-            await handleFile(file, true);
-            return;
-          }
-        }
-      }
-      
-      toast({
-        title: "No image found",
-        description: "Copy an image to your clipboard first",
-        variant: "destructive",
-      });
-    } catch (error) {
-      console.error('Clipboard access error:', error);
-      
-      if (error instanceof Error) {
-        if (error.name === 'NotAllowedError') {
-          toast({
-            title: "Clipboard access denied",
-            description: "Please allow clipboard permissions in your browser",
-            variant: "destructive",
-          });
-        } else {
-          toast({
-            title: "Clipboard error",
-            description: "Try copying the image again",
-            variant: "destructive",
-          });
-        }
-      }
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFile(files[0]);
     }
   };
 
@@ -243,134 +107,57 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
       ref={containerRef}
       className={`
         w-full h-full rounded-lg transition-all duration-200 cursor-pointer
-        ${dragActive ? 'bg-primary/10' : 'bg-muted/50'}
-        ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/80 hover:ring-1 hover:ring-primary/20'}
+        bg-muted/50
+        ${disabled || isProcessing ? 'opacity-50 cursor-not-allowed' : 'hover:bg-muted/80'}
         ${preview ? 'p-0' : 'p-6'}
         ${className}
       `}
+      onClick={() => containerRef.current?.focus()}
       onPaste={handlePaste}
-      onMouseEnter={() => containerRef.current?.focus()}
-      onDragEnter={handleDrag}
-      onDragLeave={handleDrag}
-      onDragOver={handleDrag}
-      onDrop={handleDrop}
       tabIndex={0}
     >
       <input
         ref={fileInputRef}
         type="file"
-        accept="image/png,image/jpeg,image/jpg,image/webp,video/mp4,video/webm,video/quicktime,video/x-msvideo"
+        accept="image/*,video/*"
         onChange={handleFileSelect}
         className="hidden"
         disabled={disabled}
       />
-        {isProcessing ? (
-          <div className="flex flex-col items-center justify-center text-center space-y-3">
-            <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-medium">Optimizing image...</p>
-            <p className="text-xs text-muted-foreground">
-              Compressing and resizing for faster uploads
-            </p>
+      
+      {isProcessing ? (
+        <div className="flex flex-col items-center justify-center text-center space-y-3 h-full">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm font-medium">Optimizing...</p>
+        </div>
+      ) : preview ? (
+        <div className="relative w-full h-full min-h-[200px]">
+          <img src={preview} alt="Uploaded" className="w-full h-full object-cover rounded-lg" />
+          <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+            <Button type="button" variant="secondary" size="sm" onClick={(e) => { e.stopPropagation(); openFileSelector(); }}>
+              Change
+            </Button>
           </div>
-        ) : preview ? (
-          <div className="relative w-full h-full min-h-[200px]">
-            <img
-              src={preview}
-              alt="Uploaded image"
-              className="w-full h-full object-cover rounded-lg"
-            />
-            <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 transition-opacity duration-200 rounded-lg flex flex-col gap-2 items-center justify-center">
-              <Button 
-                type="button" 
-                variant="secondary" 
-                size="sm"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openFileSelector();
-                }}
-              >
-                Change Image
+        </div>
+      ) : (
+        <div className="flex flex-col items-center justify-center text-center space-y-4 h-full">
+          <Upload className="w-8 h-8 text-muted-foreground" />
+          <div className="space-y-2">
+            <p className="text-sm font-medium">Tap to paste or browse</p>
+            <Button type="button" onClick={(e) => { e.stopPropagation(); openFileSelector(); }} variant="outline" size="sm" disabled={disabled || isProcessing}>
+              Browse Files
+            </Button>
+          </div>
+          {onGenerate && (
+            <div className="w-full max-w-xs pt-4 border-t">
+              <Button type="button" onClick={(e) => { e.stopPropagation(); onGenerate(); }} variant="outline" size="lg" className="w-full" disabled={isProcessing || isGenerating}>
+                <Sparkles className="h-5 w-5 mr-2" />
+                {isGenerating ? 'Generating...' : 'Generate'}
               </Button>
             </div>
-          </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center text-center space-y-4 h-full">
-            <Upload className="w-8 h-8 text-muted-foreground mx-auto" />
-            <div className="mx-auto space-y-3">
-              <p className="text-sm font-medium">Upload Image or Video</p>
-              <p className="text-xs text-muted-foreground">
-                Drop or paste your file here
-              </p>
-              <Button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  openFileSelector();
-                }}
-                variant="outline"
-                size="sm"
-                disabled={disabled || isProcessing}
-              >
-                Browse Files
-              </Button>
-            </div>
-            {onGenerate && (
-              <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t">
-                <p className="text-xs text-muted-foreground text-center mb-3">
-                  Or add text overlay
-                </p>
-                <Button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onGenerate();
-                  }}
-                  variant="outline"
-                  size="lg"
-                  className="w-full mx-auto"
-                  disabled={isProcessing || isGenerating}
-                >
-                  <Sparkles className="h-5 w-5 mr-2" />
-                  {isGenerating ? 'Generating...' : 'Generate'}
-                </Button>
-              </div>
-            )}
-            {showCopyPrompt && (
-              <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t space-y-2">
-                <Button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePasteFromClipboard();
-                  }}
-                  variant="outline"
-                  size="lg"
-                  className="w-full mx-auto"
-                  disabled={isProcessing}
-                >
-                  <Clipboard className="h-5 w-5 mr-2" />
-                  Paste Image
-                </Button>
-                {onCopyPrompt && (
-                  <Button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onCopyPrompt();
-                    }}
-                    variant="outline"
-                    size="lg"
-                    className="w-full mx-auto"
-                    disabled={isProcessing}
-                  >
-                    <Copy className="h-5 w-5 mr-2" />
-                    Copy Prompt
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+          )}
+        </div>
+      )}
     </div>
   );
 }

@@ -316,8 +316,6 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
             onImageSelect={handleImageUpload}
             disabled={isUploading}
             className="w-full h-full"
-            showCopyPrompt={true}
-            onCopyPrompt={handleCopyPrompt}
             onGenerate={handleGenerateTextImage}
             isGenerating={isGenerating}
           />

@@ -762,17 +762,10 @@ export function BookEditorPanel({
               <div className="relative w-full h-full">
                 <ImageUpload 
                   onImageSelect={(file) => {
-                    const scrollX = window.scrollX || window.pageXOffset;
-                    const scrollY = window.scrollY || window.pageYOffset;
-                    
                     const reader = new FileReader();
                     reader.onloadend = () => {
                       onImageUpload(reader.result as string, imageMode);
                       setIsReplacing(false);
-                      
-                      requestAnimationFrame(() => {
-                        window.scrollTo(scrollX, scrollY);
-                      });
                     };
                     reader.readAsDataURL(file);
                   }}
@@ -842,15 +835,9 @@ export function BookEditorPanel({
             ) : (
               <ImageUpload 
                 onImageSelect={(file) => {
-                  const scrollX = window.scrollX || window.pageXOffset;
-                  const scrollY = window.scrollY || window.pageYOffset;
-                  
                   const reader = new FileReader();
                   reader.onloadend = () => {
                     onImageUpload(reader.result as string, imageMode);
-                    requestAnimationFrame(() => {
-                      window.scrollTo(scrollX, scrollY);
-                    });
                   };
                   reader.readAsDataURL(file);
                 }}

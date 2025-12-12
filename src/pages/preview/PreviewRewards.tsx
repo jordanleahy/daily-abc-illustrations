@@ -174,6 +174,49 @@ const PreviewRewards = () => {
         </div>
       </PreviewSection>
 
+      {/* Custom Rewards */}
+      <PreviewSection variant="feature">
+        <div className="max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div className="order-2 md:order-1">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-card border border-border rounded-xl p-4 text-center">
+                  <span className="text-3xl mb-2 block">🧋</span>
+                  <p className="font-medium text-foreground text-sm">Bubble Tea</p>
+                  <p className="text-primary font-bold">$5.00</p>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-4 text-center">
+                  <span className="text-3xl mb-2 block">🍬</span>
+                  <p className="font-medium text-foreground text-sm">Candy</p>
+                  <p className="text-primary font-bold">$1.00</p>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-4 text-center">
+                  <span className="text-3xl mb-2 block">🎮</span>
+                  <p className="font-medium text-foreground text-sm">Game Night</p>
+                  <p className="text-primary font-bold">$3.00</p>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-4 text-center">
+                  <span className="text-3xl mb-2 block">🍦</span>
+                  <p className="font-medium text-foreground text-sm">Ice Cream</p>
+                  <p className="text-primary font-bold">$4.00</p>
+                </div>
+              </div>
+            </div>
+            <div className="space-y-6 order-1 md:order-2">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground">
+                Add any reward you want
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Screen time is just the start. Add custom rewards that matter to your family—bubble tea trips, candy, game nights, or that toy they've been eyeing. Set any price. You're in control.
+              </p>
+              <p className="text-muted-foreground">
+                Kids see their balance grow and choose how to spend it. Some will cash out fast. Others will save for weeks. Both are learning.
+              </p>
+            </div>
+          </div>
+        </div>
+      </PreviewSection>
+
       {/* CTA */}
       <PreviewSection variant="feature">
         <div className="max-w-2xl mx-auto text-center">

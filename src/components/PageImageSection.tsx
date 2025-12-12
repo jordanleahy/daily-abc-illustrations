@@ -8,7 +8,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { ProcessStatus } from "@/types/shared";
 import { useState, useEffect } from "react";
-import { Loader2, Upload, Clipboard, Copy, ArrowLeft, DollarSign, Sparkles } from "lucide-react";
+import { Loader2, Upload, Clipboard, Copy, ArrowLeft, DollarSign, Sparkles, Undo2 } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
 import { compositeTextOnImage } from "@/utils/imageTextCompositor";
 import { copyToClipboard } from '@/utils/clipboardHelpers';
@@ -40,7 +40,9 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
   const [internalShowUpload, setInternalShowUpload] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isUndoing, setIsUndoing] = useState(false);
   const [showPromptViewer, setShowPromptViewer] = useState(false);
+  const [previousTextImageUrl, setPreviousTextImageUrl] = useState<string | null>(null);
 
   // Use external upload state if provided, otherwise use internal state
   const showUpload = externalShowUpload !== undefined ? externalShowUpload : internalShowUpload;
@@ -182,6 +184,11 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
 
     setIsGenerating(true);
     try {
+      // Store previous text image URL for undo
+      if (currentImage.text_image_url) {
+        setPreviousTextImageUrl(currentImage.text_image_url);
+      }
+
       // Get page title from database
       const { data: pageData, error: pageError } = await supabase
         .from('pages')
@@ -243,6 +250,39 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
       });
     } finally {
       setIsGenerating(false);
+    }
+  };
+
+  // Undo text image generation - restore previous text image
+  const handleUndoTextImage = async () => {
+    if (!user || !currentImage?.id) return;
+
+    setIsUndoing(true);
+    try {
+      // Update page_image_urls with previous text_image_url (or null)
+      const { error: updateError } = await supabase
+        .from('page_image_urls')
+        .update({ text_image_url: previousTextImageUrl })
+        .eq('id', currentImage.id);
+
+      if (updateError) throw updateError;
+
+      toast({
+        title: "Undo successful",
+        description: "Text image has been restored.",
+      });
+      
+      setPreviousTextImageUrl(null);
+      refreshData();
+    } catch (error: any) {
+      console.error('Error undoing text image:', error);
+      toast({
+        title: "Undo failed",
+        description: error.message || "Failed to restore previous text image",
+        variant: "destructive",
+      });
+    } finally {
+      setIsUndoing(false);
     }
   };
 
@@ -401,21 +441,40 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
               </p>
             </div>
             
-            {/* Generate text overlay button */}
-            <Button 
-              onClick={handleGenerateTextImage}
-              size="sm"
-              variant="default"
-              className="w-full max-w-xs"
-              disabled={isUploading || isGenerating || !currentImage?.image_url}
-            >
-              {isGenerating ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4 mr-2" />
+            {/* Generate text overlay button with Undo */}
+            <div className="flex gap-2 w-full max-w-xs">
+              <Button 
+                onClick={handleGenerateTextImage}
+                size="sm"
+                variant="default"
+                className="flex-1"
+                disabled={isUploading || isGenerating || isUndoing || !currentImage?.image_url}
+              >
+                {isGenerating ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <Sparkles className="w-4 h-4 mr-2" />
+                )}
+                {isGenerating ? 'Generating...' : 'Generate'}
+              </Button>
+              
+              {/* Undo button - only show when there's a previous text image to restore */}
+              {previousTextImageUrl !== null && (
+                <Button 
+                  onClick={handleUndoTextImage}
+                  size="sm"
+                  variant="outline"
+                  disabled={isUploading || isGenerating || isUndoing}
+                  title="Undo text generation"
+                >
+                  {isUndoing ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Undo2 className="w-4 h-4" />
+                  )}
+                </Button>
               )}
-              {isGenerating ? 'Generating...' : 'Generate'}
-            </Button>
+            </div>
 
             {/* View Prompt button */}
             {hasDeployedPrompt && currentPrompt?.content && (

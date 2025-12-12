@@ -15,6 +15,10 @@ export interface PageImageUrl {
   version_number: number;
   /** Public URL of the uploaded image */
   image_url: string | null;
+  /** Public URL of the black & white coloring version */
+  coloring_image_url?: string | null;
+  /** Public URL of the text overlay version */
+  text_image_url?: string | null;
   /** Description/prompt associated with this image */
   prompt_used: string | null;
   /** Error message if generation failed */

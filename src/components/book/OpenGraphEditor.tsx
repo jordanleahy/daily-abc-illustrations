@@ -68,6 +68,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentTitle = seoMetadata?.seo_title || bookTitle;
@@ -519,6 +520,152 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
     }
   };
 
+  const handleGenerateFromCover = async () => {
+    if (!bookCover) {
+      toast.error('No cover image available. Please upload a cover image first.');
+      return;
+    }
+
+    if (!user?.id) {
+      toast.error('User not authenticated. Please log in and try again.');
+      return;
+    }
+
+    setIsGenerating(true);
+    try {
+      toast.loading('Generating thumbnail from cover...', { id: 'generating-thumbnail' });
+
+      // Fetch the cover image as a blob
+      const response = await fetch(bookCover);
+      if (!response.ok) throw new Error('Failed to fetch cover image');
+      const blob = await response.blob();
+      const file = new File([blob], 'cover.webp', { type: blob.type });
+
+      // Process for OpenGraph dimensions (1200x630)
+      const processed = await processImageForOpenGraph(file);
+      toast.dismiss('generating-thumbnail');
+
+      // Upload to book-covers bucket
+      const storagePath = `${bookId}/og-generated-${Date.now()}.webp`;
+      const { error: uploadError } = await supabase.storage
+        .from('book-covers')
+        .upload(storagePath, processed.blob, {
+          contentType: 'image/webp',
+          cacheControl: '31536000, immutable',
+          upsert: true,
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: publicUrl } = supabase.storage
+        .from('book-covers')
+        .getPublicUrl(storagePath);
+
+      if (!publicUrl?.publicUrl) {
+        throw new Error('Failed to get public URL for generated thumbnail');
+      }
+
+      // Find or create daily_published entry
+      let { data: dailyPublishedEntries, error: dailyError } = await supabase
+        .from('daily_published')
+        .select('id, status, created_at')
+        .eq('book_id', bookId)
+        .order('created_at', { ascending: false });
+
+      if (dailyError) throw new Error(`Failed to find daily published entry: ${dailyError.message}`);
+
+      let targetDailyPublished = null;
+
+      if (!dailyPublishedEntries || dailyPublishedEntries.length === 0) {
+        const { data: newEntry, error: createError } = await supabase
+          .from('daily_published')
+          .insert({
+            book_id: bookId,
+            title: bookTitle,
+            description: bookDescription || `Thumbnail for ${bookTitle}`,
+            status: 'draft',
+            is_active: false,
+            publish_date: new Date().toISOString().split('T')[0]
+          })
+          .select()
+          .single();
+
+        if (createError) throw new Error(`Failed to create draft entry: ${createError.message}`);
+        targetDailyPublished = newEntry;
+      } else {
+        const priorityOrder = ['active', 'queued', 'expired', 'draft'];
+        for (const priority of priorityOrder) {
+          const entry = dailyPublishedEntries.find(e => e.status === priority);
+          if (entry) {
+            targetDailyPublished = entry;
+            break;
+          }
+        }
+        if (!targetDailyPublished) targetDailyPublished = dailyPublishedEntries[0];
+      }
+
+      // Update or insert SEO metadata
+      const { data: updatedRows } = await supabase
+        .from('seo_metadata')
+        .update({
+          og_image_url: publicUrl.publicUrl,
+          seo_title: currentTitle,
+          seo_description: currentDescription,
+          is_active: true,
+          is_latest: true,
+        })
+        .eq('daily_published_id', targetDailyPublished.id)
+        .eq('is_latest', true)
+        .select('id');
+
+      if (!updatedRows || updatedRows.length === 0) {
+        const { data: versionData } = await supabase
+          .rpc('get_next_seo_version_number', { p_daily_published_id: targetDailyPublished.id });
+        const nextVersion = versionData || 1;
+
+        await supabase
+          .from('seo_metadata')
+          .update({ is_latest: false })
+          .eq('daily_published_id', targetDailyPublished.id)
+          .eq('is_latest', true);
+
+        const { error: insertError } = await supabase
+          .from('seo_metadata')
+          .insert({
+            daily_published_id: targetDailyPublished.id,
+            user_id: user.id,
+            og_image_url: publicUrl.publicUrl,
+            seo_title: currentTitle,
+            seo_description: currentDescription,
+            optimization_status: 'complete',
+            version_number: nextVersion,
+            is_latest: true,
+            is_active: true,
+            source_data: {
+              book_id: bookId,
+              upload_type: 'generated_from_cover',
+              dimensions: `${processed.width}x${processed.height}`,
+              compression_ratio: processed.compressionRatio.toFixed(2)
+            }
+          });
+
+        if (insertError) throw new Error(`Failed to save SEO metadata: ${insertError.message}`);
+      }
+
+      await refetch();
+      await queryClient.invalidateQueries({ queryKey: ['library-books'] });
+      
+      toast.success('Thumbnail generated from cover successfully');
+    } catch (error) {
+      console.error('Generate thumbnail error:', error);
+      toast.dismiss('generating-thumbnail');
+      toast.error(error instanceof Error ? error.message : 'Failed to generate thumbnail');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <Card>
@@ -637,7 +784,7 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
               <Button
                 variant="outline"
                 onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
+                disabled={isUploading || isGenerating}
                 className="flex items-center gap-2"
               >
                 {isUploading ? (
@@ -645,8 +792,23 @@ export const OpenGraphEditor = ({ bookId, bookTitle, bookDescription }: OpenGrap
                 ) : (
                   <Upload className="w-4 h-4" />
                 )}
-                {currentImage ? 'Replace Image' : 'Upload Image'}
+                {currentImage ? 'Replace' : 'Upload'}
               </Button>
+              {bookCover && (
+                <Button
+                  variant="outline"
+                  onClick={handleGenerateFromCover}
+                  disabled={isUploading || isGenerating}
+                  className="flex items-center gap-2"
+                >
+                  {isGenerating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="w-4 h-4" />
+                  )}
+                  Generate from Cover
+                </Button>
+              )}
             </div>
           </div>
           

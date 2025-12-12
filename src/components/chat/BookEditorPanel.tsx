@@ -955,7 +955,6 @@ export function BookEditorPanel({
                     }}
                     disabled={createBookMutation.isPending}
                     className="h-full"
-                    requireSquare={false}
                   />
                 )}
               </div>

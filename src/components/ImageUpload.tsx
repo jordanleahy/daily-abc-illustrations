@@ -11,7 +11,6 @@ interface ImageUploadProps {
   disabled?: boolean;
   className?: string;
   autoTrigger?: boolean;
-  requireSquare?: boolean;
   showCopyPrompt?: boolean;
   onCopyPrompt?: () => void;
   onGenerate?: () => void;
@@ -19,7 +18,7 @@ interface ImageUploadProps {
   existingImageUrl?: string;
 }
 
-export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false, requireSquare = true, showCopyPrompt = false, onCopyPrompt, onGenerate, isGenerating = false, existingImageUrl }: ImageUploadProps) {
+export function ImageUpload({ onImageSelect, disabled = false, className = "", autoTrigger = false, showCopyPrompt = false, onCopyPrompt, onGenerate, isGenerating = false, existingImageUrl }: ImageUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [preview, setPreview] = useState<string | null>(existingImageUrl || null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -76,36 +75,14 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
     return null;
   };
 
-  const checkAspectRatio = (file: File): Promise<boolean> => {
-    return new Promise((resolve) => {
-      const img = new Image();
-      img.onload = () => {
-        const aspectRatio = img.width / img.height;
-        const isSquare = Math.abs(aspectRatio - 1) < 0.1; // Allow 10% tolerance
-        resolve(isSquare);
-      };
-      img.onerror = () => resolve(false);
-      img.src = URL.createObjectURL(file);
-    });
-  };
-
   const handleFile = async (file: File, isPasted: boolean = false) => {
     const validationError = validateImage(file);
     if (validationError) {
-      console.error('File validation error:', validationError);
+      toast({ title: "Invalid file", description: validationError, variant: "destructive" });
       return;
     }
 
     const isVideo = file.type.startsWith('video/');
-
-    // Skip aspect ratio check for videos
-    if (!isVideo && requireSquare) {
-      const isSquare = await checkAspectRatio(file);
-      if (!isSquare) {
-        console.error('Image must have a 1:1 aspect ratio (square)');
-        return;
-      }
-    }
 
     setIsProcessing(true);
     try {
@@ -320,7 +297,7 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
           <div className="flex flex-col items-center justify-center text-center space-y-4 h-full">
             <Upload className="w-8 h-8 text-muted-foreground mx-auto" />
             <div className="mx-auto space-y-3">
-              <p className="text-sm font-medium">{requireSquare ? 'Upload 1:1 Image' : 'Upload Image or Video'}</p>
+              <p className="text-sm font-medium">Upload Image or Video</p>
               <p className="text-xs text-muted-foreground">
                 Drop or paste your file here
               </p>

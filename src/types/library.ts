@@ -17,6 +17,7 @@ export interface LibraryBook {
   // User activity fields
   last_viewed_at?: string | null;
   view_count?: number;
+  completion_count?: number; // Number of times this book was completed by family kids
   // Book categorization metadata
   metadata?: {
     type?: string;

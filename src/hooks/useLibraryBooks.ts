@@ -123,18 +123,26 @@ export const useLibraryBooks = () => {
         (coverImages || []).map(img => [img.book_id, img.image_url])
       );
 
-      // Batch fetch user activity
+      // Batch fetch user activity (includes completion count per family)
       let activityMap = new Map();
+      let completionMap = new Map<string, number>();
       if (user) {
         const { data: activityData } = await supabase
           .from('user_book_activity')
-          .select('book_id, last_viewed_at, view_count')
+          .select('book_id, last_viewed_at, view_count, reading_completed')
           .eq('user_id', user.id)
           .in('book_id', bookIds);
 
         activityMap = new Map(
           (activityData || []).map(activity => [activity.book_id, activity])
         );
+        
+        // Count completions per book (per-family: all records for this user where reading_completed = true)
+        (activityData || []).forEach(activity => {
+          if (activity.reading_completed && activity.book_id) {
+            completionMap.set(activity.book_id, (completionMap.get(activity.book_id) || 0) + 1);
+          }
+        });
       }
 
       // Transform to LibraryBook format
@@ -152,6 +160,7 @@ export const useLibraryBooks = () => {
           cover_image: coverMap.get(book.id) || null,
           last_viewed_at: activity?.last_viewed_at || null,
           view_count: activity?.view_count || 0,
+          completion_count: completionMap.get(book.id) || 0,
           metadata: book.metadata as LibraryBook['metadata'],
         };
       });

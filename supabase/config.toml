@@ -141,6 +141,9 @@ verify_jwt = true
 [functions.backfill-text-images]
 verify_jwt = true
 
+[functions.admin-upload-image]
+verify_jwt = false
+
 [api]
 enabled = true
 port = 54321

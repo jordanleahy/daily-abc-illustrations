@@ -293,10 +293,17 @@ serve(async (req) => {
         : `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. Skip the theme discovery question and integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
       : '';
 
+    // Check if user is forcing outline creation (e.g., typing "create outline")
+    const lastUserMessage = messages.filter(m => m.role === 'user').pop();
+    const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
+    const forceOutline = lastMessageContent.includes('create outline') || lastMessageContent.includes('generate outline');
+
     const conversationStageContext = outlineReady
       ? '\n\n✅ OUTLINE COMPLETE: The book outline has been created and approved. Focus conversation on next steps: reviewing pages, creating the book, or making adjustments.'
       : bookCreated
       ? '\n\n📖 BOOK CREATED: The book has been successfully created in the database. User can now review pages, generate images, or make edits.'
+      : forceOutline
+      ? '\n\n🚀 FORCE OUTLINE: The user has requested immediate outline generation. Generate the complete book outline NOW with all pages, titles, and image prompts in markdown format. Do not ask any more discovery questions. Use sensible defaults for any missing information (age: 3-4 years, letter case: lowercase for ABC, etc.). Generate the full outline in this response with empty suggestions array.'
       : '\n\n🎯 DISCOVERY PHASE: Guide the user through the book creation conversation to gather all requirements for generating a complete outline.';
 
     // Combine base prompt with contextual additions

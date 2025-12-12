@@ -153,8 +153,52 @@ const HabitsRewards = () => {
         </div>
       </PreviewSection>
 
-      {/* Consistency > Topic */}
+      {/* How It Works */}
       <PreviewSection variant="feature" className="bg-muted/30">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              How habits work
+            </h2>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Simple setup, flexible enough for your family
+            </p>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <span className="text-2xl">✏️</span>
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">Create or choose</h3>
+              <p className="text-muted-foreground text-sm">
+                Build your own habits from scratch or pick from a library of common ones. Reading, brushing teeth, tidying up—whatever matters to your family.
+              </p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <span className="text-2xl">🪙</span>
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">Assign coins</h3>
+              <p className="text-muted-foreground text-sm">
+                Set a coin value for each habit. Harder habits earn more. Kids see their coins grow and trade them for rewards you approve.
+              </p>
+            </div>
+            <div className="bg-card border border-border rounded-xl p-6">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <span className="text-2xl">📅</span>
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">Schedule flexibly</h3>
+              <p className="text-muted-foreground text-sm">
+                Set habits for specific days or let them repeat. Skip weekends, pause for vacations, or add extra habits when you need them.
+              </p>
+            </div>
+          </div>
+        </div>
+      </PreviewSection>
+
+      {/* Consistency > Topic */}
+      <PreviewSection variant="feature">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-6">
             The topic barely matters

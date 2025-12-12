@@ -28,6 +28,7 @@ export const PreviewNav = () => {
   ];
 
   const familyItems = [
+    { title: 'Multi-Kid Profiles', href: '/preview/family', description: 'Manage your kids' },
     { title: 'For Families', href: '/preview/for-families', description: 'Collaborate on reading' },
     { title: 'For Grandparents', href: '/preview/for-grandparents', description: 'Stay connected' },
     { title: 'For Toddlers', href: '/preview/for-families#toddlers', description: 'Ages 2-4' },

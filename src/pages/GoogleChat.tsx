@@ -1006,35 +1006,39 @@ export default function GoogleChat() {
       }
 
       try {
-        console.log('Uploading image...');
+        console.log('Uploading image in mode:', imageMode);
         
-        // OPTIMISTIC UPDATE: Immediately update local state before upload
-        setEditorPageImages(prev => ({
-          ...prev,
-          [currentEditorPage]: imageDataUrl
-        }));
-        
-        // Clear replace mode immediately
-        setReplacePageMode(prev => {
-          const updated = { ...prev };
-          delete updated[currentEditorPage];
-          return updated;
-        });
-        
-        // Auto-advance immediately for instant UX
-        if (currentEditorPage < pageCount) {
-          setCurrentEditorPage(currentEditorPage + 1);
+        // OPTIMISTIC UPDATE: Immediately update local state before upload (only for color mode)
+        if (imageMode === 'color') {
+          setEditorPageImages(prev => ({
+            ...prev,
+            [currentEditorPage]: imageDataUrl
+          }));
+          
+          // Clear replace mode immediately
+          setReplacePageMode(prev => {
+            const updated = { ...prev };
+            delete updated[currentEditorPage];
+            return updated;
+          });
+          
+          // Auto-advance immediately for instant UX (only for color mode)
+          if (currentEditorPage < pageCount) {
+            setCurrentEditorPage(currentEditorPage + 1);
+          }
         }
         
         // Convert base64 to blob
         const response = await fetch(imageDataUrl);
         const blob = await response.blob();
-        const file = new File([blob], `page-${currentEditorPage}-${Date.now()}.png`, { type: 'image/png' });
+        const modePrefix = imageMode === 'text' ? 'text-' : imageMode === 'bw' ? 'coloring-' : '';
+        const fileName = `${modePrefix}page-${currentEditorPage}-${Date.now()}.png`;
+        const file = new File([blob], fileName, { type: 'image/png' });
         
         // Upload to Supabase Storage
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('page-images')
-          .upload(`${user?.id}/${createdBookId}/page-${currentEditorPage}-${Date.now()}.png`, file, {
+          .upload(`${user?.id}/${createdBookId}/${fileName}`, file, {
             cacheControl: '3600',
             upsert: false,
           });
@@ -1046,48 +1050,96 @@ export default function GoogleChat() {
           .from('page-images')
           .getPublicUrl(uploadData.path);
         
-        // Get next version number
-        const { data: existingImages } = await supabase
-          .from('page_image_urls')
-          .select('version_number')
-          .eq('page_id', currentPage.id)
-          .order('version_number', { ascending: false })
-          .limit(1);
-        
-        const nextVersion = (existingImages?.[0]?.version_number || 0) + 1;
-        
-        // Mark all previous versions as not latest
-        await supabase
-          .from('page_image_urls')
-          .update({ is_latest: false })
-          .eq('page_id', currentPage.id);
-        
-        // Insert new image record
-        const { error: insertError } = await supabase
-          .from('page_image_urls')
-          .insert({
-            page_id: currentPage.id,
-            book_id: createdBookId,
-            user_id: user?.id,
-            version_number: nextVersion,
-            image_url: publicUrl,
-            source_type: 'user_uploaded',
-            is_latest: true,
-          });
-        
-        if (insertError) throw insertError;
-        
-        // Update React Query cache directly instead of invalidating
-        queryClient.setQueryData(['book-page-images', createdBookId], (old: Record<number, string> | undefined) => ({
-          ...old,
-          [currentEditorPage]: publicUrl
-        }));
-        
-        // Update optimistic state with final URL
-        setEditorPageImages(prev => ({
-          ...prev,
-          [currentEditorPage]: publicUrl
-        }));
+        // For text or bw mode: UPDATE existing record's specific column
+        // For color mode: INSERT new version record
+        if (imageMode === 'text' || imageMode === 'bw') {
+          // Find the latest record for this page
+          const { data: latestRecord } = await supabase
+            .from('page_image_urls')
+            .select('id')
+            .eq('page_id', currentPage.id)
+            .eq('is_latest', true)
+            .single();
+          
+          if (latestRecord) {
+            // Update only the specific column
+            const updateColumn = imageMode === 'text' ? 'text_image_url' : 'coloring_image_url';
+            const { error: updateError } = await supabase
+              .from('page_image_urls')
+              .update({ [updateColumn]: publicUrl })
+              .eq('id', latestRecord.id);
+            
+            if (updateError) throw updateError;
+          } else {
+            // No existing record, create one with the specific URL
+            const insertData = {
+              page_id: currentPage.id,
+              book_id: createdBookId,
+              user_id: user?.id,
+              version_number: 1,
+              source_type: 'user_uploaded' as const,
+              is_latest: true,
+              text_image_url: imageMode === 'text' ? publicUrl : null,
+              coloring_image_url: imageMode === 'bw' ? publicUrl : null,
+            };
+            
+            const { error: insertError } = await supabase
+              .from('page_image_urls')
+              .insert(insertData);
+            
+            if (insertError) throw insertError;
+          }
+          
+          // Update the appropriate cache key
+          const cacheKey = imageMode === 'text' ? 'book-page-text-images' : 'book-page-coloring-images';
+          queryClient.setQueryData([cacheKey, createdBookId], (old: Record<number, string> | undefined) => ({
+            ...old,
+            [currentEditorPage]: publicUrl
+          }));
+        } else {
+          // Color mode: original behavior - insert new version
+          const { data: existingImages } = await supabase
+            .from('page_image_urls')
+            .select('version_number')
+            .eq('page_id', currentPage.id)
+            .order('version_number', { ascending: false })
+            .limit(1);
+          
+          const nextVersion = (existingImages?.[0]?.version_number || 0) + 1;
+          
+          // Mark all previous versions as not latest
+          await supabase
+            .from('page_image_urls')
+            .update({ is_latest: false })
+            .eq('page_id', currentPage.id);
+          
+          // Insert new image record
+          const { error: insertError } = await supabase
+            .from('page_image_urls')
+            .insert({
+              page_id: currentPage.id,
+              book_id: createdBookId,
+              user_id: user?.id,
+              version_number: nextVersion,
+              image_url: publicUrl,
+              source_type: 'user_uploaded',
+              is_latest: true,
+            });
+          
+          if (insertError) throw insertError;
+          
+          // Update React Query cache directly instead of invalidating
+          queryClient.setQueryData(['book-page-images', createdBookId], (old: Record<number, string> | undefined) => ({
+            ...old,
+            [currentEditorPage]: publicUrl
+          }));
+          
+          // Update optimistic state with final URL
+          setEditorPageImages(prev => ({
+            ...prev,
+            [currentEditorPage]: publicUrl
+          }));
+        }
       } catch (error: any) {
         console.error('Image upload error:', error);
         // Rollback optimistic update on error

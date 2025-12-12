@@ -21,6 +21,7 @@ import { useReadingPreferences } from '@/hooks/useReadingPreferences';
 import { BookImage } from '@/components/ui/book-image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { isContentPage } from '@/types/book';
+import { ColorModeUploadSection } from './ColorModeUploadSection';
 
 
 interface BookEditorPanelProps {
@@ -832,6 +833,12 @@ export function BookEditorPanel({
                   Adds text overlay to your color image
                 </p>
               </div>
+            ) : imageMode === 'color' ? (
+              <ColorModeUploadSection
+                onImageUpload={onImageUpload}
+                onCopyPrompt={handleCopyPrompt}
+                disabled={createBookMutation.isPending}
+              />
             ) : (
               <ImageUpload 
                 onImageSelect={(file) => {

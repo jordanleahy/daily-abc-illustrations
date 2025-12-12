@@ -2,6 +2,7 @@ import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookImage } from '@/components/ui/book-image';
 import { Badge } from '@/components/ui/badge';
+import { CheckCircle } from 'lucide-react';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { trackBookView } from '@/utils/bookViewTracking';
@@ -74,8 +75,9 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
   const metadata = book.metadata;
   const targetAge = metadata?.targetAge;
   
-  // Get cover image
+  // Get cover image and completion count
   const coverImage = 'cover_image' in book ? book.cover_image : ('image_url' in book ? book.image_url : null);
+  const completionCount = 'completion_count' in book ? book.completion_count : 0;
 
   return (
     <>
@@ -89,6 +91,13 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
           <Badge className={LIBRARY_STYLES.bookCard.badge}>
             {LIBRARY_TEXT.BADGES.FEATURED}
           </Badge>
+        )}
+        
+        {completionCount && completionCount > 0 && (
+          <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
+            <CheckCircle className="w-3 h-3" />
+            <span>{completionCount}×</span>
+          </div>
         )}
         
         <div className={LIBRARY_STYLES.bookCard.imageContainer}>

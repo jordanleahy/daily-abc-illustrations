@@ -30,12 +30,13 @@ serve(async (req) => {
       ? `${characterTheme} style, ` 
       : '';
     
-    const prompt = `Generate an image: Create a vibrant children's book cover thumbnail.
+    const prompt = `Generate an image: Create a vibrant children's book cover thumbnail in landscape format (1200x630 ratio).
 
-Book Title: "${bookTitle}"
-${bookDescription ? `Description: ${bookDescription}` : ''}
+CRITICAL TITLE REQUIREMENT: The book title "${bookTitle}" MUST be displayed as LARGE, BOLD text CENTERED horizontally and vertically in the image, taking up 50-60% of the visual space. Use a fun, playful, child-friendly font style. The title is the most important visual element.
 
-Style: ${themeStyle}Children's book illustration, soft watercolor aesthetic, warm inviting colors. Landscape format (1200x630 ratio). Display the title "${bookTitle}" in large, bold, centered letters taking 50-60% of the visual space with a fun child-friendly font. Make it colorful and engaging.`;
+${bookDescription ? `Book theme: ${bookDescription}` : ''}
+
+Style: ${themeStyle}Children's book illustration, soft watercolor aesthetic, warm inviting colors, playful educational theme. Create a colorful, engaging background scene that complements but does not overshadow the centered title text.`;
 
     console.log("Generating thumbnail for:", bookTitle);
 

@@ -93,7 +93,7 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
           </Badge>
         )}
         
-        {completionCount && completionCount > 0 && (
+        {completionCount > 0 && (
           <div className="absolute top-2 left-2 z-10 flex items-center gap-1 bg-green-500 text-white px-2 py-0.5 rounded-full text-xs font-medium shadow-sm">
             <CheckCircle className="w-3 h-3" />
             <span>{completionCount}×</span>

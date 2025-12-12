@@ -19,7 +19,8 @@ export const PreviewNav = () => {
   const productItems = [
     { title: 'Overview', href: '/preview/product', description: 'See all features' },
     { title: 'Reading & Library', href: '/preview/tracking', description: 'Track reading progress' },
-    { title: 'Habits & Rewards', href: '/preview/habits', description: 'Build reading habits' },
+    { title: 'Habits', href: '/preview/habits', description: 'Build daily routines' },
+    { title: 'Rewards', href: '/preview/rewards', description: 'Motivate with incentives' },
     { title: 'AI Book Studio', href: '/preview/ai-studio', description: 'Create custom books' },
     { title: 'Parent Dashboard', href: '/preview/dashboard', description: 'Monitor your family' }
   ];

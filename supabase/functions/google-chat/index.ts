@@ -306,10 +306,13 @@ serve(async (req) => {
       ? '\n\n🚀 FORCE OUTLINE: The user has requested immediate outline generation. Generate the complete book outline NOW with all pages, titles, and image prompts in markdown format. Do not ask any more discovery questions. Use sensible defaults for any missing information (age: 3-4 years, letter case: lowercase for ABC, etc.). Generate the full outline in this response with empty suggestions array.'
       : '\n\n🎯 DISCOVERY PHASE: Guide the user through the book creation conversation to gather all requirements for generating a complete outline.';
 
+    // Multi-language support - respond in user's language while maintaining safety
+    const languageContext = `\n\n🌍 LANGUAGE INSTRUCTION: Detect the language the user is writing in and respond in that SAME language throughout the entire conversation. This applies to all responses including discovery questions, suggestions, title/description proposals, and the complete book outline. Maintain all content safety guidelines and age-appropriateness regardless of language. Do NOT translate internal instruction tags like [SUGGEST] or markdown formatting.`;
+
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + ageContext + curatedItemsContext + themeContext + conversationStageContext,
+      content: systemPromptContent + languageContext + ageContext + curatedItemsContext + themeContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

@@ -227,7 +227,7 @@ export function BookEditorPanel({
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
 
-  const currentCoverPrompt = editorPagePrompts[1] || null;
+  
   
   // Check if all pages have images uploaded
   const allImagesUploaded = useMemo(() => {
@@ -820,37 +820,6 @@ export function BookEditorPanel({
           </>
         )}
 
-        {/* Cover Image Prompt - Show on page 1 (Cover Page) */}
-        {currentPageNumber === 1 && currentCoverPrompt && (
-          <div className="space-y-2">
-            <p className="text-xs font-medium text-muted-foreground">Cover Image Prompt</p>
-            <div className="border rounded-lg p-3 bg-muted/30 space-y-2">
-              <div className="text-xs text-muted-foreground max-h-32 overflow-y-auto">
-                {currentCoverPrompt}
-              </div>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={async () => {
-                  try {
-                    await copyToClipboard(currentCoverPrompt);
-                    
-                    // Create book immediately if not already created
-                    if (!isBookCreated && !createBookMutation.isPending) {
-                      onCreateBook();
-                    }
-                  } catch (error) {
-                    console.error('Failed to copy prompt:', error);
-                  }
-                }}
-                className="w-full"
-              >
-                <Copy className="h-4 w-4 mr-1" />
-                Copy Cover Prompt
-              </Button>
-            </div>
-          </div>
-        )}
 
       </div>
 

@@ -22,6 +22,7 @@ export const PreviewNav = () => {
     { title: 'Habits', href: '/preview/habits', description: 'Build daily routines' },
     { title: 'Rewards', href: '/preview/rewards', description: 'Motivate with incentives' },
     { title: 'Snowboard Tricks', href: '/preview/tricks', description: 'Track trick progress' },
+    { title: 'Print-outs', href: '/preview/print-outs', description: 'Coloring books to print' },
     { title: 'AI Book Studio', href: '/preview/ai-studio', description: 'Create custom books' },
     { title: 'Parent Dashboard', href: '/preview/dashboard', description: 'Monitor your family' }
   ];

@@ -6,6 +6,7 @@ import { HelmetProvider } from "react-helmet-async";
 import { RoleProvider } from "@/contexts/RoleContext";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { NetworkStatusProvider } from "@/contexts/NetworkStatusContext";
+import { ClipboardProvider } from "@/contexts/ClipboardContext";
 import { WeakNetworkBanner } from "@/components/ui/WeakNetworkBanner";
 import Index from "./pages/Index";
 import Landing from "./pages/Landing";
@@ -125,6 +126,7 @@ const App = () => {
         <AuthProvider>
           <RoleProvider>
             <NetworkStatusProvider>
+              <ClipboardProvider>
               <WeakNetworkBanner />
               <Toaster />
               <Sonner />
@@ -212,6 +214,7 @@ const App = () => {
               <Route path="*" element={<NotFound />} />
             </Routes>
               </BrowserRouter>
+              </ClipboardProvider>
             </NetworkStatusProvider>
           </RoleProvider>
         </AuthProvider>

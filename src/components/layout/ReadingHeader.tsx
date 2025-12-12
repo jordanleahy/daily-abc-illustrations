@@ -137,8 +137,8 @@ export function ReadingHeader({
             <span className="font-medium text-foreground">{displayKid.first_name}</span>
             <span className="text-muted-foreground">•</span>
             <div className="flex items-center gap-1">
-              <Circle className="w-3 h-3 fill-amber-600 text-amber-700" />
-              <span className="text-amber-700 font-medium">{formatPenniesAsCurrency(kidPennies)}</span>
+              <Circle className={`w-3 h-3 ${kidPennies < 0 ? 'fill-red-500 text-red-600' : 'fill-amber-600 text-amber-700'}`} />
+              <span className={`font-medium ${kidPennies < 0 ? 'text-red-500' : 'text-amber-700'}`}>{formatPenniesAsCurrency(kidPennies)}</span>
             </div>
           </>
         )}

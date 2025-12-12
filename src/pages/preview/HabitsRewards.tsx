@@ -177,11 +177,11 @@ const HabitsRewards = () => {
             </div>
             <div className="bg-card border border-border rounded-xl p-6">
               <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <span className="text-2xl">🪙</span>
+                <span className="text-2xl">💵</span>
               </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Assign coins</h3>
+              <h3 className="text-lg font-bold text-foreground mb-2">Assign money</h3>
               <p className="text-muted-foreground text-sm">
-                Set a coin value for each habit. Harder habits earn more. Kids see their coins grow and trade them for rewards you approve.
+                Set a dollar value for each habit. Harder habits earn more. Kids see their balance grow and trade it for rewards you approve.
               </p>
             </div>
             <div className="bg-card border border-border rounded-xl p-6">

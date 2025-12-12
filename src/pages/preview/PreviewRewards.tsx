@@ -1,132 +1,96 @@
 import { PreviewPageLayout } from '@/components/preview/layout/PreviewPageLayout';
 import { PreviewSection } from '@/components/preview/layout/PreviewSection';
 import { Button } from '@/components/ui/button';
-import { Link, useNavigate } from 'react-router-dom';
-import { Gift, ShoppingBag, Clock, Coins, Star, Trophy } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Play, Clock, ShieldCheck, Youtube, DollarSign, Timer } from 'lucide-react';
 
 const PreviewRewards = () => {
   const navigate = useNavigate();
 
   return (
     <PreviewPageLayout>
-      {/* Hero */}
+      {/* Hero - YouTube Focus */}
       <PreviewSection variant="hero">
         <div className="max-w-4xl mx-auto text-center space-y-6">
-          <div className="inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-full text-sm font-medium">
-            <Gift className="w-4 h-4" />
-            Rewards System
+          <div className="inline-flex items-center gap-2 bg-red-500/10 text-red-500 px-4 py-2 rounded-full text-sm font-medium">
+            <Youtube className="w-4 h-4" />
+            Built-in Screen Time
           </div>
           <h1 className="text-4xl md:text-6xl font-bold text-foreground tracking-tight">
-            Effort earns.<br />
-            <span className="text-primary">Rewards motivate.</span>
+            $1 = 5 minutes.<br />
+            <span className="text-primary">Then it stops.</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Kids see their hard work pay off. Parents control the store. Everyone wins.
+            YouTube is built into the app. When their earned time runs out, the video stops. No negotiations. No "just one more."
           </p>
         </div>
       </PreviewSection>
 
-      {/* How Rewards Work */}
+      {/* Primary Feature - YouTube Timer */}
       <PreviewSection variant="feature" className="bg-muted/30">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              How rewards work
-            </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              A simple system that teaches value and delayed gratification
-            </p>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Coins className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Earn from habits</h3>
-              <p className="text-muted-foreground text-sm">
-                Every completed habit adds money to your child's balance. They see their earnings grow in real time.
-              </p>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <ShoppingBag className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Browse the store</h3>
-              <p className="text-muted-foreground text-sm">
-                Kids pick from rewards you've approved. Screen time, treats, activities—whatever motivates your family.
-              </p>
-            </div>
-            <div className="bg-card border border-border rounded-xl p-6">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                <Gift className="w-6 h-6 text-primary" />
-              </div>
-              <h3 className="text-lg font-bold text-foreground mb-2">Redeem and enjoy</h3>
-              <p className="text-muted-foreground text-sm">
-                When they've earned enough, they cash in. You fulfill the reward. The cycle continues.
-              </p>
-            </div>
-          </div>
-        </div>
-      </PreviewSection>
-
-      {/* Parent Control */}
-      <PreviewSection variant="feature">
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-                You control the store
+                Screen time they earn
               </h2>
               <p className="text-lg text-muted-foreground">
-                Add your own rewards with custom prices. A trip to the park? 50 cents. Extra screen time? $1. That special toy they've been wanting? $20.
+                Kids spend their earned money on YouTube time. The videos play right in the app with a countdown timer. When time's up, it's up.
               </p>
-              <ul className="space-y-4">
-                <li className="flex items-start gap-3">
-                  <Star className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <span className="text-muted-foreground">Set any price for any reward</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Star className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <span className="text-muted-foreground">Add photos so kids know what they're saving for</span>
-                </li>
-                <li className="flex items-start gap-3">
-                  <Star className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                  <span className="text-muted-foreground">Approve purchases before they're fulfilled</span>
-                </li>
-              </ul>
-            </div>
-            <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-background border border-border rounded-xl p-8">
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-8 h-8 text-primary" />
-                    <div>
-                      <p className="font-medium text-foreground">30 min screen time</p>
-                      <p className="text-sm text-muted-foreground">Most popular</p>
-                    </div>
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <DollarSign className="w-5 h-5 text-primary" />
                   </div>
-                  <span className="font-bold text-primary">$1.00</span>
+                  <div>
+                    <p className="font-medium text-foreground">Simple math</p>
+                    <p className="text-muted-foreground text-sm">$1 buys 5 minutes. $2 buys 10. Kids learn to budget.</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
-                  <div className="flex items-center gap-3">
-                    <Gift className="w-8 h-8 text-primary" />
-                    <div>
-                      <p className="font-medium text-foreground">Ice cream trip</p>
-                      <p className="text-sm text-muted-foreground">Weekend reward</p>
-                    </div>
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <Timer className="w-5 h-5 text-primary" />
                   </div>
-                  <span className="font-bold text-primary">$5.00</span>
+                  <div>
+                    <p className="font-medium text-foreground">Automatic cutoff</p>
+                    <p className="text-muted-foreground text-sm">The app stops playback when their time runs out. No parent intervention needed.</p>
+                  </div>
                 </div>
-                <div className="flex items-center justify-between p-4 bg-card rounded-lg border border-border">
-                  <div className="flex items-center gap-3">
-                    <Trophy className="w-8 h-8 text-primary" />
-                    <div>
-                      <p className="font-medium text-foreground">New LEGO set</p>
-                      <p className="text-sm text-muted-foreground">Big goal</p>
+                <div className="flex items-start gap-4">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                    <ShieldCheck className="w-5 h-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">You control the content</p>
+                    <p className="text-muted-foreground text-sm">Approve which videos are available. Kids can only watch what you've approved.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Visual mockup */}
+            <div className="relative">
+              <div className="bg-card border border-border rounded-xl overflow-hidden shadow-lg">
+                {/* Video placeholder */}
+                <div className="aspect-video bg-gradient-to-br from-muted to-muted/50 flex items-center justify-center relative">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="h-16 w-16 rounded-full bg-red-500 flex items-center justify-center">
+                      <Play className="w-8 h-8 text-white ml-1" />
                     </div>
                   </div>
-                  <span className="font-bold text-primary">$25.00</span>
+                </div>
+                {/* Timer bar */}
+                <div className="p-4 border-t border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <Clock className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium text-foreground">Time remaining</span>
+                    </div>
+                    <span className="text-lg font-bold text-primary">3:42</span>
+                  </div>
+                  <div className="w-full bg-muted rounded-full h-2">
+                    <div className="bg-primary h-2 rounded-full" style={{ width: '74%' }}></div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -134,27 +98,68 @@ const PreviewRewards = () => {
         </div>
       </PreviewSection>
 
-      {/* Life Lessons */}
+      {/* How It Works */}
+      <PreviewSection variant="feature">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              How it works
+            </h2>
+          </div>
+          
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="text-center">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-primary">1</span>
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">Complete habits</h3>
+              <p className="text-muted-foreground text-sm">
+                Kids finish their daily habits and earn money into their balance.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-primary">2</span>
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">Buy screen time</h3>
+              <p className="text-muted-foreground text-sm">
+                They spend $1 for 5 minutes. Their balance updates instantly.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-primary">3</span>
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">Watch until time's up</h3>
+              <p className="text-muted-foreground text-sm">
+                YouTube plays in the app. When the timer hits zero, the video stops automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+      </PreviewSection>
+
+      {/* Why This Works */}
       <PreviewSection variant="feature" className="bg-muted/30">
         <div className="max-w-3xl mx-auto text-center space-y-8">
           <h2 className="text-3xl md:text-4xl font-bold text-foreground">
-            More than just motivation
+            No more screen time battles
           </h2>
           <p className="text-xl text-muted-foreground">
-            The rewards system teaches real-world lessons: saving for goals, delayed gratification, and the connection between effort and outcome. These are skills that last a lifetime.
+            When kids earn their screen time, they respect the limits. The timer isn't the bad guy—they simply used up what they earned. Want more? Complete more habits tomorrow.
           </p>
-          <div className="grid sm:grid-cols-3 gap-6 pt-4">
-            <div className="p-4">
-              <p className="text-4xl font-bold text-primary mb-2">Saving</p>
-              <p className="text-muted-foreground text-sm">Watch their balance grow toward bigger goals</p>
+          <div className="grid sm:grid-cols-2 gap-6 pt-4 text-left">
+            <div className="bg-card border border-border rounded-xl p-6">
+              <p className="font-bold text-foreground mb-2">Before</p>
+              <p className="text-muted-foreground text-sm">
+                "Just 5 more minutes!" Arguments. Meltdowns. Parent becomes the bad guy.
+              </p>
             </div>
-            <div className="p-4">
-              <p className="text-4xl font-bold text-primary mb-2">Patience</p>
-              <p className="text-muted-foreground text-sm">Learn that good things take time and effort</p>
-            </div>
-            <div className="p-4">
-              <p className="text-4xl font-bold text-primary mb-2">Choice</p>
-              <p className="text-muted-foreground text-sm">Decide how to spend what they've earned</p>
+            <div className="bg-card border border-border rounded-xl p-6">
+              <p className="font-bold text-primary mb-2">After</p>
+              <p className="text-muted-foreground text-sm">
+                Time runs out. Video stops. "I'll earn more tomorrow." Done.
+              </p>
             </div>
           </div>
         </div>
@@ -164,10 +169,10 @@ const PreviewRewards = () => {
       <PreviewSection variant="feature">
         <div className="max-w-2xl mx-auto text-center">
           <h2 className="text-3xl font-bold text-foreground mb-4">
-            Ready to reward the right behaviors?
+            Ready to end the screen time fights?
           </h2>
           <p className="text-lg text-muted-foreground mb-8">
-            Start building your family's reward store today.
+            Let them earn it. Let the app enforce it.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Button 

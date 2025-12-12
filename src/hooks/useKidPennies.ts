@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -6,6 +7,32 @@ import { toast } from '@/hooks/use-toast';
 export const useKidPennies = (kidId?: string) => {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
+
+  // Real-time subscription for automatic updates
+  useEffect(() => {
+    if (!user?.id || !kidId) return;
+
+    const channel = supabase
+      .channel(`kid-pennies-${kidId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'kid_profiles',
+          filter: `id=eq.${kidId}`,
+        },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ['kid-pennies', kidId] });
+          queryClient.invalidateQueries({ queryKey: ['kid-profiles'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user?.id, kidId, queryClient]);
 
   // Get penny balance for a specific kid
   const { data: kidPennies, isLoading } = useQuery({

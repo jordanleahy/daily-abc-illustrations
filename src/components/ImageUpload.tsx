@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Upload, AlertCircle, Clipboard, Copy, Sparkles } from "lucide-react";
-// Toast notifications removed
 import { processImage, formatFileSize } from "@/utils/imageProcessor";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useClipboard } from "@/contexts/ClipboardContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface ImageUploadProps {
   onImageSelect: (file: File) => void;
@@ -25,6 +26,8 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const { consumeClipboardImage, isIOS } = useClipboard();
+  const { toast } = useToast();
 
   // Update preview when existingImageUrl changes
   useEffect(() => {
@@ -193,6 +196,24 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
   const handlePasteFromClipboard = async () => {
     if (disabled || isProcessing) return;
 
+    // First, try to consume cached clipboard image from global context
+    const cachedFile = await consumeClipboardImage();
+    if (cachedFile) {
+      await handleFile(cachedFile, true);
+      return;
+    }
+
+    // iOS Safari has strict clipboard limitations
+    if (isIOS) {
+      toast({
+        title: "Paste on iOS",
+        description: "Long-press in this area and select Paste",
+      });
+      // Focus the container to enable paste
+      containerRef.current?.focus();
+      return;
+    }
+
     try {
       // Request clipboard permission and read
       const clipboardItems = await navigator.clipboard.read();
@@ -202,24 +223,33 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
           if (type.startsWith('image/')) {
             const blob = await clipboardItem.getType(type);
             const file = new File([blob], `clipboard-image.${type.split('/')[1]}`, { type });
-            await handleFile(file, true); // Mark as pasted
+            await handleFile(file, true);
             return;
           }
         }
       }
       
-      console.error('No image found in clipboard');
+      toast({
+        title: "No image found",
+        description: "Copy an image to your clipboard first",
+        variant: "destructive",
+      });
     } catch (error) {
       console.error('Clipboard access error:', error);
       
-      // Handle different error scenarios
       if (error instanceof Error) {
         if (error.name === 'NotAllowedError') {
-          console.error('Clipboard access denied. Please allow clipboard permissions.');
-        } else if (error.name === 'NotFoundError') {
-          console.error('No image found in clipboard');
+          toast({
+            title: "Clipboard access denied",
+            description: "Please allow clipboard permissions in your browser",
+            variant: "destructive",
+          });
         } else {
-          console.error('Failed to access clipboard. Try taking a photo instead.');
+          toast({
+            title: "Clipboard error",
+            description: "Try copying the image again",
+            variant: "destructive",
+          });
         }
       }
     }

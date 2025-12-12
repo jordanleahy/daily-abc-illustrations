@@ -30,16 +30,12 @@ serve(async (req) => {
       ? `${characterTheme} style, ` 
       : '';
     
-    const prompt = `Create a vibrant, eye-catching children's book cover thumbnail for social media sharing.
+    const prompt = `Generate an image: Create a vibrant children's book cover thumbnail.
 
 Book Title: "${bookTitle}"
 ${bookDescription ? `Description: ${bookDescription}` : ''}
 
-Style: ${themeStyle}Children's book illustration, soft watercolor aesthetic, rounded friendly shapes, warm and inviting colors, playful educational theme. The image should be landscape format (1200x630 ratio) suitable for social media previews.
-
-The title "${bookTitle}" should be prominently displayed in large, bold, centered letters at the center of the image, taking up 50-60% of the visual space. Use a fun, child-friendly font style.
-
-Make the illustration colorful, engaging, and instantly appealing to parents and grandparents who might see it shared on social media.`;
+Style: ${themeStyle}Children's book illustration, soft watercolor aesthetic, warm inviting colors. Landscape format (1200x630 ratio). Display the title "${bookTitle}" in large, bold, centered letters taking 50-60% of the visual space with a fun child-friendly font. Make it colorful and engaging.`;
 
     console.log("Generating thumbnail for:", bookTitle);
 

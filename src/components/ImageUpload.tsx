@@ -328,22 +328,38 @@ export function ImageUpload({ onImageSelect, disabled = false, className = "", a
                 </Button>
               </div>
             )}
-            {showCopyPrompt && onCopyPrompt && (
-              <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t">
+            {showCopyPrompt && (
+              <div className="w-full max-w-xs mx-auto mt-4 pt-4 border-t space-y-2">
                 <Button
                   type="button"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onCopyPrompt();
+                    handlePasteFromClipboard();
                   }}
                   variant="outline"
                   size="lg"
                   className="w-full mx-auto"
                   disabled={isProcessing}
                 >
-                  <Copy className="h-5 w-5 mr-2" />
-                  Copy Prompt
+                  <Clipboard className="h-5 w-5 mr-2" />
+                  Paste Image
                 </Button>
+                {onCopyPrompt && (
+                  <Button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onCopyPrompt();
+                    }}
+                    variant="outline"
+                    size="lg"
+                    className="w-full mx-auto"
+                    disabled={isProcessing}
+                  >
+                    <Copy className="h-5 w-5 mr-2" />
+                    Copy Prompt
+                  </Button>
+                )}
               </div>
             )}
           </div>

@@ -775,7 +775,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         book_name: sanitizeText(bookData.bookName, 200),
         category: sanitizeText(bookData.category || 'General', 100),
         book_description: sanitizeText(bookData.bookDescription || '', 1000),
-        total_pages: sanitizedPages.length + 1,
+        total_pages: sanitizedPages.length,
         status: 'draft',
         reference_book_id: referenceBookId || null,
         chat_session_id: sessionId || null, // Link to chat session for traceability

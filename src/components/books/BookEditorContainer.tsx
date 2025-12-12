@@ -210,7 +210,8 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
     console.log('[Thumbnail Upload] Starting upload:', file.name, file.size, file.type);
 
     const fileExt = file.name.split('.').pop() || 'png';
-    const filePath = `${bookId}/${coverPage.id}-${Date.now()}.${fileExt}`;
+    // Include user.id in path to satisfy RLS policies
+    const filePath = `${user.id}/${bookId}/${coverPage.id}-${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from('page-images')

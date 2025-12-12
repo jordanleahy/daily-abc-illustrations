@@ -202,18 +202,27 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
 
   const handleThumbnailUpload = useCallback(async (file: File) => {
     const coverPage = editorData?.coverPage;
-    if (!coverPage || !user) return;
+    if (!coverPage || !user) {
+      console.error('[Thumbnail Upload] Missing coverPage or user');
+      return;
+    }
 
-    const fileExt = file.name.split('.').pop();
-    const filePath = `${bookId}/${coverPage.id}.${fileExt}`;
+    console.log('[Thumbnail Upload] Starting upload:', file.name, file.size, file.type);
+
+    const fileExt = file.name.split('.').pop() || 'png';
+    const filePath = `${bookId}/${coverPage.id}-${Date.now()}.${fileExt}`;
 
     const { error: uploadError } = await supabase.storage
       .from('page-images')
       .upload(filePath, file, { upsert: true });
 
-    if (uploadError) return;
+    if (uploadError) {
+      console.error('[Thumbnail Upload] Storage upload failed:', uploadError);
+      return;
+    }
 
     const { data: { publicUrl } } = supabase.storage.from('page-images').getPublicUrl(filePath);
+    console.log('[Thumbnail Upload] Got public URL:', publicUrl);
 
     const { error: dbError } = await supabase
       .from('page_image_urls')
@@ -226,10 +235,14 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
         is_latest: true,
       });
 
-    if (!dbError) {
-      setThumbnailOverride(publicUrl);
-      queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
+    if (dbError) {
+      console.error('[Thumbnail Upload] DB upsert failed:', dbError);
+      return;
     }
+
+    console.log('[Thumbnail Upload] Success, setting thumbnail override');
+    setThumbnailOverride(publicUrl);
+    queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
   }, [bookId, editorData?.coverPage, user, queryClient]);
 
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {

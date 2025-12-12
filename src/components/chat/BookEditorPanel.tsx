@@ -262,16 +262,27 @@ export function BookEditorPanel({
         // Convert base64 to File and call onCoverUpload
         const response = await fetch(data.imageUrl);
         const blob = await response.blob();
-        const file = new File([blob], 'generated-thumbnail.webp', { type: 'image/webp' });
+        // Use png type since the AI generates PNG images
+        const file = new File([blob], `generated-thumbnail-${Date.now()}.png`, { type: blob.type || 'image/png' });
+        
+        console.log('[Generate Thumbnail] Created file:', file.name, file.size, file.type);
         
         if (onCoverUpload) {
-          onCoverUpload(file);
+          await onCoverUpload(file);
+          toast({
+            title: "Thumbnail generated",
+            description: "AI-generated thumbnail has been applied",
+          });
+        } else {
+          console.error('[Generate Thumbnail] onCoverUpload not provided');
+          toast({
+            title: "Cannot apply thumbnail",
+            description: "Missing upload handler - please try from the book editor",
+            variant: "destructive",
+          });
         }
-        
-        toast({
-          title: "Thumbnail generated",
-          description: "AI-generated thumbnail has been applied",
-        });
+      } else {
+        throw new Error("No image URL in response");
       }
     } catch (error) {
       console.error('Error generating thumbnail:', error);

@@ -20,6 +20,7 @@ import { useMemo, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/themeFilters';
 import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
+import { useBookCompletionCounts } from '@/hooks/useBookCompletionCounts';
 import type { LibraryBook } from '@/types/library';
 const Index = () => {
   const {
@@ -63,6 +64,14 @@ const Index = () => {
     isLoading: isLoadingBooks
   } = useLandingPageData();
 
+  // Extract book IDs for completion count lookup
+  const bookIds = useMemo(() => {
+    return landingData?.libraryBooks?.map(book => book.id) || [];
+  }, [landingData?.libraryBooks]);
+
+  // Fetch completion counts for these books
+  const { data: completionCounts } = useBookCompletionCounts(bookIds);
+
   // Map LandingLibraryBook[] to LibraryBook[] for component compatibility
   const libraryItems: LibraryBook[] = useMemo(() => {
     if (!landingData?.libraryBooks) return [];
@@ -77,9 +86,10 @@ const Index = () => {
       cover_image: book.image_url,
       last_viewed_at: null,
       view_count: 0,
+      completion_count: completionCounts?.get(book.id) || 0,
       metadata: book.metadata,
     }));
-  }, [landingData?.libraryBooks]);
+  }, [landingData?.libraryBooks, completionCounts]);
 
   // ⚡ PERFORMANCE OPTIMIZATION: Debounced search for instant feel
   const {

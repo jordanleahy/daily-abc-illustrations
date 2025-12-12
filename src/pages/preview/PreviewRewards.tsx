@@ -107,7 +107,7 @@ const PreviewRewards = () => {
             </h2>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-4 gap-8">
             <div className="text-center">
               <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <span className="text-2xl font-bold text-primary">1</span>
@@ -133,6 +133,15 @@ const PreviewRewards = () => {
               <h3 className="text-lg font-bold text-foreground mb-2">Watch until time's up</h3>
               <p className="text-muted-foreground text-sm">
                 YouTube plays in the app. When the timer hits zero, the video stops automatically.
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl font-bold text-primary">4</span>
+              </div>
+              <h3 className="text-lg font-bold text-foreground mb-2">Back to a book</h3>
+              <p className="text-muted-foreground text-sm">
+                When time's up, the app redirects them to a book they can read on their own.
               </p>
             </div>
           </div>

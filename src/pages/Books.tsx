@@ -140,35 +140,18 @@ export default function Books() {
 
               {/* Admin-only completion filter toggle */}
               {isAdmin && (
-                <div className="flex items-center gap-4">
-                  <Tabs value={completionFilter} onValueChange={(v) => setCompletionFilter(v as 'completed' | 'not-completed')} className="flex-1 max-w-md">
-                    <TabsList className="grid w-full grid-cols-2">
-                      <TabsTrigger value="completed" className="gap-2">
-                        <CheckCircle className="h-4 w-4" />
-                        Completed
-                      </TabsTrigger>
-                      <TabsTrigger value="not-completed" className="gap-2">
-                        <Circle className="h-4 w-4" />
-                        Not Completed
-                      </TabsTrigger>
-                    </TabsList>
-                  </Tabs>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      toast.info('Running backfill...');
-                      const { data, error } = await supabase.functions.invoke('backfill-text-images');
-                      if (error) {
-                        toast.error('Backfill failed: ' + error.message);
-                      } else {
-                        toast.success(`Backfill complete: ${data?.processed || 0} images processed`);
-                      }
-                    }}
-                  >
-                    Backfill Text Images
-                  </Button>
-                </div>
+                <Tabs value={completionFilter} onValueChange={(v) => setCompletionFilter(v as 'completed' | 'not-completed')} className="max-w-md">
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="completed" className="gap-2">
+                      <CheckCircle className="h-4 w-4" />
+                      Completed
+                    </TabsTrigger>
+                    <TabsTrigger value="not-completed" className="gap-2">
+                      <Circle className="h-4 w-4" />
+                      Not Completed
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
               )}
 
               {books && books.length > 0 ? (

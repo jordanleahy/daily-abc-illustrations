@@ -1610,6 +1610,7 @@ export default function GoogleChat() {
                 pageTextOverlays={pageTextOverlays}
                 onUpdatePageText={handleUpdatePageText}
                 onToggleStatus={handleToggleBookStatus}
+                isPublishing={updateBookStatusMutation.isPending}
                 bookStatus={(bookData?.status as PublicationStatus) || PublicationStatus.DRAFT}
                 bookTitle={bookData?.book_name}
                 bookDescription={bookData?.book_description || undefined}
@@ -1652,6 +1653,7 @@ export default function GoogleChat() {
                 pageTextOverlays={pageTextOverlays}
                 onUpdatePageText={handleUpdatePageText}
                 onToggleStatus={handleToggleBookStatus}
+                isPublishing={updateBookStatusMutation.isPending}
                 bookStatus={(bookData?.status as PublicationStatus) || PublicationStatus.DRAFT}
                 bookTitle={bookData?.book_name}
                 bookDescription={bookData?.book_description || undefined}

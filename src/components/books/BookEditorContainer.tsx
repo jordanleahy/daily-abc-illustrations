@@ -303,6 +303,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
       pageTextOverlays={pageTextOverlays}
       onUpdatePageText={handleUpdatePageText}
       onToggleStatus={handleToggleBookStatus}
+      isPublishing={updateBookStatusMutation.isPending}
       bookStatus={(editorData.book.status as PublicationStatus) || PublicationStatus.DRAFT}
       bookTitle={editorData.book.book_name}
       bookDescription={editorData.book.book_description || undefined}

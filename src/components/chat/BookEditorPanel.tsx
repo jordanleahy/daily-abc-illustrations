@@ -50,6 +50,7 @@ interface BookEditorPanelProps {
   pageTextOverlays?: Record<number, string>;
   onUpdatePageText?: (pageNumber: number, newText: string) => void;
   onToggleStatus?: () => void;
+  isPublishing?: boolean;
   bookStatus?: PublicationStatus;
   bookTitle?: string;
   bookDescription?: string;
@@ -85,6 +86,7 @@ export function BookEditorPanel({
   pageTextOverlays = {},
   onUpdatePageText,
   onToggleStatus,
+  isPublishing = false,
   bookStatus = PublicationStatus.DRAFT,
   bookTitle,
   bookDescription,
@@ -977,12 +979,18 @@ export function BookEditorPanel({
               variant={bookStatus === PublicationStatus.DRAFT ? 'default' : 'outline'}
               size="lg"
               onClick={onToggleStatus}
+              disabled={isPublishing}
               className={bookStatus === PublicationStatus.DRAFT 
                 ? "w-full bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70"
                 : "flex-1"
               }
             >
-              {bookStatus === PublicationStatus.DRAFT ? (
+              {isPublishing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {bookStatus === PublicationStatus.DRAFT ? 'Publishing...' : 'Unpublishing...'}
+                </>
+              ) : bookStatus === PublicationStatus.DRAFT ? (
                 <>
                   <FileUp className="h-4 w-4 mr-2" />
                   Publish

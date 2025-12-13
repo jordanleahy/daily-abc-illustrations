@@ -2811,6 +2811,19 @@ export type Database = {
         Returns: string
       }
       generate_slug: { Args: { input_text: string }; Returns: string }
+      get_all_kids_with_activity: {
+        Args: never
+        Returns: {
+          date_of_birth: string
+          kid_id: string
+          kid_name: string
+          last_activity_at: string
+          parent_user_id: string
+          total_books_read: number
+          total_completions: number
+          total_reading_sessions: number
+        }[]
+      }
       get_all_users_with_activity: {
         Args: never
         Returns: {
@@ -2841,6 +2854,23 @@ export type Database = {
           page_number: number
           title: string
           updated_at: string
+        }[]
+      }
+      get_kid_reading_activity: {
+        Args: { p_kid_id: string }
+        Returns: {
+          activity_id: string
+          book_category: string
+          book_id: string
+          book_name: string
+          completion_count: number
+          created_at: string
+          last_reading_session_at: string
+          last_viewed_at: string
+          pages_read: number
+          reading_completed: boolean
+          total_pages: number
+          view_count: number
         }[]
       }
       get_library_books_by_completion: {

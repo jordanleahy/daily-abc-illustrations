@@ -1,17 +1,29 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Message } from './useGoogleChat';
+import type { ChatSession } from './useGoogleChatSessions';
 
 /**
  * Cache-first hook for loading session messages
- * Uses React Query for instant switching via cache
+ * ⚡ OPTIMIZED: First checks sessions cache before fetching
  */
 export function useSessionMessages(sessionId: string | undefined) {
+  const queryClient = useQueryClient();
+
   return useQuery({
     queryKey: ['session-messages', sessionId],
     queryFn: async () => {
       if (!sessionId) return [];
 
+      // ⚡ First, check if messages are already in sessions cache
+      const cachedSessions = queryClient.getQueryData<ChatSession[]>(['gemini-chat-sessions', 50]);
+      const cachedSession = cachedSessions?.find(s => s.id === sessionId);
+      
+      if (cachedSession?.messages && cachedSession.messages.length > 0) {
+        return cachedSession.messages as unknown as Message[];
+      }
+
+      // Fallback: fetch from database
       const { data, error } = await supabase
         .from('gemini_chat_sessions')
         .select('messages')
@@ -23,8 +35,8 @@ export function useSessionMessages(sessionId: string | undefined) {
       return (data?.messages as unknown as Message[]) || [];
     },
     enabled: !!sessionId,
-    // Uses global 7-day staleTime from App.tsx for instant loading
-    refetchOnWindowFocus: false, // Prevent unnecessary refetches
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
   });
 }
 

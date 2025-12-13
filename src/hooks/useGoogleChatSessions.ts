@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { useState } from 'react';
 
@@ -20,10 +21,12 @@ export interface ChatSession {
   qa_page_prompts: Record<number, string> | null;
 }
 
-const INITIAL_LIMIT = 1000;
+// Performance: Start with fewer sessions for faster initial load
+const INITIAL_LIMIT = 50;
 
 export function useGoogleChatSessions() {
   const queryClient = useQueryClient();
+  const { user } = useAuthContext(); // ⚡ Use cached user from context
   const [limit, setLimit] = useState(INITIAL_LIMIT);
 
   // Fetch sessions with pagination
@@ -41,19 +44,19 @@ export function useGoogleChatSessions() {
       if (error) throw error;
       return data as ChatSession[];
     },
-    // Uses global 7-day staleTime from App.tsx for instant loading
-    refetchOnWindowFocus: false, // Prevent unnecessary refetches
-    refetchOnMount: false, // Use cached data for returning users
+    enabled: !!user?.id, // Only fetch when user is authenticated
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
   });
 
   // Check if there might be more sessions
   const hasMore = sessions.length === limit;
 
-  // Create new session
+  // Create new session - uses cached user from context
   const createSession = useMutation({
     mutationFn: async (sessionName?: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+      if (!user?.id) throw new Error('Not authenticated');
 
       const { data, error } = await supabase
         .from('gemini_chat_sessions')
@@ -69,8 +72,12 @@ export function useGoogleChatSessions() {
       if (error) throw error;
       return data as ChatSession;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
+    onSuccess: (newSession) => {
+      // ⚡ Optimistic update instead of invalidation
+      queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions', limit], (old) => {
+        if (!old) return [newSession];
+        return [newSession, ...old];
+      });
     },
     onError: (error) => {
       toast.error('Failed to create conversation');
@@ -95,8 +102,8 @@ export function useGoogleChatSessions() {
       return data as ChatSession;
     },
     onSuccess: (updatedSession) => {
-      // Optimistic update: directly update the session in cache and re-sort
-      queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions'], (old) => {
+      // ⚡ Optimistic update: directly update the session in cache and re-sort
+      queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions', limit], (old) => {
         if (!old) return [updatedSession];
         
         // Update the session and re-sort by last_message_at (newest first)
@@ -117,7 +124,7 @@ export function useGoogleChatSessions() {
     },
   });
 
-  // Update session name
+  // Update session name - optimistic only, no invalidation needed
   const updateSessionName = useMutation({
     mutationFn: async ({ sessionId, name, silent }: { sessionId: string; name: string; silent?: boolean }) => {
       const { data, error } = await supabase
@@ -131,8 +138,8 @@ export function useGoogleChatSessions() {
       return { session: data as ChatSession, silent };
     },
     onMutate: async ({ sessionId, name }) => {
-      // Optimistically update the cache
-      queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions'], (old) => {
+      // ⚡ Optimistic update only - no invalidation needed
+      queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions', limit], (old) => {
         if (!old) return old;
         return old.map(session => 
           session.id === sessionId 
@@ -142,7 +149,7 @@ export function useGoogleChatSessions() {
       });
     },
     onSuccess: ({ silent }) => {
-      queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
+      // ⚡ Removed invalidation - optimistic update is sufficient
       if (!silent) {
         toast.success('Conversation renamed');
       }
@@ -182,13 +189,18 @@ export function useGoogleChatSessions() {
 
       if (error) throw error;
       
-      return { deletedBook: deleteBook && !!session?.created_book_id };
+      return { sessionId, deletedBook: deleteBook && !!session?.created_book_id };
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
-      queryClient.invalidateQueries({ queryKey: ['books'] });
+      // ⚡ Optimistic removal from cache
+      queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions', limit], (old) => {
+        if (!old) return old;
+        return old.filter(session => session.id !== data.sessionId);
+      });
       
+      // Only invalidate books if we deleted one
       if (data.deletedBook) {
+        queryClient.invalidateQueries({ queryKey: ['books'] });
         toast.success('Conversation and book deleted');
       } else {
         toast.success('Conversation deleted. Book moved to your library.');
@@ -199,7 +211,7 @@ export function useGoogleChatSessions() {
     },
   });
 
-  // Link book to session
+  // Link book to session - optimistic update
   const linkBookToSession = useMutation({
     mutationFn: async ({ sessionId, bookId }: { sessionId: string; bookId: string }) => {
       const { error } = await supabase
@@ -208,16 +220,25 @@ export function useGoogleChatSessions() {
         .eq('id', sessionId);
 
       if (error) throw error;
+      return { sessionId, bookId };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
+    onSuccess: ({ sessionId, bookId }) => {
+      // ⚡ Optimistic update instead of invalidation
+      queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions', limit], (old) => {
+        if (!old) return old;
+        return old.map(session => 
+          session.id === sessionId 
+            ? { ...session, created_book_id: bookId }
+            : session
+        );
+      });
     },
     onError: () => {
       toast.error('Failed to link book to conversation');
     },
   });
 
-  // Update QA page images
+  // Update QA page images - silent, no invalidation needed
   const updateQAPageImages = useMutation({
     mutationFn: async ({ sessionId, qaPageImages }: { sessionId: string; qaPageImages: Record<number, string> }) => {
       const { error } = await supabase
@@ -226,16 +247,25 @@ export function useGoogleChatSessions() {
         .eq('id', sessionId);
 
       if (error) throw error;
+      return { sessionId, qaPageImages };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
+    onSuccess: ({ sessionId, qaPageImages }) => {
+      // ⚡ Optimistic update instead of invalidation
+      queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions', limit], (old) => {
+        if (!old) return old;
+        return old.map(session => 
+          session.id === sessionId 
+            ? { ...session, qa_page_images: qaPageImages }
+            : session
+        );
+      });
     },
     onError: () => {
       console.error('Failed to update editor page images');
     },
   });
 
-  // Update QA page prompts
+  // Update QA page prompts - silent, no invalidation needed
   const updateQAPagePrompts = useMutation({
     mutationFn: async ({ sessionId, qaPagePrompts }: { sessionId: string; qaPagePrompts: Record<number, string> }) => {
       const { error } = await supabase
@@ -244,9 +274,18 @@ export function useGoogleChatSessions() {
         .eq('id', sessionId);
 
       if (error) throw error;
+      return { sessionId, qaPagePrompts };
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['gemini-chat-sessions'] });
+    onSuccess: ({ sessionId, qaPagePrompts }) => {
+      // ⚡ Optimistic update instead of invalidation
+      queryClient.setQueryData<ChatSession[]>(['gemini-chat-sessions', limit], (old) => {
+        if (!old) return old;
+        return old.map(session => 
+          session.id === sessionId 
+            ? { ...session, qa_page_prompts: qaPagePrompts }
+            : session
+        );
+      });
     },
     onError: () => {
       console.error('Failed to update editor page prompts');

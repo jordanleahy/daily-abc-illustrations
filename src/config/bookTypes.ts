@@ -160,6 +160,17 @@ export const BOOK_TYPES = [
     expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
   },
   {
+    id: 'digraphs' as const,
+    label: 'Digraph Book',
+    icon: BookOpen,
+    description: 'Early phonics with digraph sounds (ch, sh, th, wh...)',
+    prompt: 'I want to create a digraph book for early phonics instruction that teaches letter pairs making single sounds.',
+    color: 'text-rose-500',
+    needsClarification: true,
+    clarificationContext: 'Ask about digraph focus: random digraphs for mixed practice OR specific digraph for targeted instruction on one sound.',
+    expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
+  },
+  {
     id: 'other',
     label: 'Other',
     icon: Package,

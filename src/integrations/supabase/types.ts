@@ -3031,16 +3031,27 @@ export type Database = {
         Args: { p_completion_id: string }
         Returns: Json
       }
-      update_reading_progress: {
-        Args: {
-          p_book_id: string
-          p_kid_id?: string
-          p_pages_read?: number
-          p_reading_completed?: boolean
-          p_user_id: string
-        }
-        Returns: Json
-      }
+      update_reading_progress:
+        | {
+            Args: {
+              p_book_id: string
+              p_kid_id?: string
+              p_pages_read?: number
+              p_reading_completed?: boolean
+              p_user_id: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              p_book_id: string
+              p_kid_id?: string
+              p_pages_read: number
+              p_reading_completed: boolean
+              p_user_id: string
+            }
+            Returns: Json
+          }
       update_subscription_cache: {
         Args: {
           p_expires_at?: string

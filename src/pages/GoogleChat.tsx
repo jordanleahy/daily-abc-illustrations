@@ -196,7 +196,7 @@ export default function GoogleChat() {
   const [editorPagePrompts, setEditorPagePrompts] = useState<Record<number, string>>({});
   const [outlineJustCompleted, setOutlineJustCompleted] = useState(false);
   const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
-  const previousShouldShow = useRef(false);
+  const previousShouldShow = useRef<boolean | null>(null); // null = skip first render
   // Start with editor closed - only open when outline is newly completed or user clicks "View Pages"
   const [forceEditorClosed, setForceEditorClosed] = useState(true);
 
@@ -378,6 +378,12 @@ export default function GoogleChat() {
     }
     
     const currentShouldShow = shouldShowReviewButton;
+    
+    // Skip first render - initialize previousShouldShow without triggering
+    if (previousShouldShow.current === null) {
+      previousShouldShow.current = currentShouldShow;
+      return;
+    }
     
     // If we just transitioned from false → true, the outline was just completed
     if (!previousShouldShow.current && currentShouldShow) {
@@ -1569,9 +1575,9 @@ export default function GoogleChat() {
 
 
         {/* Book Editor Panel - Responsive: Bottom Sheet on Mobile, Sliding Div on Desktop */}
-        {isMobile && (
+        {isMobile && showEditor && !createBookMutation.isSuccess && (
           <Sheet 
-            open={showEditor && !createBookMutation.isSuccess} 
+            open={true} 
             onOpenChange={(open) => {
               if (!open) setForceEditorClosed(true);
             }}
@@ -1579,7 +1585,6 @@ export default function GoogleChat() {
             <SheetContent 
               side="bottom" 
               className="w-full max-h-[90vh] p-0 overflow-hidden rounded-t-xl z-[100]"
-              forceMount
             >
               <BookEditorPanel
                 showEditor={true}
@@ -1600,15 +1605,15 @@ export default function GoogleChat() {
                 onCreateBook={handleCreateBook}
                 coverPageId={coverPageId}
                 bookId={createdBookId}
-              onCoverUpload={handleThumbnailUpload}
-              thumbnailUrl={thumbnailUrl}
-              pageTextOverlays={pageTextOverlays}
-              onUpdatePageText={handleUpdatePageText}
-              onToggleStatus={handleToggleBookStatus}
-              bookStatus={(bookData?.status as PublicationStatus) || PublicationStatus.DRAFT}
-              bookTitle={bookData?.book_name}
-              bookDescription={bookData?.book_description || undefined}
-              characterTheme={(bookData?.metadata as any)?.characterTheme}
+                onCoverUpload={handleThumbnailUpload}
+                thumbnailUrl={thumbnailUrl}
+                pageTextOverlays={pageTextOverlays}
+                onUpdatePageText={handleUpdatePageText}
+                onToggleStatus={handleToggleBookStatus}
+                bookStatus={(bookData?.status as PublicationStatus) || PublicationStatus.DRAFT}
+                bookTitle={bookData?.book_name}
+                bookDescription={bookData?.book_description || undefined}
+                characterTheme={(bookData?.metadata as any)?.characterTheme}
               />
             </SheetContent>
           </Sheet>

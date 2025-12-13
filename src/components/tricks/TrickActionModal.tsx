@@ -61,9 +61,9 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goals }: TrickActi
     }
   }, [trick?.video_urls]);
 
-  // Find goals by stance
+  // Find goals by stance (fallback to first goal as 'regular' if stance not set)
   const regularGoal = useMemo(() => 
-    goals.find(g => g.trick_id === trick?.id && g.stance === 'regular'),
+    goals.find(g => g.trick_id === trick?.id && (g.stance === 'regular' || !g.stance)),
     [goals, trick?.id]
   );
   

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Drawer,
@@ -9,10 +9,11 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { ThumbsUp, ThumbsDown } from 'lucide-react';
-import { Trick, VideoData } from '@/types/trick';
+import { ThumbsUp, ThumbsDown, Plus } from 'lucide-react';
+import { Trick, VideoData, TrickStance } from '@/types/trick';
 import { TrickGoalWithDetails } from '@/types/trick';
 import { useAddTrickCompletion } from '@/hooks/useAddTrickCompletion';
+import { useCreateSwitchGoal } from '@/hooks/useCreateSwitchGoal';
 import { TrickMediaViewer } from './TrickMediaViewer';
 import { TrickUploadZone } from './TrickUploadZone';
 
@@ -20,11 +21,13 @@ interface TrickActionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   trick: Trick | null;
-  goal: TrickGoalWithDetails | null;
+  goals: TrickGoalWithDetails[]; // Changed from single goal to array
 }
 
-export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActionModalProps) => {
+export const TrickActionModal = ({ open, onOpenChange, trick, goals }: TrickActionModalProps) => {
+  const [selectedStance, setSelectedStance] = useState<TrickStance>('regular');
   const addCompletion = useAddTrickCompletion();
+  const createSwitchGoal = useCreateSwitchGoal();
 
   const images = useMemo(() => {
     if (!trick) return [];
@@ -58,15 +61,28 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
     }
   }, [trick?.video_urls]);
 
+  // Find goals by stance
+  const regularGoal = useMemo(() => 
+    goals.find(g => g.trick_id === trick?.id && g.stance === 'regular'),
+    [goals, trick?.id]
+  );
+  
+  const switchGoal = useMemo(() => 
+    goals.find(g => g.trick_id === trick?.id && g.stance === 'switch'),
+    [goals, trick?.id]
+  );
+  
+  const currentGoal = selectedStance === 'regular' ? regularGoal : switchGoal;
+
   if (!trick) return null;
 
   const handleSuccess = () => {
-    if (!goal) return;
+    if (!currentGoal) return;
     
     addCompletion.mutate({
-      goalId: goal.id,
+      goalId: currentGoal.id,
       count_increment: 1,
-      notes: 'Success',
+      notes: `Success (${selectedStance})`,
     }, {
       onSuccess: () => {
         onOpenChange(false);
@@ -75,12 +91,12 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
   };
 
   const handleFailed = () => {
-    if (!goal) return;
+    if (!currentGoal) return;
     
     addCompletion.mutate({
-      goalId: goal.id,
+      goalId: currentGoal.id,
       count_increment: 1,
-      notes: 'Failed attempt',
+      notes: `Failed attempt (${selectedStance})`,
     }, {
       onSuccess: () => {
         onOpenChange(false);
@@ -88,7 +104,13 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
     });
   };
 
-  const isCompleted = goal && goal.current_count >= goal.target_count;
+  const handleCreateSwitchGoal = () => {
+    if (!regularGoal) return;
+    createSwitchGoal.mutate(regularGoal.id);
+  };
+
+  const isCompleted = currentGoal && currentGoal.current_count >= currentGoal.target_count;
+  const hasAnyGoal = regularGoal || switchGoal;
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
@@ -118,23 +140,72 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
               </DrawerDescription>
             )}
           </div>
-          {goal && (
-            <div className="text-sm text-muted-foreground">
-              Progress: {goal.current_count} / {goal.target_count} completions
-            </div>
-          )}
         </DrawerHeader>
 
-        {!goal ? (
+        {/* Stance Toggle */}
+        {hasAnyGoal && (
+          <div className="flex gap-2 px-4 pb-2">
+            <Button
+              variant={selectedStance === 'regular' ? 'default' : 'outline'}
+              size="sm"
+              className="flex-1"
+              onClick={() => setSelectedStance('regular')}
+            >
+              Regular
+              {regularGoal && (
+                <span className="ml-1 text-xs opacity-70">
+                  ({regularGoal.current_count}/{regularGoal.target_count})
+                </span>
+              )}
+            </Button>
+            <Button
+              variant={selectedStance === 'switch' ? 'default' : 'outline'}
+              size="sm"
+              className="flex-1"
+              onClick={() => setSelectedStance('switch')}
+            >
+              Switch
+              {switchGoal && (
+                <span className="ml-1 text-xs opacity-70">
+                  ({switchGoal.current_count}/{switchGoal.target_count})
+                </span>
+              )}
+            </Button>
+          </div>
+        )}
+
+        {/* Progress Display */}
+        {currentGoal && (
+          <div className="text-sm text-muted-foreground px-4 pb-2">
+            Progress: {currentGoal.current_count} / {currentGoal.target_count} completions
+          </div>
+        )}
+
+        {!hasAnyGoal ? (
           <div className="text-center py-4 px-4">
             <p className="text-sm text-muted-foreground">
               No active goal for this trick. Ask your parent to set up a goal!
             </p>
           </div>
+        ) : selectedStance === 'switch' && !switchGoal ? (
+          <div className="text-center py-4 px-4 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              No switch stance goal yet.
+            </p>
+            <Button
+              onClick={handleCreateSwitchGoal}
+              disabled={createSwitchGoal.isPending}
+              variant="outline"
+              size="sm"
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              {createSwitchGoal.isPending ? 'Creating...' : 'Create Switch Goal'}
+            </Button>
+          </div>
         ) : isCompleted ? (
           <div className="text-center py-4 px-4">
             <p className="text-sm font-medium text-primary">
-              🎉 Goal Completed!
+              🎉 {selectedStance === 'regular' ? 'Regular' : 'Switch'} Goal Completed!
             </p>
           </div>
         ) : (
@@ -163,9 +234,9 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goal }: TrickActio
             <div className="px-4 py-2">
               <TrickUploadZone
                 trickId={trick.id}
-                goalId={goal?.id}
-                kidProfileId={goal?.kid_profile_id}
-                attemptNumber={goal?.current_count}
+                goalId={currentGoal?.id}
+                kidProfileId={currentGoal?.kid_profile_id}
+                attemptNumber={currentGoal?.current_count}
               />
             </div>
           </>

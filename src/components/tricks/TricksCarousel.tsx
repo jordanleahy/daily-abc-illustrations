@@ -26,10 +26,10 @@ export const TricksCarousel = memo(({
 
   if (tricks.length === 0) return null;
 
-  // Find goal for selected trick
-  const selectedGoal = useMemo(() => {
-    if (!selectedTrick) return null;
-    return goals.find(goal => goal.trick_id === selectedTrick.id) || null;
+  // Find all goals for selected trick (both stances)
+  const selectedGoals = useMemo(() => {
+    if (!selectedTrick) return [];
+    return goals.filter(goal => goal.trick_id === selectedTrick.id);
   }, [selectedTrick, goals]);
 
   return (
@@ -49,7 +49,7 @@ export const TricksCarousel = memo(({
       >
         <CarouselContent className={LIBRARY_STYLES.carousel.content}>
           {tricks.map((trick) => {
-            const trickGoal = goals.find(goal => goal.trick_id === trick.id) || null;
+            const trickGoals = goals.filter(goal => goal.trick_id === trick.id);
             return (
               <CarouselItem
                 key={trick.id}
@@ -57,7 +57,7 @@ export const TricksCarousel = memo(({
               >
                 <TricksCarouselCard
                   trick={trick}
-                  goal={trickGoal}
+                  goals={trickGoals}
                   onClick={() => setSelectedTrick(trick)}
                 />
               </CarouselItem>
@@ -73,7 +73,7 @@ export const TricksCarousel = memo(({
         open={!!selectedTrick}
         onOpenChange={(open) => !open && setSelectedTrick(null)}
         trick={selectedTrick}
-        goal={selectedGoal}
+        goals={selectedGoals}
       />
     </section>
   );

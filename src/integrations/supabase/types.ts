@@ -2833,6 +2833,19 @@ export type Database = {
           updated_at: string
         }[]
       }
+      get_library_books_by_completion: {
+        Args: { p_user_id: string }
+        Returns: {
+          book_description: string
+          book_name: string
+          category: string
+          completion_count: number
+          created_at: string
+          id: string
+          is_library_book: boolean
+          last_completed_at: string
+        }[]
+      }
       get_next_available_publish_date: { Args: never; Returns: string }
       get_next_gemini_image_version_number: {
         Args: { p_page_id: string }

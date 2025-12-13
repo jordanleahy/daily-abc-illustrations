@@ -6,7 +6,7 @@ import { RewardsCarousel } from '@/components/rewards/RewardsCarousel';
 import { TricksCarousel } from '@/components/tricks/TricksCarousel';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { useLandingPageData } from '@/hooks/useLandingPageData';
+import { useLibraryBooksByCompletion } from '@/hooks/useLibraryBooksByCompletion';
 import { useRewardsProducts } from '@/hooks/useRewardsProducts';
 import { useTricks } from '@/hooks/useTricks';
 import { useTrickGoals } from '@/hooks/useTrickGoals';
@@ -16,12 +16,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useNavigate } from 'react-router-dom';
-import { useMemo, useState } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { extractAvailableThemes, filterBooksByThemeAndSearch } from '@/utils/themeFilters';
-import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
-import { useBookCompletionCounts } from '@/hooks/useBookCompletionCounts';
-import type { LibraryBook } from '@/types/library';
 const Index = () => {
   const {
     isAuthenticated
@@ -58,50 +53,11 @@ const Index = () => {
     data: trickGoals = []
   } = useTrickGoals(firstKid?.id);
 
-  // ⚡ PERFORMANCE: Use landing page data (single edge function) instead of useLibraryBooks (3 queries)
+  // Fetch library books sorted by user's completion history (personalized ordering)
   const {
-    data: landingData,
+    data: libraryItems = [],
     isLoading: isLoadingBooks
-  } = useLandingPageData();
-
-  // Extract book IDs for completion count lookup
-  const bookIds = useMemo(() => {
-    return landingData?.libraryBooks?.map(book => book.id) || [];
-  }, [landingData?.libraryBooks]);
-
-  // Fetch completion counts for these books
-  const { data: completionCounts } = useBookCompletionCounts(bookIds);
-
-  // Map LandingLibraryBook[] to LibraryBook[] for component compatibility
-  const libraryItems: LibraryBook[] = useMemo(() => {
-    if (!landingData?.libraryBooks) return [];
-    return landingData.libraryBooks.map(book => ({
-      id: book.id,
-      book_name: book.book_name,
-      book_description: book.book_description,
-      created_at: book.created_at,
-      updated_at: book.updated_at,
-      is_highlighted: book.is_highlighted,
-      total_pages: 0, // Not available in landing data, not used for display
-      cover_image: book.image_url,
-      last_viewed_at: null,
-      view_count: 0,
-      completion_count: completionCounts?.get(book.id) || 0,
-      metadata: book.metadata,
-    }));
-  }, [landingData?.libraryBooks, completionCounts]);
-
-  // ⚡ PERFORMANCE OPTIMIZATION: Debounced search for instant feel
-  const {
-    activeQuery,
-  } = useOptimizedSearch('debounced', 300);
-  const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
-
-  // Extract available themes from library books
-  const availableThemes = useMemo(() => extractAvailableThemes(libraryItems), [libraryItems]);
-
-  // Apply filters using activeQuery (debounced value)
-  const filteredLibraryItems = useMemo(() => filterBooksByThemeAndSearch(libraryItems, activeQuery, selectedThemes), [libraryItems, activeQuery, selectedThemes]);
+  } = useLibraryBooksByCompletion();
 
   // Preload book images for instant display on return visits
   useHomeImagePreloader(libraryItems);
@@ -112,10 +68,10 @@ const Index = () => {
   // Only show pending habits - acted-upon habits disappear immediately
   const activeCompletions = completions.filter(c => c.status === 'pending');
 
-  // Limit books to top 5 per category for performance
-  const limitedLibraryItems = filteredLibraryItems.slice(0, 30);
-  const isLoading = isLoadingKids || isLoadingHabits;
+  // Limit books to top 30 for performance
+  const limitedLibraryItems = libraryItems.slice(0, 30);
   const isMobile = useIsMobile();
+  
   if (subscriptionLoading || isLoadingBooks) {
     return <StandardPageLayout>
         <div className="container mx-auto py-8">
@@ -198,11 +154,7 @@ const Index = () => {
         {hasActiveSubscription && firstKid && tricks.length > 0 && <TricksCarousel tricks={tricks} goals={trickGoals} />}
 
         {/* Categorized Book Sections */}
-        {filteredLibraryItems.length > 0 ? <CategorizedBookSections books={limitedLibraryItems} maxBooksPerCategory={5} showViewAllLinks={true} /> : libraryItems.length > 0 ? <div className="text-center py-12">
-            <p className="text-muted-foreground">
-              No books found matching your filters.
-            </p>
-          </div> : null}
+        {limitedLibraryItems.length > 0 ? <CategorizedBookSections books={limitedLibraryItems} maxBooksPerCategory={5} showViewAllLinks={true} /> : null}
       </div>
     </StandardPageLayout>;
 };

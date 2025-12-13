@@ -2094,6 +2094,7 @@ export type Database = {
       user_book_activity: {
         Row: {
           book_id: string | null
+          completion_count: number
           created_at: string
           id: string
           kid_id: string | null
@@ -2107,6 +2108,7 @@ export type Database = {
         }
         Insert: {
           book_id?: string | null
+          completion_count?: number
           created_at?: string
           id?: string
           kid_id?: string | null
@@ -2120,6 +2122,7 @@ export type Database = {
         }
         Update: {
           book_id?: string | null
+          completion_count?: number
           created_at?: string
           id?: string
           kid_id?: string | null

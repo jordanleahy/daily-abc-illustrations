@@ -24,7 +24,7 @@ export interface UserBookCardProps {
   onClick: () => void;
   index: number;
   onEditClick?: (bookId: string) => void;
-  publicationStatus?: Pick<DailyPublished, 'id' | 'status' | 'publish_date'> | null;
+  publicationStatus?: Pick<DailyPublished, 'id' | 'status' | 'publish_date' | 'slug'> | null;
   onPublish?: (bookId: string, title: string, description?: string) => void;
   onUnpublish?: (dailyPublishedId: string) => void;
   onDelete?: (bookId: string, bookName: string) => void;
@@ -208,24 +208,46 @@ export function UserBookCard({
             </Button>
             
             {publicationStatus && (
-              <Button 
-                variant="outline"
-                size="sm"
-                className="w-full gap-2"
-                onClick={async (e) => {
-                  e.stopPropagation();
-                  const libraryLink = `${SITE_CONFIG.productionUrl}/library/${book.id}`;
-                  try {
-                    await copyToClipboard(libraryLink);
-                    toast({ title: "Link copied" });
-                  } catch (error) {
-                    console.error('Failed to copy link:', error);
-                  }
-                }}
-              >
-                <Link2 className="h-4 w-4" />
-                Copy Link
-              </Button>
+              <>
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2"
+                  onClick={async (e) => {
+                    e.stopPropagation();
+                    const libraryLink = `${SITE_CONFIG.productionUrl}/library/${book.id}`;
+                    try {
+                      await copyToClipboard(libraryLink);
+                      toast({ title: "Link copied" });
+                    } catch (error) {
+                      console.error('Failed to copy link:', error);
+                    }
+                  }}
+                >
+                  <Link2 className="h-4 w-4" />
+                  Copy Link
+                </Button>
+                {publicationStatus.slug && (
+                  <Button 
+                    variant="outline"
+                    size="sm"
+                    className="w-full gap-2"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const marketingLink = `${SITE_CONFIG.productionUrl}/book/${publicationStatus.slug}`;
+                      try {
+                        await copyToClipboard(marketingLink);
+                        toast({ title: "Marketing link copied" });
+                      } catch (error) {
+                        console.error('Failed to copy marketing link:', error);
+                      }
+                    }}
+                  >
+                    <Link2 className="h-4 w-4" />
+                    Copy Marketing Link
+                  </Button>
+                )}
+              </>
             )}
           </div>
         </AdminOnly>

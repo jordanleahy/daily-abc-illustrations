@@ -142,37 +142,35 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goals }: TrickActi
           </div>
         </DrawerHeader>
 
-        {/* Stance Toggle */}
-        {hasAnyGoal && (
-          <div className="flex gap-2 px-4 pb-2">
-            <Button
-              variant={selectedStance === 'regular' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1"
-              onClick={() => setSelectedStance('regular')}
-            >
-              Regular
-              {regularGoal && (
-                <span className="ml-1 text-xs opacity-70">
-                  ({regularGoal.current_count}/{regularGoal.target_count})
-                </span>
-              )}
-            </Button>
-            <Button
-              variant={selectedStance === 'switch' ? 'default' : 'outline'}
-              size="sm"
-              className="flex-1"
-              onClick={() => setSelectedStance('switch')}
-            >
-              Switch
-              {switchGoal && (
-                <span className="ml-1 text-xs opacity-70">
-                  ({switchGoal.current_count}/{switchGoal.target_count})
-                </span>
-              )}
-            </Button>
-          </div>
-        )}
+        {/* Stance Toggle - Always visible */}
+        <div className="flex gap-2 px-4 py-3 bg-muted/50 rounded-lg mx-4 mb-2">
+          <Button
+            variant={selectedStance === 'regular' ? 'default' : 'outline'}
+            size="sm"
+            className="flex-1"
+            onClick={() => setSelectedStance('regular')}
+          >
+            Regular
+            {regularGoal && (
+              <span className="ml-1 text-xs opacity-70">
+                ({regularGoal.current_count}/{regularGoal.target_count})
+              </span>
+            )}
+          </Button>
+          <Button
+            variant={selectedStance === 'switch' ? 'default' : 'outline'}
+            size="sm"
+            className="flex-1"
+            onClick={() => setSelectedStance('switch')}
+          >
+            Switch
+            {switchGoal && (
+              <span className="ml-1 text-xs opacity-70">
+                ({switchGoal.current_count}/{switchGoal.target_count})
+              </span>
+            )}
+          </Button>
+        </div>
 
         {/* Progress Display */}
         {currentGoal && (

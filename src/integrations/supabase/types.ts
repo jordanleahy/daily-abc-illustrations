@@ -3004,12 +3004,12 @@ export type Database = {
       update_reading_progress: {
         Args: {
           p_book_id: string
-          p_kid_id: string
-          p_pages_read: number
-          p_reading_completed: boolean
+          p_kid_id?: string
+          p_pages_read?: number
+          p_reading_completed?: boolean
           p_user_id: string
         }
-        Returns: undefined
+        Returns: Json
       }
       update_subscription_cache: {
         Args: {

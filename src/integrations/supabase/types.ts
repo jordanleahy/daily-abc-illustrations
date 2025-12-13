@@ -1874,6 +1874,7 @@ export type Database = {
           is_active: boolean
           kid_profile_id: string
           parent_user_id: string
+          stance: string
           target_count: number
           trick_id: string
           updated_at: string
@@ -1887,6 +1888,7 @@ export type Database = {
           is_active?: boolean
           kid_profile_id: string
           parent_user_id: string
+          stance?: string
           target_count: number
           trick_id: string
           updated_at?: string
@@ -1900,6 +1902,7 @@ export type Database = {
           is_active?: boolean
           kid_profile_id?: string
           parent_user_id?: string
+          stance?: string
           target_count?: number
           trick_id?: string
           updated_at?: string
@@ -2775,6 +2778,10 @@ export type Database = {
         Returns: Json
       }
       create_scheduled_habit_completions: { Args: never; Returns: Json }
+      create_switch_goal_from_regular: {
+        Args: { p_regular_goal_id: string }
+        Returns: string
+      }
       create_trick_completion_unified: {
         Args: { p_count_increment: number; p_goal_id: string; p_notes?: string }
         Returns: Json

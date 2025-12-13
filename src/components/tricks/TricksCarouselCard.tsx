@@ -5,11 +5,11 @@ import { Trick, TrickGoalWithDetails } from '@/types/trick';
 
 interface TricksCarouselCardProps {
   trick: Trick;
-  goal: TrickGoalWithDetails | null;
+  goals: TrickGoalWithDetails[]; // Changed from single goal to array
   onClick: () => void;
 }
 
-export const TricksCarouselCard = memo(({ trick, goal, onClick }: TricksCarouselCardProps) => {
+export const TricksCarouselCard = memo(({ trick, goals, onClick }: TricksCarouselCardProps) => {
   const displayImage = (() => {
     const photoUrl = trick.photo_url;
     if (!photoUrl) return null;
@@ -30,6 +30,12 @@ export const TricksCarouselCard = memo(({ trick, goal, onClick }: TricksCarousel
   ]
     .filter(Boolean)
     .join(' ');
+
+  // Find goals by stance
+  const regularGoal = goals.find(g => g.stance === 'regular');
+  const switchGoal = goals.find(g => g.stance === 'switch');
+  const hasRegular = !!regularGoal;
+  const hasSwitch = !!switchGoal;
 
   return (
     <Card 
@@ -54,10 +60,20 @@ export const TricksCarouselCard = memo(({ trick, goal, onClick }: TricksCarousel
           <h3 className="font-semibold text-sm line-clamp-2">
             {formattedTitle}
           </h3>
-          {goal && (
-            <p className="text-xs text-muted-foreground">
-              {goal.current_count} out of {goal.target_count}
-            </p>
+          {/* Show stance badges if practiced */}
+          {(hasRegular || hasSwitch) && (
+            <div className="flex gap-1">
+              {hasRegular && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-primary/10 text-primary">
+                  R: {regularGoal.current_count}/{regularGoal.target_count}
+                </span>
+              )}
+              {hasSwitch && (
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-secondary/50 text-secondary-foreground">
+                  S: {switchGoal.current_count}/{switchGoal.target_count}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </CardContent>

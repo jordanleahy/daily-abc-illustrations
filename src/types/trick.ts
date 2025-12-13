@@ -24,6 +24,8 @@ export interface Trick {
   updated_at: string;
 }
 
+export type TrickStance = 'regular' | 'switch';
+
 export interface TrickGoal {
   id: string;
   trick_id: string;
@@ -32,6 +34,7 @@ export interface TrickGoal {
   target_count: number;
   current_count: number;
   is_active: boolean;
+  stance: TrickStance;
   goal_started_at: string;
   goal_completed_at: string | null;
   created_at: string;

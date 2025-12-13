@@ -79,7 +79,7 @@ export const useBooks = (
         .from('books')
         .select(`
           *,
-          daily_published!left(id, status, publish_date, is_active),
+          daily_published!left(id, status, publish_date, is_active, slug),
           activity:user_book_activity!left(
             last_viewed_at,
             view_count,

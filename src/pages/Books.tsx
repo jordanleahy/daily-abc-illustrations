@@ -167,7 +167,8 @@ export default function Books() {
                         publicationStatus={book.daily_published?.[0] ? {
                           id: book.daily_published[0].id,
                           status: book.daily_published[0].status as any,
-                          publish_date: book.daily_published[0].publish_date
+                          publish_date: book.daily_published[0].publish_date,
+                          slug: book.daily_published[0].slug
                         } : null}
                         onPublish={(id, title, desc) => schedulePublication.mutate({ bookId: id, title, description: desc })}
                         onUnpublish={(id) => deletePublication.mutate(id)}

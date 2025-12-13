@@ -2847,10 +2847,14 @@ export type Database = {
           book_name: string
           category: string
           completion_count: number
+          cover_image_url: string
           created_at: string
           id: string
+          is_highlighted: boolean
           is_library_book: boolean
           last_completed_at: string
+          metadata: Json
+          updated_at: string
         }[]
       }
       get_next_available_publish_date: { Args: never; Returns: string }

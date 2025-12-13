@@ -1,4 +1,5 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import type { LibraryBook } from '@/types/library';
@@ -26,6 +27,33 @@ interface LibraryBookByCompletionRow {
  */
 export function useLibraryBooksByCompletion() {
   const { user } = useAuthContext();
+  const queryClient = useQueryClient();
+
+  // Real-time subscription to invalidate cache when completion counts change
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('library-books-completion-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_book_activity',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          // Invalidate the query to refetch with updated completion counts
+          queryClient.invalidateQueries({ queryKey: ['library-books-by-completion', user.id] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
 
   return useQuery({
     queryKey: ['library-books-by-completion', user?.id],

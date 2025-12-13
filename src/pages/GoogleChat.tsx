@@ -197,7 +197,8 @@ export default function GoogleChat() {
   const [outlineJustCompleted, setOutlineJustCompleted] = useState(false);
   const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
   const previousShouldShow = useRef(false);
-  const [forceEditorClosed, setForceEditorClosed] = useState(false);
+  // Start with editor closed - only open when outline is newly completed or user clicks "View Pages"
+  const [forceEditorClosed, setForceEditorClosed] = useState(true);
 
   // Priority: Show book images from storage if book exists, otherwise show Book Editor images
   // But hide images for pages in replace mode
@@ -397,6 +398,7 @@ export default function GoogleChat() {
     
     if (outlineJustCompleted) {
       setCurrentEditorPage(1); // Start at cover page
+      setForceEditorClosed(false); // Allow editor to open for newly completed outline
       
       // Scroll to bottom to show the banner
       setTimeout(() => {

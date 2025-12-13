@@ -9,11 +9,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from '@/components/ui/drawer';
-import { ThumbsUp, ThumbsDown, Plus } from 'lucide-react';
+import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { Trick, VideoData, TrickStance } from '@/types/trick';
 import { TrickGoalWithDetails } from '@/types/trick';
 import { useAddTrickCompletion } from '@/hooks/useAddTrickCompletion';
-import { useCreateSwitchGoal } from '@/hooks/useCreateSwitchGoal';
 import { TrickMediaViewer } from './TrickMediaViewer';
 import { TrickUploadZone } from './TrickUploadZone';
 
@@ -27,7 +26,6 @@ interface TrickActionModalProps {
 export const TrickActionModal = ({ open, onOpenChange, trick, goals }: TrickActionModalProps) => {
   const [selectedStance, setSelectedStance] = useState<TrickStance>('regular');
   const addCompletion = useAddTrickCompletion();
-  const createSwitchGoal = useCreateSwitchGoal();
 
   const images = useMemo(() => {
     if (!trick) return [];
@@ -102,11 +100,6 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goals }: TrickActi
         onOpenChange(false);
       },
     });
-  };
-
-  const handleCreateSwitchGoal = () => {
-    if (!regularGoal) return;
-    createSwitchGoal.mutate(regularGoal.id);
   };
 
   const isCompleted = currentGoal && currentGoal.current_count >= currentGoal.target_count;
@@ -185,20 +178,11 @@ export const TrickActionModal = ({ open, onOpenChange, trick, goals }: TrickActi
               No active goal for this trick. Ask your parent to set up a goal!
             </p>
           </div>
-        ) : selectedStance === 'switch' && !switchGoal ? (
-          <div className="text-center py-4 px-4 space-y-3">
+        ) : !currentGoal ? (
+          <div className="text-center py-4 px-4">
             <p className="text-sm text-muted-foreground">
-              No switch stance goal yet.
+              Loading goal...
             </p>
-            <Button
-              onClick={handleCreateSwitchGoal}
-              disabled={createSwitchGoal.isPending}
-              variant="outline"
-              size="sm"
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {createSwitchGoal.isPending ? 'Creating...' : 'Create Switch Goal'}
-            </Button>
           </div>
         ) : isCompleted ? (
           <div className="text-center py-4 px-4">

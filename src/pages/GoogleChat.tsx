@@ -1571,7 +1571,7 @@ export default function GoogleChat() {
           <Sheet 
             open={showEditor && !createBookMutation.isSuccess} 
             onOpenChange={(open) => {
-              // Editor state is derived, onOpenChange is no-op
+              if (!open) setForceEditorClosed(true);
             }}
           >
             <SheetContent 

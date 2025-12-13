@@ -65,12 +65,12 @@ export const useReadingProgressTracking = () => {
     totalPages: number,
     kidId?: string | null
   ) => {
-    if (!user) return;
+    if (!user) return null;
 
     const readingCompleted = pagesRead >= totalPages;
 
     try {
-      const { error } = await supabase.rpc('update_reading_progress', {
+      const { data, error } = await supabase.rpc('update_reading_progress', {
         p_user_id: user.id,
         p_book_id: bookId,
         p_kid_id: kidId || null,
@@ -79,8 +79,17 @@ export const useReadingProgressTracking = () => {
       });
 
       if (error) throw error;
+      
+      // Return the result containing completion_count and session info
+      return data as { 
+        success: boolean; 
+        activity_id: string; 
+        session_id: string; 
+        completion_count: number; 
+      } | null;
     } catch (error) {
       console.error('Failed to update reading progress:', error);
+      return null;
     }
   }, [user]);
 

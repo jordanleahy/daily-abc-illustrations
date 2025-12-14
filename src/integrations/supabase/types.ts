@@ -3014,6 +3014,21 @@ export type Database = {
       is_book_published: { Args: { book_id: string }; Returns: boolean }
       process_enhanced_daily_publishing: { Args: never; Returns: Json }
       process_simple_daily_publishing: { Args: never; Returns: Json }
+      resolve_public_book_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          book_created_at: string
+          book_description: string
+          book_id: string
+          book_name: string
+          description: string
+          id: string
+          source_type: string
+          title: string
+          total_pages: number
+          user_id: string
+        }[]
+      }
       search_embeddings: {
         Args: {
           match_count?: number

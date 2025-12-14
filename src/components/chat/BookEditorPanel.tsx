@@ -198,18 +198,20 @@ export function BookEditorPanel({
     try {
       // Fetch the image and convert to data URL
       const response = await fetch(colorImageUrl);
-      const blob = await response.blob();
+      const imageBlob = await response.blob();
+
+      // Composite text onto image (returns Blob directly)
+      const compositedBlob = await compositeTextOnImage(imageBlob, pageText);
+      
+      // Convert blob to dataUrl for the upload handler
       const dataUrl = await new Promise<string>((resolve) => {
         const reader = new FileReader();
         reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
+        reader.readAsDataURL(compositedBlob);
       });
-
-      // Composite text onto image
-      const result = await compositeTextOnImage(dataUrl, pageText);
       
       // Upload the composited image
-      onImageUpload(result.dataUrl, 'text');
+      onImageUpload(dataUrl, 'text');
     } catch (error) {
       console.error('Error generating text image:', error);
       toast({ title: "Generation failed", description: "Could not create text image", variant: "destructive" });

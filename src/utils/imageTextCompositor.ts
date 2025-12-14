@@ -2,6 +2,8 @@
  * Image Text Compositor
  * Composites text overlay onto an image using canvas
  * Matches the CSS styling from TextOverlay component: bg-black/60, white text, font-semibold text-lg
+ * 
+ * Optimized: Uses createImageBitmap() for faster, more memory-efficient image processing
  */
 
 export interface CompositeOptions {
@@ -13,27 +15,15 @@ export interface CompositeOptions {
 }
 
 /**
- * Load an image from a data URL or regular URL
- */
-function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => resolve(img);
-    img.onerror = (e) => reject(new Error(`Failed to load image: ${e}`));
-    img.src = src;
-  });
-}
-
-/**
  * Composites text onto an image with a semi-transparent black bar at the bottom
- * Returns the composited image as both a data URL and Blob
+ * Accepts a Blob directly for better performance (no base64 conversion needed)
+ * Returns the composited image as a Blob
  */
 export async function compositeTextOnImage(
-  imageDataUrl: string,
+  imageBlob: Blob,
   text: string,
   options: Partial<CompositeOptions> = {}
-): Promise<{ dataUrl: string; blob: Blob }> {
+): Promise<Blob> {
   const {
     fontSize = 24,
     fontWeight = 600,
@@ -41,31 +31,35 @@ export async function compositeTextOnImage(
     barOpacity = 0.6,
   } = options;
 
-  // Load the source image
-  const img = await loadImage(imageDataUrl);
+  // Use createImageBitmap for faster, more memory-efficient image loading
+  const imageBitmap = await createImageBitmap(imageBlob);
   
   // Create canvas with image dimensions
   const canvas = document.createElement('canvas');
   const ctx = canvas.getContext('2d');
   
   if (!ctx) {
+    imageBitmap.close();
     throw new Error('Failed to get canvas 2d context');
   }
   
-  canvas.width = img.width;
-  canvas.height = img.height;
+  canvas.width = imageBitmap.width;
+  canvas.height = imageBitmap.height;
   
   // Draw the original image
-  ctx.drawImage(img, 0, 0);
+  ctx.drawImage(imageBitmap, 0, 0);
+  
+  // Release the ImageBitmap memory immediately after drawing
+  imageBitmap.close();
   
   // Calculate bar dimensions (scale based on image size)
-  const scaleFactor = img.width / 400; // Base scale on 400px reference width
+  const scaleFactor = canvas.width / 400; // Base scale on 400px reference width
   const scaledBarHeight = Math.max(40, barHeight * scaleFactor);
   const scaledFontSize = Math.max(16, fontSize * scaleFactor);
   
   // Draw semi-transparent black bar at bottom
   ctx.fillStyle = `rgba(0, 0, 0, ${barOpacity})`;
-  ctx.fillRect(0, img.height - scaledBarHeight, img.width, scaledBarHeight);
+  ctx.fillRect(0, canvas.height - scaledBarHeight, canvas.width, scaledBarHeight);
   
   // Draw text
   ctx.fillStyle = 'white';
@@ -74,8 +68,8 @@ export async function compositeTextOnImage(
   ctx.textBaseline = 'middle';
   
   // Calculate text position (centered in bar)
-  const textX = img.width / 2;
-  const textY = img.height - (scaledBarHeight / 2);
+  const textX = canvas.width / 2;
+  const textY = canvas.height - (scaledBarHeight / 2);
   
   // Draw text with slight shadow for better readability
   ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
@@ -84,7 +78,7 @@ export async function compositeTextOnImage(
   ctx.shadowOffsetY = 1;
   
   // Wrap text if too long
-  const maxWidth = img.width * 0.9;
+  const maxWidth = canvas.width * 0.9;
   const lines = wrapText(ctx, text, maxWidth);
   
   if (lines.length === 1) {
@@ -100,15 +94,12 @@ export async function compositeTextOnImage(
     });
   }
   
-  // Convert to blob
+  // Convert to blob directly (no intermediate dataUrl)
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) => {
         if (blob) {
-          resolve({
-            dataUrl: canvas.toDataURL('image/png'),
-            blob,
-          });
+          resolve(blob);
         } else {
           reject(new Error('Failed to create blob from canvas'));
         }

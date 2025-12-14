@@ -151,7 +151,7 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.generate-og-image]
-verify_jwt = true
+verify_jwt = false
 
 [api]
 enabled = true

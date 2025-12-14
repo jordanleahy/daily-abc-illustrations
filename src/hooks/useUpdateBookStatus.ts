@@ -34,6 +34,7 @@ export const useUpdateBookStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['book', variables.bookId] });
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['library-books'] });
+      queryClient.invalidateQueries({ queryKey: ['book-editor-data', variables.bookId] });
       
       console.log(`Book status changed to ${variables.status}`);
     },

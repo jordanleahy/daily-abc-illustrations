@@ -57,3 +57,17 @@ export interface CreateDailyPublishedRequest {
   description?: string;
   queue_order?: number; // Simple queue position
 }
+
+// Unified resolved public book from resolve_public_book_by_slug RPC
+export interface ResolvedPublicBook {
+  id: string;
+  book_id: string;
+  title: string;
+  description: string | null;
+  source_type: 'daily_published' | 'marketing';
+  book_name: string;
+  book_description: string | null;
+  user_id: string;
+  total_pages: number | null;
+  book_created_at: string;
+}

@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePublicBookBySlug } from '@/hooks/usePublicBookBySlug';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
@@ -54,17 +53,20 @@ export default function PublicBook() {
   // Preload all page images for instant display
   usePublicBookImagePreloader(pages, bookData?.book_id);
   
-  // Try to get SEO metadata by daily_published_id first, then by book_id
-  const { data: seoByDaily } = useSeoMetadata(bookData?.id);
+  // Get SEO metadata based on source type
+  // For daily_published: use the daily_published_id
+  // For marketing: use the book_id
+  const dailyPublishedId = bookData?.source_type === 'daily_published' ? bookData.id : undefined;
+  const { data: seoByDaily } = useSeoMetadata(dailyPublishedId);
   const { data: seoByBook } = useSeoMetadataByBook(bookData?.book_id);
   const seoMetadata = seoByDaily || seoByBook;
 
   // Generate OpenGraph metadata
   const ogMetadata = bookData ? generateDailyPublishedOpenGraph(
     seoMetadata?.seo_title || bookData.title,
-    seoMetadata?.seo_description || bookData.description,
+    seoMetadata?.seo_description || bookData.description || '',
     undefined,
-    26,
+    bookData.total_pages || 26,
     bookData.id,
     undefined,
     undefined,

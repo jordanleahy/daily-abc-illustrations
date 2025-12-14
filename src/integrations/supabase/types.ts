@@ -2968,6 +2968,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_book_completion: {
+        Args: { p_book_id: string; p_kid_id?: string; p_user_id: string }
+        Returns: Json
+      }
       increment_kid_coins: {
         Args: { p_amount: number; p_kid_id: string }
         Returns: undefined

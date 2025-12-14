@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
 import { Shimmer } from '@/components/ui/shimmer';
-import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX, ChevronDown, Sparkles, Loader2, Wand2 } from 'lucide-react';
+import { Copy, Send, ArrowLeft, ArrowRight, Check, BookOpen, X, ExternalLink, Pencil, FileUp, FileX, ChevronDown, Sparkles, Loader2, Wand2, RefreshCw } from 'lucide-react';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -765,14 +765,30 @@ export function BookEditorPanel({
                       <><Copy className="h-3 w-3 mr-1" />Copy</>
                     )}
                   </Button>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setIsReplacing(true)}
-                    className="text-xs h-7"
-                  >
-                    Replace
-                  </Button>
+                  {imageMode === 'bw' ? (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleGenerateColoringImage}
+                      disabled={isGeneratingColoringImage}
+                      className="text-xs h-7"
+                    >
+                      {isGeneratingColoringImage ? (
+                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Generating...</>
+                      ) : (
+                        <><RefreshCw className="h-3 w-3 mr-1" />Regenerate</>
+                      )}
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setIsReplacing(true)}
+                      className="text-xs h-7"
+                    >
+                      Replace
+                    </Button>
+                  )}
                 </div>
                 
                 

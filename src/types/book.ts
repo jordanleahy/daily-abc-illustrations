@@ -112,6 +112,8 @@ export interface Book {
   updated_at: string;
   /** ISO timestamp of last activity (view, edit, image generation) */
   last_activity_at?: string;
+  /** URL-safe slug for marketing/sharing links (auto-generated from book_name) */
+  marketing_url?: string;
 }
 
 /**

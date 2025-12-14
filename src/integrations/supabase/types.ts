@@ -493,6 +493,7 @@ export type Database = {
           is_library_book: boolean | null
           is_style_template: boolean | null
           last_activity_at: string | null
+          marketing_url: string | null
           metadata: Json | null
           pdf_url: string | null
           product_description: string | null
@@ -517,6 +518,7 @@ export type Database = {
           is_library_book?: boolean | null
           is_style_template?: boolean | null
           last_activity_at?: string | null
+          marketing_url?: string | null
           metadata?: Json | null
           pdf_url?: string | null
           product_description?: string | null
@@ -541,6 +543,7 @@ export type Database = {
           is_library_book?: boolean | null
           is_style_template?: boolean | null
           last_activity_at?: string | null
+          marketing_url?: string | null
           metadata?: Json | null
           pdf_url?: string | null
           product_description?: string | null

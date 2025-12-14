@@ -59,7 +59,8 @@ serve(async (req) => {
       'book-creation-first-words',
       'book-creation-bedtime',
       'book-creation-cvc',
-      'book-creation-sight-words'
+      'book-creation-sight-words',
+      'book-creation-digraphs'
     ];
 
     const results = [];

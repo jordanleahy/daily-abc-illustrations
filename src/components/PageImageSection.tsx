@@ -8,7 +8,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Loader2, Upload, Clipboard, Copy, ArrowLeft, Sparkles } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
-import { compositeTextOnImage } from "@/utils/imageTextCompositor";
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 
 interface PageImageSectionProps {
@@ -122,7 +121,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     }
   };
 
-  // Generate text image by compositing title onto existing color image
+  // Generate text image via server-side edge function
   const handleGenerateTextImage = async () => {
     if (!user || !currentImage?.image_url) {
       toast({
@@ -135,46 +134,12 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
 
     setIsGenerating(true);
     try {
-      // Get page title from database
-      const { data: pageData, error: pageError } = await supabase
-        .from('pages')
-        .select('title')
-        .eq('id', pageId)
-        .single();
+      const { data, error } = await supabase.functions.invoke('generate-text-image', {
+        body: { pageId, bookId }
+      });
 
-      if (pageError || !pageData?.title) {
-        throw new Error('Could not fetch page title');
-      }
-
-      // Fetch the color image as blob (no base64 conversion needed)
-      const response = await fetch(currentImage.image_url);
-      const imageBlob = await response.blob();
-
-      // Composite text onto image (uses createImageBitmap for better performance)
-      const compositedBlob = await compositeTextOnImage(imageBlob, pageData.title);
-
-      // Upload the composited image
-      const fileName = `page-${pageId}-text-${Date.now()}.png`;
-      const filePath = `${user.id}/${bookId}/text/${fileName}`;
-      
-      const { error: uploadError } = await supabase.storage
-        .from('page-images')
-        .upload(filePath, compositedBlob, { contentType: 'image/png' });
-
-      if (uploadError) throw uploadError;
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from('page-images')
-        .getPublicUrl(filePath);
-
-      // Update page_image_urls with text_image_url
-      const { error: updateError } = await supabase
-        .from('page_image_urls')
-        .update({ text_image_url: urlData.publicUrl })
-        .eq('id', currentImage.id);
-
-      if (updateError) throw updateError;
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to generate text image');
 
       toast({
         title: "Text image generated",

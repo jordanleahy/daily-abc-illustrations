@@ -693,8 +693,8 @@ export function BookEditorPanel({
                   disableHoverEffects={true}
                 />
                 
-                {/* Interactive Text Overlay - only show for content pages when not hidden and NOT in text image mode */}
-                {imageMode !== 'text' && shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && currentPageText && (
+                {/* Interactive Text Overlay - only show for content pages in color mode */}
+                {imageMode === 'color' && shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && currentPageText && (
                   <>
                     {isEditingOverlayText && onUpdatePageText ? (
                       <div className="absolute bottom-0 left-0 right-0 z-10 bg-black/60 backdrop-blur-sm px-4 py-3">
@@ -776,8 +776,8 @@ export function BookEditorPanel({
                 </div>
                 
                 
-                {/* Show/Hide Overlay buttons - only for content pages and NOT in text mode */}
-                {imageMode !== 'text' && shouldShowTextOverlay && currentPageId && isOverlayHidden(currentPageId) && (
+                {/* Show/Hide Overlay buttons - only for content pages in color mode */}
+                {imageMode === 'color' && shouldShowTextOverlay && currentPageId && isOverlayHidden(currentPageId) && (
                   <Button
                     variant="secondary"
                     size="sm"
@@ -793,8 +793,8 @@ export function BookEditorPanel({
                   </Button>
                 )}
                 
-                {/* Hide Overlay button when overlay is shown - only for content pages and NOT in text mode */}
-                {imageMode !== 'text' && shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && (
+                {/* Hide Overlay button when overlay is shown - only for content pages in color mode */}
+                {imageMode === 'color' && shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && (
                   <Button
                     variant="secondary"
                     size="sm"

@@ -117,23 +117,13 @@ export default function PublicBook() {
         <div className="py-8 md:py-12 space-y-8">
           {/* Header */}
           <div className="space-y-4">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-3">
-                  {seoMetadata?.seo_title || bookData.title}
-                </h1>
-                <p className="text-lg text-muted-foreground max-w-3xl">
-                  {seoMetadata?.seo_description || bookData.description}
-                </p>
-              </div>
-              <div className="flex gap-2 shrink-0">
-                <Button size="icon" variant="outline" title="Add to favorites">
-                  <Plus className="h-5 w-5" />
-                </Button>
-                <Button size="icon" variant="outline" title="Download PDF">
-                  <Download className="h-5 w-5" />
-                </Button>
-              </div>
+            <div className="space-y-3">
+              <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold">
+                {seoMetadata?.seo_title || bookData.title}
+              </h1>
+              <p className="text-lg text-muted-foreground max-w-3xl">
+                {seoMetadata?.seo_description || bookData.description}
+              </p>
             </div>
           </div>
 

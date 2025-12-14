@@ -102,6 +102,7 @@ export function BookEditorPanel({
   const [hasRunQaAgent, setHasRunQaAgent] = useState(false);
   const [imageMode, setImageMode] = useState<'color' | 'bw' | 'text'>('color');
   const [isGeneratingTextImage, setIsGeneratingTextImage] = useState(false);
+  const [isGeneratingColoringImage, setIsGeneratingColoringImage] = useState(false);
   const [isCopyingImage, setIsCopyingImage] = useState(false);
   const [isGeneratingThumbnail, setIsGeneratingThumbnail] = useState(false);
   const { toast } = useToast();
@@ -217,6 +218,52 @@ export function BookEditorPanel({
       toast({ title: "Generation failed", description: "Could not create text image", variant: "destructive" });
     } finally {
       setIsGeneratingTextImage(false);
+    }
+  };
+
+  // Handle generating coloring book image from color image using AI
+  const handleGenerateColoringImage = async () => {
+    const colorImageUrl = currentPageNumber === 1 
+      ? (thumbnailUrl || displayImages[1]) 
+      : displayImages[currentPageNumber];
+    
+    if (!colorImageUrl) {
+      toast({ title: "No color image", description: "Upload a color image first", variant: "destructive" });
+      return;
+    }
+
+    // Get the current page ID
+    const pageId = pages?.find(p => p.page_number === currentPageNumber)?.id;
+    if (!pageId || !bookId) {
+      toast({ title: "Missing data", description: "Could not find page information", variant: "destructive" });
+      return;
+    }
+
+    setIsGeneratingColoringImage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-coloring-image', {
+        body: { pageId, bookId, colorImageUrl }
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to generate coloring image');
+
+      toast({ title: "Coloring page created", description: "B&W coloring book version generated" });
+      
+      // Refresh to show the new image - trigger parent refresh if available
+      if (data.coloringImageUrl) {
+        // The parent component should refresh via real-time subscription or manual trigger
+      }
+    } catch (error: any) {
+      console.error('Error generating coloring image:', error);
+      const message = error.message?.includes('Rate limit') 
+        ? 'Rate limit exceeded. Please try again later.'
+        : error.message?.includes('credits') 
+        ? 'AI credits exhausted. Please add credits.'
+        : 'Could not create coloring book image';
+      toast({ title: "Generation failed", description: message, variant: "destructive" });
+    } finally {
+      setIsGeneratingColoringImage(false);
     }
   };
   
@@ -835,6 +882,25 @@ export function BookEditorPanel({
                 </Button>
                 <p className="text-xs text-muted-foreground mt-3">
                   Adds text overlay to your color image
+                </p>
+              </div>
+            ) : imageMode === 'bw' && hasColorImage ? (
+              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
+                <Button
+                  onClick={handleGenerateColoringImage}
+                  size="lg"
+                  className="gap-2"
+                  disabled={isGeneratingColoringImage}
+                >
+                  {isGeneratingColoringImage ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Wand2 className="h-5 w-5" />
+                  )}
+                  {isGeneratingColoringImage ? 'Generating...' : 'Generate Coloring Page'}
+                </Button>
+                <p className="text-xs text-muted-foreground mt-3">
+                  Converts color image to B&W outline for coloring
                 </p>
               </div>
             ) : imageMode === 'color' ? (

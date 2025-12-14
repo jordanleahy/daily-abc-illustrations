@@ -32,8 +32,17 @@ serve(async (req) => {
 
     const imageBlob = await imageResponse.blob();
     const imageArrayBuffer = await imageBlob.arrayBuffer();
-    const base64Image = btoa(String.fromCharCode(...new Uint8Array(imageArrayBuffer)));
     const mimeType = imageBlob.type || 'image/png';
+    
+    // Convert to base64 using chunked approach to avoid stack overflow
+    const uint8Array = new Uint8Array(imageArrayBuffer);
+    let base64Image = '';
+    const chunkSize = 8192;
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize);
+      base64Image += String.fromCharCode(...chunk);
+    }
+    base64Image = btoa(base64Image);
 
     // Use Lovable AI to generate the letterboxed OG image
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');

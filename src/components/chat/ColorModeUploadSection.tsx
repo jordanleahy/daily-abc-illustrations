@@ -79,37 +79,34 @@ export function ColorModeUploadSection({
         disabled={disabled}
       />
       
-      <div className="flex flex-col gap-2 w-full max-w-[200px]">
+      <div className="flex flex-col gap-4 w-full">
         <Button
           onClick={() => fileInputRef.current?.click()}
           variant="default"
-          size="sm"
-          className="w-full gap-2"
+          className="w-full h-14 gap-2 text-base"
           disabled={disabled}
         >
-          <Upload className="h-4 w-4" />
+          <Upload className="h-5 w-5" />
           Upload
         </Button>
         
         <Button
           onClick={handlePaste}
           variant="secondary"
-          size="sm"
-          className="w-full gap-2"
+          className="w-full h-14 gap-2 text-base"
           disabled={disabled}
         >
-          <ClipboardPaste className="h-4 w-4" />
+          <ClipboardPaste className="h-5 w-5" />
           Paste
         </Button>
         
         <Button
           onClick={onCopyPrompt}
           variant="outline"
-          size="sm"
-          className="w-full gap-2"
+          className="w-full h-14 gap-2 text-base"
           disabled={disabled}
         >
-          <Copy className="h-4 w-4" />
+          <Copy className="h-5 w-5" />
           Copy Prompt
         </Button>
       </div>

@@ -146,19 +146,6 @@ export function UserBookCard({
 
         <Button 
           variant="outline" 
-          className="w-full gap-2"
-          onClick={(e) => {
-            e.stopPropagation();
-            if (user) duplicateBook({ bookId: book.id, userId: user.id });
-          }}
-          disabled={isDuplicating}
-        >
-          <Copy className="h-4 w-4" />
-          {isDuplicating ? 'Duplicating...' : 'Duplicate'}
-        </Button>
-
-        <Button 
-          variant="outline" 
           className="w-full"
           onMouseEnter={handleEditHover}
           onClick={(e) => {
@@ -187,31 +174,47 @@ export function UserBookCard({
           }
         />
 
-        {/* Marketing Link - Available to all users */}
-        {book.marketing_url && (
-          <Button 
-            variant="outline"
-            size="sm"
-            className="w-full gap-2"
-            onClick={async (e) => {
-              e.stopPropagation();
-              const marketingLink = `${SITE_CONFIG.productionUrl}/book/${book.marketing_url}`;
-              try {
-                await copyToClipboard(marketingLink);
-                toast({ title: "Marketing link copied" });
-              } catch (error) {
-                console.error('Failed to copy marketing link:', error);
-              }
-            }}
-          >
-            <Link2 className="h-4 w-4" />
-            Copy Marketing Link
-          </Button>
-        )}
-
         <AdminOnly fallback={null}>
           <div className="space-y-2 pt-3 mt-3 border-t border-border/50">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Admin Actions</div>
+            
+            {/* Duplicate button - Admin only */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="w-full gap-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (user) duplicateBook({ bookId: book.id, userId: user.id });
+              }}
+              disabled={isDuplicating}
+            >
+              <Copy className="h-4 w-4" />
+              {isDuplicating ? 'Duplicating...' : 'Duplicate'}
+            </Button>
+
+            {/* Marketing Link - Admin only */}
+            {book.marketing_url && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  const marketingLink = `${SITE_CONFIG.productionUrl}/book/${book.marketing_url}`;
+                  try {
+                    await copyToClipboard(marketingLink);
+                    toast({ title: "Marketing link copied" });
+                  } catch (error) {
+                    console.error('Failed to copy marketing link:', error);
+                  }
+                }}
+              >
+                <Link2 className="h-4 w-4" />
+                Copy Marketing Link
+              </Button>
+            )}
+
             <Button 
               variant={publicationStatus ? "destructive" : "default"}
               size="sm"

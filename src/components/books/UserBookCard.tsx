@@ -187,6 +187,28 @@ export function UserBookCard({
           }
         />
 
+        {/* Marketing Link - Available to all users */}
+        {book.marketing_url && (
+          <Button 
+            variant="outline"
+            size="sm"
+            className="w-full gap-2"
+            onClick={async (e) => {
+              e.stopPropagation();
+              const marketingLink = `${SITE_CONFIG.productionUrl}/book/${book.marketing_url}`;
+              try {
+                await copyToClipboard(marketingLink);
+                toast({ title: "Marketing link copied" });
+              } catch (error) {
+                console.error('Failed to copy marketing link:', error);
+              }
+            }}
+          >
+            <Link2 className="h-4 w-4" />
+            Copy Marketing Link
+          </Button>
+        )}
+
         <AdminOnly fallback={null}>
           <div className="space-y-2 pt-3 mt-3 border-t border-border/50">
             <div className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Admin Actions</div>

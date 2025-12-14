@@ -66,7 +66,7 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Create a 1200x630 pixel Open Graph image. Take this square book cover image and place it centered in the frame. Fill the left and right sides with a heavily blurred, zoomed-in version of the same image as a soft background. The original cover should be clearly visible and sharp in the center, taking up most of the height. The blurred sides should blend smoothly. Do not add any text or overlays - just the cover centered with blurred background on the sides.`
+                text: `Create a 1200x630 pixel Open Graph image. Take this square book cover image and place it centered in the frame. Fill the left and right sides with an EXTREMELY blurred, heavily zoomed-in version of the same image as a very soft, dreamy background. Apply maximum gaussian blur so the background colors blend together smoothly with no recognizable details. The original cover should be clearly visible and sharp in the center, taking up most of the height. The ultra-blurred sides should blend seamlessly. Do not add any text or overlays - just the cover centered with heavily blurred background on the sides.`
               },
               {
                 type: "image_url",

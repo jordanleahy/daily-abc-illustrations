@@ -146,17 +146,12 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
         throw new Error('Could not fetch page title');
       }
 
-      // Fetch the color image and convert to data URL
+      // Fetch the color image as blob (no base64 conversion needed)
       const response = await fetch(currentImage.image_url);
-      const blob = await response.blob();
-      const imageDataUrl = await new Promise<string>((resolve) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.readAsDataURL(blob);
-      });
+      const imageBlob = await response.blob();
 
-      // Composite text onto image
-      const { blob: compositedBlob } = await compositeTextOnImage(imageDataUrl, pageData.title);
+      // Composite text onto image (uses createImageBitmap for better performance)
+      const compositedBlob = await compositeTextOnImage(imageBlob, pageData.title);
 
       // Upload the composited image
       const fileName = `page-${pageId}-text-${Date.now()}.png`;

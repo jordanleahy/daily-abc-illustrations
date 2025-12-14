@@ -61,23 +61,22 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
     if (!currentPage) return;
 
     try {
-      let finalImageDataUrl = imageDataUrl;
       let finalBlob: Blob;
+
+      // Convert dataUrl to blob first
+      const base64Response = await fetch(imageDataUrl);
+      const inputBlob = await base64Response.blob();
 
       // If text mode, composite text onto image first
       if (imageMode === 'text') {
         const pageText = editorData.pageTextOverlays[currentEditorPage] || currentPage.title || '';
         if (pageText) {
-          const composited = await compositeTextOnImage(imageDataUrl, pageText);
-          finalImageDataUrl = composited.dataUrl;
-          finalBlob = composited.blob;
+          finalBlob = await compositeTextOnImage(inputBlob, pageText);
         } else {
-          const base64Response = await fetch(imageDataUrl);
-          finalBlob = await base64Response.blob();
+          finalBlob = inputBlob;
         }
       } else {
-        const base64Response = await fetch(imageDataUrl);
-        finalBlob = await base64Response.blob();
+        finalBlob = inputBlob;
       }
 
       const modePrefix = imageMode === 'bw' ? 'coloring-' : imageMode === 'text' ? 'text-' : '';

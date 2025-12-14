@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ImageUpload } from '@/components/ImageUpload';
@@ -93,6 +94,7 @@ export function BookEditorPanel({
   characterTheme,
 }: BookEditorPanelProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
@@ -250,10 +252,8 @@ export function BookEditorPanel({
 
       toast({ title: "Coloring page created", description: "B&W coloring book version generated" });
       
-      // Refresh to show the new image - trigger parent refresh if available
-      if (data.coloringImageUrl) {
-        // The parent component should refresh via real-time subscription or manual trigger
-      }
+      // Invalidate the book editor data to refresh and show the new coloring image
+      await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
     } catch (error: any) {
       console.error('Error generating coloring image:', error);
       const message = error.message?.includes('Rate limit') 

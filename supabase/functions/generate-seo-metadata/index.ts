@@ -219,12 +219,62 @@ Return only JSON format:
 
     console.log('SEO metadata stored with ID:', seoMetadata.id);
 
+    // Generate OG image from book cover
+    let generatedOgImageUrl = ogImageUrl || null;
+    try {
+      // Get the cover image (first page) for this book
+      const { data: coverImage } = await supabase
+        .from('page_image_urls')
+        .select('image_url')
+        .eq('book_id', bookId)
+        .eq('is_latest', true)
+        .not('image_url', 'is', null)
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .single();
+
+      if (coverImage?.image_url) {
+        console.log('Generating OG image from cover:', coverImage.image_url);
+        
+        // Call generate-og-image function
+        const ogResponse = await fetch(`${supabaseUrl}/functions/v1/generate-og-image`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${supabaseServiceKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            coverImageUrl: coverImage.image_url,
+            bookId: bookId,
+            dailyPublishedId: dailyPublishedId,
+            seoMetadataId: seoMetadata.id
+          }),
+        });
+
+        if (ogResponse.ok) {
+          const ogResult = await ogResponse.json();
+          if (ogResult.success && ogResult.ogImageUrl) {
+            generatedOgImageUrl = ogResult.ogImageUrl;
+            console.log('OG image generated:', generatedOgImageUrl);
+          }
+        } else {
+          console.error('OG image generation failed:', await ogResponse.text());
+        }
+      } else {
+        console.log('No cover image found for OG generation');
+      }
+    } catch (ogError) {
+      console.error('Error generating OG image:', ogError);
+      // Don't fail the whole request if OG generation fails
+    }
+
     return new Response(JSON.stringify({
       success: true,
       seoMetadataId: seoMetadata.id,
       version: versionNumber,
       optimizedTitle: parsed.title,
-      optimizedDescription: parsed.description
+      optimizedDescription: parsed.description,
+      ogImageUrl: generatedOgImageUrl
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

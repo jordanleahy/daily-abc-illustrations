@@ -59,8 +59,7 @@ serve(async (req) => {
       'book-creation-first-words',
       'book-creation-bedtime',
       'book-creation-cvc',
-      'book-creation-sight-words',
-      'book-creation-digraphs'
+      'book-creation-sight-words'
     ];
 
     const results = [];
@@ -201,20 +200,6 @@ function applyTypeSpecificAdjustments(instructions: string, agentType: string): 
     updated = updated.replace(/colors?\s+selection[^.]*\./gi, 'Present 10 different colors across the 10 content pages.');
   } else if (agentType === 'book-creation-shapes') {
     updated = updated.replace(/shapes?\s+selection[^.]*\./gi, 'Present 10 different shapes across the 10 content pages.');
-  } else if (agentType === 'book-creation-digraphs') {
-    // Ensure digraph focus mode question has proper SUGGEST blocks
-    const digraphFocusSuggest = `Ask: "Would you like to cover multiple digraphs or focus on one specific digraph?"
-
-[SUGGEST]
-random: 🎲 Random Digraphs (variety in one book)
-specific: 🎯 Specific Digraph (focus on one)
-[/SUGGEST]`;
-
-    // Replace any existing focus mode question without SUGGEST blocks
-    updated = updated.replace(
-      /Ask[:\s]*["']?Would you like to cover multiple digraphs or focus on one specific digraph\??["']?\s*(?!\[SUGGEST\])/gi,
-      digraphFocusSuggest
-    );
   }
 
   // Ensure all references to "Pages 3-X" become "Pages 3-12"

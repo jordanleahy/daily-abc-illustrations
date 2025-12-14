@@ -1,5 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { createCanvas, loadImage } from "https://deno.land/x/canvas@v1.4.2/mod.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +8,7 @@ const corsHeaders = {
 interface RequestBody {
   pageId: string;
   bookId: string;
+  imageBlob: string; // Base64 encoded image data from client-side compositing
 }
 
 Deno.serve(async (req) => {
@@ -44,94 +44,46 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { pageId, bookId } = await req.json() as RequestBody;
+    const { pageId, bookId, imageBlob } = await req.json() as RequestBody;
     console.log(`Processing text image for page: ${pageId}, book: ${bookId}`);
 
-    if (!pageId || !bookId) {
-      return new Response(JSON.stringify({ error: "Missing pageId or bookId" }), {
+    if (!pageId || !bookId || !imageBlob) {
+      return new Response(JSON.stringify({ error: "Missing pageId, bookId, or imageBlob" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    // Fetch page title
-    const { data: pageData, error: pageError } = await supabase
-      .from("pages")
-      .select("title")
-      .eq("id", pageId)
-      .single();
-
-    if (pageError || !pageData?.title) {
-      console.error("Page fetch error:", pageError);
-      return new Response(JSON.stringify({ error: "Could not fetch page title" }), {
-        status: 404,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // Fetch current color image URL
+    // Fetch current image record ID
     const { data: imageData, error: imageError } = await supabase
       .from("page_image_urls")
-      .select("id, image_url")
+      .select("id")
       .eq("page_id", pageId)
       .eq("is_latest", true)
       .single();
 
-    if (imageError || !imageData?.image_url) {
+    if (imageError || !imageData) {
       console.error("Image fetch error:", imageError);
-      return new Response(JSON.stringify({ error: "No color image found for this page" }), {
+      return new Response(JSON.stringify({ error: "No image record found for this page" }), {
         status: 404,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    console.log(`Fetching image from: ${imageData.image_url}`);
-    console.log(`Text to composite: "${pageData.title}"`);
-
-    // Load the source image using deno canvas
-    const image = await loadImage(imageData.image_url);
-    const width = image.width();
-    const height = image.height();
-    
-    console.log(`Image dimensions: ${width}x${height}`);
-
-    // Create canvas with same dimensions
-    const canvas = createCanvas(width, height);
-    const ctx = canvas.getContext("2d");
-
-    // Draw original image
-    ctx.drawImage(image, 0, 0);
-
-    // Calculate bar dimensions (scale based on image size)
-    const scaleFactor = width / 400;
-    const barHeight = Math.max(40, 60 * scaleFactor);
-    const fontSize = Math.max(16, 24 * scaleFactor);
-    const barOpacity = 0.6;
-
-    // Draw semi-transparent black bar at bottom
-    ctx.fillStyle = `rgba(0, 0, 0, ${barOpacity})`;
-    ctx.fillRect(0, height - barHeight, width, barHeight);
-
-    // Configure text
-    ctx.fillStyle = "white";
-    ctx.font = `bold ${fontSize}px sans-serif`;
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-
-    // Calculate text position (centered in bar)
-    const textX = width / 2;
-    const textY = height - (barHeight / 2);
-
-    // Draw text
-    ctx.fillText(pageData.title, textX, textY);
-
-    // Convert canvas to PNG buffer
-    const pngBuffer = canvas.toBuffer("image/png");
-    const pngBlob = new Blob([pngBuffer], { type: "image/png" });
+    // Decode base64 image
+    const base64Data = imageBlob.replace(/^data:image\/\w+;base64,/, "");
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const pngBlob = new Blob([bytes], { type: "image/png" });
 
     // Upload to storage
     const fileName = `page-${pageId}-text-${Date.now()}.png`;
     const filePath = `${user.id}/${bookId}/text/${fileName}`;
+
+    console.log(`Uploading to: ${filePath}`);
 
     const { error: uploadError } = await supabase.storage
       .from("page-images")
@@ -161,7 +113,7 @@ Deno.serve(async (req) => {
       throw updateError;
     }
 
-    console.log(`Text image generated successfully: ${urlData.publicUrl}`);
+    console.log(`Text image uploaded successfully: ${urlData.publicUrl}`);
 
     return new Response(
       JSON.stringify({ 

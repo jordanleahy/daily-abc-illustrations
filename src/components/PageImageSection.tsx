@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Loader2, Upload, Clipboard, Copy, ArrowLeft, Sparkles } from "lucide-react";
 import { ImageUpload } from "./ImageUpload";
 import { copyToClipboard } from '@/utils/clipboardHelpers';
+import { compositeTextOnImage } from '@/utils/imageTextCompositor';
 
 interface PageImageSectionProps {
   pageId: string;
@@ -121,7 +122,7 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
     }
   };
 
-  // Generate text image via server-side edge function
+  // Generate text image: client-side compositing, server-side upload
   const handleGenerateTextImage = async () => {
     if (!user || !currentImage?.image_url) {
       toast({
@@ -134,12 +135,41 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
 
     setIsGenerating(true);
     try {
+      // 1. Fetch the page title
+      const { data: pageData, error: pageError } = await supabase
+        .from('pages')
+        .select('title')
+        .eq('id', pageId)
+        .single();
+
+      if (pageError || !pageData?.title) {
+        throw new Error('Could not fetch page title');
+      }
+
+      // 2. Fetch the color image as blob
+      const imageResponse = await fetch(currentImage.image_url);
+      if (!imageResponse.ok) throw new Error('Failed to fetch color image');
+      const imageBlob = await imageResponse.blob();
+
+      // 3. Composite text on image (client-side canvas)
+      const compositedBlob = await compositeTextOnImage(imageBlob, pageData.title);
+
+      // 4. Convert blob to base64 for sending to edge function
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(compositedBlob);
+      const base64Image = await base64Promise;
+
+      // 5. Send to edge function for upload and DB update
       const { data, error } = await supabase.functions.invoke('generate-text-image', {
-        body: { pageId, bookId }
+        body: { pageId, bookId, imageBlob: base64Image }
       });
 
       if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate text image');
+      if (!data?.success) throw new Error(data?.error || 'Failed to upload text image');
 
       toast({
         title: "Text image generated",

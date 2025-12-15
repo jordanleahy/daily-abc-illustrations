@@ -76,28 +76,37 @@ export function UserBookCard({
     setIsCopyingMarketingPost(true);
     
     try {
-      // Fetch content pages (page_number >= 3)
-      const { data: pages, error } = await supabase
-        .from('pages')
-        .select('title, page_number')
-        .eq('book_id', book.id)
-        .gte('page_number', 3)
-        .order('page_number', { ascending: true });
+      // Create the text Promise immediately in user gesture context (iOS Safari fix)
+      const textPromise = async (): Promise<Blob> => {
+        // Fetch content pages inside the promise
+        const { data: pages, error } = await supabase
+          .from('pages')
+          .select('title, page_number')
+          .eq('book_id', book.id)
+          .gte('page_number', 3)
+          .order('page_number', { ascending: true });
+        
+        if (error) throw error;
+        
+        const pageTitles = pages?.map(p => p.title) || [];
+        const marketingUrl = `${SITE_CONFIG.productionUrl}/book/${book.marketing_url}`;
+        
+        const post = generateDigraphMarketingPost({
+          bookName: book.book_name,
+          bookDescription: book.book_description,
+          characterTheme: book.metadata?.characterTheme || null,
+          marketingUrl,
+          pageTitles,
+        });
+        
+        return new Blob([post], { type: 'text/plain' });
+      };
       
-      if (error) throw error;
+      // Call clipboard API immediately with the Promise (keeps user gesture context)
+      await navigator.clipboard.write([
+        new ClipboardItem({ 'text/plain': textPromise() })
+      ]);
       
-      const pageTitles = pages?.map(p => p.title) || [];
-      const marketingUrl = `${SITE_CONFIG.productionUrl}/book/${book.marketing_url}`;
-      
-      const post = generateDigraphMarketingPost({
-        bookName: book.book_name,
-        bookDescription: book.book_description,
-        characterTheme: book.metadata?.characterTheme || null,
-        marketingUrl,
-        pageTitles,
-      });
-      
-      await copyToClipboard(post);
       toast({ title: "Marketing post copied!" });
     } catch (error) {
       console.error('Failed to copy marketing post:', error);

@@ -284,26 +284,6 @@ export function UserBookCard({
                   <Link2 className="h-4 w-4" />
                   Copy Link
                 </Button>
-                {publicationStatus.slug && (
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    className="w-full gap-2"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const marketingLink = `${SITE_CONFIG.productionUrl}/book/${publicationStatus.slug}`;
-                      try {
-                        await copyToClipboard(marketingLink);
-                        toast({ title: "Marketing link copied" });
-                      } catch (error) {
-                        console.error('Failed to copy marketing link:', error);
-                      }
-                    }}
-                  >
-                    <Link2 className="h-4 w-4" />
-                    Copy Marketing Link
-                  </Button>
-                )}
               </>
             )}
           </div>

@@ -9,48 +9,33 @@ interface SchedulePublicationParams {
   description?: string;
 }
 
-// Helper to get book cover image URL
-const getBookCoverUrl = async (bookId: string): Promise<string | null> => {
-  const { data } = await supabase
-    .from('page_image_urls')
-    .select('image_url, pages!inner(page_type)')
-    .eq('book_id', bookId)
-    .eq('is_latest', true)
-    .eq('pages.page_type', 'cover')
-    .maybeSingle();
-  
-  return data?.image_url || null;
-};
 
-// Helper to generate OG image for a daily published entry
-const generateOgImage = async (
-  coverImageUrl: string,
+// Helper to generate SEO metadata (which also triggers OG image generation)
+const generateSeoMetadata = async (
   bookId: string,
-  dailyPublishedId: string
+  dailyPublishedId: string,
+  title: string,
+  description?: string
 ): Promise<void> => {
   try {
-    console.log('Generating OG image for book:', bookId);
+    console.log('Generating SEO metadata for book:', bookId);
     
-    const { data, error } = await supabase.functions.invoke('generate-og-image', {
+    const { error } = await supabase.functions.invoke('generate-seo-metadata', {
       body: {
-        coverImageUrl,
         bookId,
         dailyPublishedId,
+        contentTitle: title,
+        bookDescription: description,
       }
     });
 
     if (error) {
-      console.error('OG image generation failed:', error);
-      return;
-    }
-
-    if (data?.success) {
-      console.log('OG image generated successfully:', data.ogImageUrl);
+      console.error('SEO metadata generation failed:', error);
     } else {
-      console.error('OG image generation returned error:', data?.error);
+      console.log('SEO metadata generated successfully for book:', bookId);
     }
   } catch (err) {
-    console.error('Error calling generate-og-image:', err);
+    console.error('Error calling generate-seo-metadata:', err);
   }
 };
 
@@ -121,11 +106,10 @@ export const useScheduleBookPublication = () => {
         console.error('Failed to mark book as library book:', bookUpdateError);
       }
 
-      // Auto-generate OG image for social media thumbnails (fire and forget)
-      const coverUrl = await getBookCoverUrl(bookId);
-      if (coverUrl && data) {
+      // Auto-generate SEO metadata including OG image (fire and forget)
+      if (data) {
         // Don't await - let it run in background
-        generateOgImage(coverUrl, bookId, data.id);
+        generateSeoMetadata(bookId, data.id, title, description);
       }
 
       return { ...data, publish_date: publishDate };

@@ -67,6 +67,7 @@ import ForFamilies from "./pages/preview/ForFamilies";
 import ForGrandparents from "./pages/preview/ForGrandparents";
 import PreviewPricing from "./pages/preview/PreviewPricing";
 import BlogHome from "./pages/preview/BlogHome";
+import Explore from "./pages/Explore";
 import About from "./pages/About";
 import { useEffect } from "react";
 import { scheduleCacheCleanup } from "./utils/cacheCleanup";
@@ -149,6 +150,7 @@ const App = () => {
                 <Route path="/preview/family" element={<PreviewFamily />} />
                 <Route path="/preview/pricing" element={<PreviewPricing />} />
                 <Route path="/preview/blog" element={<BlogHome />} />
+                <Route path="/explore" element={<Explore />} />
                 <Route path="/about" element={<About />} />
                 
                 <Route path="/home" element={<ProtectedRoute requireSubscription={false}><Index /></ProtectedRoute>} />

@@ -827,28 +827,37 @@ export function BookEditorPanel({
                 )}
               </div>
             ) : isReplacing ? (
-              <div className="relative w-full h-full">
-                <ImageUpload 
-                  onImageSelect={(file) => {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                      onImageUpload(reader.result as string, imageMode);
-                      setIsReplacing(false);
-                    };
-                    reader.readAsDataURL(file);
-                  }}
+              imageMode === 'color' ? (
+                <ColorModeUploadSection
+                  onImageUpload={onImageUpload}
+                  onCopyPrompt={handleCopyPrompt}
                   disabled={createBookMutation.isPending}
-                  className="h-full"
+                  onCancel={() => setIsReplacing(false)}
                 />
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setIsReplacing(false)}
-                  className="absolute top-2 right-2 text-xs h-7"
-                >
-                  Cancel
-                </Button>
-              </div>
+              ) : (
+                <div className="relative w-full h-full">
+                  <ImageUpload 
+                    onImageSelect={(file) => {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        onImageUpload(reader.result as string, imageMode);
+                        setIsReplacing(false);
+                      };
+                      reader.readAsDataURL(file);
+                    }}
+                    disabled={createBookMutation.isPending}
+                    className="h-full"
+                  />
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsReplacing(false)}
+                    className="absolute top-2 right-2 text-xs h-7"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )
             ) : showConfirmation ? (
               <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
                 <div className="w-16 h-16 rounded-full bg-green-500/10 flex items-center justify-center mb-4 animate-in zoom-in duration-300">

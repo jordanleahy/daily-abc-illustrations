@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -16,8 +16,9 @@ import { getThemeDisplayName } from '@/types/characterTheme';
 import { getBookTypeDisplayName } from '@/types/bookType';
 import { supabase } from '@/integrations/supabase/client';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
+import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Copy, Link2 } from 'lucide-react';
+import { BookOpen, Copy, Link2, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -59,6 +60,7 @@ export function UserBookCard({
   const { user } = useAuthContext();
   const { toast } = useToast();
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
+  const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
   const coverImageUrl = book.coverImageUrl;
   
   const { ref, inView } = useIntersectionObserver({
@@ -68,6 +70,42 @@ export function UserBookCard({
   
   const shouldLoadImmediately = index < 6;
   const shouldRender = shouldLoadImmediately || inView;
+
+  const handleCopyMarketingPost = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsCopyingMarketingPost(true);
+    
+    try {
+      // Fetch content pages (page_number >= 3)
+      const { data: pages, error } = await supabase
+        .from('pages')
+        .select('title, page_number')
+        .eq('book_id', book.id)
+        .gte('page_number', 3)
+        .order('page_number', { ascending: true });
+      
+      if (error) throw error;
+      
+      const pageTitles = pages?.map(p => p.title) || [];
+      const marketingUrl = `${SITE_CONFIG.productionUrl}/book/${book.marketing_url}`;
+      
+      const post = generateDigraphMarketingPost({
+        bookName: book.book_name,
+        bookDescription: book.book_description,
+        characterTheme: book.metadata?.characterTheme || null,
+        marketingUrl,
+        pageTitles,
+      });
+      
+      await copyToClipboard(post);
+      toast({ title: "Marketing post copied!" });
+    } catch (error) {
+      console.error('Failed to copy marketing post:', error);
+      toast({ title: "Failed to copy", variant: "destructive" });
+    } finally {
+      setIsCopyingMarketingPost(false);
+    }
+  };
 
   const handleEditHover = useCallback(() => {
     queryClient.prefetchQuery({
@@ -244,6 +282,20 @@ export function UserBookCard({
               >
                 <Link2 className="h-4 w-4" />
                 Copy Marketing Link
+              </Button>
+            )}
+
+            {/* Marketing Post - Digraph books only */}
+            {book.metadata?.bookType === 'digraphs' && book.marketing_url && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={handleCopyMarketingPost}
+                disabled={isCopyingMarketingPost}
+              >
+                <Share2 className="h-4 w-4" />
+                {isCopyingMarketingPost ? 'Copying...' : 'Copy Marketing Post'}
               </Button>
             )}
 

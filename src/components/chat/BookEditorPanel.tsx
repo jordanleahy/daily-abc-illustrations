@@ -23,6 +23,7 @@ import { BookImage } from '@/components/ui/book-image';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { isContentPage } from '@/types/book';
 import { ColorModeUploadSection } from './ColorModeUploadSection';
+import { TextModeUploadSection } from './TextModeUploadSection';
 
 
 interface BookEditorPanelProps {
@@ -868,6 +869,12 @@ export function BookEditorPanel({
                   Upload area loading...
                 </p>
               </div>
+            ) : imageMode === 'text' ? (
+              <TextModeUploadSection
+                hasColorImage={hasColorImage}
+                onGenerate={handleGenerateTextImage}
+                isGenerating={isGeneratingTextImage}
+              />
             ) : !hasSeenOnboarding ? (
               <button
                 onClick={handleCopyPrompt}
@@ -894,21 +901,6 @@ export function BookEditorPanel({
                   Click to copy prompt for AI Studio
                 </p>
               </button>
-            ) : imageMode === 'text' && hasColorImage ? (
-              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-                <Button
-                  onClick={handleGenerateTextImage}
-                  size="lg"
-                  className="gap-2"
-                  disabled={isGeneratingTextImage}
-                >
-                  <Sparkles className="h-5 w-5" />
-                  {isGeneratingTextImage ? 'Generating...' : 'Generate Text Image'}
-                </Button>
-                <p className="text-xs text-muted-foreground mt-3">
-                  Adds text overlay to your color image
-                </p>
-              </div>
             ) : imageMode === 'bw' && hasColorImage ? (
               <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
                 <Button

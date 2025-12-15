@@ -8,12 +8,14 @@ interface ColorModeUploadSectionProps {
   onImageUpload: (base64: string, imageMode: 'color' | 'bw' | 'text') => void;
   onCopyPrompt: () => void;
   disabled?: boolean;
+  onCancel?: () => void;
 }
 
 export function ColorModeUploadSection({
   onImageUpload,
   onCopyPrompt,
   disabled = false,
+  onCancel,
 }: ColorModeUploadSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -25,6 +27,7 @@ export function ColorModeUploadSection({
     try {
       const processed = await processImage(file, { maxWidth: 1024, maxHeight: 1024 });
       onImageUpload(processed.dataUrl, 'color');
+      onCancel?.();
     } catch (error) {
       console.error('Error processing image:', error);
       toast({
@@ -50,6 +53,7 @@ export function ColorModeUploadSection({
           const file = new File([blob], 'pasted-image.png', { type: imageType });
           const processed = await processImage(file, { maxWidth: 1024, maxHeight: 1024 });
           onImageUpload(processed.dataUrl, 'color');
+          onCancel?.();
           return;
         }
       }
@@ -69,7 +73,17 @@ export function ColorModeUploadSection({
   }, [onImageUpload, toast]);
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center gap-3">
+    <div className="relative w-full h-full flex flex-col items-center justify-center p-4 text-center gap-3">
+      {onCancel && (
+        <Button
+          variant="secondary"
+          size="sm"
+          onClick={onCancel}
+          className="absolute top-2 right-2 text-xs h-7"
+        >
+          Cancel
+        </Button>
+      )}
       <input
         ref={fileInputRef}
         type="file"

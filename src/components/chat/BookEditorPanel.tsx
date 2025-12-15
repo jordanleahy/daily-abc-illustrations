@@ -647,17 +647,19 @@ export function BookEditorPanel({
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">Page Image</p>
             <div className="flex items-center gap-1 bg-muted rounded-full p-0.5">
-              <button 
-                onClick={() => setImageMode('text')}
-                className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
-                  imageMode === 'text' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                📝 Text
-                {hasTextImage && <span className="text-green-500 ml-0.5">✓</span>}
-              </button>
+              {hasColorImage && (
+                <button 
+                  onClick={() => setImageMode('text')}
+                  className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
+                    imageMode === 'text' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  📝 Text
+                  {hasTextImage && <span className="text-green-500 ml-0.5">✓</span>}
+                </button>
+              )}
               <button 
                 onClick={() => setImageMode('color')}
                 className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
@@ -669,17 +671,19 @@ export function BookEditorPanel({
                 🎨 Color
                 {hasColorImage && <span className="text-green-500 ml-0.5">✓</span>}
               </button>
-              <button 
-                onClick={() => setImageMode('bw')}
-                className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
-                  imageMode === 'bw' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                ⬜ B&W
-                {hasBwImage && <span className="text-green-500 ml-0.5">✓</span>}
-              </button>
+              {hasColorImage && (
+                <button 
+                  onClick={() => setImageMode('bw')}
+                  className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
+                    imageMode === 'bw' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  ⬜ B&W
+                  {hasBwImage && <span className="text-green-500 ml-0.5">✓</span>}
+                </button>
+              )}
             </div>
           </div>
           <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">

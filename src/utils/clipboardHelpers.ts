@@ -16,36 +16,35 @@ export async function copyImageToClipboard(imageUrl: string): Promise<void> {
   const scrollY = window.scrollY || window.pageYOffset;
 
   try {
-    // Fetch the image as a blob
-    const response = await fetch(imageUrl);
-    const blob = await response.blob();
-    
-    // Convert to PNG via canvas (clipboard requires PNG format)
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    
-    await new Promise<void>((resolve, reject) => {
-      img.onload = () => resolve();
-      img.onerror = () => reject(new Error('Failed to load image'));
-      img.src = imageUrl;
-    });
-    
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    const ctx = canvas.getContext('2d');
-    ctx?.drawImage(img, 0, 0);
-    
-    const pngBlob = await new Promise<Blob>((resolve, reject) => {
-      canvas.toBlob((b) => {
-        if (b) resolve(b);
-        else reject(new Error('Failed to create blob'));
-      }, 'image/png');
-    });
-    
-    // Copy to clipboard using ClipboardItem API
+    // Safari requires passing a Promise to ClipboardItem, not an already-resolved Blob
+    // This keeps the clipboard.write() call synchronous with the user gesture
+    const imagePromise = async (): Promise<Blob> => {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Failed to load image'));
+        img.src = imageUrl;
+      });
+      
+      const canvas = document.createElement('canvas');
+      canvas.width = img.naturalWidth;
+      canvas.height = img.naturalHeight;
+      const ctx = canvas.getContext('2d');
+      ctx?.drawImage(img, 0, 0);
+      
+      return new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((b) => {
+          if (b) resolve(b);
+          else reject(new Error('Failed to create blob'));
+        }, 'image/png');
+      });
+    };
+
+    // Pass the Promise to ClipboardItem (Safari-compatible)
     await navigator.clipboard.write([
-      new ClipboardItem({ 'image/png': pngBlob })
+      new ClipboardItem({ 'image/png': imagePromise() })
     ]);
     
     // Restore scroll position

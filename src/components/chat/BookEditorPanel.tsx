@@ -99,7 +99,7 @@ export function BookEditorPanel({
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [isEditingText, setIsEditingText] = useState(false);
   const [copiedPages, setCopiedPages] = useState<Set<number>>(new Set());
-  const [isThumbnailOpen, setIsThumbnailOpen] = useState(false);
+  
   const [isReplacing, setIsReplacing] = useState(false);
   const [isEditingOverlayText, setIsEditingOverlayText] = useState(false);
   const [hasRunQaAgent, setHasRunQaAgent] = useState(false);
@@ -107,7 +107,7 @@ export function BookEditorPanel({
   const [isGeneratingTextImage, setIsGeneratingTextImage] = useState(false);
   const [isGeneratingColoringImage, setIsGeneratingColoringImage] = useState(false);
   const [isCopyingImage, setIsCopyingImage] = useState(false);
-  const [isGeneratingThumbnail, setIsGeneratingThumbnail] = useState(false);
+  
   const { toast } = useToast();
   
   // Check if user has seen the onboarding (one-time only)
@@ -288,68 +288,6 @@ export function BookEditorPanel({
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [wordStatuses, setWordStatuses] = useState<Record<number, 'difficult' | 'understood'>>({});
 
-  // Generate thumbnail using AI
-  const handleGenerateThumbnail = async () => {
-    if (!bookTitle) {
-      toast({
-        title: "Missing title",
-        description: "Book title is required to generate a thumbnail",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    setIsGeneratingThumbnail(true);
-    try {
-      const { data, error } = await supabase.functions.invoke('generate-thumbnail', {
-        body: {
-          bookTitle,
-          bookDescription,
-          characterTheme,
-        },
-      });
-
-      if (error) throw error;
-      
-      if (data?.imageUrl) {
-        // Convert base64 to File and call onCoverUpload
-        const response = await fetch(data.imageUrl);
-        const blob = await response.blob();
-        // Use png type since the AI generates PNG images
-        const file = new File([blob], `generated-thumbnail-${Date.now()}.png`, { type: blob.type || 'image/png' });
-        
-        console.log('[Generate Thumbnail] Created file:', file.name, file.size, file.type);
-        
-        if (onCoverUpload) {
-          await onCoverUpload(file);
-          toast({
-            title: "Thumbnail generated",
-            description: "AI-generated thumbnail has been applied",
-          });
-        } else {
-          console.error('[Generate Thumbnail] onCoverUpload not provided');
-          toast({
-            title: "Cannot apply thumbnail",
-            description: "Missing upload handler - please try from the book editor",
-            variant: "destructive",
-          });
-        }
-      } else {
-        throw new Error("No image URL in response");
-      }
-    } catch (error) {
-      console.error('Error generating thumbnail:', error);
-      toast({
-        title: "Generation failed",
-        description: error instanceof Error ? error.message : "Failed to generate thumbnail",
-        variant: "destructive",
-      });
-    } finally {
-      setIsGeneratingThumbnail(false);
-    }
-  };
-
-  
   // Check if all pages have images uploaded
   const allImagesUploaded = useMemo(() => {
     if (!isBookCreated) return false;
@@ -974,92 +912,6 @@ export function BookEditorPanel({
 
       {/* Sticky Footer with Actions */}
       <div className="sticky bottom-0 bg-background border-t px-4 py-3 space-y-3 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-        {/* Thumbnail Image Upload - Show only when all page images are uploaded */}
-        {allImagesUploaded && onCoverUpload && (
-          <Collapsible open={isThumbnailOpen} onOpenChange={setIsThumbnailOpen}>
-            <CollapsibleTrigger asChild>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full flex items-center justify-between p-2 h-auto hover:bg-muted/50"
-              >
-                <p className="text-xs font-medium text-muted-foreground">Book Thumbnail (Optional)</p>
-                <ChevronDown 
-                  className={`h-4 w-4 text-muted-foreground transition-transform duration-200 ${
-                    isThumbnailOpen ? 'transform rotate-180' : ''
-                  }`}
-                />
-              </Button>
-            </CollapsibleTrigger>
-            <CollapsibleContent className="space-y-2 pt-2">
-              <div className="h-48 rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
-                {thumbnailUrl ? (
-                  <div className="relative w-full h-full group">
-                    <BookImage 
-                      src={thumbnailUrl} 
-                      alt="Book thumbnail preview"
-                      className="w-full h-full object-cover rounded-lg"
-                      priority={false}
-                    />
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => {
-                        // Trigger file picker to replace
-                        const input = document.createElement('input');
-                        input.type = 'file';
-                        input.accept = 'image/png,image/jpeg,image/jpg,image/webp';
-                        input.onchange = (e) => {
-                          const file = (e.target as HTMLInputElement).files?.[0];
-                          if (file) onCoverUpload(file);
-                        };
-                        input.click();
-                      }}
-                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
-                    >
-                      Replace
-                    </Button>
-                  </div>
-                ) : (
-                  <ImageUpload 
-                    onImageSelect={(file) => {
-                      // Store scroll position before processing
-                      const scrollX = window.scrollX || window.pageXOffset;
-                      const scrollY = window.scrollY || window.pageYOffset;
-                      
-                      onCoverUpload(file);
-                      
-                      // Restore scroll position after upload
-                      requestAnimationFrame(() => {
-                        window.scrollTo(scrollX, scrollY);
-                      });
-                    }}
-                    disabled={createBookMutation.isPending}
-                    className="h-full"
-                  />
-                )}
-              </div>
-              
-              {/* Generate Thumbnail Button */}
-              {bookTitle && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleGenerateThumbnail}
-                  disabled={isGeneratingThumbnail || createBookMutation.isPending}
-                  className="w-full flex items-center justify-center gap-2"
-                >
-                  {isGeneratingThumbnail ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="h-4 w-4" />
-                  )}
-                  {isGeneratingThumbnail ? 'Generating...' : 'Generate Image'}
-                </Button>
-              )}
-            </CollapsibleContent>
-          </Collapsible>
-        )}
         
         {/* Publish/Unpublish Toggle - Show when all images are uploaded */}
         {allImagesUploaded && onToggleStatus && (

@@ -516,8 +516,8 @@ export function BookEditorPanel({
         // Mark this page as copied
         setCopiedPages(prev => new Set(prev).add(currentPageNumber));
 
-        // Create book immediately if not already created
-        if (!isBookCreated && !createBookMutation.isPending) {
+        // Create book immediately if not already created (with additional guard)
+        if (!isBookCreated && !createBookMutation.isPending && !createBookMutation.isSuccess) {
           onCreateBook();
         }
 

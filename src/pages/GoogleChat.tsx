@@ -659,13 +659,27 @@ export default function GoogleChat() {
   }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId]);
 
   const handleCreateBook = useCallback(async () => {
+    // Guard 1: No active session
     if (!currentSessionId) {
       console.warn('No active session');
       return;
     }
 
+    // Guard 2: No messages
     if (messages.length === 0) {
       console.warn('Please have a conversation first');
+      return;
+    }
+
+    // Guard 3: Book already created for this session (prevents duplicates)
+    if (createdBookId) {
+      console.warn('[Book Creation] Book already exists for this session:', createdBookId);
+      return;
+    }
+
+    // Guard 4: Creation already in progress
+    if (createBookMutation.isPending) {
+      console.warn('[Book Creation] Book creation already in progress');
       return;
     }
 
@@ -812,7 +826,7 @@ export default function GoogleChat() {
       console.error('Book creation error:', error);
       // Error toast is handled by the mutation
     }
-  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, selectedCharacterTheme, selectedAgeRange, targetWords]);
+  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, selectedCharacterTheme, selectedAgeRange, targetWords, createdBookId]);
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
     // Handle special actions

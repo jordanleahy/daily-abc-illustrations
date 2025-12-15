@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { Checkbox } from '@/components/ui/checkbox';
 import { BookImage } from '@/components/ui/book-image';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { AdminOnly } from '@/components/AdminOnly';
@@ -17,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { SITE_CONFIG } from '@/config/site';
 import { BookOpen, Copy, Link2 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
 export interface UserBookCardProps {
@@ -31,6 +33,10 @@ export interface UserBookCardProps {
   isPublishing?: boolean;
   isUnpublishing?: boolean;
   isDeleting?: boolean;
+  // Selection mode props
+  selectionMode?: boolean;
+  isSelected?: boolean;
+  onSelectionChange?: (bookId: string, selected: boolean) => void;
 }
 
 export function UserBookCard({ 
@@ -45,6 +51,9 @@ export function UserBookCard({
   isPublishing,
   isUnpublishing,
   isDeleting,
+  selectionMode = false,
+  isSelected = false,
+  onSelectionChange,
 }: UserBookCardProps) {
   const queryClient = useQueryClient();
   const { user } = useAuthContext();
@@ -86,16 +95,39 @@ export function UserBookCard({
     });
   }, [book.id, queryClient]);
 
+  const handleCardClick = () => {
+    if (selectionMode) {
+      onSelectionChange?.(book.id, !isSelected);
+    } else {
+      onClick();
+    }
+  };
+
   return (
     <Card 
       ref={ref}
-      className="cursor-pointer hover:shadow-lg transition-shadow group overflow-hidden"
-      onClick={onClick}
+      className={cn(
+        "cursor-pointer hover:shadow-lg transition-shadow group overflow-hidden",
+        selectionMode && isSelected && "ring-2 ring-primary bg-primary/5"
+      )}
+      onClick={handleCardClick}
     >
       <CardHeader className="space-y-2">
-        <CardTitle className="text-lg group-hover:text-primary transition-colors">
-          {book.book_name}
-        </CardTitle>
+        <div className="flex items-start gap-3">
+          {selectionMode && (
+            <Checkbox
+              checked={isSelected}
+              onCheckedChange={(checked) => {
+                onSelectionChange?.(book.id, !!checked);
+              }}
+              onClick={(e) => e.stopPropagation()}
+              className="mt-1"
+            />
+          )}
+          <CardTitle className="text-lg group-hover:text-primary transition-colors flex-1">
+            {book.book_name}
+          </CardTitle>
+        </div>
         
         <div className="flex flex-wrap gap-2">
           {book.metadata?.bookType && (

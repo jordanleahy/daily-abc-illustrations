@@ -10,9 +10,11 @@ import { useRole } from '@/contexts/RoleContext';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useBooks } from '@/hooks/useBooks';
 import { useOptimizedSearch } from '@/hooks/useOptimizedSearch';
+import { useBulkDeleteBooks } from '@/hooks/useBulkDeleteBooks';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { BulkDeleteBar } from '@/components/books/BulkDeleteBar';
 
-import { BookOpen, Calendar, CheckCircle, Circle } from 'lucide-react';
+import { BookOpen, Calendar, CheckCircle, Circle, CheckSquare } from 'lucide-react';
 import { 
   Pagination, 
   PaginationContent, 
@@ -49,10 +51,15 @@ export default function Books() {
   const schedulePublication = useScheduleBookPublication();
   const deletePublication = useDeleteDailyPublished();
   const deleteBook = useDeleteBook();
+  const bulkDeleteBooks = useBulkDeleteBooks();
   
   // ⚡ PERFORMANCE: Only track editor open state - hooks load lazily in BookEditorContainer
   const [showEditor, setShowEditor] = useState(false);
   const [selectedBookId, setSelectedBookId] = useState<string | null>(null);
+  
+  // Selection mode for bulk delete
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedBookIds, setSelectedBookIds] = useState<Set<string>>(new Set());
   
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
@@ -99,6 +106,39 @@ export default function Books() {
     setSelectedBookId(null);
   };
 
+  // Selection mode handlers
+  const handleToggleSelectionMode = () => {
+    setSelectionMode(!selectionMode);
+    if (selectionMode) {
+      setSelectedBookIds(new Set()); // Clear selection when exiting
+    }
+  };
+
+  const handleSelectionChange = (bookId: string, selected: boolean) => {
+    setSelectedBookIds(prev => {
+      const next = new Set(prev);
+      if (selected) {
+        next.add(bookId);
+      } else {
+        next.delete(bookId);
+      }
+      return next;
+    });
+  };
+
+  const handleClearSelection = () => {
+    setSelectedBookIds(new Set());
+  };
+
+  const handleBulkDelete = () => {
+    bulkDeleteBooks.mutate(Array.from(selectedBookIds), {
+      onSuccess: () => {
+        setSelectedBookIds(new Set());
+        setSelectionMode(false);
+      },
+    });
+  };
+
   const pageTitle = "My Books";
   const pageDescription = "Create and manage your ABC books";
 
@@ -140,24 +180,39 @@ export default function Books() {
 
               {/* Admin-only completion filter toggle */}
               {isAdmin && (
-                <Tabs value={completionFilter} onValueChange={(v) => setCompletionFilter(v as 'completed' | 'not-completed')} className="max-w-md">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="completed" className="gap-2">
-                      <CheckCircle className="h-4 w-4" />
-                      Completed
-                    </TabsTrigger>
-                    <TabsTrigger value="not-completed" className="gap-2">
-                      <Circle className="h-4 w-4" />
-                      Not Completed
-                    </TabsTrigger>
-                  </TabsList>
-                </Tabs>
+                <div className="flex items-center gap-4">
+                  <Tabs value={completionFilter} onValueChange={(v) => setCompletionFilter(v as 'completed' | 'not-completed')} className="max-w-md">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="completed" className="gap-2">
+                        <CheckCircle className="h-4 w-4" />
+                        Completed
+                      </TabsTrigger>
+                      <TabsTrigger value="not-completed" className="gap-2">
+                        <Circle className="h-4 w-4" />
+                        Not Completed
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                  
+                  {/* Only show select button in Not Completed view */}
+                  {completionFilter === 'not-completed' && books && books.length > 0 && (
+                    <Button
+                      variant={selectionMode ? "default" : "outline"}
+                      size="sm"
+                      onClick={handleToggleSelectionMode}
+                      className="gap-2"
+                    >
+                      <CheckSquare className="h-4 w-4" />
+                      {selectionMode ? 'Cancel Select' : 'Select'}
+                    </Button>
+                  )}
+                </div>
               )}
 
               {books && books.length > 0 ? (
                 <>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {books.map((book, index) => (
+                     {books.map((book, index) => (
                       <UserBookCard
                         key={book.id}
                         book={book}
@@ -176,7 +231,9 @@ export default function Books() {
                         isPublishing={schedulePublication.isPending}
                         isUnpublishing={deletePublication.isPending}
                         isDeleting={deleteBook.isPending}
-                        
+                        selectionMode={selectionMode && completionFilter === 'not-completed'}
+                        isSelected={selectedBookIds.has(book.id)}
+                        onSelectionChange={handleSelectionChange}
                       />
                     ))}
                   </div>
@@ -244,6 +301,14 @@ export default function Books() {
           />
         )}
       </div>
+      
+      {/* Bulk delete floating bar */}
+      <BulkDeleteBar
+        selectedCount={selectedBookIds.size}
+        onClearSelection={handleClearSelection}
+        onDeleteConfirm={handleBulkDelete}
+        isDeleting={bulkDeleteBooks.isPending}
+      />
     </>
   );
 }

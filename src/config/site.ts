@@ -13,7 +13,7 @@ export const SITE_CONFIG = {
   
   // URLs and social
   url: typeof window !== 'undefined' ? window.location.origin : '',
-  productionUrl: 'https://dailyabcillustrations.com',
+  productionUrl: 'https://chairlifthabits.com',
   twitter: {
     handle: '@lovable_dev',
     creator: '@lovable_dev',

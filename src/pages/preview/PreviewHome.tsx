@@ -41,20 +41,6 @@ const PreviewHome = () => {
       {/* Everything in one app - Feature Grid */}
       <FeatureGrid />
 
-      {/* Deep Dive: Reading & Library */}
-      <DeepDiveSection
-        title="All your books, in one place"
-        description="Connect your Chairlift library and see every book your child explores. Daily AI books appear each morning at 7:01 AM Eastern Time. You choose what stays in rotation and what moves to the side."
-        features={[
-          'Multiple book types: ABC, numbers, animals, colors, emotions, shapes, sight words, and more',
-          'Text overlays on top of illustrations for an easy mobile reading experience',
-          'Word learning system that highlights new vocabulary and tracks exposure over time'
-        ]}
-        ctaText="Explore the reading experience"
-        ctaLink="/preview/tracking"
-        imagePosition="left"
-      />
-
       {/* Deep Dive: Habits & Rewards */}
       <DeepDiveSection
         title="Habits and rewards that stick"
@@ -66,6 +52,20 @@ const PreviewHome = () => {
         ]}
         ctaText="See how habits work"
         ctaLink="/preview/habits"
+        imagePosition="left"
+      />
+
+      {/* Deep Dive: Reading & Library */}
+      <DeepDiveSection
+        title="All your books, in one place"
+        description="Connect your Chairlift library and see every book your child explores. Daily AI books appear each morning at 7:01 AM Eastern Time. You choose what stays in rotation and what moves to the side."
+        features={[
+          'Multiple book types: ABC, numbers, animals, colors, emotions, shapes, sight words, and more',
+          'Text overlays on top of illustrations for an easy mobile reading experience',
+          'Word learning system that highlights new vocabulary and tracks exposure over time'
+        ]}
+        ctaText="Explore the reading experience"
+        ctaLink="/preview/tracking"
         imagePosition="right"
       />
 

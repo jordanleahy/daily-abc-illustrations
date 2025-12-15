@@ -9,6 +9,51 @@ interface SchedulePublicationParams {
   description?: string;
 }
 
+// Helper to get book cover image URL
+const getBookCoverUrl = async (bookId: string): Promise<string | null> => {
+  const { data } = await supabase
+    .from('page_image_urls')
+    .select('image_url, pages!inner(page_type)')
+    .eq('book_id', bookId)
+    .eq('is_latest', true)
+    .eq('pages.page_type', 'cover')
+    .maybeSingle();
+  
+  return data?.image_url || null;
+};
+
+// Helper to generate OG image for a daily published entry
+const generateOgImage = async (
+  coverImageUrl: string,
+  bookId: string,
+  dailyPublishedId: string
+): Promise<void> => {
+  try {
+    console.log('Generating OG image for book:', bookId);
+    
+    const { data, error } = await supabase.functions.invoke('generate-og-image', {
+      body: {
+        coverImageUrl,
+        bookId,
+        dailyPublishedId,
+      }
+    });
+
+    if (error) {
+      console.error('OG image generation failed:', error);
+      return;
+    }
+
+    if (data?.success) {
+      console.log('OG image generated successfully:', data.ogImageUrl);
+    } else {
+      console.error('OG image generation returned error:', data?.error);
+    }
+  } catch (err) {
+    console.error('Error calling generate-og-image:', err);
+  }
+};
+
 export const useScheduleBookPublication = () => {
   const queryClient = useQueryClient();
 
@@ -74,7 +119,13 @@ export const useScheduleBookPublication = () => {
 
       if (bookUpdateError) {
         console.error('Failed to mark book as library book:', bookUpdateError);
-        // Don't throw - the book is still scheduled, just won't appear in library yet
+      }
+
+      // Auto-generate OG image for social media thumbnails (fire and forget)
+      const coverUrl = await getBookCoverUrl(bookId);
+      if (coverUrl && data) {
+        // Don't await - let it run in background
+        generateOgImage(coverUrl, bookId, data.id);
       }
 
       return { ...data, publish_date: publishDate };

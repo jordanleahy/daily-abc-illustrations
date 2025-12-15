@@ -290,7 +290,7 @@ export function UserBookCard({
                 }}
               >
                 <Link2 className="h-4 w-4" />
-                Copy Marketing Link
+                Landing Page
               </Button>
             )}
 
@@ -304,7 +304,7 @@ export function UserBookCard({
                 disabled={isCopyingMarketingPost}
               >
                 <Share2 className="h-4 w-4" />
-                {isCopyingMarketingPost ? 'Copying...' : 'Copy Social Post'}
+                {isCopyingMarketingPost ? 'Copying...' : 'Social Post'}
               </Button>
             )}
 
@@ -343,7 +343,7 @@ export function UserBookCard({
                   }}
                 >
                   <Link2 className="h-4 w-4" />
-                  Copy Link
+                  Library Link
                 </Button>
               </>
             )}

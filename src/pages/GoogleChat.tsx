@@ -184,6 +184,14 @@ export default function GoogleChat() {
     },
     enabled: !!createdBookId,
   });
+
+  // Sync selectedBookType from book metadata when loading a session with a created book
+  useEffect(() => {
+    const bookType = (bookData?.metadata as { bookType?: string } | null)?.bookType;
+    if (bookType && !selectedBookType) {
+      setSelectedBookType(bookType as BookTypeId);
+    }
+  }, [bookData?.metadata, selectedBookType]);
   
   // Only show "View Book" if book is published
   const isBookPublished = bookData?.status === 'published';
@@ -972,11 +980,16 @@ export default function GoogleChat() {
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
         setIsMobileSidebarOpen(false);
-        setSelectedBookType(null);
         setReplacePageMode({});
         
-        // Load editor images and prompts from the selected session
+        // Only reset book type if the session has no created book
+        // If it has a created book, useEffect will sync from bookData.metadata
         const session = sessions.find(s => s.id === sessionId);
+        if (!session?.created_book_id) {
+          setSelectedBookType(null);
+        }
+        
+        // Load editor images and prompts from the selected session
         if (session?.qa_page_images) {
           setEditorPageImages(session.qa_page_images);
         } else {

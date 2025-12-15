@@ -101,6 +101,7 @@ export const useDuplicateBook = () => {
           book_description: newDescription,
           total_pages: originalBook.total_pages,
           status: 'draft',
+          metadata: applyReplacementsToJson(originalBook.metadata),
         })
         .select()
         .single();

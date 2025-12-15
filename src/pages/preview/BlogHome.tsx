@@ -1,35 +1,29 @@
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { Link } from 'react-router-dom';
+import { format } from 'date-fns';
 import { PreviewPageLayout } from '@/components/preview/layout/PreviewPageLayout';
 import { PreviewSection } from '@/components/preview/layout/PreviewSection';
 
 const BlogHome = () => {
-  const categories = [
-    'Reading habits',
-    'Parent scripts and routines',
-    'Rewards and motivation',
-    'Screen-time tradeoffs',
-    'Chairlift product tips'
-  ];
+  const { data: posts, isLoading } = useQuery({
+    queryKey: ['blog-posts-public'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('blog_posts')
+        .select('*')
+        .eq('status', 'published')
+        .order('published_at', { ascending: false });
+      
+      if (error) throw error;
+      return data;
+    },
+  });
 
-  const featuredPosts = [
-    {
-      title: 'How to start a daily reading habit with your toddler',
-      excerpt: 'Short, practical guidance for parents who want stronger reading habits at home.',
-      category: 'Reading habits',
-      readTime: '5 min read'
-    },
-    {
-      title: 'The coin system: Making rewards feel fair for kids',
-      excerpt: 'Learn how to use Chairlift\'s coin and rewards system to motivate consistent reading.',
-      category: 'Rewards and motivation',
-      readTime: '4 min read'
-    },
-    {
-      title: '5 parent scripts for bedtime reading resistance',
-      excerpt: 'What to say when your child doesn\'t want to read before bed.',
-      category: 'Parent scripts and routines',
-      readTime: '6 min read'
-    }
-  ];
+  // Extract unique tags from all posts for categories
+  const categories = posts
+    ? [...new Set(posts.flatMap(post => post.tags || []))]
+    : [];
 
   return (
     <PreviewPageLayout>
@@ -46,56 +40,74 @@ const BlogHome = () => {
       </PreviewSection>
 
       {/* Categories */}
-      <PreviewSection variant="default">
-        <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-6">Categories</h2>
-          <div className="flex flex-wrap gap-3">
-            {categories.map((category) => (
-              <div
-                key={category}
-                className="px-4 py-2 rounded-full border border-border bg-card hover:bg-accent transition-colors cursor-pointer"
-              >
-                <span className="text-sm font-medium text-foreground">{category}</span>
-              </div>
-            ))}
+      {categories.length > 0 && (
+        <PreviewSection variant="default">
+          <div className="max-w-4xl mx-auto">
+            <h2 className="text-2xl font-bold text-foreground mb-6">Categories</h2>
+            <div className="flex flex-wrap gap-3">
+              {categories.map((category) => (
+                <div
+                  key={category}
+                  className="px-4 py-2 rounded-full border border-border bg-card hover:bg-accent transition-colors cursor-pointer"
+                >
+                  <span className="text-sm font-medium text-foreground">{category}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      </PreviewSection>
+        </PreviewSection>
+      )}
 
-      {/* Featured Posts */}
+      {/* Blog Posts */}
       <PreviewSection variant="feature" className="bg-muted/30">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl font-bold text-foreground mb-8">Featured articles</h2>
+          <h2 className="text-2xl font-bold text-foreground mb-8">Latest articles</h2>
+          
+          {isLoading && (
+            <div className="text-center py-8 text-muted-foreground">Loading posts...</div>
+          )}
+
+          {!isLoading && !posts?.length && (
+            <div className="text-center py-12 text-muted-foreground">
+              No blog posts published yet. Check back soon!
+            </div>
+          )}
+
           <div className="space-y-6">
-            {featuredPosts.map((post, index) => (
-              <div
-                key={index}
-                className="p-6 rounded-lg border border-border bg-card hover:shadow-lg transition-shadow cursor-pointer"
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-xs font-semibold text-primary uppercase tracking-wide">
-                    {post.category}
-                  </span>
-                  <span className="text-xs text-muted-foreground">{post.readTime}</span>
+            {posts?.map((post) => (
+              <Link key={post.id} to={`/blog/${post.slug}`}>
+                <div className="p-6 rounded-lg border border-border bg-card hover:shadow-lg transition-shadow cursor-pointer">
+                  {post.featured_image_url && (
+                    <img 
+                      src={post.featured_image_url} 
+                      alt={post.title}
+                      className="w-full h-48 object-cover rounded-md mb-4"
+                    />
+                  )}
+                  <div className="flex items-center gap-3 mb-3">
+                    {post.tags && post.tags[0] && (
+                      <span className="text-xs font-semibold text-primary uppercase tracking-wide">
+                        {post.tags[0]}
+                      </span>
+                    )}
+                    {post.published_at && (
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(post.published_at), 'MMMM d, yyyy')}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="text-xl font-bold text-foreground mb-2">
+                    {post.title}
+                  </h3>
+                  {post.excerpt && (
+                    <p className="text-muted-foreground">
+                      {post.excerpt}
+                    </p>
+                  )}
                 </div>
-                <h3 className="text-xl font-bold text-foreground mb-2">
-                  {post.title}
-                </h3>
-                <p className="text-muted-foreground">
-                  {post.excerpt}
-                </p>
-              </div>
+              </Link>
             ))}
           </div>
-        </div>
-      </PreviewSection>
-
-      {/* Coming Soon */}
-      <PreviewSection variant="default">
-        <div className="max-w-3xl mx-auto text-center">
-          <p className="text-muted-foreground">
-            More articles coming soon. Check back regularly for new content on building reading habits with your family.
-          </p>
         </div>
       </PreviewSection>
     </PreviewPageLayout>

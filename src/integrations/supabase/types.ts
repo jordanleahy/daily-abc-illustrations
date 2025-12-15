@@ -359,6 +359,48 @@ export type Database = {
           },
         ]
       }
+      book_social_posts: {
+        Row: {
+          book_id: string
+          created_at: string
+          id: string
+          platform: string
+          posted_at: string
+          user_id: string
+        }
+        Insert: {
+          book_id: string
+          created_at?: string
+          id?: string
+          platform: string
+          posted_at?: string
+          user_id: string
+        }
+        Update: {
+          book_id?: string
+          created_at?: string
+          id?: string
+          platform?: string
+          posted_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_social_posts_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "book_social_posts_book_id_fkey"
+            columns: ["book_id"]
+            isOneToOne: false
+            referencedRelation: "kid_last_viewed_book_with_cover"
+            referencedColumns: ["book_id"]
+          },
+        ]
+      }
       book_system_prompts: {
         Row: {
           book_id: string

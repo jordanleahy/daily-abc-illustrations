@@ -8,6 +8,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { BookImage } from '@/components/ui/book-image';
 import { DeleteConfirmDialog } from '@/components/shared/DeleteConfirmDialog';
 import { AdminOnly } from '@/components/AdminOnly';
+import { SocialPostTracker } from '@/components/books/SocialPostTracker';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
 import { useAuthContext } from '@/contexts/AuthContext';
@@ -61,6 +62,7 @@ export function UserBookCard({
   const { toast } = useToast();
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
   const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
+  const [showSocialIcons, setShowSocialIcons] = useState(false);
   const coverImageUrl = book.coverImageUrl;
   
   const { ref, inView } = useIntersectionObserver({
@@ -296,16 +298,22 @@ export function UserBookCard({
 
             {/* Marketing Post - Digraph books only */}
             {book.metadata?.bookType === 'digraphs' && book.marketing_url && (
-              <Button 
-                variant="outline"
-                size="sm"
-                className="w-full gap-2"
-                onClick={handleCopyMarketingPost}
-                disabled={isCopyingMarketingPost}
-              >
-                <Share2 className="h-4 w-4" />
-                {isCopyingMarketingPost ? 'Copying...' : 'Social Post'}
-              </Button>
+              <div className="space-y-2">
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2"
+                  onClick={(e) => {
+                    handleCopyMarketingPost(e);
+                    setShowSocialIcons(true);
+                  }}
+                  disabled={isCopyingMarketingPost}
+                >
+                  <Share2 className="h-4 w-4" />
+                  {isCopyingMarketingPost ? 'Copying...' : 'Social Post'}
+                </Button>
+                {showSocialIcons && <SocialPostTracker bookId={book.id} />}
+              </div>
             )}
 
             <Button 

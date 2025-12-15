@@ -62,7 +62,6 @@ export function UserBookCard({
   const { toast } = useToast();
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
   const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
-  const [showSocialIcons, setShowSocialIcons] = useState(false);
   const coverImageUrl = book.coverImageUrl;
   
   const { ref, inView } = useIntersectionObserver({
@@ -303,16 +302,13 @@ export function UserBookCard({
                   variant="outline"
                   size="sm"
                   className="w-full gap-2"
-                  onClick={(e) => {
-                    handleCopyMarketingPost(e);
-                    setShowSocialIcons(true);
-                  }}
+                  onClick={handleCopyMarketingPost}
                   disabled={isCopyingMarketingPost}
                 >
                   <Share2 className="h-4 w-4" />
                   {isCopyingMarketingPost ? 'Copying...' : 'Social Post'}
                 </Button>
-                {showSocialIcons && <SocialPostTracker bookId={book.id} />}
+                <SocialPostTracker bookId={book.id} />
               </div>
             )}
 

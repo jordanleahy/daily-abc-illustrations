@@ -231,7 +231,7 @@ export const useGoogleChat = (
             };
           }
           
-          // Title approval fallback
+        // Title approval fallback
           if (cleanedText.includes('Looks perfect') || cleanedText.includes('Create the book')) {
             return { 
               cleanContent: cleanedText, 
@@ -239,6 +239,91 @@ export const useGoogleChat = (
                 { id: 'approve', label: '✅ Looks perfect! Create the book', value: 'create_book' },
                 { id: 'edit-title', label: '✏️ Change the title', value: 'Change the title' },
                 { id: 'edit-description', label: '📝 Update the description', value: 'Update the description' },
+              ]
+            };
+          }
+        }
+
+        // Fallback: Digraph agent questions
+        if (!match && effectiveBookType === 'digraphs') {
+          // Digraph scope selection fallback
+          if (cleanedText.includes('multiple digraphs') || cleanedText.includes('specific digraph') || cleanedText.includes('Random Digraphs') || cleanedText.includes('Specific Digraph')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'mixed', label: 'Random Digraphs (variety in one book)', value: 'Random Digraphs' },
+                { id: 'specific', label: 'Specific Digraph (master one sound)', value: 'Specific Digraph' },
+              ]
+            };
+          }
+          
+          // Specific digraph selection fallback
+          if (cleanedText.includes('Which specific digraph') || cleanedText.includes('which digraph')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'ch', label: 'ch (chair, cheese)', value: 'ch' },
+                { id: 'sh', label: 'sh (ship, shell)', value: 'sh' },
+                { id: 'th', label: 'th (think, thumb)', value: 'th' },
+                { id: 'wh', label: 'wh (whale, wheel)', value: 'wh' },
+                { id: 'ph', label: 'ph (phone, photo)', value: 'ph' },
+                { id: 'ck', label: 'ck (duck, sock)', value: 'ck' },
+                { id: 'ng', label: 'ng (ring, sing)', value: 'ng' },
+                { id: 'gh', label: 'gh (ghost, night)', value: 'gh' },
+                { id: 'kn', label: 'kn (knee, knife)', value: 'kn' },
+                { id: 'wr', label: 'wr (write, wrist)', value: 'wr' },
+                { id: 'qu', label: 'qu (queen, quilt)', value: 'qu' },
+                { id: 'sc', label: 'sc (scene, scent)', value: 'sc' },
+                { id: 'sk', label: 'sk (sky, skip)', value: 'sk' },
+                { id: 'sm', label: 'sm (small, smile)', value: 'sm' },
+                { id: 'sn', label: 'sn (snow, snake)', value: 'sn' },
+                { id: 'sp', label: 'sp (spin, spot)', value: 'sp' },
+                { id: 'st', label: 'st (star, stop)', value: 'st' },
+                { id: 'sw', label: 'sw (swim, swing)', value: 'sw' },
+                { id: 'tch', label: 'tch (watch, catch)', value: 'tch' },
+                { id: 'dge', label: 'dge (badge, edge)', value: 'dge' },
+              ]
+            };
+          }
+        }
+
+        // Generic fallbacks for common discovery patterns across all book types
+        if (!match) {
+          // Age group selection fallback
+          if (cleanedText.toLowerCase().includes('what age') || cleanedText.toLowerCase().includes('age group') || cleanedText.toLowerCase().includes('age range')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: '1-2', label: '1-2 years', value: '1-2 years' },
+                { id: '2-3', label: '2-3 years', value: '2-3 years' },
+                { id: '3-4', label: '3-4 years', value: '3-4 years' },
+                { id: '4-5', label: '4-5 years', value: '4-5 years' },
+                { id: '5-6', label: '5-6 years', value: '5-6 years' },
+              ]
+            };
+          }
+
+          // Page count selection fallback
+          if (cleanedText.toLowerCase().includes('how many') && (cleanedText.toLowerCase().includes('page') || cleanedText.toLowerCase().includes('content'))) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'pages-5', label: '5 pages (quick intro)', value: '5 pages' },
+                { id: 'pages-10', label: '10 pages (standard)', value: '10 pages' },
+                { id: 'pages-15', label: '15 pages (comprehensive)', value: '15 pages' },
+                { id: 'pages-20', label: '20 pages (deep dive)', value: '20 pages' },
+              ]
+            };
+          }
+
+          // Title/description approval fallback
+          if (cleanedText.includes('Looks great') || cleanedText.includes('approve') || cleanedText.includes('sound good') || cleanedText.includes('look good')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'approve', label: '✓ Looks great!', value: 'Looks great!' },
+                { id: 'edit-title', label: 'Edit title', value: 'Edit title' },
+                { id: 'edit-description', label: 'Edit description', value: 'Edit description' },
               ]
             };
           }

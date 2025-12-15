@@ -735,6 +735,18 @@ export function BookEditorPanel({
                   )}
                 </div>
                 
+                {/* Replace chip for B&W mode - top left */}
+                {imageMode === 'bw' && (
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => setIsReplacing(true)}
+                    className="absolute top-2 left-2 text-xs h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
+                  >
+                    Replace
+                  </Button>
+                )}
+                
                 
                 {/* Show/Hide Overlay buttons - only for content pages in color mode */}
                 {imageMode === 'color' && shouldShowTextOverlay && currentPageId && isOverlayHidden(currentPageId) && (

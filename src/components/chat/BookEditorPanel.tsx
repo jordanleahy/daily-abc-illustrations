@@ -839,6 +839,14 @@ export function BookEditorPanel({
                 onGenerate={handleGenerateTextImage}
                 isGenerating={isGeneratingTextImage}
               />
+            ) : imageMode === 'bw' ? (
+              <BWModeUploadSection
+                onImageUpload={onImageUpload}
+                onGenerate={handleGenerateColoringImage}
+                hasColorImage={hasColorImage}
+                isGenerating={isGeneratingColoringImage}
+                disabled={createBookMutation.isPending}
+              />
             ) : !hasSeenOnboarding ? (
               <button
                 onClick={handleCopyPrompt}
@@ -865,14 +873,6 @@ export function BookEditorPanel({
                   Click to copy prompt for AI Studio
                 </p>
               </button>
-            ) : imageMode === 'bw' ? (
-              <BWModeUploadSection
-                onImageUpload={onImageUpload}
-                onGenerate={handleGenerateColoringImage}
-                hasColorImage={hasColorImage}
-                isGenerating={isGeneratingColoringImage}
-                disabled={createBookMutation.isPending}
-              />
             ) : imageMode === 'color' ? (
               <ColorModeUploadSection
                 onImageUpload={onImageUpload}

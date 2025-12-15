@@ -83,7 +83,7 @@ export const useDuplicateBook = () => {
       }
 
       // Apply replacements to book fields
-      const newBookName = applyReplacements(`${originalBook.book_name} (Copy)`);
+      const newBookName = applyReplacements(originalBook.book_name);
       const newDescription = applyReplacements(originalBook.book_description);
       
       // Log replacements

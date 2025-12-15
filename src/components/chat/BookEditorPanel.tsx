@@ -24,6 +24,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { isContentPage } from '@/types/book';
 import { ColorModeUploadSection } from './ColorModeUploadSection';
 import { TextModeUploadSection } from './TextModeUploadSection';
+import { BWModeUploadSection } from './BWModeUploadSection';
 
 
 interface BookEditorPanelProps {
@@ -777,6 +778,15 @@ export function BookEditorPanel({
                   disabled={createBookMutation.isPending}
                   onCancel={() => setIsReplacing(false)}
                 />
+              ) : imageMode === 'bw' ? (
+                <BWModeUploadSection
+                  onImageUpload={onImageUpload}
+                  onGenerate={handleGenerateColoringImage}
+                  hasColorImage={hasColorImage}
+                  isGenerating={isGeneratingColoringImage}
+                  disabled={createBookMutation.isPending}
+                  onCancel={() => setIsReplacing(false)}
+                />
               ) : (
                 <div className="relative w-full h-full">
                   <ImageUpload 
@@ -843,25 +853,14 @@ export function BookEditorPanel({
                   Click to copy prompt for AI Studio
                 </p>
               </button>
-            ) : imageMode === 'bw' && hasColorImage ? (
-              <div className="w-full h-full flex flex-col items-center justify-center p-6 text-center">
-                <Button
-                  onClick={handleGenerateColoringImage}
-                  size="lg"
-                  className="gap-2"
-                  disabled={isGeneratingColoringImage}
-                >
-                  {isGeneratingColoringImage ? (
-                    <Loader2 className="h-5 w-5 animate-spin" />
-                  ) : (
-                    <Wand2 className="h-5 w-5" />
-                  )}
-                  {isGeneratingColoringImage ? 'Generating...' : 'Generate Coloring Page'}
-                </Button>
-                <p className="text-xs text-muted-foreground mt-3">
-                  Converts color image to B&W outline for coloring
-                </p>
-              </div>
+            ) : imageMode === 'bw' ? (
+              <BWModeUploadSection
+                onImageUpload={onImageUpload}
+                onGenerate={handleGenerateColoringImage}
+                hasColorImage={hasColorImage}
+                isGenerating={isGeneratingColoringImage}
+                disabled={createBookMutation.isPending}
+              />
             ) : imageMode === 'color' ? (
               <ColorModeUploadSection
                 onImageUpload={onImageUpload}

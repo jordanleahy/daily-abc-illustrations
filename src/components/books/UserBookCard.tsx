@@ -295,7 +295,7 @@ export function UserBookCard({
                 disabled={isCopyingMarketingPost}
               >
                 <Share2 className="h-4 w-4" />
-                {isCopyingMarketingPost ? 'Copying...' : 'Copy Marketing Post'}
+                {isCopyingMarketingPost ? 'Copying...' : 'Copy Social Post'}
               </Button>
             )}
 

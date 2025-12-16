@@ -148,6 +148,33 @@ serve(async (req) => {
       });
     }
 
+    // Check trial status FIRST before checking Stripe
+    const { data: profile, error: profileError } = await supabaseClient
+      .from('profiles')
+      .select('trial_ends_at')
+      .eq('id', user.id)
+      .single();
+
+    if (!profileError && profile?.trial_ends_at) {
+      const trialEndsAt = new Date(profile.trial_ends_at);
+      const isInTrial = trialEndsAt > new Date();
+      
+      if (isInTrial) {
+        logStep("User is in active trial", { trialEndsAt: profile.trial_ends_at });
+        const trialResult = {
+          subscribed: true,
+          is_trial: true,
+          trial_ends_at: profile.trial_ends_at,
+        };
+        setCachedResult(cacheKey, trialResult);
+        return new Response(JSON.stringify(trialResult), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+    }
+
+    // If not in trial, check Stripe subscription
     // Retrieve Stripe key only after authentication
     const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
     if (!stripeKey) {

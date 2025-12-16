@@ -74,6 +74,8 @@ interface ReadingHeaderProps {
   hasNext?: boolean;
   /** Label for the back button - defaults to "Library" */
   backLabel?: string;
+  /** Whether to show kid name and coin balance - defaults to true */
+  showKidInfo?: boolean;
 }
 
 /**
@@ -92,7 +94,8 @@ export function ReadingHeader({
   onNext,
   hasPrevious = false,
   hasNext = false,
-  backLabel = "Library"
+  backLabel = "Library",
+  showKidInfo = true
 }: ReadingHeaderProps) {
   const { qrCodeData } = useBookQRCode(showQRCode ? (bookId || undefined) : undefined);
   const navigate = useNavigate();
@@ -130,9 +133,9 @@ export function ReadingHeader({
         )}
       </div>
       
-      {/* Center section: Kid info - Only show coins for Plus tier users */}
+      {/* Center section: Kid info - Only show coins for Plus tier users when showKidInfo is true */}
       <div className="flex items-center gap-2 text-sm">
-        {displayKid && hasHabitsRewards && (
+        {showKidInfo && displayKid && hasHabitsRewards && (
           <>
             <span className="font-medium text-foreground">{displayKid.first_name}</span>
             <span className="text-muted-foreground">•</span>

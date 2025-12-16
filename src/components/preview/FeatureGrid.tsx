@@ -1,4 +1,4 @@
-import { BookOpen, Target, Gift, Users, Snowflake, Palette } from 'lucide-react';
+import { BookOpen, Target, Gift, Users, Snowflake, Palette, Youtube } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
@@ -12,6 +12,13 @@ export const FeatureGrid = () => {
       subtitle: 'Build habits that stick',
       description: 'Create daily habits for reading, chores, brushing teeth, or anything else. Mark them done from any device in a few taps. Turn streaks into coins so kids feel proud of their progress.',
       link: '/preview/habits'
+    },
+    {
+      icon: Youtube,
+      title: 'Embedded YouTube',
+      subtitle: '$1 = 5 minutes, then it stops',
+      description: 'YouTube plays right in the app with a countdown timer. Kids earn 1¢ per page read—$1 unlocks 5 minutes of screen time. When time\'s up, they\'re redirected back to books or habits. Customize the rewards to fit your family.',
+      link: '/preview/rewards'
     },
     {
       icon: BookOpen,

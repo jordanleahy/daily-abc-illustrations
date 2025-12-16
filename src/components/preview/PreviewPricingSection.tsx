@@ -18,7 +18,7 @@ export const PreviewPricingSection = () => {
           </p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className="grid md:grid-cols-3 gap-6">
           {/* Free Plan */}
           <div className="p-8 rounded-lg border-2 border-border bg-card">
             <h3 className="text-2xl font-bold text-foreground mb-4">Free</h3>
@@ -34,6 +34,30 @@ export const PreviewPricingSection = () => {
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <span className="text-muted-foreground">Basic reading history for one child</span>
+              </li>
+            </ul>
+          </div>
+
+          {/* Annual Pass */}
+          <div className="p-8 rounded-lg border-2 border-border bg-card">
+            <h3 className="text-2xl font-bold text-foreground mb-4">Annual Pass</h3>
+            <div className="mb-4">
+              <span className="text-3xl font-bold text-foreground">$8.99</span>
+              <span className="text-muted-foreground">/month</span>
+              <p className="text-sm text-muted-foreground mt-1">billed annually</p>
+            </div>
+            <ul className="space-y-3 mb-8">
+              <li className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-muted-foreground">Full library access for all book types</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-muted-foreground">Habits, coins, and rewards store</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-muted-foreground">Multiple kid profiles</span>
               </li>
             </ul>
           </div>

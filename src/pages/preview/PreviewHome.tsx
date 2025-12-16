@@ -50,8 +50,6 @@ const PreviewHome = () => {
           'Let your reader see streaks and coins climb in a simple view',
           'Use a shared "store" so kids know which rewards are in reach'
         ]}
-        ctaText="See how habits work"
-        ctaLink="/preview/habits"
         imagePosition="left"
       />
 

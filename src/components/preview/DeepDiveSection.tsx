@@ -6,8 +6,8 @@ interface DeepDiveSectionProps {
   title: string;
   description: string;
   features: string[];
-  ctaText: string;
-  ctaLink: string;
+  ctaText?: string;
+  ctaLink?: string;
   imagePosition: 'left' | 'right';
 }
 
@@ -41,12 +41,14 @@ export const DeepDiveSection = ({
                 </li>
               ))}
             </ul>
-            <Button
-              variant="outline"
-              onClick={() => navigate(ctaLink)}
-            >
-              {ctaText}
-            </Button>
+            {ctaText && ctaLink && (
+              <Button
+                variant="outline"
+                onClick={() => navigate(ctaLink)}
+              >
+                {ctaText}
+              </Button>
+            )}
           </div>
 
           {/* Image Placeholder */}

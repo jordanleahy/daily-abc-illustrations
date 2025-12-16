@@ -21,6 +21,8 @@ interface SubscriptionStatus {
   interval?: string;
   subscription_end?: string;
   cancel_at_period_end?: boolean;
+  is_trial?: boolean;
+  trial_ends_at?: string;
   loading: boolean;
   error?: string;
 }
@@ -118,6 +120,8 @@ const fetchSubscription = async (userId: string): Promise<SubscriptionStatus> =>
         interval: data.interval,
         subscription_end: data.subscription_end,
         cancel_at_period_end: data.cancel_at_period_end,
+        is_trial: data.is_trial || false,
+        trial_ends_at: data.trial_ends_at,
         loading: false,
       };
 
@@ -410,6 +414,12 @@ export const useSubscription = () => {
 
   const finalData: SubscriptionStatus = (query.data as SubscriptionStatus) || { subscribed: false, loading: false };
 
+  // Calculate trial days remaining
+  const isInTrial = finalData.is_trial && finalData.trial_ends_at && new Date(finalData.trial_ends_at) > new Date();
+  const daysLeftInTrial = isInTrial && finalData.trial_ends_at
+    ? Math.ceil((new Date(finalData.trial_ends_at).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    : 0;
+
   return {
     // Raw subscription data
     subscribed: finalData.subscribed,
@@ -419,6 +429,12 @@ export const useSubscription = () => {
     subscription_end: finalData.subscription_end,
     cancel_at_period_end: finalData.cancel_at_period_end,
     error: finalData.error,
+    
+    // Trial data
+    is_trial: finalData.is_trial,
+    trial_ends_at: finalData.trial_ends_at,
+    isInTrial,
+    daysLeftInTrial,
     
     // State
     loading: effectiveLoading,

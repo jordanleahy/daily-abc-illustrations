@@ -5,6 +5,7 @@ import { Header } from './Header';
 import { PageContent } from './PageContent';
 import { Footer } from '@/components/landing/Footer';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { TrialBanner } from '@/components/subscription/TrialBanner';
 
 interface PageLayoutProps {
   children: ReactNode;
@@ -45,6 +46,7 @@ export const PageLayout = ({
           reviewButtonVariant={reviewButtonVariant}
         />
       )}
+      <TrialBanner />
       <PageContent fullHeight={fullHeight}>
         {children}
       </PageContent>

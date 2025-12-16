@@ -427,7 +427,7 @@ export function UnifiedReadingView({
             showQRCode={false}
             backLabel={backLabel}
             bookId={book.book_id || book.id}
-            showKidInfo={contentType !== 'library_book'}
+            showKidInfo={contentType === 'daily_published'}
           />
         )}
         

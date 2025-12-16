@@ -5,7 +5,7 @@ import { AgeRangeId } from './ageRange';
 /**
  * Page type enum matching database enum
  */
-export type PageType = 'cover' | 'educational' | 'content';
+export type PageType = 'cover' | 'educational' | 'content' | 'worksheet';
 
 /**
  * Type guard to check if a page is a cover page
@@ -26,6 +26,13 @@ export const isEducationalPage = (page: Page): boolean => {
  */
 export const isContentPage = (page: Page): boolean => {
   return page.page_type === 'content';
+};
+
+/**
+ * Type guard to check if a page is a worksheet page
+ */
+export const isWorksheetPage = (page: Page): boolean => {
+  return page.page_type === 'worksheet';
 };
 
 /**

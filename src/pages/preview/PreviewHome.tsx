@@ -80,7 +80,7 @@ const PreviewHome = () => {
         ]}
         ctaText="View the parent dashboard"
         ctaLink="/preview/dashboard"
-        imagePosition="right"
+        imagePosition="left"
       />
 
       {/* Daily AI Books Section */}

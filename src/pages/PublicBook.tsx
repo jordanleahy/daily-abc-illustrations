@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { usePublicBookBySlug } from '@/hooks/usePublicBookBySlug';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { usePublicPageImage } from '@/hooks/usePublicPageImage';
@@ -16,6 +16,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: number; isLocked: boolean }) => {
   const { data: imageData } = usePublicPageImage(page.id);
+  const navigate = useNavigate();
+
+  const handleLockedClick = () => {
+    navigate('/auth?mode=signup');
+  };
   
   return (
     <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -29,7 +34,10 @@ const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: numbe
           />
           
           {isLocked && (
-            <div className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center">
+            <div 
+              className="absolute inset-0 bg-background/80 backdrop-blur-sm flex flex-col items-center justify-center p-4 text-center cursor-pointer hover:bg-background/70 transition-colors"
+              onClick={handleLockedClick}
+            >
               <Plus className="h-12 w-12 mb-3 text-primary" />
               <p className="text-sm text-muted-foreground">
                 Subscribe to View

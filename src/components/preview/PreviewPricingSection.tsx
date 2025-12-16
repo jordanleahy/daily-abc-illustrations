@@ -20,7 +20,10 @@ export const PreviewPricingSection = () => {
 
         <div className="grid md:grid-cols-3 gap-6">
           {/* Free Plan */}
-          <div className="p-8 rounded-lg border-2 border-border bg-card">
+          <div 
+            className="p-8 rounded-lg border-2 border-border bg-card cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50"
+            onClick={() => navigate('/auth?mode=signup')}
+          >
             <h3 className="text-2xl font-bold text-foreground mb-4">Free</h3>
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-3">
@@ -36,11 +39,22 @@ export const PreviewPricingSection = () => {
                 <span className="text-muted-foreground">Basic reading history for one child</span>
               </li>
             </ul>
+            <div className="text-center">
+              <span className="text-sm font-medium text-primary">Get Started Free →</span>
+            </div>
           </div>
 
-          {/* Annual Pass */}
-          <div className="p-8 rounded-lg border-2 border-border bg-card">
-            <h3 className="text-2xl font-bold text-foreground mb-4">Annual Pass</h3>
+          {/* Annual Pass - Highlighted */}
+          <div 
+            className="p-8 rounded-lg border-2 border-primary bg-card cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02]"
+            onClick={() => navigate('/pricing')}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-bold text-foreground">Annual Pass</h3>
+              <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
+                Best Value
+              </span>
+            </div>
             <div className="mb-4">
               <span className="text-3xl font-bold text-foreground">$8.99</span>
               <span className="text-muted-foreground">/month</span>
@@ -60,16 +74,17 @@ export const PreviewPricingSection = () => {
                 <span className="text-muted-foreground">Multiple kid profiles</span>
               </li>
             </ul>
+            <div className="text-center">
+              <span className="text-sm font-medium text-primary">Select Annual →</span>
+            </div>
           </div>
 
           {/* Plus Plan */}
-          <div className="p-8 rounded-lg border-2 border-primary bg-card">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-2xl font-bold text-foreground">Chairlift Plus</h3>
-              <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
-                Popular
-              </span>
-            </div>
+          <div 
+            className="p-8 rounded-lg border-2 border-border bg-card cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50"
+            onClick={() => navigate('/pricing')}
+          >
+            <h3 className="text-2xl font-bold text-foreground mb-4">Chairlift Plus</h3>
             <div className="mb-4">
               <span className="text-3xl font-bold text-foreground">$14.99</span>
               <span className="text-muted-foreground">/month</span>
@@ -89,16 +104,10 @@ export const PreviewPricingSection = () => {
                 <span className="text-muted-foreground">Multiple kid profiles and full parent dashboard</span>
               </li>
             </ul>
+            <div className="text-center">
+              <span className="text-sm font-medium text-primary">Select Monthly →</span>
+            </div>
           </div>
-        </div>
-
-        <div className="text-center mt-12">
-          <Button
-            size="lg"
-            onClick={() => navigate('/preview/pricing')}
-          >
-            View full pricing
-          </Button>
         </div>
       </div>
     </PreviewSection>

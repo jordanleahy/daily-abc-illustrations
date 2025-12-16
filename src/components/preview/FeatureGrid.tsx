@@ -89,15 +89,6 @@ export const FeatureGrid = () => {
           })}
         </div>
 
-        <div className="text-center">
-          <Button 
-            size="lg"
-            variant="outline"
-            onClick={() => navigate('/preview/product')}
-          >
-            Explore all features
-          </Button>
-        </div>
       </div>
     </div>
   );

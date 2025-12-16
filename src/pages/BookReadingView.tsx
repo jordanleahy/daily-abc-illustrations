@@ -103,7 +103,7 @@ export default function BookReadingView() {
   }
 
   const entryPoint = location.state?.from === 'library' ? 'library_card' : 'direct_link';
-  const backLabel = location.state?.from === 'google-chat' ? 'Chat' : 'Library';
+  const backLabel = location.state?.from === 'google-chat' ? 'Chat' : 'My Books';
 
   return (
     <UnifiedReadingView

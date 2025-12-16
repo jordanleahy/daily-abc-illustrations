@@ -13,6 +13,7 @@ import oppositesBookCover from '@/assets/book-covers/opposites-cover.png';
 import rhymingBookCover from '@/assets/book-covers/rhyming-cover.png';
 import sightWordsBookCover from '@/assets/book-covers/sight-words-cover.png';
 import animalsBookCover from '@/assets/book-covers/animals-cover.png';
+import digraphsBookCover from '@/assets/book-covers/digraphs-cover.jpeg';
 
 interface EmptyStateProps {
   onBookTypeSelect: (bookType: BookType) => void;
@@ -28,6 +29,7 @@ const coverImages: Record<string, string> = {
   rhyming: rhymingBookCover,
   'sight-words': sightWordsBookCover,
   animals: animalsBookCover,
+  digraphs: digraphsBookCover,
 };
 
 export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {

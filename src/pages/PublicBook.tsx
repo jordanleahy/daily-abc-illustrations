@@ -1,9 +1,11 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
 import { usePublicBookBySlug } from '@/hooks/usePublicBookBySlug';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { usePublicPageImage } from '@/hooks/usePublicPageImage';
 import { useSeoMetadata, useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
 import { usePublicBookImagePreloader } from '@/hooks/usePublicBookImagePreloader';
+import { usePublicBookColoringImages } from '@/hooks/usePublicBookColoringImages';
 import { MetaHead } from '@/components/common';
 import { generateDailyPublishedOpenGraph } from '@/utils/openGraph';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
@@ -11,8 +13,10 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookImage } from '@/components/ui/book-image';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { Download, Plus, Loader2 } from 'lucide-react';
+import { Download, Plus, Loader2, Palette } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { generateColoringBookPDF } from '@/services/pdfGenerator';
+import { toast } from 'sonner';
 
 const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: number; isLocked: boolean }) => {
   const { data: imageData } = usePublicPageImage(page.id);
@@ -57,6 +61,8 @@ export default function PublicBook() {
   const { slug } = useParams<{ slug: string }>();
   const { data: bookData, isLoading: bookLoading } = usePublicBookBySlug(slug);
   const { data: pages, isLoading: pagesLoading } = useDailyPublishedPages(bookData?.book_id);
+  const { data: coloringImages } = usePublicBookColoringImages(bookData?.book_id);
+  const [isDownloading, setIsDownloading] = useState(false);
   
   // Preload all page images for instant display
   usePublicBookImagePreloader(pages, bookData?.book_id);
@@ -81,6 +87,31 @@ export default function PublicBook() {
     seoMetadata?.seo_title,
     seoMetadata?.seo_description
   ) : null;
+
+  const handleDownloadColoringPDF = async () => {
+    if (!bookData?.book_id) return;
+    
+    setIsDownloading(true);
+    toast.loading('Preparing coloring pages PDF...', { id: 'coloring-download' });
+    
+    try {
+      await generateColoringBookPDF(
+        bookData.book_id,
+        bookData.title || 'coloring-book',
+        {
+          onProgress: (current, total) => {
+            toast.loading(`Processing page ${current + 1} of ${total}...`, { id: 'coloring-download' });
+          }
+        }
+      );
+      toast.success('Coloring pages downloaded!', { id: 'coloring-download' });
+    } catch (error) {
+      console.error('Error downloading coloring PDF:', error);
+      toast.error('Failed to download coloring pages', { id: 'coloring-download' });
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   if (bookLoading || pagesLoading) {
     return (
@@ -117,6 +148,11 @@ export default function PublicBook() {
     );
   }
 
+  const hasColoringPages = coloringImages && coloringImages.length > 0;
+  const firstColoringImage = hasColoringPages ? coloringImages[0] : null;
+  const first3Pages = pages?.slice(0, 3) || [];
+  const remainingPages = pages?.slice(3) || [];
+
   return (
     <>
       {ogMetadata && <MetaHead metadata={ogMetadata} />}
@@ -135,15 +171,15 @@ export default function PublicBook() {
             </div>
           </div>
 
-          {/* Letter Cards Grid */}
+          {/* First 3 Page Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {pages && pages.length > 0 ? (
-              pages.map((page, index) => (
+            {first3Pages.length > 0 ? (
+              first3Pages.map((page, index) => (
                 <PublicBookPageCard 
                   key={page.id} 
                   page={page}
                   index={index}
-                  isLocked={index >= 3}
+                  isLocked={false}
                 />
               ))
             ) : (
@@ -153,6 +189,58 @@ export default function PublicBook() {
               </div>
             )}
           </div>
+
+          {/* Coloring Pages Section - Only show if coloring images exist */}
+          {hasColoringPages && firstColoringImage && (
+            <div className="p-6 rounded-lg border-2 border-primary/20 bg-primary/5">
+              <div className="flex flex-col md:flex-row gap-6 items-center">
+                <div className="w-full md:w-48 flex-shrink-0">
+                  <AspectRatio ratio={1/1} className="rounded-lg overflow-hidden border border-border bg-white">
+                    <img 
+                      src={firstColoringImage.coloring_image_url} 
+                      alt="Coloring page preview"
+                      className="w-full h-full object-cover"
+                    />
+                  </AspectRatio>
+                </div>
+                <div className="flex-1 text-center md:text-left">
+                  <div className="flex items-center gap-2 justify-center md:justify-start mb-2">
+                    <Palette className="h-5 w-5 text-primary" />
+                    <h3 className="text-xl font-semibold">Free Coloring Pages</h3>
+                  </div>
+                  <p className="text-muted-foreground mb-4">
+                    Download {coloringImages.length} printable coloring pages from this book!
+                  </p>
+                  <Button 
+                    onClick={handleDownloadColoringPDF}
+                    disabled={isDownloading}
+                    className="gap-2"
+                  >
+                    {isDownloading ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="h-4 w-4" />
+                    )}
+                    Download Coloring Pages PDF
+                  </Button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Remaining Page Cards (Locked) */}
+          {remainingPages.length > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {remainingPages.map((page, index) => (
+                <PublicBookPageCard 
+                  key={page.id} 
+                  page={page}
+                  index={index + 3}
+                  isLocked={true}
+                />
+              ))}
+            </div>
+          )}
 
           {/* CTA Section */}
           <div className="mt-12 p-8 rounded-lg bg-muted text-center">

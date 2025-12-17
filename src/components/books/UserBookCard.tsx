@@ -18,6 +18,7 @@ import { getBookTypeDisplayName } from '@/types/bookType';
 import { supabase } from '@/integrations/supabase/client';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
+import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
 import { BookOpen, Copy, Link2, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -91,14 +92,23 @@ export function UserBookCard({
         
         const pageTitles = pages?.map(p => p.title) || [];
         const marketingUrl = `${SITE_CONFIG.productionUrl}/book/${book.marketing_url}`;
+        const isDigraph = book.metadata?.bookType === 'digraphs';
         
-        const post = generateDigraphMarketingPost({
-          bookName: book.book_name,
-          bookDescription: book.book_description,
-          characterTheme: book.metadata?.characterTheme || null,
-          marketingUrl,
-          pageTitles,
-        });
+        const post = isDigraph 
+          ? generateDigraphMarketingPost({
+              bookName: book.book_name,
+              bookDescription: book.book_description,
+              characterTheme: book.metadata?.characterTheme || null,
+              marketingUrl,
+              pageTitles,
+            })
+          : generateGenericMarketingPost({
+              bookName: book.book_name,
+              bookDescription: book.book_description,
+              characterTheme: book.metadata?.characterTheme || null,
+              marketingUrl,
+              bookType: book.metadata?.bookType || null,
+            });
         
         return new Blob([post], { type: 'text/plain' });
       };
@@ -295,8 +305,8 @@ export function UserBookCard({
               </Button>
             )}
 
-            {/* Marketing Post - Digraph books only */}
-            {book.metadata?.bookType === 'digraphs' && book.marketing_url && (
+            {/* Marketing Post - All library books */}
+            {publicationStatus && book.marketing_url && (
               <Button 
                 variant="outline"
                 size="sm"

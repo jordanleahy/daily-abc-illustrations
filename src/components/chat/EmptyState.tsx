@@ -14,6 +14,10 @@ import rhymingBookCover from '@/assets/book-covers/rhyming-cover.png';
 import sightWordsBookCover from '@/assets/book-covers/sight-words-cover.png';
 import animalsBookCover from '@/assets/book-covers/animals-cover.png';
 import digraphsBookCover from '@/assets/book-covers/digraphs-cover.jpeg';
+import firstWordsBookCover from '@/assets/book-covers/first-words-cover.png';
+import bedtimeBookCover from '@/assets/book-covers/bedtime-cover.png';
+import cvcBookCover from '@/assets/book-covers/cvc-cover.png';
+import generalBookCover from '@/assets/book-covers/general-cover.png';
 
 interface EmptyStateProps {
   onBookTypeSelect: (bookType: BookType) => void;
@@ -30,6 +34,10 @@ const coverImages: Record<string, string> = {
   'sight-words': sightWordsBookCover,
   animals: animalsBookCover,
   digraphs: digraphsBookCover,
+  'first-words': firstWordsBookCover,
+  bedtime: bedtimeBookCover,
+  cvc: cvcBookCover,
+  general: generalBookCover,
 };
 
 export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {

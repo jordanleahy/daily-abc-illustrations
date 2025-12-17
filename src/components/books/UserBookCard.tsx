@@ -297,19 +297,21 @@ export function UserBookCard({
 
             {/* Marketing Post - Digraph books only */}
             {book.metadata?.bookType === 'digraphs' && book.marketing_url && (
-              <div className="space-y-2">
-                <Button 
-                  variant="outline"
-                  size="sm"
-                  className="w-full gap-2"
-                  onClick={handleCopyMarketingPost}
-                  disabled={isCopyingMarketingPost}
-                >
-                  <Share2 className="h-4 w-4" />
-                  {isCopyingMarketingPost ? 'Copying...' : 'Social Post'}
-                </Button>
-                <SocialPostTracker bookId={book.id} />
-              </div>
+              <Button 
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={handleCopyMarketingPost}
+                disabled={isCopyingMarketingPost}
+              >
+                <Share2 className="h-4 w-4" />
+                {isCopyingMarketingPost ? 'Copying...' : 'Social Post'}
+              </Button>
+            )}
+            
+            {/* Social Post Tracker - Always visible for library books */}
+            {publicationStatus && (
+              <SocialPostTracker bookId={book.id} />
             )}
 
             <Button 

@@ -21,7 +21,8 @@ export type AgentType =
   | 'book-creation-first-words'
   | 'book-creation-bedtime'
   | 'book-creation-general'          // Custom topic books
-  | 'book-creation-digraphs';        // Digraph phonics
+  | 'book-creation-digraphs'         // Digraph phonics
+  | 'book-creation-dr-seuss';        // Dr. Seuss whimsical style
 
 /**
  * Maps book types to specialized agent types for orchestration
@@ -41,6 +42,7 @@ export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
   'bedtime': 'book-creation-bedtime',
   'general': 'book-creation-general',
   'digraphs': 'book-creation-digraphs',
+  'dr-seuss': 'book-creation-dr-seuss',
   // Fallback for unknown types
   'other': 'book-creation'
 } as const;

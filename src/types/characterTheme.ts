@@ -16,6 +16,7 @@ export const CharacterTheme = {
   BENJI_DAVIES: 'benji-davies',
   BLACK_AND_WHITE: 'black-and-white',
   BEAR_STORIES: 'bear-stories',
+  DORA: 'dora',
   CUSTOM: 'custom',
   NO_THEME: 'no-theme',
 } as const;
@@ -39,6 +40,7 @@ export const themeDisplayNames: Record<CharacterThemeValue, string> = {
   'benji-davies': 'Benji Davies Style',
   'black-and-white': 'Black & White',
   'bear-stories': 'Bear Stories',
+  'dora': 'Dora the Explorer',
   'custom': 'Custom Theme',
   'no-theme': 'No Theme',
 };

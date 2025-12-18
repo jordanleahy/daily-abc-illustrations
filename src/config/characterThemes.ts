@@ -55,6 +55,10 @@ export const characterThemes: Record<string, CharacterTheme> = {
   'dora': {
     thumbnail: '/themes/dora.png',
     altText: 'Dora the Explorer themed book'
+  },
+  'little-mermaid': {
+    thumbnail: '/themes/little-mermaid.png',
+    altText: 'The Little Mermaid themed book'
   }
 };
 

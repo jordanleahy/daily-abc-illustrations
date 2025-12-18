@@ -17,6 +17,7 @@ export const CharacterTheme = {
   BLACK_AND_WHITE: 'black-and-white',
   BEAR_STORIES: 'bear-stories',
   DORA: 'dora',
+  LITTLE_MERMAID: 'little-mermaid',
   CUSTOM: 'custom',
   NO_THEME: 'no-theme',
 } as const;
@@ -41,6 +42,7 @@ export const themeDisplayNames: Record<CharacterThemeValue, string> = {
   'black-and-white': 'Black & White',
   'bear-stories': 'Bear Stories',
   'dora': 'Dora the Explorer',
+  'little-mermaid': 'The Little Mermaid',
   'custom': 'Custom Theme',
   'no-theme': 'No Theme',
 };

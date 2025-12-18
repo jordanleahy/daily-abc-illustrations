@@ -1,9 +1,17 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
+import { toZonedTime, format } from 'https://esm.sh/date-fns-tz@3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
+
+// Get today's date in Eastern Time (source of truth for publishing)
+function getTodayEastern(): string {
+  const now = new Date();
+  const easternTime = toZonedTime(now, 'America/New_York');
+  return format(easternTime, 'yyyy-MM-dd');
+}
 
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -15,13 +23,15 @@ Deno.serve(async (req) => {
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    console.log('🚀 Starting landing page data fetch...');
+    const todayEastern = getTodayEastern();
+    console.log('🚀 Starting landing page data fetch for date:', todayEastern);
     const startTime = Date.now();
 
     // Execute all queries in parallel for maximum performance
     console.log('📊 Step 1: Fetching core data (daily published, popular books, library books)...');
     const [dailyPublishedResult, popularBooksResult, libraryBooksResult] = await Promise.all([
-      // 1. Get active daily published with pages and images
+      // 1. Get today's daily published by publish_date (source of truth)
+      // This works regardless of whether the cron job has updated status
       supabase
         .from('daily_published')
         .select(`
@@ -30,13 +40,10 @@ Deno.serve(async (req) => {
           title,
           description,
           status,
-          is_active,
           expires_at,
           books!inner(id, book_name)
         `)
-        .eq('is_active', true)
-        .eq('status', 'active')
-        .order('publish_date', { ascending: true })
+        .eq('publish_date', todayEastern)
         .limit(1)
         .maybeSingle(),
 

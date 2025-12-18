@@ -1,7 +1,16 @@
+import { useEffect } from "react";
 import { StandardPageLayout } from "@/components/layout/StandardPageLayout";
 import { VideoGrid } from "@/components/video/VideoGrid";
 
 export default function Videos() {
+  // Enforce dark mode on this route
+  useEffect(() => {
+    document.documentElement.classList.add('dark');
+    return () => {
+      document.documentElement.classList.remove('dark');
+    };
+  }, []);
+
   return (
     <StandardPageLayout>
       <div className="py-8 space-y-6">

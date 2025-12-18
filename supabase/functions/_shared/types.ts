@@ -5,7 +5,7 @@
 export const VALID_CHARACTER_THEMES = [
   'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
   'moana', 'mickey-mouse', 'mario', 'sesame-street', 
-  'benji-davies', 'black-and-white', 'bear-stories',
+  'benji-davies', 'black-and-white', 'bear-stories', 'dora',
   'custom', 'no-theme'
 ] as const;
 

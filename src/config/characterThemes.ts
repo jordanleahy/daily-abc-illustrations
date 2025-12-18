@@ -51,6 +51,10 @@ export const characterThemes: Record<string, CharacterTheme> = {
   'bear-stories': {
     thumbnail: '/themes/bear-stories.png',
     altText: 'Bear Memories - A cinematic winter adventure at Snowtop Mountain'
+  },
+  'dora': {
+    thumbnail: '/themes/dora.png',
+    altText: 'Dora the Explorer themed book'
   }
 };
 

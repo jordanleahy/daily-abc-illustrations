@@ -8,7 +8,7 @@ export interface AgentConfig {
   /** Display name shown to users */
   name: string;
   /** Agent type determining its specialized capabilities and role */
-  type: 'chat' | 'book-creation' | 'book-creation-numbers' | 'book-creation-rhyming' | 'book-creation-colors' | 'book-creation-abc' | 'book-creation-shapes' | 'book-creation-opposites' | 'book-creation-emotions' | 'book-creation-animals' | 'book-creation-first-words' | 'book-creation-bedtime' | 'book-creation-cvc' | 'book-creation-sight-words';
+  type: 'chat' | 'book-creation' | 'book-creation-numbers' | 'book-creation-rhyming' | 'book-creation-colors' | 'book-creation-abc' | 'book-creation-shapes' | 'book-creation-opposites' | 'book-creation-emotions' | 'book-creation-animals' | 'book-creation-first-words' | 'book-creation-bedtime' | 'book-creation-cvc' | 'book-creation-sight-words' | 'book-creation-parent-education';
   /** Description of the agent's purpose and goals */
   intent: string;
   /** Current operational status */

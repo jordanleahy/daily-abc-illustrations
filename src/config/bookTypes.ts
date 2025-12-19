@@ -11,7 +11,8 @@ import {
   Moon,
   BookOpen,
   Eye,
-  Package
+  Package,
+  GraduationCap
 } from 'lucide-react';
 import { BookTypeId } from '@/types/bookType';
 
@@ -168,6 +169,15 @@ export const BOOK_TYPES = [
     color: 'text-rose-500',
     needsClarification: true,
     clarificationContext: 'Ask about digraph focus: random digraphs for mixed practice OR specific digraph for targeted instruction on one sound.',
+    expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
+  },
+  {
+    id: 'parent-education' as const,
+    label: 'Parent Education',
+    icon: GraduationCap,
+    description: 'Science-backed reading development guides for parents',
+    prompt: 'I want to create a parent education book that helps parents understand how to support their child\'s reading development with science-backed methods and practical daily habits.',
+    color: 'text-teal-500',
     expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
   },
   {

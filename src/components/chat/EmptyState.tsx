@@ -18,6 +18,7 @@ import firstWordsBookCover from '@/assets/book-covers/first-words-cover.png';
 import bedtimeBookCover from '@/assets/book-covers/bedtime-cover.png';
 import cvcBookCover from '@/assets/book-covers/cvc-cover.png';
 import generalBookCover from '@/assets/book-covers/general-cover.png';
+import parentEducationBookCover from '@/assets/book-covers/parent-education-cover.png';
 
 interface EmptyStateProps {
   onBookTypeSelect: (bookType: BookType) => void;
@@ -38,6 +39,7 @@ const coverImages: Record<string, string> = {
   bedtime: bedtimeBookCover,
   cvc: cvcBookCover,
   general: generalBookCover,
+  'parent-education': parentEducationBookCover,
 };
 
 export const EmptyState = memo(({ onBookTypeSelect }: EmptyStateProps) => {

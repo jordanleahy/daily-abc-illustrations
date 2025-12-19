@@ -19,13 +19,17 @@ export const PreviewHero = () => {
   // Lazy load carousel images on-demand
   useLazyCarouselImages(pages, currentPageIndex);
   
-  const handleNextPage = () => {
+  const handleNextPage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (dailyPublished) {
       window.open(`/daily-published/${dailyPublished.id}`, '_blank');
     }
   };
   
-  const handlePrevPage = () => {
+  const handlePrevPage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (currentPageIndex > 0) {
       setCurrentPageIndex(currentPageIndex - 1);
     }
@@ -89,6 +93,7 @@ export const PreviewHero = () => {
 
               <div className="flex items-center gap-2">
                 <Button 
+                  type="button"
                   variant="outline" 
                   className="flex-1 h-16" 
                   onClick={handlePrevPage} 
@@ -98,6 +103,7 @@ export const PreviewHero = () => {
                 </Button>
 
                 <Button 
+                  type="button"
                   variant="default" 
                   className="flex-1 h-16" 
                   onClick={handleNextPage}

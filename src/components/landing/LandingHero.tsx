@@ -20,13 +20,17 @@ export const LandingHero = ({
   // Lazy load carousel images on-demand
   useLazyCarouselImages(pages, currentPageIndex);
   
-  const handleNextPage = () => {
+  const handleNextPage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (dailyPublished) {
       window.open(`/daily-published/${dailyPublished.id}`, '_blank');
     }
   };
   
-  const handlePrevPage = () => {
+  const handlePrevPage = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     if (currentPageIndex > 0) {
       setCurrentPageIndex(currentPageIndex - 1);
     }

@@ -87,6 +87,7 @@ export const LandingHero = ({
 
                 <div className="flex items-center gap-2">
                   <Button 
+                    type="button"
                     variant="outline" 
                     className="flex-1 h-16" 
                     onClick={handlePrevPage} 
@@ -96,6 +97,7 @@ export const LandingHero = ({
                   </Button>
 
                   <Button 
+                    type="button"
                     variant="default" 
                     className="flex-1 h-16" 
                     onClick={handleNextPage}

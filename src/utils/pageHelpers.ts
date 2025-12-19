@@ -23,9 +23,12 @@ export interface ParsedOutline {
  * Returns structured data with page lookup by number
  */
 export const parseBookOutline = (messages: any[]): ParsedOutline | null => {
-  // Find last message with outline
+  // Find last message with outline - check for both bold and list formats
   const outlineMsg = [...messages].reverse().find(
-    msg => typeof msg.content === 'string' && /\*\*Page\s+\d+/i.test(msg.content)
+    msg => typeof msg.content === 'string' && (
+      /\*\*Page\s+\d+/i.test(msg.content) || 
+      /- Page\s+\d+:/i.test(msg.content)
+    )
   );
   
   if (!outlineMsg) return null;
@@ -33,16 +36,39 @@ export const parseBookOutline = (messages: any[]): ParsedOutline | null => {
   const content = outlineMsg.content as string;
   const allPages = new Map<number, ParsedPage>();
   
-  // Parse all pages using regex
-  const pagePattern = /\*\*Page\s+(\d+):?\s*([^*]*)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/gi;
+  // Parse bold format pages: **Page 1: Title** or **Page 1 - Cover**: Title
+  const boldPagePattern = /\*\*Page\s+(\d+)[\s:-]+([^*]*?)\*\*:?\s*([\s\S]*?)(?=\n\*\*Page|\n- Page\s+\d+|$)/gi;
   let match;
   
-  while ((match = pagePattern.exec(content)) !== null) {
+  while ((match = boldPagePattern.exec(content)) !== null) {
     const pageNum = parseInt(match[1], 10);
-    const rawTitle = (match[2] || '').trim().replace(/^:\s*/, '').replace(/:$/, '');
+    const rawTitle = (match[2] || '').trim().replace(/^[-:\s]+/, '').replace(/[-:\s]+$/, '');
     const description = (match[3] || '').trim();
     
-    // Determine page type based on number
+    let pageType: 'cover' | 'educational' | 'content';
+    if (pageNum === 1) pageType = 'cover';
+    else if (pageNum === 2) pageType = 'educational';
+    else pageType = 'content';
+    
+    allPages.set(pageNum, {
+      pageNumber: pageNum,
+      pageType,
+      title: rawTitle || `Page ${pageNum}`,
+      description
+    });
+  }
+  
+  // Parse list format pages: - Page 3: Title or - Page 3: Title: Description
+  const listPagePattern = /- Page\s+(\d+):\s*([^:\n]+)(?::\s*([^\n]*))?/gi;
+  
+  while ((match = listPagePattern.exec(content)) !== null) {
+    const pageNum = parseInt(match[1], 10);
+    // Don't override if already parsed from bold format
+    if (allPages.has(pageNum)) continue;
+    
+    const rawTitle = (match[2] || '').trim();
+    const description = (match[3] || '').trim();
+    
     let pageType: 'cover' | 'educational' | 'content';
     if (pageNum === 1) pageType = 'cover';
     else if (pageNum === 2) pageType = 'educational';

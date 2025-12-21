@@ -443,39 +443,45 @@ export default function GoogleChat() {
       themeCharacters.length > 0 && 
       selectedCharacterIds.length === 0;
     
-    const lastMessage = messages[messages.length - 1];
-    
-    // Inject CharacterSelector into the last assistant message after theme selection
-    if (needsCharacterSelection && lastMessage?.role === 'assistant') {
-      // Check if this message already has characterSelection (avoid double injection)
-      const hasCharacterSelection = lastMessage.suggestedActions?.some(
-        (a: any) => a.characterSelection
-      );
+    // If character selection is needed, find the last AI message and inject CharacterSelector
+    if (needsCharacterSelection) {
+      const updatedMessages = [...messages];
       
-      if (!hasCharacterSelection) {
-        const updatedMessages = [...messages];
-        const selectableCharacters = themeCharacters.map(toSelectableCharacter);
-        
-        updatedMessages[updatedMessages.length - 1] = {
-          ...lastMessage,
-          suggestedActions: [
-            {
-              id: 'character-selection',
-              label: 'Select Characters',
-              value: '',
-              themeId: selectedCharacterTheme,
-              characterSelection: {
-                themeId: selectedCharacterTheme,
-                characters: selectableCharacters,
-              },
-            },
-          ],
-        };
-        return updatedMessages;
+      // Find the last assistant message (this is where we inject the CharacterSelector)
+      for (let i = updatedMessages.length - 1; i >= 0; i--) {
+        const msg = updatedMessages[i];
+        if (msg.role === 'assistant') {
+          // Check if this message already has characterSelection (avoid double injection)
+          const hasCharacterSelection = msg.suggestedActions?.some(
+            (a: any) => a.characterSelection
+          );
+          
+          if (!hasCharacterSelection) {
+            const selectableCharacters = themeCharacters.map(toSelectableCharacter);
+            
+            updatedMessages[i] = {
+              ...msg,
+              suggestedActions: [
+                {
+                  id: 'character-selection',
+                  label: 'Select Characters',
+                  value: '',
+                  themeId: selectedCharacterTheme,
+                  characterSelection: {
+                    themeId: selectedCharacterTheme,
+                    characters: selectableCharacters,
+                  },
+                },
+              ],
+            };
+            return updatedMessages;
+          }
+          break; // Stop after first assistant message
+        }
       }
     }
     
-    // Original logic: Add create book options
+    const lastMessage = messages[messages.length - 1];
     if (lastMessage?.role === 'assistant' && !lastMessage.suggestedActions) {
       const content = typeof lastMessage.content === 'string' ? lastMessage.content.toLowerCase() : '';
       const isReady = content.includes('create book') || 
@@ -916,8 +922,16 @@ export default function GoogleChat() {
       }
       
       // Capture character theme if present in the action
+      // If theme is selected but no characters yet, DON'T send to AI - wait for CharacterSelector
+      if (action.themeId && !action.selectedCharacterIds?.length) {
+        console.log('[Theme Selection] User selected theme, waiting for character selection:', action.themeId);
+        setSelectedCharacterTheme(action.themeId);
+        // Don't send message - CharacterSelector will be injected via useMemo
+        return;
+      }
+      
+      // Theme without character selection handled above
       if (action.themeId) {
-        console.log('[Theme Selection] User selected theme:', action.themeId);
         setSelectedCharacterTheme(action.themeId);
       }
       

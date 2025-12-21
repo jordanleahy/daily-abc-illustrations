@@ -155,7 +155,7 @@ export default function GoogleChat() {
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
   
   // Fetch characters for selected theme (for CharacterSelector injection)
-  const { data: themeCharacters = [] } = useCharacters(selectedCharacterTheme);
+  const { data: themeCharacters = [], isLoading: charactersLoading } = useCharacters(selectedCharacterTheme);
   
   // Track cover page ID for post-creation uploads
   const [coverPageId, setCoverPageId] = useState<string | null>(null);
@@ -437,9 +437,10 @@ export default function GoogleChat() {
     if (messages.length === 0) return messages;
     
     // Check if we need to inject CharacterSelector
-    // Theme selected + characters available from DB + no characters confirmed yet
+    // Theme selected + characters finished loading + characters available + no characters confirmed yet
     const needsCharacterSelection = 
       selectedCharacterTheme && 
+      !charactersLoading &&
       themeCharacters.length > 0 && 
       selectedCharacterIds.length === 0;
     
@@ -504,7 +505,7 @@ export default function GoogleChat() {
       }
     }
     return messages;
-  }, [messages, pageCount, selectedCharacterTheme, themeCharacters, selectedCharacterIds]);
+  }, [messages, pageCount, selectedCharacterTheme, themeCharacters, selectedCharacterIds, charactersLoading]);
 
   // Smart scroll: only auto-scroll when user sends a message
   // Keep viewport at top when AI responds so user sees text first

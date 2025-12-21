@@ -2,14 +2,10 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { cn } from '@/lib/utils';
+import type { SelectableCharacter } from '@/hooks/useCharacters';
 
-export interface SelectableCharacter {
-  id: string;
-  name: string;
-  description: string;
-  thumbnail?: string;
-  defaultSelected?: boolean;
-}
+// Re-export for backward compatibility
+export type { SelectableCharacter };
 
 interface CharacterSelectorProps {
   characters: SelectableCharacter[];

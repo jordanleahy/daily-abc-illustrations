@@ -150,6 +150,9 @@ export default function GoogleChat() {
   // Track selected character theme from user suggestions
   const [selectedCharacterTheme, setSelectedCharacterTheme] = useState<CharacterThemeValue | null>(null);
   
+  // Track selected character IDs for enforcement
+  const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
+  
   // Track cover page ID for post-creation uploads
   const [coverPageId, setCoverPageId] = useState<string | null>(null);
 
@@ -603,7 +606,8 @@ export default function GoogleChat() {
       outlineReady: shouldShowReviewButton && !createdBookId,
       bookCreated: !!createdBookId,
       characterTheme: selectedCharacterTheme,
-      bookType: selectedBookType
+      bookType: selectedBookType,
+      selectedCharacterIds: selectedCharacterIds.length > 0 ? selectedCharacterIds : undefined
     });
     setInput('');
   };
@@ -788,6 +792,7 @@ export default function GoogleChat() {
         targetWords: targetWords.length > 0 ? targetWords : undefined,
         sessionId: currentSessionId, // Include session ID for traceability
         storedPrompts: Object.keys(promptsToStore).length > 0 ? promptsToStore : undefined, // Use extracted prompts
+        selectedCharacterIds: selectedCharacterIds.length > 0 ? selectedCharacterIds : undefined, // Pass selected character IDs for enforcement
       });
       
       console.log('[Book Creation] Created book with', Object.keys(promptsToStore).length, 'stored prompts');
@@ -872,18 +877,29 @@ export default function GoogleChat() {
         setSelectedCharacterTheme(action.themeId);
       }
       
+      // Capture selected character IDs for enforcement
+      if (action.selectedCharacterIds && action.selectedCharacterIds.length > 0) {
+        console.log('[Character Selection] User selected characters:', action.selectedCharacterIds);
+        setSelectedCharacterIds(action.selectedCharacterIds);
+      }
+      
       // Capture age range if present in the action
       if (action.ageRangeId) {
         console.log('[Age Range Selection] User selected age range:', action.ageRangeId);
         setSelectedAgeRange(action.ageRangeId as AgeRangeId);
       }
       
-      // Send the predefined response
+      // Send the predefined response - include newly selected character IDs if present
+      const characterIdsToUse = action.selectedCharacterIds?.length > 0 
+        ? action.selectedCharacterIds 
+        : selectedCharacterIds;
+      
       await sendMessage(action.value, undefined, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
         bookCreated: !!createdBookId,
-        characterTheme: selectedCharacterTheme,
-        bookType: selectedBookType
+        characterTheme: action.themeId || selectedCharacterTheme,
+        bookType: selectedBookType,
+        selectedCharacterIds: characterIdsToUse
       });
     } else {
       // "Custom" option - just focus the input field
@@ -910,6 +926,7 @@ export default function GoogleChat() {
         setOutlineJustCompleted(false);
         setSelectedBookType(null);
         setSelectedCharacterTheme(null); // Reset theme selection
+        setSelectedCharacterIds([]); // Reset character selection
         setSelectedAgeRange(null); // Reset age range selection
         setReplacePageMode({});
         // Close mobile sidebar when creating new session

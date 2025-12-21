@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
 import { fetchAgeGroups, getAgeGroupSuggestions } from '../_shared/ageGroups.ts';
-import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
+import { buildCharacterConstraints } from '../_shared/characterConstraints.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -295,11 +295,11 @@ serve(async (req) => {
         : `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. Skip the theme discovery question and integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
       : '';
 
-    // Character constraints for selected characters
+    // Character constraints for selected characters - now fetched from database
     let characterConstraintsContext = '';
     console.log(`🎭 Character selection received:`, { characterTheme, selectedCharacterIds });
     if (selectedCharacterIds && selectedCharacterIds.length > 0 && characterTheme) {
-      const constraints = getSelectedCharacterConstraints(characterTheme, selectedCharacterIds);
+      const constraints = await buildCharacterConstraints(supabaseClient, characterTheme, selectedCharacterIds);
       if (constraints) {
         characterConstraintsContext = `\n\n${constraints}`;
         console.log(`🎭 Character constraints applied for ${characterTheme}:`, selectedCharacterIds);

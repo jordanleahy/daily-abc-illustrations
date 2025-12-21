@@ -13,13 +13,9 @@ interface MessageContent {
   };
 }
 
-export interface SelectableCharacter {
-  id: string;
-  name: string;
-  description: string;
-  thumbnail?: string;
-  defaultSelected?: boolean;
-}
+// Re-export SelectableCharacter from useCharacters for backward compatibility
+export type { SelectableCharacter } from '@/hooks/useCharacters';
+import type { SelectableCharacter } from '@/hooks/useCharacters';
 
 export interface CharacterSelectionData {
   themeId: string;
@@ -101,73 +97,9 @@ export const useGoogleChat = (
     // Check if user just selected Bluey theme - intercept and show character selection
     const messageText = displayText || (typeof content === 'string' ? content : '');
     
-    // Don't intercept if this is a character selection confirmation
-    const isCharacterSelectionConfirm = messageText.toLowerCase().includes('i want these characters');
-    
-    const isBlueySelection = !isCharacterSelectionConfirm && 
-      messageText.toLowerCase().includes('bluey') && 
-      (messageText.toLowerCase().includes('theme') || 
-       currentMessages.some(m => m.role === 'assistant' && typeof m.content === 'string' && 
-         (m.content.toLowerCase().includes('character theme') || m.content.toLowerCase().includes('which character'))));
-
-    if (isBlueySelection) {
-      // Inject character selection UI instead of calling AI
-      const blueyCharacters: SelectableCharacter[] = [
-        {
-          id: 'bluey',
-          name: 'Bluey',
-          description: '6-year-old Blue Heeler, light blue fur, curious and playful',
-          thumbnail: '/characters/bluey/bluey.png',
-          defaultSelected: true
-        },
-        {
-          id: 'bingo',
-          name: 'Bingo',
-          description: '4-year-old Red Heeler, orange-red fur, imaginative and sweet',
-          thumbnail: '/characters/bluey/bingo.png',
-          defaultSelected: true
-        },
-        {
-          id: 'bandit',
-          name: 'Bandit',
-          description: 'Dad, Blue Heeler, dark blue fur, playful and inventive',
-          thumbnail: '/characters/bluey/bandit.png'
-        },
-        {
-          id: 'chilli',
-          name: 'Chilli',
-          description: 'Mum, Red Heeler, orange fur, patient and nurturing',
-          thumbnail: '/characters/bluey/chilli.png'
-        }
-      ];
-
-      const characterSelectionMessage: Message = {
-        role: 'assistant',
-        content: 'Great choice! Bluey is a wonderful theme for your book. Now, which Bluey characters would you like to include?',
-        suggestedActions: [{
-          id: 'bluey-character-selection',
-          label: 'Select Characters',
-          value: 'character-selection',
-          characterSelection: {
-            themeId: 'bluey',
-            characters: blueyCharacters
-          }
-        }]
-      };
-
-      const messagesWithCharacterSelection = [...updatedMessages, characterSelectionMessage];
-      
-      if (sessionId) {
-        queryClient.setQueryData(['session-messages', sessionId], messagesWithCharacterSelection);
-      }
-      
-      if (onMessagesUpdate && sessionId) {
-        onMessagesUpdate(messagesWithCharacterSelection, sessionId);
-      }
-      
-      setIsLoading(false);
-      return;
-    }
+    // Note: Character selection is now handled externally via useCharacters hook
+    // The frontend will inject character selection UI based on theme selection
+    // This keeps the hook focused on chat logic only
 
     try {
       // Use cached session from AuthContext (0ms instead of 50-100ms)

@@ -88,6 +88,7 @@ export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: Messa
                     label: `Selected: ${selectedNames.join(', ')}`,
                     value: `I want these characters in my book: ${selectedNames.join(', ')}`,
                     themeId: characterSelectionAction.characterSelection!.themeId as any,
+                    selectedCharacterIds: selectedIds, // Pass selected character IDs for enforcement
                   });
                 }}
               />

@@ -33,6 +33,7 @@ export interface SuggestedAction {
   themeId?: CharacterThemeValue;
   ageRangeId?: string;
   characterSelection?: CharacterSelectionData;
+  selectedCharacterIds?: string[]; // IDs of characters selected for enforcement
 }
 
 export interface Message {
@@ -60,6 +61,7 @@ export const useGoogleChat = (
       bookCreated?: boolean;
       characterTheme?: CharacterThemeValue | null;
       bookType?: BookTypeId | null;
+      selectedCharacterIds?: string[]; // For character enforcement
     }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
@@ -193,7 +195,8 @@ export const useGoogleChat = (
             bookCreated: context?.bookCreated,
             kidAge,
             bookType: context?.bookType || bookType,
-            characterTheme: context?.characterTheme
+            characterTheme: context?.characterTheme,
+            selectedCharacterIds: context?.selectedCharacterIds
           })
         }
       );
@@ -492,6 +495,7 @@ export const useGoogleChat = (
         bookCreated?: boolean;
         characterTheme?: CharacterThemeValue | null;
         bookType?: BookTypeId | null;
+        selectedCharacterIds?: string[];
       }
     ) => {
       return sendMessage(

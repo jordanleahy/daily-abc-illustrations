@@ -26,6 +26,7 @@ export interface CreateBookParams {
   targetWords?: string[]; // Target words for vocabulary practice (from recommendations)
   sessionId?: string; // Chat session ID for traceability
   storedPrompts?: Record<number, string>; // Pre-extracted prompts from qa_page_prompts
+  selectedCharacterIds?: string[]; // IDs of selected characters for enforcement
 }
 
 interface CreateBookResponse {
@@ -96,6 +97,7 @@ export const useGoogleCreateBook = () => {
           fullPrompts: fullPrompts,
           targetWords: params.targetWords || undefined,
           sessionId: params.sessionId || undefined,
+          selectedCharacterIds: params.selectedCharacterIds || undefined,
         },
       });
 

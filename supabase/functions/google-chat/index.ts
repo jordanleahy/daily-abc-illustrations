@@ -4,6 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
 import { fetchAgeGroups, getAgeGroupSuggestions } from '../_shared/ageGroups.ts';
+import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -158,13 +159,14 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated, kidAge, bookType, characterTheme } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, kidAge, bookType, characterTheme, selectedCharacterIds } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
       kidAge?: { years: number; months: number };
       bookType?: string;
       characterTheme?: string;
+      selectedCharacterIds?: string[];
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -293,6 +295,16 @@ serve(async (req) => {
         : `\n\n🎨 CHARACTER THEME SELECTED:\nThe user has selected "${characterTheme}" as the character theme. Skip the theme discovery question and integrate this character throughout the book outline including cover page, educational focus page, and all content pages. Make specific references to the character in image descriptions.`
       : '';
 
+    // Character constraints for selected characters
+    let characterConstraintsContext = '';
+    if (selectedCharacterIds && selectedCharacterIds.length > 0 && characterTheme) {
+      const constraints = getSelectedCharacterConstraints(characterTheme, selectedCharacterIds);
+      if (constraints) {
+        characterConstraintsContext = `\n\n${constraints}`;
+        console.log(`🎭 Character constraints applied for ${characterTheme}:`, selectedCharacterIds);
+      }
+    }
+
     // Check if user is forcing outline creation (e.g., typing "create outline")
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
@@ -312,7 +324,7 @@ serve(async (req) => {
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + ageContext + curatedItemsContext + themeContext + conversationStageContext,
+      content: systemPromptContent + languageContext + ageContext + curatedItemsContext + themeContext + characterConstraintsContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

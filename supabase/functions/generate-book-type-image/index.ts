@@ -1,9 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders } from '../_shared/types.ts';
 
 const UNIFIED_STYLE_PROMPT = `Children's book illustration style: soft watercolor aesthetic, rounded friendly shapes, warm pastel color palette, simple clean composition, playful educational theme, gentle shadows, white background, centered subject matter. No text overlays. Clean illustration only.`;
 

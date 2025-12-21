@@ -29,8 +29,7 @@ export interface LandingPageImage {
 }
 
 /**
- * Daily published content for landing page - extends base with pages
- * @deprecated Use DailyPublishedWithPages from @/types/dailyPublished instead
+ * Daily published content for landing page - includes page images for hero display
  */
 export interface LandingDailyPublished extends Pick<BaseDailyPublished, 'id' | 'book_id' | 'title' | 'status' | 'is_active' | 'expires_at'> {
   description: string;

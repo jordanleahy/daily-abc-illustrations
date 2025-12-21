@@ -1,10 +1,6 @@
 import { createClient } from 'jsr:@supabase/supabase-js@2';
 import { toZonedTime, format } from 'https://esm.sh/date-fns-tz@3';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders } from '../_shared/types.ts';
 
 // Get today's date in Eastern Time (source of truth for publishing)
 function getTodayEastern(): string {

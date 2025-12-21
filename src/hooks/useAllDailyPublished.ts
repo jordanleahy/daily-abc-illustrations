@@ -1,7 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-export interface DailyPublishedWithBook {
+/**
+ * Library item type - specific shape for landing page library display
+ * Uses 'books' relation name for direct Supabase join syntax
+ */
+export interface LibraryDailyPublishedItem {
   id: string;
   book_id: string;
   title: string;
@@ -81,7 +85,7 @@ export const useAllDailyPublished = () => {
       }));
 
       console.log('✅ Found daily published items:', combined.length);
-      return combined as DailyPublishedWithBook[];
+      return combined as LibraryDailyPublishedItem[];
     },
     // Uses global 7-day staleTime from App.tsx for instant loading
   });

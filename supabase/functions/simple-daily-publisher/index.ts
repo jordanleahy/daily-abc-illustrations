@@ -1,33 +1,16 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { toZonedTime, format } from 'https://esm.sh/date-fns-tz@3';
-
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+import { corsHeaders, DailyPublishedRow } from '../_shared/types.ts';
 
 interface Database {
   public: {
     Tables: {
       daily_published: {
-        Row: {
-          id: string;
-          book_id: string;
-          title: string;
-          description?: string;
-          status: 'draft' | 'queued' | 'active' | 'expired';
-          is_active: boolean;
-          published_at: string;
-          expires_at?: string;
-          publish_date: string;
-          created_at: string;
-          updated_at: string;
-          queue_position?: number;
-        };
+        Row: DailyPublishedRow;
       };
     };
     Functions: {
-      process_simple_daily_publishing: {
+      process_enhanced_daily_publishing: {
         Returns: any;
       };
     };

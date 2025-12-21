@@ -9,6 +9,7 @@ import type {
 } from '@/types/book-extended';
 
 // Re-export types for backward compatibility
+// TODO: Remove these re-exports - import directly from @/types/book-extended
 export type {
   LandingPageData,
   LandingDailyPublished,

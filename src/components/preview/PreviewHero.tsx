@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useState } from 'react';
 import { ChevronLeft, ChevronRight, Book } from 'lucide-react';
 import { useLandingPageData } from '@/hooks/useLandingPageData';
@@ -10,7 +10,6 @@ import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 
 export const PreviewHero = () => {
-  const navigate = useNavigate();
   const { data: landingData } = useLandingPageData();
   const dailyPublished = landingData?.dailyPublished;
   const pages = dailyPublished?.pages || [];
@@ -18,14 +17,6 @@ export const PreviewHero = () => {
   
   // Lazy load carousel images on-demand
   useLazyCarouselImages(pages, currentPageIndex);
-  
-  const handleNextPage = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (dailyPublished) {
-      window.open(`/daily-published/${dailyPublished.id}`, '_blank');
-    }
-  };
   
   const handlePrevPage = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -103,13 +94,13 @@ export const PreviewHero = () => {
                 </Button>
 
                 <Button 
-                  type="button"
+                  asChild
                   variant="default" 
-                  className="flex-1 h-16" 
-                  onClick={handleNextPage}
-                  title="Open full book"
+                  className="flex-1 h-16"
                 >
-                  <ChevronRight className="h-8 w-8" />
+                  <Link to={`/daily-published/${dailyPublished.id}`}>
+                    <ChevronRight className="h-8 w-8" />
+                  </Link>
                 </Button>
               </div>
             </div>

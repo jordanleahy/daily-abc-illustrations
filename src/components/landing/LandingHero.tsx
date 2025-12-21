@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
 import { SITE_CONFIG } from '@/config/site';
 import { ChevronRight, Book } from 'lucide-react';
-import { LandingDailyPublished } from '@/hooks/useLandingPageData';
+import type { LandingDailyPublished } from '@/types/book-extended';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 

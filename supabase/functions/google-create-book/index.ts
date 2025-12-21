@@ -5,6 +5,7 @@ import { z } from 'https://deno.land/x/zod@v3.22.4/mod.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
 import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange, BOOK_TYPE_TO_AGENT_TYPE, AgentType } from '../_shared/types.ts';
+import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -30,6 +31,7 @@ const requestSchema = z.object({
   fullPrompts: z.record(z.string()).optional(), // Full image prompts by page number
   targetWords: z.array(z.string()).optional(), // Target words for word learning recommendations
   sessionId: z.string().uuid().optional(), // Chat session ID for traceability
+  selectedCharacterIds: z.array(z.string()).optional(), // IDs of selected characters for enforcement
   educationalFocus: z.object({
     targetAge: z.string(),
     learningType: z.string(),
@@ -121,7 +123,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId } = validatedData;
+    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId, selectedCharacterIds } = validatedData;
     
     // Normalize and validate book type
     const bookType = normalizeBookType(rawBookType);
@@ -440,6 +442,15 @@ IMPORTANT - WORD LEARNING FOCUS:
 - Target words: [${targetWords.join(', ')}]
 `;
       console.log(`Target words for vocabulary practice: ${targetWords.join(', ')}`);
+    }
+
+    // Add character constraints if characters were selected
+    if (selectedCharacterIds && selectedCharacterIds.length > 0 && characterTheme) {
+      const characterConstraints = getSelectedCharacterConstraints(characterTheme, selectedCharacterIds);
+      if (characterConstraints) {
+        systemPrompt += `\n${characterConstraints}`;
+        console.log(`[Character Enforcement] Applied constraints for ${characterTheme}:`, selectedCharacterIds);
+      }
     }
 
     const prompt = `Based on this conversation, create a complete children's book:

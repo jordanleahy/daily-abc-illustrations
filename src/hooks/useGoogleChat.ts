@@ -159,6 +159,31 @@ export const useGoogleChat = (
         queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
       }
 
+      // Debounce SSE updates - batch every 150ms instead of per-token
+      let pendingUpdate = false;
+      let updateTimeoutId: ReturnType<typeof setTimeout> | null = null;
+      const DEBOUNCE_MS = 150;
+
+      const flushUpdate = () => {
+        if (sessionId && pendingUpdate) {
+          const displayContent = stripSuggestTags(fullContent);
+          messagesWithResponse = [
+            ...messagesWithResponse.slice(0, -1),
+            { role: 'assistant' as const, content: displayContent }
+          ];
+          queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
+          pendingUpdate = false;
+        }
+        updateTimeoutId = null;
+      };
+
+      const scheduleUpdate = () => {
+        pendingUpdate = true;
+        if (!updateTimeoutId) {
+          updateTimeoutId = setTimeout(flushUpdate, DEBOUNCE_MS);
+        }
+      };
+
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -180,24 +205,20 @@ export const useGoogleChat = (
             const delta = parsed.choices?.[0]?.delta?.content;
             if (delta) {
               fullContent += delta;
-              
-              // Strip suggest tags during streaming for display
-              const displayContent = stripSuggestTags(fullContent);
-              
-              // Update the last message with cleaned content
-              messagesWithResponse = [
-                ...messagesWithResponse.slice(0, -1),
-                { role: 'assistant' as const, content: displayContent }
-              ];
-              if (sessionId) {
-                queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
-              }
+              // Schedule a debounced update instead of updating immediately
+              scheduleUpdate();
             }
           } catch (e) {
             console.error('Failed to parse SSE chunk:', e);
           }
         }
       }
+
+      // Flush any pending update when stream ends
+      if (updateTimeoutId) {
+        clearTimeout(updateTimeoutId);
+      }
+      flushUpdate();
 
       // Parse suggestions from final content and strip internal tags
       const parseSuggestions = (text: string) => {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
+import { useDailyPublishedQueue } from '@/hooks/useDailyPublishedQueue';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { useScheduleImagePreloader } from '@/hooks/useScheduleImagePreloader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -96,7 +96,7 @@ function SchedulePreviewCard({ item, position }: SchedulePreviewCardProps) {
 }
 
 export function SchedulePreview() {
-  const { data: scheduleItems, isLoading, error } = useDailyPublishedSchedule();
+  const { data: scheduleItems, isLoading, error } = useDailyPublishedQueue();
   
   // Preload schedule images for instant display
   useScheduleImagePreloader(scheduleItems);

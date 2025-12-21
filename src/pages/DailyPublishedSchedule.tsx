@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/AuthContext';
-import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
+import { useDailyPublishedQueue } from '@/hooks/useDailyPublishedQueue';
 import { useExpireContent } from '@/hooks/useExpireContent';
 import { useScheduleImagePreloader } from '@/hooks/useScheduleImagePreloader';
 import { MetaHead } from '@/components/common/MetaHead';
@@ -14,7 +14,7 @@ import { DailyPublishedQueueCard } from '@/components/daily-published/DailyPubli
 
 export default function DailyPublishedSchedule() {
   const { user } = useAuthContext();
-  const { data: scheduleItems, isLoading, error } = useDailyPublishedSchedule();
+  const { data: scheduleItems, isLoading, error } = useDailyPublishedQueue();
   const expireContent = useExpireContent();
 
   // Preload schedule images for instant display

@@ -14,6 +14,14 @@ export interface Character {
   is_active: boolean;
 }
 
+export interface SelectableCharacter {
+  id: string;
+  name: string;
+  description: string;
+  thumbnail?: string;
+  defaultSelected?: boolean;
+}
+
 /**
  * Hook to fetch characters for a specific theme
  * Uses aggressive caching (24-hour stale time) for optimal performance

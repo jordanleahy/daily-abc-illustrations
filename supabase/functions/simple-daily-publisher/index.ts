@@ -26,9 +26,10 @@ Deno.serve(async (req) => {
   try {
     console.log('🚀 Simple Daily Publisher started at:', new Date().toISOString());
     
-    // Parse request body to check schedule type
+    // Parse request body to check for force flag
     const body = await req.text();
     const requestData = body ? JSON.parse(body) : {};
+    const forceExecution = requestData.force === true;
     
     // Check if this is the correct time slot for Eastern Time
     const now = new Date();
@@ -36,17 +37,18 @@ Deno.serve(async (req) => {
     const easternHour = easternTime.getHours();
     const easternMinute = easternTime.getMinutes();
     
-    // Only process if it's 7:01 AM Eastern Time (±2 minutes for tolerance)
+    // Only process if it's 7:01 AM Eastern Time (±3 minutes) OR forced
     const isCorrectTime = easternHour === 7 && easternMinute >= 0 && easternMinute <= 3;
     
-    if (!isCorrectTime) {
+    if (!isCorrectTime && !forceExecution) {
       console.log(`⏰ Skipping execution - not 7:01 AM Eastern Time. Current: ${format(easternTime, 'HH:mm zzz')}`);
       return new Response(
         JSON.stringify({ 
           success: true, 
           message: 'Execution skipped - not scheduled time',
           current_eastern_time: format(easternTime, 'yyyy-MM-dd HH:mm:ss zzz'),
-          scheduled_time: '07:01 Eastern Time'
+          scheduled_time: '07:01 Eastern Time',
+          hint: 'Add {"force": true} to request body to override time check'
         }),
         { 
           headers: { 
@@ -57,7 +59,7 @@ Deno.serve(async (req) => {
       );
     }
     
-    console.log(`✅ Executing at correct Eastern Time: ${format(easternTime, 'yyyy-MM-dd HH:mm:ss zzz')}`);
+    console.log(`✅ Executing at Eastern Time: ${format(easternTime, 'yyyy-MM-dd HH:mm:ss zzz')} (forced: ${forceExecution})`);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');

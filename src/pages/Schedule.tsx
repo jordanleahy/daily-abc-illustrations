@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
+import { useDailyPublishedQueue } from '@/hooks/useDailyPublishedQueue';
 import { useBatchSeoMetadata } from '@/hooks/useBatchSeoMetadata';
 import { useBatchBookCoverImages } from '@/hooks/useBatchBookCoverImages';
 import { useDailyPublishedPrefetch } from '@/hooks/useDailyPublishedPrefetch';
@@ -66,7 +66,7 @@ export default function Schedule() {
     data: scheduleItems,
     isLoading,
     error
-  } = useDailyPublishedSchedule();
+  } = useDailyPublishedQueue();
   const { hasActiveSubscription } = useSubscription();
   const { hasLibraryAccess } = useFeatureAccess();
   const { prefetchDailyPublished } = useDailyPublishedPrefetch();

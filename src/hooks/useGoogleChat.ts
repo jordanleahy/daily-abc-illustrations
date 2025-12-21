@@ -98,7 +98,12 @@ export const useGoogleChat = (
 
     // Check if user just selected Bluey theme - intercept and show character selection
     const messageText = displayText || (typeof content === 'string' ? content : '');
-    const isBlueySelection = messageText.toLowerCase().includes('bluey') && 
+    
+    // Don't intercept if this is a character selection confirmation
+    const isCharacterSelectionConfirm = messageText.toLowerCase().includes('i want these characters');
+    
+    const isBlueySelection = !isCharacterSelectionConfirm && 
+      messageText.toLowerCase().includes('bluey') && 
       (messageText.toLowerCase().includes('theme') || 
        currentMessages.some(m => m.role === 'assistant' && typeof m.content === 'string' && 
          (m.content.toLowerCase().includes('character theme') || m.content.toLowerCase().includes('which character'))));

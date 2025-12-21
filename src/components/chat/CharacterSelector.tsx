@@ -54,12 +54,19 @@ export const CharacterSelector = ({ characters, themeId, onConfirm }: CharacterS
           const isSelected = selected.has(character.id);
           
           return (
-            <button
+            <div
               key={character.id}
-              type="button"
+              role="button"
+              tabIndex={0}
               onClick={() => toggleCharacter(character.id)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleCharacter(character.id);
+                }
+              }}
               className={cn(
-                "relative flex flex-col items-center p-3 rounded-lg border-2 transition-all",
+                "relative flex flex-col items-center p-3 rounded-lg border-2 transition-all cursor-pointer",
                 "hover:border-primary/50 hover:bg-accent/30",
                 isSelected 
                   ? "border-primary bg-primary/10" 
@@ -105,7 +112,7 @@ export const CharacterSelector = ({ characters, themeId, onConfirm }: CharacterS
               <span className="text-xs text-muted-foreground text-center line-clamp-2 mt-1">
                 {character.description}
               </span>
-            </button>
+            </div>
           );
         })}
       </div>

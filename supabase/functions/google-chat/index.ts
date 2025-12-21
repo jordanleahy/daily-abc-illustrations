@@ -297,6 +297,7 @@ serve(async (req) => {
 
     // Character constraints for selected characters
     let characterConstraintsContext = '';
+    console.log(`🎭 Character selection received:`, { characterTheme, selectedCharacterIds });
     if (selectedCharacterIds && selectedCharacterIds.length > 0 && characterTheme) {
       const constraints = getSelectedCharacterConstraints(characterTheme, selectedCharacterIds);
       if (constraints) {

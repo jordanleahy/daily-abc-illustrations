@@ -323,6 +323,27 @@ export const useGoogleChat = (
             };
           }
 
+          // Character theme selection fallback
+          const lowerText = cleanedText.toLowerCase();
+          if (lowerText.includes('character theme') || lowerText.includes('character style') || 
+              (lowerText.includes('theme') && lowerText.includes('would you like')) ||
+              (lowerText.includes('character') && lowerText.includes('would you like'))) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'bluey', label: '🐕 Bluey', value: 'Bluey', themeId: 'bluey' as CharacterThemeValue },
+                { id: 'paw-patrol', label: '🐾 PAW Patrol', value: 'PAW Patrol', themeId: 'paw-patrol' as CharacterThemeValue },
+                { id: 'frozen', label: '❄️ Frozen', value: 'Frozen', themeId: 'frozen' as CharacterThemeValue },
+                { id: 'peppa-pig', label: '🐷 Peppa Pig', value: 'Peppa Pig', themeId: 'peppa-pig' as CharacterThemeValue },
+                { id: 'cocomelon', label: '🍉 Cocomelon', value: 'Cocomelon', themeId: 'cocomelon' as CharacterThemeValue },
+                { id: 'mickey-mouse', label: '🐭 Mickey Mouse', value: 'Mickey Mouse', themeId: 'mickey-mouse' as CharacterThemeValue },
+                { id: 'bear-stories', label: '🐻 Bear Stories', value: 'Bear Stories', themeId: 'bear-stories' as CharacterThemeValue },
+                { id: 'no-theme', label: '📚 No Theme', value: 'No Theme', themeId: 'no-theme' as CharacterThemeValue },
+                { id: 'custom', label: '✏️ Custom Theme', value: '', themeId: 'custom' as CharacterThemeValue },
+              ]
+            };
+          }
+
           // Page count selection fallback
           if (cleanedText.toLowerCase().includes('how many') && (cleanedText.toLowerCase().includes('page') || cleanedText.toLowerCase().includes('content'))) {
             return { 

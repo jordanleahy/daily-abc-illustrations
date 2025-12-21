@@ -33,6 +33,7 @@ import { BookTypeId } from '@/types/bookType';
 import { AgeRangeId } from '@/types/ageRange';
 import type { CharacterThemeValue } from '@/types/characterTheme';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { useCharacters, toSelectableCharacter } from '@/hooks/useCharacters';
 import { differenceInYears, differenceInMonths } from 'date-fns';
 import { AdminOnly } from '@/components/AdminOnly';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
@@ -152,6 +153,9 @@ export default function GoogleChat() {
   
   // Track selected character IDs for enforcement
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
+  
+  // Fetch characters for selected theme (for CharacterSelector injection)
+  const { data: themeCharacters = [] } = useCharacters(selectedCharacterTheme);
   
   // Track cover page ID for post-creation uploads
   const [coverPageId, setCoverPageId] = useState<string | null>(null);
@@ -428,10 +432,50 @@ export default function GoogleChat() {
   }, [outlineJustCompleted, isMobile, createdBookId, bookData?.status]);
 
   // Add quick reply buttons when AI indicates book is ready to create
+  // Also inject CharacterSelector when theme selected but characters not confirmed
   const messagesWithCreateOptions = useMemo(() => {
     if (messages.length === 0) return messages;
     
+    // Check if we need to inject CharacterSelector
+    // Theme selected + characters available from DB + no characters confirmed yet
+    const needsCharacterSelection = 
+      selectedCharacterTheme && 
+      themeCharacters.length > 0 && 
+      selectedCharacterIds.length === 0;
+    
     const lastMessage = messages[messages.length - 1];
+    
+    // Inject CharacterSelector into the last assistant message after theme selection
+    if (needsCharacterSelection && lastMessage?.role === 'assistant') {
+      // Check if this message already has characterSelection (avoid double injection)
+      const hasCharacterSelection = lastMessage.suggestedActions?.some(
+        (a: any) => a.characterSelection
+      );
+      
+      if (!hasCharacterSelection) {
+        const updatedMessages = [...messages];
+        const selectableCharacters = themeCharacters.map(toSelectableCharacter);
+        
+        updatedMessages[updatedMessages.length - 1] = {
+          ...lastMessage,
+          suggestedActions: [
+            {
+              id: 'character-selection',
+              label: 'Select Characters',
+              value: '',
+              themeId: selectedCharacterTheme,
+              characterSelection: {
+                themeId: selectedCharacterTheme,
+                characters: selectableCharacters,
+              },
+            },
+          ],
+        };
+        return updatedMessages;
+      }
+    }
+    
+    // Original logic: Add create book options
     if (lastMessage?.role === 'assistant' && !lastMessage.suggestedActions) {
       const content = typeof lastMessage.content === 'string' ? lastMessage.content.toLowerCase() : '';
       const isReady = content.includes('create book') || 
@@ -454,7 +498,7 @@ export default function GoogleChat() {
       }
     }
     return messages;
-  }, [messages, pageCount]);
+  }, [messages, pageCount, selectedCharacterTheme, themeCharacters, selectedCharacterIds]);
 
   // Smart scroll: only auto-scroll when user sends a message
   // Keep viewport at top when AI responds so user sees text first

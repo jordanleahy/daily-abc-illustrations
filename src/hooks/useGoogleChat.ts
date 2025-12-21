@@ -13,12 +13,26 @@ interface MessageContent {
   };
 }
 
+export interface SelectableCharacter {
+  id: string;
+  name: string;
+  description: string;
+  thumbnail?: string;
+  defaultSelected?: boolean;
+}
+
+export interface CharacterSelectionData {
+  themeId: string;
+  characters: SelectableCharacter[];
+}
+
 export interface SuggestedAction {
   id: string;
   label: string;
   value: string;
   themeId?: CharacterThemeValue;
   ageRangeId?: string;
+  characterSelection?: CharacterSelectionData;
 }
 
 export interface Message {

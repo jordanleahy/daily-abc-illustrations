@@ -8,6 +8,7 @@ import { ImageButton } from './ImageButton';
 import { characterThemes } from '@/config/characterThemes';
 import { BookRecommendationCard } from './BookRecommendationCard';
 import { parseRecommendations } from '@/utils/recommendationParser';
+import { CharacterSelector } from './CharacterSelector';
 
 interface MessageItemProps {
   message: Message;
@@ -68,6 +69,31 @@ export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: Messa
           </div>
         )}
         {message.suggestedActions && message.suggestedActions.length > 0 && (() => {
+          // Check if any action has character selection data
+          const characterSelectionAction = message.suggestedActions.find(a => a.characterSelection);
+          
+          if (characterSelectionAction?.characterSelection) {
+            return (
+              <CharacterSelector
+                characters={characterSelectionAction.characterSelection.characters}
+                themeId={characterSelectionAction.characterSelection.themeId}
+                onConfirm={(selectedIds) => {
+                  // Create a response action with selected characters
+                  const selectedNames = characterSelectionAction.characterSelection!.characters
+                    .filter(c => selectedIds.includes(c.id))
+                    .map(c => c.name);
+                  
+                  onQuickReply?.({
+                    id: 'character-selection-confirm',
+                    label: `Selected: ${selectedNames.join(', ')}`,
+                    value: `I want these characters in my book: ${selectedNames.join(', ')}`,
+                    themeId: characterSelectionAction.characterSelection!.themeId as any,
+                  });
+                }}
+              />
+            );
+          }
+          
           // Separate actions into text and image buttons
           const textActions = [];
           const imageActions = [];

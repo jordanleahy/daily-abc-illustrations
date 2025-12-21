@@ -3,6 +3,14 @@
  * Used to ensure consistent visual style, character appearance, and world-building across all pages
  */
 
+export interface SelectableCharacter {
+  id: string;
+  name: string;
+  description: string;
+  thumbnail?: string;
+  defaultSelected?: boolean;
+}
+
 export interface StyleGuide {
   id: string;
   name: string;
@@ -13,6 +21,7 @@ export interface StyleGuide {
   compositionRules: string;
   settingDetails?: string;
   specialInstructions?: string;
+  selectableCharacters?: SelectableCharacter[];
 }
 
 export const BEAR_STORIES_STYLE: StyleGuide = {
@@ -425,9 +434,167 @@ These anchors force the AI to maintain the Bear Stories world consistency.
 `
 };
 
+export const BLUEY_STYLE: StyleGuide = {
+  id: 'bluey',
+  name: 'Bluey - Australian Heeler Family',
+  
+  selectableCharacters: [
+    {
+      id: 'bluey',
+      name: 'Bluey',
+      description: '6-year-old Blue Heeler, light blue fur, curious and playful',
+      thumbnail: '/characters/bluey/bluey.png',
+      defaultSelected: true
+    },
+    {
+      id: 'bingo',
+      name: 'Bingo',
+      description: '4-year-old Red Heeler, orange-red fur, imaginative and sweet',
+      thumbnail: '/characters/bluey/bingo.png',
+      defaultSelected: true
+    },
+    {
+      id: 'bandit',
+      name: 'Bandit',
+      description: 'Dad, Blue Heeler, dark blue fur, playful and inventive',
+      thumbnail: '/characters/bluey/bandit.png'
+    },
+    {
+      id: 'chilli',
+      name: 'Chilli',
+      description: 'Mum, Red Heeler, orange fur, patient and nurturing',
+      thumbnail: '/characters/bluey/chilli.png'
+    }
+  ],
+  
+  characterDescriptions: `
+ALLOWED CHARACTERS ONLY:
+The following characters are the ONLY characters permitted in this book.
+⚠️ DO NOT include ANY characters not listed in the selected character list.
+
+BLUEY CHARACTER REFERENCE:
+1. Bluey (6-year-old Blue Heeler)
+   - Light blue fur with darker blue spots
+   - Curious, adventurous, playful personality
+   - Often leads games and adventures
+   
+2. Bingo (4-year-old Red Heeler)
+   - Orange-red fur with lighter belly
+   - Imaginative, sweet, slightly quieter than Bluey
+   - Creative and thoughtful
+   
+3. Bandit (Dad - Blue Heeler)
+   - Dark blue fur, larger build
+   - Playful dad who joins in games
+   - Inventive and patient
+   
+4. Chilli (Mum - Red Heeler)
+   - Orange fur, slender build
+   - Patient, nurturing, supportive
+   - Often helps resolve conflicts
+`,
+  
+  visualStyle: `
+VISUAL STYLE - AUSTRALIAN CHILDREN'S ANIMATION:
+
+Art Direction:
+- Clean, simple 2D animation style
+- Bright, cheerful color palette
+- Soft rounded shapes and forms
+- Child-friendly, accessible aesthetic
+- Warm, inviting Australian suburban setting
+
+Atmosphere:
+- Playful, energetic family scenes
+- Backyard adventures and imaginative play
+- Warm Australian sunshine
+- Cozy family home environment
+`,
+
+  colorPalette: `
+COLOR PALETTE (USE THESE EXACT TONES):
+
+Blues (Heeler dogs):
+- Light Blue: #6EC6F5 (Bluey's fur)
+- Dark Blue: #3A7CA5 (Bandit's fur)
+- Sky Blue: #87CEEB (backgrounds)
+
+Oranges/Reds (Heeler dogs):
+- Orange: #F5A052 (Bingo's fur)
+- Red-Orange: #E87B3F (Chilli's fur)
+
+Environment:
+- Grass Green: #7CB342
+- Sky Blue: #87CEEB
+- House Cream: #FFF8DC
+- Warm Yellow: #FFD54F (sunshine)
+`,
+
+  lightingRules: `
+LIGHTING BEHAVIOR:
+
+Daytime Outdoor:
+- Bright Australian sunshine
+- Warm golden light
+- Soft shadows from trees
+- Clear blue skies
+
+Indoor:
+- Warm ambient lighting
+- Cozy family home atmosphere
+- Soft window light
+`,
+
+  compositionRules: `
+COMPOSITION GUIDELINES:
+
+Character Framing:
+- Family-centered scenes
+- Characters at child's eye level
+- Clear expressions and body language
+- Action-oriented poses during play
+
+Environmental Storytelling:
+- Australian backyard setting
+- Family home interiors
+- Playground and park scenes
+- Neighborhood adventures
+`,
+
+  settingDetails: `
+THE HEELER FAMILY HOME:
+
+Architecture:
+- Typical Australian suburban house
+- Cream/beige exterior
+- Red-brown roof
+- Large backyard with lawn
+- Wooden deck area
+
+Surroundings:
+- Grassy backyard for play
+- Neighborhood streets
+- Local parks and playgrounds
+- Australian native trees
+`,
+
+  specialInstructions: `
+⚠️ CHARACTER RESTRICTIONS - STRICTLY ENFORCED:
+Only include characters from the approved selection list.
+DO NOT include extended family (Stripe, Trixie, Socks, Muffin, etc.) unless specifically selected.
+DO NOT include school friends, neighbors, or other characters.
+
+🎯 QUALITY CONTROL:
+- Maintain consistent character proportions
+- Keep the simple, clean animation style
+- Use bright, cheerful colors
+- Focus on family interaction and imaginative play
+`
+};
+
 export const STYLE_GUIDES: Record<string, StyleGuide> = {
   'bear-stories': BEAR_STORIES_STYLE,
-  // Future themes can be added here
+  'bluey': BLUEY_STYLE,
 };
 
 export function getStyleGuide(styleGuideKey: string): StyleGuide | null {
@@ -582,5 +749,35 @@ CHARACTER CLOTHING:
 - DanDan's jacket: #40B5AD (teal)
 - Chelson's beanie: #7EB9E2 (blue) with #E43F3F pom-pom
 - Gondola cabins: #E43F3F (red)`;
+}
+
+/**
+ * Get character constraint text for selected characters from a style guide
+ * Used to inject character restrictions into page prompts
+ */
+export function getSelectedCharacterConstraints(
+  styleGuideKey: string,
+  selectedCharacterIds: string[]
+): string {
+  const guide = getStyleGuide(styleGuideKey);
+  if (!guide?.selectableCharacters) return '';
+  
+  const selectedChars = guide.selectableCharacters
+    .filter(c => selectedCharacterIds.includes(c.id));
+  
+  if (selectedChars.length === 0) return '';
+  
+  const charList = selectedChars
+    .map(c => `- ${c.name}: ${c.description}`)
+    .join('\n');
+  
+  return `
+⚠️ CHARACTER RESTRICTIONS - STRICTLY ENFORCED:
+ONLY the following characters may appear in this book:
+${charList}
+
+DO NOT include ANY other characters, animals, or named figures.
+All characters not listed above are FORBIDDEN.
+`;
 }
 

@@ -299,7 +299,7 @@ serve(async (req) => {
     let characterConstraintsContext = '';
     console.log(`🎭 Character selection received:`, { characterTheme, selectedCharacterIds });
     if (selectedCharacterIds && selectedCharacterIds.length > 0 && characterTheme) {
-      const constraints = await buildCharacterConstraints(supabaseClient, characterTheme, selectedCharacterIds);
+      const constraints = await buildCharacterConstraints(supabase, characterTheme, selectedCharacterIds);
       if (constraints) {
         characterConstraintsContext = `\n\n${constraints}`;
         console.log(`🎭 Character constraints applied for ${characterTheme}:`, selectedCharacterIds);

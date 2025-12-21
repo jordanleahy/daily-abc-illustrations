@@ -5,6 +5,7 @@
 
 import { Book } from './book';
 import { AgeRangeId } from './ageRange';
+import { DailyPublished as BaseDailyPublished } from './dailyPublished';
 
 /**
  * Book with SEO metadata for daily published content
@@ -28,16 +29,11 @@ export interface LandingPageImage {
 }
 
 /**
- * Daily published content for landing page
+ * Daily published content for landing page - extends base with pages
+ * @deprecated Use DailyPublishedWithPages from @/types/dailyPublished instead
  */
-export interface LandingDailyPublished {
-  id: string;
-  book_id: string;
-  title: string;
+export interface LandingDailyPublished extends Pick<BaseDailyPublished, 'id' | 'book_id' | 'title' | 'status' | 'is_active' | 'expires_at'> {
   description: string;
-  status: string;
-  is_active: boolean;
-  expires_at: string;
   pages: LandingPageImage[];
 }
 

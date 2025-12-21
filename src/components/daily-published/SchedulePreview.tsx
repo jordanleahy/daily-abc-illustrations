@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { useScheduleImagePreloader } from '@/hooks/useScheduleImagePreloader';
@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Clock, BookOpen, Image, Calendar, ExternalLink } from 'lucide-react';
-import { DailyPublishedWithBook } from '@/types/dailyPublished';
+import type { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { toEasternTime } from '@/utils/timezone';
 import { format } from 'date-fns-tz';
 import { BookImage } from '@/components/ui/book-image';
@@ -50,22 +50,14 @@ interface SchedulePreviewCardProps {
 }
 
 function SchedulePreviewCard({ item, position }: SchedulePreviewCardProps) {
-  const navigate = useNavigate();
   const { data: seoMetadata } = useSeoMetadata(item.id);
-  
-  const handleCardClick = () => {
-    if (item.status === 'active') {
-      navigate(`/daily-published/${item.id}`);
-    }
-  };
   
   const isActive = item.status === 'active';
   const isQueued = item.status === 'queued' && typeof position === 'number';
   
-  return (
+  const cardElement = (
     <Card 
-      className={`transition-shadow group ${isActive ? "cursor-pointer hover:shadow-md" : ""}`} 
-      onClick={isActive ? handleCardClick : undefined}
+      className={`transition-shadow group ${isActive ? "cursor-pointer hover:shadow-md" : ""}`}
     >
       <CardHeader className="pb-2 pt-3 px-3">
         <div className="flex gap-3 items-center">
@@ -95,10 +87,15 @@ function SchedulePreviewCard({ item, position }: SchedulePreviewCardProps) {
       </CardHeader>
     </Card>
   );
+
+  if (isActive) {
+    return <Link to={`/daily-published/${item.id}`}>{cardElement}</Link>;
+  }
+  
+  return cardElement;
 }
 
 export function SchedulePreview() {
-  const navigate = useNavigate();
   const { data: scheduleItems, isLoading, error } = useDailyPublishedSchedule();
   
   // Preload schedule images for instant display
@@ -144,13 +141,15 @@ export function SchedulePreview() {
           No upcoming content scheduled yet
         </p>
         <Button 
+          asChild
           variant="outline" 
           size="sm"
-          onClick={() => navigate('/schedule')}
           className="gap-2"
         >
-          <Calendar className="w-4 h-4" />
-          View Full Schedule
+          <Link to="/schedule">
+            <Calendar className="w-4 h-4" />
+            View Full Schedule
+          </Link>
         </Button>
       </div>
     );
@@ -202,13 +201,15 @@ export function SchedulePreview() {
       {/* View Full Schedule Button */}
       <div className="pt-2 border-t border-border/50">
         <Button 
+          asChild
           variant="outline" 
           size="sm"
-          onClick={() => navigate('/schedule')}
           className="w-full gap-2"
         >
-          <ExternalLink className="w-4 h-4" />
-          View Full Schedule
+          <Link to="/schedule">
+            <ExternalLink className="w-4 h-4" />
+            View Full Schedule
+          </Link>
         </Button>
       </div>
     </div>

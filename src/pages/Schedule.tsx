@@ -1,5 +1,5 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useDailyPublishedSchedule } from '@/hooks/useDailyPublishedSchedule';
 import { useBatchSeoMetadata } from '@/hooks/useBatchSeoMetadata';
 import { useBatchBookCoverImages } from '@/hooks/useBatchBookCoverImages';
@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Clock, BookOpen, Image } from 'lucide-react';
-import { DailyPublishedWithBook } from '@/types/dailyPublished';
+import type { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { toEasternTime } from '@/utils/timezone';
 import { format } from 'date-fns-tz';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
@@ -271,8 +271,6 @@ function PublicScheduleCard({
   coverImageUrl,
   onHover
 }: PublicScheduleCardProps) {
-  const navigate = useNavigate();
-  
   // PHASE 3: Progressive loading with intersection observer for long queues
   const { ref, inView } = useIntersectionObserver({
     rootMargin: '400px', // Load before scrolling into view
@@ -282,12 +280,10 @@ function PublicScheduleCard({
   // Priority loading for active item and first 5 queued
   const shouldLoadImmediately = position === 'active' || (typeof position === 'number' && position <= 5);
   const shouldRender = shouldLoadImmediately || inView;
-  const handleCardClick = () => {
-    navigate(`/daily-published/${item.id}`);
-  };
   const isActive = item.status === 'active';
   const isQueued = item.status === 'queued' && typeof position === 'number';
   const isExpired = position === "expired";
+  
   // Don't render if not in view yet (for long queues)
   if (!shouldRender) {
     return (
@@ -299,12 +295,12 @@ function PublicScheduleCard({
     );
   }
 
-   return <Card 
-     ref={ref}
-     className={`transition-shadow group ${isActive ? "cursor-pointer hover:shadow-lg" : ""}`} 
-     onClick={isActive ? handleCardClick : undefined}
-     onMouseEnter={onHover}
-   >
+  const cardElement = (
+    <Card 
+      ref={ref}
+      className={`transition-shadow group ${isActive ? "cursor-pointer hover:shadow-lg" : ""}`} 
+      onMouseEnter={onHover}
+    >
       <CardHeader className="pb-3">
         <div className="flex flex-col md:flex-row gap-3 md:items-center">
           {/* Thumbnail */}
@@ -360,5 +356,12 @@ function PublicScheduleCard({
           </div>
         </div>
       </CardHeader>
-    </Card>;
+    </Card>
+  );
+
+  if (isActive) {
+    return <Link to={`/daily-published/${item.id}`}>{cardElement}</Link>;
+  }
+  
+  return cardElement;
 }

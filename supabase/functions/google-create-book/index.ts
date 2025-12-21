@@ -793,6 +793,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
         metadata: { 
           ...validatedMetadata, 
           hasStyleGuide: !!styleGuide,
+          selectedCharacterIds: selectedCharacterIds || [], // Store selected characters for image regeneration
           // Track which agent created this book for learning
           createdByAgentId: selectedAgent.id,
           createdByAgentType: selectedAgent.type,

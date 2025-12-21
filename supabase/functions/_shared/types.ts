@@ -362,36 +362,3 @@ export interface CompareRequest {
   /** New agent configuration to compare against */
   newConfig: AgentConfig;
 }
-
-// ============================================
-// Daily Published Types (shared with edge functions)
-// ============================================
-
-/**
- * Status values for daily published content lifecycle
- */
-export type DailyPublishedStatus = 'draft' | 'queued' | 'active' | 'expired';
-
-/**
- * Daily published database row type for edge functions
- */
-export interface DailyPublishedRow {
-  id: string;
-  book_id: string;
-  title: string;
-  description?: string | null;
-  status: DailyPublishedStatus;
-  is_active: boolean;
-  published_at: string;
-  expires_at?: string | null;
-  publish_date: string;
-  created_at: string;
-  updated_at: string;
-  queue_position?: number | null;
-  queue_order?: number | null;
-  slug?: string | null;
-  qr_code_image?: string | null;
-  qr_code_public_url?: string | null;
-  qr_code_config?: Record<string, unknown> | null;
-  qr_code_generated_at?: string | null;
-}

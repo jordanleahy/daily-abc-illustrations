@@ -6,7 +6,11 @@ import {
   generateAgentRecord,
   AgentConfig 
 } from "../_shared/instructionTemplates.ts";
-import { corsHeaders } from '../_shared/types.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
 const LOVABLE_AI_GATEWAY = "https://ai.gateway.lovable.dev/v1/chat/completions";

@@ -1,16 +1,33 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { toZonedTime, format } from 'https://esm.sh/date-fns-tz@3';
-import { corsHeaders, DailyPublishedRow } from '../_shared/types.ts';
+
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
 interface Database {
   public: {
     Tables: {
       daily_published: {
-        Row: DailyPublishedRow;
+        Row: {
+          id: string;
+          book_id: string;
+          title: string;
+          description?: string;
+          status: 'draft' | 'queued' | 'active' | 'expired';
+          is_active: boolean;
+          published_at: string;
+          expires_at?: string;
+          publish_date: string;
+          created_at: string;
+          updated_at: string;
+          queue_position?: number;
+        };
       };
     };
     Functions: {
-      process_enhanced_daily_publishing: {
+      process_simple_daily_publishing: {
         Returns: any;
       };
     };
@@ -26,10 +43,9 @@ Deno.serve(async (req) => {
   try {
     console.log('🚀 Simple Daily Publisher started at:', new Date().toISOString());
     
-    // Parse request body to check for force flag
+    // Parse request body to check schedule type
     const body = await req.text();
     const requestData = body ? JSON.parse(body) : {};
-    const forceExecution = requestData.force === true;
     
     // Check if this is the correct time slot for Eastern Time
     const now = new Date();
@@ -37,18 +53,17 @@ Deno.serve(async (req) => {
     const easternHour = easternTime.getHours();
     const easternMinute = easternTime.getMinutes();
     
-    // Only process if it's 7:01 AM Eastern Time (±3 minutes) OR forced
+    // Only process if it's 7:01 AM Eastern Time (±2 minutes for tolerance)
     const isCorrectTime = easternHour === 7 && easternMinute >= 0 && easternMinute <= 3;
     
-    if (!isCorrectTime && !forceExecution) {
+    if (!isCorrectTime) {
       console.log(`⏰ Skipping execution - not 7:01 AM Eastern Time. Current: ${format(easternTime, 'HH:mm zzz')}`);
       return new Response(
         JSON.stringify({ 
           success: true, 
           message: 'Execution skipped - not scheduled time',
           current_eastern_time: format(easternTime, 'yyyy-MM-dd HH:mm:ss zzz'),
-          scheduled_time: '07:01 Eastern Time',
-          hint: 'Add {"force": true} to request body to override time check'
+          scheduled_time: '07:01 Eastern Time'
         }),
         { 
           headers: { 
@@ -59,7 +74,7 @@ Deno.serve(async (req) => {
       );
     }
     
-    console.log(`✅ Executing at Eastern Time: ${format(easternTime, 'yyyy-MM-dd HH:mm:ss zzz')} (forced: ${forceExecution})`);
+    console.log(`✅ Executing at correct Eastern Time: ${format(easternTime, 'yyyy-MM-dd HH:mm:ss zzz')}`);
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL');

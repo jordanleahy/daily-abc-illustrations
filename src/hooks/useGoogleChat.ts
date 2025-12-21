@@ -159,31 +159,6 @@ export const useGoogleChat = (
         queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
       }
 
-      // Debounce SSE updates - batch every 150ms instead of per-token
-      let pendingUpdate = false;
-      let updateTimeoutId: ReturnType<typeof setTimeout> | null = null;
-      const DEBOUNCE_MS = 150;
-
-      const flushUpdate = () => {
-        if (sessionId && pendingUpdate) {
-          const displayContent = stripSuggestTags(fullContent);
-          messagesWithResponse = [
-            ...messagesWithResponse.slice(0, -1),
-            { role: 'assistant' as const, content: displayContent }
-          ];
-          queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
-          pendingUpdate = false;
-        }
-        updateTimeoutId = null;
-      };
-
-      const scheduleUpdate = () => {
-        pendingUpdate = true;
-        if (!updateTimeoutId) {
-          updateTimeoutId = setTimeout(flushUpdate, DEBOUNCE_MS);
-        }
-      };
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
@@ -205,20 +180,24 @@ export const useGoogleChat = (
             const delta = parsed.choices?.[0]?.delta?.content;
             if (delta) {
               fullContent += delta;
-              // Schedule a debounced update instead of updating immediately
-              scheduleUpdate();
+              
+              // Strip suggest tags during streaming for display
+              const displayContent = stripSuggestTags(fullContent);
+              
+              // Update the last message with cleaned content
+              messagesWithResponse = [
+                ...messagesWithResponse.slice(0, -1),
+                { role: 'assistant' as const, content: displayContent }
+              ];
+              if (sessionId) {
+                queryClient.setQueryData(['session-messages', sessionId], messagesWithResponse);
+              }
             }
           } catch (e) {
             console.error('Failed to parse SSE chunk:', e);
           }
         }
       }
-
-      // Flush any pending update when stream ends
-      if (updateTimeoutId) {
-        clearTimeout(updateTimeoutId);
-      }
-      flushUpdate();
 
       // Parse suggestions from final content and strip internal tags
       const parseSuggestions = (text: string) => {
@@ -340,27 +319,6 @@ export const useGoogleChat = (
                 { id: '3-4', label: '3-4 years', value: '3-4 years' },
                 { id: '4-5', label: '4-5 years', value: '4-5 years' },
                 { id: '5-6', label: '5-6 years', value: '5-6 years' },
-              ]
-            };
-          }
-
-          // Character theme selection fallback
-          const lowerText = cleanedText.toLowerCase();
-          if (lowerText.includes('character theme') || lowerText.includes('character style') || 
-              (lowerText.includes('theme') && lowerText.includes('would you like')) ||
-              (lowerText.includes('character') && lowerText.includes('would you like'))) {
-            return { 
-              cleanContent: cleanedText, 
-              suggestedActions: [
-                { id: 'bluey', label: '🐕 Bluey', value: 'Bluey', themeId: 'bluey' as CharacterThemeValue },
-                { id: 'paw-patrol', label: '🐾 PAW Patrol', value: 'PAW Patrol', themeId: 'paw-patrol' as CharacterThemeValue },
-                { id: 'frozen', label: '❄️ Frozen', value: 'Frozen', themeId: 'frozen' as CharacterThemeValue },
-                { id: 'peppa-pig', label: '🐷 Peppa Pig', value: 'Peppa Pig', themeId: 'peppa-pig' as CharacterThemeValue },
-                { id: 'cocomelon', label: '🍉 Cocomelon', value: 'Cocomelon', themeId: 'cocomelon' as CharacterThemeValue },
-                { id: 'mickey-mouse', label: '🐭 Mickey Mouse', value: 'Mickey Mouse', themeId: 'mickey-mouse' as CharacterThemeValue },
-                { id: 'bear-stories', label: '🐻 Bear Stories', value: 'Bear Stories', themeId: 'bear-stories' as CharacterThemeValue },
-                { id: 'no-theme', label: '📚 No Theme', value: 'No Theme', themeId: 'no-theme' as CharacterThemeValue },
-                { id: 'custom', label: '✏️ Custom Theme', value: '', themeId: 'custom' as CharacterThemeValue },
               ]
             };
           }

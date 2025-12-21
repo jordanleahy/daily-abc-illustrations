@@ -664,6 +664,56 @@ export type Database = {
         }
         Relationships: []
       }
+      characters: {
+        Row: {
+          constraint_text: string | null
+          created_at: string
+          default_selected: boolean
+          description: string
+          id: string
+          is_active: boolean
+          name: string
+          sort_order: number
+          theme_id: string
+          thumbnail_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          constraint_text?: string | null
+          created_at?: string
+          default_selected?: boolean
+          description: string
+          id: string
+          is_active?: boolean
+          name: string
+          sort_order?: number
+          theme_id: string
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          constraint_text?: string | null
+          created_at?: string
+          default_selected?: boolean
+          description?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          sort_order?: number
+          theme_id?: string
+          thumbnail_url?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "characters_theme_id_fkey"
+            columns: ["theme_id"]
+            isOneToOne: false
+            referencedRelation: "character_themes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       color_palettes: {
         Row: {
           accent_hex: string

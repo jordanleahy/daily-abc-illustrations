@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { SITE_CONFIG } from '@/config/site';
-import { ChevronLeft, ChevronRight, Book } from 'lucide-react';
+import { ChevronRight, Book } from 'lucide-react';
 import { LandingDailyPublished } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -11,15 +11,7 @@ interface LandingHeroProps {
 }
 
 export const LandingHero = ({ dailyPublished }: LandingHeroProps) => {
-  const navigate = useNavigate();
   const firstPage = dailyPublished?.pages?.[0];
-  
-  // Navigate to daily published book using client-side routing
-  const handleOpenBook = () => {
-    if (dailyPublished?.id) {
-      navigate(`/daily-published/${dailyPublished.id}`);
-    }
-  };
   return (
     <section className="w-full min-h-[600px] flex items-center py-12 md:py-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full">
@@ -78,14 +70,14 @@ export const LandingHero = ({ dailyPublished }: LandingHeroProps) => {
                 </AspectRatio>
 
                 <Button 
-                  type="button"
+                  asChild
                   variant="default" 
-                  className="w-full h-16" 
-                  onClick={handleOpenBook}
-                  title="Open full book"
+                  className="w-full h-16"
                 >
-                  <span className="mr-2">Read Book</span>
-                  <ChevronRight className="h-6 w-6" />
+                  <Link to={`/daily-published/${dailyPublished.id}`}>
+                    <span className="mr-2">Read Book</span>
+                    <ChevronRight className="h-6 w-6" />
+                  </Link>
                 </Button>
               </div>
             ) : (

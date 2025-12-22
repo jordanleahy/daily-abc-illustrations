@@ -34,6 +34,7 @@ import { AgeRangeId } from '@/types/ageRange';
 import type { CharacterThemeValue } from '@/types/characterTheme';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useCharacters, toSelectableCharacter } from '@/hooks/useCharacters';
+import { useCharacterThemes } from '@/hooks/useCharacterThemes';
 import { differenceInYears, differenceInMonths } from 'date-fns';
 import { AdminOnly } from '@/components/AdminOnly';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
@@ -150,6 +151,9 @@ export default function GoogleChat() {
   
   // Track selected character theme from user suggestions
   const [selectedCharacterTheme, setSelectedCharacterTheme] = useState<CharacterThemeValue | null>(null);
+  
+  // Fetch all active themes for text-based theme detection
+  const { data: allCharacterThemes = [] } = useCharacterThemes();
   
   // Track selected character IDs for enforcement
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
@@ -643,6 +647,24 @@ export default function GoogleChat() {
       // Update cache immediately
       queryClient.setQueryData(['session-messages', currentSessionId], newMessages);
       // Persist to DB
+      await updateSessionMessages({ sessionId: currentSessionId, messages: newMessages as any });
+      setInput('');
+      return;
+    }
+
+    // Detect if user message matches a character theme name (e.g., "Bluey")
+    const themeMatch = allCharacterThemes.find(t => 
+      lower === t.display_name.toLowerCase() ||
+      lower === t.id.toLowerCase()
+    );
+
+    if (themeMatch && !selectedCharacterTheme && currentSessionId) {
+      console.log('[Theme Detection] Detected theme from text:', themeMatch.id);
+      setSelectedCharacterTheme(themeMatch.id as CharacterThemeValue);
+      // Add user message to show what they typed, then wait for character selection
+      const userMsg = { role: 'user' as const, content: raw };
+      const newMessages = [...messages, userMsg];
+      queryClient.setQueryData(['session-messages', currentSessionId], newMessages);
       await updateSessionMessages({ sessionId: currentSessionId, messages: newMessages as any });
       setInput('');
       return;

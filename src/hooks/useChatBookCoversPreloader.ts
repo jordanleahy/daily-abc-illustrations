@@ -15,6 +15,12 @@ import oppositesBookCover from '@/assets/book-covers/opposites-cover.png';
 import rhymingBookCover from '@/assets/book-covers/rhyming-cover.png';
 import sightWordsBookCover from '@/assets/book-covers/sight-words-cover.png';
 import animalsBookCover from '@/assets/book-covers/animals-cover.png';
+import digraphsBookCover from '@/assets/book-covers/digraphs-cover.jpeg';
+import bedtimeBookCover from '@/assets/book-covers/bedtime-cover.png';
+import cvcBookCover from '@/assets/book-covers/cvc-cover.png';
+import firstWordsBookCover from '@/assets/book-covers/first-words-cover.png';
+import generalBookCover from '@/assets/book-covers/general-cover.png';
+import parentEducationBookCover from '@/assets/book-covers/parent-education-cover.png';
 
 export function useChatBookCoversPreloader() {
   // All book cover URLs in a stable array
@@ -28,6 +34,12 @@ export function useChatBookCoversPreloader() {
     rhymingBookCover,
     sightWordsBookCover,
     animalsBookCover,
+    digraphsBookCover,
+    bedtimeBookCover,
+    cvcBookCover,
+    firstWordsBookCover,
+    generalBookCover,
+    parentEducationBookCover,
   ], []);
 
   // Preload all book covers with high priority for instant display

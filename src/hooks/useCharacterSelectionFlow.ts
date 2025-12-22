@@ -58,13 +58,23 @@ export function useCharacterSelectionFlow(): UseCharacterSelectionFlowReturn {
   const [isConfirmed, setIsConfirmed] = useState(false);
   
   // Fetch all themes for text detection (with aggressive caching)
-  const { data: allThemes = [] } = useCharacterThemes();
+  const { data: allThemes = [], isLoading: themesLoading } = useCharacterThemes();
   
   // Fetch characters for selected theme
   const { data: characters = [], isLoading: charactersLoading } = useCharacters(themeId);
   
+  // Log theme loading status for debugging
+  useEffect(() => {
+    console.log('[CharacterFlow] Themes status:', {
+      count: allThemes.length,
+      isLoading: themesLoading,
+      themeNames: allThemes.slice(0, 3).map(t => t.display_name),
+    });
+  }, [allThemes, themesLoading]);
+  
   // Prefetch themes on mount for reliable text-based detection
   useEffect(() => {
+    console.log('[CharacterFlow] Prefetching themes on mount...');
     queryClient.prefetchQuery({
       queryKey: ['character-themes', { includeInactive: false }],
       queryFn: async () => {
@@ -73,6 +83,7 @@ export function useCharacterSelectionFlow(): UseCharacterSelectionFlowReturn {
           .select('*')
           .eq('is_active', true)
           .order('sort_order', { ascending: true });
+        console.log('[CharacterFlow] Prefetch complete, got', data?.length, 'themes');
         return data || [];
       },
       staleTime: 24 * 60 * 60 * 1000, // 24 hours
@@ -120,7 +131,27 @@ export function useCharacterSelectionFlow(): UseCharacterSelectionFlowReturn {
    * Returns true if a theme was detected and selected
    */
   const detectThemeFromText = useCallback((input: string): boolean => {
-    if (!input || themeId) return false; // Already have a theme
+    // Log entry point for debugging
+    console.log('[CharacterFlow] detectThemeFromText called:', {
+      input,
+      currentThemeId: themeId,
+      themesAvailable: allThemes.length,
+    });
+    
+    if (!input) {
+      console.log('[CharacterFlow] detectThemeFromText: No input, returning false');
+      return false;
+    }
+    
+    if (themeId) {
+      console.log('[CharacterFlow] detectThemeFromText: Theme already selected, returning false');
+      return false;
+    }
+    
+    if (allThemes.length === 0) {
+      console.log('[CharacterFlow] detectThemeFromText: Themes not loaded yet, returning false');
+      return false;
+    }
     
     const lower = input.toLowerCase().trim();
     
@@ -129,10 +160,11 @@ export function useCharacterSelectionFlow(): UseCharacterSelectionFlowReturn {
       lower === t.id.toLowerCase()
     );
     
-    console.log('[CharacterFlow] Theme detection:', {
+    console.log('[CharacterFlow] Theme detection result:', {
       input: lower,
       themesLoaded: allThemes.length,
       matchFound: !!match,
+      matchId: match?.id,
     });
     
     if (match) {

@@ -356,6 +356,13 @@ export const useGoogleChat = (
         const suggestionsText = match[1].trim();
         const cleanContent = cleanedText.replace(suggestRegex, '').trim();
         
+        // Known theme IDs for detection
+        const themeIds = new Set([
+          'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
+          'moana', 'mickey-mouse', 'mario', 'sesame-street', 'benji-davies',
+          'black-and-white', 'bear-stories', 'dora', 'little-mermaid'
+        ]);
+
         const actions = suggestionsText
           .split('\n')
           .filter(line => line.trim())
@@ -366,9 +373,22 @@ export const useGoogleChat = (
             const id = line.substring(0, colonIndex).trim();
             const label = line.substring(colonIndex + 1).trim();
             
-            return { id, label, value: id === 'custom' ? '' : label };
+            // Check if this action represents a character theme
+            const isTheme = themeIds.has(id) || themeIds.has(id.toLowerCase());
+            
+            const action: SuggestedAction = { 
+              id, 
+              label, 
+              value: id === 'custom' ? '' : label,
+            };
+            if (isTheme) {
+              action.themeId = id as CharacterThemeValue;
+            }
+            return action;
           })
           .filter((action): action is SuggestedAction => action !== null);
+        
+        console.log('[parseSuggestions] Parsed actions:', actions.map(a => ({ id: a.id, themeId: a.themeId })));
         
         return { cleanContent, suggestedActions: actions.length > 0 ? actions : undefined };
       };

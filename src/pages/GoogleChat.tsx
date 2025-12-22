@@ -152,8 +152,24 @@ export default function GoogleChat() {
   // Track selected character theme from user suggestions
   const [selectedCharacterTheme, setSelectedCharacterTheme] = useState<CharacterThemeValue | null>(null);
   
-  // Fetch all active themes for text-based theme detection
+  // Fetch all active themes for text-based theme detection (with prefetch for instant detection)
   const { data: allCharacterThemes = [] } = useCharacterThemes();
+  
+  // Prefetch character themes on mount for reliable text-based detection
+  useEffect(() => {
+    queryClient.prefetchQuery({
+      queryKey: ['character-themes', { includeInactive: false }],
+      queryFn: async () => {
+        const { data } = await supabase
+          .from('character_themes')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+        return data || [];
+      },
+      staleTime: 24 * 60 * 60 * 1000, // 24 hours
+    });
+  }, [queryClient]);
   
   // Track selected character IDs for enforcement
   const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
@@ -658,8 +674,17 @@ export default function GoogleChat() {
       lower === t.id.toLowerCase()
     );
 
+    // Debug logging for theme detection
+    console.log('[Theme Detection] Checking:', {
+      userInput: lower,
+      themesLoaded: allCharacterThemes.length,
+      availableThemes: allCharacterThemes.map(t => t.display_name),
+      matchFound: !!themeMatch,
+      currentSelectedTheme: selectedCharacterTheme
+    });
+
     if (themeMatch && !selectedCharacterTheme && currentSessionId) {
-      console.log('[Theme Detection] Detected theme from text:', themeMatch.id);
+      console.log('[Theme Detection] ✅ Detected theme from text:', themeMatch.id);
       setSelectedCharacterTheme(themeMatch.id as CharacterThemeValue);
       // Add user message to show what they typed, then wait for character selection
       const userMsg = { role: 'user' as const, content: raw };

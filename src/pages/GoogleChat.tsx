@@ -150,6 +150,7 @@ export default function GoogleChat() {
   const [localCreatedBookId, setLocalCreatedBookId] = useState<string | null>(null);
   
   // Character selection flow - single source of truth for theme + character state
+  // This hook manages theme detection, character loading, and selection confirmation
   const characterFlow = useCharacterSelectionFlow();
   
   // Track cover page ID for post-creation uploads

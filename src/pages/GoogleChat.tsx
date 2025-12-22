@@ -33,8 +33,8 @@ import { BookTypeId } from '@/types/bookType';
 import { AgeRangeId } from '@/types/ageRange';
 import type { CharacterThemeValue } from '@/types/characterTheme';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { useCharacters, toSelectableCharacter } from '@/hooks/useCharacters';
-import { useCharacterThemes } from '@/hooks/useCharacterThemes';
+import { useCharacterSelectionFlow } from '@/hooks/useCharacterSelectionFlow';
+import { useCharacterSelectionInjection } from '@/components/chat/CharacterSelectionStep';
 import { differenceInYears, differenceInMonths } from 'date-fns';
 import { AdminOnly } from '@/components/AdminOnly';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
@@ -149,33 +149,8 @@ export default function GoogleChat() {
   // Track locally created book ID (separate from session data for immediate UI updates)
   const [localCreatedBookId, setLocalCreatedBookId] = useState<string | null>(null);
   
-  // Track selected character theme from user suggestions
-  const [selectedCharacterTheme, setSelectedCharacterTheme] = useState<CharacterThemeValue | null>(null);
-  
-  // Fetch all active themes for text-based theme detection (with prefetch for instant detection)
-  const { data: allCharacterThemes = [] } = useCharacterThemes();
-  
-  // Prefetch character themes on mount for reliable text-based detection
-  useEffect(() => {
-    queryClient.prefetchQuery({
-      queryKey: ['character-themes', { includeInactive: false }],
-      queryFn: async () => {
-        const { data } = await supabase
-          .from('character_themes')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true });
-        return data || [];
-      },
-      staleTime: 24 * 60 * 60 * 1000, // 24 hours
-    });
-  }, [queryClient]);
-  
-  // Track selected character IDs for enforcement
-  const [selectedCharacterIds, setSelectedCharacterIds] = useState<string[]>([]);
-  
-  // Fetch characters for selected theme (for CharacterSelector injection)
-  const { data: themeCharacters = [], isLoading: charactersLoading } = useCharacters(selectedCharacterTheme);
+  // Character selection flow - single source of truth for theme + character state
+  const characterFlow = useCharacterSelectionFlow();
   
   // Track cover page ID for post-creation uploads
   const [coverPageId, setCoverPageId] = useState<string | null>(null);
@@ -451,58 +426,41 @@ export default function GoogleChat() {
     }
   }, [outlineJustCompleted, isMobile, createdBookId, bookData?.status]);
 
-  // Add quick reply buttons when AI indicates book is ready to create
-  // Also inject CharacterSelector when theme selected but characters not confirmed
-  const messagesWithCreateOptions = useMemo(() => {
-    if (messages.length === 0) return messages;
-    
-    // Check if we need to inject CharacterSelector
-    // Theme selected + characters finished loading + characters available + no characters confirmed yet
-    const needsCharacterSelection = 
-      selectedCharacterTheme && 
-      !charactersLoading &&
-      themeCharacters.length > 0 && 
-      selectedCharacterIds.length === 0;
-    
-    // If character selection is needed, find the last AI message and inject CharacterSelector
-    if (needsCharacterSelection) {
-      const updatedMessages = [...messages];
-      
-      // Find the last assistant message (this is where we inject the CharacterSelector)
-      for (let i = updatedMessages.length - 1; i >= 0; i--) {
-        const msg = updatedMessages[i];
-        if (msg.role === 'assistant') {
-          // Check if this message already has characterSelection (avoid double injection)
-          const hasCharacterSelection = msg.suggestedActions?.some(
-            (a: any) => a.characterSelection
-          );
-          
-          if (!hasCharacterSelection) {
-            const selectableCharacters = themeCharacters.map(toSelectableCharacter);
-            
-            updatedMessages[i] = {
-              ...msg,
-              suggestedActions: [
-                {
-                  id: 'character-selection',
-                  label: 'Select Characters',
-                  value: '',
-                  themeId: selectedCharacterTheme,
-                  characterSelection: {
-                    themeId: selectedCharacterTheme,
-                    characters: selectableCharacters,
-                  },
-                },
-              ],
-            };
-            return updatedMessages;
-          }
-          break; // Stop after first assistant message
-        }
-      }
+  // Auto-show Book Editor Panel only when outline is just completed (not on page load)
+  useEffect(() => {
+    // Don't auto-show QA for published books
+    if (createdBookId && bookData?.status === 'published') {
+      return;
     }
     
-    const lastMessage = messages[messages.length - 1];
+    if (outlineJustCompleted) {
+      setCurrentEditorPage(1); // Start at cover page
+      setForceEditorClosed(false); // Allow editor to open for newly completed outline
+      
+      // Scroll to bottom to show the banner
+      setTimeout(() => {
+        scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      
+      // Reset flag after opening
+      setOutlineJustCompleted(false);
+    }
+  }, [outlineJustCompleted, isMobile, createdBookId, bookData?.status]);
+
+  // Use refactored hook for character selection injection
+  const messagesWithCharacterSelection = useCharacterSelectionInjection({
+    flowState: characterFlow.state,
+    messages,
+  });
+
+  // Add quick reply buttons when AI indicates book is ready to create
+  const messagesWithCreateOptions = useMemo(() => {
+    if (messagesWithCharacterSelection.length === 0) return messagesWithCharacterSelection;
+    
+    // If character selection is already injected, just return those messages
+    if (characterFlow.needsCharacterSelection) return messagesWithCharacterSelection;
+    
+    const lastMessage = messagesWithCharacterSelection[messagesWithCharacterSelection.length - 1];
     if (lastMessage?.role === 'assistant' && !lastMessage.suggestedActions) {
       const content = typeof lastMessage.content === 'string' ? lastMessage.content.toLowerCase() : '';
       const isReady = content.includes('create book') || 
@@ -512,7 +470,7 @@ export default function GoogleChat() {
       
       if (isReady && pageCount >= 3) {
         // Return messages with suggested actions added to last message
-        const updatedMessages = [...messages];
+        const updatedMessages = [...messagesWithCharacterSelection];
         updatedMessages[updatedMessages.length - 1] = {
           ...lastMessage,
           suggestedActions: [
@@ -524,8 +482,8 @@ export default function GoogleChat() {
         return updatedMessages;
       }
     }
-    return messages;
-  }, [messages, pageCount, selectedCharacterTheme, themeCharacters, selectedCharacterIds, charactersLoading]);
+    return messagesWithCharacterSelection;
+  }, [messagesWithCharacterSelection, pageCount, characterFlow.needsCharacterSelection]);
 
   // Smart scroll: only auto-scroll when user sends a message
   // Keep viewport at top when AI responds so user sees text first
@@ -668,25 +626,9 @@ export default function GoogleChat() {
       return;
     }
 
-    // Detect if user message matches a character theme name (e.g., "Bluey")
-    const themeMatch = allCharacterThemes.find(t => 
-      lower === t.display_name.toLowerCase() ||
-      lower === t.id.toLowerCase()
-    );
-
-    // Debug logging for theme detection
-    console.log('[Theme Detection] Checking:', {
-      userInput: lower,
-      themesLoaded: allCharacterThemes.length,
-      availableThemes: allCharacterThemes.map(t => t.display_name),
-      matchFound: !!themeMatch,
-      currentSelectedTheme: selectedCharacterTheme
-    });
-
-    if (themeMatch && !selectedCharacterTheme && currentSessionId) {
-      console.log('[Theme Detection] ✅ Detected theme from text:', themeMatch.id);
-      setSelectedCharacterTheme(themeMatch.id as CharacterThemeValue);
-      // Add user message to show what they typed, then wait for character selection
+    // Use refactored hook for theme detection from text
+    if (characterFlow.detectThemeFromText(raw)) {
+      // Theme was detected - add user message and wait for character selection
       const userMsg = { role: 'user' as const, content: raw };
       const newMessages = [...messages, userMsg];
       queryClient.setQueryData(['session-messages', currentSessionId], newMessages);
@@ -703,9 +645,9 @@ export default function GoogleChat() {
     await sendMessage(raw, undefined, messages, {
       outlineReady: shouldShowReviewButton && !createdBookId,
       bookCreated: !!createdBookId,
-      characterTheme: selectedCharacterTheme,
+      characterTheme: characterFlow.themeId,
       bookType: selectedBookType,
-      selectedCharacterIds: selectedCharacterIds.length > 0 ? selectedCharacterIds : undefined
+      selectedCharacterIds: characterFlow.selectedCharacterIds.length > 0 ? characterFlow.selectedCharacterIds : undefined
     });
     setInput('');
   };
@@ -726,12 +668,12 @@ export default function GoogleChat() {
       await sendMessageWithImage(message, base64Data, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
         bookCreated: !!createdBookId,
-        characterTheme: selectedCharacterTheme,
+        characterTheme: characterFlow.themeId,
         bookType: selectedBookType
       });
     };
     reader.readAsDataURL(file);
-  }, [input, sendMessageWithImage, messages, shouldShowReviewButton, createdBookId]);
+  }, [input, sendMessageWithImage, messages, shouldShowReviewButton, createdBookId, characterFlow.themeId, selectedBookType]);
 
   // Auto-generate cover prompt for QA panel
   const handleGenerateCoverPrompt = useCallback(async () => {
@@ -883,14 +825,14 @@ export default function GoogleChat() {
         pageDetails: outline?.contentPages || undefined,
         qaImages: Object.keys(editorPageImages).length > 0 ? editorPageImages : undefined,
         bookType: selectedBookType || undefined,
-        characterTheme: selectedCharacterTheme || undefined, // Pass validated theme from suggestions
+        characterTheme: characterFlow.themeId || undefined, // Pass validated theme from flow
         targetAge: selectedAgeRange || undefined, // Pass validated age range
         textOverlayPreference,
         referenceBookId,
         targetWords: targetWords.length > 0 ? targetWords : undefined,
         sessionId: currentSessionId, // Include session ID for traceability
         storedPrompts: Object.keys(promptsToStore).length > 0 ? promptsToStore : undefined, // Use extracted prompts
-        selectedCharacterIds: selectedCharacterIds.length > 0 ? selectedCharacterIds : undefined, // Pass selected character IDs for enforcement
+        selectedCharacterIds: characterFlow.selectedCharacterIds.length > 0 ? characterFlow.selectedCharacterIds : undefined, // Pass selected character IDs for enforcement
       });
       
       console.log('[Book Creation] Created book with', Object.keys(promptsToStore).length, 'stored prompts');
@@ -929,7 +871,7 @@ export default function GoogleChat() {
       console.error('Book creation error:', error);
       // Error toast is handled by the mutation
     }
-  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, selectedCharacterTheme, selectedAgeRange, targetWords, createdBookId]);
+  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, targetWords, createdBookId]);
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
     // Handle special actions
@@ -973,20 +915,20 @@ export default function GoogleChat() {
       // If theme is selected but no characters yet, DON'T send to AI - wait for CharacterSelector
       if (action.themeId && !action.selectedCharacterIds?.length) {
         console.log('[Theme Selection] User selected theme, waiting for character selection:', action.themeId);
-        setSelectedCharacterTheme(action.themeId);
-        // Don't send message - CharacterSelector will be injected via useMemo
+        characterFlow.selectTheme(action.themeId);
+        // Don't send message - CharacterSelector will be injected via hook
         return;
       }
       
       // Theme without character selection handled above
       if (action.themeId) {
-        setSelectedCharacterTheme(action.themeId);
+        characterFlow.selectTheme(action.themeId);
       }
       
       // Capture selected character IDs for enforcement
       if (action.selectedCharacterIds && action.selectedCharacterIds.length > 0) {
         console.log('[Character Selection] User selected characters:', action.selectedCharacterIds);
-        setSelectedCharacterIds(action.selectedCharacterIds);
+        characterFlow.confirmSelection(action.selectedCharacterIds);
       }
       
       // Capture age range if present in the action
@@ -998,12 +940,12 @@ export default function GoogleChat() {
       // Send the predefined response - include newly selected character IDs if present
       const characterIdsToUse = action.selectedCharacterIds?.length > 0 
         ? action.selectedCharacterIds 
-        : selectedCharacterIds;
+        : characterFlow.selectedCharacterIds;
       
       await sendMessage(action.value, undefined, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
         bookCreated: !!createdBookId,
-        characterTheme: action.themeId || selectedCharacterTheme,
+        characterTheme: action.themeId || characterFlow.themeId,
         bookType: selectedBookType,
         selectedCharacterIds: characterIdsToUse
       });
@@ -1031,8 +973,7 @@ export default function GoogleChat() {
         setLocalCreatedBookId(null);
         setOutlineJustCompleted(false);
         setSelectedBookType(null);
-        setSelectedCharacterTheme(null); // Reset theme selection
-        setSelectedCharacterIds([]); // Reset character selection
+        characterFlow.reset(); // Reset theme and character selection
         setSelectedAgeRange(null); // Reset age range selection
         setReplacePageMode({});
         // Close mobile sidebar when creating new session

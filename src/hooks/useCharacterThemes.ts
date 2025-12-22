@@ -37,7 +37,7 @@ export function useCharacterThemes(includeInactive = false) {
       if (error) throw error;
       return data || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours - themes rarely change
   });
 }
 

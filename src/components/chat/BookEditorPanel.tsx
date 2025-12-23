@@ -25,6 +25,8 @@ import { isContentPage } from '@/types/book';
 import { ColorModeUploadSection } from './ColorModeUploadSection';
 import { TextModeUploadSection } from './TextModeUploadSection';
 import { BWModeUploadSection } from './BWModeUploadSection';
+import { TextImageGenerationProgress } from './TextImageGenerationProgress';
+import { useGenerateAllTextImages } from '@/hooks/useGenerateAllTextImages';
 
 
 interface BookEditorPanelProps {
@@ -133,6 +135,16 @@ export function BookEditorPanel({
   const { generateMetadata, isGenerating } = useWordMetadata();
   const { isOverlayHidden, toggleOverlay, isToggling, isLoading: isPreferencesLoading } = useReadingPreferences();
   const { user } = useAuthContext();
+  
+  // Generate all text images hook
+  const {
+    progress: textImageProgress,
+    generateAll: generateAllTextImages,
+    cancel: cancelTextImageGeneration,
+    reset: resetTextImageProgress,
+    retryFailed: retryFailedTextImages,
+    isProcessing: isGeneratingAllTextImages,
+  } = useGenerateAllTextImages(bookId || null);
   
   // Fetch pages data
   const { pages } = useBookPages(bookId || undefined);
@@ -834,11 +846,22 @@ export function BookEditorPanel({
                 </p>
               </div>
             ) : imageMode === 'text' ? (
-              <TextModeUploadSection
-                hasColorImage={hasColorImage}
-                onGenerate={handleGenerateTextImage}
-                isGenerating={isGeneratingTextImage}
-              />
+              isGeneratingAllTextImages || textImageProgress.status !== 'idle' ? (
+                <TextImageGenerationProgress
+                  progress={textImageProgress}
+                  onCancel={cancelTextImageGeneration}
+                  onRetryFailed={retryFailedTextImages}
+                  onClose={resetTextImageProgress}
+                />
+              ) : (
+                <TextModeUploadSection
+                  hasColorImage={hasColorImage}
+                  onGenerate={handleGenerateTextImage}
+                  onGenerateAll={generateAllTextImages}
+                  isGenerating={isGeneratingTextImage}
+                  isGeneratingAll={isGeneratingAllTextImages}
+                />
+              )
             ) : imageMode === 'bw' ? (
               <BWModeUploadSection
                 onImageUpload={onImageUpload}

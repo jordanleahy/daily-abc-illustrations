@@ -1,6 +1,6 @@
-import { useRef, useCallback } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Upload, ClipboardPaste } from 'lucide-react';
+import { Copy, Upload } from 'lucide-react';
 import { processImage } from '@/utils/imageProcessor';
 import { useToast } from '@/hooks/use-toast';
 
@@ -18,6 +18,7 @@ export function ColorModeUploadSection({
   onCancel,
 }: ColorModeUploadSectionProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   const handleFileChange = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -41,39 +42,50 @@ export function ColorModeUploadSection({
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
-  }, [onImageUpload, toast]);
+  }, [onImageUpload, onCancel, toast]);
 
-  const handlePaste = useCallback(async () => {
-    try {
-      const clipboardItems = await navigator.clipboard.read();
-      for (const item of clipboardItems) {
-        const imageType = item.types.find(type => type.startsWith('image/'));
-        if (imageType) {
-          const blob = await item.getType(imageType);
-          const file = new File([blob], 'pasted-image.png', { type: imageType });
-          const processed = await processImage(file, { maxWidth: 1024, maxHeight: 1024 });
-          onImageUpload(processed.dataUrl, 'color');
-          onCancel?.();
-          return;
+  const handlePasteEvent = useCallback(async (e: ClipboardEvent) => {
+    if (disabled) return;
+    
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (const item of Array.from(items)) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const blob = item.getAsFile();
+        if (blob) {
+          try {
+            const processed = await processImage(blob, { maxWidth: 1024, maxHeight: 1024 });
+            onImageUpload(processed.dataUrl, 'color');
+            onCancel?.();
+          } catch (error) {
+            console.error('Error processing pasted image:', error);
+            toast({
+              title: 'Paste failed',
+              description: 'Could not process the pasted image',
+              variant: 'destructive',
+            });
+          }
         }
+        return;
       }
-      toast({
-        title: 'No image found',
-        description: 'Copy an image to your clipboard first',
-        variant: 'destructive',
-      });
-    } catch (error) {
-      console.error('Paste error:', error);
-      toast({
-        title: 'Paste failed',
-        description: 'Could not read from clipboard. Try using the upload button.',
-        variant: 'destructive',
-      });
     }
-  }, [onImageUpload, toast]);
+  }, [disabled, onImageUpload, onCancel, toast]);
+
+  // Add global paste listener when component is mounted
+  useEffect(() => {
+    document.addEventListener('paste', handlePasteEvent);
+    return () => {
+      document.removeEventListener('paste', handlePasteEvent);
+    };
+  }, [handlePasteEvent]);
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center p-4 text-center gap-3">
+    <div 
+      ref={containerRef}
+      className="relative w-full h-full flex flex-col items-center justify-center p-4 text-center gap-3"
+    >
       {onCancel && (
         <Button
           variant="secondary"
@@ -105,16 +117,6 @@ export function ColorModeUploadSection({
         </Button>
         
         <Button
-          onClick={handlePaste}
-          variant="secondary"
-          className="w-full h-14 gap-2 text-base"
-          disabled={disabled}
-        >
-          <ClipboardPaste className="h-5 w-5" />
-          Paste
-        </Button>
-        
-        <Button
           onClick={onCopyPrompt}
           variant="outline"
           className="w-full h-14 gap-2 text-base"
@@ -126,7 +128,7 @@ export function ColorModeUploadSection({
       </div>
       
       <p className="text-xs text-muted-foreground mt-1">
-        Upload or paste your color image
+        Upload or paste (Ctrl/Cmd+V) your image
       </p>
     </div>
   );

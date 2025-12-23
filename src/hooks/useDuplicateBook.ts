@@ -10,10 +10,10 @@ interface DuplicateBookParams {
 
 // Character name replacements for Bluey books (exact word match, case-sensitive)
 const CHARACTER_REPLACEMENTS: [string, string][] = [
-  ['Bluey', 'Thatch'],
-  ['Chili', 'Shelly'],
-  ['Bandit', 'Chelsea'],
-  ['Bingo', 'Whistler'],
+  ['Bluey', 'Shelly'],
+  ['Bingo', 'Thatch'],
+  ['Bandit', 'Whistler'],
+  ['Chili', 'Chelsea'],
 ];
 
 const applyReplacements = (text: string | null): string | null => {
@@ -82,14 +82,26 @@ export const useDuplicateBook = () => {
         throw new Error('Failed to fetch book pages');
       }
 
-      // Apply replacements to book fields
-      const newBookName = applyReplacements(originalBook.book_name);
-      const newDescription = applyReplacements(originalBook.book_description);
+      // Check if this is a Bluey-themed book
+      const metadata = originalBook.metadata as { characterTheme?: string } | null;
+      const isBlueyBook = metadata?.characterTheme === 'bluey';
+
+      // Apply replacements only for Bluey books
+      const newBookName = isBlueyBook 
+        ? applyReplacements(originalBook.book_name) 
+        : originalBook.book_name;
+      const newDescription = isBlueyBook 
+        ? applyReplacements(originalBook.book_description) 
+        : originalBook.book_description;
       
       // Log replacements
-      console.log('[Duplicate] Applying character name replacements:', CHARACTER_REPLACEMENTS.map(([o, r]) => `${o} → ${r}`).join(', '));
-      console.log('[Duplicate] Original title:', originalBook.book_name);
-      console.log('[Duplicate] New title:', newBookName);
+      if (isBlueyBook) {
+        console.log('[Duplicate] Bluey book detected - applying character name replacements:', CHARACTER_REPLACEMENTS.map(([o, r]) => `${o} → ${r}`).join(', '));
+        console.log('[Duplicate] Original title:', originalBook.book_name);
+        console.log('[Duplicate] New title:', newBookName);
+      } else {
+        console.log('[Duplicate] Non-Bluey book - skipping character replacements');
+      }
 
       // Create new book with replacements applied
       const { data: newBook, error: newBookError } = await supabase
@@ -110,7 +122,7 @@ export const useDuplicateBook = () => {
         throw new Error('Failed to create duplicate book');
       }
 
-      // Duplicate all pages with replacements applied
+      // Duplicate all pages (with replacements only for Bluey books)
       if (originalPages && originalPages.length > 0) {
         const pagesToInsert = originalPages.map((page) => ({
           book_id: newBook.id,
@@ -118,9 +130,9 @@ export const useDuplicateBook = () => {
           page_identifier: page.page_identifier || page.letter,
           page_number: page.page_number,
           page_type: page.page_type,
-          title: applyReplacements(page.title),
-          description: applyReplacements(page.description),
-          content: applyReplacementsToJson(page.content),
+          title: isBlueyBook ? applyReplacements(page.title) : page.title,
+          description: isBlueyBook ? applyReplacements(page.description) : page.description,
+          content: isBlueyBook ? applyReplacementsToJson(page.content) : page.content,
         }));
 
         const { error: insertPagesError } = await supabase
@@ -133,14 +145,16 @@ export const useDuplicateBook = () => {
           throw new Error('Failed to duplicate book pages');
         }
         
-        // Log page replacements
-        console.log(`[Duplicate] Processed ${pagesToInsert.length} pages with character replacements`);
+        // Log page processing
+        console.log(`[Duplicate] Processed ${pagesToInsert.length} pages${isBlueyBook ? ' with character replacements' : ''}`);
       }
 
-      // Validate no original names remain in book
-      const validBook = validateNoOriginalNames(newBook.book_name) && validateNoOriginalNames(newBook.book_description);
-      if (!validBook) {
-        console.warn('[Duplicate] Warning: Original character names may still exist in book');
+      // Validate no original names remain in book (only for Bluey books)
+      if (isBlueyBook) {
+        const validBook = validateNoOriginalNames(newBook.book_name) && validateNoOriginalNames(newBook.book_description);
+        if (!validBook) {
+          console.warn('[Duplicate] Warning: Original character names may still exist in book');
+        }
       }
 
       return newBook;

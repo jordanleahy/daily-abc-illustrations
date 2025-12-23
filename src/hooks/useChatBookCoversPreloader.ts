@@ -23,23 +23,24 @@ import generalBookCover from '@/assets/book-covers/general-cover.png';
 import parentEducationBookCover from '@/assets/book-covers/parent-education-cover.png';
 
 export function useChatBookCoversPreloader() {
-  // All book cover URLs in a stable array
+  // Ordered by database sort_order to ensure first 6 get <link rel="preload"> hints
   const bookCoverUrls = useMemo(() => [
-    abcBookCover,
-    numbersBookCover,
-    colorsBookCover,
-    shapesBookCover,
-    emotionsBookCover,
-    oppositesBookCover,
-    rhymingBookCover,
-    sightWordsBookCover,
-    animalsBookCover,
-    digraphsBookCover,
-    bedtimeBookCover,
-    cvcBookCover,
-    firstWordsBookCover,
-    generalBookCover,
-    parentEducationBookCover,
+    digraphsBookCover,        // sort_order: -1 (displays FIRST)
+    abcBookCover,             // sort_order: 0
+    rhymingBookCover,         // sort_order: 1
+    numbersBookCover,         // sort_order: 2
+    shapesBookCover,          // sort_order: 3
+    colorsBookCover,          // sort_order: 4
+    // Below the fold - less critical for instant loading:
+    oppositesBookCover,       // sort_order: 5
+    emotionsBookCover,        // sort_order: 6
+    animalsBookCover,         // sort_order: 7
+    firstWordsBookCover,      // sort_order: 8
+    bedtimeBookCover,         // sort_order: 9
+    cvcBookCover,             // sort_order: 10
+    sightWordsBookCover,      // sort_order: 11
+    generalBookCover,         // sort_order: 13
+    parentEducationBookCover, // sort_order: 14
   ], []);
 
   // Preload all book covers with high priority for instant display

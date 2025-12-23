@@ -16,10 +16,11 @@ import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';
 import { Card } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { UnifiedReadingView } from '@/components/reading';
 import { PublicPageImage } from '@/components/daily-published';
 import { RoleDebugger } from '@/components/RoleDebugger';
-import { Calendar } from 'lucide-react';
+import { Calendar, BookOpen, ArrowLeft, Plus } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
 
 export default function BookReadingView() {
@@ -65,21 +66,36 @@ export default function BookReadingView() {
 
   if (bookError || !book) {
     return (
-      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4 gap-4">
-        <Card className="max-w-md w-full mt-20">
-          <div className="p-6 text-center space-y-4">
-            <div className="flex items-center justify-center gap-2">
-              <Calendar className="h-5 w-5" />
-              <h2 className="text-lg font-semibold">Book Not Found</h2>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+        <Card className="max-w-md w-full">
+          <div className="p-8 text-center space-y-6">
+            <div className="rounded-full bg-muted p-4 w-fit mx-auto">
+              <Calendar className="h-8 w-8 text-muted-foreground" />
             </div>
-            <p className="text-sm text-muted-foreground">
-              This book could not be found in your library.
-            </p>
-            {bookError && (
-              <p className="text-sm text-destructive">
-                Error: {bookError.message}
+            <div className="space-y-2">
+              <h2 className="text-xl font-semibold">Book Not Found</h2>
+              <p className="text-sm text-muted-foreground">
+                This book doesn't exist or may have been deleted.
               </p>
-            )}
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-3 pt-2">
+              <Button 
+                onClick={() => navigate('/books')} 
+                className="flex-1 gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back to My Books
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => navigate('/google-chat')} 
+                className="flex-1 gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                Create New Book
+              </Button>
+            </div>
           </div>
         </Card>
         <RoleDebugger />

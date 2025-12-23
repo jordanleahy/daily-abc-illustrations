@@ -1,10 +1,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export const useDeleteBook = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   return useMutation({
     mutationFn: async (bookId: string) => {
@@ -14,6 +17,7 @@ export const useDeleteBook = () => {
         .eq('id', bookId);
 
       if (error) throw error;
+      return bookId;
     },
     onMutate: async (bookId: string) => {
       // Cancel outgoing refetches
@@ -43,7 +47,7 @@ export const useDeleteBook = () => {
         description: 'Failed to delete the book. Please try again.',
       });
     },
-    onSuccess: () => {
+    onSuccess: (deletedBookId) => {
       queryClient.invalidateQueries({ queryKey: ['books'] });
       queryClient.invalidateQueries({ queryKey: ['book'] });
       queryClient.invalidateQueries({ queryKey: ['library-books'] });
@@ -55,6 +59,12 @@ export const useDeleteBook = () => {
         title: 'Book Deleted',
         description: 'The book and all its content have been permanently deleted.',
       });
+
+      // Auto-redirect if currently viewing the deleted book
+      const currentPath = location.pathname;
+      if (currentPath.includes(`/books/${deletedBookId}`)) {
+        navigate('/books', { replace: true });
+      }
     },
     onSettled: () => {
       // Refetch after mutation completes (success or error)

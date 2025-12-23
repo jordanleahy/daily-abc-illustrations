@@ -123,6 +123,8 @@ export const useDuplicateBook = () => {
       }
 
       // Duplicate all pages (with replacements only for Bluey books)
+      const pageIdMapping: Record<string, string> = {}; // Map old page IDs to new page IDs
+      
       if (originalPages && originalPages.length > 0) {
         const pagesToInsert = originalPages.map((page) => ({
           book_id: newBook.id,
@@ -135,9 +137,10 @@ export const useDuplicateBook = () => {
           content: isBlueyBook ? applyReplacementsToJson(page.content) : page.content,
         }));
 
-        const { error: insertPagesError } = await supabase
+        const { data: insertedPages, error: insertPagesError } = await supabase
           .from('pages')
-          .insert(pagesToInsert);
+          .insert(pagesToInsert)
+          .select('id, page_number');
 
         if (insertPagesError) {
           // If pages insertion fails, try to clean up the book
@@ -145,8 +148,58 @@ export const useDuplicateBook = () => {
           throw new Error('Failed to duplicate book pages');
         }
         
+        // Build page ID mapping (original page ID -> new page ID)
+        if (insertedPages) {
+          originalPages.forEach((originalPage, index) => {
+            const newPage = insertedPages.find(p => p.page_number === originalPage.page_number);
+            if (newPage) {
+              pageIdMapping[originalPage.id] = newPage.id;
+            }
+          });
+        }
+        
         // Log page processing
         console.log(`[Duplicate] Processed ${pagesToInsert.length} pages${isBlueyBook ? ' with character replacements' : ''}`);
+      }
+
+      // Duplicate page_system_prompts for all pages
+      if (Object.keys(pageIdMapping).length > 0) {
+        const originalPageIds = Object.keys(pageIdMapping);
+        
+        // Fetch the latest prompts for each original page
+        const { data: originalPrompts, error: promptsError } = await supabase
+          .from('page_system_prompts')
+          .select('*')
+          .in('page_id', originalPageIds)
+          .eq('is_latest', true);
+
+        if (!promptsError && originalPrompts && originalPrompts.length > 0) {
+          const promptsToInsert = originalPrompts.map((prompt) => ({
+            book_id: newBook.id,
+            page_id: pageIdMapping[prompt.page_id],
+            user_id: userId,
+            content: isBlueyBook ? applyReplacements(prompt.content) || prompt.content : prompt.content,
+            source_type: 'duplicated',
+            prompt_status: prompt.prompt_status,
+            is_latest: true,
+            is_deployed: false,
+            version_number: 1,
+            page_letter: prompt.page_letter,
+            page_title: isBlueyBook ? applyReplacements(prompt.page_title) : prompt.page_title,
+            prompt_type: prompt.prompt_type,
+            generation_metadata: prompt.generation_metadata,
+          }));
+
+          const { error: insertPromptsError } = await supabase
+            .from('page_system_prompts')
+            .insert(promptsToInsert);
+
+          if (insertPromptsError) {
+            console.warn('[Duplicate] Failed to duplicate page_system_prompts:', insertPromptsError.message);
+          } else {
+            console.log(`[Duplicate] Duplicated ${promptsToInsert.length} page system prompts`);
+          }
+        }
       }
 
       // Validate no original names remain in book (only for Bluey books)

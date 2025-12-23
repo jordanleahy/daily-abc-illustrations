@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 export interface TextImageProgress {
   current: number;
@@ -26,6 +27,7 @@ const DELAY_BETWEEN_PAGES_MS = 300;
 export function useGenerateAllTextImages(bookId: string | null) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuthContext();
   const cancelledRef = useRef(false);
   
   const [progress, setProgress] = useState<TextImageProgress>({
@@ -57,6 +59,11 @@ export function useGenerateAllTextImages(bookId: string | null) {
   const generateAll = useCallback(async () => {
     if (!bookId) {
       toast({ title: 'No book selected', variant: 'destructive' });
+      return;
+    }
+
+    if (!user?.id) {
+      toast({ title: 'Not authenticated', variant: 'destructive' });
       return;
     }
 
@@ -172,9 +179,9 @@ export function useGenerateAllTextImages(bookId: string | null) {
         // Composite text onto image
         const compositedBlob = await compositeTextOnImage(imageBlob, page.textOverlay);
 
-        // Upload to storage
+        // Upload to storage - path must start with user ID for RLS policy
         const fileName = `text-${page.pageId}-${Date.now()}.png`;
-        const storagePath = `${bookId}/${fileName}`;
+        const storagePath = `${user.id}/${bookId}/${fileName}`;
 
         const { error: uploadError } = await supabase.storage
           .from('page-images')
@@ -251,7 +258,7 @@ export function useGenerateAllTextImages(bookId: string | null) {
         variant: 'destructive',
       });
     }
-  }, [bookId, queryClient, toast]);
+  }, [bookId, user, queryClient, toast]);
 
   const retryFailed = useCallback(async () => {
     if (!bookId || progress.failedPages.length === 0) return;

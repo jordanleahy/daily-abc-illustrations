@@ -218,6 +218,39 @@ export const useDuplicateBook = () => {
             console.log(`[Duplicate] Duplicated ${promptsToInsert.length} page system prompts`);
           }
         }
+
+        // Duplicate page_image_urls for all pages
+        const { data: originalImages, error: imagesError } = await supabase
+          .from('page_image_urls')
+          .select('*')
+          .in('page_id', originalPageIds)
+          .eq('is_latest', true);
+
+        if (!imagesError && originalImages && originalImages.length > 0) {
+          const imagesToInsert = originalImages.map((img) => ({
+            book_id: newBook.id,
+            page_id: pageIdMapping[img.page_id],
+            user_id: userId,
+            image_url: img.image_url,
+            coloring_image_url: img.coloring_image_url,
+            text_image_url: img.text_image_url,
+            text_overlay_config: img.text_overlay_config,
+            prompt_used: img.prompt_used,
+            source_type: 'duplicated',
+            is_latest: true,
+            version_number: 1,
+          }));
+
+          const { error: insertImagesError } = await supabase
+            .from('page_image_urls')
+            .insert(imagesToInsert);
+
+          if (insertImagesError) {
+            console.warn('[Duplicate] Failed to duplicate page_image_urls:', insertImagesError.message);
+          } else {
+            console.log(`[Duplicate] Duplicated ${imagesToInsert.length} page images`);
+          }
+        }
       }
 
       // Validate no original names remain in book (only for Bluey books)

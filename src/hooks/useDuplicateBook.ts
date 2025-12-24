@@ -104,6 +104,13 @@ export const useDuplicateBook = () => {
       }
 
       // Create new book with replacements applied
+      // Update characterTheme in metadata from 'bluey' to 'westons'
+      let newMetadata = applyReplacementsToJson(originalBook.metadata);
+      if (isBlueyBook && newMetadata && typeof newMetadata === 'object') {
+        newMetadata = { ...newMetadata, characterTheme: 'westons' };
+        console.log('[Duplicate] Updated characterTheme: bluey → westons');
+      }
+
       const { data: newBook, error: newBookError } = await supabase
         .from('books')
         .insert({
@@ -113,7 +120,7 @@ export const useDuplicateBook = () => {
           book_description: newDescription,
           total_pages: originalBook.total_pages,
           status: 'draft',
-          metadata: applyReplacementsToJson(originalBook.metadata),
+          metadata: newMetadata,
         })
         .select()
         .single();

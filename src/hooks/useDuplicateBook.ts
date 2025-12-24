@@ -9,7 +9,18 @@ interface DuplicateBookParams {
 }
 
 // Character name replacements for Bluey books (exact word match, case-sensitive)
+// Include possessive forms: "Bluey's" and "Blueys" (informal without apostrophe)
 const CHARACTER_REPLACEMENTS: [string, string][] = [
+  // Possessive forms first (more specific matches before general)
+  ["Bluey's", "Shelly's"],
+  ["Blueys", "Shelly's"],
+  ["Bingo's", "Thatch's"],
+  ["Bingos", "Thatch's"],
+  ["Bandit's", "Whistler's"],
+  ["Bandits", "Whistler's"],
+  ["Chili's", "Chelsea's"],
+  ["Chilis", "Chelsea's"],
+  // Base names last
   ['Bluey', 'Shelly'],
   ['Bingo', 'Thatch'],
   ['Bandit', 'Whistler'],

@@ -107,8 +107,8 @@ export const useDuplicateBook = () => {
       // Update characterTheme in metadata from 'bluey' to 'westons'
       let newMetadata = applyReplacementsToJson(originalBook.metadata);
       if (isBlueyBook && newMetadata && typeof newMetadata === 'object') {
-        newMetadata = { ...newMetadata, characterTheme: 'westons' };
-        console.log('[Duplicate] Updated characterTheme: bluey → westons');
+        newMetadata = { ...newMetadata, characterTheme: 'weston' };
+        console.log('[Duplicate] Updated characterTheme: bluey → weston');
       }
 
       const { data: newBook, error: newBookError } = await supabase

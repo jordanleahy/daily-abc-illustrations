@@ -325,51 +325,43 @@ export function PageImageSection({ pageId, bookId, showUpload: externalShowUploa
           </Button>
         </div>
       ) : (
-        // Show initial state - paste only (Upload button handles file selection)
+        // Show initial state - Upload, Copy Prompt, and paste instructions
         <div 
           className="flex flex-col items-center justify-center h-full space-y-4 p-4 text-center border-2 border-dashed border-muted-foreground/20 rounded-lg focus:border-primary focus:outline-none transition-colors"
         >
-          <div className="flex flex-col items-center space-y-3">
+          <div className="flex flex-col items-center space-y-3 w-full max-w-xs">
             <div className="w-16 h-16 rounded-full bg-muted/50 flex items-center justify-center">
               <Clipboard className="w-8 h-8 text-muted-foreground/60" />
             </div>
-            <div>
-              <p className="text-sm font-medium text-foreground mb-1">
-                Paste image from clipboard
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Or use the Upload button above to select files
-              </p>
-            </div>
             
-            {/* Generate text overlay button */}
+            {/* Upload button */}
             <Button 
-              onClick={handleGenerateTextImage}
+              onClick={() => setInternalShowUpload(true)}
               size="sm"
               variant="default"
-              className="w-full max-w-xs"
-              disabled={isUploading || isGenerating || !currentImage?.image_url}
+              className="w-full"
+              disabled={isUploading}
             >
-              {isGenerating ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Sparkles className="w-4 h-4 mr-2" />
-              )}
-              {isGenerating ? 'Generating...' : 'Generate'}
+              <Upload className="w-4 h-4 mr-2" />
+              Upload
             </Button>
 
-            {/* View Prompt button */}
+            {/* Copy Prompt button */}
             {hasDeployedPrompt && currentPrompt?.content && (
               <Button 
-                onClick={() => setShowPromptViewer(true)}
+                onClick={handleCopyPrompt}
                 size="sm"
-                variant="secondary"
-                className="w-full max-w-xs"
+                variant="outline"
+                className="w-full"
               >
                 <Copy className="w-4 h-4 mr-2" />
-                View Prompt
+                Copy Prompt
               </Button>
             )}
+            
+            <p className="text-xs text-muted-foreground">
+              Upload or paste (Ctrl/Cmd+V) your image
+            </p>
           </div>
         </div>
       )}

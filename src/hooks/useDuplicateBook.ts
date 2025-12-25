@@ -38,15 +38,6 @@ const applyReplacements = (text: string | null): string | null => {
   return result;
 };
 
-// Validation: ensure no original names remain
-const validateNoOriginalNames = (text: string | null): boolean => {
-  if (!text) return true;
-  for (const [original] of CHARACTER_REPLACEMENTS) {
-    const pattern = new RegExp(`\\b${original}\\b`);
-    if (pattern.test(text)) return false;
-  }
-  return true;
-};
 
 const applyReplacementsToJson = (content: any): any => {
   if (!content) return content;
@@ -274,13 +265,6 @@ export const useDuplicateBook = () => {
         }
       }
 
-      // Validate no original names remain in book (only for Bluey books)
-      if (isBlueyBook) {
-        const validBook = validateNoOriginalNames(newBook.book_name) && validateNoOriginalNames(newBook.book_description);
-        if (!validBook) {
-          console.warn('[Duplicate] Warning: Original character names may still exist in book');
-        }
-      }
 
       return newBook;
     },

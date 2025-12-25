@@ -250,7 +250,8 @@ export const useDuplicateBook = () => {
               user_id: userId,
               image_url: img.image_url,
               coloring_image_url: img.coloring_image_url,
-              text_image_url: img.text_image_url,
+              // For Bluey books, clear text_image_url so it regenerates with correct names
+              text_image_url: isBlueyBook ? null : img.text_image_url,
               text_overlay_config: img.text_overlay_config,
               prompt_used: img.prompt_used,
               source_type: img.source_type || 'user_uploaded',

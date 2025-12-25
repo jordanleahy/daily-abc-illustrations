@@ -142,8 +142,15 @@ export const useDuplicateBook = () => {
 
       // Duplicate all pages (with replacements only for Bluey books)
       const pageIdMapping: Record<string, string> = {}; // Map old page IDs to new page IDs
+      const pageNumberToNewId: Record<number, string> = {}; // Map page_number to new page ID
+      const pageNumberToOriginalId: Record<number, string> = {}; // Map page_number to original page ID
       
       if (originalPages && originalPages.length > 0) {
+        // Build original page_number mapping
+        originalPages.forEach((page) => {
+          pageNumberToOriginalId[page.page_number] = page.id;
+        });
+
         const pagesToInsert = originalPages.map((page) => ({
           book_id: newBook.id,
           letter: page.letter,
@@ -166,18 +173,20 @@ export const useDuplicateBook = () => {
           throw new Error('Failed to duplicate book pages');
         }
         
-        // Build page ID mapping (original page ID -> new page ID)
+        // Build page ID mappings using page_number as reliable key
         if (insertedPages) {
-          originalPages.forEach((originalPage, index) => {
-            const newPage = insertedPages.find(p => p.page_number === originalPage.page_number);
-            if (newPage) {
-              pageIdMapping[originalPage.id] = newPage.id;
+          insertedPages.forEach((newPage) => {
+            pageNumberToNewId[newPage.page_number] = newPage.id;
+            const originalPageId = pageNumberToOriginalId[newPage.page_number];
+            if (originalPageId) {
+              pageIdMapping[originalPageId] = newPage.id;
             }
           });
         }
         
         // Log page processing
         console.log(`[Duplicate] Processed ${pagesToInsert.length} pages${isBlueyBook ? ' with character replacements' : ''}`);
+        console.log(`[Duplicate] Page mappings created: ${Object.keys(pageIdMapping).length}`);
       }
 
       // Duplicate page_system_prompts for all pages
@@ -219,28 +228,44 @@ export const useDuplicateBook = () => {
           }
         }
 
-        // Duplicate page_image_urls for all pages
-        const { data: originalImages, error: imagesError } = await supabase
-          .from('page_image_urls')
-          .select('*')
-          .in('page_id', originalPageIds)
-          .eq('is_latest', true);
+      // Duplicate page_image_urls - query by book_id for reliability
+      const { data: originalImages, error: imagesError } = await supabase
+        .from('page_image_urls')
+        .select('*, pages!inner(page_number)')
+        .eq('book_id', bookId)
+        .eq('is_latest', true);
 
-        if (!imagesError && originalImages && originalImages.length > 0) {
-          const imagesToInsert = originalImages.map((img) => ({
-            book_id: newBook.id,
-            page_id: pageIdMapping[img.page_id],
-            user_id: userId,
-            image_url: img.image_url,
-            coloring_image_url: img.coloring_image_url,
-            text_image_url: img.text_image_url,
-            text_overlay_config: img.text_overlay_config,
-            prompt_used: img.prompt_used,
-            source_type: img.source_type || 'user_uploaded',
-            is_latest: true,
-            version_number: 1,
-          }));
+      console.log(`[Duplicate] Found ${originalImages?.length || 0} images to duplicate`);
 
+      if (!imagesError && originalImages && originalImages.length > 0) {
+        const imagesToInsert = originalImages
+          .map((img) => {
+            // Use page_number from joined pages table to find new page_id
+            const pageNumber = (img.pages as any)?.page_number;
+            const newPageId = pageNumber !== undefined ? pageNumberToNewId[pageNumber] : undefined;
+            
+            if (!newPageId) {
+              console.warn(`[Duplicate] Could not map image for page_number ${pageNumber}`);
+              return null;
+            }
+
+            return {
+              book_id: newBook.id,
+              page_id: newPageId,
+              user_id: userId,
+              image_url: img.image_url,
+              coloring_image_url: img.coloring_image_url,
+              text_image_url: img.text_image_url,
+              text_overlay_config: img.text_overlay_config,
+              prompt_used: img.prompt_used,
+              source_type: img.source_type || 'user_uploaded',
+              is_latest: true,
+              version_number: 1,
+            };
+          })
+          .filter(Boolean);
+
+        if (imagesToInsert.length > 0) {
           const { error: insertImagesError } = await supabase
             .from('page_image_urls')
             .insert(imagesToInsert);
@@ -251,6 +276,7 @@ export const useDuplicateBook = () => {
             console.log(`[Duplicate] Duplicated ${imagesToInsert.length} page images`);
           }
         }
+      }
       }
 
       // Validate no original names remain in book (only for Bluey books)

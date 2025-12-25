@@ -236,7 +236,7 @@ export const useDuplicateBook = () => {
             text_image_url: img.text_image_url,
             text_overlay_config: img.text_overlay_config,
             prompt_used: img.prompt_used,
-            source_type: 'duplicated',
+            source_type: img.source_type,
             is_latest: true,
             version_number: 1,
           }));

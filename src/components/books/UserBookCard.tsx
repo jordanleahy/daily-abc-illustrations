@@ -11,6 +11,7 @@ import { AdminOnly } from '@/components/AdminOnly';
 import { SocialPostTracker } from '@/components/books/SocialPostTracker';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
+import { useGenerateOGAssets } from '@/hooks/useGenerateOGAssets';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getThemeDisplayName } from '@/types/characterTheme';
@@ -20,7 +21,7 @@ import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
 import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Copy, Link2, Share2 } from 'lucide-react';
+import { BookOpen, Copy, Image, Link2, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -62,6 +63,7 @@ export function UserBookCard({
   const { user } = useAuthContext();
   const { toast } = useToast();
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
+  const { mutate: generateOGAssets, isPending: isGeneratingOG } = useGenerateOGAssets();
   const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
   const coverImageUrl = book.coverImageUrl;
   
@@ -282,6 +284,28 @@ export function UserBookCard({
               <Copy className="h-4 w-4" />
               {isDuplicating ? 'Duplicating...' : 'Duplicate'}
             </Button>
+
+            {/* OG Assets - Only show for published books */}
+            {publicationStatus && (
+              <Button 
+                variant="outline"
+                size="sm"
+                className="w-full gap-2"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  generateOGAssets({
+                    bookId: book.id,
+                    title: book.book_name,
+                    description: book.book_description,
+                    dailyPublishedId: publicationStatus.id
+                  });
+                }}
+                disabled={isGeneratingOG}
+              >
+                <Image className="h-4 w-4" />
+                {isGeneratingOG ? 'Generating...' : 'OG Assets'}
+              </Button>
+            )}
 
             {/* Marketing Link - Admin only */}
             {book.marketing_url && (

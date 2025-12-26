@@ -835,6 +835,13 @@ export function BookEditorPanel({
                   <Button
                     variant="secondary"
                     size="sm"
+                    className="text-xs h-7"
+                  >
+                    Westin
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={async () => {
                       if (!currentPageImage) return;
                       setIsCopyingImage(true);

@@ -13,11 +13,11 @@ serve(async (req) => {
   }
 
   try {
-    const { pageId, bookId, colorImageUrl } = await req.json();
+    const { pageId, bookId, textImageUrl } = await req.json();
 
-    if (!pageId || !bookId || !colorImageUrl) {
+    if (!pageId || !bookId || !textImageUrl) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Missing required parameters' }),
+        JSON.stringify({ success: false, error: 'Missing required parameters: pageId, bookId, textImageUrl' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -50,9 +50,10 @@ serve(async (req) => {
       );
     }
 
-    console.log('Generating coloring book image for page:', pageId);
+    console.log('Generating coloring book image from text image for page:', pageId);
 
-    // Call Lovable AI to convert the color image to a coloring book outline
+    // Call Lovable AI to convert the text image to a coloring book outline
+    // The text image has a text bar at the bottom that must be preserved
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -67,12 +68,19 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: "Convert this image into a coloring book page. Create clean black outlines on a pure white background. Remove all colors and shading. Keep the main subjects and shapes clearly defined with bold, simple outlines that children can color in. No gray shading, no colors - just black lines on white."
+                text: `Convert this image into a coloring book page. Create clean, simple black outlines on a pure white background.
+
+CRITICAL INSTRUCTIONS:
+1. This image has a text bar at the bottom with words/title - DO NOT modify, remove, or convert this text bar. Keep the text exactly as it appears with its original styling and colors.
+2. Only convert the illustration portion ABOVE the text bar to black outlines.
+3. Remove all colors and shading from the illustration area only.
+4. Keep the main subjects and shapes clearly defined with bold, simple outlines that children can color in.
+5. The text bar at the bottom should remain completely unchanged.`
               },
               {
                 type: "image_url",
                 image_url: {
-                  url: colorImageUrl
+                  url: textImageUrl
                 }
               }
             ]

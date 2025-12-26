@@ -237,14 +237,13 @@ export function BookEditorPanel({
     }
   };
 
-  // Handle generating coloring book image from color image using AI
+  // Handle generating coloring book image from text image using AI
+  // The text image includes the text bar at the bottom which will be preserved
   const handleGenerateColoringImage = async () => {
-    const colorImageUrl = currentPageNumber === 1 
-      ? (thumbnailUrl || displayImages[1]) 
-      : displayImages[currentPageNumber];
+    const textImageUrl = displayTextImages[currentPageNumber];
     
-    if (!colorImageUrl) {
-      toast({ title: "No color image", description: "Upload a color image first", variant: "destructive" });
+    if (!textImageUrl) {
+      toast({ title: "No text image", description: "Generate a text image first", variant: "destructive" });
       return;
     }
 
@@ -258,13 +257,13 @@ export function BookEditorPanel({
     setIsGeneratingColoringImage(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-coloring-image', {
-        body: { pageId, bookId, colorImageUrl }
+        body: { pageId, bookId, textImageUrl }
       });
 
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to generate coloring image');
 
-      toast({ title: "Coloring page created", description: "B&W coloring book version generated" });
+      toast({ title: "Coloring page created", description: "B&W coloring book version generated with text preserved" });
       
       // Invalidate the book editor data to refresh and show the new coloring image
       await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
@@ -726,8 +725,9 @@ export function BookEditorPanel({
                       variant="secondary"
                       size="sm"
                       onClick={handleGenerateColoringImage}
-                      disabled={isGeneratingColoringImage}
+                      disabled={isGeneratingColoringImage || !hasTextImage}
                       className="text-xs h-7"
+                      title={!hasTextImage ? 'Generate a text image first' : 'Regenerate B&W image'}
                     >
                       {isGeneratingColoringImage ? (
                         <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Generating...</>
@@ -806,7 +806,7 @@ export function BookEditorPanel({
                 <BWModeUploadSection
                   onImageUpload={onImageUpload}
                   onGenerate={handleGenerateColoringImage}
-                  hasColorImage={hasColorImage}
+                  hasTextImage={hasTextImage}
                   isGenerating={isGeneratingColoringImage}
                   disabled={createBookMutation.isPending}
                   onCancel={() => setIsReplacing(false)}
@@ -866,7 +866,7 @@ export function BookEditorPanel({
               <BWModeUploadSection
                 onImageUpload={onImageUpload}
                 onGenerate={handleGenerateColoringImage}
-                hasColorImage={hasColorImage}
+                hasTextImage={hasTextImage}
                 isGenerating={isGeneratingColoringImage}
                 disabled={createBookMutation.isPending}
               />

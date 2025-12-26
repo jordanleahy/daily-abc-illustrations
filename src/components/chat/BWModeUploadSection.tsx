@@ -7,7 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 interface BWModeUploadSectionProps {
   onImageUpload: (base64: string, imageMode: 'color' | 'bw' | 'text') => void;
   onGenerate: () => void;
-  hasColorImage: boolean;
+  hasTextImage: boolean;
   isGenerating: boolean;
   disabled?: boolean;
   onCancel?: () => void;
@@ -16,7 +16,7 @@ interface BWModeUploadSectionProps {
 export function BWModeUploadSection({
   onImageUpload,
   onGenerate,
-  hasColorImage,
+  hasTextImage,
   isGenerating,
   disabled = false,
   onCancel,
@@ -118,7 +118,7 @@ export function BWModeUploadSection({
           Paste
         </Button>
         
-        {hasColorImage && (
+        {hasTextImage && (
           <>
             <div className="flex items-center gap-2 my-1">
               <div className="flex-1 h-px bg-border" />
@@ -137,16 +137,16 @@ export function BWModeUploadSection({
               ) : (
                 <Wand2 className="h-5 w-5" />
               )}
-              {isGenerating ? 'Generating...' : 'Generate from Color'}
+              {isGenerating ? 'Generating...' : 'Generate from Text Image'}
             </Button>
           </>
         )}
       </div>
       
       <p className="text-xs text-muted-foreground mt-1">
-        {hasColorImage 
-          ? 'Upload your own or generate from color image'
-          : 'Upload a black & white coloring page'
+        {hasTextImage 
+          ? 'Upload your own or generate from text image'
+          : 'Generate a text image first, then create B&W version'
         }
       </p>
     </div>

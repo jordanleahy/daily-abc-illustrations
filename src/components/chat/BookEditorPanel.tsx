@@ -412,13 +412,15 @@ export function BookEditorPanel({
     }
 
     setIsEditingWestin(true);
+    toast({ title: "Processing image...", description: "This may take 15-30 seconds" });
+    
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData?.session?.access_token) {
         throw new Error('Not authenticated');
       }
 
-      const response = await supabase.functions.invoke('edit-color-image', {
+      const response = await supabase.functions.invoke<{ success: boolean; imageUrl?: string; error?: string; costCents?: number }>('edit-color-image', {
         body: {
           pageId: currentPageId,
           bookId,
@@ -436,11 +438,12 @@ export function BookEditorPanel({
       }
 
       toast({ title: "Image updated!", description: "The blue dog has been replaced with a Samoyed" });
-      queryClient.invalidateQueries({ queryKey: ['book-page-images'] });
-      queryClient.invalidateQueries({ queryKey: ['page-image-urls'] });
-    } catch (error: any) {
+      queryClient.invalidateQueries({ queryKey: ['book-page-images', bookId] });
+      queryClient.invalidateQueries({ queryKey: ['page-image-urls', bookId] });
+    } catch (error: unknown) {
       console.error('Error editing image:', error);
-      toast({ title: "Edit failed", description: error.message || 'Could not edit image', variant: "destructive" });
+      const message = error instanceof Error ? error.message : 'Could not edit image';
+      toast({ title: "Edit failed", description: message, variant: "destructive" });
     } finally {
       setIsEditingWestin(false);
     }
@@ -827,6 +830,15 @@ export function BookEditorPanel({
                   enableMobileSave={true}
                   disableHoverEffects={true}
                 />
+                
+                {/* Shimmer overlay during Westin edit */}
+                {isEditingWestin && (
+                  <div className="absolute inset-0 bg-background/60 backdrop-blur-[2px] flex flex-col items-center justify-center z-20">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                    <p className="text-sm font-medium text-foreground">Editing image...</p>
+                    <p className="text-xs text-muted-foreground">This may take 15-30 seconds</p>
+                  </div>
+                )}
                 
                 {/* Interactive Text Overlay - only show for content pages in color mode */}
                 {imageMode === 'color' && shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && currentPageText && (

@@ -38,6 +38,7 @@ interface BookEditorPanelProps {
   displayImages: Record<number, string>;
   displayColoringImages?: Record<number, string>;
   displayTextImages?: Record<number, string>;
+  pageBwCosts?: Record<number, number>;
   editorPageImages: Record<number, string>;
   editorPagePrompts: Record<number, string>;
   getCurrentPagePrompt: (pageNum: number) => string | null;
@@ -74,6 +75,7 @@ export function BookEditorPanel({
   displayImages,
   displayColoringImages = {},
   displayTextImages = {},
+  pageBwCosts = {},
   editorPageImages,
   editorPagePrompts,
   getCurrentPagePrompt,
@@ -630,7 +632,14 @@ export function BookEditorPanel({
                       : 'text-muted-foreground hover:text-foreground'
                   }`}
                 >
-                  ⬜ B&W
+                  {pageBwCosts[currentPageNumber] ? (
+                    <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1 rounded">
+                      {(pageBwCosts[currentPageNumber] / 100).toFixed(2)}¢
+                    </span>
+                  ) : (
+                    <span>⬜</span>
+                  )}
+                  B&W
                   {hasBwImage && <span className="text-green-500 ml-0.5">✓</span>}
                 </button>
               )}

@@ -41,7 +41,7 @@ interface BookEditorPanelProps {
   pageBwCosts?: Record<number, number>;
   pageColorCosts?: Record<number, number>;
   editorPageImages: Record<number, string>;
-  editorPagePrompts: Record<number, string>;
+  
   getCurrentPagePrompt: (pageNum: number) => string | null;
   getCurrentPageTitle?: (pageNum: number) => string | null;
   createBookMutation: any;
@@ -79,7 +79,6 @@ export function BookEditorPanel({
   pageBwCosts = {},
   pageColorCosts = {},
   editorPageImages,
-  editorPagePrompts,
   getCurrentPagePrompt,
   getCurrentPageTitle,
   createBookMutation,
@@ -124,7 +123,7 @@ export function BookEditorPanel({
   });
   
   // Derive hasClickedCopy from whether prompt exists for current page OR page was copied
-  const hasClickedCopy = !!editorPagePrompts[currentPageNumber] || copiedPages.has(currentPageNumber);
+  const hasClickedCopy = !!getCurrentPagePrompt(currentPageNumber) || copiedPages.has(currentPageNumber);
   
   // Handle close with context-aware navigation
   const handleClose = () => {

@@ -11,8 +11,8 @@ export function useBookEditorData(bookId: string | null | undefined) {
     queryFn: async () => {
       if (!bookId) return null;
 
-      // Fetch all data in parallel
-      const [bookResult, pagesResult, imagesResult] = await Promise.all([
+      // Fetch all data in parallel (including deployed prompts)
+      const [bookResult, pagesResult, imagesResult, promptsResult] = await Promise.all([
         // Book with chat session data
         supabase
           .from('books')
@@ -27,7 +27,7 @@ export function useBookEditorData(bookId: string | null | undefined) {
           .eq('book_id', bookId)
           .order('page_number', { ascending: true }),
         
-        // All latest images with deployed prompts (including coloring and text images)
+        // All latest images (including coloring and text images)
         supabase
           .from('page_image_urls')
           .select(`
@@ -35,7 +35,14 @@ export function useBookEditorData(bookId: string | null | undefined) {
             pages!inner(page_number, page_type)
           `)
           .eq('book_id', bookId)
-          .eq('is_latest', true)
+          .eq('is_latest', true),
+        
+        // Deployed prompts with page number via join (parallel fetch!)
+        supabase
+          .from('page_system_prompts')
+          .select('content, pages!inner(page_number)')
+          .eq('pages.book_id', bookId)
+          .eq('is_deployed', true)
       ]);
 
       if (bookResult.error) throw bookResult.error;
@@ -43,6 +50,15 @@ export function useBookEditorData(bookId: string | null | undefined) {
       const book = bookResult.data;
       const pages = pagesResult.data || [];
       const images = imagesResult.data || [];
+      const promptsData = promptsResult.data || [];
+
+      // Build deployed prompts map from parallel query
+      const deployedPrompts: Record<number, string> = {};
+      promptsData.forEach((prompt: any) => {
+        if (prompt.pages?.page_number !== undefined) {
+          deployedPrompts[prompt.pages.page_number] = prompt.content;
+        }
+      });
 
       // Build image maps (color, coloring/B&W, text images, and costs)
       const pageImages: Record<number, string> = {};
@@ -54,14 +70,12 @@ export function useBookEditorData(bookId: string | null | undefined) {
         if (item.pages?.page_number !== undefined) {
           if (item.image_url) {
             pageImages[item.pages.page_number] = item.image_url;
-            // Store color generation cost if available
             if (item.color_generation_cost_cents) {
               pageColorCosts[item.pages.page_number] = item.color_generation_cost_cents;
             }
           }
           if (item.coloring_image_url) {
             pageColoringImages[item.pages.page_number] = item.coloring_image_url;
-            // Store B&W cost if available
             if (item.generation_cost_cents) {
               pageBwCosts[item.pages.page_number] = item.generation_cost_cents;
             }
@@ -86,24 +100,6 @@ export function useBookEditorData(bookId: string | null | undefined) {
       const sessionData = book.gemini_chat_sessions;
       const sessionPrompts = (sessionData?.qa_page_prompts as Record<number, string>) || {};
       const sessionImages = (sessionData?.qa_page_images as Record<number, string>) || {};
-
-      // Fetch deployed prompts if we have pages
-      let deployedPrompts: Record<number, string> = {};
-      if (pages.length > 0) {
-        const pageIds = pages.map(p => p.id);
-        const { data: promptsData } = await supabase
-          .from('page_system_prompts')
-          .select('page_id, content')
-          .in('page_id', pageIds)
-          .eq('is_deployed', true);
-
-        promptsData?.forEach((prompt) => {
-          const page = pages.find(p => p.id === prompt.page_id);
-          if (page) {
-            deployedPrompts[page.page_number] = prompt.content;
-          }
-        });
-      }
 
       return {
         book,

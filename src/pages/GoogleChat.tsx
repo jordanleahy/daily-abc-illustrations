@@ -1686,7 +1686,6 @@ export default function GoogleChat() {
                 pageCount={pageCount}
                 displayImages={displayImages}
                 editorPageImages={editorPageImages}
-                editorPagePrompts={editorPagePrompts}
                 getCurrentPagePrompt={getCurrentPagePrompt}
                 getCurrentPageTitle={getCurrentPageTitle}
                 createBookMutation={createBookMutation}
@@ -1729,7 +1728,6 @@ export default function GoogleChat() {
               pageCount={pageCount}
               displayImages={displayImages}
               editorPageImages={editorPageImages}
-              editorPagePrompts={editorPagePrompts}
               getCurrentPagePrompt={getCurrentPagePrompt}
               getCurrentPageTitle={getCurrentPageTitle}
               createBookMutation={createBookMutation}

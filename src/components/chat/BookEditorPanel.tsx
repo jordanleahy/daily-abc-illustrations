@@ -158,6 +158,9 @@ export function BookEditorPanel({
     isProcessing: isGeneratingAllTextImages,
   } = useGenerateAllTextImages(bookId || null);
   
+  // Combined state to check if any image generation is in progress
+  const isAnyGenerating = isGeneratingTextImage || isGeneratingColoringImage || isGeneratingColorImage || isGeneratingAllTextImages;
+  
   // Fetch pages data
   const { pages } = useBookPages(bookId || undefined);
   
@@ -1167,7 +1170,7 @@ export function BookEditorPanel({
             variant="outline"
             size="sm"
             onClick={() => onNavigate('prev')}
-            disabled={currentPageNumber === 1}
+            disabled={currentPageNumber === 1 || isAnyGenerating}
             className="flex-1"
           >
             <ArrowLeft className="h-4 w-4 mr-1" />
@@ -1187,7 +1190,7 @@ export function BookEditorPanel({
             variant="default"
             size="sm"
             onClick={() => onNavigate('next')}
-            disabled={currentPageNumber === pageCount}
+            disabled={currentPageNumber === pageCount || isAnyGenerating}
             className="flex-1"
           >
             Next

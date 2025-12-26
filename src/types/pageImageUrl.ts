@@ -29,6 +29,10 @@ export interface PageImageUrl {
   source_type: 'ai_generated' | 'user_uploaded';
   /** Text overlay configuration applied to this image */
   text_overlay_config?: any | null;
+  /** Cost in cents for AI generation */
+  generation_cost_cents?: number | null;
+  /** Additional usage metadata from AI generation */
+  usage_metadata?: Record<string, any> | null;
   /** ISO timestamp when the record was created */
   created_at: string;
   /** ISO timestamp when the record was last modified */

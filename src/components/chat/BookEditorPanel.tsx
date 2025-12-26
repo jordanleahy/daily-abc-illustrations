@@ -121,6 +121,7 @@ export function BookEditorPanel({
   const [isGeneratingColoringImage, setIsGeneratingColoringImage] = useState(false);
   const [isGeneratingColorImage, setIsGeneratingColorImage] = useState(false);
   const [isCopyingImage, setIsCopyingImage] = useState(false);
+  const [isEditingWestin, setIsEditingWestin] = useState(false);
   
   const { toast } = useToast();
   
@@ -400,6 +401,48 @@ export function BookEditorPanel({
       toast({ title: "Generation failed", description: message, variant: "destructive" });
     } finally {
       setIsGeneratingColorImage(false);
+    }
+  };
+
+  // Handle Westin button click - edit image to replace blue dog with Samoyed
+  const handleWestinEdit = async () => {
+    if (!currentPageImage || !bookId || !currentPageId) {
+      toast({ title: "Cannot edit", description: "No image or book available", variant: "destructive" });
+      return;
+    }
+
+    setIsEditingWestin(true);
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData?.session?.access_token) {
+        throw new Error('Not authenticated');
+      }
+
+      const response = await supabase.functions.invoke('edit-color-image', {
+        body: {
+          pageId: currentPageId,
+          bookId,
+          imageUrl: currentPageImage,
+          editPrompt: "Please replace the blue dog with a Samoyed dog"
+        }
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Edit failed');
+      }
+
+      if (!response.data?.success) {
+        throw new Error(response.data?.error || 'Edit failed');
+      }
+
+      toast({ title: "Image updated!", description: "The blue dog has been replaced with a Samoyed" });
+      queryClient.invalidateQueries({ queryKey: ['book-page-images'] });
+      queryClient.invalidateQueries({ queryKey: ['page-image-urls'] });
+    } catch (error: any) {
+      console.error('Error editing image:', error);
+      toast({ title: "Edit failed", description: error.message || 'Could not edit image', variant: "destructive" });
+    } finally {
+      setIsEditingWestin(false);
     }
   };
   
@@ -835,9 +878,15 @@ export function BookEditorPanel({
                   <Button
                     variant="secondary"
                     size="sm"
+                    onClick={handleWestinEdit}
+                    disabled={isEditingWestin || !currentPageImage}
                     className="text-xs h-7"
                   >
-                    Westin
+                    {isEditingWestin ? (
+                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Editing...</>
+                    ) : (
+                      'Westin'
+                    )}
                   </Button>
                   <Button
                     variant="secondary"

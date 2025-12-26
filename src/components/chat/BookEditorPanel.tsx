@@ -412,7 +412,6 @@ export function BookEditorPanel({
     }
 
     setIsEditingWestin(true);
-    toast({ title: "Processing image...", description: "This may take 15-30 seconds" });
     
     try {
       const { data: sessionData } = await supabase.auth.getSession();

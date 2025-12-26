@@ -169,7 +169,7 @@ CRITICAL INSTRUCTIONS:
     // Update the page_image_urls table with cost tracking
     const { data: existingRecord } = await supabase
       .from('page_image_urls')
-      .select('id, generation_cost_cents, usage_metadata')
+      .select('id, color_generation_cost_cents, usage_metadata')
       .eq('page_id', pageId)
       .eq('is_latest', true)
       .single();
@@ -180,7 +180,7 @@ CRITICAL INSTRUCTIONS:
         .from('page_image_urls')
         .update({ 
           coloring_image_url: coloringImageUrl,
-          generation_cost_cents: (existingRecord.generation_cost_cents || 0) + costCents,
+          color_generation_cost_cents: (existingRecord.color_generation_cost_cents || 0) + costCents,
           usage_metadata: {
             ...(existingRecord.usage_metadata || {}),
             ...buildImageGenerationMetadata(inputTokens, outputTokens, 'coloring_generation')
@@ -204,7 +204,7 @@ CRITICAL INSTRUCTIONS:
           is_latest: true,
           version_number: 1,
           source_type: 'ai_generated',
-          generation_cost_cents: costCents,
+          color_generation_cost_cents: costCents,
           usage_metadata: buildImageGenerationMetadata(inputTokens, outputTokens, 'coloring_generation')
         });
 

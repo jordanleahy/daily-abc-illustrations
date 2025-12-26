@@ -152,7 +152,7 @@ export function BookEditorPanel({
   } = useGenerateAllTextImages(bookId || null);
   
   // Fetch pages data
-  const { pages, loading: pagesLoading } = useBookPages(bookId || undefined);
+  const { pages } = useBookPages(bookId || undefined);
   
   // Helper function to get image for current page based on image mode
   const currentPageImage = useMemo(() => {
@@ -940,7 +940,7 @@ export function BookEditorPanel({
                 onCopyPrompt={handleCopyPrompt}
                 onGenerate={handleGenerateColorImage}
                 isGenerating={isGeneratingColorImage}
-                hasPrompt={!!getCurrentPagePrompt(currentPageNumber) && !pagesLoading && pages.length > 0}
+                hasPrompt={!!getCurrentPagePrompt(currentPageNumber)}
                 disabled={createBookMutation.isPending}
               />
             ) : (

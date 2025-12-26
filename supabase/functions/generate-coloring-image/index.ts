@@ -122,10 +122,11 @@ CRITICAL INSTRUCTIONS:
     const inputCost = (inputTokens / 1000) * 0.00001875;
     const outputCost = (outputTokens / 1000) * 0.000075;
     const estimatedCost = inputCost + outputCost;
-    const costCents = Math.round(estimatedCost * 100 * 100) / 100; // Round to 2 decimal places in cents
+    // Convert to cents as integer (minimum 1 cent if any cost occurred)
+    const costCents = estimatedCost > 0 ? Math.max(1, Math.round(estimatedCost * 100)) : 0;
     
     console.log(`📊 AI Usage - Input: ${inputTokens} tokens, Output: ${outputTokens} tokens, Total: ${totalTokens} tokens`);
-    console.log(`💰 Estimated cost: $${estimatedCost.toFixed(6)} (~${costCents.toFixed(2)} cents)`);
+    console.log(`💰 Estimated cost: $${estimatedCost.toFixed(6)} (~${costCents} cents)`);
 
     // Extract the generated image from the response
     const generatedImageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;

@@ -1,7 +1,5 @@
-import { Button } from '@/components/ui/button';
-import { Link } from 'react-router-dom';
 import { SITE_CONFIG } from '@/config/site';
-import { ChevronRight, Book } from 'lucide-react';
+import { Book } from 'lucide-react';
 import type { LandingDailyPublished } from '@/types/book-extended';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -37,9 +35,6 @@ export const LandingHero = ({ dailyPublished }: LandingHeroProps) => {
                 <AspectRatio ratio={1/1}>
                   <div className="w-full h-full bg-gradient-to-br from-muted via-muted/50 to-muted rounded-lg" />
                 </AspectRatio>
-                <div className="flex items-center justify-center">
-                  <div className="h-12 w-full bg-gradient-to-br from-muted via-muted/50 to-muted rounded-md" />
-                </div>
               </div>
             ) : firstPage ? (
               <div className="space-y-4">
@@ -68,17 +63,6 @@ export const LandingHero = ({ dailyPublished }: LandingHeroProps) => {
                     } 
                   />
                 </AspectRatio>
-
-                <Button 
-                  asChild
-                  variant="default" 
-                  className="w-full h-16"
-                >
-                  <Link to={`/daily-published/${dailyPublished.id}`}>
-                    <span className="mr-2">Read Book</span>
-                    <ChevronRight className="h-6 w-6" />
-                  </Link>
-                </Button>
               </div>
             ) : (
               <AspectRatio ratio={1/1} className="bg-muted rounded-lg flex items-center justify-center">

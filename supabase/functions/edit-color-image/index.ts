@@ -184,7 +184,6 @@ serve(async (req) => {
               model: IMAGE_GENERATION_MODEL,
               edit_prompt: editPrompt,
               generated_at: new Date().toISOString()
-              generated_at: new Date().toISOString()
             }
           }
         })
@@ -214,7 +213,6 @@ serve(async (req) => {
               flat_rate_cost_usd: IMAGE_GENERATION_COST_USD,
               model: IMAGE_GENERATION_MODEL,
               edit_prompt: editPrompt,
-              generated_at: new Date().toISOString()
               generated_at: new Date().toISOString()
             }
           }

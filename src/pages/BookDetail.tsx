@@ -71,7 +71,8 @@ export default function BookDetail() {
   const queryClient = useQueryClient();
   const { pages } = useBookPages(id);
   const { data: book, isLoading: bookLoading, error: bookError, isFetched: bookFetched } = useBook(id);
-  const { data: pageImages = {}, isLoading: imagesLoading } = useBookPageImages(id);
+  const { data: bookPageData, isLoading: imagesLoading } = useBookPageImages(id);
+  const pageImages = bookPageData?.images ?? {};
   const { isLoading: rolesLoading } = useRole();
   
   // Subscribe to real-time page image updates

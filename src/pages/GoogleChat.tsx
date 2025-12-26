@@ -163,8 +163,10 @@ export default function GoogleChat() {
   );
   const createdBookId = localCreatedBookId || selectedSession?.created_book_id || null;
 
-  // Fetch book images from storage if book exists
-  const { data: bookPageImages, isLoading: bookImagesLoading } = useBookPageImages(createdBookId);
+  // Fetch book images and color costs from storage if book exists
+  const { data: bookPageData, isLoading: bookImagesLoading } = useBookPageImages(createdBookId);
+  const bookPageImages = bookPageData?.images ?? {};
+  const pageColorCosts = bookPageData?.colorCosts ?? {};
   
   // Subscribe to real-time page image updates
   usePageImageUrlsSubscription(createdBookId);
@@ -1848,6 +1850,7 @@ export default function GoogleChat() {
                 pageCount={pageCount}
                 displayImages={displayImages}
                 editorPageImages={editorPageImages}
+                pageColorCosts={pageColorCosts}
                 getCurrentPagePrompt={getCurrentPagePrompt}
                 getCurrentPageTitle={getCurrentPageTitle}
                 createBookMutation={createBookMutation}
@@ -1891,6 +1894,7 @@ export default function GoogleChat() {
               pageCount={pageCount}
               displayImages={displayImages}
               editorPageImages={editorPageImages}
+              pageColorCosts={pageColorCosts}
               getCurrentPagePrompt={getCurrentPagePrompt}
               getCurrentPageTitle={getCurrentPageTitle}
               createBookMutation={createBookMutation}
@@ -1902,16 +1906,16 @@ export default function GoogleChat() {
               onCreateBookAndWait={handleCreateBookAndWait}
               coverPageId={coverPageId}
               bookId={createdBookId}
-                onCoverUpload={handleThumbnailUpload}
-                thumbnailUrl={thumbnailUrl}
-                pageTextOverlays={pageTextOverlays}
-                onUpdatePageText={handleUpdatePageText}
-                onToggleStatus={handleToggleBookStatus}
-                isPublishing={updateBookStatusMutation.isPending}
-                bookStatus={(bookData?.status as PublicationStatus) || PublicationStatus.DRAFT}
-                bookTitle={bookData?.book_name}
-                bookDescription={bookData?.book_description || undefined}
-                characterTheme={(bookData?.metadata as any)?.characterTheme}
+              onCoverUpload={handleThumbnailUpload}
+              thumbnailUrl={thumbnailUrl}
+              pageTextOverlays={pageTextOverlays}
+              onUpdatePageText={handleUpdatePageText}
+              onToggleStatus={handleToggleBookStatus}
+              isPublishing={updateBookStatusMutation.isPending}
+              bookStatus={(bookData?.status as PublicationStatus) || PublicationStatus.DRAFT}
+              bookTitle={bookData?.book_name}
+              bookDescription={bookData?.book_description || undefined}
+              characterTheme={(bookData?.metadata as any)?.characterTheme}
             />
           </div>
         )}

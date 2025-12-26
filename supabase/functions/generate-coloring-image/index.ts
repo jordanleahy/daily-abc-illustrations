@@ -1,5 +1,11 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { 
+  IMAGE_GENERATION_MODEL, 
+  IMAGE_GENERATION_COST_USD, 
+  IMAGE_GENERATION_COST_CENTS,
+  logImageGenerationUsage 
+} from "../_shared/aiModelConstants.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -61,7 +67,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
+        model: IMAGE_GENERATION_MODEL,
         messages: [
           {
             role: "user",
@@ -118,12 +124,10 @@ CRITICAL INSTRUCTIONS:
     const outputTokens = usage?.completion_tokens || 0;
     const totalTokens = usage?.total_tokens || inputTokens + outputTokens;
     
-    // Gemini 2.5 Flash Image: flat rate $0.039 per generated image
-    const FLAT_RATE_PER_IMAGE_USD = 0.039;
-    const costCents = Math.round(FLAT_RATE_PER_IMAGE_USD * 100); // 4 cents
+    // Use centralized pricing constants
+    const costCents = IMAGE_GENERATION_COST_CENTS;
     
-    console.log(`📊 AI Usage - Input: ${inputTokens} tokens, Output: ${outputTokens} tokens, Total: ${totalTokens} tokens`);
-    console.log(`💰 Cost: $${FLAT_RATE_PER_IMAGE_USD} (flat rate per image) = ${costCents} cents`);
+    logImageGenerationUsage(inputTokens, outputTokens, totalTokens);
 
     // Extract the generated image from the response
     const generatedImageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
@@ -183,7 +187,9 @@ CRITICAL INSTRUCTIONS:
               input_tokens: inputTokens,
               output_tokens: outputTokens,
               total_tokens: totalTokens,
-              flat_rate_cost_usd: FLAT_RATE_PER_IMAGE_USD,
+              flat_rate_cost_usd: IMAGE_GENERATION_COST_USD,
+              model: IMAGE_GENERATION_MODEL,
+              generated_at: new Date().toISOString()
               generated_at: new Date().toISOString()
             }
           }
@@ -212,7 +218,9 @@ CRITICAL INSTRUCTIONS:
               input_tokens: inputTokens,
               output_tokens: outputTokens,
               total_tokens: totalTokens,
-              flat_rate_cost_usd: FLAT_RATE_PER_IMAGE_USD,
+              flat_rate_cost_usd: IMAGE_GENERATION_COST_USD,
+              model: IMAGE_GENERATION_MODEL,
+              generated_at: new Date().toISOString()
               generated_at: new Date().toISOString()
             }
           }

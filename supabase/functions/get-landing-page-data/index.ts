@@ -63,7 +63,7 @@ Deno.serve(async (req) => {
         .order('updated_at', { ascending: false })
         .limit(6),
 
-      // 3. Get library books directly from books table
+      // 3. Get ALL library books directly from books table (no limit for visitors)
       supabase
         .from('books')
         .select(`
@@ -79,7 +79,6 @@ Deno.serve(async (req) => {
         .eq('is_library_book', true)
         .eq('status', 'published')
         .order('updated_at', { ascending: false })
-        .limit(20)
     ]);
 
     console.log('✅ Step 1 complete:', {

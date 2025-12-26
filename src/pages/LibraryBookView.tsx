@@ -38,7 +38,8 @@ export default function LibraryBookView() {
   
   const { data: book, isLoading: isLoadingBook, error: bookError } = useLibraryBookById(safeBookId);
   const { data: pages = [], isLoading: isLoadingPages } = useLibraryBookPages(safeBookId);
-  const { data: imageMap = {} } = useBookPageImages(safeBookId);
+  const { data: bookPageData } = useBookPageImages(safeBookId);
+  const imageMap = bookPageData?.images ?? {};
   
   // Preload library images with optimization and caching
   useLibraryBookImagePreloader(safeBookId, pages);

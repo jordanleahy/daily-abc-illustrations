@@ -874,6 +874,168 @@ export default function GoogleChat() {
     }
   }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, targetWords, createdBookId]);
 
+  // Create book and wait for result - returns book ID and pages for immediate image generation
+  const handleCreateBookAndWait = useCallback(async (): Promise<{ bookId: string; pages: Array<{ id: string; page_number: number }> } | null> => {
+    // Guard 1: No active session
+    if (!currentSessionId) {
+      console.warn('No active session');
+      return null;
+    }
+
+    // Guard 2: No messages
+    if (messages.length === 0) {
+      console.warn('Please have a conversation first');
+      return null;
+    }
+
+    // Guard 3: Book already created for this session
+    if (createdBookId) {
+      // Book exists, fetch the pages and return
+      const { data: existingPages, error } = await supabase
+        .from('pages')
+        .select('id, page_number')
+        .eq('book_id', createdBookId)
+        .order('page_number');
+      
+      if (error || !existingPages) {
+        console.error('Failed to fetch existing pages:', error);
+        return null;
+      }
+      
+      return { bookId: createdBookId, pages: existingPages };
+    }
+
+    // Guard 4: Creation already in progress
+    if (createBookMutation.isPending) {
+      console.warn('[Book Creation] Book creation already in progress');
+      return null;
+    }
+
+    const outline = parseBookOutline(messages);
+
+    // Extract prompts if not already extracted
+    let promptsToStore = editorPagePrompts;
+    
+    if (Object.keys(promptsToStore).length === 0) {
+      console.log('[Book Creation] No prompts found, extracting from conversation...');
+      
+      const conversationText = messages
+        .filter(m => m.role === 'assistant')
+        .map(m => m.content)
+        .join('\n');
+      
+      const coverMatch = conversationText.match(/\*\*(?:Cover:[^\n*]*|Page\s+1:\s*Cover)\*\*\s*([\s\S]*?)(?=\n\*\*(?:Educational Focus:|Page\s+2:)|\n\*\*Page\s+\d+|$)/i);
+      
+      const extractedPrompts: Record<number, string> = {};
+      
+      if (coverMatch) {
+        let coverPrompt = coverMatch[0];
+        if (!coverPrompt.toLowerCase().includes('centered') && 
+            !coverPrompt.toLowerCase().includes('center')) {
+          const titleMatch = conversationText.match(/\*\*(?:Cover:\s*([^*\n]+?)|Page\s+1:\s*Cover)\*\*/i);
+          const bookTitle = titleMatch ? (titleMatch[1]?.trim() || '[TITLE]') : '[TITLE]';
+          coverPrompt = `${coverPrompt}\n\nCRITICAL INSTRUCTION: Display "${bookTitle}" in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.`;
+        }
+        extractedPrompts[1] = coverPrompt;
+      }
+      
+      const eduMatch = conversationText.match(/\*\*(?:Educational Focus:[^\n*]*|Page\s+2:\s*(?:Educational\s+)?Focus)\*\*\s*([\s\S]*?)(?=\n\*\*Page\s+\d+|$)/i);
+      if (eduMatch) {
+        extractedPrompts[2] = eduMatch[0];
+      }
+      
+      const allPrompts = extractPromptsRecord(outline);
+      Object.assign(extractedPrompts, allPrompts);
+      
+      if (Object.keys(extractedPrompts).length > 0) {
+        await updateQAPagePrompts({ 
+          sessionId: currentSessionId, 
+          qaPagePrompts: extractedPrompts 
+        });
+        setEditorPagePrompts(extractedPrompts);
+        promptsToStore = extractedPrompts;
+      }
+    }
+
+    const textOverlayPreference = 'without-text';
+    let referenceBookId: string | undefined;
+    
+    for (const msg of messages) {
+      if (msg.role === 'user' && typeof msg.content === 'string') {
+        const styleMatch = msg.content.match(/style-([a-f0-9-]{36})/i);
+        if (styleMatch) {
+          referenceBookId = styleMatch[1];
+        }
+      }
+    }
+
+    const textMessages = messages.map(msg => ({
+      role: msg.role,
+      content: typeof msg.content === 'string' ? msg.content : '[Image uploaded]'
+    }));
+
+    try {
+      const result = await createBookMutation.mutateAsync({
+        conversationHistory: textMessages,
+        pageDetails: outline?.contentPages || undefined,
+        qaImages: Object.keys(editorPageImages).length > 0 ? editorPageImages : undefined,
+        bookType: selectedBookType || undefined,
+        characterTheme: characterFlow.themeId || undefined,
+        targetAge: selectedAgeRange || undefined,
+        textOverlayPreference,
+        referenceBookId,
+        targetWords: targetWords.length > 0 ? targetWords : undefined,
+        sessionId: currentSessionId,
+        storedPrompts: Object.keys(promptsToStore).length > 0 ? promptsToStore : undefined,
+        selectedCharacterIds: characterFlow.selectedCharacterIds.length > 0 ? characterFlow.selectedCharacterIds : undefined,
+      });
+      
+      // Set local book ID immediately
+      setLocalCreatedBookId(result.bookId);
+      
+      // Link book to current session
+      await linkBookToSession({ 
+        sessionId: currentSessionId, 
+        bookId: result.bookId 
+      });
+      
+      // Fetch the book details to update session name
+      const { data: bookData } = await supabase
+        .from('books')
+        .select('book_name')
+        .eq('id', result.bookId)
+        .single();
+      
+      if (bookData) {
+        await updateSessionName({
+          sessionId: currentSessionId,
+          name: bookData.book_name,
+          silent: true
+        });
+      }
+      
+      // Fetch the newly created pages
+      const { data: newPages, error: pagesError } = await supabase
+        .from('pages')
+        .select('id, page_number')
+        .eq('book_id', result.bookId)
+        .order('page_number');
+      
+      if (pagesError || !newPages) {
+        console.error('Failed to fetch new pages:', pagesError);
+        return null;
+      }
+      
+      // Clear editor images but keep prompts
+      setEditorPageImages({});
+      
+      return { bookId: result.bookId, pages: newPages };
+    } catch (error) {
+      console.error('Book creation error:', error);
+      return null;
+    }
+  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, targetWords, createdBookId]);
+
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
     // Handle special actions
     if (action.value === 'open_qa') {
@@ -1694,6 +1856,7 @@ export default function GoogleChat() {
                 onImageUpload={handleEditorImageUpload}
                 onRemoveImage={handleRemoveEditorImage}
                 onCreateBook={handleCreateBook}
+                onCreateBookAndWait={handleCreateBookAndWait}
                 coverPageId={coverPageId}
                 bookId={createdBookId}
                 onCoverUpload={handleThumbnailUpload}
@@ -1736,6 +1899,7 @@ export default function GoogleChat() {
               onImageUpload={handleEditorImageUpload}
               onRemoveImage={handleRemoveEditorImage}
               onCreateBook={handleCreateBook}
+              onCreateBookAndWait={handleCreateBookAndWait}
               coverPageId={coverPageId}
               bookId={createdBookId}
                 onCoverUpload={handleThumbnailUpload}

@@ -29,6 +29,11 @@ import { TextImageGenerationProgress } from './TextImageGenerationProgress';
 import { useGenerateAllTextImages } from '@/hooks/useGenerateAllTextImages';
 
 
+interface CreateBookResult {
+  bookId: string;
+  pages: Array<{ id: string; page_number: number }>;
+}
+
 interface BookEditorPanelProps {
   showEditor: boolean;
   isBookCreated: boolean;
@@ -50,6 +55,7 @@ interface BookEditorPanelProps {
   onImageUpload: (base64: string, imageMode: 'color' | 'bw' | 'text') => void;
   onRemoveImage: (pageNumber: number) => void;
   onCreateBook: () => void;
+  onCreateBookAndWait?: () => Promise<CreateBookResult | null>;
   coverPageId?: string | null;
   bookId?: string | null;
   onCoverUpload?: (file: File) => void;
@@ -87,6 +93,7 @@ export function BookEditorPanel({
   onImageUpload,
   onRemoveImage,
   onCreateBook,
+  onCreateBookAndWait,
   coverPageId,
   bookId,
   onCoverUpload,
@@ -318,6 +325,73 @@ export function BookEditorPanel({
       await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
     } catch (error: any) {
       console.error('Error generating color image:', error);
+      const message = error.message?.includes('Rate limit') 
+        ? 'Rate limit exceeded. Please try again later.'
+        : error.message?.includes('credits') 
+        ? 'AI credits exhausted. Please add credits.'
+        : 'Could not generate image';
+      toast({ title: "Generation failed", description: message, variant: "destructive" });
+    } finally {
+      setIsGeneratingColorImage(false);
+    }
+  };
+
+  // Handle generating color image with automatic book creation if needed
+  const handleGenerateWithBookCreation = async () => {
+    // If book already exists, just generate the image
+    if (bookId) {
+      await handleGenerateColorImage();
+      return;
+    }
+
+    // No book yet - need to create it first
+    if (!onCreateBookAndWait) {
+      toast({ title: "Cannot create book", description: "Book creation not available", variant: "destructive" });
+      return;
+    }
+
+    setIsGeneratingColorImage(true);
+    try {
+      toast({ title: "Creating book...", description: "Please wait while we set up your book" });
+      
+      const result = await onCreateBookAndWait();
+      
+      if (!result) {
+        toast({ title: "Book creation failed", description: "Could not create book", variant: "destructive" });
+        return;
+      }
+
+      // Find the page ID for the current page number
+      const pageData = result.pages.find(p => p.page_number === currentPageNumber);
+      if (!pageData) {
+        toast({ title: "Page not found", description: "Could not find page after book creation", variant: "destructive" });
+        return;
+      }
+
+      // Get the prompt
+      const prompt = getCurrentPagePrompt(currentPageNumber);
+      if (!prompt) {
+        toast({ title: "No prompt available", description: "Copy or generate a prompt first", variant: "destructive" });
+        return;
+      }
+
+      // Now generate the image with the new book and page IDs
+      const { data, error } = await supabase.functions.invoke('generate-color-image', {
+        body: { pageId: pageData.id, bookId: result.bookId, prompt }
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
+
+      toast({ 
+        title: "Image generated!", 
+        description: `Cost: ${data.costCents}¢` 
+      });
+      
+      // Invalidate to refresh the new book data
+      await queryClient.invalidateQueries({ queryKey: ['book-editor-data', result.bookId] });
+    } catch (error: any) {
+      console.error('Error generating color image with book creation:', error);
       const message = error.message?.includes('Rate limit') 
         ? 'Rate limit exceeded. Please try again later.'
         : error.message?.includes('credits') 
@@ -937,7 +1011,7 @@ export function BookEditorPanel({
               <ColorModeUploadSection
                 onImageUpload={onImageUpload}
                 onCopyPrompt={handleCopyPrompt}
-                onGenerate={handleGenerateColorImage}
+                onGenerate={handleGenerateWithBookCreation}
                 isGenerating={isGeneratingColorImage}
                 hasPrompt={!!getCurrentPagePrompt(currentPageNumber)}
                 disabled={createBookMutation.isPending}

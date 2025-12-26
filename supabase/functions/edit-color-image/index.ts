@@ -2,9 +2,9 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { 
   IMAGE_GENERATION_MODEL, 
-  IMAGE_GENERATION_COST_USD, 
   IMAGE_GENERATION_COST_CENTS,
-  logImageGenerationUsage 
+  logImageGenerationUsage,
+  buildImageGenerationMetadata
 } from "../_shared/aiModelConstants.ts";
 
 const corsHeaders = {
@@ -176,15 +176,7 @@ serve(async (req) => {
           color_generation_cost_cents: (existingRecord.color_generation_cost_cents || 0) + costCents,
           usage_metadata: {
             ...(existingRecord.usage_metadata || {}),
-            image_edit: {
-              input_tokens: inputTokens,
-              output_tokens: outputTokens,
-              total_tokens: totalTokens,
-              flat_rate_cost_usd: IMAGE_GENERATION_COST_USD,
-              model: IMAGE_GENERATION_MODEL,
-              edit_prompt: editPrompt,
-              generated_at: new Date().toISOString()
-            }
+            ...buildImageGenerationMetadata(inputTokens, outputTokens, 'image_edit', { edit_prompt: editPrompt })
           }
         })
         .eq('id', existingRecord.id);
@@ -205,17 +197,7 @@ serve(async (req) => {
           version_number: 1,
           source_type: 'ai_edited',
           color_generation_cost_cents: costCents,
-          usage_metadata: {
-            image_edit: {
-              input_tokens: inputTokens,
-              output_tokens: outputTokens,
-              total_tokens: totalTokens,
-              flat_rate_cost_usd: IMAGE_GENERATION_COST_USD,
-              model: IMAGE_GENERATION_MODEL,
-              edit_prompt: editPrompt,
-              generated_at: new Date().toISOString()
-            }
-          }
+          usage_metadata: buildImageGenerationMetadata(inputTokens, outputTokens, 'image_edit', { edit_prompt: editPrompt })
         });
 
       if (insertError) {

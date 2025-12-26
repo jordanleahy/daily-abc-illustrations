@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { IMAGE_GENERATION_MODEL } from "../_shared/aiModelConstants.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,7 +48,7 @@ Style: ${themeStyle}Children's book illustration, soft watercolor aesthetic, war
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-2.5-flash-image-preview",
+        model: IMAGE_GENERATION_MODEL,
         messages: [
           {
             role: "user",

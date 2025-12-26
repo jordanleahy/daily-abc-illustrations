@@ -74,14 +74,23 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Convert this image into a coloring book page. Create clean, simple black outlines on a pure white background.
+                text: `Transform this image into a printable coloring book page suitable for children to color with crayons.
 
-CRITICAL INSTRUCTIONS:
-1. This image has a text bar at the bottom with words/title - DO NOT modify, remove, or convert this text bar. Keep the text exactly as it appears with its original styling and colors.
-2. Only convert the illustration portion ABOVE the text bar to black outlines.
-3. Remove all colors and shading from the illustration area only.
-4. Keep the main subjects and shapes clearly defined with bold, simple outlines that children can color in.
-5. The text bar at the bottom should remain completely unchanged.`
+CRITICAL OUTPUT REQUIREMENTS - ZERO EXCEPTIONS:
+- The illustration area must contain ONLY pure black lines (#000000) on a pure white background (#FFFFFF)
+- ABSOLUTELY NO color fills - no browns, blues, greens, pinks, tans, beiges, or ANY color whatsoever
+- ABSOLUTELY NO gray fills or shading - only solid black line outlines
+- All shapes must be empty/hollow white areas bounded by clean black outlines
+- The result must look exactly like a traditional coloring book page you would buy at a store
+- NO gradients, NO colored shadows, NO tinted areas - pure black lines only
+
+TEXT BAR PRESERVATION - MANDATORY:
+- The text bar at the bottom of this image with words/title must remain EXACTLY as-is
+- Do NOT convert, modify, remove, or alter the text bar in any way - keep its original colors and styling completely unchanged
+
+VALIDATION CHECK:
+- If any color (other than black lines and white fill) remains in the illustration area above the text bar, the output is WRONG
+- The goal is for a child to print this on paper and color it themselves with crayons - they need EMPTY white spaces to fill in`
               },
               {
                 type: "image_url",

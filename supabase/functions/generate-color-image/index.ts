@@ -1,7 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { 
-  IMAGE_GENERATION_MODEL, 
+  IMAGE_GENERATION_MODEL,
+  IMAGE_GENERATION_MODEL_PRO,
   IMAGE_GENERATION_COST_CENTS,
   logImageGenerationUsage,
   buildImageGenerationMetadata
@@ -12,6 +13,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Page types that use the pro model for better text accuracy
+const PRO_MODEL_PAGE_TYPES = ['cover', 'educational'];
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -19,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { pageId, bookId, prompt } = await req.json();
+    const { pageId, bookId, prompt, pageType } = await req.json();
 
     if (!pageId || !bookId || !prompt) {
       return new Response(
@@ -56,7 +60,13 @@ serve(async (req) => {
       );
     }
 
+    // Determine which model to use based on page type
+    const useProModel = pageType && PRO_MODEL_PAGE_TYPES.includes(pageType);
+    const selectedModel = useProModel ? IMAGE_GENERATION_MODEL_PRO : IMAGE_GENERATION_MODEL;
+    
     console.log('🎨 Generating color image for page:', pageId);
+    console.log('📄 Page type:', pageType || 'unknown');
+    console.log('🤖 Using model:', selectedModel, useProModel ? '(PRO - better text accuracy)' : '(standard)');
     console.log('📝 Prompt length:', prompt.length);
 
     // Call Lovable AI to generate the color image
@@ -67,7 +77,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: IMAGE_GENERATION_MODEL,
+        model: selectedModel,
         messages: [
           {
             role: "user",

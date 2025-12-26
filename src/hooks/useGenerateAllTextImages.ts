@@ -212,6 +212,9 @@ export function useGenerateAllTextImages(bookId: string | null) {
           completedPages: [...prev.completedPages, page.pageNumber],
         }));
 
+        // Progressively invalidate to show images as they're generated
+        await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
+
       } catch (error: any) {
         console.error(`Error generating text image for page ${page.letter}:`, error);
         failedPages.push({
@@ -242,8 +245,11 @@ export function useGenerateAllTextImages(bookId: string | null) {
       currentPageLetter: null,
     }));
 
-    // Invalidate queries to refresh the UI
-    await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
+    // Force refetch to ensure UI is fully up to date
+    await queryClient.invalidateQueries({ 
+      queryKey: ['book-editor-data', bookId],
+      refetchType: 'all' 
+    });
 
     // Show summary toast
     if (failedPages.length === 0) {

@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useUpdateBookStatus } from '@/hooks/useUpdateBookStatus';
@@ -39,6 +39,27 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
 
   // Preload images - use existing prefetched data if available
   useBookEditorImagePreloader(editorData?.pageImages);
+
+  // Real-time subscription for page_image_urls changes
+  useEffect(() => {
+    if (!bookId) return;
+    
+    const channel = supabase
+      .channel(`page-images-${bookId}`)
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'page_image_urls',
+        filter: `book_id=eq.${bookId}`
+      }, () => {
+        queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
+      })
+      .subscribe();
+      
+    return () => { 
+      supabase.removeChannel(channel); 
+    };
+  }, [bookId, queryClient]);
 
   const handleEditorPageNavigation = useCallback((direction: 'next' | 'prev') => {
     const pages = editorData?.pages;

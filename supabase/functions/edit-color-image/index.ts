@@ -112,14 +112,12 @@ serve(async (req) => {
     const outputTokens = usage?.completion_tokens || 0;
     const totalTokens = usage?.total_tokens || inputTokens + outputTokens;
     
-    // Estimate cost
-    const inputCost = (inputTokens / 1000) * 0.00001875;
-    const outputCost = (outputTokens / 1000) * 0.000075;
-    const estimatedCost = inputCost + outputCost;
-    const costCents = estimatedCost > 0 ? Math.max(1, Math.round(estimatedCost * 100)) : 0;
+    // Gemini 2.5 Flash Image: flat rate $0.039 per generated image
+    const FLAT_RATE_PER_IMAGE_USD = 0.039;
+    const costCents = Math.round(FLAT_RATE_PER_IMAGE_USD * 100); // 4 cents
     
     console.log(`📊 AI Usage - Input: ${inputTokens} tokens, Output: ${outputTokens} tokens, Total: ${totalTokens} tokens`);
-    console.log(`💰 Estimated cost: $${estimatedCost.toFixed(6)} (~${costCents} cents)`);
+    console.log(`💰 Cost: $${FLAT_RATE_PER_IMAGE_USD} (flat rate per image) = ${costCents} cents`);
 
     // Extract the generated image from the response
     const generatedImageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
@@ -178,7 +176,7 @@ serve(async (req) => {
               input_tokens: inputTokens,
               output_tokens: outputTokens,
               total_tokens: totalTokens,
-              estimated_cost_usd: estimatedCost,
+              flat_rate_cost_usd: FLAT_RATE_PER_IMAGE_USD,
               edit_prompt: editPrompt,
               generated_at: new Date().toISOString()
             }
@@ -207,7 +205,7 @@ serve(async (req) => {
               input_tokens: inputTokens,
               output_tokens: outputTokens,
               total_tokens: totalTokens,
-              estimated_cost_usd: estimatedCost,
+              flat_rate_cost_usd: FLAT_RATE_PER_IMAGE_USD,
               edit_prompt: editPrompt,
               generated_at: new Date().toISOString()
             }

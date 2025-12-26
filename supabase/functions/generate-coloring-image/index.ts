@@ -103,7 +103,21 @@ serve(async (req) => {
     }
 
     const aiData = await response.json();
-    console.log('AI response received');
+    
+    // Extract and log usage/cost information
+    const usage = aiData.usage;
+    const inputTokens = usage?.prompt_tokens || 0;
+    const outputTokens = usage?.completion_tokens || 0;
+    const totalTokens = usage?.total_tokens || inputTokens + outputTokens;
+    
+    // Estimate cost (Gemini 2.5 Flash pricing: ~$0.00001875/1K input, ~$0.000075/1K output)
+    const inputCost = (inputTokens / 1000) * 0.00001875;
+    const outputCost = (outputTokens / 1000) * 0.000075;
+    const estimatedCost = inputCost + outputCost;
+    const costCents = Math.round(estimatedCost * 100 * 100) / 100; // Round to 2 decimal places in cents
+    
+    console.log(`📊 AI Usage - Input: ${inputTokens} tokens, Output: ${outputTokens} tokens, Total: ${totalTokens} tokens`);
+    console.log(`💰 Estimated cost: $${estimatedCost.toFixed(6)} (~${costCents.toFixed(2)} cents)`);
 
     // Extract the generated image from the response
     const generatedImageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
@@ -142,19 +156,32 @@ serve(async (req) => {
     const coloringImageUrl = publicUrlData.publicUrl;
     console.log('Coloring image uploaded:', coloringImageUrl);
 
-    // Update the page_image_urls table
+    // Update the page_image_urls table with cost tracking
     const { data: existingRecord } = await supabase
       .from('page_image_urls')
-      .select('id')
+      .select('id, generation_cost_cents, usage_metadata')
       .eq('page_id', pageId)
       .eq('is_latest', true)
       .single();
 
     if (existingRecord) {
-      // Update existing record
+      // Update existing record with coloring image and cost
       const { error: updateError } = await supabase
         .from('page_image_urls')
-        .update({ coloring_image_url: coloringImageUrl })
+        .update({ 
+          coloring_image_url: coloringImageUrl,
+          generation_cost_cents: (existingRecord.generation_cost_cents || 0) + costCents,
+          usage_metadata: {
+            ...(existingRecord.usage_metadata || {}),
+            coloring_generation: {
+              input_tokens: inputTokens,
+              output_tokens: outputTokens,
+              total_tokens: totalTokens,
+              estimated_cost_usd: estimatedCost,
+              generated_at: new Date().toISOString()
+            }
+          }
+        })
         .eq('id', existingRecord.id);
 
       if (updateError) {
@@ -162,7 +189,7 @@ serve(async (req) => {
         throw new Error('Failed to update coloring image URL');
       }
     } else {
-      // Create new record
+      // Create new record with cost tracking
       const { error: insertError } = await supabase
         .from('page_image_urls')
         .insert({
@@ -172,7 +199,17 @@ serve(async (req) => {
           coloring_image_url: coloringImageUrl,
           is_latest: true,
           version_number: 1,
-          source_type: 'ai_generated'
+          source_type: 'ai_generated',
+          generation_cost_cents: costCents,
+          usage_metadata: {
+            coloring_generation: {
+              input_tokens: inputTokens,
+              output_tokens: outputTokens,
+              total_tokens: totalTokens,
+              estimated_cost_usd: estimatedCost,
+              generated_at: new Date().toISOString()
+            }
+          }
         });
 
       if (insertError) {

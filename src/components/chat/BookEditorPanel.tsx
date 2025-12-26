@@ -934,32 +934,6 @@ export function BookEditorPanel({
                 isGenerating={isGeneratingColoringImage}
                 disabled={createBookMutation.isPending}
               />
-            ) : !hasSeenOnboarding ? (
-              <button
-                onClick={handleCopyPrompt}
-                className="w-full h-full flex flex-col items-center justify-center p-6 text-center hover:bg-muted/50 transition-colors cursor-pointer"
-              >
-                <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                  <Copy className="h-8 w-8 text-foreground" />
-                </div>
-                <p className="text-base font-semibold mb-2">Copy Image Prompt</p>
-                <p className="text-xs text-muted-foreground">
-                  Click to copy prompt for AI Studio
-                </p>
-              </button>
-            ) : !hasClickedCopy ? (
-              <button
-                onClick={handleCopyPrompt}
-                className="w-full h-full flex flex-col items-center justify-center p-6 text-center hover:bg-muted/50 transition-colors cursor-pointer"
-              >
-                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
-                  <Copy className="h-8 w-8 text-primary" />
-                </div>
-                <p className="text-base font-semibold mb-2">Copy Image Prompt</p>
-                <p className="text-xs text-muted-foreground">
-                  Click to copy prompt for AI Studio
-                </p>
-              </button>
             ) : imageMode === 'color' ? (
               <ColorModeUploadSection
                 onImageUpload={onImageUpload}

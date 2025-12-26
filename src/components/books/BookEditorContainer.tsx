@@ -265,6 +265,10 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
     return editorData?.pageBwCosts || {};
   }, [editorData?.pageBwCosts]);
 
+  const pageColorCosts = useMemo(() => {
+    return editorData?.pageColorCosts || {};
+  }, [editorData?.pageColorCosts]);
+
   const pageTextOverlays = useMemo(() => {
     return { ...(editorData?.pageTextOverlays || {}), ...localTextOverrides };
   }, [editorData?.pageTextOverlays, localTextOverrides]);
@@ -293,6 +297,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
       displayColoringImages={displayColoringImages}
       displayTextImages={displayTextImages}
       pageBwCosts={pageBwCosts}
+      pageColorCosts={pageColorCosts}
       getCurrentPagePrompt={getCurrentPagePrompt}
       createBookMutation={{ isSuccess: false } as any}
       onClose={onClose}

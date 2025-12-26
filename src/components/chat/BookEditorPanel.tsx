@@ -317,10 +317,6 @@ export function BookEditorPanel({
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
 
-      toast({ 
-        title: "Image generated!", 
-        description: `Cost: ${data.costCents}¢` 
-      });
       
       // Invalidate the book editor data to refresh and show the new image
       await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
@@ -384,10 +380,6 @@ export function BookEditorPanel({
       if (error) throw error;
       if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
 
-      toast({ 
-        title: "Image generated!", 
-        description: `Cost: ${data.costCents}¢` 
-      });
       
       // Invalidate to refresh the new book data
       await queryClient.invalidateQueries({ queryKey: ['book-editor-data', result.bookId] });

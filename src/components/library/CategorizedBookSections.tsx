@@ -99,15 +99,15 @@ export const CategorizedBookSections = memo(({
     );
   }
 
+  // Only show categories that actually have books
+  const categoriesWithBooks = categoriesToShow.filter(
+    category => (booksByCategory[category.id]?.length || 0) > 0
+  );
+
   return (
     <div className={LIBRARY_STYLES.page.content}>
-      {categoriesToShow.map((category) => {
+      {categoriesWithBooks.map((category) => {
         const categoryBooks = booksByCategory[category.id] || [];
-        
-        // Skip empty categories unless showAllCategories is true
-        if (categoryBooks.length === 0 && !showAllCategories) {
-          return null;
-        }
 
         return (
           <CategoryBookCarousel

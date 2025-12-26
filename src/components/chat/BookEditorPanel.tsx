@@ -623,7 +623,7 @@ export function BookEditorPanel({
                 🎨 Color
                 {hasColorImage && <span className="text-green-500 ml-0.5">✓</span>}
               </button>
-              {hasColorImage && (
+              {hasTextImage && (
                 <button 
                   onClick={() => setImageMode('bw')}
                   className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${

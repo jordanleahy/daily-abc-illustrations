@@ -31,7 +31,7 @@ export function useBookEditorData(bookId: string | null | undefined) {
         supabase
           .from('page_image_urls')
           .select(`
-            id, image_url, coloring_image_url, text_image_url, page_id, generation_cost_cents,
+            id, image_url, coloring_image_url, text_image_url, page_id, generation_cost_cents, color_generation_cost_cents,
             pages!inner(page_number, page_type)
           `)
           .eq('book_id', bookId)
@@ -44,15 +44,20 @@ export function useBookEditorData(bookId: string | null | undefined) {
       const pages = pagesResult.data || [];
       const images = imagesResult.data || [];
 
-      // Build image maps (color, coloring/B&W, text images, and B&W costs)
+      // Build image maps (color, coloring/B&W, text images, and costs)
       const pageImages: Record<number, string> = {};
       const pageColoringImages: Record<number, string> = {};
       const pageTextImages: Record<number, string> = {};
       const pageBwCosts: Record<number, number> = {};
+      const pageColorCosts: Record<number, number> = {};
       images.forEach((item: any) => {
         if (item.pages?.page_number !== undefined) {
           if (item.image_url) {
             pageImages[item.pages.page_number] = item.image_url;
+            // Store color generation cost if available
+            if (item.color_generation_cost_cents) {
+              pageColorCosts[item.pages.page_number] = item.color_generation_cost_cents;
+            }
           }
           if (item.coloring_image_url) {
             pageColoringImages[item.pages.page_number] = item.coloring_image_url;
@@ -107,6 +112,7 @@ export function useBookEditorData(bookId: string | null | undefined) {
         pageColoringImages,
         pageTextImages,
         pageBwCosts,
+        pageColorCosts,
         coverPage,
         coverImageUrl,
         pageTextOverlays,

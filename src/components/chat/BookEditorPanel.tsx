@@ -39,6 +39,7 @@ interface BookEditorPanelProps {
   displayColoringImages?: Record<number, string>;
   displayTextImages?: Record<number, string>;
   pageBwCosts?: Record<number, number>;
+  pageColorCosts?: Record<number, number>;
   editorPageImages: Record<number, string>;
   editorPagePrompts: Record<number, string>;
   getCurrentPagePrompt: (pageNum: number) => string | null;
@@ -76,6 +77,7 @@ export function BookEditorPanel({
   displayColoringImages = {},
   displayTextImages = {},
   pageBwCosts = {},
+  pageColorCosts = {},
   editorPageImages,
   editorPagePrompts,
   getCurrentPagePrompt,
@@ -111,6 +113,7 @@ export function BookEditorPanel({
   const [imageMode, setImageMode] = useState<'color' | 'bw' | 'text'>('color');
   const [isGeneratingTextImage, setIsGeneratingTextImage] = useState(false);
   const [isGeneratingColoringImage, setIsGeneratingColoringImage] = useState(false);
+  const [isGeneratingColorImage, setIsGeneratingColorImage] = useState(false);
   const [isCopyingImage, setIsCopyingImage] = useState(false);
   
   const { toast } = useToast();
@@ -279,6 +282,51 @@ export function BookEditorPanel({
       toast({ title: "Generation failed", description: message, variant: "destructive" });
     } finally {
       setIsGeneratingColoringImage(false);
+    }
+  };
+
+  // Handle generating color image using AI
+  const handleGenerateColorImage = async () => {
+    const prompt = getCurrentPagePrompt(currentPageNumber);
+    
+    if (!prompt) {
+      toast({ title: "No prompt available", description: "Copy or generate a prompt first", variant: "destructive" });
+      return;
+    }
+
+    // Get the current page ID
+    const pageId = pages?.find(p => p.page_number === currentPageNumber)?.id;
+    if (!pageId || !bookId) {
+      toast({ title: "Missing data", description: "Could not find page information", variant: "destructive" });
+      return;
+    }
+
+    setIsGeneratingColorImage(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('generate-color-image', {
+        body: { pageId, bookId, prompt }
+      });
+
+      if (error) throw error;
+      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
+
+      toast({ 
+        title: "Image generated!", 
+        description: `Cost: ${data.costCents}¢` 
+      });
+      
+      // Invalidate the book editor data to refresh and show the new image
+      await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
+    } catch (error: any) {
+      console.error('Error generating color image:', error);
+      const message = error.message?.includes('Rate limit') 
+        ? 'Rate limit exceeded. Please try again later.'
+        : error.message?.includes('credits') 
+        ? 'AI credits exhausted. Please add credits.'
+        : 'Could not generate image';
+      toast({ title: "Generation failed", description: message, variant: "destructive" });
+    } finally {
+      setIsGeneratingColorImage(false);
     }
   };
   
@@ -620,7 +668,14 @@ export function BookEditorPanel({
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                🎨 Color
+                {pageColorCosts[currentPageNumber] ? (
+                  <span className="text-[10px] font-mono bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1 rounded">
+                    {(pageColorCosts[currentPageNumber] / 100).toFixed(2)}¢
+                  </span>
+                ) : (
+                  <span>🎨</span>
+                )}
+                Color
                 {hasColorImage && <span className="text-green-500 ml-0.5">✓</span>}
               </button>
               {hasTextImage && (
@@ -909,6 +964,9 @@ export function BookEditorPanel({
               <ColorModeUploadSection
                 onImageUpload={onImageUpload}
                 onCopyPrompt={handleCopyPrompt}
+                onGenerate={handleGenerateColorImage}
+                isGenerating={isGeneratingColorImage}
+                hasPrompt={!!getCurrentPagePrompt(currentPageNumber)}
                 disabled={createBookMutation.isPending}
               />
             ) : (

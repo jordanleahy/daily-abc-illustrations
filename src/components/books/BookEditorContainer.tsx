@@ -225,18 +225,20 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
   }, [bookId, editorData?.coverPage, user, queryClient]);
 
   const getCurrentPagePrompt = useCallback((pageNum: number): string | null => {
-    if (!editorData) return null;
+    // Allow early return with page.description even before full data loads
+    const page = editorData?.pages?.find(p => p.page_number === pageNum);
+    
+    // Priority: deployed > session > page content > description (immediate fallback)
+    if (editorData?.deployedPrompts?.[pageNum]) return editorData.deployedPrompts[pageNum];
+    if (editorData?.sessionPrompts?.[pageNum]) return editorData.sessionPrompts[pageNum];
 
-    // Priority: deployed > session > page content
-    if (editorData.deployedPrompts[pageNum]) return editorData.deployedPrompts[pageNum];
-    if (editorData.sessionPrompts[pageNum]) return editorData.sessionPrompts[pageNum];
-
-    const page = editorData.pages.find(p => p.page_number === pageNum);
     if (!page) return null;
 
     const fullPrompt = (page.content as any)?.imagePrompt;
     if (fullPrompt) return fullPrompt;
-    return page.description;
+    
+    // Immediate fallback to page.description
+    return page.description || null;
   }, [editorData]);
 
   // Merge fetched images with local overrides, excluding replaced pages
@@ -246,7 +248,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
 
     const filtered: Record<number, string> = {};
     Object.entries(merged).forEach(([pageNum, imageUrl]) => {
-      if (!replacePageMode[Number(pageNum)]) {
+      if (!replacePageMode[Number(pageNum)] && typeof imageUrl === 'string') {
         filtered[Number(pageNum)] = imageUrl;
       }
     });
@@ -293,7 +295,6 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
       pageCount={editorData.pageCount}
       displayImages={displayImages}
       editorPageImages={localImageOverrides}
-      editorPagePrompts={editorData.sessionPrompts}
       displayColoringImages={displayColoringImages}
       displayTextImages={displayTextImages}
       pageBwCosts={pageBwCosts}

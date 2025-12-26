@@ -424,11 +424,34 @@ export const useGoogleChat = (
         }
       }
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('Google chat error:', error);
-      // Revert cache on error
+      
+      // Create an error message to show the user (keep user message, add error response)
+      const errorMessage = error?.message || 'Something went wrong';
+      const isPaymentError = errorMessage.includes('payment') || errorMessage.includes('402') || errorMessage.includes('credits');
+      
+      const errorResponseContent = isPaymentError
+        ? "I'm unable to respond right now due to a billing issue. Please check your Lovable AI Gateway credits and try again."
+        : `I encountered an error: ${errorMessage}. Please try again.`;
+      
+      const messagesWithError = [
+        ...updatedMessages,
+        { 
+          role: 'assistant' as const, 
+          content: errorResponseContent,
+          suggestedActions: [
+            { id: 'retry', label: '🔄 Try Again', value: userMessage.content as string }
+          ]
+        }
+      ];
+      
       if (sessionId) {
-        queryClient.setQueryData(['session-messages', sessionId], currentMessages);
+        queryClient.setQueryData(['session-messages', sessionId], messagesWithError);
+        // Also persist error state so conversation isn't lost
+        if (onMessagesUpdate) {
+          onMessagesUpdate(messagesWithError, sessionId);
+        }
       }
     } finally {
       setIsLoading(false);

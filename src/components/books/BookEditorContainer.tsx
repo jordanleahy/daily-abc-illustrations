@@ -47,7 +47,7 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
     const channel = supabase
       .channel(`page-images-${bookId}`)
       .on('postgres_changes', {
-        event: 'UPDATE',
+        event: '*',
         schema: 'public',
         table: 'page_image_urls',
         filter: `book_id=eq.${bookId}`

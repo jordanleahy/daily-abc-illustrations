@@ -304,8 +304,10 @@ export function BookEditorPanel({
       return;
     }
 
-    // Get the current page ID
-    const pageId = pages?.find(p => p.page_number === currentPageNumber)?.id;
+    // Get the current page ID and type
+    const currentPage = pages?.find(p => p.page_number === currentPageNumber);
+    const pageId = currentPage?.id;
+    const pageType = currentPage?.page_type;
     if (!pageId || !bookId) {
       toast({ title: "Missing data", description: "Could not find page information", variant: "destructive" });
       return;
@@ -314,7 +316,7 @@ export function BookEditorPanel({
     setIsGeneratingColorImage(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-color-image', {
-        body: { pageId, bookId, prompt }
+        body: { pageId, bookId, prompt, pageType }
       });
 
       if (error) throw error;
@@ -368,6 +370,9 @@ export function BookEditorPanel({
         return;
       }
 
+      // Derive page type from page number for newly created books
+      const derivedPageType = currentPageNumber === 1 ? 'cover' : currentPageNumber === 2 ? 'educational' : 'content';
+
       // Get the prompt
       const prompt = getCurrentPagePrompt(currentPageNumber);
       if (!prompt) {
@@ -377,7 +382,7 @@ export function BookEditorPanel({
 
       // Now generate the image with the new book and page IDs
       const { data, error } = await supabase.functions.invoke('generate-color-image', {
-        body: { pageId: pageData.id, bookId: result.bookId, prompt }
+        body: { pageId: pageData.id, bookId: result.bookId, prompt, pageType: derivedPageType }
       });
 
       if (error) throw error;

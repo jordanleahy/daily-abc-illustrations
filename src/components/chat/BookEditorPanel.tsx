@@ -1009,17 +1009,12 @@ export function BookEditorPanel({
                 />
               ) : (
                 <div className="relative w-full h-full">
-                  <ImageUpload 
-                    onImageSelect={(file) => {
-                      const reader = new FileReader();
-                      reader.onloadend = () => {
-                        onImageUpload(reader.result as string, imageMode);
-                        setIsReplacing(false);
-                      };
-                      reader.readAsDataURL(file);
-                    }}
-                    disabled={createBookMutation.isPending}
-                    className="h-full"
+                  <TextModeUploadSection
+                    hasColorImage={hasColorImage}
+                    onGenerate={handleGenerateTextImage}
+                    onGenerateAll={generateAllTextImages}
+                    isGenerating={isGeneratingTextImage}
+                    isGeneratingAll={isGeneratingAllTextImages}
                   />
                   <Button
                     variant="secondary"

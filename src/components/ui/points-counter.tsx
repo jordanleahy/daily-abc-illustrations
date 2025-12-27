@@ -1,20 +1,20 @@
-import { Coins } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { formatPenniesAsCurrency } from '@/utils/currency';
+import { formatPoints } from '@/utils/currency';
 
-interface PennyCounterProps {
-  pennies: number;
+interface PointsCounterProps {
+  points: number;
   size?: 'sm' | 'md' | 'lg';
   showLabel?: boolean;
   className?: string;
 }
 
-export function PennyCounter({ 
-  pennies, 
+export function PointsCounter({ 
+  points, 
   size = 'md', 
   showLabel = true,
   className 
-}: PennyCounterProps) {
+}: PointsCounterProps) {
   const sizeClasses = {
     sm: {
       icon: 'h-4 w-4',
@@ -34,13 +34,13 @@ export function PennyCounter({
   };
 
   const sizes = sizeClasses[size];
-  const isNegative = pennies < 0;
+  const isNegative = points < 0;
 
   return (
     <div className={cn("text-right", className)}>
       <div className="flex items-center gap-2 justify-end mb-1">
-        <Coins className={cn(sizes.icon, isNegative ? "text-red-500" : "text-amber-500")} />
-        <span className={cn(sizes.text, "font-bold", isNegative ? "text-red-500" : "text-foreground")}>{formatPenniesAsCurrency(pennies)}</span>
+        <Star className={cn(sizes.icon, isNegative ? "text-red-500" : "text-amber-500", "fill-current")} />
+        <span className={cn(sizes.text, "font-bold", isNegative ? "text-red-500" : "text-foreground")}>{formatPoints(points)}</span>
       </div>
       {showLabel && (
         <p className={cn(sizes.label, "text-muted-foreground")}>Total Earned</p>
@@ -50,6 +50,11 @@ export function PennyCounter({
 }
 
 /**
- * @deprecated Use PennyCounter instead
+ * @deprecated Use PointsCounter instead
  */
-export { PennyCounter as CoinCounter };
+export { PointsCounter as PennyCounter };
+
+/**
+ * @deprecated Use PointsCounter instead
+ */
+export { PointsCounter as CoinCounter };

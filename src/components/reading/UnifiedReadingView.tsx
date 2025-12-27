@@ -63,7 +63,7 @@ import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
 import { useReadingProgressTracking } from '@/hooks/useReadingProgressTracking';
 import { useBookCompletion } from '@/hooks/useBookCompletion';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { useKidPennies } from '@/hooks/useKidPennies';
+import { useKidPoints } from '@/hooks/useKidPoints';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 // Toast notifications removed

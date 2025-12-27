@@ -2,7 +2,7 @@ import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { PennyCounter } from '@/components/ui/penny-counter';
+import { PointsCounter } from '@/components/ui/points-counter';
 import { useTodayHabits } from '@/hooks/useTodayHabits';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useDeleteHabit } from '@/hooks/useDeleteHabit';

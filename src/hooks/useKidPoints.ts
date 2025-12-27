@@ -4,7 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 
-export const useKidPennies = (kidId?: string) => {
+export const useKidPoints = (kidId?: string) => {
   const { user } = useAuthContext();
   const queryClient = useQueryClient();
 
@@ -13,7 +13,7 @@ export const useKidPennies = (kidId?: string) => {
     if (!user?.id || !kidId) return;
 
     const channel = supabase
-      .channel(`kid-pennies-${kidId}`)
+      .channel(`kid-points-${kidId}`)
       .on(
         'postgres_changes',
         {
@@ -23,7 +23,7 @@ export const useKidPennies = (kidId?: string) => {
           filter: `id=eq.${kidId}`,
         },
         () => {
-          queryClient.invalidateQueries({ queryKey: ['kid-pennies', kidId] });
+          queryClient.invalidateQueries({ queryKey: ['kid-points', kidId] });
           queryClient.invalidateQueries({ queryKey: ['kid-profiles'] });
         }
       )
@@ -34,9 +34,9 @@ export const useKidPennies = (kidId?: string) => {
     };
   }, [user?.id, kidId, queryClient]);
 
-  // Get penny balance for a specific kid
-  const { data: kidPennies, isLoading } = useQuery({
-    queryKey: ['kid-pennies', kidId],
+  // Get point balance for a specific kid
+  const { data: kidPoints, isLoading } = useQuery({
+    queryKey: ['kid-points', kidId],
     queryFn: async () => {
       if (!user?.id || !kidId) throw new Error('User not authenticated or kid not specified');
       
@@ -54,11 +54,11 @@ export const useKidPennies = (kidId?: string) => {
     enabled: !!user?.id && !!kidId,
   });
 
-  // Add pennies to a kid's balance
-  const addPenniesMutation = useMutation({
-    mutationFn: async ({ kidId, penniesToAdd }: { kidId: string; penniesToAdd: number }) => {
+  // Add points to a kid's balance
+  const addPointsMutation = useMutation({
+    mutationFn: async ({ kidId, pointsToAdd }: { kidId: string; pointsToAdd: number }) => {
       if (!user?.id) throw new Error('User not authenticated');
-      if (penniesToAdd <= 0) throw new Error('Pennies to add must be positive');
+      if (pointsToAdd <= 0) throw new Error('Points to add must be positive');
       
       // Fetch current balance
       const { data: kidData, error: fetchError } = await supabase
@@ -71,7 +71,7 @@ export const useKidPennies = (kidId?: string) => {
       
       if (fetchError) throw fetchError;
       
-      const newBalance = (kidData?.earned_coins || 0) + penniesToAdd;
+      const newBalance = (kidData?.earned_coins || 0) + pointsToAdd;
       
       // Update with new balance
       const { data, error } = await supabase
@@ -88,31 +88,36 @@ export const useKidPennies = (kidId?: string) => {
     },
     onSuccess: () => {
       toast({
-        title: "Pennies Added!",
+        title: "Points Added!",
         description: "Great job reading!",
       });
-      queryClient.invalidateQueries({ queryKey: ['kid-pennies'] });
+      queryClient.invalidateQueries({ queryKey: ['kid-points'] });
       queryClient.invalidateQueries({ queryKey: ['kid-profiles'] });
     },
     onError: (error) => {
       toast({
         title: "Error",
-        description: "Failed to add pennies. Please try again.",
+        description: "Failed to add points. Please try again.",
         variant: "destructive",
       });
-      console.error('Failed to add pennies:', error);
+      console.error('Failed to add points:', error);
     },
   });
 
   return {
-    kidPennies,
+    kidPoints,
     isLoading,
-    addPennies: addPenniesMutation.mutate,
-    isAddingPennies: addPenniesMutation.isPending,
+    addPoints: addPointsMutation.mutate,
+    isAddingPoints: addPointsMutation.isPending,
   };
 };
 
 /**
- * @deprecated Use useKidPennies instead
+ * @deprecated Use useKidPoints instead
  */
-export const useKidCoins = useKidPennies;
+export const useKidPennies = useKidPoints;
+
+/**
+ * @deprecated Use useKidPoints instead
+ */
+export const useKidCoins = useKidPoints;

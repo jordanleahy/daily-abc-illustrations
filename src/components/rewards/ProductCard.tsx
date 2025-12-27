@@ -1,11 +1,10 @@
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { PennyCounter } from '@/components/ui/penny-counter';
+import { PointsCounter } from '@/components/ui/points-counter';
 import { BookImage } from '@/components/ui/book-image';
 import { Edit2, Trash2, ShoppingCart, Check } from 'lucide-react';
 import type { RewardsProduct } from '@/types/rewardsProduct';
-import { formatPenniesAsCurrency } from '@/utils/currency';
 
 interface ProductCardProps {
   product: RewardsProduct;
@@ -87,12 +86,7 @@ export const ProductCard = ({
         )}
 
         <div className="flex items-center justify-between pt-2">
-          <div className="flex items-center gap-2">
-            <PennyCounter pennies={product.coin_price} size="sm" showLabel={false} />
-            <span className="text-xs text-muted-foreground">
-              ({formatPenniesAsCurrency(product.coin_price)})
-            </span>
-          </div>
+          <PointsCounter points={product.coin_price} size="sm" showLabel={false} />
 
           {product.quantity_available !== null && (
             <Badge variant="outline" className="text-xs">
@@ -134,7 +128,7 @@ export const ProductCard = ({
             disabled={!canAfford || product.quantity_available === 0 || isPurchasing}
           >
             <ShoppingCart className="w-4 h-4 mr-2" />
-            {isPurchasing ? 'Purchasing...' : canAfford ? 'Buy Now' : 'Not Enough Pennies'}
+            {isPurchasing ? 'Purchasing...' : canAfford ? 'Buy Now' : 'Not Enough Points'}
           </Button>
         )}
       </CardFooter>

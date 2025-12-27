@@ -52,7 +52,7 @@ const RewardsManage = () => {
     <StandardPageLayout title="Manage Rewards Store">
       <div className="space-y-6">
         <p className="text-muted-foreground">
-          Create rewards for your kids to purchase with their earned coins
+          Create rewards for your kids to purchase with their earned points
         </p>
         <Tabs defaultValue="products" className="w-full">
           <TabsList className="grid w-full grid-cols-2">

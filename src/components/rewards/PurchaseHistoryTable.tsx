@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Textarea } from '@/components/ui/textarea';
 import { Check, Clock, X } from 'lucide-react';
-import { formatPenniesAsCurrency } from '@/utils/currency';
+import { formatPoints } from '@/utils/currency';
 import { format } from 'date-fns';
 import type { KidPurchaseWithDetails } from '@/types/kidPurchase';
 import { useFulfillPurchase } from '@/hooks/useFulfillPurchase';
@@ -102,7 +102,7 @@ export const PurchaseHistoryTable = ({ purchases }: PurchaseHistoryTableProps) =
               <div className="flex-1">
                 <p className="font-medium">{purchase.kid_rewards_products?.title}</p>
                 <p className="text-sm text-muted-foreground">
-                  {purchase.coins_spent} pennies ({formatPenniesAsCurrency(purchase.coins_spent)})
+                  {formatPoints(purchase.coins_spent)}
                 </p>
               </div>
             </div>

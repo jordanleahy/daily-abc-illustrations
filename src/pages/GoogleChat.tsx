@@ -1110,10 +1110,10 @@ export default function GoogleChat() {
         characterFlow.confirmSelection(action.selectedCharacterIds);
       }
       
-      // Capture age range if present in the action
-      if (action.ageRangeId) {
-        console.log('[Age Range Selection] User selected age range:', action.ageRangeId);
-        setSelectedAgeRange(action.ageRangeId as AgeRangeId);
+      // Capture grade level if present in the action
+      if (action.gradeId) {
+        console.log('[Grade Level Selection] User selected grade:', action.gradeId);
+        setSelectedGradeLevel(action.gradeId as GradeId);
       }
       
       // Send the predefined response - include newly selected character IDs if present

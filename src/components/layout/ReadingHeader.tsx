@@ -100,7 +100,7 @@ export function ReadingHeader({
   const { qrCodeData } = useBookQRCode(showQRCode ? (bookId || undefined) : undefined);
   const navigate = useNavigate();
   const { data: kidProfiles } = useKidProfiles();
-  const { kidPennies } = useKidPennies(kidId || '');
+  const { kidPoints } = useKidPoints(kidId || '');
   const { hasHabitsRewards } = useFeatureAccess();
   
   // Find the kid to display
@@ -140,8 +140,8 @@ export function ReadingHeader({
             <span className="font-medium text-foreground">{displayKid.first_name}</span>
             <span className="text-muted-foreground">•</span>
             <div className="flex items-center gap-1">
-              <Circle className={`w-3 h-3 ${kidPennies < 0 ? 'fill-red-500 text-red-600' : 'fill-amber-600 text-amber-700'}`} />
-              <span className={`font-medium ${kidPennies < 0 ? 'text-red-500' : 'text-amber-700'}`}>{formatPenniesAsCurrency(kidPennies)}</span>
+              <Circle className={`w-3 h-3 ${kidPoints < 0 ? 'fill-red-500 text-red-600' : 'fill-amber-600 text-amber-700'}`} />
+              <span className={`font-medium ${kidPoints < 0 ? 'text-red-500' : 'text-amber-700'}`}>{formatPoints(kidPoints)}</span>
             </div>
           </>
         )}

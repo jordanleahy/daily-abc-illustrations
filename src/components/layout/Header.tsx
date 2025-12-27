@@ -248,7 +248,7 @@ export function Header({
                   {displayName}
                 </Link>
                 <span className="text-muted-foreground text-xs">·</span>
-                <PennyCounter pennies={totalPennies} size="sm" showLabel={false} />
+                <PointsCounter points={totalPennies} size="sm" showLabel={false} />
               </div>
             )}
             
@@ -333,7 +333,7 @@ export function Header({
                 </SheetHeader>
                 <div className="flex items-center justify-between px-6 py-3 border-b">
                   <span className="text-base font-semibold">{displayName}</span>
-                  <PennyCounter pennies={totalPennies} size="sm" showLabel={false} />
+                  <PointsCounter points={totalPennies} size="sm" showLabel={false} />
                 </div>
                 <div className="mt-6 space-y-2">
                   {/* Navigation Links */}
@@ -423,7 +423,7 @@ export function Header({
                 <Button variant="ghost" size="sm" className="relative hidden md:flex items-center gap-2 px-3">
                   <span className="text-sm font-medium">{displayName}</span>
                   <span className="text-muted-foreground text-sm">·</span>
-                  <PennyCounter pennies={totalPennies} size="sm" showLabel={false} />
+                  <PointsCounter points={totalPennies} size="sm" showLabel={false} />
                   <span className="sr-only">User menu</span>
                 </Button>
               </DropdownMenuTrigger>
@@ -433,7 +433,7 @@ export function Header({
                     <p className="font-medium text-sm">{displayName}</p>
                     <p className="text-xs text-muted-foreground">{user?.email}</p>
                   </div>
-                  <PennyCounter pennies={totalPennies} size="sm" showLabel={false} />
+                  <PointsCounter points={totalPennies} size="sm" showLabel={false} />
                 </div>
                 <DropdownMenuSeparator />
                 <AdminOnly>

@@ -235,7 +235,7 @@ export function UnifiedReadingView({
     }
   }, [kidProfiles, selectedKidId]);
   
-  const { addPennies, isAddingPennies } = useKidPennies(selectedKidId);
+  const { addPoints, isAddingPoints } = useKidPoints(selectedKidId);
   
   // Get current page and related data
   const currentPage = reorderedPages[currentPageIndex];
@@ -339,12 +339,12 @@ export function UnifiedReadingView({
       // User finished the book - ONLY deposit pennies for Plus tier users
       if (hasHabitsRewards && selectedKidId && earnedRewards > 0) {
         try {
-          await addPennies({ 
+          await addPoints({ 
             kidId: selectedKidId, 
-            penniesToAdd: earnedRewards 
+            pointsToAdd: earnedRewards 
           });
           
-          console.log(`You earned ${earnedRewards} pennies! 🎉 - Great job reading!`);
+          console.log(`You earned ${earnedRewards} points! 🎉 - Great job reading!`);
           
           endSession('book_completed');
           onBack();
@@ -480,7 +480,7 @@ export function UnifiedReadingView({
           onPreviousPage={handlePrevious}
           onNextPage={handleNext}
           disablePreviousPage={currentPageIndex === 0}
-          disableNextPage={isAddingPennies}
+          disableNextPage={isAddingPoints}
           overlayText={currentPage.title || ''}
           overlayWords={currentPageWords}
           overlayCurrentWordIndex={readingState.currentWordIndex}

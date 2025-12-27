@@ -74,7 +74,7 @@ export default function MyTricks() {
                   </SelectContent>
                 </Select>
                 {selectedKid && !isEditMode && (
-                  <PennyCounter pennies={selectedKid.earned_coins} size="sm" />
+                  <PointsCounter points={selectedKid.earned_coins} size="sm" />
                 )}
               </>
             )}

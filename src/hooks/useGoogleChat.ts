@@ -59,6 +59,7 @@ export const useGoogleChat = (
       characterTheme?: CharacterThemeValue | null;
       bookType?: BookTypeId | null;
       selectedCharacterIds?: string[]; // For character enforcement
+      gradeLevel?: GradeId | null; // For grade level selection
     }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
@@ -126,7 +127,7 @@ export const useGoogleChat = (
             messages: [...messagesWithoutSuggestions, apiUserMessage],
             outlineReady: context?.outlineReady,
             bookCreated: context?.bookCreated,
-            gradeLevel, // Changed from kidAge
+            gradeLevel: context?.gradeLevel || gradeLevel, // Prefer context value for immediate updates
             bookType: context?.bookType || bookType,
             characterTheme: context?.characterTheme,
             selectedCharacterIds: context?.selectedCharacterIds

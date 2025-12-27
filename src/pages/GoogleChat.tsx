@@ -1126,7 +1126,8 @@ export default function GoogleChat() {
         bookCreated: !!createdBookId,
         characterTheme: action.themeId || characterFlow.themeId,
         bookType: selectedBookType,
-        selectedCharacterIds: characterIdsToUse
+        selectedCharacterIds: characterIdsToUse,
+        gradeLevel: action.gradeId || selectedGradeLevel
       });
     } else {
       // "Custom" option - just focus the input field

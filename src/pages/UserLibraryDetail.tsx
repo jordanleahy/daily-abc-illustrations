@@ -92,7 +92,7 @@ export default function UserLibraryDetail() {
       bookTitle: dailyContent.title,
       bookId: dailyContent.book_id,
       kidIds,
-      coinAmount: totalPages, // Dynamic: 1 page = 1 coin
+      coinAmount: totalPages, // Dynamic: 1 page = 1 point
     });
   };
 

@@ -117,7 +117,7 @@ const Index = () => {
                 <div className="space-y-2">
                   <h2 className="text-2xl font-bold">Unlock Habits & Rewards</h2>
                   <p className="text-muted-foreground">
-                    Track reading progress, earn coins, and motivate your kids with our interactive rewards system.
+                    Track reading progress, earn points, and motivate your kids with our interactive rewards system.
                   </p>
                 </div>
                 <ul className="space-y-2 text-sm">
@@ -127,11 +127,11 @@ const Index = () => {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary font-bold mt-0.5">✓</span>
-                    <span>Reward completed habits with coins</span>
+                    <span>Reward completed habits with points</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary font-bold mt-0.5">✓</span>
-                    <span>Set up a rewards store for kids to spend coins</span>
+                    <span>Set up a rewards store for kids to spend points</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-primary font-bold mt-0.5">✓</span>

@@ -1084,7 +1084,7 @@ export default function GoogleChat() {
     // Regular quick reply
     if (action.value) {
       // Capture book type if the action ID matches a valid book type
-      const validBookTypes = ['abc', 'numbers', 'colors', 'shapes', 'rhyming', 'opposites', 'emotions', 'animals', 'first-words', 'bedtime', 'cvc', 'sight-words'];
+      const validBookTypes = ['abc', 'numbers', 'colors', 'shapes', 'rhyming', 'opposites', 'emotions', 'animals', 'first-words', 'bedtime', 'cvc', 'sight-words', 'digraphs', 'general', 'parent-education'];
       if (validBookTypes.includes(action.id)) {
         console.log('[Book Type Selection] User selected book type:', action.id);
         setSelectedBookType(action.id as BookTypeId);
@@ -1136,7 +1136,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId]);
+  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, characterFlow]);
   // Note: handleOpenEditorPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 

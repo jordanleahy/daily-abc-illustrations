@@ -116,7 +116,7 @@ export function ColorModeUploadSection({
           onClick={() => fileInputRef.current?.click()}
           variant="default"
           className="w-full h-12 gap-2 text-base"
-          disabled={disabled}
+          disabled={disabled || isGenerating}
         >
           <Upload className="h-5 w-5" />
           Upload
@@ -142,7 +142,7 @@ export function ColorModeUploadSection({
           onClick={onCopyPrompt}
           variant="outline"
           className="w-full h-12 gap-2 text-base"
-          disabled={disabled}
+          disabled={disabled || isGenerating}
         >
           <Copy className="h-5 w-5" />
           Copy Prompt

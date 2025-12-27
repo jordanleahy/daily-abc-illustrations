@@ -3,7 +3,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { 
   IMAGE_GENERATION_MODEL,
   IMAGE_GENERATION_MODEL_PRO,
-  IMAGE_GENERATION_COST_CENTS,
+  getImageCostByModel,
   logImageGenerationUsage,
   buildImageGenerationMetadata
 } from "../_shared/aiModelConstants.ts";
@@ -124,10 +124,10 @@ serve(async (req) => {
     const outputTokens = usage?.completion_tokens || 0;
     const totalTokens = usage?.total_tokens || inputTokens + outputTokens;
     
-    // Use centralized pricing constants
-    const costCents = IMAGE_GENERATION_COST_CENTS;
+    // Use dynamic pricing based on selected model
+    const { cents: costCents } = getImageCostByModel(selectedModel);
     
-    logImageGenerationUsage(inputTokens, outputTokens, totalTokens);
+    logImageGenerationUsage(inputTokens, outputTokens, totalTokens, selectedModel);
 
     // Extract the generated image from the response
     const generatedImageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
@@ -183,7 +183,7 @@ serve(async (req) => {
           color_generation_cost_cents: (existingRecord.color_generation_cost_cents || 0) + costCents,
           usage_metadata: {
             ...(existingRecord.usage_metadata || {}),
-            ...buildImageGenerationMetadata(inputTokens, outputTokens, 'color_generation')
+            ...buildImageGenerationMetadata(inputTokens, outputTokens, 'color_generation', selectedModel)
           }
         })
         .eq('id', existingRecord.id);
@@ -205,7 +205,7 @@ serve(async (req) => {
           version_number: 1,
           source_type: 'ai_generated',
           color_generation_cost_cents: costCents,
-          usage_metadata: buildImageGenerationMetadata(inputTokens, outputTokens, 'color_generation')
+          usage_metadata: buildImageGenerationMetadata(inputTokens, outputTokens, 'color_generation', selectedModel)
         });
 
       if (insertError) {

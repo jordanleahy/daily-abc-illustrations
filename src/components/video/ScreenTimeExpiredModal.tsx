@@ -24,7 +24,7 @@ export const ScreenTimeExpiredModal = ({ open, onDismiss }: ScreenTimeExpiredMod
           </div>
           <DialogTitle className="text-xl">Great Job Watching!</DialogTitle>
           <DialogDescription className="text-base">
-            Your screen time is finished. Complete your habits to earn more coins for videos!
+            Your screen time is finished. Complete your habits to earn more points for videos!
           </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex-col gap-2 sm:flex-col">

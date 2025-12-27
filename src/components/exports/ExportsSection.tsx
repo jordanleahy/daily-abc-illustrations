@@ -14,7 +14,6 @@
  * 
  * All PDF generation is handled client-side using pdf-lib for optimal performance.
  */
-
 import React, { useState, useEffect } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
@@ -36,6 +35,7 @@ import { DailyPublishedStatus } from '@/types/dailyPublished';
 import { PublicationStatus } from '@/types/shared';
 import { getAppendPublishDate } from '@/utils/publishQueue';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
+import { generateUniqueSlug } from '@/utils/slugUtils';
 
 /**
  * Props for the ExportsSection component
@@ -48,65 +48,6 @@ interface ExportsSectionProps {
   /** Display name of the content for user-facing messages */
   contentName: string;
 }
-
-/**
- * Generates a URL-safe slug from a title string
- * Matches the database generate_slug function logic for consistency
- * 
- * @param title - The title to convert to a slug
- * @returns URL-safe slug string (max 60 chars)
- */
-const generateSlugFromTitle = (title: string): string => {
-  // Convert to lowercase and remove special characters
-  let slug = title.toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special chars
-    .replace(/\s+/g, '-')         // Replace spaces with hyphens
-    .replace(/-+/g, '-')          // Replace multiple hyphens with single
-    .trim()
-    .replace(/^-+|-+$/g, '');    // Remove leading/trailing hyphens
-  
-  // Truncate to 60 characters
-  slug = slug.substring(0, 60);
-  
-  // Remove trailing hyphen if truncation created one
-  slug = slug.replace(/-+$/, '');
-  
-  return slug || 'untitled'; // Fallback if empty
-};
-
-/**
- * Generates a unique slug by checking for existing slugs and appending a timestamp if needed
- * @param title - The title to convert to a slug
- * @param bookId - The book ID to check for existing publications
- * @returns Unique URL-safe slug string
- */
-const generateUniqueSlug = async (title: string, bookId: string): Promise<string> => {
-  const baseSlug = generateSlugFromTitle(title);
-  
-  // Check if this slug already exists for any publication
-  const { data: existing } = await supabase
-    .from('daily_published')
-    .select('slug')
-    .eq('slug', baseSlug)
-    .maybeSingle();
-  
-  // If no conflict, use the base slug
-  if (!existing) {
-    return baseSlug;
-  }
-  
-  // If conflict exists, append timestamp to make it unique
-  // Use date format: YYYYMMDD
-  const timestamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-  
-  // Ensure total length stays within 60 chars
-  // Format: base-slug-YYYYMMDD
-  const maxBaseLength = 60 - timestamp.length - 1; // -1 for the hyphen
-  const truncatedBase = baseSlug.substring(0, maxBaseLength).replace(/-+$/, '');
-  
-  return `${truncatedBase}-${timestamp}`;
-};
-
 /**
  * ExportsSection Component
  * 

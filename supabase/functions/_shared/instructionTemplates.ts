@@ -45,17 +45,17 @@ no-theme: No Theme
 Wait for user selection before proceeding.
 `.trim(),
 
-  // Age group selection block
-  ageGroupSelection: `
-## Step 2: Age Group Selection
+  // Grade level selection block
+  gradeLevelSelection: `
+## Step 2: Grade Level
 
-Ask for the child's age using [SUGGEST] blocks:
+Ask for the child's grade level using [SUGGEST] blocks:
 
 [SUGGEST]
-1-2: 1-2 years
-2-3: 2-3 years
-3-4: 3-4 years
-4-5: 4-5 years
+PRE_K: Pre-K
+K: Kindergarten
+GRADE_1: 1st Grade
+GRADE_2: 2nd Grade
 [/SUGGEST]
 
 Wait for user selection before proceeding.
@@ -82,7 +82,7 @@ Only proceed to outline generation after explicit approval.
 ## Educational Focus Page (Page 2)
 
 Generate Page 2 with three vertically-stacked colorful badges:
-- **Age Range Badge** (teal background): Display selected age range
+- **Grade Level Badge** (teal background): Display selected grade level
 - **Learning Type Badge** (coral background): "${learningType}"
 - **Skill Focus Badge** (gold background): "${skillFocus}"
 
@@ -192,8 +192,8 @@ export function assembleAgentInstructions(config: AgentConfig): string {
   // 2. Character theme selection
   sections.push(TEMPLATES.characterThemeSelection);
 
-  // 3. Age group selection
-  sections.push(TEMPLATES.ageGroupSelection);
+  // 3. Grade level selection
+  sections.push(TEMPLATES.gradeLevelSelection);
 
   // 4. Type-specific discovery questions
   if (config.discoveryQuestions.length > 0) {

@@ -1,5 +1,6 @@
-// Digraph Corpus - Fixed dataset for Pre-K through Grade 2
+// Digraph Corpus v2 - Fixed dataset for Pre-K through Grade 2
 // Import directly into edge functions for 0ms latency lookups
+// Includes both digraphs (two letters, one sound) and consonant blends
 
 export type GradeLevel = 'PRE_K' | 'K' | 'GRADE_1' | 'GRADE_2';
 
@@ -26,19 +27,21 @@ export interface DigraphCorpus {
 
 export const DIGRAPH_CORPUS: DigraphCorpus = {
   metadata: {
-    corpus_version: "v1",
+    corpus_version: "v2",
     grade_ceiling: "GRADE_2",
-    scope: "English digraph words commonly encountered from Pre-K through Grade 2",
+    scope: "English digraph and consonant blend words commonly encountered from Pre-K through Grade 2",
     rules: [
       "No proper nouns",
       "No post–Grade 2 vocabulary",
       "One canonical spelling per word",
-      "Words grouped by spelling digraph, not pronunciation",
-      "Grades use enum constants only"
+      "Words grouped by spelling digraph/blend, not pronunciation",
+      "Grades use enum constants only",
+      "Includes traditional digraphs and consonant blends matching UI options"
     ]
   },
   grades: ["PRE_K", "K", "GRADE_1", "GRADE_2"],
   digraphs: [
+    // ===== CONSONANT DIGRAPHS =====
     {
       digraph: "ch",
       words: [
@@ -100,6 +103,36 @@ export const DIGRAPH_CORPUS: DigraphCorpus = {
       ]
     },
     {
+      digraph: "wh",
+      words: [
+        { word: "when", grade: "PRE_K" },
+        { word: "what", grade: "K" },
+        { word: "where", grade: "K" },
+        { word: "which", grade: "K" },
+        { word: "white", grade: "K" },
+        { word: "while", grade: "GRADE_1" },
+        { word: "wheel", grade: "GRADE_1" },
+        { word: "whale", grade: "GRADE_1" },
+        { word: "whisper", grade: "GRADE_2" },
+        { word: "whether", grade: "GRADE_2" }
+      ]
+    },
+    {
+      digraph: "ph",
+      words: [
+        { word: "phone", grade: "K" },
+        { word: "photo", grade: "K" },
+        { word: "phrase", grade: "GRADE_1" },
+        { word: "elephant", grade: "GRADE_1" },
+        { word: "dolphin", grade: "GRADE_1" },
+        { word: "alphabet", grade: "GRADE_2" },
+        { word: "trophy", grade: "GRADE_2" },
+        { word: "graph", grade: "GRADE_2" },
+        { word: "phonics", grade: "GRADE_2" },
+        { word: "pharmacy", grade: "GRADE_2" }
+      ]
+    },
+    {
       digraph: "ck",
       words: [
         { word: "duck", grade: "PRE_K" },
@@ -134,18 +167,49 @@ export const DIGRAPH_CORPUS: DigraphCorpus = {
       ]
     },
     {
-      digraph: "wh",
+      digraph: "gh",
       words: [
-        { word: "when", grade: "PRE_K" },
-        { word: "what", grade: "K" },
-        { word: "where", grade: "K" },
-        { word: "which", grade: "K" },
-        { word: "white", grade: "K" },
-        { word: "while", grade: "GRADE_1" },
-        { word: "wheel", grade: "GRADE_1" },
-        { word: "whale", grade: "GRADE_1" },
-        { word: "whisper", grade: "GRADE_2" },
-        { word: "whether", grade: "GRADE_2" }
+        { word: "ghost", grade: "K" },
+        { word: "night", grade: "K" },
+        { word: "light", grade: "K" },
+        { word: "right", grade: "GRADE_1" },
+        { word: "sight", grade: "GRADE_1" },
+        { word: "fight", grade: "GRADE_1" },
+        { word: "bright", grade: "GRADE_1" },
+        { word: "flight", grade: "GRADE_2" },
+        { word: "knight", grade: "GRADE_2" },
+        { word: "thought", grade: "GRADE_2" },
+        { word: "daughter", grade: "GRADE_2" }
+      ]
+    },
+    {
+      digraph: "kn",
+      words: [
+        { word: "knee", grade: "K" },
+        { word: "knot", grade: "K" },
+        { word: "know", grade: "K" },
+        { word: "knew", grade: "GRADE_1" },
+        { word: "knife", grade: "GRADE_1" },
+        { word: "knock", grade: "GRADE_1" },
+        { word: "knight", grade: "GRADE_2" },
+        { word: "knit", grade: "GRADE_2" },
+        { word: "knob", grade: "GRADE_2" },
+        { word: "knowledge", grade: "GRADE_2" }
+      ]
+    },
+    {
+      digraph: "wr",
+      words: [
+        { word: "wrap", grade: "K" },
+        { word: "write", grade: "K" },
+        { word: "wrist", grade: "GRADE_1" },
+        { word: "wrong", grade: "GRADE_1" },
+        { word: "wrote", grade: "GRADE_1" },
+        { word: "wreck", grade: "GRADE_2" },
+        { word: "wreath", grade: "GRADE_2" },
+        { word: "wrestle", grade: "GRADE_2" },
+        { word: "wrapper", grade: "GRADE_2" },
+        { word: "wriggle", grade: "GRADE_2" }
       ]
     },
     {
@@ -157,67 +221,145 @@ export const DIGRAPH_CORPUS: DigraphCorpus = {
         { word: "quit", grade: "K" },
         { word: "quack", grade: "GRADE_1" },
         { word: "quiz", grade: "GRADE_1" },
-        { word: "question", grade: "GRADE_2" }
+        { word: "quilt", grade: "GRADE_1" },
+        { word: "question", grade: "GRADE_2" },
+        { word: "quarter", grade: "GRADE_2" }
       ]
     },
     {
-      digraph: "ai",
+      digraph: "tch",
       words: [
-        { word: "rain", grade: "PRE_K" },
-        { word: "tail", grade: "K" },
-        { word: "train", grade: "K" },
-        { word: "paint", grade: "K" },
-        { word: "wait", grade: "K" },
-        { word: "brain", grade: "GRADE_1" },
-        { word: "chain", grade: "GRADE_1" },
-        { word: "plain", grade: "GRADE_1" },
-        { word: "afraid", grade: "GRADE_2" },
-        { word: "remain", grade: "GRADE_2" }
+        { word: "itch", grade: "K" },
+        { word: "catch", grade: "K" },
+        { word: "match", grade: "K" },
+        { word: "watch", grade: "GRADE_1" },
+        { word: "patch", grade: "GRADE_1" },
+        { word: "hatch", grade: "GRADE_1" },
+        { word: "switch", grade: "GRADE_1" },
+        { word: "stretch", grade: "GRADE_2" },
+        { word: "scratch", grade: "GRADE_2" },
+        { word: "kitchen", grade: "GRADE_2" },
+        { word: "catcher", grade: "GRADE_2" }
       ]
     },
     {
-      digraph: "oa",
+      digraph: "dge",
       words: [
-        { word: "boat", grade: "PRE_K" },
-        { word: "coat", grade: "K" },
-        { word: "road", grade: "K" },
-        { word: "soap", grade: "K" },
-        { word: "goat", grade: "GRADE_1" },
-        { word: "toast", grade: "GRADE_1" },
-        { word: "floating", grade: "GRADE_2" }
+        { word: "edge", grade: "K" },
+        { word: "badge", grade: "GRADE_1" },
+        { word: "bridge", grade: "GRADE_1" },
+        { word: "fridge", grade: "GRADE_1" },
+        { word: "judge", grade: "GRADE_1" },
+        { word: "ridge", grade: "GRADE_2" },
+        { word: "wedge", grade: "GRADE_2" },
+        { word: "hedge", grade: "GRADE_2" },
+        { word: "ledge", grade: "GRADE_2" },
+        { word: "knowledge", grade: "GRADE_2" }
+      ]
+    },
+
+    // ===== CONSONANT BLENDS =====
+    {
+      digraph: "sc",
+      words: [
+        { word: "scat", grade: "PRE_K" },
+        { word: "scan", grade: "K" },
+        { word: "scar", grade: "K" },
+        { word: "scale", grade: "GRADE_1" },
+        { word: "scare", grade: "GRADE_1" },
+        { word: "scene", grade: "GRADE_1" },
+        { word: "scent", grade: "GRADE_1" },
+        { word: "score", grade: "GRADE_2" },
+        { word: "scooter", grade: "GRADE_2" },
+        { word: "scissors", grade: "GRADE_2" }
       ]
     },
     {
-      digraph: "ee",
+      digraph: "sk",
       words: [
-        { word: "see", grade: "PRE_K" },
-        { word: "tree", grade: "K" },
-        { word: "feet", grade: "K" },
-        { word: "green", grade: "K" },
-        { word: "sleep", grade: "GRADE_1" },
-        { word: "keep", grade: "GRADE_1" },
-        { word: "between", grade: "GRADE_2" }
+        { word: "ski", grade: "PRE_K" },
+        { word: "sky", grade: "PRE_K" },
+        { word: "skip", grade: "K" },
+        { word: "skin", grade: "K" },
+        { word: "skate", grade: "GRADE_1" },
+        { word: "skill", grade: "GRADE_1" },
+        { word: "skirt", grade: "GRADE_1" },
+        { word: "skull", grade: "GRADE_2" },
+        { word: "skeleton", grade: "GRADE_2" },
+        { word: "skateboard", grade: "GRADE_2" }
       ]
     },
     {
-      digraph: "oo",
+      digraph: "sm",
       words: [
-        { word: "moon", grade: "PRE_K" },
-        { word: "book", grade: "K" },
-        { word: "look", grade: "K" },
-        { word: "food", grade: "K" },
-        { word: "wood", grade: "GRADE_1" },
-        { word: "good", grade: "GRADE_1" },
-        { word: "school", grade: "GRADE_2" }
+        { word: "small", grade: "PRE_K" },
+        { word: "smell", grade: "K" },
+        { word: "smile", grade: "K" },
+        { word: "smart", grade: "GRADE_1" },
+        { word: "smoke", grade: "GRADE_1" },
+        { word: "smooth", grade: "GRADE_1" },
+        { word: "smash", grade: "GRADE_2" },
+        { word: "smother", grade: "GRADE_2" },
+        { word: "smuggle", grade: "GRADE_2" }
       ]
     },
     {
-      digraph: "kn",
+      digraph: "sn",
       words: [
-        { word: "knee", grade: "K" },
-        { word: "knife", grade: "GRADE_1" },
-        { word: "knock", grade: "GRADE_1" },
-        { word: "knot", grade: "GRADE_2" }
+        { word: "snow", grade: "PRE_K" },
+        { word: "snap", grade: "K" },
+        { word: "snack", grade: "K" },
+        { word: "snake", grade: "K" },
+        { word: "snail", grade: "GRADE_1" },
+        { word: "snore", grade: "GRADE_1" },
+        { word: "sneeze", grade: "GRADE_1" },
+        { word: "snuggle", grade: "GRADE_2" },
+        { word: "snowflake", grade: "GRADE_2" }
+      ]
+    },
+    {
+      digraph: "sp",
+      words: [
+        { word: "spin", grade: "PRE_K" },
+        { word: "spot", grade: "PRE_K" },
+        { word: "spoon", grade: "K" },
+        { word: "speak", grade: "K" },
+        { word: "spell", grade: "GRADE_1" },
+        { word: "spend", grade: "GRADE_1" },
+        { word: "spider", grade: "GRADE_1" },
+        { word: "special", grade: "GRADE_2" },
+        { word: "sparkle", grade: "GRADE_2" },
+        { word: "spaghetti", grade: "GRADE_2" }
+      ]
+    },
+    {
+      digraph: "st",
+      words: [
+        { word: "star", grade: "PRE_K" },
+        { word: "stop", grade: "PRE_K" },
+        { word: "step", grade: "K" },
+        { word: "stay", grade: "K" },
+        { word: "story", grade: "GRADE_1" },
+        { word: "stand", grade: "GRADE_1" },
+        { word: "storm", grade: "GRADE_1" },
+        { word: "street", grade: "GRADE_2" },
+        { word: "station", grade: "GRADE_2" },
+        { word: "stomach", grade: "GRADE_2" }
+      ]
+    },
+    {
+      digraph: "sw",
+      words: [
+        { word: "swim", grade: "PRE_K" },
+        { word: "swan", grade: "K" },
+        { word: "swap", grade: "K" },
+        { word: "swing", grade: "K" },
+        { word: "sweet", grade: "GRADE_1" },
+        { word: "sweep", grade: "GRADE_1" },
+        { word: "sweat", grade: "GRADE_1" },
+        { word: "switch", grade: "GRADE_2" },
+        { word: "swallow", grade: "GRADE_2" },
+        { word: "sweater", grade: "GRADE_2" }
       ]
     }
   ]
@@ -229,7 +371,7 @@ export const DIGRAPH_CORPUS: DigraphCorpus = {
  * Get all words for a specific digraph
  */
 export function getWordsForDigraph(digraph: string): WordEntry[] {
-  const entry = DIGRAPH_CORPUS.digraphs.find(d => d.digraph === digraph);
+  const entry = DIGRAPH_CORPUS.digraphs.find(d => d.digraph.toLowerCase() === digraph.toLowerCase());
   return entry?.words ?? [];
 }
 
@@ -282,5 +424,34 @@ export function getAllDigraphs(): string[] {
  * Get digraph entry with all metadata
  */
 export function getDigraphEntry(digraph: string): DigraphEntry | undefined {
-  return DIGRAPH_CORPUS.digraphs.find(d => d.digraph === digraph);
+  return DIGRAPH_CORPUS.digraphs.find(d => d.digraph.toLowerCase() === digraph.toLowerCase());
+}
+
+/**
+ * Get words for a digraph filtered up to a maximum grade level
+ */
+export function getWordsForDigraphThroughGrade(digraph: string, maxGrade: GradeLevel): WordEntry[] {
+  const gradeOrder: GradeLevel[] = ['PRE_K', 'K', 'GRADE_1', 'GRADE_2'];
+  const maxIndex = gradeOrder.indexOf(maxGrade);
+  const validGrades = gradeOrder.slice(0, maxIndex + 1);
+  
+  const entry = DIGRAPH_CORPUS.digraphs.find(d => d.digraph.toLowerCase() === digraph.toLowerCase());
+  if (!entry) return [];
+  
+  return entry.words.filter(w => validGrades.includes(w.grade));
+}
+
+/**
+ * Check if a digraph exists in the corpus
+ */
+export function isValidDigraph(digraph: string): boolean {
+  return DIGRAPH_CORPUS.digraphs.some(d => d.digraph.toLowerCase() === digraph.toLowerCase());
+}
+
+/**
+ * Get total word count for a digraph
+ */
+export function getWordCountForDigraph(digraph: string): number {
+  const entry = DIGRAPH_CORPUS.digraphs.find(d => d.digraph.toLowerCase() === digraph.toLowerCase());
+  return entry ? entry.words.length : 0;
 }

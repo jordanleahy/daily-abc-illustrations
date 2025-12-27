@@ -55,7 +55,7 @@ export default function MyHabits() {
       <div className="container mx-auto py-8 space-y-6">
         <div className="text-center space-y-4">
           <h1 className="text-3xl font-bold">My Habits for Today</h1>
-          <PennyCounter pennies={selectedKid.earned_coins} size="lg" />
+          <PointsCounter points={selectedKid.earned_coins} size="lg" />
           <p className="text-muted-foreground">
             Complete your habits to keep your coins!
           </p>

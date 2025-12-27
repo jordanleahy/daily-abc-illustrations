@@ -12,7 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { copyToClipboard, copyImageToClipboard } from '@/utils/clipboardHelpers';
-import { getLovableAiErrorMessage } from '@/utils/lovableAiErrors';
+import { getLovableAiErrorMessage, parseLovableAiError } from '@/utils/lovableAiErrors';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
 import { WordsCard } from './WordsCard';
@@ -439,12 +439,35 @@ export function BookEditorPanel({
         }
       });
 
-      if (response.error) {
-        throw new Error(response.error.message || 'Edit failed');
-      }
-
-      if (!response.data?.success) {
-        throw new Error(response.data?.error || 'Edit failed');
+      if (response.error || !response.data?.success) {
+        const aiError = parseLovableAiError(response.error, response.data);
+        
+        if (aiError.isCreditsExhausted) {
+          toast({ 
+            title: "Credits exhausted", 
+            description: "Please add credits in Settings → Workspace → Usage.",
+            variant: "destructive" 
+          });
+        } else if (aiError.isRateLimited) {
+          toast({ 
+            title: "Rate limited", 
+            description: "Please wait a moment and try again.",
+            variant: "destructive" 
+          });
+        } else if (aiError.isNoImageGenerated) {
+          toast({ 
+            title: "Edit couldn't be applied", 
+            description: "The AI couldn't generate the edited image. Try a different edit prompt.",
+            variant: "destructive" 
+          });
+        } else {
+          toast({ 
+            title: "Edit failed", 
+            description: response.data?.error || response.error?.message || "Could not edit image",
+            variant: "destructive" 
+          });
+        }
+        return;
       }
 
       toast({ title: "Image updated!", description: "The blue dog has been replaced with a Samoyed" });
@@ -452,8 +475,12 @@ export function BookEditorPanel({
       queryClient.invalidateQueries({ queryKey: ['page-image-urls', bookId] });
     } catch (error: unknown) {
       console.error('Error editing image:', error);
-      const message = error instanceof Error ? error.message : 'Could not edit image';
-      toast({ title: "Edit failed", description: message, variant: "destructive" });
+      const aiError = parseLovableAiError(error);
+      toast({ 
+        title: "Edit failed", 
+        description: aiError.message,
+        variant: "destructive" 
+      });
     } finally {
       setIsEditingWestin(false);
     }

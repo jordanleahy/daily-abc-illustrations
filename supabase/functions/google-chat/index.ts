@@ -5,6 +5,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
 import { fetchGradeLevels, getGradeLabel, type ValidGrade } from '../_shared/gradeLevels.ts';
 import { buildCharacterConstraints } from '../_shared/characterConstraints.ts';
+import { getWordsForDigraphThroughGrade, isValidDigraph, type GradeLevel } from '../_shared/digraphCorpus.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -287,6 +288,50 @@ serve(async (req) => {
       }
     }
 
+    // Digraph-specific word corpus context - inject grade-filtered words when digraph book type
+    let digraphWordsContext = '';
+    if (bookType === 'digraph' && gradeLevel) {
+      // Map gradeLevel (ValidGrade) to corpus GradeLevel
+      const gradeMapping: Record<ValidGrade, GradeLevel> = {
+        'PRE_K': 'PRE_K',
+        'K': 'K',
+        'GRADE_1': 'GRADE_1',
+        'GRADE_2': 'GRADE_2'
+      };
+      const corpusGrade = gradeMapping[gradeLevel];
+      
+      if (corpusGrade) {
+        // Try to detect which digraph was selected from conversation
+        const digraphPatterns = ['ch', 'sh', 'th', 'wh', 'ph', 'ck', 'ng', 'gh', 'kn', 'wr', 'qu', 'tch', 'dge', 'sc', 'sk', 'sm', 'sn', 'sp', 'st', 'sw'];
+        let selectedDigraph: string | null = null;
+        
+        for (const msg of messages) {
+          if (msg.role === 'user' && typeof msg.content === 'string') {
+            const content = msg.content.toLowerCase();
+            for (const dg of digraphPatterns) {
+              // Look for digraph selection patterns like "ch" or "'ch'" or "the ch digraph"
+              if (content.includes(`"${dg}"`) || content.includes(`'${dg}'`) || 
+                  content.includes(`${dg} digraph`) || content.includes(`${dg} blend`) ||
+                  content === dg || content.endsWith(` ${dg}`) || content.startsWith(`${dg} `)) {
+                selectedDigraph = dg;
+                break;
+              }
+            }
+            if (selectedDigraph) break;
+          }
+        }
+        
+        if (selectedDigraph && isValidDigraph(selectedDigraph)) {
+          const words = getWordsForDigraphThroughGrade(selectedDigraph, corpusGrade);
+          if (words.length > 0) {
+            const wordList = words.map(w => `- ${w.word} (${w.grade})`).join('\n');
+            digraphWordsContext = `\n\n📖 GRADE-APPROPRIATE WORDS FOR "${selectedDigraph.toUpperCase()}" (up to ${getGradeLabel(gradeLevel)}):\n⚠️ CRITICAL: You MUST ONLY use words from this list for the book outline. Do NOT invent or suggest words outside this curated list.\n${wordList}`;
+            console.log(`📚 Digraph corpus: Injected ${words.length} words for "${selectedDigraph}" up to ${gradeLevel}`);
+          }
+        }
+      }
+    }
+
     const themeContext = characterTheme
       ? characterTheme === 'custom'
         ? `\n\n⚠️ CRITICAL - THEME STATUS:\n🎨 CUSTOM THEME REQUESTED - The user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.\n\n❌ DO NOT ask "What character theme would you like?" - this step is complete.`
@@ -325,7 +370,7 @@ serve(async (req) => {
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + themeContext + characterConstraintsContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

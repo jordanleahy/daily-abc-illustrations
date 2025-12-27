@@ -64,10 +64,18 @@ serve(async (req) => {
     const useProModel = pageType && PRO_MODEL_PAGE_TYPES.includes(pageType);
     const selectedModel = useProModel ? IMAGE_GENERATION_MODEL_PRO : IMAGE_GENERATION_MODEL;
     
+    // Enforce 1:1 aspect ratio for cover and educational pages
+    const requiresSquareFormat = pageType && PRO_MODEL_PAGE_TYPES.includes(pageType);
+    const aspectRatioPrefix = requiresSquareFormat 
+      ? `CRITICAL - IMAGE DIMENSIONS: Generate a SQUARE image with 1:1 aspect ratio. The width and height MUST be equal. This is mandatory.\n\n`
+      : '';
+    const enhancedPrompt = aspectRatioPrefix + prompt;
+    
     console.log('🎨 Generating color image for page:', pageId);
     console.log('📄 Page type:', pageType || 'unknown');
     console.log('🤖 Using model:', selectedModel, useProModel ? '(PRO - better text accuracy)' : '(standard)');
-    console.log('📝 Prompt length:', prompt.length);
+    console.log('📐 Square format enforced:', requiresSquareFormat);
+    console.log('📝 Prompt length:', enhancedPrompt.length);
 
     // Call Lovable AI to generate the color image
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -81,7 +89,7 @@ serve(async (req) => {
         messages: [
           {
             role: "user",
-            content: prompt
+            content: enhancedPrompt
           }
         ],
         modalities: ["image", "text"]

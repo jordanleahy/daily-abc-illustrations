@@ -12,6 +12,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { useNavigate } from 'react-router-dom';
 import { TextOverlay } from '@/components/ui/text-overlay';
 import { copyToClipboard, copyImageToClipboard } from '@/utils/clipboardHelpers';
+import { getLovableAiErrorMessage } from '@/utils/lovableAiErrors';
 import { InlineEditInput } from '@/components/ui/inline-edit-input';
 import { PublicationStatus } from '@/types/shared/status';
 import { WordsCard } from './WordsCard';
@@ -275,8 +276,16 @@ export function BookEditorPanel({
         body: { pageId, bookId, textImageUrl }
       });
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate coloring image');
+      if (error) {
+        const message = getLovableAiErrorMessage(error, data);
+        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        return;
+      }
+      if (!data?.success) {
+        const message = getLovableAiErrorMessage(null, data);
+        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        return;
+      }
 
       toast({ title: "Coloring page created", description: "B&W coloring book version generated with text preserved" });
       
@@ -284,11 +293,7 @@ export function BookEditorPanel({
       await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
     } catch (error: any) {
       console.error('Error generating coloring image:', error);
-      const message = error.message?.includes('Rate limit') 
-        ? 'Rate limit exceeded. Please try again later.'
-        : error.message?.includes('credits') 
-        ? 'AI credits exhausted. Please add credits.'
-        : 'Could not create coloring book image';
+      const message = getLovableAiErrorMessage(error);
       toast({ title: "Generation failed", description: message, variant: "destructive" });
     } finally {
       setIsGeneratingColoringImage(false);
@@ -319,19 +324,22 @@ export function BookEditorPanel({
         body: { pageId, bookId, prompt, pageType }
       });
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
-
+      if (error) {
+        const message = getLovableAiErrorMessage(error, data);
+        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        return;
+      }
+      if (!data?.success) {
+        const message = getLovableAiErrorMessage(null, data);
+        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        return;
+      }
       
       // Invalidate the book editor data to refresh and show the new image
       await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
     } catch (error: any) {
       console.error('Error generating color image:', error);
-      const message = error.message?.includes('Rate limit') 
-        ? 'Rate limit exceeded. Please try again later.'
-        : error.message?.includes('credits') 
-        ? 'AI credits exhausted. Please add credits.'
-        : 'Could not generate image';
+      const message = getLovableAiErrorMessage(error);
       toast({ title: "Generation failed", description: message, variant: "destructive" });
     } finally {
       setIsGeneratingColorImage(false);
@@ -385,19 +393,22 @@ export function BookEditorPanel({
         body: { pageId: pageData.id, bookId: result.bookId, prompt, pageType: derivedPageType }
       });
 
-      if (error) throw error;
-      if (!data?.success) throw new Error(data?.error || 'Failed to generate image');
-
+      if (error) {
+        const message = getLovableAiErrorMessage(error, data);
+        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        return;
+      }
+      if (!data?.success) {
+        const message = getLovableAiErrorMessage(null, data);
+        toast({ title: "Generation failed", description: message, variant: "destructive" });
+        return;
+      }
       
       // Invalidate to refresh the new book data
       await queryClient.invalidateQueries({ queryKey: ['book-editor-data', result.bookId] });
     } catch (error: any) {
       console.error('Error generating color image with book creation:', error);
-      const message = error.message?.includes('Rate limit') 
-        ? 'Rate limit exceeded. Please try again later.'
-        : error.message?.includes('credits') 
-        ? 'AI credits exhausted. Please add credits.'
-        : 'Could not generate image';
+      const message = getLovableAiErrorMessage(error);
       toast({ title: "Generation failed", description: message, variant: "destructive" });
     } finally {
       setIsGeneratingColorImage(false);

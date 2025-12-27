@@ -25,7 +25,7 @@ import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { AdminOnly } from '@/components/AdminOnly';
 import { Container } from './Container';
 import { UserProfileModal } from '@/components/profile/UserProfileModal';
-import { PennyCounter } from '@/components/ui/penny-counter';
+import { PointsCounter } from '@/components/ui/points-counter';
 import { getDefaultRouteForRole } from '@/config/routes';
 
 /**

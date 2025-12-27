@@ -29,7 +29,7 @@ export const usePurchaseReward = () => {
       
       toast({
         title: '🎉 Purchase Successful!',
-        description: `${data.kidName} purchased "${data.productTitle}" for ${data.purchase.coins_spent} coins!`,
+        description: `${data.kidName} purchased "${data.productTitle}" for ${data.purchase.coins_spent} points!`,
       });
     },
     onError: (error: Error) => {

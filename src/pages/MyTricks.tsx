@@ -9,7 +9,7 @@ import { CreateTrickModal } from '@/components/tricks/CreateTrickModal';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect } from 'react';
-import { PennyCounter } from '@/components/ui/penny-counter';
+import { PointsCounter } from '@/components/ui/points-counter';
 import { Edit, Plus, ArrowLeft } from 'lucide-react';
 import { Trick } from '@/types/trick';
 

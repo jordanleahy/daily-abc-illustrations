@@ -7,10 +7,10 @@ export const RewardsFeature = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            1 Page = 1¢
+            1 Page = 1 Point
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Every book completed earns coins and builds confidence. Track progress and celebrate learning milestones together.
+            Every book completed earns points and builds confidence. Track progress and celebrate learning milestones together.
           </p>
         </div>
 
@@ -21,7 +21,7 @@ export const RewardsFeature = () => {
               <div className="space-y-6">
                 <div className="flex justify-center">
                   <div className="text-6xl font-bold text-primary">
-                    $1.24
+                    124 points
                   </div>
                 </div>
                 <div className="text-center">
@@ -37,13 +37,13 @@ export const RewardsFeature = () => {
           {/* Benefits List */}
           <div className="space-y-6">
             <div className="space-y-2">
-              <h3 className="font-semibold text-xl">🎯 Earn Money</h3>
+              <h3 className="font-semibold text-xl">🎯 Earn Points</h3>
               <p className="text-muted-foreground">
-                Complete books, each money buy bubble team
+                Complete books, earn points for rewards
               </p>
             </div>
             <div className="space-y-2">
-              <h3 className="font-semibold text-xl">💰Save Money</h3>
+              <h3 className="font-semibold text-xl">💰 Save Points</h3>
               <p className="text-muted-foreground">
                 See reading progress and phonics mastery over time
               </p>

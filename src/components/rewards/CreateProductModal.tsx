@@ -13,7 +13,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useCreateRewardsProduct } from '@/hooks/useCreateRewardsProduct';
 import { useUpdateRewardsProduct } from '@/hooks/useUpdateRewardsProduct';
-import { formatPenniesAsCurrency } from '@/utils/currency';
 import type { RewardsProduct } from '@/types/rewardsProduct';
 import { ModalProps } from '@/types/shared';
 import { BookImage } from '@/components/ui/book-image';
@@ -29,7 +28,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
   
   const [title, setTitle] = useState(editProduct?.title || '');
   const [description, setDescription] = useState(editProduct?.description || '');
-  const [coinPrice, setCoinPrice] = useState(editProduct?.coin_price?.toString() || '');
+  const [pointCost, setPointCost] = useState(editProduct?.coin_price?.toString() || '');
   const [screenTimeMinutes, setScreenTimeMinutes] = useState(editProduct?.screen_time_minutes?.toString() || '');
   const [hasQuantityLimit, setHasQuantityLimit] = useState(!!editProduct?.quantity_available);
   const [quantityAvailable, setQuantityAvailable] = useState(editProduct?.quantity_available?.toString() || '1');
@@ -44,7 +43,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
     if (open && editProduct) {
       setTitle(editProduct.title || '');
       setDescription(editProduct.description || '');
-      setCoinPrice(editProduct.coin_price?.toString() || '');
+      setPointCost(editProduct.coin_price?.toString() || '');
       setScreenTimeMinutes(editProduct.screen_time_minutes?.toString() || '');
       setHasQuantityLimit(!!editProduct.quantity_available);
       setQuantityAvailable(editProduct.quantity_available?.toString() || '1');
@@ -124,7 +123,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
       const productData = {
         title,
         description: description || undefined,
-        coin_price: parseInt(coinPrice),
+        coin_price: parseInt(pointCost),
         product_image_url: productImageUrl,
         product_video_url: productVideoUrl,
         screen_time_minutes: screenTimeMinutes ? parseInt(screenTimeMinutes) : undefined,
@@ -159,7 +158,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
   const resetForm = () => {
     setTitle('');
     setDescription('');
-    setCoinPrice('');
+    setPointCost('');
     setScreenTimeMinutes('');
     setHasQuantityLimit(false);
     setQuantityAvailable('1');
@@ -169,7 +168,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
     setExistingVideoUrl('');
   };
 
-  const coins = parseInt(coinPrice) || 0;
+  const points = parseInt(pointCost) || 0;
 
   const isSystemProduct = editProduct?.is_system_product;
 
@@ -182,8 +181,8 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
           </DialogTitle>
           <DialogDescription>
             {isSystemProduct 
-              ? 'Adjust the coin price and minutes for the Screen Time reward'
-              : 'Create rewards that your kids can purchase with their earned coins'
+              ? 'Adjust the point cost and minutes for the Screen Time reward'
+              : 'Create rewards that your kids can purchase with their earned points'
             }
           </DialogDescription>
         </DialogHeader>
@@ -195,23 +194,23 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
               <Alert>
                 <Info className="h-4 w-4" />
                 <AlertDescription>
-                  Screen Time is a required system product. You can only modify the coin price and minutes.
+                  Screen Time is a required system product. You can only modify the point cost and minutes.
                 </AlertDescription>
               </Alert>
 
               <div className="space-y-2">
-                <Label htmlFor="price">Coin Price *</Label>
+                <Label htmlFor="price">Point Cost *</Label>
                 <Input
                   id="price"
                   type="number"
                   min="1"
-                  value={coinPrice}
-                  onChange={(e) => setCoinPrice(e.target.value)}
+                  value={pointCost}
+                  onChange={(e) => setPointCost(e.target.value)}
                   placeholder="100"
                   required
                 />
                 <p className="text-xs text-muted-foreground">
-                  {coins > 0 && `${coins} pennies = ${formatPenniesAsCurrency(coins)}`}
+                  {points > 0 && `${points} points`}
                 </p>
               </div>
 
@@ -287,18 +286,18 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="price">Coin Price *</Label>
+                  <Label htmlFor="price">Point Cost *</Label>
                   <Input
                     id="price"
                     type="number"
                     min="1"
-                    value={coinPrice}
-                    onChange={(e) => setCoinPrice(e.target.value)}
+                    value={pointCost}
+                    onChange={(e) => setPointCost(e.target.value)}
                     placeholder="100"
                     required
                   />
                   <p className="text-xs text-muted-foreground">
-                    {coins > 0 && `${coins} pennies = ${formatPenniesAsCurrency(coins)}`}
+                    {points > 0 && `${points} points`}
                   </p>
                 </div>
 
@@ -358,7 +357,7 @@ export const CreateProductModal = ({ open, onOpenChange, editProduct }: CreatePr
               type="submit"
               disabled={
                 !title ||
-                !coinPrice ||
+                !pointCost ||
                 (isSystemProduct && !screenTimeMinutes) ||
                 isUploading ||
                 createProduct.isPending ||

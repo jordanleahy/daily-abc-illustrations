@@ -4,9 +4,9 @@ import { Circle, QrCode, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useBookQRCode } from '@/hooks/useBookQRCode';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
-import { useKidPennies } from '@/hooks/useKidPennies';
+import { useKidPoints } from '@/hooks/useKidPoints';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
-import { formatPenniesAsCurrency } from '@/utils/currency';
+import { formatPoints } from '@/utils/currency';
 
 /**
  * ReadingHeader Component

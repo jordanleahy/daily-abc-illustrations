@@ -1,22 +1,22 @@
 /**
- * Currency utility functions for converting pennies to dollar amounts
- * Conversion rate: 100 pennies = $1.00
+ * Points utility functions for formatting point values
  */
 
 /**
- * Formats pennies as US currency
- * @param pennies - The number of pennies to convert
- * @returns Formatted currency string (e.g., "$1.60")
+ * Formats a number as points display
+ * @param points - The number of points to format
+ * @returns Formatted points string (e.g., "150 points")
  */
-export function formatPenniesAsCurrency(pennies: number): string {
-  const dollars = pennies / 100;
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(dollars);
+export function formatPoints(points: number): string {
+  return `${points} points`;
 }
 
 /**
- * @deprecated Use formatPenniesAsCurrency instead
+ * @deprecated Use formatPoints instead
  */
-export const formatCoinsAsCurrency = formatPenniesAsCurrency;
+export const formatPenniesAsCurrency = formatPoints;
+
+/**
+ * @deprecated Use formatPoints instead
+ */
+export const formatCoinsAsCurrency = formatPoints;

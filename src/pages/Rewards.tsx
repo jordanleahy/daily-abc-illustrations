@@ -8,9 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { BookImage } from '@/components/ui/book-image';
-import { Coins, BookOpen, Star, ShoppingBag, Package, Plus, UserPlus } from 'lucide-react';
+import { Star, BookOpen, ShoppingBag, Package, Plus, UserPlus } from 'lucide-react';
 import { RewardContainer } from '@/components/ui/reward-container';
-import { PennyCounter } from '@/components/ui/penny-counter';
+import { PointsCounter } from '@/components/ui/points-counter';
 import { ProductCard } from '@/components/rewards/ProductCard';
 import { PurchaseConfirmDialog } from '@/components/rewards/PurchaseConfirmDialog';
 import { useRewardsProducts } from '@/hooks/useRewardsProducts';
@@ -70,7 +70,7 @@ export default function Rewards() {
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold mb-2">Reading Rewards</h1>
             <p className="text-muted-foreground">
-              Track your reading progress and collect coins!
+              Track your reading progress and collect points!
             </p>
           </div>
 
@@ -99,16 +99,16 @@ export default function Rewards() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-yellow-500" />
+                  <Star className="h-5 w-5 text-amber-500" />
                   Earned Rewards
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-center py-8">
                   <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Start Reading to Earn Coins!</h3>
+                  <h3 className="text-lg font-semibold mb-2">Start Reading to Earn Points!</h3>
                   <p className="text-muted-foreground">
-                    Read ABC books to start collecting your first coins.
+                    Read ABC books to start collecting your first points.
                   </p>
                 </div>
               </CardContent>
@@ -194,7 +194,7 @@ export default function Rewards() {
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Reading Rewards</h1>
           <p className="text-muted-foreground">
-            Track your reading progress and collect coins!
+            Track your reading progress and collect points!
           </p>
         </div>
 
@@ -251,16 +251,16 @@ export default function Rewards() {
                       <p className="text-muted-foreground">Reading Champion</p>
                     </div>
                   </div>
-                  <PennyCounter pennies={currentKid.earned_coins || 0} size="md" />
+                  <PointsCounter points={currentKid.earned_coins || 0} size="md" />
                 </div>
               </CardContent>
             </Card>
 
-            {/* Coin Display */}
+            {/* Points Display */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Coins className="h-5 w-5 text-yellow-500" />
+                  <Star className="h-5 w-5 text-amber-500" />
                   Earned Rewards
                 </CardTitle>
               </CardHeader>
@@ -272,9 +272,9 @@ export default function Rewards() {
                 ) : (
                   <div className="text-center py-8">
                     <BookOpen className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold mb-2">Start Reading to Earn Coins!</h3>
+                    <h3 className="text-lg font-semibold mb-2">Start Reading to Earn Points!</h3>
                     <p className="text-muted-foreground">
-                      Read ABC books to start collecting your first coins.
+                      Read ABC books to start collecting your first points.
                     </p>
                   </div>
                 )}
@@ -287,7 +287,7 @@ export default function Rewards() {
                 <div className="text-center">
                   <h3 className="text-lg font-semibold mb-2">Keep Reading!</h3>
                   <p className="text-muted-foreground">
-                    Every page you read earns you more coins. 
+                    Every page you read earns you more points. 
                     Visit the daily books to continue your reading adventure!
                   </p>
                 </div>
@@ -318,7 +318,7 @@ export default function Rewards() {
                     <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
                     <h3 className="text-lg font-semibold mb-2">No Rewards Yet!</h3>
                     <p className="text-muted-foreground mb-4">
-                      Add rewards to your store that your kids can purchase with their earned coins.
+                      Add rewards to your store that your kids can purchase with their earned points.
                     </p>
                     <Button variant="outline" asChild>
                       <Link to="/rewards/manage">
@@ -400,7 +400,7 @@ export default function Rewards() {
           open={!!purchaseProduct}
           onOpenChange={(open) => !open && setPurchaseProduct(null)}
           product={purchaseProduct}
-          currentPennies={currentKid?.earned_coins || 0}
+          currentPoints={currentKid?.earned_coins || 0}
           onConfirm={handleConfirmPurchase}
         />
       </div>

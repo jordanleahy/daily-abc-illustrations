@@ -19,7 +19,7 @@ interface SuggestedAction {
   label: string;
   value: string;
   themeId?: string;
-  ageRangeId?: string;
+  gradeId?: string;
 }
 
 interface Message {

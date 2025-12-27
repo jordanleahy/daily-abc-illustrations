@@ -28,8 +28,7 @@ export interface SuggestedAction {
   label: string;
   value: string;
   themeId?: CharacterThemeValue;
-  ageRangeId?: string;
-  gradeId?: GradeId; // New: grade level selection
+  gradeId?: GradeId;
   characterSelection?: CharacterSelectionData;
   selectedCharacterIds?: string[]; // IDs of characters selected for enforcement
 }
@@ -224,15 +223,15 @@ export const useGoogleChat = (
             };
           }
           
-          // Age group fallback  
-          if (cleanedText.includes('What age is this ABC book for')) {
+          // Grade level fallback  
+          if (cleanedText.toLowerCase().includes('grade') || cleanedText.toLowerCase().includes('what grade')) {
             return { 
               cleanContent: cleanedText, 
               suggestedActions: [
-                { id: '1-2', label: '1-2 years (very simple words)', value: '1-2 years' },
-                { id: '2-3', label: '2-3 years (familiar objects)', value: '2-3 years' },
-                { id: '3-4', label: '3-4 years (expanded vocabulary)', value: '3-4 years' },
-                { id: '4-5', label: '4-5 years (more complex words)', value: '4-5 years' },
+                { id: 'PRE_K', label: 'Pre-K (Ages 3-4)', value: 'Pre-K', gradeId: 'PRE_K' as GradeId },
+                { id: 'K', label: 'Kindergarten (Ages 5-6)', value: 'Kindergarten', gradeId: 'K' as GradeId },
+                { id: 'GRADE_1', label: '1st Grade (Ages 6-7)', value: '1st Grade', gradeId: 'GRADE_1' as GradeId },
+                { id: 'GRADE_2', label: '2nd Grade (Ages 7-8)', value: '2nd Grade', gradeId: 'GRADE_2' as GradeId },
               ]
             };
           }
@@ -311,16 +310,15 @@ export const useGoogleChat = (
 
         // Generic fallbacks for common discovery patterns across all book types
         if (!match) {
-          // Age group selection fallback
-          if (cleanedText.toLowerCase().includes('what age') || cleanedText.toLowerCase().includes('age group') || cleanedText.toLowerCase().includes('age range')) {
+          // Grade level selection fallback
+          if (cleanedText.toLowerCase().includes('grade level') || cleanedText.toLowerCase().includes('what grade') || cleanedText.toLowerCase().includes('which grade')) {
             return { 
               cleanContent: cleanedText, 
               suggestedActions: [
-                { id: '1-2', label: '1-2 years', value: '1-2 years' },
-                { id: '2-3', label: '2-3 years', value: '2-3 years' },
-                { id: '3-4', label: '3-4 years', value: '3-4 years' },
-                { id: '4-5', label: '4-5 years', value: '4-5 years' },
-                { id: '5-6', label: '5-6 years', value: '5-6 years' },
+                { id: 'PRE_K', label: 'Pre-K (Ages 3-4)', value: 'Pre-K', gradeId: 'PRE_K' as GradeId },
+                { id: 'K', label: 'Kindergarten (Ages 5-6)', value: 'Kindergarten', gradeId: 'K' as GradeId },
+                { id: 'GRADE_1', label: '1st Grade (Ages 6-7)', value: '1st Grade', gradeId: 'GRADE_1' as GradeId },
+                { id: 'GRADE_2', label: '2nd Grade (Ages 7-8)', value: '2nd Grade', gradeId: 'GRADE_2' as GradeId },
               ]
             };
           }

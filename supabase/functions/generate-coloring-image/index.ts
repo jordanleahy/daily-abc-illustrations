@@ -1,8 +1,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 import { 
-  IMAGE_GENERATION_MODEL, 
-  IMAGE_GENERATION_COST_CENTS,
+  COLORING_IMAGE_MODEL,
+  getImageCostByModel,
   logImageGenerationUsage,
   buildImageGenerationMetadata
 } from "../_shared/aiModelConstants.ts";
@@ -56,7 +56,8 @@ serve(async (req) => {
       );
     }
 
-    console.log('Generating coloring book image from text image for page:', pageId);
+    console.log(`🎨 Generating coloring book image for page: ${pageId}`);
+    console.log(`🤖 Using model: ${COLORING_IMAGE_MODEL}`);
 
     // Call Lovable AI to convert the text image to a coloring book outline
     // The text image has a text bar at the bottom that must be preserved
@@ -67,7 +68,7 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: IMAGE_GENERATION_MODEL,
+        model: COLORING_IMAGE_MODEL,
         messages: [
           {
             role: "user",
@@ -133,10 +134,10 @@ VALIDATION CHECK:
     const outputTokens = usage?.completion_tokens || 0;
     const totalTokens = usage?.total_tokens || inputTokens + outputTokens;
     
-    // Use centralized pricing constants
-    const costCents = IMAGE_GENERATION_COST_CENTS;
+    // Use dynamic pricing from constants
+    const { cents: costCents } = getImageCostByModel(COLORING_IMAGE_MODEL);
     
-    logImageGenerationUsage(inputTokens, outputTokens, totalTokens);
+    logImageGenerationUsage(inputTokens, outputTokens, totalTokens, COLORING_IMAGE_MODEL);
 
     // Extract the generated image from the response
     const generatedImageUrl = aiData.choices?.[0]?.message?.images?.[0]?.image_url?.url;
@@ -192,7 +193,7 @@ VALIDATION CHECK:
           color_generation_cost_cents: (existingRecord.color_generation_cost_cents || 0) + costCents,
           usage_metadata: {
             ...(existingRecord.usage_metadata || {}),
-            ...buildImageGenerationMetadata(inputTokens, outputTokens, 'coloring_generation')
+            ...buildImageGenerationMetadata(inputTokens, outputTokens, 'coloring_generation', COLORING_IMAGE_MODEL)
           }
         })
         .eq('id', existingRecord.id);
@@ -214,7 +215,7 @@ VALIDATION CHECK:
           version_number: 1,
           source_type: 'ai_generated',
           color_generation_cost_cents: costCents,
-          usage_metadata: buildImageGenerationMetadata(inputTokens, outputTokens, 'coloring_generation')
+          usage_metadata: buildImageGenerationMetadata(inputTokens, outputTokens, 'coloring_generation', COLORING_IMAGE_MODEL)
         });
 
       if (insertError) {

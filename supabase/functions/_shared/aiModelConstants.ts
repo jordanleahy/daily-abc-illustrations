@@ -12,6 +12,12 @@
 // ============================================
 
 /**
+ * Model for coloring book image generation
+ * Uses standard Gemini model for cost-effective B&W conversions
+ */
+export const COLORING_IMAGE_MODEL = 'google/gemini-2.5-flash-image-preview';
+
+/**
  * Standard image generation model (Gemini 2.5 Flash Image / Nano Banana)
  * Fast, cost-effective image generation
  */
@@ -92,6 +98,7 @@ export function getImageCostByModel(model: string): { usd: number; cents: number
     case IMAGE_GENERATION_MODEL_PRO:
       return { usd: IMAGE_GENERATION_PRO_COST_USD, cents: IMAGE_GENERATION_PRO_COST_CENTS };
     case IMAGE_GENERATION_MODEL:
+    case COLORING_IMAGE_MODEL:
     default:
       return { usd: IMAGE_GENERATION_COST_USD, cents: IMAGE_GENERATION_COST_CENTS };
   }

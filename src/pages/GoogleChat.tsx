@@ -168,6 +168,31 @@ export default function GoogleChat() {
   const bookPageImages = bookPageData?.images ?? {};
   const pageColorCosts = bookPageData?.colorCosts ?? {};
   
+  // Fetch cover thumbnail via React Query for proper cache invalidation
+  const { data: thumbnailUrl } = useQuery({
+    queryKey: ['book-cover-image', createdBookId],
+    queryFn: async () => {
+      if (!createdBookId) return null;
+      const { data, error } = await supabase
+        .from('page_image_urls')
+        .select(`
+          image_url,
+          pages!inner(page_type)
+        `)
+        .eq('book_id', createdBookId)
+        .eq('pages.page_type', 'cover')
+        .eq('is_latest', true)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching cover image:', error);
+        return null;
+      }
+      return data?.image_url || null;
+    },
+    enabled: !!createdBookId,
+  });
+  
   // Subscribe to real-time page image updates
   usePageImageUrlsSubscription(createdBookId);
   
@@ -1692,8 +1717,6 @@ export default function GoogleChat() {
       await queryClient.invalidateQueries({ queryKey: ['book-page-images', createdBookId] });
       await queryClient.invalidateQueries({ queryKey: ['books', user?.id] });
       
-      setThumbnailUrl(publicUrl);
-      
       // Auto-navigate to next page after successful cover upload
       if (currentEditorPage === 1 && pageCount > 1) {
         setCurrentEditorPage(2);
@@ -1705,34 +1728,7 @@ export default function GoogleChat() {
     }
   }, [createdBookId, user, queryClient, currentEditorPage, pageCount]);
 
-  // Fetch thumbnail URL from cover page
-  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
-  
-  useEffect(() => {
-    if (!createdBookId) {
-      setThumbnailUrl(null);
-      return;
-    }
-    
-    const fetchCoverImage = async () => {
-      const { data, error } = await supabase
-        .from('page_image_urls')
-        .select(`
-          image_url,
-          pages!inner(page_type)
-        `)
-        .eq('book_id', createdBookId)
-        .eq('pages.page_type', 'cover')
-        .eq('is_latest', true)
-        .maybeSingle();
-      
-      if (!error && data?.image_url) {
-        setThumbnailUrl(data.image_url);
-      }
-    };
-    
-    fetchCoverImage();
-  }, [createdBookId]);
+  // thumbnailUrl is now fetched via React Query above (line ~170) for proper cache invalidation
 
   return (
     <AdminOnly showMessage={true}>

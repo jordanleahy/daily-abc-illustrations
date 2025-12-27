@@ -4,6 +4,7 @@ import { useAuthContext } from '@/contexts/AuthContext';
 import { useQueryClient } from '@tanstack/react-query';
 import type { CharacterThemeValue } from '@/types/characterTheme';
 import type { BookTypeId } from '@/types/bookType';
+import type { GradeId } from '@/types/grade';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -28,6 +29,7 @@ export interface SuggestedAction {
   value: string;
   themeId?: CharacterThemeValue;
   ageRangeId?: string;
+  gradeId?: GradeId; // New: grade level selection
   characterSelection?: CharacterSelectionData;
   selectedCharacterIds?: string[]; // IDs of characters selected for enforcement
 }
@@ -41,7 +43,7 @@ export interface Message {
 export const useGoogleChat = (
   sessionId?: string,
   onMessagesUpdate?: (messages: Message[], sessionId: string) => void,
-  kidAge?: { years: number; months: number },
+  gradeLevel?: GradeId, // Changed from kidAge to gradeLevel
   bookType?: string
 ) => {
   const queryClient = useQueryClient();
@@ -125,7 +127,7 @@ export const useGoogleChat = (
             messages: [...messagesWithoutSuggestions, apiUserMessage],
             outlineReady: context?.outlineReady,
             bookCreated: context?.bookCreated,
-            kidAge,
+            gradeLevel, // Changed from kidAge
             bookType: context?.bookType || bookType,
             characterTheme: context?.characterTheme,
             selectedCharacterIds: context?.selectedCharacterIds

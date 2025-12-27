@@ -3,7 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
-import { fetchAgeGroups, getAgeGroupSuggestions } from '../_shared/ageGroups.ts';
+import { fetchGradeLevels, getGradeLabel, type ValidGrade } from '../_shared/gradeLevels.ts';
 import { buildCharacterConstraints } from '../_shared/characterConstraints.ts';
 
 interface MessageContent {
@@ -159,11 +159,11 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated, kidAge, bookType, characterTheme, selectedCharacterIds } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
-      kidAge?: { years: number; months: number };
+      gradeLevel?: ValidGrade;
       bookType?: string;
       characterTheme?: string;
       selectedCharacterIds?: string[];
@@ -245,9 +245,9 @@ serve(async (req) => {
       console.log('🔍 No book type selected');
     }
 
-    // Add context about kid age and theme if already provided
-    const ageContext = kidAge 
-      ? `\n\n👶 CHILD AGE CONTEXT:\nThe selected child is ${kidAge.years} years and ${kidAge.months} months old. Skip the age discovery question and use this age to tailor all educational content, vocabulary, and complexity to this specific developmental stage.`
+    // Add context about grade level if already provided
+    const gradeContext = gradeLevel 
+      ? `\n\n📚 GRADE LEVEL CONTEXT:\nThe selected grade level is ${getGradeLabel(gradeLevel)}. Skip the grade/age discovery question and tailor all educational content, vocabulary, and complexity to this specific grade level.`
       : '';
 
     // ABC-specific curated items context - only process if ABC book and subject theme selected
@@ -325,13 +325,13 @@ serve(async (req) => {
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + ageContext + curatedItemsContext + themeContext + characterConstraintsContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + themeContext + characterConstraintsContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
     console.log(`📊 System prompt length: ${systemMessage.content.length} characters`);
     console.log(`📊 Conversation stage: ${outlineReady ? 'Outline Ready' : bookCreated ? 'Book Created' : 'Discovery'}`);
-    console.log(`👶 Kid age provided: ${kidAge ? `${kidAge.years}y ${kidAge.months}m` : 'No'}`);
+    console.log(`📚 Grade level: ${gradeLevel || 'None'}`);
     console.log(`🎨 Character theme: ${characterTheme || 'None'}`);
 
     const allMessages = [systemMessage, ...messages];

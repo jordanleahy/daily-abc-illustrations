@@ -31,11 +31,11 @@ import { PublicationStatus } from '@/types/shared/status';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { BookTypeId } from '@/types/bookType';
 import { AgeRangeId } from '@/types/ageRange';
+import type { GradeId } from '@/types/grade';
 import type { CharacterThemeValue } from '@/types/characterTheme';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useCharacterSelectionFlow } from '@/hooks/useCharacterSelectionFlow';
 import { useCharacterSelectionInjection } from '@/components/chat/CharacterSelectionStep';
-import { differenceInYears, differenceInMonths } from 'date-fns';
 import { AdminOnly } from '@/components/AdminOnly';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
 
@@ -51,12 +51,13 @@ export default function GoogleChat() {
   const [isMobile, setIsMobile] = useState(false);
   const [selectedBookType, setSelectedBookType] = useState<BookTypeId | null>(null);
   const [selectedAgeRange, setSelectedAgeRange] = useState<AgeRangeId | null>(null);
+  const [selectedGradeLevel, setSelectedGradeLevel] = useState<GradeId | null>(null);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
   
-  // Get kid profiles
+  // Get kid profiles (kept for backwards compatibility with existing UI)
   const { data: kidProfiles = [] } = useKidProfiles();
   
-  // Auto-select kid if there's exactly one profile
+  // Auto-select kid if there's exactly one profile (kept for backwards compatibility)
   useEffect(() => {
     if (kidProfiles.length === 1 && !selectedKidId) {
       setSelectedKidId(kidProfiles[0].id);
@@ -121,23 +122,11 @@ export default function GoogleChat() {
     }, 1000);
   }, [updateSessionMessages]);
 
-  // Calculate kid age if selected
-  const kidAge = useMemo(() => {
-    if (!selectedKidId) return undefined;
-    const kid = kidProfiles.find(k => k.id === selectedKidId);
-    if (!kid?.date_of_birth) return undefined;
-    
-    const birthDate = new Date(kid.date_of_birth);
-    const years = differenceInYears(new Date(), birthDate);
-    const months = differenceInMonths(new Date(), birthDate) % 12;
-    
-    return { years, months };
-  }, [selectedKidId, kidProfiles]);
-
+  // Use grade level for chat context (replaces kidAge)
   const { isLoading, sendMessage, sendMessageWithImage } = useGoogleChat(
     currentSessionId || undefined,
     handleMessagesUpdate,
-    kidAge,
+    selectedGradeLevel || undefined,
     selectedBookType || undefined
   );
 

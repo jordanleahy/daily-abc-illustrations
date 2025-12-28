@@ -932,10 +932,10 @@ export function BookEditorPanel({
                   </>
                 )}
                 
-                <div className={`absolute right-2 flex flex-col items-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity ${
+                <div className={`absolute right-2 bottom-2 flex flex-col items-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity ${
                   imageMode === 'color' && shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && currentPageText 
-                    ? 'bottom-12' 
-                    : 'bottom-2'
+                    ? 'mb-10' 
+                    : ''
                 }`}>
                   <Button
                     variant="secondary"

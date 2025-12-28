@@ -21,7 +21,7 @@ import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
 import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Copy, Image, Link2, Share2 } from 'lucide-react';
+import { BookOpen, Check, Copy, Image, Link2, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -65,6 +65,7 @@ export function UserBookCard({
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
   const { mutate: generateOGAssets, isPending: isGeneratingOG } = useGenerateOGAssets();
   const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
+  const [ogSuccess, setOgSuccess] = useState(false);
   const coverImageUrl = book.coverImageUrl;
   
   const { ref, inView } = useIntersectionObserver({
@@ -288,9 +289,12 @@ export function UserBookCard({
             {/* OG Assets - Only show for published books */}
             {publicationStatus && (
               <Button 
-                variant="outline"
+                variant={ogSuccess ? "default" : "outline"}
                 size="sm"
-                className="w-full gap-2"
+                className={cn(
+                  "w-full gap-2 transition-all duration-300",
+                  ogSuccess && "bg-green-600 hover:bg-green-600 text-white border-green-600"
+                )}
                 onClick={(e) => {
                   e.stopPropagation();
                   generateOGAssets({
@@ -298,12 +302,22 @@ export function UserBookCard({
                     title: book.book_name,
                     description: book.book_description,
                     dailyPublishedId: publicationStatus.id
+                  }, {
+                    onSuccess: () => {
+                      setOgSuccess(true);
+                      setTimeout(() => setOgSuccess(false), 3000);
+                    }
                   });
                 }}
-                disabled={isGeneratingOG}
+                disabled={isGeneratingOG || ogSuccess}
               >
-                <Image className="h-4 w-4" />
-                {isGeneratingOG ? 'Generating...' : 'OG Assets'}
+                {ogSuccess ? (
+                  <><Check className="h-4 w-4" />Generated!</>
+                ) : isGeneratingOG ? (
+                  <><Image className="h-4 w-4 animate-pulse" />Generating...</>
+                ) : (
+                  <><Image className="h-4 w-4" />OG Assets</>
+                )}
               </Button>
             )}
 

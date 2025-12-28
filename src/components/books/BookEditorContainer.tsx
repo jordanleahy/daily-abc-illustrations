@@ -33,6 +33,8 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
   // Minimal local state - only for user interactions
   const [currentEditorPage, setCurrentEditorPage] = useState(1);
   const [localImageOverrides, setLocalImageOverrides] = useState<Record<number, string>>({});
+  const [localColoringImageOverrides, setLocalColoringImageOverrides] = useState<Record<number, string>>({});
+  const [localTextImageOverrides, setLocalTextImageOverrides] = useState<Record<number, string>>({});
   const [replacePageMode, setReplacePageMode] = useState<Record<number, boolean>>({});
   const [thumbnailOverride, setThumbnailOverride] = useState<string | null>(null);
   const [localTextOverrides, setLocalTextOverrides] = useState<Record<number, string>>({});
@@ -158,6 +160,10 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
 
       if (imageMode === 'color') {
         setLocalImageOverrides(prev => ({ ...prev, [currentEditorPage]: publicUrlData.publicUrl }));
+      } else if (imageMode === 'bw') {
+        setLocalColoringImageOverrides(prev => ({ ...prev, [currentEditorPage]: publicUrlData.publicUrl }));
+      } else if (imageMode === 'text') {
+        setLocalTextImageOverrides(prev => ({ ...prev, [currentEditorPage]: publicUrlData.publicUrl }));
       }
       setReplacePageMode(prev => ({ ...prev, [currentEditorPage]: false }));
 
@@ -198,6 +204,16 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
 
     updateBookStatusMutation.mutate({ bookId, status: newStatus });
   }, [bookId, editorData?.book?.status, updateBookStatusMutation]);
+
+  // Callback for when AI generates a coloring image - immediately update local state
+  const handleColoringImageGenerated = useCallback((pageNumber: number, imageUrl: string) => {
+    setLocalColoringImageOverrides(prev => ({ ...prev, [pageNumber]: imageUrl }));
+  }, []);
+
+  // Callback for when AI generates a text image - immediately update local state
+  const handleTextImageGenerated = useCallback((pageNumber: number, imageUrl: string) => {
+    setLocalTextImageOverrides(prev => ({ ...prev, [pageNumber]: imageUrl }));
+  }, []);
 
   const handleThumbnailUpload = useCallback(async (file: File) => {
     const coverPage = editorData?.coverPage;
@@ -277,12 +293,12 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
   }, [editorData?.pageImages, localImageOverrides, replacePageMode]);
 
   const displayColoringImages = useMemo(() => {
-    return editorData?.pageColoringImages || {};
-  }, [editorData?.pageColoringImages]);
+    return { ...(editorData?.pageColoringImages || {}), ...localColoringImageOverrides };
+  }, [editorData?.pageColoringImages, localColoringImageOverrides]);
 
   const displayTextImages = useMemo(() => {
-    return editorData?.pageTextImages || {};
-  }, [editorData?.pageTextImages]);
+    return { ...(editorData?.pageTextImages || {}), ...localTextImageOverrides };
+  }, [editorData?.pageTextImages, localTextImageOverrides]);
 
   const pageBwCosts = useMemo(() => {
     return editorData?.pageBwCosts || {};
@@ -339,6 +355,8 @@ export function BookEditorContainer({ bookId, isMobile, onClose }: BookEditorCon
       bookTitle={editorData.book.book_name}
       bookDescription={editorData.book.book_description || undefined}
       characterTheme={(editorData.book.metadata as any)?.characterTheme}
+      onColoringImageGenerated={handleColoringImageGenerated}
+      onTextImageGenerated={handleTextImageGenerated}
     />
   );
 

@@ -1068,7 +1068,7 @@ export function BookEditorPanel({
             )}
           </div>
           {/* Image mode toggle chips - below image */}
-          <div className="flex items-center justify-center gap-1 bg-muted rounded-full p-0.5 w-fit mx-auto">
+          <div className="flex items-center justify-end gap-1 bg-muted rounded-full p-0.5 w-fit ml-auto">
             {hasColorImage && (
               <button 
                 onClick={() => setImageMode('text')}

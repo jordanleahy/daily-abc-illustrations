@@ -972,20 +972,30 @@ export function BookEditorPanel({
                     )}
                   </Button>
                   {imageMode === 'bw' ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={handleGenerateColoringImage}
-                      disabled={isGeneratingColoringImage || !hasTextImage}
-                      className="text-xs h-7"
-                      title={!hasTextImage ? 'Generate a text image first' : 'Regenerate B&W image'}
-                    >
-                      {isGeneratingColoringImage ? (
-                        <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Generating...</>
-                      ) : (
-                        <><RefreshCw className="h-3 w-3 mr-1" />Regenerate</>
-                      )}
-                    </Button>
+                    <>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={handleGenerateColoringImage}
+                        disabled={isGeneratingColoringImage || !hasTextImage}
+                        className="text-xs h-7"
+                        title={!hasTextImage ? 'Generate a text image first' : 'Regenerate B&W image'}
+                      >
+                        {isGeneratingColoringImage ? (
+                          <><Loader2 className="h-3 w-3 mr-1 animate-spin" />Generating...</>
+                        ) : (
+                          <><RefreshCw className="h-3 w-3 mr-1" />Regenerate</>
+                        )}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => setIsReplacing(true)}
+                        className="text-xs h-7"
+                      >
+                        Replace
+                      </Button>
+                    </>
                   ) : (
                     <Button
                       variant="secondary"
@@ -1014,17 +1024,6 @@ export function BookEditorPanel({
                   )}
                 </div>
                 
-                {/* Replace chip for B&W mode - top left */}
-                {imageMode === 'bw' && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setIsReplacing(true)}
-                    className="absolute top-2 left-2 text-xs h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
-                  >
-                    Replace
-                  </Button>
-                )}
               </div>
             ) : isReplacing ? (
               imageMode === 'color' ? (

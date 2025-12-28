@@ -69,6 +69,8 @@ interface BookEditorPanelProps {
   bookTitle?: string;
   bookDescription?: string;
   characterTheme?: string;
+  onColoringImageGenerated?: (pageNumber: number, imageUrl: string) => void;
+  onTextImageGenerated?: (pageNumber: number, imageUrl: string) => void;
 }
 
 // Feature flag to show/hide the Words learning section
@@ -107,6 +109,8 @@ export function BookEditorPanel({
   bookTitle,
   bookDescription,
   characterTheme,
+  onColoringImageGenerated,
+  onTextImageGenerated,
 }: BookEditorPanelProps) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -285,6 +289,11 @@ export function BookEditorPanel({
         const message = getLovableAiErrorMessage(null, data);
         toast({ title: "Generation failed", description: message, variant: "destructive" });
         return;
+      }
+
+      // Immediately update local state with the new coloring image URL
+      if (data.coloringImageUrl && onColoringImageGenerated) {
+        onColoringImageGenerated(currentPageNumber, data.coloringImageUrl);
       }
 
       toast({ title: "Coloring page created", description: "B&W coloring book version generated with text preserved" });

@@ -76,8 +76,8 @@ export function useBookEditorData(bookId: string | null | undefined) {
           }
           if (item.coloring_image_url) {
             pageColoringImages[item.pages.page_number] = item.coloring_image_url;
-            if (item.generation_cost_cents) {
-              pageBwCosts[item.pages.page_number] = item.generation_cost_cents;
+            if (item.color_generation_cost_cents) {
+              pageBwCosts[item.pages.page_number] = item.color_generation_cost_cents;
             }
           }
           if (item.text_image_url) {

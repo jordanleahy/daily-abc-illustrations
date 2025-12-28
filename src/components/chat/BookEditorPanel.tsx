@@ -809,62 +809,7 @@ export function BookEditorPanel({
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
         {/* Image Upload/Display Area */}
         <div className="space-y-2" key={`page-${currentPageNumber}-${imageMode}`}>
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-medium text-muted-foreground">Page Image</p>
-            <div className="flex items-center gap-1 bg-muted rounded-full p-0.5">
-              {hasColorImage && (
-                <button 
-                  onClick={() => setImageMode('text')}
-                  className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
-                    imageMode === 'text' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  📝 Text
-                  {hasTextImage && <span className="text-green-500 ml-0.5">✓</span>}
-                </button>
-              )}
-              <button 
-                onClick={() => setImageMode('color')}
-                className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
-                  imageMode === 'color' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {pageColorCosts[currentPageNumber] ? (
-                  <span className="text-[10px] font-mono bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1 rounded">
-                    {(pageColorCosts[currentPageNumber] / 100).toFixed(2)}¢
-                  </span>
-                ) : (
-                  <span>🎨</span>
-                )}
-                Color
-                {hasColorImage && <span className="text-green-500 ml-0.5">✓</span>}
-              </button>
-              {hasTextImage && (
-                <button 
-                  onClick={() => setImageMode('bw')}
-                  className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
-                    imageMode === 'bw' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  {pageBwCosts[currentPageNumber] ? (
-                    <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1 rounded">
-                      {(pageBwCosts[currentPageNumber] / 100).toFixed(2)}¢
-                    </span>
-                  ) : (
-                    <span>⬜</span>
-                  )}
-                  B&W
-                  {hasBwImage && <span className="text-green-500 ml-0.5">✓</span>}
-                </button>
-              )}
-            </div>
-          </div>
+          <p className="text-xs font-medium text-muted-foreground">Page Image</p>
           <div className="aspect-square rounded-lg overflow-hidden border-2 border-dashed border-primary/30 bg-muted/30">
             {currentPageImage && !isReplacing ? (
               <div className="relative w-full h-full group">
@@ -1121,6 +1066,60 @@ export function BookEditorPanel({
                 disabled={createBookMutation.isPending}
                 className="h-full"
               />
+            )}
+          </div>
+          {/* Image mode toggle chips - below image */}
+          <div className="flex items-center justify-center gap-1 bg-muted rounded-full p-0.5 w-fit mx-auto">
+            {hasColorImage && (
+              <button 
+                onClick={() => setImageMode('text')}
+                className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
+                  imageMode === 'text' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                📝 Text
+                {hasTextImage && <span className="text-green-500 ml-0.5">✓</span>}
+              </button>
+            )}
+            <button 
+              onClick={() => setImageMode('color')}
+              className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
+                imageMode === 'color' 
+                  ? 'bg-primary text-primary-foreground' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              {pageColorCosts[currentPageNumber] ? (
+                <span className="text-[10px] font-mono bg-amber-500/20 text-amber-600 dark:text-amber-400 px-1 rounded">
+                  {(pageColorCosts[currentPageNumber] / 100).toFixed(2)}¢
+                </span>
+              ) : (
+                <span>🎨</span>
+              )}
+              Color
+              {hasColorImage && <span className="text-green-500 ml-0.5">✓</span>}
+            </button>
+            {hasTextImage && (
+              <button 
+                onClick={() => setImageMode('bw')}
+                className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
+                  imageMode === 'bw' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {pageBwCosts[currentPageNumber] ? (
+                  <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1 rounded">
+                    {(pageBwCosts[currentPageNumber] / 100).toFixed(2)}¢
+                  </span>
+                ) : (
+                  <span>⬜</span>
+                )}
+                B&W
+                {hasBwImage && <span className="text-green-500 ml-0.5">✓</span>}
+              </button>
             )}
           </div>
         </div>

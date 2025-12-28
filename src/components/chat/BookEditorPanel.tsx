@@ -932,7 +932,7 @@ export function BookEditorPanel({
                   </>
                 )}
                 
-                <div className="absolute top-2 right-2 flex gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                <div className="absolute top-2 right-2 flex flex-col items-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="secondary"
                     size="sm"
@@ -996,6 +996,22 @@ export function BookEditorPanel({
                       Replace
                     </Button>
                   )}
+                  {/* Show/Hide Overlay button - only for content pages in color mode */}
+                  {imageMode === 'color' && shouldShowTextOverlay && currentPageId && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        if (!isToggling) {
+                          toggleOverlay(currentPageId);
+                        }
+                      }}
+                      disabled={isToggling}
+                      className="text-xs h-7"
+                    >
+                      {isOverlayHidden(currentPageId) ? 'Show Overlay' : 'Hide Overlay'}
+                    </Button>
+                  )}
                 </div>
                 
                 {/* Replace chip for B&W mode - top left */}
@@ -1007,41 +1023,6 @@ export function BookEditorPanel({
                     className="absolute top-2 left-2 text-xs h-7 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity"
                   >
                     Replace
-                  </Button>
-                )}
-                
-                
-                {/* Show/Hide Overlay buttons - only for content pages in color mode */}
-                {imageMode === 'color' && shouldShowTextOverlay && currentPageId && isOverlayHidden(currentPageId) && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      if (!isToggling) {
-                        toggleOverlay(currentPageId);
-                      }
-                    }}
-                    disabled={isToggling}
-                    className="absolute top-11 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
-                  >
-                    Show Overlay
-                  </Button>
-                )}
-                
-                {/* Hide Overlay button when overlay is shown - only for content pages in color mode */}
-                {imageMode === 'color' && shouldShowTextOverlay && currentPageId && !isOverlayHidden(currentPageId) && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => {
-                      if (!isToggling) {
-                        toggleOverlay(currentPageId);
-                      }
-                    }}
-                    disabled={isToggling}
-                    className="absolute top-11 right-2 opacity-0 group-hover:opacity-100 transition-opacity text-xs h-7"
-                  >
-                    Hide Overlay
                   </Button>
                 )}
               </div>

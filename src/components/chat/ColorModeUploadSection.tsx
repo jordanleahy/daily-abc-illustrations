@@ -1,6 +1,6 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Upload, Sparkles, Loader2 } from 'lucide-react';
+import { Copy, Upload, Sparkles, Loader2, ClipboardPaste } from 'lucide-react';
 import { processImage } from '@/utils/imageProcessor';
 import { useToast } from '@/hooks/use-toast';
 
@@ -87,6 +87,37 @@ export function ColorModeUploadSection({
     };
   }, [handlePasteEvent]);
 
+  const handlePasteButtonClick = useCallback(async () => {
+    if (disabled) return;
+    
+    try {
+      const clipboardItems = await navigator.clipboard.read();
+      for (const item of clipboardItems) {
+        const imageType = item.types.find(type => type.startsWith('image/'));
+        if (imageType) {
+          const blob = await item.getType(imageType);
+          const file = new File([blob], 'pasted-image.png', { type: imageType });
+          const processed = await processImage(file, { maxWidth: 1024, maxHeight: 1024 });
+          onImageUpload(processed.dataUrl, 'color');
+          onCancel?.();
+          return;
+        }
+      }
+      toast({
+        title: 'No image found',
+        description: 'Copy an image to your clipboard first',
+        variant: 'destructive',
+      });
+    } catch (error) {
+      console.error('Error reading clipboard:', error);
+      toast({
+        title: 'Paste failed',
+        description: 'Could not read from clipboard. Try using Ctrl/Cmd+V instead.',
+        variant: 'destructive',
+      });
+    }
+  }, [disabled, onImageUpload, onCancel, toast]);
+
   return (
     <div 
       ref={containerRef}
@@ -121,6 +152,16 @@ export function ColorModeUploadSection({
           <Upload className="h-5 w-5" />
           Upload
         </Button>
+
+        <Button
+          onClick={handlePasteButtonClick}
+          variant="secondary"
+          className="w-full h-12 gap-2 text-base"
+          disabled={disabled || isGenerating}
+        >
+          <ClipboardPaste className="h-5 w-5" />
+          Paste
+        </Button>
         
         {onGenerate && (
           <Button
@@ -150,7 +191,7 @@ export function ColorModeUploadSection({
       </div>
       
       <p className="text-xs text-muted-foreground mt-1">
-        Upload, generate with AI, or paste (Ctrl/Cmd+V)
+        Upload, paste from clipboard, or generate with AI
       </p>
     </div>
   );

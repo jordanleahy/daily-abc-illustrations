@@ -75,23 +75,36 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Transform this image into a printable coloring book page suitable for children to color with crayons.
+                text: `YOU MUST CONVERT THIS IMAGE INTO A PURE BLACK AND WHITE COLORING BOOK PAGE.
 
-CRITICAL OUTPUT REQUIREMENTS - ZERO EXCEPTIONS:
-- The illustration area must contain ONLY pure black lines (#000000) on a pure white background (#FFFFFF)
-- ABSOLUTELY NO color fills - no browns, blues, greens, pinks, tans, beiges, or ANY color whatsoever
-- ABSOLUTELY NO gray fills or shading - only solid black line outlines
-- All shapes must be empty/hollow white areas bounded by clean black outlines
-- The result must look exactly like a traditional coloring book page you would buy at a store
-- NO gradients, NO colored shadows, NO tinted areas - pure black lines only
+THIS IS NOT AN ENHANCEMENT REQUEST - THIS IS A COMPLETE CONVERSION:
+Create a brand new BLACK AND WHITE LINE DRAWING based on this image. Do NOT simply adjust or filter the existing image.
 
-TEXT BAR PRESERVATION - MANDATORY:
-- The text bar at the bottom of this image with words/title must remain EXACTLY as-is
-- Do NOT convert, modify, remove, or alter the text bar in any way - keep its original colors and styling completely unchanged
+ABSOLUTE REQUIREMENTS - NO EXCEPTIONS ALLOWED:
+1. OUTPUT MUST BE: Pure black lines (#000000) on pure white background (#FFFFFF) ONLY
+2. ZERO COLOR: No brown, no blue, no green, no pink, no tan, no beige, no gray - NOTHING except black lines and white space
+3. ZERO FILLS: Every single shape must be EMPTY/HOLLOW with only black outlines - no filled areas whatsoever
+4. ZERO SHADING: No gradients, no gray tones, no shadows, no anti-aliasing gray pixels
+5. LINE ART ONLY: Think of a coloring book you buy at a dollar store - pure simple black outlines on white paper
 
-VALIDATION CHECK:
-- If any color (other than black lines and white fill) remains in the illustration area above the text bar, the output is WRONG
-- The goal is for a child to print this on paper and color it themselves with crayons - they need EMPTY white spaces to fill in`
+WHAT A CHILD NEEDS:
+- A page they can PRINT on regular white paper
+- EMPTY white spaces inside all shapes that they will COLOR WITH CRAYONS
+- If your output has ANY color or gray fills, the child cannot color it - YOU FAILED
+
+SIMPLIFY THE DRAWING:
+- Convert complex details into simple, bold black outlines
+- Make lines thick enough to be clearly visible when printed
+- Remove texture, remove shading, remove all color information
+- Keep only the essential shape outlines
+
+TEXT BAR AT BOTTOM - DO NOT TOUCH:
+- The text bar at the very bottom of this image must remain EXACTLY as-is with its original colors
+- Only convert the ILLUSTRATION AREA above the text bar to black and white line art
+
+SELF-CHECK BEFORE OUTPUT:
+- Look at the illustration area (above text bar) - is there ANY pixel that is not pure black or pure white? If yes, FIX IT.
+- The ONLY acceptable output is pure black lines on pure white background in the illustration area.`
               },
               {
                 type: "image_url",

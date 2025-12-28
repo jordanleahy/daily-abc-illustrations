@@ -31,7 +31,7 @@ export function useBookEditorData(bookId: string | null | undefined) {
         supabase
           .from('page_image_urls')
           .select(`
-            id, image_url, coloring_image_url, text_image_url, page_id, generation_cost_cents, color_generation_cost_cents,
+            id, image_url, coloring_image_url, text_image_url, page_id, generation_cost_cents, color_generation_cost_cents, bw_generation_cost_cents,
             pages!inner(page_number, page_type)
           `)
           .eq('book_id', bookId)
@@ -76,8 +76,8 @@ export function useBookEditorData(bookId: string | null | undefined) {
           }
           if (item.coloring_image_url) {
             pageColoringImages[item.pages.page_number] = item.coloring_image_url;
-            if (item.color_generation_cost_cents) {
-              pageBwCosts[item.pages.page_number] = item.color_generation_cost_cents;
+            if (item.bw_generation_cost_cents) {
+              pageBwCosts[item.pages.page_number] = item.bw_generation_cost_cents;
             }
           }
           if (item.text_image_url) {

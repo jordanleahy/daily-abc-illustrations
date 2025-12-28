@@ -932,7 +932,7 @@ export function BookEditorPanel({
                   </>
                 )}
                 
-                <div className="absolute top-2 right-2 flex flex-col items-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                <div className="absolute bottom-12 right-2 flex flex-col items-end gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
                   <Button
                     variant="secondary"
                     size="sm"

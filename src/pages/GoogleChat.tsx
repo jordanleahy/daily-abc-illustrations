@@ -33,6 +33,9 @@ import { BookTypeId } from '@/types/bookType';
 import { AgeRangeId } from '@/types/ageRange';
 import type { GradeId } from '@/types/grade';
 import type { CharacterThemeValue } from '@/types/characterTheme';
+import type { SeasonId } from '@/types/season';
+import type { EnvironmentId } from '@/types/environment';
+import type { ClothingBrandId } from '@/types/clothingBrand';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useCharacterSelectionFlow } from '@/hooks/useCharacterSelectionFlow';
 import { useCharacterSelectionInjection } from '@/components/chat/CharacterSelectionStep';
@@ -52,6 +55,9 @@ export default function GoogleChat() {
   const [selectedBookType, setSelectedBookType] = useState<BookTypeId | null>(null);
   const [selectedAgeRange, setSelectedAgeRange] = useState<AgeRangeId | null>(null);
   const [selectedGradeLevel, setSelectedGradeLevel] = useState<GradeId | null>(null);
+  const [selectedSeason, setSelectedSeason] = useState<SeasonId | null>(null);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentId | null>(null);
+  const [selectedClothingBrand, setSelectedClothingBrand] = useState<ClothingBrandId | null>(null);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
   
   // Get kid profiles (kept for backwards compatibility with existing UI)
@@ -664,7 +670,11 @@ export default function GoogleChat() {
       bookCreated: !!createdBookId,
       characterTheme: characterFlow.themeId,
       bookType: selectedBookType,
-      selectedCharacterIds: characterFlow.selectedCharacterIds.length > 0 ? characterFlow.selectedCharacterIds : undefined
+      selectedCharacterIds: characterFlow.selectedCharacterIds.length > 0 ? characterFlow.selectedCharacterIds : undefined,
+      gradeLevel: selectedGradeLevel,
+      season: selectedSeason,
+      environment: selectedEnvironment,
+      clothingBrand: selectedClothingBrand
     });
     setInput('');
   };
@@ -686,7 +696,11 @@ export default function GoogleChat() {
         outlineReady: shouldShowReviewButton && !createdBookId,
         bookCreated: !!createdBookId,
         characterTheme: characterFlow.themeId,
-        bookType: selectedBookType
+        bookType: selectedBookType,
+        gradeLevel: selectedGradeLevel,
+        season: selectedSeason,
+        environment: selectedEnvironment,
+        clothingBrand: selectedClothingBrand
       });
     };
     reader.readAsDataURL(file);
@@ -715,7 +729,11 @@ export default function GoogleChat() {
     await sendMessage(bookType.prompt, undefined, messages, {
       outlineReady: shouldShowReviewButton && !createdBookId,
       bookCreated: !!createdBookId,
-      bookType: bookType.id as BookTypeId
+      bookType: bookType.id as BookTypeId,
+      gradeLevel: selectedGradeLevel,
+      season: selectedSeason,
+      environment: selectedEnvironment,
+      clothingBrand: selectedClothingBrand
     });
   }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId]);
 
@@ -1116,6 +1134,24 @@ export default function GoogleChat() {
         setSelectedGradeLevel(action.gradeId as GradeId);
       }
       
+      // Capture season if present in the action
+      if (action.seasonId) {
+        console.log('[Season Selection] User selected season:', action.seasonId);
+        setSelectedSeason(action.seasonId as SeasonId);
+      }
+      
+      // Capture environment if present in the action
+      if (action.environmentId) {
+        console.log('[Environment Selection] User selected environment:', action.environmentId);
+        setSelectedEnvironment(action.environmentId as EnvironmentId);
+      }
+      
+      // Capture clothing brand if present in the action
+      if (action.clothingBrandId) {
+        console.log('[Clothing Brand Selection] User selected clothing brand:', action.clothingBrandId);
+        setSelectedClothingBrand(action.clothingBrandId as ClothingBrandId);
+      }
+      
       // Send the predefined response - include newly selected character IDs if present
       const characterIdsToUse = action.selectedCharacterIds?.length > 0 
         ? action.selectedCharacterIds 
@@ -1127,7 +1163,10 @@ export default function GoogleChat() {
         characterTheme: action.themeId || characterFlow.themeId,
         bookType: selectedBookType,
         selectedCharacterIds: characterIdsToUse,
-        gradeLevel: action.gradeId || selectedGradeLevel
+        gradeLevel: action.gradeId || selectedGradeLevel,
+        season: action.seasonId || selectedSeason,
+        environment: action.environmentId || selectedEnvironment,
+        clothingBrand: action.clothingBrandId || selectedClothingBrand
       });
     } else {
       // "Custom" option - just focus the input field
@@ -1136,7 +1175,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, characterFlow]);
+  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, characterFlow]);
   // Note: handleOpenEditorPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 
@@ -1155,6 +1194,10 @@ export default function GoogleChat() {
         setSelectedBookType(null);
         characterFlow.reset(); // Reset theme and character selection
         setSelectedAgeRange(null); // Reset age range selection
+        setSelectedGradeLevel(null); // Reset grade level selection
+        setSelectedSeason(null); // Reset season selection
+        setSelectedEnvironment(null); // Reset environment selection
+        setSelectedClothingBrand(null); // Reset clothing brand selection
         setReplacePageMode({});
         // Close mobile sidebar when creating new session
         setIsMobileSidebarOpen(false);

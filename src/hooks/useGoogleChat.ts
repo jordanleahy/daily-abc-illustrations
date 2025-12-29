@@ -391,6 +391,18 @@ export const useGoogleChat = (
               ]
             };
           }
+
+          // Clothing brand selection fallback - optional discovery question for character attire
+          if (cleanedText.toLowerCase().includes('clothing brand') || cleanedText.toLowerCase().includes('branded clothing') || cleanedText.toLowerCase().includes('wear branded')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'BURTON', label: '🏂 Burton', value: 'Burton', clothingBrandId: 'BURTON' as ClothingBrandId },
+                { id: 'NONE', label: '👕 No brand', value: 'No brand', clothingBrandId: 'NONE' as ClothingBrandId },
+                { id: 'skip-clothing-brand', label: '⏭️ Skip', value: 'No specific brand' },
+              ]
+            };
+          }
         }
         
         if (!match) {
@@ -406,6 +418,15 @@ export const useGoogleChat = (
           'moana', 'mickey-mouse', 'mario', 'sesame-street', 'benji-davies',
           'black-and-white', 'bear-stories', 'dora', 'little-mermaid'
         ]);
+
+        // Known season IDs
+        const seasonIds = new Set(['SPRING', 'SUMMER', 'FALL', 'WINTER']);
+
+        // Known environment IDs
+        const environmentIds = new Set(['CITY', 'SNOWBOARD_RESORT', 'SKI_RESORT', 'ISLAND', 'DESERT', 'MOUNTAIN', 'PARK']);
+
+        // Known clothing brand IDs
+        const clothingBrandIds = new Set(['BURTON', 'NONE']);
 
         const actions = suggestionsText
           .split('\n')
@@ -427,6 +448,18 @@ export const useGoogleChat = (
             };
             if (isTheme) {
               action.themeId = id as CharacterThemeValue;
+            }
+            // Check for season IDs
+            if (seasonIds.has(id)) {
+              action.seasonId = id as SeasonId;
+            }
+            // Check for environment IDs
+            if (environmentIds.has(id)) {
+              action.environmentId = id as EnvironmentId;
+            }
+            // Check for clothing brand IDs
+            if (clothingBrandIds.has(id)) {
+              action.clothingBrandId = id as ClothingBrandId;
             }
             return action;
           })
@@ -515,6 +548,10 @@ export const useGoogleChat = (
         characterTheme?: CharacterThemeValue | null;
         bookType?: BookTypeId | null;
         selectedCharacterIds?: string[];
+        gradeLevel?: GradeId | null;
+        season?: SeasonId | null;
+        environment?: EnvironmentId | null;
+        clothingBrand?: ClothingBrandId | null;
       }
     ) => {
       return sendMessage(

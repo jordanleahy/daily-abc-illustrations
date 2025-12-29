@@ -6,6 +6,7 @@ import type { CharacterThemeValue } from '@/types/characterTheme';
 import type { BookTypeId } from '@/types/bookType';
 import type { GradeId } from '@/types/grade';
 import type { SeasonId } from '@/types/season';
+import type { EnvironmentId } from '@/types/environment';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -31,6 +32,7 @@ export interface SuggestedAction {
   themeId?: CharacterThemeValue;
   gradeId?: GradeId;
   seasonId?: SeasonId;
+  environmentId?: EnvironmentId;
   characterSelection?: CharacterSelectionData;
   selectedCharacterIds?: string[]; // IDs of characters selected for enforcement
 }
@@ -63,6 +65,7 @@ export const useGoogleChat = (
       selectedCharacterIds?: string[]; // For character enforcement
       gradeLevel?: GradeId | null; // For grade level selection
       season?: SeasonId | null; // For season selection
+      environment?: EnvironmentId | null; // For environment selection
     }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
@@ -134,7 +137,8 @@ export const useGoogleChat = (
             bookType: context?.bookType || bookType,
             characterTheme: context?.characterTheme,
             selectedCharacterIds: context?.selectedCharacterIds,
-            season: context?.season
+            season: context?.season,
+            environment: context?.environment
           })
         }
       );
@@ -363,6 +367,23 @@ export const useGoogleChat = (
                 { id: 'FALL', label: '🍂 Fall', value: 'Fall', seasonId: 'FALL' as SeasonId },
                 { id: 'WINTER', label: '❄️ Winter', value: 'Winter', seasonId: 'WINTER' as SeasonId },
                 { id: 'skip-season', label: '⏭️ Skip', value: 'No specific season' },
+              ]
+            };
+          }
+
+          // Environment selection fallback - optional discovery question
+          if (cleanedText.toLowerCase().includes('environment') || cleanedText.toLowerCase().includes('setting') || cleanedText.toLowerCase().includes('location') || cleanedText.toLowerCase().includes('where should')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'CITY', label: '🏙️ City', value: 'City', environmentId: 'CITY' as EnvironmentId },
+                { id: 'SNOWBOARD_RESORT', label: '🏂 Snowboard Resort', value: 'Snowboard Resort', environmentId: 'SNOWBOARD_RESORT' as EnvironmentId },
+                { id: 'SKI_RESORT', label: '⛷️ Ski Resort', value: 'Ski Resort', environmentId: 'SKI_RESORT' as EnvironmentId },
+                { id: 'ISLAND', label: '🏝️ Island', value: 'Island', environmentId: 'ISLAND' as EnvironmentId },
+                { id: 'DESERT', label: '🏜️ Desert', value: 'Desert', environmentId: 'DESERT' as EnvironmentId },
+                { id: 'MOUNTAIN', label: '🏔️ Mountain', value: 'Mountain', environmentId: 'MOUNTAIN' as EnvironmentId },
+                { id: 'PARK', label: '🌳 Park', value: 'Park', environmentId: 'PARK' as EnvironmentId },
+                { id: 'skip-environment', label: '⏭️ Skip', value: 'No specific environment' },
               ]
             };
           }

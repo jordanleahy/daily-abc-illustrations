@@ -353,7 +353,7 @@ export const useGoogleChat = (
             };
           }
 
-          // Season selection fallback - asked as final discovery question
+          // Season selection fallback - asked as final discovery question (optional)
           if (cleanedText.toLowerCase().includes('season') || cleanedText.toLowerCase().includes('time of year')) {
             return { 
               cleanContent: cleanedText, 
@@ -362,6 +362,7 @@ export const useGoogleChat = (
                 { id: 'SUMMER', label: '☀️ Summer', value: 'Summer', seasonId: 'SUMMER' as SeasonId },
                 { id: 'FALL', label: '🍂 Fall', value: 'Fall', seasonId: 'FALL' as SeasonId },
                 { id: 'WINTER', label: '❄️ Winter', value: 'Winter', seasonId: 'WINTER' as SeasonId },
+                { id: 'skip-season', label: '⏭️ Skip', value: 'No specific season' },
               ]
             };
           }

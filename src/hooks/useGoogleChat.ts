@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { CharacterThemeValue } from '@/types/characterTheme';
 import type { BookTypeId } from '@/types/bookType';
 import type { GradeId } from '@/types/grade';
+import type { SeasonId } from '@/types/season';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -29,6 +30,7 @@ export interface SuggestedAction {
   value: string;
   themeId?: CharacterThemeValue;
   gradeId?: GradeId;
+  seasonId?: SeasonId;
   characterSelection?: CharacterSelectionData;
   selectedCharacterIds?: string[]; // IDs of characters selected for enforcement
 }
@@ -60,6 +62,7 @@ export const useGoogleChat = (
       bookType?: BookTypeId | null;
       selectedCharacterIds?: string[]; // For character enforcement
       gradeLevel?: GradeId | null; // For grade level selection
+      season?: SeasonId | null; // For season selection
     }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
@@ -130,7 +133,8 @@ export const useGoogleChat = (
             gradeLevel: context?.gradeLevel || gradeLevel, // Prefer context value for immediate updates
             bookType: context?.bookType || bookType,
             characterTheme: context?.characterTheme,
-            selectedCharacterIds: context?.selectedCharacterIds
+            selectedCharacterIds: context?.selectedCharacterIds,
+            season: context?.season
           })
         }
       );
@@ -345,6 +349,19 @@ export const useGoogleChat = (
                 { id: 'approve', label: '✓ Looks great!', value: 'Looks great!' },
                 { id: 'edit-title', label: 'Edit title', value: 'Edit title' },
                 { id: 'edit-description', label: 'Edit description', value: 'Edit description' },
+              ]
+            };
+          }
+
+          // Season selection fallback - asked as final discovery question
+          if (cleanedText.toLowerCase().includes('season') || cleanedText.toLowerCase().includes('time of year')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'SPRING', label: '🌸 Spring', value: 'Spring', seasonId: 'SPRING' as SeasonId },
+                { id: 'SUMMER', label: '☀️ Summer', value: 'Summer', seasonId: 'SUMMER' as SeasonId },
+                { id: 'FALL', label: '🍂 Fall', value: 'Fall', seasonId: 'FALL' as SeasonId },
+                { id: 'WINTER', label: '❄️ Winter', value: 'Winter', seasonId: 'WINTER' as SeasonId },
               ]
             };
           }

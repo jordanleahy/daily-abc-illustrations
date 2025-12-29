@@ -6,6 +6,7 @@ import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
 import { fetchGradeLevels, getGradeLabel, type ValidGrade } from '../_shared/gradeLevels.ts';
 import { buildCharacterConstraints } from '../_shared/characterConstraints.ts';
 import { getWordsForDigraphThroughGrade, isValidDigraph, type GradeLevel } from '../_shared/digraphCorpus.ts';
+import { getSeasonDisplay, isValidSeason, type ValidSeason } from '../_shared/seasons.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -160,7 +161,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
@@ -168,6 +169,7 @@ serve(async (req) => {
       bookType?: string;
       characterTheme?: string;
       selectedCharacterIds?: string[];
+      season?: ValidSeason;
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -351,6 +353,11 @@ serve(async (req) => {
       }
     }
 
+    // Season context - asked as the final discovery question before outline
+    const seasonContext = season && isValidSeason(season)
+      ? `\n\n⚠️ CRITICAL - SEASON STATUS:\n🗓️ SEASON ALREADY SELECTED: ${getSeasonDisplay(season)}\n❌ DO NOT ask "What season?" - this step is COMPLETE.\n✅ PROCEED to generating the outline.\nIntegrate ${getSeasonDisplay(season)} seasonal elements, colors, activities, and atmosphere throughout the book's illustrations and content.`
+      : '';
+
     // Check if user is forcing outline creation (e.g., typing "create outline")
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
@@ -370,7 +377,7 @@ serve(async (req) => {
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
@@ -378,6 +385,7 @@ serve(async (req) => {
     console.log(`📊 Conversation stage: ${outlineReady ? 'Outline Ready' : bookCreated ? 'Book Created' : 'Discovery'}`);
     console.log(`📚 Grade level: ${gradeLevel || 'None'}`);
     console.log(`🎨 Character theme: ${characterTheme || 'None'}`);
+    console.log(`🗓️ Season: ${season || 'None'}`);
 
     const allMessages = [systemMessage, ...messages];
 

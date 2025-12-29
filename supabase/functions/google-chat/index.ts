@@ -8,6 +8,7 @@ import { buildCharacterConstraints } from '../_shared/characterConstraints.ts';
 import { getWordsForDigraphThroughGrade, isValidDigraph, type GradeLevel } from '../_shared/digraphCorpus.ts';
 import { getSeasonDisplay, isValidSeason, type ValidSeason } from '../_shared/seasons.ts';
 import { getEnvironmentDisplay, isValidEnvironment, type ValidEnvironment } from '../_shared/environments.ts';
+import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothingBrand, type ValidClothingBrand } from '../_shared/clothingBrands.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -162,7 +163,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment, clothingBrand } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
@@ -172,6 +173,7 @@ serve(async (req) => {
       selectedCharacterIds?: string[];
       season?: ValidSeason;
       environment?: ValidEnvironment;
+      clothingBrand?: ValidClothingBrand;
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -365,6 +367,11 @@ serve(async (req) => {
       ? `\n\n⚠️ CRITICAL - ENVIRONMENT STATUS:\n🌍 ENVIRONMENT ALREADY SELECTED: ${getEnvironmentDisplay(environment)}\n❌ DO NOT ask "What environment/setting?" - this step is COMPLETE.\nSet all illustrations and content in a ${getEnvironmentDisplay(environment)} environment with appropriate scenery, landmarks, and atmosphere.`
       : '';
 
+    // Clothing brand context - optional discovery question for character attire
+    const clothingBrandContext = clothingBrand && isValidClothingBrand(clothingBrand)
+      ? `\n\n⚠️ CRITICAL - CLOTHING BRAND STATUS:\n👕 CLOTHING BRAND ALREADY SELECTED: ${getClothingBrandDisplay(clothingBrand)}\n❌ DO NOT ask "What clothing brand?" - this step is COMPLETE.\n${getClothingBrandPromptInjection(clothingBrand)}`
+      : '';
+
     // Check if user is forcing outline creation (e.g., typing "create outline")
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
@@ -384,7 +391,7 @@ serve(async (req) => {
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
@@ -394,6 +401,7 @@ serve(async (req) => {
     console.log(`🎨 Character theme: ${characterTheme || 'None'}`);
     console.log(`🗓️ Season: ${season || 'None'}`);
     console.log(`🌍 Environment: ${environment || 'None'}`);
+    console.log(`👕 Clothing brand: ${clothingBrand || 'None'}`);
 
     const allMessages = [systemMessage, ...messages];
 

@@ -7,6 +7,7 @@ import type { BookTypeId } from '@/types/bookType';
 import type { GradeId } from '@/types/grade';
 import type { SeasonId } from '@/types/season';
 import type { EnvironmentId } from '@/types/environment';
+import type { ClothingBrandId } from '@/types/clothingBrand';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -33,6 +34,7 @@ export interface SuggestedAction {
   gradeId?: GradeId;
   seasonId?: SeasonId;
   environmentId?: EnvironmentId;
+  clothingBrandId?: ClothingBrandId;
   characterSelection?: CharacterSelectionData;
   selectedCharacterIds?: string[]; // IDs of characters selected for enforcement
 }
@@ -66,6 +68,7 @@ export const useGoogleChat = (
       gradeLevel?: GradeId | null; // For grade level selection
       season?: SeasonId | null; // For season selection
       environment?: EnvironmentId | null; // For environment selection
+      clothingBrand?: ClothingBrandId | null; // For clothing brand selection
     }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
@@ -138,7 +141,8 @@ export const useGoogleChat = (
             characterTheme: context?.characterTheme,
             selectedCharacterIds: context?.selectedCharacterIds,
             season: context?.season,
-            environment: context?.environment
+            environment: context?.environment,
+            clothingBrand: context?.clothingBrand
           })
         }
       );

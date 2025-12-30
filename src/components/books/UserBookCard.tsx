@@ -94,7 +94,9 @@ export function UserBookCard({
         if (error) throw error;
         
         const pageTitles = pages?.map(p => p.title) || [];
-        const marketingUrl = `${SITE_CONFIG.productionUrl}/book/${book.marketing_url}`;
+        // Use daily_published.slug for consistency with OG metadata, fallback to marketing_url
+        const slug = publicationStatus?.slug || book.marketing_url;
+        const marketingUrl = `${SITE_CONFIG.productionUrl}/book/${slug}`;
         const isDigraph = book.metadata?.bookType === 'digraphs';
         
         const post = isDigraph 
@@ -321,20 +323,20 @@ export function UserBookCard({
               </Button>
             )}
 
-            {/* Marketing Link - Admin only */}
-            {book.marketing_url && (
+            {/* Landing Page Link - Uses daily_published.slug for consistency with OG metadata */}
+            {publicationStatus?.slug && (
               <Button 
                 variant="outline"
                 size="sm"
                 className="w-full gap-2"
                 onClick={async (e) => {
                   e.stopPropagation();
-                  const marketingLink = `${SITE_CONFIG.productionUrl}/book/${book.marketing_url}`;
+                  const landingPageLink = `${SITE_CONFIG.productionUrl}/book/${publicationStatus.slug}`;
                   try {
-                    await copyToClipboard(marketingLink);
-                    toast({ title: "Marketing link copied" });
+                    await copyToClipboard(landingPageLink);
+                    toast({ title: "Landing page link copied" });
                   } catch (error) {
-                    console.error('Failed to copy marketing link:', error);
+                    console.error('Failed to copy landing page link:', error);
                   }
                 }}
               >

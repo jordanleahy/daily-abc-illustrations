@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Instagram, Facebook, Linkedin, Check, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSocialPostTracking, SocialPlatform } from '@/hooks/useSocialPostTracking';
 import { useGenerateOGAssets } from '@/hooks/useGenerateOGAssets';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
 
 // TikTok icon (Lucide doesn't have one)
@@ -33,7 +35,26 @@ const PLATFORMS: { id: SocialPlatform; icon: React.ReactNode; label: string }[] 
 export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPublishedId }: SocialPostTrackerProps) {
   const { postedPlatforms, markAsPosted, isMarking } = useSocialPostTracking(bookId);
   const { mutate: generateOGAssets, isPending: isGeneratingOG } = useGenerateOGAssets();
-  const [ogSuccess, setOgSuccess] = useState(false);
+  
+  // Check if OG assets already exist for this book
+  const { data: hasOGAssets } = useQuery({
+    queryKey: ['og-assets-exists', bookId],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from('seo_metadata')
+        .select('id, og_image_url, seo_title')
+        .eq('book_id', bookId)
+        .eq('is_active', true)
+        .maybeSingle();
+      
+      return !!(data?.og_image_url && data?.seo_title);
+    },
+  });
+  
+  const [showSuccessAnimation, setShowSuccessAnimation] = useState(false);
+  
+  // OG is "done" if assets exist in DB or we just generated them
+  const ogComplete = hasOGAssets || showSuccessAnimation;
 
   const handlePlatformClick = (platform: SocialPlatform, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -51,8 +72,7 @@ export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPubl
       dailyPublishedId
     }, {
       onSuccess: () => {
-        setOgSuccess(true);
-        setTimeout(() => setOgSuccess(false), 3000);
+        setShowSuccessAnimation(true);
       }
     });
   };
@@ -65,16 +85,16 @@ export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPubl
         size="icon"
         className={cn(
           "h-8 w-8 relative transition-all",
-          ogSuccess 
+          ogComplete 
             ? "bg-primary/10 border-primary text-primary hover:bg-primary/20" 
             : "text-muted-foreground hover:text-foreground"
         )}
         onClick={handleOGClick}
-        disabled={isGeneratingOG || ogSuccess}
-        title={ogSuccess ? "OG assets generated" : "Generate OG assets"}
+        disabled={isGeneratingOG || ogComplete}
+        title={ogComplete ? "OG assets generated" : "Generate OG assets"}
       >
         <Image className={cn("h-4 w-4", isGeneratingOG && "animate-pulse")} />
-        {ogSuccess && (
+        {ogComplete && (
           <Check className="h-3 w-3 absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5" />
         )}
       </Button>

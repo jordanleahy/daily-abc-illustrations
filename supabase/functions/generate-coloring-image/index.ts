@@ -75,36 +75,27 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `YOU MUST CONVERT THIS IMAGE INTO A PURE BLACK AND WHITE COLORING BOOK PAGE.
+                text: `STYLE REFERENCE: Dover Publications coloring book, dollar store coloring book, rubber stamp line art, clip art outline, vector stroke-only illustration.
 
-THIS IS NOT AN ENHANCEMENT REQUEST - THIS IS A COMPLETE CONVERSION:
-Create a brand new BLACK AND WHITE LINE DRAWING based on this image. Do NOT simply adjust or filter the existing image.
+OUTPUT FORMAT: 2-bit color depth - ONLY pure black lines (#000000) on pure white background (#FFFFFF). No anti-aliasing.
 
-ABSOLUTE REQUIREMENTS - NO EXCEPTIONS ALLOWED:
-1. OUTPUT MUST BE: Pure black lines (#000000) on pure white background (#FFFFFF) ONLY
-2. ZERO COLOR: No brown, no blue, no green, no pink, no tan, no beige, no gray - NOTHING except black lines and white space
-3. ZERO FILLS: Every single shape must be EMPTY/HOLLOW with only black outlines - no filled areas whatsoever
-4. ZERO SHADING: No gradients, no gray tones, no shadows, no anti-aliasing gray pixels
-5. LINE ART ONLY: Think of a coloring book you buy at a dollar store - pure simple black outlines on white paper
+NEGATIVE (DO NOT INCLUDE): color, grayscale, shading, gradients, fills, shadows, texture, photorealistic details, gray pixels, brown, tan, beige, any RGB values other than 000000 and FFFFFF.
 
-WHAT A CHILD NEEDS:
-- A page they can PRINT on regular white paper
-- EMPTY white spaces inside all shapes that they will COLOR WITH CRAYONS
-- If your output has ANY color or gray fills, the child cannot color it - YOU FAILED
+Create a brand new BLACK AND WHITE LINE DRAWING based on this image. Do NOT filter or adjust - redraw as simple outline art.
 
-SIMPLIFY THE DRAWING:
-- Convert complex details into simple, bold black outlines
-- Make lines thick enough to be clearly visible when printed
-- Remove texture, remove shading, remove all color information
-- Keep only the essential shape outlines
+REQUIREMENTS:
+1. Pure black outlines only - every shape is HOLLOW/EMPTY inside
+2. Bold, thick lines (3-4px) visible when printed
+3. Simplified shapes - remove complex details, keep essential forms
+4. Think "Adobe Illustrator stroke-only paths" not "Photoshop filter"
 
-TEXT BAR AT BOTTOM - DO NOT TOUCH:
-- The text bar at the very bottom of this image must remain EXACTLY as-is with its original colors
-- Only convert the ILLUSTRATION AREA above the text bar to black and white line art
+PURPOSE: A child will PRINT this on white paper and COLOR IT WITH CRAYONS. If any area has color or gray fill, the child cannot color it.
 
-SELF-CHECK BEFORE OUTPUT:
-- Look at the illustration area (above text bar) - is there ANY pixel that is not pure black or pure white? If yes, FIX IT.
-- The ONLY acceptable output is pure black lines on pure white background in the illustration area.`
+TEXT BAR AT BOTTOM - PRESERVE EXACTLY:
+- The text bar at the very bottom must remain unchanged with its original colors
+- Only convert the ILLUSTRATION AREA above it to line art
+
+SELF-CHECK: In the illustration area, is there ANY pixel that is not pure black or pure white? If yes, FIX IT.`
               },
               {
                 type: "image_url",

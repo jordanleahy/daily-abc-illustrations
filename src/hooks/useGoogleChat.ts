@@ -8,7 +8,7 @@ import type { GradeId } from '@/types/grade';
 import type { SeasonId } from '@/types/season';
 import type { EnvironmentId } from '@/types/environment';
 import type { ClothingBrandId } from '@/types/clothingBrand';
-
+import type { LocationId } from '@/types/location';
 interface MessageContent {
   type: 'text' | 'image_url';
   text?: string;
@@ -35,6 +35,7 @@ export interface SuggestedAction {
   seasonId?: SeasonId;
   environmentId?: EnvironmentId;
   clothingBrandId?: ClothingBrandId;
+  locationId?: LocationId;
   characterSelection?: CharacterSelectionData;
   selectedCharacterIds?: string[]; // IDs of characters selected for enforcement
 }
@@ -69,6 +70,7 @@ export const useGoogleChat = (
       season?: SeasonId | null; // For season selection
       environment?: EnvironmentId | null; // For environment selection
       clothingBrand?: ClothingBrandId | null; // For clothing brand selection
+      location?: LocationId | null; // For location selection
     }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
@@ -142,7 +144,8 @@ export const useGoogleChat = (
             selectedCharacterIds: context?.selectedCharacterIds,
             season: context?.season,
             environment: context?.environment,
-            clothingBrand: context?.clothingBrand
+            clothingBrand: context?.clothingBrand,
+            location: context?.location
           })
         }
       );
@@ -403,6 +406,24 @@ export const useGoogleChat = (
               ]
             };
           }
+
+          // Location selection fallback - optional discovery question for specific resort
+          if (cleanedText.toLowerCase().includes('resort') || cleanedText.toLowerCase().includes('which resort') || cleanedText.toLowerCase().includes('specific location')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'VAIL_RESORT', label: '🏔️ Vail Resort', value: 'Vail Resort', locationId: 'VAIL_RESORT' as LocationId },
+                { id: 'SUGARBUSH_RESORT', label: '🍁 Sugarbush Resort', value: 'Sugarbush Resort', locationId: 'SUGARBUSH_RESORT' as LocationId },
+                { id: 'STRATTON', label: '⛷️ Stratton', value: 'Stratton', locationId: 'STRATTON' as LocationId },
+                { id: 'KILLINGTON', label: '🏂 Killington', value: 'Killington', locationId: 'KILLINGTON' as LocationId },
+                { id: 'MOUNTAIN_CREEK', label: '🎿 Mountain Creek', value: 'Mountain Creek', locationId: 'MOUNTAIN_CREEK' as LocationId },
+                { id: 'COPPER_MOUNTAIN', label: '🥉 Copper Mountain', value: 'Copper Mountain', locationId: 'COPPER_MOUNTAIN' as LocationId },
+                { id: 'BRECKENRIDGE', label: '🏘️ Breckenridge', value: 'Breckenridge', locationId: 'BRECKENRIDGE' as LocationId },
+                { id: 'KEYSTONE', label: '🌙 Keystone', value: 'Keystone', locationId: 'KEYSTONE' as LocationId },
+                { id: 'skip-location', label: '⏭️ Skip', value: 'No specific resort' },
+              ]
+            };
+          }
         }
         
         if (!match) {
@@ -427,6 +448,9 @@ export const useGoogleChat = (
 
         // Known clothing brand IDs
         const clothingBrandIds = new Set(['BURTON', 'NONE']);
+
+        // Known location IDs
+        const locationIds = new Set(['VAIL_RESORT', 'SUGARBUSH_RESORT', 'STRATTON', 'KILLINGTON', 'MOUNTAIN_CREEK', 'COPPER_MOUNTAIN', 'BRECKENRIDGE', 'KEYSTONE']);
 
         const actions = suggestionsText
           .split('\n')
@@ -460,6 +484,10 @@ export const useGoogleChat = (
             // Check for clothing brand IDs
             if (clothingBrandIds.has(id)) {
               action.clothingBrandId = id as ClothingBrandId;
+            }
+            // Check for location IDs
+            if (locationIds.has(id)) {
+              action.locationId = id as LocationId;
             }
             return action;
           })
@@ -552,6 +580,7 @@ export const useGoogleChat = (
         season?: SeasonId | null;
         environment?: EnvironmentId | null;
         clothingBrand?: ClothingBrandId | null;
+        location?: LocationId | null;
       }
     ) => {
       return sendMessage(

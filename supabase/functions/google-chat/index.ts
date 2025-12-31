@@ -9,6 +9,7 @@ import { getWordsForDigraphThroughGrade, isValidDigraph, type GradeLevel } from 
 import { getSeasonDisplay, isValidSeason, type ValidSeason } from '../_shared/seasons.ts';
 import { getEnvironmentDisplay, isValidEnvironment, type ValidEnvironment } from '../_shared/environments.ts';
 import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothingBrand, type ValidClothingBrand } from '../_shared/clothingBrands.ts';
+import { getLocationDisplay, isValidLocation, type ValidLocation } from '../_shared/locations.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -163,7 +164,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment, clothingBrand } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment, clothingBrand, location } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
@@ -174,6 +175,7 @@ serve(async (req) => {
       season?: ValidSeason;
       environment?: ValidEnvironment;
       clothingBrand?: ValidClothingBrand;
+      location?: ValidLocation;
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -372,6 +374,11 @@ serve(async (req) => {
       ? `\n\n⚠️ CRITICAL - CLOTHING BRAND STATUS:\n👕 CLOTHING BRAND ALREADY SELECTED: ${getClothingBrandDisplay(clothingBrand)}\n❌ DO NOT ask "What clothing brand?" - this step is COMPLETE.\n${getClothingBrandPromptInjection(clothingBrand)}`
       : '';
 
+    // Location context - optional discovery question for specific resort
+    const locationContext = location && isValidLocation(location)
+      ? `\n\n⚠️ CRITICAL - LOCATION STATUS:\n📍 LOCATION ALREADY SELECTED: ${getLocationDisplay(location)}\n❌ DO NOT ask "Which resort/location?" - this step is COMPLETE.\nSet all illustrations at ${getLocationDisplay(location)} with authentic resort landmarks, signage, and atmosphere.`
+      : '';
+
     // Check if user is forcing outline creation (e.g., typing "create outline")
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
@@ -391,7 +398,7 @@ serve(async (req) => {
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
@@ -402,6 +409,7 @@ serve(async (req) => {
     console.log(`🗓️ Season: ${season || 'None'}`);
     console.log(`🌍 Environment: ${environment || 'None'}`);
     console.log(`👕 Clothing brand: ${clothingBrand || 'None'}`);
+    console.log(`📍 Location: ${location || 'None'}`);
 
     const allMessages = [systemMessage, ...messages];
 

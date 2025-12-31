@@ -1,6 +1,8 @@
-import { Instagram, Facebook, Linkedin, Check } from 'lucide-react';
+import { useState } from 'react';
+import { Instagram, Facebook, Linkedin, Check, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSocialPostTracking, SocialPlatform } from '@/hooks/useSocialPostTracking';
+import { useGenerateOGAssets } from '@/hooks/useGenerateOGAssets';
 import { cn } from '@/lib/utils';
 
 // TikTok icon (Lucide doesn't have one)
@@ -16,6 +18,9 @@ const TikTokIcon = ({ className }: { className?: string }) => (
 
 interface SocialPostTrackerProps {
   bookId: string;
+  bookName: string;
+  bookDescription?: string | null;
+  dailyPublishedId: string;
 }
 
 const PLATFORMS: { id: SocialPlatform; icon: React.ReactNode; label: string }[] = [
@@ -25,8 +30,10 @@ const PLATFORMS: { id: SocialPlatform; icon: React.ReactNode; label: string }[] 
   { id: 'linkedin', icon: <Linkedin className="h-4 w-4" />, label: 'LinkedIn' },
 ];
 
-export function SocialPostTracker({ bookId }: SocialPostTrackerProps) {
+export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPublishedId }: SocialPostTrackerProps) {
   const { postedPlatforms, markAsPosted, isMarking } = useSocialPostTracking(bookId);
+  const { mutate: generateOGAssets, isPending: isGeneratingOG } = useGenerateOGAssets();
+  const [ogSuccess, setOgSuccess] = useState(false);
 
   const handlePlatformClick = (platform: SocialPlatform, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -35,8 +42,44 @@ export function SocialPostTracker({ bookId }: SocialPostTrackerProps) {
     }
   };
 
+  const handleOGClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    generateOGAssets({
+      bookId,
+      title: bookName,
+      description: bookDescription,
+      dailyPublishedId
+    }, {
+      onSuccess: () => {
+        setOgSuccess(true);
+        setTimeout(() => setOgSuccess(false), 3000);
+      }
+    });
+  };
+
   return (
     <div className="flex items-center justify-center gap-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
+      {/* OG Assets button */}
+      <Button
+        variant="outline"
+        size="icon"
+        className={cn(
+          "h-8 w-8 relative transition-all",
+          ogSuccess 
+            ? "bg-primary/10 border-primary text-primary hover:bg-primary/20" 
+            : "text-muted-foreground hover:text-foreground"
+        )}
+        onClick={handleOGClick}
+        disabled={isGeneratingOG || ogSuccess}
+        title={ogSuccess ? "OG assets generated" : "Generate OG assets"}
+      >
+        <Image className={cn("h-4 w-4", isGeneratingOG && "animate-pulse")} />
+        {ogSuccess && (
+          <Check className="h-3 w-3 absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5" />
+        )}
+      </Button>
+
+      {/* Social platform buttons */}
       {PLATFORMS.map(({ id, icon, label }) => {
         const isPosted = postedPlatforms.includes(id);
         

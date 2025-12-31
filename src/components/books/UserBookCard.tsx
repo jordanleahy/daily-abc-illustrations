@@ -11,7 +11,6 @@ import { AdminOnly } from '@/components/AdminOnly';
 import { SocialPostTracker } from '@/components/books/SocialPostTracker';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
-import { useGenerateOGAssets } from '@/hooks/useGenerateOGAssets';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getThemeDisplayName } from '@/types/characterTheme';
@@ -21,7 +20,7 @@ import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
 import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Check, Copy, Image, Link2, Share2 } from 'lucide-react';
+import { BookOpen, Copy, Link2, Share2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -63,9 +62,7 @@ export function UserBookCard({
   const { user } = useAuthContext();
   const { toast } = useToast();
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
-  const { mutate: generateOGAssets, isPending: isGeneratingOG } = useGenerateOGAssets();
   const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
-  const [ogSuccess, setOgSuccess] = useState(false);
   const coverImageUrl = book.coverImageUrl;
   
   const { ref, inView } = useIntersectionObserver({
@@ -288,41 +285,6 @@ export function UserBookCard({
               {isDuplicating ? 'Duplicating...' : 'Duplicate'}
             </Button>
 
-            {/* OG Assets - Only show for published books */}
-            {publicationStatus && (
-              <Button 
-                variant={ogSuccess ? "default" : "outline"}
-                size="sm"
-                className={cn(
-                  "w-full gap-2 transition-all duration-300",
-                  ogSuccess && "bg-green-600 hover:bg-green-600 text-white border-green-600"
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  generateOGAssets({
-                    bookId: book.id,
-                    title: book.book_name,
-                    description: book.book_description,
-                    dailyPublishedId: publicationStatus.id
-                  }, {
-                    onSuccess: () => {
-                      setOgSuccess(true);
-                      setTimeout(() => setOgSuccess(false), 3000);
-                    }
-                  });
-                }}
-                disabled={isGeneratingOG || ogSuccess}
-              >
-                {ogSuccess ? (
-                  <><Check className="h-4 w-4" />Generated!</>
-                ) : isGeneratingOG ? (
-                  <><Image className="h-4 w-4 animate-pulse" />Generating...</>
-                ) : (
-                  <><Image className="h-4 w-4" />OG Assets</>
-                )}
-              </Button>
-            )}
-
             {/* Landing Page Link - Uses daily_published.slug for consistency with OG metadata */}
             {publicationStatus?.slug && (
               <Button 
@@ -359,9 +321,14 @@ export function UserBookCard({
               </Button>
             )}
             
-            {/* Social Post Tracker - Always visible for library books */}
+            {/* Social Post Tracker with OG Assets - Always visible for library books */}
             {publicationStatus && (
-              <SocialPostTracker bookId={book.id} />
+              <SocialPostTracker 
+                bookId={book.id}
+                bookName={book.book_name}
+                bookDescription={book.book_description}
+                dailyPublishedId={publicationStatus.id}
+              />
             )}
 
             <Button 

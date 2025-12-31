@@ -77,25 +77,37 @@ serve(async (req) => {
                 type: "text",
                 text: `STYLE REFERENCE: Dover Publications coloring book, dollar store coloring book, rubber stamp line art, clip art outline, vector stroke-only illustration.
 
+TARGET AUDIENCE: Pre-K children (ages 3-5) who color with chunky crayons and have developing fine motor skills.
+
 OUTPUT FORMAT: 2-bit color depth - ONLY pure black lines (#000000) on pure white background (#FFFFFF). No anti-aliasing.
 
-NEGATIVE (DO NOT INCLUDE): color, grayscale, shading, gradients, fills, shadows, texture, photorealistic details, gray pixels, brown, tan, beige, any RGB values other than 000000 and FFFFFF.
+NEGATIVE (DO NOT INCLUDE): color, grayscale, shading, gradients, fills, shadows, texture, photorealistic details, gray pixels, brown, tan, beige, intricate patterns, overlapping elements, background clutter, any RGB values other than 000000 and FFFFFF.
 
 Create a brand new BLACK AND WHITE LINE DRAWING based on this image. Do NOT filter or adjust - redraw as simple outline art.
 
-REQUIREMENTS:
-1. Pure black outlines only - every shape is HOLLOW/EMPTY inside
-2. Bold, thick lines (3-4px) visible when printed
-3. Simplified shapes - remove complex details, keep essential forms
-4. Think "Adobe Illustrator stroke-only paths" not "Photoshop filter"
+PRE-K SIMPLIFICATION RULES:
+- Maximum 3-5 main objects per illustration
+- NO intricate patterns, textures, or fine details
+- NO overlapping elements that confuse shape boundaries
+- NO background clutter - focus on main subject only
+- Each colorable area must be LARGE enough for chunky crayons
+- Simple, recognizable shapes a 3-year-old can identify
+- One clear focal point per illustration
 
-PURPOSE: A child will PRINT this on white paper and COLOR IT WITH CRAYONS. If any area has color or gray fill, the child cannot color it.
+LINE REQUIREMENTS FOR SMALL HANDS:
+1. Extra bold outlines: 5-6px stroke width (thicker than standard coloring books)
+2. Smooth, continuous lines - no scratchy or broken strokes
+3. Clear, widely-spaced shapes so small hands don't color outside lines
+4. Round, friendly shapes preferred over sharp angular forms
+5. Every shape is HOLLOW/EMPTY inside - pure outlines only
+
+PURPOSE: A Pre-K child will PRINT this on white paper and COLOR IT WITH CHUNKY CRAYONS. If any area has color, gray fill, or is too small/detailed, the child cannot color it successfully.
 
 TEXT BAR AT BOTTOM - PRESERVE EXACTLY:
 - The text bar at the very bottom must remain unchanged with its original colors
 - Only convert the ILLUSTRATION AREA above it to line art
 
-SELF-CHECK: In the illustration area, is there ANY pixel that is not pure black or pure white? If yes, FIX IT.`
+SELF-CHECK: In the illustration area, is there ANY pixel that is not pure black or pure white? Are shapes large and simple enough for a 3-year-old? If not, FIX IT.`
               },
               {
                 type: "image_url",

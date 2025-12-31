@@ -110,6 +110,10 @@ export function UserBookCard({
               characterTheme: book.metadata?.characterTheme || null,
               marketingUrl,
               bookType: book.metadata?.bookType || null,
+              // Discovery attributes for dynamic hashtags
+              season: book.metadata?.season || null,
+              environment: book.metadata?.environment || null,
+              clothingBrand: book.metadata?.clothingBrand || null,
             });
         
         return new Blob([post], { type: 'text/plain' });

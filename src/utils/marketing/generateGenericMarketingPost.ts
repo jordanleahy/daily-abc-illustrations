@@ -13,6 +13,7 @@ interface GenericMarketingPostParams {
   season?: string | null;
   environment?: string | null;
   clothingBrand?: string | null;
+  location?: string | null;
 }
 
 /**
@@ -122,6 +123,26 @@ function getClothingBrandHashtag(brand: string | null): string {
   return brandMap[brand.toUpperCase()] || '';
 }
 
+/**
+ * Gets hashtags for location
+ */
+function getLocationHashtag(loc: string | null): string {
+  if (!loc) return '';
+  
+  const locationMap: Record<string, string> = {
+    'VAIL_RESORT': '#Vail #VailResort',
+    'SUGARBUSH_RESORT': '#Sugarbush #Vermont',
+    'STRATTON': '#Stratton #VermontSki',
+    'KILLINGTON': '#Killington #BeastOfTheEast',
+    'MOUNTAIN_CREEK': '#MountainCreek #NJSki',
+    'COPPER_MOUNTAIN': '#CopperMountain #Colorado',
+    'BRECKENRIDGE': '#Breckenridge #Breck',
+    'KEYSTONE': '#Keystone #KeystoneResort',
+  };
+  
+  return locationMap[loc.toUpperCase()] || '';
+}
+
 export function generateGenericMarketingPost({
   bookName,
   bookDescription,
@@ -131,6 +152,7 @@ export function generateGenericMarketingPost({
   season,
   environment,
   clothingBrand,
+  location,
 }: GenericMarketingPostParams): string {
   const themeName = formatTheme(characterTheme);
   const themeHashtag = getThemeHashtag(characterTheme);
@@ -138,6 +160,7 @@ export function generateGenericMarketingPost({
   const seasonHashtag = getSeasonHashtag(season);
   const environmentHashtag = getEnvironmentHashtag(environment);
   const brandHashtag = getClothingBrandHashtag(clothingBrand);
+  const locationHashtag = getLocationHashtag(location);
   
   // Build tagline
   let tagline = `🎨 NEW: ${bookName}`;
@@ -159,6 +182,7 @@ export function generateGenericMarketingPost({
     seasonHashtag,
     environmentHashtag,
     brandHashtag,
+    locationHashtag,
     themeHashtag,
   ].filter(Boolean).join(' ');
   

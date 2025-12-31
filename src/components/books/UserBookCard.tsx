@@ -114,6 +114,7 @@ export function UserBookCard({
               season: book.metadata?.season || null,
               environment: book.metadata?.environment || null,
               clothingBrand: book.metadata?.clothingBrand || null,
+              location: book.metadata?.location || null,
             });
         
         return new Blob([post], { type: 'text/plain' });

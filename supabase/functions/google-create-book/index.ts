@@ -32,6 +32,10 @@ const requestSchema = z.object({
   targetWords: z.array(z.string()).optional(), // Target words for word learning recommendations
   sessionId: z.string().uuid().optional(), // Chat session ID for traceability
   selectedCharacterIds: z.array(z.string()).optional(), // IDs of selected characters for enforcement
+  // Discovery attributes for marketing hashtags
+  season: z.string().optional(),
+  environment: z.string().optional(),
+  clothingBrand: z.string().optional(),
   educationalFocus: z.object({
     targetAge: z.string(),
     learningType: z.string(),
@@ -123,7 +127,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId, selectedCharacterIds } = validatedData;
+    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId, selectedCharacterIds, season, environment, clothingBrand } = validatedData;
     
     // Normalize and validate book type
     const bookType = normalizeBookType(rawBookType);
@@ -798,7 +802,11 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
           createdByAgentId: selectedAgent.id,
           createdByAgentType: selectedAgent.type,
           createdByAgentVersion: selectedAgent.version,
-          agentSource: agentSource
+          agentSource: agentSource,
+          // Discovery attributes for marketing hashtags
+          season: season || null,
+          environment: environment || null,
+          clothingBrand: clothingBrand || null
         }
       })
       .select()

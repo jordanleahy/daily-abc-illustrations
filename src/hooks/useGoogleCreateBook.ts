@@ -27,6 +27,10 @@ export interface CreateBookParams {
   sessionId?: string; // Chat session ID for traceability
   storedPrompts?: Record<number, string>; // Pre-extracted prompts from qa_page_prompts
   selectedCharacterIds?: string[]; // IDs of selected characters for enforcement
+  // Discovery attributes for marketing hashtags
+  season?: string;
+  environment?: string;
+  clothingBrand?: string;
 }
 
 interface CreateBookResponse {
@@ -98,6 +102,10 @@ export const useGoogleCreateBook = () => {
           targetWords: params.targetWords || undefined,
           sessionId: params.sessionId || undefined,
           selectedCharacterIds: params.selectedCharacterIds || undefined,
+          // Discovery attributes for marketing hashtags
+          season: params.season || undefined,
+          environment: params.environment || undefined,
+          clothingBrand: params.clothingBrand || undefined,
         },
       });
 

@@ -9,6 +9,10 @@ interface GenericMarketingPostParams {
   characterTheme: string | null;
   marketingUrl: string;
   bookType?: string | null;
+  // Discovery attributes for dynamic hashtags
+  season?: string | null;
+  environment?: string | null;
+  clothingBrand?: string | null;
 }
 
 /**
@@ -70,16 +74,70 @@ function getBookTypeInfo(bookType: string | null): { displayName: string; hashta
   return typeMap[bookType] || { displayName: 'learning', hashtag: '#earlylearning' };
 }
 
+/**
+ * Gets hashtag for season
+ */
+function getSeasonHashtag(season: string | null): string {
+  if (!season) return '';
+  
+  const seasonMap: Record<string, string> = {
+    'SPRING': '#SpringReads',
+    'SUMMER': '#SummerReading',
+    'FALL': '#FallBooks',
+    'WINTER': '#WinterReading',
+  };
+  
+  return seasonMap[season.toUpperCase()] || '';
+}
+
+/**
+ * Gets hashtags for environment
+ */
+function getEnvironmentHashtag(env: string | null): string {
+  if (!env) return '';
+  
+  const envMap: Record<string, string> = {
+    'SNOWBOARD_RESORT': '#Snowboarding #SnowboardKids',
+    'SKI_RESORT': '#Skiing #SkiKids',
+    'ISLAND': '#BeachLife #IslandAdventure',
+    'DESERT': '#DesertAdventure',
+    'MOUNTAIN': '#MountainAdventure',
+    'CITY': '#CityKids #UrbanAdventure',
+    'PARK': '#OutdoorKids',
+  };
+  
+  return envMap[env.toUpperCase()] || '';
+}
+
+/**
+ * Gets hashtags for clothing brand
+ */
+function getClothingBrandHashtag(brand: string | null): string {
+  if (!brand || brand === 'NONE' || brand.toUpperCase() === 'NONE') return '';
+  
+  const brandMap: Record<string, string> = {
+    'BURTON': '#Burton #BurtonKids',
+  };
+  
+  return brandMap[brand.toUpperCase()] || '';
+}
+
 export function generateGenericMarketingPost({
   bookName,
   bookDescription,
   characterTheme,
   marketingUrl,
   bookType,
+  season,
+  environment,
+  clothingBrand,
 }: GenericMarketingPostParams): string {
   const themeName = formatTheme(characterTheme);
   const themeHashtag = getThemeHashtag(characterTheme);
   const { displayName: typeDisplayName, hashtag: typeHashtag } = getBookTypeInfo(bookType);
+  const seasonHashtag = getSeasonHashtag(season);
+  const environmentHashtag = getEnvironmentHashtag(environment);
+  const brandHashtag = getClothingBrandHashtag(clothingBrand);
   
   // Build tagline
   let tagline = `🎨 NEW: ${bookName}`;
@@ -98,8 +156,9 @@ export function generateGenericMarketingPost({
     typeHashtag,
     '#earlyreading',
     '#preschool',
-    '#kindergarten',
-    '#learntoread',
+    seasonHashtag,
+    environmentHashtag,
+    brandHashtag,
     themeHashtag,
   ].filter(Boolean).join(' ');
   

@@ -56,7 +56,7 @@ export function PublicBookShareDrawer({ bookId, bookTitle, publicUrl }: PublicBo
   return (
     <Drawer>
       <DrawerTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button variant="outline" className="w-full h-12 gap-2 sm:w-auto sm:h-auto sm:px-3 sm:py-2">
           <Share2 className="h-4 w-4" />
           Share
         </Button>

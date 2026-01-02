@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { BookImage } from '@/components/ui/book-image';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { Download, Plus, Loader2, Palette } from 'lucide-react';
+import { PublicBookShareDrawer } from '@/components/book/PublicBookShareDrawer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { generateColoringBookPDF } from '@/services/pdfGenerator';
 import { toast } from 'sonner';
@@ -169,6 +170,13 @@ export default function PublicBook() {
                 {seoMetadata?.seo_description || bookData.description}
               </p>
             </div>
+            
+            {/* Share Button */}
+            <PublicBookShareDrawer 
+              bookId={bookData.book_id}
+              bookTitle={bookData.title}
+              publicUrl={window.location.href}
+            />
           </div>
 
           {/* First 3 Page Cards */}

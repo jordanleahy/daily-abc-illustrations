@@ -539,6 +539,10 @@ export type Database = {
           metadata: Json | null
           pdf_url: string | null
           product_description: string | null
+          qr_code_config: Json | null
+          qr_code_generated_at: string | null
+          qr_code_image: string | null
+          qr_code_public_url: string | null
           reference_book_id: string | null
           status: Database["public"]["Enums"]["publication_status"]
           style_name: string | null
@@ -564,6 +568,10 @@ export type Database = {
           metadata?: Json | null
           pdf_url?: string | null
           product_description?: string | null
+          qr_code_config?: Json | null
+          qr_code_generated_at?: string | null
+          qr_code_image?: string | null
+          qr_code_public_url?: string | null
           reference_book_id?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
           style_name?: string | null
@@ -589,6 +597,10 @@ export type Database = {
           metadata?: Json | null
           pdf_url?: string | null
           product_description?: string | null
+          qr_code_config?: Json | null
+          qr_code_generated_at?: string | null
+          qr_code_image?: string | null
+          qr_code_public_url?: string | null
           reference_book_id?: string | null
           status?: Database["public"]["Enums"]["publication_status"]
           style_name?: string | null

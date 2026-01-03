@@ -444,7 +444,7 @@ export function BookEditorPanel({
           pageId: currentPageId,
           bookId,
           imageUrl: currentPageImage,
-          editPrompt: "Please replace the blue dog with a Samoyed dog"
+          editPrompt: "Please make these changes to the image:\n1. Replace the blue dog with a Samoyed dog\n2. Change the orange dog to a Bernese Mountain Dog with floppy ears (not pointy ears)"
         }
       });
 

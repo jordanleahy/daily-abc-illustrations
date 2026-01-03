@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { useLibraryBookById } from '@/hooks/useLibraryBookById';
 import { useDailyPublishedPages } from '@/hooks/useDailyPublishedPages';
 import { useDailyPublishedImagePreloader } from '@/hooks/useDailyPublishedImagePreloader';
@@ -6,6 +6,7 @@ import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useAddBookAsHabit } from '@/hooks/useAddBookAsHabit';
 import { useIsBookAddedAsHabit } from '@/hooks/useIsBookAddedAsHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { useAccessResolver } from '@/hooks/useAccessResolver';
 import { useSubscription } from '@/hooks/useSubscription';
 import { useScheduleBookPublication } from '@/hooks/useScheduleBookPublication';
 import { useBookPublicationStatus } from '@/hooks/useBookPublicationStatus';
@@ -47,6 +48,7 @@ export default function UserLibraryDetail() {
   const schedulePublication = useScheduleBookPublication();
   const { data: publicationStatus } = useBookPublicationStatus(dailyContent?.book_id);
   const isAdmin = useHasRole('admin');
+  const { accessState, isReady } = useAccessResolver();
   
   const [isDownloading, setIsDownloading] = useState(false);
   
@@ -54,6 +56,11 @@ export default function UserLibraryDetail() {
   useDailyPublishedImagePreloader(pages, dailyContent?.book_id, pageImages);
   
   const isLoading = isLoadingDaily;
+
+  // Access gate: redirect non-subscribers to pricing
+  if (isReady && accessState === 'locked') {
+    return <Navigate to="/pricing" state={{ upgrade: 'library' }} replace />;
+  }
 
   const handlePageClick = (pageIndex: number) => {
     navigate(`/library/${id}`, { 

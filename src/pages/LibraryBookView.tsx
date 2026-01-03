@@ -12,13 +12,14 @@
  * - Uses PublicPageImage component
  */
 
-import { useParams, useLocation, useNavigate } from 'react-router-dom';
+import { useParams, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { useLibraryBookById } from '@/hooks/useLibraryBookByBookId';
 import { useLibraryBookPages } from '@/hooks/useLibraryBookPages';
 import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { useLibraryBookImagePreloader } from '@/hooks/useLibraryBookImagePreloader';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
+import { useAccessResolver } from '@/hooks/useAccessResolver';
 import { trackBookView } from '@/utils/bookViewTracking';
 import { Card } from '@/components/ui/card';
 import { BookImage } from '@/components/ui/book-image';
@@ -34,6 +35,7 @@ export default function LibraryBookView() {
   const location = useLocation();
   const { user } = useAuthContext();
   const { data: kidProfiles = [] } = useKidProfiles();
+  const { accessState, isReady } = useAccessResolver();
   const safeBookId = bookId && isValidUUID(bookId) ? bookId : undefined;
   
   const { data: book, isLoading: isLoadingBook, error: bookError } = useLibraryBookById(safeBookId);
@@ -60,6 +62,11 @@ export default function LibraryBookView() {
   const handleBack = () => {
     navigate('/library');
   };
+
+  // Access gate: redirect non-subscribers to pricing
+  if (isReady && accessState === 'locked') {
+    return <Navigate to="/pricing" state={{ upgrade: 'library' }} replace />;
+  }
 
   if (isLoading) {
     return (

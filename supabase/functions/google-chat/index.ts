@@ -384,6 +384,36 @@ serve(async (req) => {
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
     const forceOutline = lastMessageContent.includes('create outline') || lastMessageContent.includes('generate outline');
 
+    // Location question injection - ask as the VERY LAST question before outline generation
+    // Only inject if: no location selected yet, outline not ready, book not created, not forcing outline
+    const shouldAskLocationQuestion = !location && !outlineReady && !bookCreated && !forceOutline;
+
+    // Detect if user just approved title (clicked "Looks perfect, create the outline!" or similar)
+    const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];
+    const titleWasJustApproved = titleApprovalPhrases.some(phrase => lastMessageContent.includes(phrase));
+
+    // Location question injection - shown as FINAL step before outline
+    const locationQuestionInjection = shouldAskLocationQuestion && titleWasJustApproved
+      ? `\n\n📍 MANDATORY FINAL STEP - LOCATION QUESTION:
+Before generating the outline, you MUST ask this question FIRST:
+
+"Would you like to set this book at a specific resort? This is optional."
+
+[SUGGEST]
+VAIL_RESORT: 🏔️ Vail Resort
+SUGARBUSH_RESORT: 🍁 Sugarbush Resort
+STRATTON: ⛷️ Stratton
+KILLINGTON: 🏂 Killington
+MOUNTAIN_CREEK: 🎿 Mountain Creek
+COPPER_MOUNTAIN: 🥉 Copper Mountain
+BRECKENRIDGE: 🏘️ Breckenridge
+KEYSTONE: 🌙 Keystone
+skip-location: ⏭️ Skip (no specific resort)
+[/SUGGEST]
+
+DO NOT generate the outline until the user answers this location question or clicks "Skip".`
+      : '';
+
     const conversationStageContext = outlineReady
       ? '\n\n✅ OUTLINE COMPLETE: The book outline has been created and approved. Focus conversation on next steps: reviewing pages, creating the book, or making adjustments.'
       : bookCreated
@@ -398,7 +428,7 @@ serve(async (req) => {
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + locationQuestionInjection + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

@@ -12,7 +12,8 @@ export const LOCATION_IDS = [
   'MOUNTAIN_CREEK',
   'COPPER_MOUNTAIN',
   'BRECKENRIDGE',
-  'KEYSTONE'
+  'KEYSTONE',
+  'NONE' // Represents "skipped" - no specific location
 ] as const;
 
 export type LocationId = typeof LOCATION_IDS[number];

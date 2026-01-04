@@ -407,8 +407,12 @@ export const useGoogleChat = (
             };
           }
 
-          // Location selection fallback - optional discovery question for specific resort
-          if (cleanedText.toLowerCase().includes('resort') || cleanedText.toLowerCase().includes('which resort') || cleanedText.toLowerCase().includes('specific location')) {
+          // Location selection fallback - optional discovery question for specific resort (FINAL question before outline)
+          if (cleanedText.toLowerCase().includes('resort') || 
+              cleanedText.toLowerCase().includes('which resort') || 
+              cleanedText.toLowerCase().includes('specific resort') ||
+              cleanedText.toLowerCase().includes('specific location') ||
+              cleanedText.toLowerCase().includes('set this book at')) {
             return { 
               cleanContent: cleanedText, 
               suggestedActions: [
@@ -420,7 +424,7 @@ export const useGoogleChat = (
                 { id: 'COPPER_MOUNTAIN', label: '🥉 Copper Mountain', value: 'Copper Mountain', locationId: 'COPPER_MOUNTAIN' as LocationId },
                 { id: 'BRECKENRIDGE', label: '🏘️ Breckenridge', value: 'Breckenridge', locationId: 'BRECKENRIDGE' as LocationId },
                 { id: 'KEYSTONE', label: '🌙 Keystone', value: 'Keystone', locationId: 'KEYSTONE' as LocationId },
-                { id: 'skip-location', label: '⏭️ Skip', value: 'No specific resort' },
+                { id: 'skip-location', label: '⏭️ Skip (no specific resort)', value: 'No specific resort', locationId: 'NONE' as LocationId },
               ]
             };
           }
@@ -449,8 +453,8 @@ export const useGoogleChat = (
         // Known clothing brand IDs
         const clothingBrandIds = new Set(['BURTON', 'NONE']);
 
-        // Known location IDs
-        const locationIds = new Set(['VAIL_RESORT', 'SUGARBUSH_RESORT', 'STRATTON', 'KILLINGTON', 'MOUNTAIN_CREEK', 'COPPER_MOUNTAIN', 'BRECKENRIDGE', 'KEYSTONE']);
+        // Known location IDs (includes skip-location and NONE to prevent re-asking)
+        const locationIds = new Set(['VAIL_RESORT', 'SUGARBUSH_RESORT', 'STRATTON', 'KILLINGTON', 'MOUNTAIN_CREEK', 'COPPER_MOUNTAIN', 'BRECKENRIDGE', 'KEYSTONE', 'skip-location', 'NONE']);
 
         const actions = suggestionsText
           .split('\n')

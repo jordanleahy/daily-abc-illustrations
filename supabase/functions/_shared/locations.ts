@@ -9,7 +9,8 @@ export const VALID_LOCATIONS = [
   'MOUNTAIN_CREEK',
   'COPPER_MOUNTAIN',
   'BRECKENRIDGE',
-  'KEYSTONE'
+  'KEYSTONE',
+  'NONE' // Represents "skipped" - no specific location
 ] as const;
 
 export type ValidLocation = typeof VALID_LOCATIONS[number];

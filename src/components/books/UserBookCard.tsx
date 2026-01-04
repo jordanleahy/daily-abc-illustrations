@@ -11,6 +11,7 @@ import { AdminOnly } from '@/components/AdminOnly';
 import { SocialPostTracker } from '@/components/books/SocialPostTracker';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useDuplicateBook } from '@/hooks/useDuplicateBook';
+import { useArchiveBook } from '@/hooks/useArchiveBook';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getThemeDisplayName } from '@/types/characterTheme';
@@ -20,7 +21,7 @@ import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
 import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Copy, Link2, Share2 } from 'lucide-react';
+import { BookOpen, Copy, Link2, Share2, Archive } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -62,6 +63,7 @@ export function UserBookCard({
   const { user } = useAuthContext();
   const { toast } = useToast();
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
+  const { mutate: archiveBook, isPending: isArchiving } = useArchiveBook();
   const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
   const coverImageUrl = book.coverImageUrl;
   
@@ -352,6 +354,26 @@ export function UserBookCard({
             >
               {publicationStatus ? 'Remove from Library' : 'Add to Library'}
             </Button>
+            
+            {/* Archive button - removes from library, daily_published, and sets status to archived */}
+            <DeleteConfirmDialog
+              title={`Archive "${book.book_name}"?`}
+              description="This will remove the book from the library, remove it from the publishing queue, and archive it. You can find archived books in the Archived tab."
+              onConfirm={() => archiveBook(book.id)}
+              isDeleting={isArchiving}
+              trigger={
+                <Button 
+                  variant="outline"
+                  size="sm"
+                  className="w-full gap-2"
+                  onClick={(e) => e.stopPropagation()}
+                  disabled={isArchiving}
+                >
+                  <Archive className="h-4 w-4" />
+                  {isArchiving ? 'Archiving...' : 'Archive'}
+                </Button>
+              }
+            />
             
             {publicationStatus && (
               <>

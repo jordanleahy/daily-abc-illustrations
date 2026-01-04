@@ -14,7 +14,7 @@ import { useBulkDeleteBooks } from '@/hooks/useBulkDeleteBooks';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { BulkDeleteBar } from '@/components/books/BulkDeleteBar';
 
-import { BookOpen, Calendar, CheckCircle, Circle, CheckSquare } from 'lucide-react';
+import { BookOpen, Calendar, CheckCircle, Circle, CheckSquare, Archive } from 'lucide-react';
 import { 
   Pagination, 
   PaginationContent, 
@@ -63,7 +63,7 @@ export default function Books() {
   
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
-  const [completionFilter, setCompletionFilter] = useState<'completed' | 'not-completed'>('completed');
+  const [completionFilter, setCompletionFilter] = useState<'completed' | 'not-completed' | 'archived'>('completed');
   const PAGE_SIZE = 24;
   
   const { rawQuery: searchQuery, activeQuery: debouncedSearchQuery, setSearchQuery } = useOptimizedSearch('debounced', 300);
@@ -181,8 +181,8 @@ export default function Books() {
               {/* Admin-only completion filter toggle */}
               {isAdmin && (
                 <div className="flex items-center gap-4">
-                  <Tabs value={completionFilter} onValueChange={(v) => setCompletionFilter(v as 'completed' | 'not-completed')} className="max-w-md">
-                    <TabsList className="grid w-full grid-cols-2">
+                  <Tabs value={completionFilter} onValueChange={(v) => setCompletionFilter(v as 'completed' | 'not-completed' | 'archived')} className="max-w-lg">
+                    <TabsList className="grid w-full grid-cols-3">
                       <TabsTrigger value="completed" className="gap-2">
                         <CheckCircle className="h-4 w-4" />
                         Completed
@@ -190,6 +190,10 @@ export default function Books() {
                       <TabsTrigger value="not-completed" className="gap-2">
                         <Circle className="h-4 w-4" />
                         Not Completed
+                      </TabsTrigger>
+                      <TabsTrigger value="archived" className="gap-2">
+                        <Archive className="h-4 w-4" />
+                        Archived
                       </TabsTrigger>
                     </TabsList>
                   </Tabs>

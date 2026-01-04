@@ -2899,6 +2899,7 @@ export type Database = {
         Returns: Json
       }
       analyze_page_image_storage: { Args: never; Returns: Json }
+      archive_book: { Args: { p_book_id: string }; Returns: Json }
       auto_purchase_screen_time: {
         Args: { p_kid_id: string; p_required_seconds: number }
         Returns: Json

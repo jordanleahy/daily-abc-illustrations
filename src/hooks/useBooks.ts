@@ -60,7 +60,7 @@ export const useBooks = (
   pagination?: { page: number; pageSize: number },
   searchQuery?: string,
   themeFilter?: string[], // Server-side theme filtering
-  completionFilter?: 'completed' | 'not-completed' // Admin-only: filter by image completion status
+  completionFilter?: 'completed' | 'not-completed' | 'archived' // Admin-only: filter by image completion status or archived
 ) => {
   const { user } = useAuthContext();
   const { isAdmin, isTeacher } = useRole();
@@ -94,8 +94,14 @@ export const useBooks = (
             )
           )
         `, { count: 'exact' })
-        .neq('status', 'archived')
         .order('updated_at', { ascending: false }); // ⚡ Explicit sort for consistent pagination
+      
+      // Filter by archived status based on completionFilter
+      if (completionFilter === 'archived') {
+        query = query.eq('status', 'archived');
+      } else {
+        query = query.neq('status', 'archived');
+      }
       
       // Apply user filter for non-admin views
       if (!showAllBooks) {

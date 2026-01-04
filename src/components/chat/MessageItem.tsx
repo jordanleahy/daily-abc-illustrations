@@ -146,6 +146,18 @@ export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: Messa
                       {action.label.replace(/[\p{Emoji_Presentation}\p{Extended_Pictographic}]/gu, '').trim()}
                     </Button>
                   ))}
+                  {/* Other button - focuses input for custom text */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      // Focus the input field by dispatching a custom event
+                      window.dispatchEvent(new CustomEvent('focus-chat-input'));
+                    }}
+                    className="text-xs w-full text-muted-foreground hover:text-foreground"
+                  >
+                    ✏️ Other (type your own)
+                  </Button>
                 </div>
               )}
             </>

@@ -7,6 +7,25 @@ interface Character {
   constraint_text: string | null;
 }
 
+/**
+ * Themes where characters are universally recognized by AI models.
+ * For these themes, we only output character names (no descriptions)
+ * to avoid confusing the model with redundant/conflicting descriptions.
+ */
+export const NAME_ONLY_THEMES = new Set([
+  'bluey',
+  'frozen',
+  'paw-patrol',
+  'peppa-pig',
+  'cocomelon',
+  'moana',
+  'mickey-mouse',
+  'mario',
+  'sesame-street',
+  'dora',
+  'little-mermaid',
+]);
+
 // In-memory cache for characters (per cold start)
 const characterCache = new Map<string, { characters: Character[]; cachedAt: number }>();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -69,8 +88,13 @@ export async function buildCharacterConstraints(
     return '';
   }
 
+  // Use name-only format for well-known themes
+  const useNameOnly = NAME_ONLY_THEMES.has(themeId);
+  
   const charList = selected
-    .map(c => `- ${c.name}: ${c.constraint_text || c.description}`)
+    .map(c => useNameOnly 
+      ? `- ${c.name}` 
+      : `- ${c.name}: ${c.constraint_text || c.description}`)
     .join('\n');
 
   return `

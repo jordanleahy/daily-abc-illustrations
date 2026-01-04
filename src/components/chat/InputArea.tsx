@@ -1,4 +1,4 @@
-import { memo } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { Send, Image as ImageIcon, BookOpen, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -68,6 +68,17 @@ export const InputArea = memo(({
     }
   };
 
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  // Listen for focus-chat-input event from "Other" button
+  useEffect(() => {
+    const handleFocusInput = () => {
+      inputRef.current?.focus();
+    };
+    window.addEventListener('focus-chat-input', handleFocusInput);
+    return () => window.removeEventListener('focus-chat-input', handleFocusInput);
+  }, []);
+
   return (
     <div className="border-t bg-background p-4">
       <div className="mx-auto max-w-4xl mb-3 flex items-center justify-between gap-4">
@@ -96,6 +107,7 @@ export const InputArea = memo(({
       </div>
       <div className="mx-auto flex max-w-4xl gap-2">
         <Input
+          ref={inputRef}
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyPress={onKeyPress}

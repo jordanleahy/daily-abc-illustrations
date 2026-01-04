@@ -767,8 +767,27 @@ export function getSelectedCharacterConstraints(
   
   if (selectedChars.length === 0) return '';
   
+  // Well-known themes use name-only format (AI models recognize these characters)
+  const NAME_ONLY_THEMES = new Set([
+    'bluey',
+    'frozen',
+    'paw-patrol',
+    'peppa-pig',
+    'cocomelon',
+    'moana',
+    'mickey-mouse',
+    'mario',
+    'sesame-street',
+    'dora',
+    'little-mermaid',
+  ]);
+  
+  const useNameOnly = NAME_ONLY_THEMES.has(styleGuideKey);
+  
   const charList = selectedChars
-    .map(c => `- ${c.name}: ${c.description}`)
+    .map(c => useNameOnly 
+      ? `- ${c.name}` 
+      : `- ${c.name}: ${c.description}`)
     .join('\n');
   
   return `

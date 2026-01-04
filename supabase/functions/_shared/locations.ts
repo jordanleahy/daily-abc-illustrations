@@ -27,7 +27,7 @@ export const LOCATION_OPTIONS: LocationOption[] = [
   { id: 'VAIL_RESORT', label: 'Vail Resort', emoji: '🏔️', description: 'Colorado, world-class terrain' },
   { id: 'SUGARBUSH_RESORT', label: 'Sugarbush Resort', emoji: '🍁', description: 'Vermont, classic New England' },
   { id: 'STRATTON', label: 'Stratton', emoji: '⛷️', description: 'Vermont, family-friendly' },
-  { id: 'KILLINGTON', label: 'Killington', emoji: '🏂', description: 'Vermont, the Beast of the East' },
+  { id: 'KILLINGTON', label: 'Killington Mountain', emoji: '🏂', description: 'Vermont, the Beast of the East' },
   { id: 'MOUNTAIN_CREEK', label: 'Mountain Creek', emoji: '🎿', description: 'New Jersey, accessible fun' },
   { id: 'COPPER_MOUNTAIN', label: 'Copper Mountain', emoji: '🥉', description: 'Colorado, naturally divided terrain' },
   { id: 'BRECKENRIDGE', label: 'Breckenridge', emoji: '🏘️', description: 'Colorado, historic mountain town' },

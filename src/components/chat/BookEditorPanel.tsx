@@ -444,7 +444,15 @@ export function BookEditorPanel({
           pageId: currentPageId,
           bookId,
           imageUrl: currentPageImage,
-          editPrompt: "Please make these changes to the image:\n1. Replace the blue dog with a Samoyed dog\n2. Change the orange dog to a Bernese Mountain Dog with floppy ears (not pointy ears)"
+          editPrompt: `Please analyze this image and make ONLY these applicable changes:
+- IF there is a blue dog in the image, replace it with a fluffy white Samoyed dog
+- IF there is an orange or reddish-brown dog in the image, replace it with a Bernese Mountain Dog (make sure the Bernese Mountain Dog does not have pointy ears)
+
+IMPORTANT RULES:
+1. Do NOT add any new dogs - only modify dogs that already exist
+2. Keep the dog in the same position and pose as the original
+3. Preserve all other elements in the image (background, objects, etc.)
+4. If only one dog exists, only replace that one dog`
         }
       });
 
@@ -479,7 +487,7 @@ export function BookEditorPanel({
         return;
       }
 
-      toast({ title: "Image updated!", description: "The blue dog has been replaced with a Samoyed" });
+      toast({ title: "Image updated!", description: "Dogs have been replaced with Westin breeds" });
       queryClient.invalidateQueries({ queryKey: ['book-page-images', bookId] });
       queryClient.invalidateQueries({ queryKey: ['page-image-urls', bookId] });
     } catch (error: unknown) {

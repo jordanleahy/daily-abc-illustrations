@@ -384,7 +384,7 @@ serve(async (req) => {
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
     const forceOutline = lastMessageContent.includes('create outline') || lastMessageContent.includes('generate outline');
 
-    // Location question injection - ask as the VERY LAST question before outline generation
+    // Location question injection - ask BEFORE title confirmation (optional questions come before title)
     // Only inject if: no location selected yet, outline not ready, book not created, not forcing outline
     const shouldAskLocationQuestion = !location && !outlineReady && !bookCreated && !forceOutline;
 
@@ -392,10 +392,11 @@ serve(async (req) => {
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];
     const titleWasJustApproved = titleApprovalPhrases.some(phrase => lastMessageContent.includes(phrase));
 
-    // Location question injection - shown as FINAL step before outline
-    const locationQuestionInjection = shouldAskLocationQuestion && titleWasJustApproved
-      ? `\n\n📍 MANDATORY FINAL STEP - LOCATION QUESTION:
-Before generating the outline, you MUST ask this question FIRST:
+    // Location question injection - shown BEFORE title proposal (optional questions come before title)
+    // This ensures title confirmation is the VERY LAST step before outline generation
+    const locationQuestionInjection = shouldAskLocationQuestion
+      ? `\n\n📍 OPTIONAL QUESTION - LOCATION (Ask BEFORE proposing title):
+Before proposing the book title, ask this optional question:
 
 "Would you like to set this book at a specific resort? This is optional."
 
@@ -403,7 +404,7 @@ Before generating the outline, you MUST ask this question FIRST:
 VAIL_RESORT: 🏔️ Vail Resort
 SUGARBUSH_RESORT: 🍁 Sugarbush Resort
 STRATTON: ⛷️ Stratton
-KILLINGTON: 🏂 Killington
+KILLINGTON: 🏂 Killington Mountain
 MOUNTAIN_CREEK: 🎿 Mountain Creek
 COPPER_MOUNTAIN: 🥉 Copper Mountain
 BRECKENRIDGE: 🏘️ Breckenridge
@@ -411,7 +412,12 @@ KEYSTONE: 🌙 Keystone
 skip-location: ⏭️ Skip (no specific resort)
 [/SUGGEST]
 
-DO NOT generate the outline until the user answers this location question or clicks "Skip".`
+⚠️ CRITICAL FLOW ORDER: All optional questions (location, season, environment, etc.) MUST be asked BEFORE proposing the book title. The title confirmation ("Looks great!") should be the VERY LAST step before generating the outline.`
+      : '';
+
+    // Title confirmation is the FINAL step - when title is approved, generate outline immediately
+    const titleConfirmationContext = titleWasJustApproved
+      ? `\n\n✅ TITLE CONFIRMED - GENERATE OUTLINE NOW: The user has approved the title. All discovery and optional questions are complete. Generate the complete book outline immediately with all pages, titles, and image prompts.`
       : '';
 
     const conversationStageContext = outlineReady
@@ -428,7 +434,7 @@ DO NOT generate the outline until the user answers this location question or cli
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + locationQuestionInjection + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + locationQuestionInjection + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

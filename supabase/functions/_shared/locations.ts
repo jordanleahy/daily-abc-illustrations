@@ -56,3 +56,20 @@ export function getLocationDisplay(locId: ValidLocation): string {
   const option = LOCATION_OPTIONS.find(l => l.id === locId);
   return option ? `${option.emoji} ${option.label}` : locId;
 }
+
+/**
+ * Spelling guidance for commonly misspelled location names
+ * Returns explicit spelling instruction to prevent AI typos
+ */
+const LOCATION_SPELLING_GUIDE: Partial<Record<ValidLocation, string>> = {
+  'KILLINGTON': 'SPELLING: K-I-L-L-I-N-G-T-O-N (note the G before T-O-N)',
+  'BRECKENRIDGE': 'SPELLING: B-R-E-C-K-E-N-R-I-D-G-E',
+  'KEYSTONE': 'SPELLING: K-E-Y-S-T-O-N-E',
+};
+
+/**
+ * Get spelling guidance for a location if available
+ */
+export function getLocationSpellingGuide(locId: ValidLocation): string | null {
+  return LOCATION_SPELLING_GUIDE[locId] || null;
+}

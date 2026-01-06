@@ -790,10 +790,19 @@ export function getSelectedCharacterConstraints(
       : `- ${c.name}: ${c.description}`)
     .join('\n');
   
+  const count = selectedChars.length;
+  const singletonRule = count === 1 
+    ? `Show EXACTLY ONE instance of ${selectedChars[0].name} - no duplicates.`
+    : `Show EXACTLY ONE of each character - ${selectedChars.map(c => c.name).join(', ')}. No duplicates of any character.`;
+
   return `
 ⚠️ CHARACTER RESTRICTIONS - STRICTLY ENFORCED:
 ONLY the following characters may appear in this book:
 ${charList}
+
+🔢 SINGLETON RULE - CRITICAL:
+${singletonRule}
+Each selected character appears as a SINGLE individual. Never show multiple copies of the same character.
 
 DO NOT include ANY other characters, animals, or named figures.
 All characters not listed above are FORBIDDEN.

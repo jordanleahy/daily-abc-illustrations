@@ -415,6 +415,17 @@ skip-location: ⏭️ Skip (no specific resort)
 ⚠️ CRITICAL FLOW ORDER: All optional questions (location, season, environment, etc.) MUST be asked BEFORE proposing the book title. The title confirmation ("Looks great!") should be the VERY LAST step before generating the outline.`
       : '';
 
+    // Check if all optional questions are complete - if so, prompt agent to propose title
+    const allOptionalQuestionsComplete = (season || lastMessageContent.includes('skip')) && 
+                                          (environment || lastMessageContent.includes('skip')) && 
+                                          (clothingBrand || lastMessageContent.includes('skip') || lastMessageContent.includes('burton') || lastMessageContent.includes('no brand')) && 
+                                          (location || lastMessageContent.includes('skip') || lastMessageContent.includes('resort') || lastMessageContent.includes('killington') || lastMessageContent.includes('vail') || lastMessageContent.includes('stratton'));
+    
+    // Proceed to title context - when all optional questions are answered, prompt title proposal
+    const proceedToTitleContext = allOptionalQuestionsComplete && !outlineReady && !bookCreated && !titleWasJustApproved
+      ? `\n\n✅ ALL OPTIONAL QUESTIONS COMPLETE: Season, environment, clothing brand, and location have all been answered or skipped. NOW proceed to propose a book title and description for user approval. Do NOT ask any more optional questions.`
+      : '';
+
     // Title confirmation is the FINAL step - when title is approved, generate outline immediately
     const titleConfirmationContext = titleWasJustApproved
       ? `\n\n✅ TITLE CONFIRMED - GENERATE OUTLINE NOW: The user has approved the title. All discovery and optional questions are complete. Generate the complete book outline immediately with all pages, titles, and image prompts.`
@@ -434,7 +445,7 @@ skip-location: ⏭️ Skip (no specific resort)
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + locationQuestionInjection + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + locationQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
@@ -446,6 +457,9 @@ skip-location: ⏭️ Skip (no specific resort)
     console.log(`🌍 Environment: ${environment || 'None'}`);
     console.log(`👕 Clothing brand: ${clothingBrand || 'None'}`);
     console.log(`📍 Location: ${location || 'None'}`);
+    console.log(`✅ All optional questions complete: ${allOptionalQuestionsComplete}`);
+    console.log(`📝 Proceed to title: ${proceedToTitleContext ? 'Yes' : 'No'}`);
+    console.log(`🎯 Title approved: ${titleWasJustApproved}`);
 
     const allMessages = [systemMessage, ...messages];
 

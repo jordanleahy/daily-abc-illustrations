@@ -9,7 +9,7 @@ import { getWordsForDigraphThroughGrade, isValidDigraph, type GradeLevel } from 
 import { getSeasonDisplay, isValidSeason, type ValidSeason } from '../_shared/seasons.ts';
 import { getEnvironmentDisplay, isValidEnvironment, type ValidEnvironment } from '../_shared/environments.ts';
 import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothingBrand, type ValidClothingBrand } from '../_shared/clothingBrands.ts';
-import { getLocationDisplay, isValidLocation, type ValidLocation } from '../_shared/locations.ts';
+import { getLocationDisplay, getLocationSpellingGuide, isValidLocation, type ValidLocation } from '../_shared/locations.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -375,8 +375,9 @@ serve(async (req) => {
       : '';
 
     // Location context - optional discovery question for specific resort
+    const spellingGuide = location && isValidLocation(location) ? getLocationSpellingGuide(location) : null;
     const locationContext = location && isValidLocation(location)
-      ? `\n\n⚠️ CRITICAL - LOCATION STATUS:\n📍 LOCATION ALREADY SELECTED: ${getLocationDisplay(location)}\n❌ DO NOT ask "Which resort/location?" - this step is COMPLETE.\nSet all illustrations at ${getLocationDisplay(location)} with authentic resort landmarks, signage, and atmosphere.`
+      ? `\n\n⚠️ CRITICAL - LOCATION STATUS:\n📍 LOCATION ALREADY SELECTED: ${getLocationDisplay(location)}${spellingGuide ? `\n📝 ${spellingGuide}` : ''}\n❌ DO NOT ask "Which resort/location?" - this step is COMPLETE.\nSet all illustrations at ${getLocationDisplay(location)} with authentic resort landmarks, signage, and atmosphere.`
       : '';
 
     // Check if user is forcing outline creation (e.g., typing "create outline")

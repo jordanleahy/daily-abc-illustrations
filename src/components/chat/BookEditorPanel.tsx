@@ -344,8 +344,11 @@ export function BookEditorPanel({
         return;
       }
       
-      // Invalidate the book editor data to refresh and show the new image
-      await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
+      // Invalidate all relevant queries to refresh and show the new image
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] }),
+        queryClient.invalidateQueries({ queryKey: ['book-page-images', bookId] }),
+      ]);
     } catch (error: any) {
       console.error('Error generating color image:', error);
       const message = getLovableAiErrorMessage(error);
@@ -413,8 +416,11 @@ export function BookEditorPanel({
         return;
       }
       
-      // Invalidate to refresh the new book data
-      await queryClient.invalidateQueries({ queryKey: ['book-editor-data', result.bookId] });
+      // Invalidate all relevant queries to refresh the new book data
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['book-editor-data', result.bookId] }),
+        queryClient.invalidateQueries({ queryKey: ['book-page-images', result.bookId] }),
+      ]);
     } catch (error: any) {
       console.error('Error generating color image with book creation:', error);
       const message = getLovableAiErrorMessage(error);

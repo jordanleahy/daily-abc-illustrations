@@ -35,7 +35,7 @@ export const CharacterSelector = ({ characters, themeId, onConfirm }: CharacterS
   };
 
   const handleConfirm = () => {
-    if (selected.size === 0) return;
+    // Allow zero selection (style-only mode)
     onConfirm(Array.from(selected));
   };
 
@@ -115,16 +115,17 @@ export const CharacterSelector = ({ characters, themeId, onConfirm }: CharacterS
       
       <Button 
         onClick={handleConfirm}
-        disabled={selected.size === 0}
         className="w-full"
         size="sm"
       >
-        Confirm Selection ({selected.size} character{selected.size !== 1 ? 's' : ''})
+        {selected.size === 0 
+          ? 'Continue with Style Only (No Characters)' 
+          : `Confirm Selection (${selected.size} character${selected.size !== 1 ? 's' : ''})`}
       </Button>
       
       {selected.size === 0 && (
-        <p className="text-xs text-destructive text-center">
-          Please select at least one character
+        <p className="text-xs text-muted-foreground text-center">
+          You can proceed with just the art style, no specific characters
         </p>
       )}
     </div>

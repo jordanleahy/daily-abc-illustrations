@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { BookImage } from '@/components/ui/book-image';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { OptimizedImage } from '@/components/ui/optimized-image';
 import { Plus, Loader2, Palette, UserPlus } from 'lucide-react';
 import { PublicBookShareDrawer } from '@/components/book/PublicBookShareDrawer';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -193,7 +194,7 @@ export default function PublicBook() {
                     ratio={1/1} 
                     className="rounded-lg overflow-hidden border border-border bg-white"
                   >
-                    <img 
+                    <OptimizedImage 
                       src={coloringImage.coloring_image_url} 
                       alt={`Coloring page for letter ${coloringImage.letter}`}
                       className="w-full h-full object-cover"

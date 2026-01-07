@@ -16,8 +16,8 @@ export const FeatureGrid = () => {
     {
       icon: Youtube,
       title: 'Embedded YouTube',
-      subtitle: '$1 = 5 minutes, then it stops',
-      description: 'YouTube plays right in the app with a countdown timer. Kids earn 1¢ per page read—$1 unlocks 5 minutes of screen time. When time\'s up, they\'re redirected back to books or habits. Customize the rewards to fit your family.',
+      subtitle: '100 points = 5 minutes, then it stops',
+      description: 'YouTube plays right in the app with a countdown timer. Kids earn 1 point per page read—100 points unlocks 5 minutes of screen time. When time\'s up, they\'re redirected back to books or habits. Customize the rewards to fit your family.',
       link: '/preview/rewards'
     },
     {

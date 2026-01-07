@@ -17,7 +17,7 @@ const PreviewRewards = () => {
             Built-in Screen Time
           </div>
           <h1 className="text-4xl md:text-6xl font-bold text-foreground tracking-tight">
-            $1 = 5 minutes.<br />
+            100 points = 5 minutes.<br />
             <span className="text-primary">Then it stops.</span>
           </h1>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">

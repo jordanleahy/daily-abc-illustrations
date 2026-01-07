@@ -10,6 +10,7 @@ import { getSeasonDisplay, isValidSeason, type ValidSeason } from '../_shared/se
 import { getEnvironmentDisplay, isValidEnvironment, type ValidEnvironment } from '../_shared/environments.ts';
 import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothingBrand, type ValidClothingBrand } from '../_shared/clothingBrands.ts';
 import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, type ValidLocation } from '../_shared/locations.ts';
+import { getCityDisplay, getCityVisualPrompt, isValidCity, type ValidCity } from '../_shared/cities.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -164,7 +165,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment, clothingBrand, location } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment, clothingBrand, location, city } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
@@ -176,6 +177,7 @@ serve(async (req) => {
       environment?: ValidEnvironment;
       clothingBrand?: ValidClothingBrand;
       location?: ValidLocation;
+      city?: ValidCity;
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -381,14 +383,24 @@ serve(async (req) => {
       ? `\n\n⚠️ CRITICAL - LOCATION STATUS:\n📍 LOCATION ALREADY SELECTED: ${getLocationDisplay(location)}${spellingGuide ? `\n📝 ${spellingGuide}` : ''}\n❌ DO NOT ask "Which resort/location?" - this step is COMPLETE.${visualPrompt || ''}`
       : '';
 
+    // City context - optional discovery question for urban setting (asked after resort)
+    const cityVisualPrompt = city && isValidCity(city) ? getCityVisualPrompt(city) : null;
+    const cityContext = city && isValidCity(city)
+      ? `\n\n⚠️ CRITICAL - CITY STATUS:\n🏙️ CITY ALREADY SELECTED: ${getCityDisplay(city)}\n❌ DO NOT ask "Which city?" - this step is COMPLETE.${cityVisualPrompt || ''}`
+      : '';
+
     // Check if user is forcing outline creation (e.g., typing "create outline")
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
     const forceOutline = lastMessageContent.includes('create outline') || lastMessageContent.includes('generate outline');
 
-    // Location question injection - ask BEFORE title confirmation (optional questions come before title)
+    // Location question injection - ask BEFORE city question (optional questions come before title)
     // Only inject if: no location selected yet, outline not ready, book not created, not forcing outline
     const shouldAskLocationQuestion = !location && !outlineReady && !bookCreated && !forceOutline;
+
+    // City question injection - ask AFTER location question, BEFORE title confirmation
+    // Only inject if: location is answered/skipped, no city selected yet, outline not ready, book not created
+    const shouldAskCityQuestion = (location || lastMessageContent.includes('skip')) && !city && !outlineReady && !bookCreated && !forceOutline;
 
     // Detect if user just approved title (clicked "Looks perfect, create the outline!" or similar)
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];
@@ -414,14 +426,32 @@ KEYSTONE: 🌙 Keystone
 skip-location: ⏭️ Skip (no specific resort)
 [/SUGGEST]
 
-⚠️ CRITICAL FLOW ORDER: All optional questions (location, season, environment, etc.) MUST be asked BEFORE proposing the book title. The title confirmation ("Looks great!") should be the VERY LAST step before generating the outline.`
+⚠️ CRITICAL FLOW ORDER: All optional questions (location, city, season, environment, etc.) MUST be asked BEFORE proposing the book title. The title confirmation ("Looks great!") should be the VERY LAST step before generating the outline.`
+      : '';
+
+    // City question injection - shown AFTER location, BEFORE title proposal
+    const cityQuestionInjection = shouldAskCityQuestion
+      ? `\n\n🏙️ OPTIONAL QUESTION - CITY (Ask AFTER location, BEFORE proposing title):
+Ask this optional question:
+
+"Would you like to set this book in a specific city? This is optional."
+
+[SUGGEST]
+JERSEY_CITY: 🌅 Jersey City
+HOBOKEN: 🚂 Hoboken
+NEW_YORK_CITY: 🗽 New York City
+skip-city: ⏭️ Skip (no specific city)
+[/SUGGEST]
+
+⚠️ CRITICAL: Ask this AFTER the resort location question and BEFORE proposing the book title.`
       : '';
 
     // Check if all optional questions are complete - if so, prompt agent to propose title
     const allOptionalQuestionsComplete = (season || lastMessageContent.includes('skip')) && 
                                           (environment || lastMessageContent.includes('skip')) && 
                                           (clothingBrand || lastMessageContent.includes('skip') || lastMessageContent.includes('burton') || lastMessageContent.includes('no brand')) && 
-                                          (location || lastMessageContent.includes('skip') || lastMessageContent.includes('resort') || lastMessageContent.includes('killington') || lastMessageContent.includes('vail') || lastMessageContent.includes('stratton'));
+                                          (location || lastMessageContent.includes('skip') || lastMessageContent.includes('resort') || lastMessageContent.includes('killington') || lastMessageContent.includes('vail') || lastMessageContent.includes('stratton')) &&
+                                          (city || lastMessageContent.includes('skip') || lastMessageContent.includes('jersey') || lastMessageContent.includes('hoboken') || lastMessageContent.includes('new york'));
     
     // Proceed to title context - when all optional questions are answered, prompt title proposal
     const proceedToTitleContext = allOptionalQuestionsComplete && !outlineReady && !bookCreated && !titleWasJustApproved
@@ -447,7 +477,7 @@ skip-location: ⏭️ Skip (no specific resort)
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + locationQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
@@ -459,6 +489,7 @@ skip-location: ⏭️ Skip (no specific resort)
     console.log(`🌍 Environment: ${environment || 'None'}`);
     console.log(`👕 Clothing brand: ${clothingBrand || 'None'}`);
     console.log(`📍 Location: ${location || 'None'}`);
+    console.log(`🏙️ City: ${city || 'None'}`);
     console.log(`✅ All optional questions complete: ${allOptionalQuestionsComplete}`);
     console.log(`📝 Proceed to title: ${proceedToTitleContext ? 'Yes' : 'No'}`);
     console.log(`🎯 Title approved: ${titleWasJustApproved}`);

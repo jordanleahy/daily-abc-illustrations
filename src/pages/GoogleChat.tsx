@@ -37,6 +37,7 @@ import type { SeasonId } from '@/types/season';
 import type { EnvironmentId } from '@/types/environment';
 import type { ClothingBrandId } from '@/types/clothingBrand';
 import type { LocationId } from '@/types/location';
+import type { CityId } from '@/types/city';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useCharacterSelectionFlow } from '@/hooks/useCharacterSelectionFlow';
 import { useCharacterSelectionInjection } from '@/components/chat/CharacterSelectionStep';
@@ -60,6 +61,7 @@ export default function GoogleChat() {
   const [selectedEnvironment, setSelectedEnvironment] = useState<EnvironmentId | null>(null);
   const [selectedClothingBrand, setSelectedClothingBrand] = useState<ClothingBrandId | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationId | null>(null);
+  const [selectedCity, setSelectedCity] = useState<CityId | null>(null);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
   
   // Get kid profiles (kept for backwards compatibility with existing UI)
@@ -676,7 +678,9 @@ export default function GoogleChat() {
       gradeLevel: selectedGradeLevel,
       season: selectedSeason,
       environment: selectedEnvironment,
-      clothingBrand: selectedClothingBrand
+      clothingBrand: selectedClothingBrand,
+      location: selectedLocation,
+      city: selectedCity
     });
     setInput('');
   };
@@ -702,7 +706,9 @@ export default function GoogleChat() {
         gradeLevel: selectedGradeLevel,
         season: selectedSeason,
         environment: selectedEnvironment,
-        clothingBrand: selectedClothingBrand
+        clothingBrand: selectedClothingBrand,
+        location: selectedLocation,
+        city: selectedCity
       });
     };
     reader.readAsDataURL(file);
@@ -735,7 +741,9 @@ export default function GoogleChat() {
       gradeLevel: selectedGradeLevel,
       season: selectedSeason,
       environment: selectedEnvironment,
-      clothingBrand: selectedClothingBrand
+      clothingBrand: selectedClothingBrand,
+      location: selectedLocation,
+      city: selectedCity
     });
   }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId]);
 
@@ -1165,6 +1173,12 @@ export default function GoogleChat() {
         setSelectedLocation(action.locationId as LocationId);
       }
       
+      // Capture city if present in the action
+      if ((action as any).cityId) {
+        console.log('[City Selection] User selected city:', (action as any).cityId);
+        setSelectedCity((action as any).cityId as CityId);
+      }
+      
       // Send the predefined response - include newly selected character IDs if present
       const characterIdsToUse = action.selectedCharacterIds?.length > 0 
         ? action.selectedCharacterIds 
@@ -1180,7 +1194,8 @@ export default function GoogleChat() {
         season: action.seasonId || selectedSeason,
         environment: action.environmentId || selectedEnvironment,
         clothingBrand: action.clothingBrandId || selectedClothingBrand,
-        location: action.locationId || selectedLocation
+        location: action.locationId || selectedLocation,
+        city: (action as any).cityId || selectedCity
       });
     } else {
       // "Custom" option - just focus the input field
@@ -1189,7 +1204,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, characterFlow]);
+  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, selectedCity, characterFlow]);
   // Note: handleOpenEditorPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 

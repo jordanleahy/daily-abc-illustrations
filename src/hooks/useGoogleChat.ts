@@ -9,6 +9,7 @@ import type { SeasonId } from '@/types/season';
 import type { EnvironmentId } from '@/types/environment';
 import type { ClothingBrandId } from '@/types/clothingBrand';
 import type { LocationId } from '@/types/location';
+import type { CityId } from '@/types/city';
 interface MessageContent {
   type: 'text' | 'image_url';
   text?: string;
@@ -36,6 +37,7 @@ export interface SuggestedAction {
   environmentId?: EnvironmentId;
   clothingBrandId?: ClothingBrandId;
   locationId?: LocationId;
+  cityId?: CityId;
   characterSelection?: CharacterSelectionData;
   selectedCharacterIds?: string[]; // IDs of characters selected for enforcement
 }
@@ -71,6 +73,7 @@ export const useGoogleChat = (
       environment?: EnvironmentId | null; // For environment selection
       clothingBrand?: ClothingBrandId | null; // For clothing brand selection
       location?: LocationId | null; // For location selection
+      city?: CityId | null; // For city selection
     }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
@@ -145,7 +148,8 @@ export const useGoogleChat = (
             season: context?.season,
             environment: context?.environment,
             clothingBrand: context?.clothingBrand,
-            location: context?.location
+            location: context?.location,
+            city: context?.city
           })
         }
       );
@@ -212,9 +216,9 @@ export const useGoogleChat = (
             }
           } catch (e) {
             console.error('Failed to parse SSE chunk:', e);
+            }
           }
         }
-      }
 
       // Parse suggestions from final content and strip internal tags
       const parseSuggestions = (text: string) => {
@@ -428,6 +432,21 @@ export const useGoogleChat = (
               ]
             };
           }
+
+          // City selection fallback - optional discovery question for urban setting
+          if (cleanedText.toLowerCase().includes('specific city') || 
+              cleanedText.toLowerCase().includes('which city') || 
+              cleanedText.toLowerCase().includes('set this book in a specific city')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'JERSEY_CITY', label: '🌅 Jersey City', value: 'Jersey City', cityId: 'JERSEY_CITY' as CityId },
+                { id: 'HOBOKEN', label: '🚂 Hoboken', value: 'Hoboken', cityId: 'HOBOKEN' as CityId },
+                { id: 'NEW_YORK_CITY', label: '🗽 New York City', value: 'New York City', cityId: 'NEW_YORK_CITY' as CityId },
+                { id: 'skip-city', label: '⏭️ Skip (no specific city)', value: 'No specific city', cityId: 'NONE' as CityId },
+              ]
+            };
+          }
         }
         
         if (!match) {
@@ -454,7 +473,10 @@ export const useGoogleChat = (
         const clothingBrandIds = new Set(['BURTON', 'NONE']);
 
         // Known location IDs (includes skip-location and NONE to prevent re-asking)
-        const locationIds = new Set(['VAIL_RESORT', 'SUGARBUSH_RESORT', 'STRATTON', 'KILLINGTON', 'MOUNTAIN_CREEK', 'COPPER_MOUNTAIN', 'BRECKENRIDGE', 'KEYSTONE', 'skip-location', 'NONE']);
+        const locationIds = new Set(['VAIL_RESORT', 'SUGARBUSH_RESORT', 'STRATTON', 'KILLINGTON', 'MOUNTAIN_CREEK', 'COPPER_MOUNTAIN', 'BRECKENRIDGE', 'KEYSTONE', 'WHISTLER_BLACKCOMB', 'skip-location', 'NONE']);
+
+        // Known city IDs
+        const cityIds = new Set(['JERSEY_CITY', 'HOBOKEN', 'NEW_YORK_CITY', 'skip-city', 'NONE']);
 
         const actions = suggestionsText
           .split('\n')
@@ -492,6 +514,10 @@ export const useGoogleChat = (
             // Check for location IDs
             if (locationIds.has(id)) {
               action.locationId = id as LocationId;
+            }
+            // Check for city IDs
+            if (cityIds.has(id)) {
+              action.cityId = id as CityId;
             }
             return action;
           })

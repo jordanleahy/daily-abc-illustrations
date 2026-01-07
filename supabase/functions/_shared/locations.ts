@@ -10,6 +10,7 @@ export const VALID_LOCATIONS = [
   'COPPER_MOUNTAIN',
   'BRECKENRIDGE',
   'KEYSTONE',
+  'WHISTLER_BLACKCOMB',
   'NONE' // Represents "skipped" - no specific location
 ] as const;
 
@@ -32,6 +33,7 @@ export const LOCATION_OPTIONS: LocationOption[] = [
   { id: 'COPPER_MOUNTAIN', label: 'Copper Mountain', emoji: '🥉', description: 'Colorado, naturally divided terrain' },
   { id: 'BRECKENRIDGE', label: 'Breckenridge', emoji: '🏘️', description: 'Colorado, historic mountain town' },
   { id: 'KEYSTONE', label: 'Keystone', emoji: '🌙', description: 'Colorado, night skiing' },
+  { id: 'WHISTLER_BLACKCOMB', label: 'Whistler Blackcomb', emoji: '🇨🇦', description: 'British Columbia, largest ski resort in North America' },
 ];
 
 /**
@@ -64,6 +66,7 @@ const LOCATION_SPELLING_GUIDE: Partial<Record<ValidLocation, string>> = {
   'KILLINGTON': 'SPELLING: K-I-L-L-I-N-G-T-O-N (note the G before T-O-N)',
   'BRECKENRIDGE': 'SPELLING: B-R-E-C-K-E-N-R-I-D-G-E',
   'KEYSTONE': 'SPELLING: K-E-Y-S-T-O-N-E',
+  'WHISTLER_BLACKCOMB': 'SPELLING: W-H-I-S-T-L-E-R B-L-A-C-K-C-O-M-B (two words, Whistler Blackcomb)',
 };
 
 /**
@@ -134,6 +137,13 @@ const RESORT_VISUAL_PROFILES: Partial<Record<ValidLocation, ResortVisualProfile>
     landmarks: ['River Run Village', 'Mountain House base', 'A51 Terrain Park', 'Keystone Lake', 'Outback bowls'],
     colorPalette: 'Evening purples/blues (night skiing), warm lodge lighting, Colorado pine greens, starlit skies',
     atmosphere: 'Family-friendly, famous night skiing, relaxed Colorado mountain village'
+  },
+  'WHISTLER_BLACKCOMB': {
+    terrain: 'Massive dual-mountain resort with dramatic coastal mountain peaks, alpine glaciers, steep chutes, legendary bowls, and extensive above-treeline terrain spanning 8,171 acres',
+    architecture: 'European-inspired pedestrian village with stone and timber construction, Pacific Northwest influences, modern luxury resort amenities, mountain chalets',
+    landmarks: ['Peak 2 Peak Gondola (record-breaking)', 'Whistler Village stroll', 'Blackcomb Glacier', 'Harmony Bowl', 'Horstman Glacier', '7th Heaven Express', 'Roundhouse Lodge'],
+    colorPalette: 'Pacific coastal blues, glacial whites, deep evergreen forests, dramatic cloud-shrouded peaks, Canadian red maple accents',
+    atmosphere: 'World-class luxury, Olympic heritage (2010 Winter Games), vibrant après-ski culture, cosmopolitan international vibe, raw coastal mountain grandeur'
   },
 };
 

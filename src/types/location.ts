@@ -13,6 +13,7 @@ export const LOCATION_IDS = [
   'COPPER_MOUNTAIN',
   'BRECKENRIDGE',
   'KEYSTONE',
+  'WHISTLER_BLACKCOMB',
   'NONE' // Represents "skipped" - no specific location
 ] as const;
 
@@ -35,6 +36,7 @@ export const LOCATION_OPTIONS: LocationOption[] = [
   { id: 'COPPER_MOUNTAIN', label: 'Copper Mountain', emoji: '🥉', description: 'Colorado, naturally divided terrain' },
   { id: 'BRECKENRIDGE', label: 'Breckenridge', emoji: '🏘️', description: 'Colorado, historic mountain town' },
   { id: 'KEYSTONE', label: 'Keystone', emoji: '🌙', description: 'Colorado, night skiing' },
+  { id: 'WHISTLER_BLACKCOMB', label: 'Whistler Blackcomb', emoji: '🇨🇦', description: 'British Columbia, largest ski resort in North America' },
 ];
 
 /**

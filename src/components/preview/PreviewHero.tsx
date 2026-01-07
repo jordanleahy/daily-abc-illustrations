@@ -9,6 +9,10 @@ import { useLazyCarouselImages } from '@/hooks/useLazyCarouselImages';
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 
+// TODO: Replace with your actual video import
+// import heroVideo from '@/assets/hero-video.mp4';
+const heroVideo = ''; // Placeholder - add your video URL or import here
+
 export const PreviewHero = () => {
   const { data: landingData } = useLandingPageData();
   const dailyPublished = landingData?.dailyPublished;
@@ -29,17 +33,34 @@ export const PreviewHero = () => {
   const currentPage = pages[currentPageIndex];
 
   return (
-    <div className="relative">
-      <div className="max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 py-12 md:py-20">
-        <h1 className="text-5xl md:text-7xl font-bold text-foreground mb-6 tracking-tight">
+    <div className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
+      {/* Video Background */}
+      {heroVideo && (
+        <video
+          autoPlay
+          muted
+          loop
+          playsInline
+          className="absolute inset-0 w-full h-full object-cover"
+        >
+          <source src={heroVideo} type="video/mp4" />
+        </video>
+      )}
+      
+      {/* Dark Overlay */}
+      <div className="absolute inset-0 bg-black/60" />
+      
+      {/* Content */}
+      <div className="relative z-10 max-w-4xl mx-auto text-center px-4 sm:px-6 lg:px-8 py-12 md:py-20">
+        <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 tracking-tight drop-shadow-lg">
           Chairlift Habits
         </h1>
-        <p className="text-xl md:text-2xl text-muted-foreground mb-10 max-w-3xl mx-auto leading-relaxed">
+        <p className="text-xl md:text-2xl text-white/90 mb-10 max-w-3xl mx-auto leading-relaxed drop-shadow-md">
           Helping toddlers grow one habit at a time. One story. One moment. One habit each day.
         </p>
         
         {/* Today's Book Card */}
-        <div className="max-w-md mx-auto bg-card rounded-lg shadow-xl p-6 border">
+        <div className="max-w-md mx-auto bg-card/95 backdrop-blur-sm rounded-lg shadow-2xl p-6 border">
           {!dailyPublished ? (
             <div className="space-y-4">
               <div className="text-center space-y-2">
@@ -111,7 +132,7 @@ export const PreviewHero = () => {
           )}
         </div>
 
-        <p className="text-sm text-muted-foreground mt-6">
+        <p className="text-sm text-white/80 mt-6 drop-shadow">
           Simple setup. Cancel anytime. 30-day money-back guarantee.
         </p>
       </div>

@@ -430,7 +430,66 @@ export function BookEditorPanel({
     }
   };
 
-  // Handle Westin button click - edit image to replace blue dog with Samoyed
+// Character to Westin breed mapping
+  const CHARACTER_TO_WESTIN_BREED: Record<string, { name: string; breed: string }> = {
+    'bluey': { name: 'Bluey (a blue cartoon heeler dog)', breed: 'fluffy white Samoyed dog' },
+    'bingo': { name: 'Bingo (an orange/tan cartoon heeler dog)', breed: 'Bernese Mountain Dog with floppy ears (tri-color: black, white, and rust)' },
+    'bandit': { name: 'Bandit (a blue adult cartoon heeler dog)', breed: 'large fluffy white Samoyed dog' },
+    'chilli': { name: 'Chilli (a red/orange adult cartoon heeler dog)', breed: 'Bernese Mountain Dog with floppy ears' },
+    // Paw Patrol characters
+    'chase': { name: 'Chase (a brown German Shepherd police pup)', breed: 'Bernese Mountain Dog with floppy ears' },
+    'marshall': { name: 'Marshall (a white Dalmatian with spots)', breed: 'fluffy white Samoyed dog' },
+    'skye': { name: 'Skye (a pink Cockapoo)', breed: 'fluffy white Samoyed dog' },
+    'rubble': { name: 'Rubble (a tan English Bulldog)', breed: 'Bernese Mountain Dog with floppy ears' },
+    'rocky': { name: 'Rocky (a gray mixed-breed)', breed: 'fluffy white Samoyed dog' },
+    'zuma': { name: 'Zuma (a brown Labrador)', breed: 'Bernese Mountain Dog with floppy ears' },
+  };
+
+  // Build character-aware edit prompt for Westin
+  const buildWestinEditPrompt = (selectedCharacterIds: string[]): string => {
+    if (!selectedCharacterIds || selectedCharacterIds.length === 0) {
+      // Fallback to color-based detection if no characters selected
+      return `Please analyze this image and make ONLY these applicable changes:
+- IF there is a blue dog in the image, replace it with a fluffy white Samoyed dog
+- IF there is an orange or reddish-brown dog in the image, replace it with a Bernese Mountain Dog (make sure the Bernese Mountain Dog does not have pointy ears)
+
+IMPORTANT RULES:
+1. Do NOT add any new dogs - only modify dogs that already exist
+2. Keep the dog in the same position and pose as the original
+3. Preserve all other elements in the image (background, objects, etc.)
+4. If only one dog exists, only replace that one dog`;
+    }
+
+    // Build character-specific replacement instructions
+    const replacements = selectedCharacterIds
+      .map(id => CHARACTER_TO_WESTIN_BREED[id])
+      .filter(Boolean)
+      .map(char => `- Replace ${char.name} with a ${char.breed}`);
+
+    if (replacements.length === 0) {
+      // Characters not in our mapping - use generic approach
+      return `Please analyze this image and make ONLY these applicable changes:
+- IF there is a blue dog in the image, replace it with a fluffy white Samoyed dog
+- IF there is an orange or reddish-brown dog in the image, replace it with a Bernese Mountain Dog (make sure the Bernese Mountain Dog does not have pointy ears)
+
+IMPORTANT RULES:
+1. Do NOT add any new dogs - only modify dogs that already exist
+2. Keep the dog in the same position and pose as the original
+3. Preserve all other elements in the image (background, objects, etc.)
+4. If only one dog exists, only replace that one dog`;
+    }
+
+    return `Please make these changes to the image:
+${replacements.join('\n')}
+
+IMPORTANT RULES:
+1. Do NOT add any new dogs - only modify the dogs specified above
+2. Keep each dog in the same position, pose, and wearing the same clothing/accessories as the original
+3. Preserve all other elements in the image (background, objects, other characters, etc.)
+4. Make the replacement dogs realistic but friendly-looking`;
+  };
+
+  // Handle Westin button click - edit image to replace characters with Westin breeds
   const handleWestinEdit = async () => {
     if (!currentPageImage || !bookId || !currentPageId) {
       toast({ title: "Cannot edit", description: "No image or book available", variant: "destructive" });
@@ -440,6 +499,16 @@ export function BookEditorPanel({
     setIsEditingWestin(true);
     
     try {
+      // Fetch book metadata to get selected character IDs
+      const { data: bookData } = await supabase
+        .from('books')
+        .select('metadata')
+        .eq('id', bookId)
+        .single();
+      
+      const selectedCharacterIds = (bookData?.metadata as any)?.selectedCharacterIds as string[] || [];
+      const editPrompt = buildWestinEditPrompt(selectedCharacterIds);
+
       const { data: sessionData } = await supabase.auth.getSession();
       if (!sessionData?.session?.access_token) {
         throw new Error('Not authenticated');
@@ -450,15 +519,7 @@ export function BookEditorPanel({
           pageId: currentPageId,
           bookId,
           imageUrl: currentPageImage,
-          editPrompt: `Please analyze this image and make ONLY these applicable changes:
-- IF there is a blue dog in the image, replace it with a fluffy white Samoyed dog
-- IF there is an orange or reddish-brown dog in the image, replace it with a Bernese Mountain Dog (make sure the Bernese Mountain Dog does not have pointy ears)
-
-IMPORTANT RULES:
-1. Do NOT add any new dogs - only modify dogs that already exist
-2. Keep the dog in the same position and pose as the original
-3. Preserve all other elements in the image (background, objects, etc.)
-4. If only one dog exists, only replace that one dog`
+          editPrompt
         }
       });
 

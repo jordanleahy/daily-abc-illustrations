@@ -400,7 +400,13 @@ serve(async (req) => {
 
     // City question injection - ask AFTER location question, BEFORE title confirmation
     // Only inject if: location is answered/skipped, no city selected yet, outline not ready, book not created
-    const shouldAskCityQuestion = (location || lastMessageContent.includes('skip')) && !city && !outlineReady && !bookCreated && !forceOutline;
+    // Detect location skip by checking for skip-related phrases or location selection
+    const locationWasAnsweredOrSkipped = location || 
+      lastMessageContent.includes('skip') || 
+      lastMessageContent.includes('no specific location') || 
+      lastMessageContent.includes('no specific resort') ||
+      lastMessageContent.includes('skip-location');
+    const shouldAskCityQuestion = locationWasAnsweredOrSkipped && !city && !outlineReady && !bookCreated && !forceOutline;
 
     // Detect if user just approved title (clicked "Looks perfect, create the outline!" or similar)
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];

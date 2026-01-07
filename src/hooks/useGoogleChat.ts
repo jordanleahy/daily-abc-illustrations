@@ -611,6 +611,7 @@ export const useGoogleChat = (
         environment?: EnvironmentId | null;
         clothingBrand?: ClothingBrandId | null;
         location?: LocationId | null;
+        city?: CityId | null;
       }
     ) => {
       return sendMessage(

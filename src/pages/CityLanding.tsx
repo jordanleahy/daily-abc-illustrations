@@ -151,16 +151,6 @@ const CityLanding = () => {
             <p className="text-lg text-muted-foreground mb-8">
               I'm building educational books daily for my daughter to solve the challenges I have at home. I believe we can partner and explore how to expand to families at zero monetary cost to city or school.
             </p>
-            <div className="flex flex-wrap justify-center gap-4">
-              <Button size="lg" asChild>
-                <a href="mailto:partnerships@chairlifthabits.com">
-                  Contact Government Relations
-                </a>
-              </Button>
-              <Button size="lg" variant="outline" asChild>
-                <Link to="/pricing-info">View Pricing</Link>
-              </Button>
-            </div>
           </div>
         </PreviewSection>
       </PreviewPageLayout>

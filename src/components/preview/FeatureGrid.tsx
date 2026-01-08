@@ -47,13 +47,6 @@ export const FeatureGrid = () => {
       subtitle: 'Turn effort into rewards',
       description: 'Create a rewards store that fits your family rules. Let kids trade coins for treats, trips, or time with you. Keep all rewards and redemptions in one place.',
       link: '/preview/habits'
-    },
-    {
-      icon: Users,
-      title: 'Family',
-      subtitle: 'Stay aligned as a family',
-      description: 'Add multiple kids with separate profiles. Share one view of progress with partners or caregivers. Keep everyone aligned on habits, rewards, and screen-time tradeoffs.',
-      link: '/preview/for-families'
     }
   ];
 

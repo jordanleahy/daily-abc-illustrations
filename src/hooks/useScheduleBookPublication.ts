@@ -39,6 +39,33 @@ const generateSeoMetadata = async (
   }
 };
 
+// Helper to generate blog post for the book
+const generateBlogPost = async (
+  bookId: string,
+  title: string,
+  description?: string
+): Promise<void> => {
+  try {
+    console.log('Generating blog post for book:', bookId);
+    
+    const { error } = await supabase.functions.invoke('generate-blog-post-for-book', {
+      body: {
+        bookId,
+        title,
+        description,
+      }
+    });
+
+    if (error) {
+      console.error('Blog post generation failed:', error);
+    } else {
+      console.log('Blog post generated successfully for book:', bookId);
+    }
+  } catch (err) {
+    console.error('Error calling generate-blog-post-for-book:', err);
+  }
+};
+
 export const useScheduleBookPublication = () => {
   const queryClient = useQueryClient();
 
@@ -106,10 +133,11 @@ export const useScheduleBookPublication = () => {
         console.error('Failed to mark book as library book:', bookUpdateError);
       }
 
-      // Auto-generate SEO metadata including OG image (fire and forget)
+      // Auto-generate SEO metadata and blog post (fire and forget)
       if (data) {
-        // Don't await - let it run in background
+        // Don't await - let them run in background
         generateSeoMetadata(bookId, data.id, title, description);
+        generateBlogPost(bookId, title, description);
       }
 
       return { ...data, publish_date: publishDate };

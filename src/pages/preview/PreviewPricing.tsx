@@ -23,19 +23,13 @@ const PreviewPricing = () => {
 
       {/* Pricing Cards */}
       <PreviewSection variant="default">
-        <div className="max-w-5xl mx-auto grid md:grid-cols-2 gap-8">
+        <div className="max-w-6xl mx-auto grid md:grid-cols-3 gap-6">
           {/* Free Plan */}
-          <div className="p-8 rounded-lg border-2 border-border bg-card">
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold text-foreground mb-2">Free</h3>
-              <div className="text-4xl font-bold text-foreground mb-4">
-                $0
-              </div>
-              <p className="text-muted-foreground">
-                Start reading with your family
-              </p>
-            </div>
-
+          <div 
+            className="p-8 rounded-lg border-2 border-border bg-card cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50"
+            onClick={() => navigate('/auth?mode=signup')}
+          >
+            <h3 className="text-2xl font-bold text-foreground mb-4">Free</h3>
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
@@ -50,38 +44,57 @@ const PreviewPricing = () => {
                 <span className="text-muted-foreground">Basic reading history for one child</span>
               </li>
             </ul>
+            <div className="text-center">
+              <span className="text-sm font-medium text-primary">Get Started Free →</span>
+            </div>
+          </div>
 
-            <Button 
-              variant="outline" 
-              className="w-full"
-              onClick={() => navigate('/auth')}
-            >
-              Get started
-            </Button>
+          {/* Annual Pass - Highlighted */}
+          <div 
+            className="p-8 rounded-lg border-2 border-primary bg-card cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02]"
+            onClick={() => navigate('/auth?mode=signup')}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-2xl font-bold text-foreground">Annual Pass</h3>
+              <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-semibold rounded-full">
+                Best Value
+              </span>
+            </div>
+            <div className="mb-4">
+              <span className="text-3xl font-bold text-foreground">$8.99</span>
+              <span className="text-muted-foreground">/month</span>
+              <p className="text-sm text-muted-foreground mt-1">billed annually</p>
+            </div>
+            <ul className="space-y-3 mb-8">
+              <li className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-muted-foreground">Full library access for all book types</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-muted-foreground">Habits, coins, and rewards store</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
+                <span className="text-muted-foreground">Multiple kid profiles</span>
+              </li>
+            </ul>
+            <div className="text-center">
+              <span className="text-sm font-medium text-primary">Select Annual →</span>
+            </div>
           </div>
 
           {/* Plus Plan */}
-          <div className="p-8 rounded-lg border-2 border-primary bg-card relative">
-            <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-              <span className="px-4 py-1 bg-primary text-primary-foreground text-sm font-semibold rounded-full">
-                Most Popular
-              </span>
+          <div 
+            className="p-8 rounded-lg border-2 border-border bg-card cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50"
+            onClick={() => navigate('/auth?mode=signup')}
+          >
+            <h3 className="text-2xl font-bold text-foreground mb-4">Chairlift Plus</h3>
+            <div className="mb-4">
+              <span className="text-3xl font-bold text-foreground">$14.99</span>
+              <span className="text-muted-foreground">/month</span>
+              <p className="text-sm text-muted-foreground mt-1">or $99/year</p>
             </div>
-
-            <div className="mb-6">
-              <h3 className="text-2xl font-bold text-foreground mb-2">Chairlift Plus</h3>
-              <div className="flex items-baseline gap-2 mb-4">
-                <span className="text-4xl font-bold text-foreground">$14.99</span>
-                <span className="text-muted-foreground">per month</span>
-              </div>
-              <p className="text-muted-foreground mb-2">
-                or $99 per year (save $80)
-              </p>
-              <p className="text-sm text-muted-foreground">
-                30-day money-back guarantee
-              </p>
-            </div>
-
             <ul className="space-y-3 mb-8">
               <li className="flex items-start gap-3">
                 <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
@@ -95,26 +108,10 @@ const PreviewPricing = () => {
                 <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
                 <span className="text-muted-foreground">Multiple kid profiles and full parent dashboard</span>
               </li>
-              <li className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-muted-foreground">Custom AI book creation</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-muted-foreground">Word learning progress tracking</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-primary mt-0.5 flex-shrink-0" />
-                <span className="text-muted-foreground">Export reports for teachers</span>
-              </li>
             </ul>
-
-            <Button 
-              className="w-full"
-              onClick={() => navigate('/auth')}
-            >
-              Start 30-day trial
-            </Button>
+            <div className="text-center">
+              <span className="text-sm font-medium text-primary">Select Monthly →</span>
+            </div>
           </div>
         </div>
       </PreviewSection>

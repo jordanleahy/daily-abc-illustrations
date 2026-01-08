@@ -52,6 +52,44 @@ const CityLanding = () => {
           </div>
         </section>
 
+        {/* City Books Section */}
+        <PreviewSection variant="default">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+                {displayName} Book Collection
+              </h2>
+              <p className="text-lg text-muted-foreground">
+                Educational books created specifically for {displayName} families
+              </p>
+            </div>
+
+            {books.length > 0 || isLoading ? (
+              <CategorizedBookSections 
+                books={books} 
+                isLoading={isLoading}
+                showViewAllLinks={false}
+              />
+            ) : (
+              <Card className="p-12 text-center">
+                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
+                  <Book className="h-10 w-10 text-muted-foreground" />
+                </div>
+                <h3 className="text-xl font-semibold mb-2">Coming Soon to {displayName}</h3>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  We're working on creating custom educational books for {displayName}. 
+                  Partner with us to bring Chairlift to your community.
+                </p>
+                <Button asChild>
+                  <a href="mailto:partnerships@chairlifthabits.com">
+                    Start a Partnership
+                  </a>
+                </Button>
+              </Card>
+            )}
+          </div>
+        </PreviewSection>
+
         {/* Value Proposition for Government */}
         <PreviewSection variant="feature">
           <div className="max-w-6xl mx-auto">
@@ -98,45 +136,6 @@ const CityLanding = () => {
             </div>
           </div>
         </PreviewSection>
-
-        {/* City Books Section */}
-        <PreviewSection variant="default">
-          <div className="max-w-7xl mx-auto">
-            <div className="text-center mb-8">
-              <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                {displayName} Book Collection
-              </h2>
-              <p className="text-lg text-muted-foreground">
-                Educational books created specifically for {displayName} families
-              </p>
-            </div>
-
-            {books.length > 0 || isLoading ? (
-              <CategorizedBookSections 
-                books={books} 
-                isLoading={isLoading}
-                showViewAllLinks={false}
-              />
-            ) : (
-              <Card className="p-12 text-center">
-                <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
-                  <Book className="h-10 w-10 text-muted-foreground" />
-                </div>
-                <h3 className="text-xl font-semibold mb-2">Coming Soon to {displayName}</h3>
-                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  We're working on creating custom educational books for {displayName}. 
-                  Partner with us to bring Chairlift to your community.
-                </p>
-                <Button asChild>
-                  <a href="mailto:partnerships@chairlifthabits.com">
-                    Start a Partnership
-                  </a>
-                </Button>
-              </Card>
-            )}
-          </div>
-        </PreviewSection>
-
         {/* CTA Section */}
         <PreviewSection variant="cta">
           <div className="max-w-3xl mx-auto text-center">

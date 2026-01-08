@@ -61,18 +61,18 @@ const CityLanding = () => {
         <PreviewSection variant="feature">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-12">
-              Why Local Governments Choose Chairlift
+              What We Can Do Together
             </h2>
             
             <div className="grid md:grid-cols-3 gap-8">
               <Card className="text-center p-6">
                 <CardContent className="pt-6">
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Building2 className="h-8 w-8 text-primary" />
+                    <Book className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">Civic Pride</h3>
+                  <h3 className="text-xl font-semibold mb-3">Personalized Education</h3>
                   <p className="text-muted-foreground">
-                    Books featuring local landmarks, history, and heroes build community pride from the earliest ages.
+                    We can build age, location, and culturally relevant educational micro-learning experiences tailored to your community.
                   </p>
                 </CardContent>
               </Card>
@@ -92,11 +92,11 @@ const CityLanding = () => {
               <Card className="text-center p-6">
                 <CardContent className="pt-6">
                   <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Sparkles className="h-8 w-8 text-primary" />
+                    <Building2 className="h-8 w-8 text-primary" />
                   </div>
-                  <h3 className="text-xl font-semibold mb-3">AI-Powered Creation</h3>
+                  <h3 className="text-xl font-semibold mb-3">Improve {displayName} Schools</h3>
                   <p className="text-muted-foreground">
-                    Our AI creates custom books featuring your city's unique character and educational priorities.
+                    We leverage AI to create unique, personalized learning experiences that supplement school resources and extend into the family.
                   </p>
                 </CardContent>
               </Card>

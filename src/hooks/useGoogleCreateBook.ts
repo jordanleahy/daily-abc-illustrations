@@ -32,6 +32,7 @@ export interface CreateBookParams {
   environment?: string;
   clothingBrand?: string;
   location?: string;
+  city?: string;
 }
 
 interface CreateBookResponse {
@@ -108,6 +109,7 @@ export const useGoogleCreateBook = () => {
           environment: params.environment || undefined,
           clothingBrand: params.clothingBrand || undefined,
           location: params.location || undefined,
+          city: params.city || undefined,
         },
       });
 

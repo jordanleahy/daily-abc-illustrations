@@ -236,7 +236,7 @@ const PreviewRewards = () => {
             <Button 
               size="lg" 
               variant="outline"
-              onClick={() => navigate('/preview/habits')}
+              onClick={() => navigate('/habits-info')}
             >
               See habits
             </Button>

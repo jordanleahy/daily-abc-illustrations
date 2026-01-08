@@ -7,27 +7,27 @@ export const PreviewFooter = () => {
     {
       title: 'Product',
       links: [
-        { label: 'Product overview', href: '/preview/product' },
-        { label: 'Reading & Library', href: '/preview/tracking' },
-        { label: 'Habits & Rewards', href: '/preview/habits' },
-        { label: 'AI Book Studio', href: '/preview/ai-studio' },
-        { label: 'Parent Dashboard', href: '/preview/dashboard' }
+        { label: 'Product overview', href: '/product' },
+        { label: 'Reading & Library', href: '/tracking' },
+        { label: 'Habits & Rewards', href: '/habits-info' },
+        { label: 'AI Book Studio', href: '/ai-studio' },
+        { label: 'Parent Dashboard', href: '/dashboard-info' }
       ]
     },
     {
       title: 'Families',
       links: [
-        { label: 'For toddlers', href: '/preview/for-families#toddlers' },
-        { label: 'For early readers', href: '/preview/for-families#early-readers' },
-        { label: 'For busy parents', href: '/preview/for-families' },
-        { label: 'For grandparents', href: '/preview/for-grandparents' }
+        { label: 'For toddlers', href: '/for-families#toddlers' },
+        { label: 'For early readers', href: '/for-families#early-readers' },
+        { label: 'For busy parents', href: '/for-families' },
+        { label: 'For grandparents', href: '/for-grandparents' }
       ]
     },
     {
       title: 'Resources',
       links: [
-        { label: 'Blog', href: '/preview/blog' },
-        { label: 'Pricing', href: '/preview/pricing' }
+        { label: 'Blog', href: '/blog-home' },
+        { label: 'Pricing', href: '/pricing-info' }
       ]
     },
     {

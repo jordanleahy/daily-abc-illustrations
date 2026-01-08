@@ -29,7 +29,7 @@ export const Footer = () => {
                 </Link>
               </li>
               <li>
-                <Link to="/preview/for-grandparents" className="text-muted-foreground hover:text-foreground transition-colors">
+                <Link to="/for-grandparents" className="text-muted-foreground hover:text-foreground transition-colors">
                   For Grandparents
                 </Link>
               </li>

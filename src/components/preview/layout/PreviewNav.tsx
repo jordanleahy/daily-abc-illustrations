@@ -47,7 +47,7 @@ export const PreviewNav = () => {
           {/* Desktop Navigation */}
           <NavigationMenu className="hidden md:flex">
             <NavigationMenuList>
-              {/* Product */}
+              {/* Product - TEMPORARILY HIDDEN
               <NavigationMenuItem>
                 <NavigationMenuTrigger>Product</NavigationMenuTrigger>
                 <NavigationMenuContent>
@@ -72,6 +72,7 @@ export const PreviewNav = () => {
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
+              */}
 
               {/* Library */}
               <NavigationMenuItem>
@@ -164,6 +165,7 @@ export const PreviewNav = () => {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border">
             <nav className="space-y-4">
+              {/* Product - TEMPORARILY HIDDEN
               <div>
                 <p className="text-sm font-semibold text-muted-foreground mb-2">Product</p>
                 <div className="space-y-2">
@@ -179,6 +181,7 @@ export const PreviewNav = () => {
                   ))}
                 </div>
               </div>
+              */}
               <div>
                 <p className="text-sm font-semibold text-muted-foreground mb-2">For Families</p>
                 <div className="space-y-2">

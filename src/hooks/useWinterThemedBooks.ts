@@ -20,14 +20,15 @@ export interface LibraryBookWithImages {
 
 export const useWinterThemedBooks = () => {
   return useQuery({
-    queryKey: ['all-library-books-with-images'],
+    queryKey: ['library-books-winter-themed'],
     queryFn: async (): Promise<LibraryBookWithImages[]> => {
-      // Get all library books
+      // Get library books with winter season
       const { data: books, error } = await supabase
         .from('books')
         .select('*')
         .eq('is_library_book', true)
         .eq('status', 'published')
+        .eq('metadata->>season', 'WINTER')
         .order('created_at', { ascending: false })
         .limit(50);
 

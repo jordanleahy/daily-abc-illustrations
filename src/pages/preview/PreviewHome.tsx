@@ -65,18 +65,6 @@ const PreviewHome = () => {
         imagePosition="right"
       />
 
-      {/* Deep Dive: Family Collaboration */}
-      <DeepDiveSection
-        title="Made for families with multiple kids"
-        description="Chairlift supports as many kid profiles as you need. Each child gets their own reading history, habits, and rewards—all in one place."
-        features={[
-          'Separate profiles for each child with age, reading level, and preferences',
-          'Track progress and activity per kid from a single dashboard',
-          'Switch between kids instantly without logging out'
-        ]}
-        imagePosition="left"
-      />
-
       {/* Daily AI Books Section */}
       <PreviewSection variant="feature" id="daily-books">
         <div className="max-w-3xl mx-auto text-center">

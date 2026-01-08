@@ -30,6 +30,7 @@ import LibraryDetail from "./pages/LibraryDetail";
 import UserLibraryDetail from "./pages/UserLibraryDetail";
 import BookReadingView from "./pages/BookReadingView";
 import PublicBook from "./pages/PublicBook";
+import PublicColorBook from "./pages/PublicColorBook";
 import Rewards from "./pages/Rewards";
 import RewardsManage from "./pages/RewardsManage";
 import DailyPublished from "./pages/DailyPublished";
@@ -182,6 +183,9 @@ const App = () => {
                 
                 {/* Public book landing page (no auth required) */}
                 <Route path="/book/:slug" element={<PublicBook />} />
+                
+                {/* Public coloring book download (no auth required) */}
+                <Route path="/colorbook/:bookId" element={<PublicColorBook />} />
                 
                 {/* Snow trick game (public) */}
                 <Route path="/snow" element={<Snow />} />

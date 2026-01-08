@@ -144,12 +144,23 @@ export const PreviewNav = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => navigate('/auth')}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate('/auth');
+              }}
               className="hidden md:inline-flex"
             >
               Sign in
             </Button>
-            <Button type="button" onClick={() => navigate('/auth')}>
+            <Button
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                navigate('/auth');
+              }}
+            >
               Start free
             </Button>
 

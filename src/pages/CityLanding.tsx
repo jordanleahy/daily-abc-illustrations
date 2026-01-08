@@ -45,14 +45,9 @@ const CityLanding = () => {
                 Local stories. Local landmarks. Local pride.
               </p>
 
-              <div className="flex flex-wrap justify-center gap-4">
-                <Button size="lg" asChild>
-                  <Link to="/auth?mode=signup">Partner With Us</Link>
-                </Button>
-                <Button size="lg" variant="outline" asChild>
-                  <a href="mailto:partnerships@chairlifthabits.com">Contact Government Relations</a>
-                </Button>
-              </div>
+              <Button size="lg" asChild>
+                <a href="mailto:jordanwilliamleahy@gmail.com">Contact</a>
+              </Button>
             </div>
           </div>
         </section>

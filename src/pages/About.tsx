@@ -179,7 +179,7 @@ export default function About() {
             <Button size="lg" onClick={() => navigate('/auth')} className="text-lg px-8">
               Start Free
             </Button>
-            <Button size="lg" variant="outline" onClick={() => navigate('/preview/pricing')} className="text-lg px-8">
+            <Button size="lg" variant="outline" onClick={() => navigate('/pricing-info')} className="text-lg px-8">
               View Pricing
             </Button>
           </div>

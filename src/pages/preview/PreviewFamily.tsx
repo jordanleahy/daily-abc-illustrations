@@ -52,7 +52,7 @@ export default function PreviewFamily() {
               <Button size="lg" onClick={() => navigate('/auth')}>
                 Get Started Free
               </Button>
-              <Button size="lg" variant="outline" onClick={() => navigate('/preview/dashboard')}>
+              <Button size="lg" variant="outline" onClick={() => navigate('/dashboard-info')}>
                 See Parent Dashboard
               </Button>
             </div>

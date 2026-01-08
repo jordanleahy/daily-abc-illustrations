@@ -134,25 +134,26 @@ const App = () => {
                 <GA4Tracker />
                 {process.env.NODE_ENV === 'development' && <PerformanceDashboard />}
                 <Routes>
-                <Route path="/" element={<Landing />} />
+                {/* Homepage - PreviewHome */}
+                <Route path="/" element={<PreviewHome />} />
                 
-                {/* Preview Routes - Phase 1 */}
-                <Route path="/preview" element={<PreviewHome />} />
-                <Route path="/preview/product" element={<ProductOverview />} />
-                <Route path="/preview/tracking" element={<ReadingTracking />} />
-                <Route path="/preview/habits" element={<HabitsRewards />} />
-                <Route path="/preview/rewards" element={<PreviewRewards />} />
-                <Route path="/preview/tricks" element={<PreviewTricks />} />
-                <Route path="/preview/print-outs" element={<PreviewPrintouts />} />
-                <Route path="/preview/ai-studio" element={<AIStudio />} />
-                <Route path="/preview/dashboard" element={<ParentDashboard />} />
-        <Route path="/preview/for-families" element={<ForFamilies />} />
-        <Route path="/preview/for-grandparents" element={<ForGrandparents />} />
-                <Route path="/preview/family" element={<PreviewFamily />} />
-                <Route path="/preview/pricing" element={<PreviewPricing />} />
-                <Route path="/preview/blog" element={<BlogHome />} />
+                {/* Marketing Pages */}
+                <Route path="/product" element={<ProductOverview />} />
+                <Route path="/tracking" element={<ReadingTracking />} />
+                <Route path="/habits-info" element={<HabitsRewards />} />
+                <Route path="/rewards-info" element={<PreviewRewards />} />
+                <Route path="/tricks-info" element={<PreviewTricks />} />
+                <Route path="/print-outs" element={<PreviewPrintouts />} />
+                <Route path="/ai-studio" element={<AIStudio />} />
+                <Route path="/dashboard-info" element={<ParentDashboard />} />
+                <Route path="/for-families" element={<ForFamilies />} />
+                <Route path="/for-grandparents" element={<ForGrandparents />} />
+                <Route path="/family" element={<PreviewFamily />} />
+                <Route path="/pricing-info" element={<PreviewPricing />} />
+                <Route path="/blog-home" element={<BlogHome />} />
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/welcome" element={<Landing />} />
                 
                 <Route path="/home" element={<ProtectedRoute requireSubscription={false}><Index /></ProtectedRoute>} />
                 <Route path="/google-chat" element={<ProtectedRoute requireSubscription={false}><GoogleChat /></ProtectedRoute>} />

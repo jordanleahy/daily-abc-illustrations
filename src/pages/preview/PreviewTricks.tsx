@@ -292,7 +292,7 @@ const PreviewTricks = () => {
             <Button 
               size="lg" 
               variant="outline"
-              onClick={() => navigate('/preview/rewards')}
+              onClick={() => navigate('/rewards-info')}
             >
               See rewards
             </Button>

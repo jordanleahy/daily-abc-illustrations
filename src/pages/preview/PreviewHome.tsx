@@ -62,8 +62,6 @@ const PreviewHome = () => {
           'Text overlays on top of illustrations for an easy mobile reading experience',
           'Word learning system that highlights new vocabulary and tracks exposure over time'
         ]}
-        ctaText="Explore the reading experience"
-        ctaLink="/preview/tracking"
         imagePosition="right"
       />
 

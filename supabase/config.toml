@@ -141,6 +141,9 @@ verify_jwt = false
 [functions.generate-daily-blog-post]
 verify_jwt = true
 
+[functions.generate-blog-post-for-book]
+verify_jwt = false
+
 [functions.backfill-text-images]
 verify_jwt = true
 

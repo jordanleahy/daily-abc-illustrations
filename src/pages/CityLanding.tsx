@@ -72,7 +72,7 @@ const CityLanding = () => {
                   </div>
                   <h3 className="text-xl font-semibold mb-3">Personalized Education</h3>
                   <p className="text-muted-foreground">
-                    We can build age, location, and culturally relevant educational micro-learning experiences tailored to your community.
+                    We can build age, neighborhood, and culturally relevant educational micro-learning experiences tailored to {displayName} families.
                   </p>
                 </CardContent>
               </Card>

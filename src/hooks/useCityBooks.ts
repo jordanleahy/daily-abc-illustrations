@@ -2,11 +2,22 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { LibraryBook } from '@/types/library';
 
+// Map URL slugs to metadata.city values
+const slugToMetadataCity: Record<string, string> = {
+  jerseycity: 'JERSEY_CITY',
+  hoboken: 'HOBOKEN',
+  newyork: 'NEW_YORK_CITY',
+  newyorkcity: 'NEW_YORK_CITY',
+};
+
 export const useCityBooks = (citySlug: string | undefined) => {
   return useQuery({
     queryKey: ['city-books', citySlug],
     queryFn: async (): Promise<LibraryBook[]> => {
       if (!citySlug) return [];
+
+      // Convert URL slug to metadata city format
+      const metadataCity = slugToMetadataCity[citySlug.toLowerCase()] || citySlug.toUpperCase();
 
       // Fetch books for this city that are published
       const { data: books, error } = await supabase
@@ -17,14 +28,13 @@ export const useCityBooks = (citySlug: string | undefined) => {
           book_description,
           category,
           status,
-          city,
           created_at,
           updated_at,
           is_highlighted,
           total_pages,
           metadata
         `)
-        .eq('city', citySlug.toLowerCase())
+        .eq('metadata->>city', metadataCity)
         .eq('status', 'published')
         .order('created_at', { ascending: false });
 

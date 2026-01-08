@@ -47,17 +47,41 @@ export const useCityBooks = (citySlug: string | undefined) => {
         return [];
       }
 
-      // Get cover images for each book (first page's image)
+      // Get cover images for each book (from cover page type)
       const booksWithCovers = await Promise.all(
         books.map(async (book) => {
-          const { data: pageImage } = await supabase
-            .from('page_image_urls')
-            .select('image_url')
+          // First, find the cover page for this book
+          const { data: coverPage } = await supabase
+            .from('pages')
+            .select('id')
             .eq('book_id', book.id)
-            .eq('is_latest', true)
-            .order('created_at', { ascending: true })
+            .eq('page_type', 'cover')
             .limit(1)
             .maybeSingle();
+
+          let pageImage = null;
+          if (coverPage) {
+            // Get the latest image for the cover page
+            const { data: coverImageData } = await supabase
+              .from('page_image_urls')
+              .select('image_url')
+              .eq('page_id', coverPage.id)
+              .eq('is_latest', true)
+              .limit(1)
+              .maybeSingle();
+            pageImage = coverImageData;
+          } else {
+            // Fallback: get first page image if no cover page exists
+            const { data: fallbackImage } = await supabase
+              .from('page_image_urls')
+              .select('image_url')
+              .eq('book_id', book.id)
+              .eq('is_latest', true)
+              .order('created_at', { ascending: true })
+              .limit(1)
+              .maybeSingle();
+            pageImage = fallbackImage;
+          }
 
           // Ensure bookType is set from category for proper carousel categorization
           const existingMetadata = (book.metadata || {}) as LibraryBook['metadata'];

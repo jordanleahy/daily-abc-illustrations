@@ -21,7 +21,7 @@ import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
 import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Copy, Link2, Share2, Archive } from 'lucide-react';
+import { BookOpen, Copy, Link2, Share2, Archive, Palette } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -290,6 +290,26 @@ export function UserBookCard({
             >
               <Copy className="h-4 w-4" />
               {isDuplicating ? 'Duplicating...' : 'Duplicate'}
+            </Button>
+
+            {/* Free ColorBook Link */}
+            <Button 
+              variant="outline"
+              size="sm"
+              className="w-full gap-2"
+              onClick={async (e) => {
+                e.stopPropagation();
+                const colorBookLink = `${SITE_CONFIG.productionUrl}/colorbook/${book.id}`;
+                try {
+                  await copyToClipboard(colorBookLink);
+                  toast({ title: "ColorBook link copied" });
+                } catch (error) {
+                  console.error('Failed to copy ColorBook link:', error);
+                }
+              }}
+            >
+              <Palette className="h-4 w-4" />
+              Free ColorBook
             </Button>
 
             {/* Landing Page Link - Uses daily_published.slug for consistency with OG metadata */}

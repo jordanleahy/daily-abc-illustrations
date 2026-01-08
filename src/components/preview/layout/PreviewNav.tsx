@@ -83,7 +83,7 @@ export const PreviewNav = () => {
                 </Link>
               </NavigationMenuItem>
 
-              {/* For Families */}
+              {/* For Families - TEMPORARILY HIDDEN
               <NavigationMenuItem>
                 <NavigationMenuTrigger>For Families</NavigationMenuTrigger>
                 <NavigationMenuContent>
@@ -108,6 +108,7 @@ export const PreviewNav = () => {
                   </ul>
                 </NavigationMenuContent>
               </NavigationMenuItem>
+              */}
 
               {/* Pricing */}
               <NavigationMenuItem>
@@ -182,6 +183,7 @@ export const PreviewNav = () => {
                 </div>
               </div>
               */}
+              {/* For Families - TEMPORARILY HIDDEN
               <div>
                 <p className="text-sm font-semibold text-muted-foreground mb-2">For Families</p>
                 <div className="space-y-2">
@@ -197,6 +199,7 @@ export const PreviewNav = () => {
                   ))}
                 </div>
               </div>
+              */}
               <Link
                 to="/explore"
                 className="block py-2 text-sm hover:text-primary"

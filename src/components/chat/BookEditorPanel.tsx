@@ -432,17 +432,29 @@ export function BookEditorPanel({
 
 // Character to Westin breed mapping
   const CHARACTER_TO_WESTIN_BREED: Record<string, { name: string; breed: string }> = {
-    'bluey': { name: 'Bluey (a blue cartoon heeler dog)', breed: 'fluffy white Samoyed dog' },
-    'bingo': { name: 'Bingo (an orange/tan cartoon heeler dog)', breed: 'Bernese Mountain Dog with floppy ears (tri-color: black, white, and rust)' },
-    'bandit': { name: 'Bandit (a blue adult cartoon heeler dog)', breed: 'large fluffy white Samoyed dog' },
-    'chilli': { name: 'Chilli (a red/orange adult cartoon heeler dog)', breed: 'Bernese Mountain Dog with floppy ears' },
+    'bluey': { 
+      name: 'Bluey (a blue cartoon heeler dog)', 
+      breed: 'Shelly, a 6-year-old fluffy white Samoyed puppy with large expressive cartoon-style eyes, a warm friendly smile, and soft rounded features' 
+    },
+    'bingo': { 
+      name: 'Bingo (an orange/tan cartoon heeler dog)', 
+      breed: 'Thatch, a 4-year-old Bernese Mountain Dog puppy with big adorable cartoon eyes, floppy ears, playful expression, and the classic tri-color coat (black, white, rust)' 
+    },
+    'bandit': { 
+      name: 'Bandit (a blue adult cartoon heeler dog)', 
+      breed: 'an adult fluffy white Samoyed with large friendly cartoon-style eyes and a warm parental expression (Shelly\'s dad)' 
+    },
+    'chilli': { 
+      name: 'Chilli (a red/orange adult cartoon heeler dog)', 
+      breed: 'an adult Bernese Mountain Dog with expressive cartoon eyes, floppy ears, and a nurturing gentle expression (Thatch\'s mom)' 
+    },
     // Paw Patrol characters
-    'chase': { name: 'Chase (a brown German Shepherd police pup)', breed: 'Bernese Mountain Dog with floppy ears' },
-    'marshall': { name: 'Marshall (a white Dalmatian with spots)', breed: 'fluffy white Samoyed dog' },
-    'skye': { name: 'Skye (a pink Cockapoo)', breed: 'fluffy white Samoyed dog' },
-    'rubble': { name: 'Rubble (a tan English Bulldog)', breed: 'Bernese Mountain Dog with floppy ears' },
-    'rocky': { name: 'Rocky (a gray mixed-breed)', breed: 'fluffy white Samoyed dog' },
-    'zuma': { name: 'Zuma (a brown Labrador)', breed: 'Bernese Mountain Dog with floppy ears' },
+    'chase': { name: 'Chase (a brown German Shepherd police pup)', breed: 'Thatch, a 4-year-old Bernese Mountain Dog puppy with big adorable cartoon eyes and playful expression' },
+    'marshall': { name: 'Marshall (a white Dalmatian with spots)', breed: 'Shelly, a 6-year-old fluffy white Samoyed puppy with large expressive cartoon-style eyes' },
+    'skye': { name: 'Skye (a pink Cockapoo)', breed: 'Shelly, a 6-year-old fluffy white Samoyed puppy with large expressive cartoon-style eyes' },
+    'rubble': { name: 'Rubble (a tan English Bulldog)', breed: 'Thatch, a 4-year-old Bernese Mountain Dog puppy with big adorable cartoon eyes' },
+    'rocky': { name: 'Rocky (a gray mixed-breed)', breed: 'Shelly, a 6-year-old fluffy white Samoyed puppy with large expressive cartoon-style eyes' },
+    'zuma': { name: 'Zuma (a brown Labrador)', breed: 'Thatch, a 4-year-old Bernese Mountain Dog puppy with big adorable cartoon eyes' },
   };
 
   // Build character-aware edit prompt for Westin
@@ -450,14 +462,15 @@ export function BookEditorPanel({
     if (!selectedCharacterIds || selectedCharacterIds.length === 0) {
       // Fallback to color-based detection if no characters selected
       return `Please analyze this image and make ONLY these applicable changes:
-- IF there is a blue dog in the image, replace it with a fluffy white Samoyed dog
-- IF there is an orange or reddish-brown dog in the image, replace it with a Bernese Mountain Dog (make sure the Bernese Mountain Dog does not have pointy ears)
+- IF there is a blue dog in the image, replace it with Shelly, a 6-year-old fluffy white Samoyed puppy with large expressive cartoon-style eyes and a warm friendly smile
+- IF there is an orange or reddish-brown dog in the image, replace it with Thatch, a 4-year-old Bernese Mountain Dog puppy with big adorable cartoon eyes, floppy ears, and playful expression
 
-IMPORTANT RULES:
-1. Do NOT add any new dogs - only modify dogs that already exist
-2. Keep the dog in the same position and pose as the original
-3. Preserve all other elements in the image (background, objects, etc.)
-4. If only one dog exists, only replace that one dog`;
+CRITICAL REQUIREMENTS:
+1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original dog in the image
+2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories on the replacement dog exactly as worn by the original
+3. POSITION & POSE: Keep the dog in the same position and body pose as the original
+4. NO NEW DOGS: Do NOT add any new dogs - only modify dogs that already exist
+5. PRESERVE SCENE: Keep all other elements in the image unchanged (background, objects, etc.)`;
     }
 
     // Build character-specific replacement instructions
@@ -469,24 +482,27 @@ IMPORTANT RULES:
     if (replacements.length === 0) {
       // Characters not in our mapping - use generic approach
       return `Please analyze this image and make ONLY these applicable changes:
-- IF there is a blue dog in the image, replace it with a fluffy white Samoyed dog
-- IF there is an orange or reddish-brown dog in the image, replace it with a Bernese Mountain Dog (make sure the Bernese Mountain Dog does not have pointy ears)
+- IF there is a blue dog in the image, replace it with Shelly, a 6-year-old fluffy white Samoyed puppy with large expressive cartoon-style eyes and a warm friendly smile
+- IF there is an orange or reddish-brown dog in the image, replace it with Thatch, a 4-year-old Bernese Mountain Dog puppy with big adorable cartoon eyes, floppy ears, and playful expression
 
-IMPORTANT RULES:
-1. Do NOT add any new dogs - only modify dogs that already exist
-2. Keep the dog in the same position and pose as the original
-3. Preserve all other elements in the image (background, objects, etc.)
-4. If only one dog exists, only replace that one dog`;
+CRITICAL REQUIREMENTS:
+1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original dog in the image
+2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories on the replacement dog exactly as worn by the original
+3. POSITION & POSE: Keep the dog in the same position and body pose as the original
+4. NO NEW DOGS: Do NOT add any new dogs - only modify dogs that already exist
+5. PRESERVE SCENE: Keep all other elements in the image unchanged (background, objects, etc.)`;
     }
 
     return `Please make these changes to the image:
 ${replacements.join('\n')}
 
-IMPORTANT RULES:
-1. Do NOT add any new dogs - only modify the dogs specified above
-2. Keep each dog in the same position, pose, and wearing the same clothing/accessories as the original
-3. Preserve all other elements in the image (background, objects, other characters, etc.)
-4. Make the replacement dogs realistic but friendly-looking`;
+CRITICAL REQUIREMENTS:
+1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original (if Bluey is smiling, Shelly smiles; if Bingo looks surprised, Thatch looks surprised)
+2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories on the replacement dog exactly as worn by the original
+3. POSITION & POSE: Keep each dog in the same position and body pose as the original
+4. NO NEW DOGS: Do NOT add any new dogs - only modify the dogs specified above
+5. PRESERVE SCENE: Keep all other elements in the image unchanged (background, objects, other characters)
+6. STYLE: Make the replacement dogs look like expressive animated children's book characters with large cartoon-style eyes`;
   };
 
   // Handle Westin button click - edit image to replace characters with Westin breeds

@@ -37,6 +37,7 @@ const requestSchema = z.object({
   environment: z.string().optional(),
   clothingBrand: z.string().optional(),
   location: z.string().optional(),
+  city: z.string().optional(),
   educationalFocus: z.object({
     targetAge: z.string(),
     learningType: z.string(),
@@ -128,7 +129,7 @@ serve(async (req) => {
 
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId, selectedCharacterIds, season, environment, clothingBrand, location } = validatedData;
+    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId, selectedCharacterIds, season, environment, clothingBrand, location, city } = validatedData;
     
     // Normalize and validate book type
     const bookType = normalizeBookType(rawBookType);
@@ -808,7 +809,8 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
           season: season || null,
           environment: environment || null,
           clothingBrand: clothingBrand || null,
-          location: location || null
+          location: location || null,
+          city: city || null
         }
       })
       .select()

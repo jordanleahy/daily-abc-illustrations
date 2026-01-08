@@ -6,10 +6,8 @@ import { MetaHead } from '@/components/common/MetaHead';
 import { SITE_CONFIG, getSiteTitle } from '@/config/site';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { OptimizedImage } from '@/components/ui/optimized-image';
-import { Book, MapPin, Users, Sparkles, Building2 } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
+import { CategorizedBookSections } from '@/components/library/CategorizedBookSections';
+import { MapPin, Users, Sparkles, Building2, Book } from 'lucide-react';
 
 const CityLanding = () => {
   const { cityName } = useParams<{ cityName: string }>();
@@ -108,8 +106,8 @@ const CityLanding = () => {
 
         {/* City Books Section */}
         <PreviewSection variant="default">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-12">
+          <div className="max-w-7xl mx-auto">
+            <div className="text-center mb-8">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
                 {displayName} Book Collection
               </h2>
@@ -118,50 +116,12 @@ const CityLanding = () => {
               </p>
             </div>
 
-            {isLoading ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {[...Array(4)].map((_, i) => (
-                  <Card key={i} className="overflow-hidden">
-                    <AspectRatio ratio={1}>
-                      <Skeleton className="w-full h-full" />
-                    </AspectRatio>
-                    <CardContent className="p-4">
-                      <Skeleton className="h-4 w-3/4 mb-2" />
-                      <Skeleton className="h-3 w-1/2" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            ) : books.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                {books.map((book) => (
-                  <Card key={book.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <AspectRatio ratio={1} className="bg-muted">
-                      {book.coverImageUrl ? (
-                        <OptimizedImage
-                          src={book.coverImageUrl}
-                          alt={book.book_name}
-                          width={400}
-                          height={400}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <Book className="h-12 w-12 text-muted-foreground" />
-                        </div>
-                      )}
-                    </AspectRatio>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-foreground line-clamp-2 mb-1">
-                        {book.book_name}
-                      </h3>
-                      {book.category && (
-                        <p className="text-sm text-muted-foreground">{book.category}</p>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+            {books.length > 0 || isLoading ? (
+              <CategorizedBookSections 
+                books={books} 
+                isLoading={isLoading}
+                showViewAllLinks={false}
+              />
             ) : (
               <Card className="p-12 text-center">
                 <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">

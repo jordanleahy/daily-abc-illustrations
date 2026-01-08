@@ -1,20 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-
-export interface CityBook {
-  id: string;
-  book_name: string;
-  book_description: string | null;
-  category: string | null;
-  status: string;
-  city: string | null;
-  coverImageUrl?: string | null;
-}
+import type { LibraryBook } from '@/types/library';
 
 export const useCityBooks = (citySlug: string | undefined) => {
   return useQuery({
     queryKey: ['city-books', citySlug],
-    queryFn: async (): Promise<CityBook[]> => {
+    queryFn: async (): Promise<LibraryBook[]> => {
       if (!citySlug) return [];
 
       // Fetch books for this city that are published
@@ -26,7 +17,12 @@ export const useCityBooks = (citySlug: string | undefined) => {
           book_description,
           category,
           status,
-          city
+          city,
+          created_at,
+          updated_at,
+          is_highlighted,
+          total_pages,
+          metadata
         `)
         .eq('city', citySlug.toLowerCase())
         .eq('status', 'published')
@@ -54,9 +50,16 @@ export const useCityBooks = (citySlug: string | undefined) => {
             .maybeSingle();
 
           return {
-            ...book,
-            coverImageUrl: pageImage?.image_url || null,
-          };
+            id: book.id,
+            book_name: book.book_name,
+            book_description: book.book_description,
+            created_at: book.created_at,
+            updated_at: book.updated_at,
+            is_highlighted: book.is_highlighted,
+            total_pages: book.total_pages || 0,
+            cover_image: pageImage?.image_url || null,
+            metadata: book.metadata as LibraryBook['metadata'],
+          } satisfies LibraryBook;
         })
       );
 

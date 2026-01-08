@@ -49,6 +49,10 @@ export const useCityBooks = (citySlug: string | undefined) => {
             .limit(1)
             .maybeSingle();
 
+          // Ensure bookType is set from category for proper carousel categorization
+          const existingMetadata = (book.metadata || {}) as LibraryBook['metadata'];
+          const bookType = existingMetadata?.bookType || book.category || 'other';
+          
           return {
             id: book.id,
             book_name: book.book_name,
@@ -58,7 +62,10 @@ export const useCityBooks = (citySlug: string | undefined) => {
             is_highlighted: book.is_highlighted,
             total_pages: book.total_pages || 0,
             cover_image: pageImage?.image_url || null,
-            metadata: book.metadata as LibraryBook['metadata'],
+            metadata: {
+              ...existingMetadata,
+              bookType,
+            },
           } satisfies LibraryBook;
         })
       );

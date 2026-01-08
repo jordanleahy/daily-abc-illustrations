@@ -51,12 +51,9 @@ export const PreviewFooter = () => {
               <ul className="space-y-3">
                 {section.links.map((link) => (
                   <li key={link.href}>
-                    <Link
-                      to={link.href}
-                      className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    >
+                    <span className="text-sm text-muted-foreground/60 cursor-not-allowed">
                       {link.label}
-                    </Link>
+                    </span>
                   </li>
                 ))}
               </ul>

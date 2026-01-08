@@ -34,9 +34,6 @@ const Explore = () => {
               <h1 className="text-4xl font-bold text-foreground mb-4">
                 Explore Our Library
               </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-                Browse our complete collection of AI-generated educational books for toddlers and early readers
-              </p>
               {libraryBooks.length > 0 && (
                 <p className="text-sm text-muted-foreground mt-2">
                   {libraryBooks.length} {libraryBooks.length === 1 ? 'book' : 'books'} available

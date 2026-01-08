@@ -1,6 +1,6 @@
 import { useRef, useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Copy, Upload, Sparkles, Loader2, ClipboardPaste } from 'lucide-react';
+import { Copy, Upload, Wand2, Loader2, ClipboardPaste } from 'lucide-react';
 import { processImage } from '@/utils/imageProcessor';
 import { useToast } from '@/hooks/use-toast';
 
@@ -119,10 +119,7 @@ export function ColorModeUploadSection({
   }, [disabled, onImageUpload, onCancel, toast]);
 
   return (
-    <div 
-      ref={containerRef}
-      className="relative w-full h-full flex flex-col items-center justify-center p-4 text-center gap-3"
-    >
+    <div className="relative w-full h-full flex flex-col p-4 text-center">
       {onCancel && (
         <Button
           variant="secondary"
@@ -139,24 +136,27 @@ export function ColorModeUploadSection({
         accept="image/*"
         onChange={handleFileChange}
         className="hidden"
-        disabled={disabled}
+        disabled={disabled || isGenerating}
       />
+      
+      {/* Spacer to push buttons to bottom */}
+      <div className="flex-1" />
       
       <div className="flex flex-col gap-3 w-full">
         <Button
           onClick={() => fileInputRef.current?.click()}
-          variant="default"
-          className="w-full h-12 gap-2 text-base"
+          variant="secondary"
+          className="w-full h-12 gap-2"
           disabled={disabled || isGenerating}
         >
           <Upload className="h-5 w-5" />
           Upload
         </Button>
-
+        
         <Button
           onClick={handlePasteButtonClick}
           variant="secondary"
-          className="w-full h-12 gap-2 text-base"
+          className="w-full h-12 gap-2"
           disabled={disabled || isGenerating}
         >
           <ClipboardPaste className="h-5 w-5" />
@@ -166,33 +166,34 @@ export function ColorModeUploadSection({
         {onGenerate && (
           <Button
             onClick={onGenerate}
-            variant="secondary"
-            className="w-full h-12 gap-2 text-base"
-            disabled={disabled || isGenerating || !hasPrompt}
+            variant="default"
+            className="w-full h-12 gap-2"
+            disabled={disabled || isGenerating}
           >
             {isGenerating ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
-              <Sparkles className="h-5 w-5" />
+              <Wand2 className="h-5 w-5" />
             )}
             {isGenerating ? 'Generating...' : 'Generate'}
           </Button>
         )}
-        
-        <Button
-          onClick={onCopyPrompt}
-          variant="outline"
-          className="w-full h-12 gap-2 text-base"
-          disabled={disabled || isGenerating}
-        >
-          <Copy className="h-5 w-5" />
-          Copy Prompt
-        </Button>
+
+        {hasPrompt && onCopyPrompt && (
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onCopyPrompt();
+            }}
+            variant="outline"
+            className="w-full h-12 gap-2"
+            disabled={disabled || isGenerating}
+          >
+            <Copy className="h-5 w-5" />
+            Copy Prompt
+          </Button>
+        )}
       </div>
-      
-      <p className="text-xs text-muted-foreground mt-1">
-        Upload, paste from clipboard, or generate with AI
-      </p>
     </div>
   );
 }

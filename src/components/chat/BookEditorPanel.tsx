@@ -430,56 +430,59 @@ export function BookEditorPanel({
     }
   };
 
-// Character to Westin breed mapping - BLUEY CARTOON STYLE with huge expressive eyes
+// Character to Westin breed mapping - BLUEY CARTOON STYLE with MASSIVE anime-like eyes
   const CHARACTER_TO_WESTIN_BREED: Record<string, { name: string; breed: string }> = {
     'bluey': { 
       name: 'Bluey (a blue cartoon heeler dog)', 
-      breed: 'Shelly, a 6-year-old fluffy white Samoyed puppy in BLUEY CARTOON STYLE with HUGE round eyes (40% of face width like Bluey TV show), small cute black nose, simplified flat-color fur shading, chibi-like exaggerated cute proportions, and a warm friendly smile' 
+      breed: 'Shelly, a fluffy white Samoyed puppy with MASSIVE OVERSIZED ANIME-STYLE ROUND EYES that take up half the face (like Bluey/Disney Junior cartoons), tiny dot nose, flat-color cel-shaded fur, chibi proportions' 
     },
     'bingo': { 
       name: 'Bingo (an orange/tan cartoon heeler dog)', 
-      breed: 'Thatch, a 4-year-old Bernese Mountain Dog puppy in BLUEY CARTOON STYLE with HUGE round adorable eyes (40% of face width like Bluey TV show), small cute nose, floppy ears, simplified flat-color fur, chibi-like proportions, playful expression, and classic tri-color coat (black, white, rust)' 
+      breed: 'Thatch, a Bernese Mountain Dog puppy with MASSIVE OVERSIZED ANIME-STYLE ROUND EYES that take up half the face (like Bluey/Disney Junior cartoons), tiny nose, floppy ears, flat-color cel-shaded fur, chibi proportions, tri-color coat' 
     },
     'bandit': { 
       name: 'Bandit (a blue adult cartoon heeler dog)', 
-      breed: 'an adult fluffy white Samoyed in BLUEY CARTOON STYLE with HUGE round expressive eyes (like Bluey TV show adult characters), small black nose, simplified flat-color fur, and a warm parental expression (Shelly\'s dad)' 
+      breed: 'an adult fluffy white Samoyed with MASSIVE CARTOON EYES (like Bluey TV show style), tiny black nose, flat-color cel-shaded fur, warm parental expression' 
     },
     'chilli': { 
       name: 'Chilli (a red/orange adult cartoon heeler dog)', 
-      breed: 'an adult Bernese Mountain Dog in BLUEY CARTOON STYLE with HUGE round expressive eyes (like Bluey TV show adult characters), small cute nose, floppy ears, simplified flat-color fur, and a nurturing gentle expression (Thatch\'s mom)' 
+      breed: 'an adult Bernese Mountain Dog with MASSIVE CARTOON EYES (like Bluey TV show style), tiny nose, floppy ears, flat-color cel-shaded fur, nurturing expression' 
     },
     // Paw Patrol characters
-    'chase': { name: 'Chase (a brown German Shepherd police pup)', breed: 'Thatch, a 4-year-old Bernese Mountain Dog puppy in BLUEY CARTOON STYLE with HUGE round eyes (40% of face width), small nose, simplified flat-color fur, chibi proportions' },
-    'marshall': { name: 'Marshall (a white Dalmatian with spots)', breed: 'Shelly, a 6-year-old fluffy white Samoyed puppy in BLUEY CARTOON STYLE with HUGE round eyes (40% of face width), small black nose, simplified flat-color fur, chibi proportions' },
-    'skye': { name: 'Skye (a pink Cockapoo)', breed: 'Shelly, a 6-year-old fluffy white Samoyed puppy in BLUEY CARTOON STYLE with HUGE round eyes (40% of face width), small black nose, simplified flat-color fur, chibi proportions' },
-    'rubble': { name: 'Rubble (a tan English Bulldog)', breed: 'Thatch, a 4-year-old Bernese Mountain Dog puppy in BLUEY CARTOON STYLE with HUGE round eyes (40% of face width), small nose, simplified flat-color fur, chibi proportions' },
-    'rocky': { name: 'Rocky (a gray mixed-breed)', breed: 'Shelly, a 6-year-old fluffy white Samoyed puppy in BLUEY CARTOON STYLE with HUGE round eyes (40% of face width), small black nose, simplified flat-color fur, chibi proportions' },
-    'zuma': { name: 'Zuma (a brown Labrador)', breed: 'Thatch, a 4-year-old Bernese Mountain Dog puppy in BLUEY CARTOON STYLE with HUGE round eyes (40% of face width), small nose, simplified flat-color fur, chibi proportions' },
+    'chase': { name: 'Chase (a brown German Shepherd police pup)', breed: 'Thatch, a Bernese Mountain Dog puppy with MASSIVE ANIME-STYLE ROUND EYES taking up half the face, tiny nose, flat-color cel-shaded fur, chibi proportions' },
+    'marshall': { name: 'Marshall (a white Dalmatian with spots)', breed: 'Shelly, a fluffy white Samoyed puppy with MASSIVE ANIME-STYLE ROUND EYES taking up half the face, tiny black nose, flat-color cel-shaded fur, chibi proportions' },
+    'skye': { name: 'Skye (a pink Cockapoo)', breed: 'Shelly, a fluffy white Samoyed puppy with MASSIVE ANIME-STYLE ROUND EYES taking up half the face, tiny black nose, flat-color cel-shaded fur, chibi proportions' },
+    'rubble': { name: 'Rubble (a tan English Bulldog)', breed: 'Thatch, a Bernese Mountain Dog puppy with MASSIVE ANIME-STYLE ROUND EYES taking up half the face, tiny nose, flat-color cel-shaded fur, chibi proportions' },
+    'rocky': { name: 'Rocky (a gray mixed-breed)', breed: 'Shelly, a fluffy white Samoyed puppy with MASSIVE ANIME-STYLE ROUND EYES taking up half the face, tiny black nose, flat-color cel-shaded fur, chibi proportions' },
+    'zuma': { name: 'Zuma (a brown Labrador)', breed: 'Thatch, a Bernese Mountain Dog puppy with MASSIVE ANIME-STYLE ROUND EYES taking up half the face, tiny nose, flat-color cel-shaded fur, chibi proportions' },
   };
 
   // Build character-aware edit prompt for Westin
   const buildWestinEditPrompt = (selectedCharacterIds: string[]): string => {
     const BLUEY_STYLE_INSTRUCTIONS = `
-BLUEY CARTOON STYLE REQUIREMENTS (CRITICAL):
-- EYES: Draw HUGE round cartoon eyes taking up 40% of face width (like Bluey TV show characters)
-- NOSE: Small cute black nose, simplified and round
-- FUR: Simplified flat-color shading (NO realistic fur texture)
-- PROPORTIONS: Chibi-like exaggerated cute proportions with slightly oversized head
-- EXPRESSION: Big expressive eyebrows for emotion`;
+EXTREMELY IMPORTANT - CARTOON EYE STYLE:
+- The eyes MUST be MASSIVE, OVERSIZED, ROUND cartoon eyes - like anime or Bluey TV show
+- Eyes should take up approximately HALF of the face width (50% of face)
+- DO NOT draw small realistic dog eyes - they must be HUGE and ROUND like Disney/Pixar characters
+- Eyes should be simple circles with large black pupils, not realistic almond-shaped dog eyes
+- Think: Bluey, Stitch, chibi anime style - extremely exaggerated cute proportions
+- Nose must be TINY - just a small black dot or triangle
+- Flat cel-shaded coloring, NO realistic fur texture or shading`;
 
     if (!selectedCharacterIds || selectedCharacterIds.length === 0) {
       // Fallback to color-based detection if no characters selected
       return `Please analyze this image and make ONLY these applicable changes:
-- IF there is a blue dog in the image, replace it with Shelly, a 6-year-old fluffy white Samoyed puppy in BLUEY CARTOON STYLE with HUGE round eyes (40% of face width), small black nose, simplified flat-color fur, and a warm friendly smile
-- IF there is an orange or reddish-brown dog in the image, replace it with Thatch, a 4-year-old Bernese Mountain Dog puppy in BLUEY CARTOON STYLE with HUGE round eyes (40% of face width), small nose, simplified flat-color fur, floppy ears, and playful expression
+- IF there is a blue dog in the image, replace it with Shelly, a fluffy white Samoyed puppy with MASSIVE OVERSIZED ANIME-STYLE ROUND EYES (taking up 50% of face width like Stitch or Bluey), tiny dot nose, flat cel-shaded fur
+- IF there is an orange or reddish-brown dog in the image, replace it with Thatch, a Bernese Mountain Dog puppy with MASSIVE OVERSIZED ANIME-STYLE ROUND EYES (taking up 50% of face width), tiny nose, floppy ears, flat cel-shaded fur
 ${BLUEY_STYLE_INSTRUCTIONS}
 
 CRITICAL REQUIREMENTS:
-1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original dog in the image
-2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories on the replacement dog exactly as worn by the original
-3. POSITION & POSE: Keep the dog in the same position and body pose as the original
-4. NO NEW DOGS: Do NOT add any new dogs - only modify dogs that already exist
-5. PRESERVE SCENE: Keep all other elements in the image unchanged (background, objects, etc.)`;
+1. EYES MUST BE HUGE - like anime/chibi style, NOT realistic dog eyes
+2. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
+3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
+4. POSITION & POSE: Keep the dog in the same position and body pose
+5. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
+6. PRESERVE SCENE: Keep all other elements unchanged`;
     }
 
     // Build character-specific replacement instructions
@@ -491,16 +494,17 @@ CRITICAL REQUIREMENTS:
     if (replacements.length === 0) {
       // Characters not in our mapping - use generic approach
       return `Please analyze this image and make ONLY these applicable changes:
-- IF there is a blue dog in the image, replace it with Shelly, a 6-year-old fluffy white Samoyed puppy in BLUEY CARTOON STYLE with HUGE round eyes (40% of face width), small black nose, simplified flat-color fur, and a warm friendly smile
-- IF there is an orange or reddish-brown dog in the image, replace it with Thatch, a 4-year-old Bernese Mountain Dog puppy in BLUEY CARTOON STYLE with HUGE round eyes (40% of face width), small nose, simplified flat-color fur, floppy ears, and playful expression
+- IF there is a blue dog in the image, replace it with Shelly, a fluffy white Samoyed puppy with MASSIVE OVERSIZED ANIME-STYLE ROUND EYES (taking up 50% of face width like Stitch or Bluey), tiny dot nose, flat cel-shaded fur
+- IF there is an orange or reddish-brown dog in the image, replace it with Thatch, a Bernese Mountain Dog puppy with MASSIVE OVERSIZED ANIME-STYLE ROUND EYES (taking up 50% of face width), tiny nose, floppy ears, flat cel-shaded fur
 ${BLUEY_STYLE_INSTRUCTIONS}
 
 CRITICAL REQUIREMENTS:
-1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original dog in the image
-2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories on the replacement dog exactly as worn by the original
-3. POSITION & POSE: Keep the dog in the same position and body pose as the original
-4. NO NEW DOGS: Do NOT add any new dogs - only modify dogs that already exist
-5. PRESERVE SCENE: Keep all other elements in the image unchanged (background, objects, etc.)`;
+1. EYES MUST BE HUGE - like anime/chibi style, NOT realistic dog eyes
+2. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
+3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
+4. POSITION & POSE: Keep the dog in the same position and body pose
+5. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
+6. PRESERVE SCENE: Keep all other elements unchanged`;
     }
 
     return `Please make these changes to the image:
@@ -508,11 +512,12 @@ ${replacements.join('\n')}
 ${BLUEY_STYLE_INSTRUCTIONS}
 
 CRITICAL REQUIREMENTS:
-1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original (if Bluey is smiling, Shelly smiles; if Bingo looks surprised, Thatch looks surprised)
-2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories on the replacement dog exactly as worn by the original
-3. POSITION & POSE: Keep each dog in the same position and body pose as the original
-4. NO NEW DOGS: Do NOT add any new dogs - only modify the dogs specified above
-5. PRESERVE SCENE: Keep all other elements in the image unchanged (background, objects, other characters)`;
+1. EYES MUST BE HUGE - like anime/chibi style with eyes taking up 50% of face, NOT realistic dog eyes
+2. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
+3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
+4. POSITION & POSE: Keep each dog in the same position and body pose
+5. NO NEW DOGS: Do NOT add any new dogs - only modify the specified dogs
+6. PRESERVE SCENE: Keep all other elements unchanged`;
   };
 
   // Handle Westin button click - edit image to replace characters with Westin breeds

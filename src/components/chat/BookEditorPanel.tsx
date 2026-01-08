@@ -430,94 +430,77 @@ export function BookEditorPanel({
     }
   };
 
-// Character to Westin breed mapping - Molang/Cinnamoroll style with big white eyes and tiny dot pupils
+// Character to Westin breed mapping - simple breed replacements
   const CHARACTER_TO_WESTIN_BREED: Record<string, { name: string; breed: string }> = {
     'bluey': { 
       name: 'Bluey (a blue cartoon heeler dog)', 
-      breed: 'Shelly, a fluffy white Samoyed puppy with big round cartoon eyes (large white sclera with TINY black dot pupils floating in center - like Molang or Cinnamoroll style), tiny dot nose, flat-color cel-shaded fur, chibi proportions' 
+      breed: 'a white Samoyed dog' 
     },
     'bingo': { 
       name: 'Bingo (an orange/tan cartoon heeler dog)', 
-      breed: 'Thatch, a Bernese Mountain Dog puppy with big round cartoon eyes (large white sclera with TINY black dot pupils floating in center - like Molang or Cinnamoroll style), tiny nose, floppy ears, flat-color cel-shaded fur, chibi proportions, tri-color coat' 
+      breed: 'a Bernese Mountain Dog' 
     },
     'bandit': { 
       name: 'Bandit (a blue adult cartoon heeler dog)', 
-      breed: 'an adult fluffy white Samoyed with big round cartoon eyes (visible white sclera with TINY black dot pupils - like Molang style), tiny black nose, flat-color cel-shaded fur, warm parental expression' 
+      breed: 'an adult white Samoyed' 
     },
     'chilli': { 
       name: 'Chilli (a red/orange adult cartoon heeler dog)', 
-      breed: 'an adult Bernese Mountain Dog with big round cartoon eyes (visible white sclera with TINY black dot pupils - like Molang style), tiny nose, floppy ears, flat-color cel-shaded fur, nurturing expression' 
+      breed: 'an adult Bernese Mountain Dog' 
     },
     // Paw Patrol characters
-    'chase': { name: 'Chase (a brown German Shepherd police pup)', breed: 'Thatch, a Bernese Mountain Dog puppy with big round cartoon eyes (white sclera visible, TINY black dot pupils - like Cinnamoroll), tiny nose, flat-color cel-shaded fur, chibi proportions' },
-    'marshall': { name: 'Marshall (a white Dalmatian with spots)', breed: 'Shelly, a fluffy white Samoyed puppy with big round cartoon eyes (white sclera visible, TINY black dot pupils - like Cinnamoroll), tiny black nose, flat-color cel-shaded fur, chibi proportions' },
-    'skye': { name: 'Skye (a pink Cockapoo)', breed: 'Shelly, a fluffy white Samoyed puppy with big round cartoon eyes (white sclera visible, TINY black dot pupils - like Cinnamoroll), tiny black nose, flat-color cel-shaded fur, chibi proportions' },
-    'rubble': { name: 'Rubble (a tan English Bulldog)', breed: 'Thatch, a Bernese Mountain Dog puppy with big round cartoon eyes (white sclera visible, TINY black dot pupils - like Cinnamoroll), tiny nose, flat-color cel-shaded fur, chibi proportions' },
-    'rocky': { name: 'Rocky (a gray mixed-breed)', breed: 'Shelly, a fluffy white Samoyed puppy with big round cartoon eyes (white sclera visible, TINY black dot pupils - like Cinnamoroll), tiny black nose, flat-color cel-shaded fur, chibi proportions' },
-    'zuma': { name: 'Zuma (a brown Labrador)', breed: 'Thatch, a Bernese Mountain Dog puppy with big round cartoon eyes (white sclera visible, TINY black dot pupils - like Cinnamoroll), tiny nose, flat-color cel-shaded fur, chibi proportions' },
+    'chase': { name: 'Chase (a brown German Shepherd police pup)', breed: 'a Bernese Mountain Dog' },
+    'marshall': { name: 'Marshall (a white Dalmatian with spots)', breed: 'a white Samoyed' },
+    'skye': { name: 'Skye (a pink Cockapoo)', breed: 'a white Samoyed' },
+    'rubble': { name: 'Rubble (a tan English Bulldog)', breed: 'a Bernese Mountain Dog' },
+    'rocky': { name: 'Rocky (a gray mixed-breed)', breed: 'a white Samoyed' },
+    'zuma': { name: 'Zuma (a brown Labrador)', breed: 'a Bernese Mountain Dog' },
   };
 
   // Build character-aware edit prompt for Westin
   const buildWestinEditPrompt = (selectedCharacterIds: string[]): string => {
-    const KAWAII_EYE_INSTRUCTIONS = `
-EXTREMELY IMPORTANT - MOLANG/CINNAMOROLL EYE STYLE:
-- Eyes must be BIG ROUND CARTOON EYES with VISIBLE WHITE SCLERA
-- TINY BLACK DOT PUPILS floating in the CENTER of each eye (like Molang or Cinnamoroll characters)
-- Pupils should be only 15-25% of the eye diameter - just small dots in large white eyes
-- The white of the eye (sclera) MUST dominate - pupils are tiny dots floating in white
-- DO NOT make pupils large or fill the eye - they must be TINY DOTS like Molang style
-- DO NOT draw realistic dog eyes - they must be stylized cartoon eyes
-- Nose must be TINY - just a small black dot or triangle
-- Flat cel-shaded coloring, NO realistic fur texture or shading`;
-
     if (!selectedCharacterIds || selectedCharacterIds.length === 0) {
       // Fallback to color-based detection if no characters selected
       return `Please analyze this image and make ONLY these applicable changes:
-- IF there is a blue dog in the image, replace it with Shelly, a fluffy white Samoyed puppy with big round cartoon eyes (large white sclera with TINY black dot pupils in center - like Molang or Cinnamoroll style), tiny dot nose, flat cel-shaded fur
-- IF there is an orange or reddish-brown dog in the image, replace it with Thatch, a Bernese Mountain Dog puppy with big round cartoon eyes (large white sclera with TINY black dot pupils in center - like Molang style), tiny nose, floppy ears, flat cel-shaded fur
-${KAWAII_EYE_INSTRUCTIONS}
+- IF there is a blue dog in the image, replace it with a white Samoyed dog
+- IF there is an orange or reddish-brown dog in the image, replace it with a Bernese Mountain Dog
 
 CRITICAL REQUIREMENTS:
-1. EYES: Big round eyes with WHITE SCLERA visible, TINY black dot pupils (15-25% of eye size) floating in center - like Molang
-2. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
-3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
-4. POSITION & POSE: Keep the dog in the same position and body pose
-5. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
-6. PRESERVE SCENE: Keep all other elements unchanged`;
+1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
+2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
+3. POSITION & POSE: Keep the dog in the same position and body pose
+4. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
+5. PRESERVE SCENE: Keep all other elements unchanged`;
     }
 
     // Build character-specific replacement instructions
     const replacements = selectedCharacterIds
       .map(id => CHARACTER_TO_WESTIN_BREED[id])
       .filter(Boolean)
-      .map(char => `- Replace ${char.name} with a ${char.breed}`);
+      .map(char => `- Replace ${char.name} with ${char.breed}`);
 
     if (replacements.length === 0) {
       // Characters not in our mapping - use generic approach
       return `Please analyze this image and make ONLY these applicable changes:
-- IF there is a blue dog in the image, replace it with Shelly, a fluffy white Samoyed puppy with big round cartoon eyes (large white sclera with TINY black dot pupils in center - like Molang or Cinnamoroll style), tiny dot nose, flat cel-shaded fur
-- IF there is an orange or reddish-brown dog in the image, replace it with Thatch, a Bernese Mountain Dog puppy with big round cartoon eyes (large white sclera with TINY black dot pupils in center - like Molang style), tiny nose, floppy ears, flat cel-shaded fur
-${KAWAII_EYE_INSTRUCTIONS}
+- IF there is a blue dog in the image, replace it with a white Samoyed dog
+- IF there is an orange or reddish-brown dog in the image, replace it with a Bernese Mountain Dog
 
 CRITICAL REQUIREMENTS:
-1. EYES: Big round eyes with WHITE SCLERA visible, TINY black dot pupils (15-25% of eye size) floating in center - like Molang
-2. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
-3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
-4. POSITION & POSE: Keep the dog in the same position and body pose
-5. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
-6. PRESERVE SCENE: Keep all other elements unchanged`;
+1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
+2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
+3. POSITION & POSE: Keep the dog in the same position and body pose
+4. NO NEW DOGS: Do NOT add any new dogs - only modify existing dogs
+5. PRESERVE SCENE: Keep all other elements unchanged`;
     }
 
     return `Please make these changes to the image:
 ${replacements.join('\n')}
-${KAWAII_EYE_INSTRUCTIONS}
 
 CRITICAL REQUIREMENTS:
-1. EYES: Big round eyes with WHITE SCLERA visible, TINY black dot pupils (15-25% of eye size) floating in center - like Molang
-2. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
-3. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
-4. POSITION & POSE: Keep each dog in the same position and body pose
-5. NO NEW DOGS: Do NOT add any new dogs - only modify the specified dogs
+1. FACIAL EXPRESSION: The replacement dog MUST have the EXACT SAME facial expression as the original
+2. CLOTHING & ACCESSORIES: Keep ALL clothing, costumes, hats, accessories exactly as worn
+3. POSITION & POSE: Keep each dog in the same position and body pose
+4. NO NEW DOGS: Do NOT add any new dogs - only modify the specified dogs
 6. PRESERVE SCENE: Keep all other elements unchanged`;
   };
 

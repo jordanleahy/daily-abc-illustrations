@@ -1038,6 +1038,12 @@ export default function GoogleChat() {
         sessionId: currentSessionId,
         storedPrompts: Object.keys(promptsToStore).length > 0 ? promptsToStore : undefined,
         selectedCharacterIds: characterFlow.selectedCharacterIds.length > 0 ? characterFlow.selectedCharacterIds : undefined,
+        // Discovery attributes for marketing hashtags
+        season: selectedSeason || undefined,
+        environment: selectedEnvironment || undefined,
+        clothingBrand: selectedClothingBrand || undefined,
+        location: selectedLocation || undefined,
+        city: selectedCity || undefined,
       });
       
       // Set local book ID immediately

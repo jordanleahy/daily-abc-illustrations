@@ -527,6 +527,7 @@ export type Database = {
           book_name: string
           category: string | null
           chat_session_id: string | null
+          city: string | null
           created_at: string
           current_system_prompt_id: string | null
           educational_focus: Json | null
@@ -556,6 +557,7 @@ export type Database = {
           book_name: string
           category?: string | null
           chat_session_id?: string | null
+          city?: string | null
           created_at?: string
           current_system_prompt_id?: string | null
           educational_focus?: Json | null
@@ -585,6 +587,7 @@ export type Database = {
           book_name?: string
           category?: string | null
           chat_session_id?: string | null
+          city?: string | null
           created_at?: string
           current_system_prompt_id?: string | null
           educational_focus?: Json | null

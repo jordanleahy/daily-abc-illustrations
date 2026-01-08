@@ -70,6 +70,7 @@ import PreviewPricing from "./pages/preview/PreviewPricing";
 import BlogHome from "./pages/preview/BlogHome";
 import Explore from "./pages/Explore";
 import About from "./pages/About";
+import CityLanding from "./pages/CityLanding";
 import { useEffect } from "react";
 import { scheduleCacheCleanup } from "./utils/cacheCleanup";
 import { initializeCacheWarming } from "./utils/cacheWarming";
@@ -153,6 +154,7 @@ const App = () => {
                 <Route path="/blog-home" element={<BlogHome />} />
                 <Route path="/explore" element={<Explore />} />
                 <Route path="/about" element={<About />} />
+                <Route path="/city/:cityName" element={<CityLanding />} />
                 <Route path="/welcome" element={<Landing />} />
                 
                 <Route path="/home" element={<ProtectedRoute requireSubscription={false}><Index /></ProtectedRoute>} />

@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/ui/button';
+import { Link } from 'react-router-dom';
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -13,7 +12,6 @@ import { Menu, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const PreviewNav = () => {
-  const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const productItems = [
@@ -141,28 +139,18 @@ export const PreviewNav = () => {
 
           {/* CTAs */}
           <div className="flex items-center gap-4">
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate('/auth');
-              }}
-              className="hidden md:inline-flex"
+            <Link
+              to="/auth"
+              className="hidden md:inline-flex items-center justify-center h-9 px-4 py-2 text-sm font-medium text-foreground hover:bg-accent hover:text-accent-foreground rounded-md transition-colors"
             >
               Sign in
-            </Button>
-            <Button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                navigate('/auth');
-              }}
+            </Link>
+            <Link
+              to="/auth"
+              className="inline-flex items-center justify-center h-9 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground hover:bg-primary/90 rounded-md transition-colors"
             >
               Start free
-            </Button>
+            </Link>
 
             {/* Mobile menu button */}
             <button

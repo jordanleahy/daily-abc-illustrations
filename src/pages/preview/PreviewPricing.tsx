@@ -139,14 +139,6 @@ const PreviewPricing = () => {
                 You'll keep Plus access until the end of your billing period, then automatically move to the free plan. Your reading history and data stay safe.
               </p>
             </div>
-            <div className="p-6 rounded-lg border border-border bg-card">
-              <h3 className="font-semibold text-foreground mb-2">
-                Do you offer family or group discounts?
-              </h3>
-              <p className="text-muted-foreground">
-                One Plus subscription covers your entire household—multiple kids and caregivers at no extra cost. Contact us for educator or school pricing.
-              </p>
-            </div>
           </div>
         </div>
       </PreviewSection>

@@ -146,11 +146,10 @@ const CityLanding = () => {
         <PreviewSection variant="cta">
           <div className="max-w-3xl mx-auto text-center">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-              Bring Chairlift to {displayName}
+              How It Would Work
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Partner with us to give every family in your city access to personalized, 
-              local educational content.
+              I'm building educational books daily for my daughter to solve the challenges I have at home. I believe we can partner and explore how to expand to families at zero monetary cost to city or school.
             </p>
             <div className="flex flex-wrap justify-center gap-4">
               <Button size="lg" asChild>

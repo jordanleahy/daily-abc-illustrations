@@ -142,13 +142,14 @@ export const PreviewNav = () => {
           {/* CTAs */}
           <div className="flex items-center gap-4">
             <Button
+              type="button"
               variant="ghost"
               onClick={() => navigate('/auth')}
               className="hidden md:inline-flex"
             >
               Sign in
             </Button>
-            <Button onClick={() => navigate('/auth')}>
+            <Button type="button" onClick={() => navigate('/auth')}>
               Start free
             </Button>
 

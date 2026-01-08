@@ -74,8 +74,6 @@ const PreviewHome = () => {
           'Track progress and activity per kid from a single dashboard',
           'Switch between kids instantly without logging out'
         ]}
-        ctaText="View the parent dashboard"
-        ctaLink="/preview/dashboard"
         imagePosition="left"
       />
 

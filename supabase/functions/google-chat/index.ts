@@ -6,6 +6,7 @@ import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
 import { fetchGradeLevels, getGradeLabel, type ValidGrade } from '../_shared/gradeLevels.ts';
 import { buildCharacterConstraints } from '../_shared/characterConstraints.ts';
 import { getWordsForDigraphThroughGrade, isValidDigraph, type GradeLevel } from '../_shared/digraphCorpus.ts';
+import { getWordsForLevel, getTopWordsForLevel, isValidSightWordLevel, getSightWordLevelLabel, type SightWordLevel } from '../_shared/sightWordsCorpus.ts';
 import { getSeasonDisplay, isValidSeason, type ValidSeason } from '../_shared/seasons.ts';
 import { getEnvironmentDisplay, isValidEnvironment, type ValidEnvironment } from '../_shared/environments.ts';
 import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothingBrand, type ValidClothingBrand } from '../_shared/clothingBrands.ts';
@@ -342,6 +343,43 @@ serve(async (req) => {
       }
     }
 
+    // Sight Words-specific word corpus context - inject level-filtered words when sight-words book type
+    let sightWordsContext = '';
+    if (bookType === 'sight-words') {
+      // Try to detect which word level was selected from conversation
+      const levelPatterns: { pattern: RegExp; level: SightWordLevel }[] = [
+        { pattern: /pre-?primer|pre_primer/i, level: 'pre-primer' },
+        { pattern: /\bprimer\b(?!.*pre)/i, level: 'primer' },
+        { pattern: /first[- ]?grade|1st[- ]?grade|grade[- ]?1/i, level: 'first-grade' },
+        { pattern: /second[- ]?grade|2nd[- ]?grade|grade[- ]?2/i, level: 'second-grade' }
+      ];
+      
+      let selectedLevel: SightWordLevel | null = null;
+      
+      for (const msg of messages) {
+        if (msg.role === 'user' && typeof msg.content === 'string') {
+          const content = msg.content;
+          for (const { pattern, level } of levelPatterns) {
+            if (pattern.test(content)) {
+              selectedLevel = level;
+              break;
+            }
+          }
+          if (selectedLevel) break;
+        }
+      }
+      
+      if (selectedLevel && isValidSightWordLevel(selectedLevel)) {
+        const words = getWordsForLevel(selectedLevel);
+        const topWords = getTopWordsForLevel(selectedLevel, 6);
+        if (words.length > 0) {
+          const wordList = words.join(', ');
+          sightWordsContext = `\n\n📖 SIGHT WORDS FOR ${getSightWordLevelLabel(selectedLevel).toUpperCase()} LEVEL:\n⚠️ CRITICAL: You MUST ONLY use words from this list for the book. Do NOT invent or suggest words outside this curated list.\n\n**Available Words:** ${wordList}\n\n**COVER PAGE REQUIREMENT:** The cover image prompt MUST include these specific sight words floating in colorful bubbles: ${topWords.join(', ')}\n\nExample cover prompt format:\n"[Art style]. [Character] in [scene]. CRITICAL INSTRUCTION: Display the book title '[TITLE]' in large, bold, CENTERED text. Include these sight words floating in colorful bubbles around the character: ${topWords.join(', ')}. Full frame."`;
+          console.log(`📚 Sight Words corpus: Injected ${words.length} words for "${selectedLevel}" level`);
+        }
+      }
+    }
+
     const themeContext = characterTheme
       ? characterTheme === 'custom'
         ? `\n\n⚠️ CRITICAL - THEME STATUS:\n🎨 CUSTOM THEME REQUESTED - The user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.\n\n❌ DO NOT ask "What character theme would you like?" - this step is complete.`
@@ -483,7 +521,7 @@ skip-city: ⏭️ Skip (no specific city)
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

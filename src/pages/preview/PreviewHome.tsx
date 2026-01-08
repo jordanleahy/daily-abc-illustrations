@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { PreviewPageLayout } from '@/components/preview/layout/PreviewPageLayout';
 import { PreviewHero } from '@/components/preview/PreviewHero';
 import { FeatureGrid } from '@/components/preview/FeatureGrid';
@@ -9,11 +10,19 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useWinterThemedBooks } from '@/hooks/useWinterThemedBooks';
 import { BookCarousel } from '@/components/landing/BookCarousel';
+import { useAuthContext } from '@/contexts/AuthContext';
 
 const PreviewHome = () => {
   const navigate = useNavigate();
   const { data: winterBooks } = useWinterThemedBooks();
+  const { isAuthenticated, loading } = useAuthContext();
 
+  // Redirect authenticated users to /home
+  useEffect(() => {
+    if (!loading && isAuthenticated) {
+      navigate('/home', { replace: true });
+    }
+  }, [isAuthenticated, loading, navigate]);
   return (
     <PreviewPageLayout>
       {/* Hero Section */}

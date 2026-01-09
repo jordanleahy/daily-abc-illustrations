@@ -15,6 +15,13 @@ const CityLanding = () => {
   
   const displayName = cityName ? formatCityName(cityName) : 'Your City';
 
+  // City-specific OG images (generated via generate-og-image edge function)
+  const cityOgImages: Record<string, string> = {
+    'jerseycity': 'https://foxdnspwzhjxjxuicute.supabase.co/storage/v1/object/public/page-images/og-images/city-jerseycity-1767971860984.png',
+  };
+
+  const ogImageUrl = cityName ? cityOgImages[cityName] : undefined;
+
   return (
     <>
       <MetaHead 
@@ -22,6 +29,13 @@ const CityLanding = () => {
           title: `${displayName} Children's Books | ${getSiteTitle()}`,
           description: `Discover educational children's books created specifically for ${displayName}. Local stories, local learning, local pride.`,
           siteName: SITE_CONFIG.name,
+          url: `https://dailyabcillustrations.com/city/${cityName}`,
+          image: ogImageUrl ? {
+            url: ogImageUrl,
+            width: 1200,
+            height: 630,
+            alt: `${displayName} Children's Books`
+          } : undefined,
         }}
       />
       <PreviewPageLayout>

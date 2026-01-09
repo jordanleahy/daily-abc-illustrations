@@ -341,6 +341,15 @@ export function UserBookCard({
               disabled={isGeneratingPrintable}
               onClick={async (e) => {
                 e.stopPropagation();
+                
+                // If already generated, open the printable colorbook in a new tab
+                if (hasPrintableImages) {
+                  const printableUrl = `${SITE_CONFIG.productionUrl}/printable-colorbook/${book.id}`;
+                  window.open(printableUrl, '_blank');
+                  return;
+                }
+                
+                // Otherwise, generate the printable coloring book
                 setIsGeneratingPrintable(true);
                 try {
                   const { data: session } = await supabase.auth.getSession();

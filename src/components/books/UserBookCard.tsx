@@ -1,5 +1,5 @@
-import { useCallback, useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useState, useEffect } from 'react';
+import { useQueryClient, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -67,6 +67,23 @@ export function UserBookCard({
   const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
   const [isGeneratingPrintable, setIsGeneratingPrintable] = useState(false);
   const coverImageUrl = book.coverImageUrl;
+
+  // Check if printable coloring images exist for this book
+  const { data: hasPrintableImages, refetch: refetchPrintableStatus } = useQuery({
+    queryKey: ['book-has-printable-coloring', book.id],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('page_image_urls')
+        .select('id', { count: 'exact', head: true })
+        .eq('book_id', book.id)
+        .eq('is_latest', true)
+        .not('printable_coloring_image_url', 'is', null);
+      
+      if (error) return false;
+      return (count ?? 0) > 0;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
   
   const { ref, inView } = useIntersectionObserver({
     rootMargin: '200px',
@@ -315,9 +332,12 @@ export function UserBookCard({
 
             {/* Generate Printable Coloring Book */}
             <Button 
-              variant="outline"
+              variant={hasPrintableImages ? "default" : "outline"}
               size="sm"
-              className="w-full gap-2"
+              className={cn(
+                "w-full gap-2",
+                hasPrintableImages && "bg-green-600 hover:bg-green-700 text-white"
+              )}
               disabled={isGeneratingPrintable}
               onClick={async (e) => {
                 e.stopPropagation();
@@ -341,6 +361,8 @@ export function UserBookCard({
                       title: "Printable coloring book created!",
                       description: `${result.summary?.success || 0} pages generated, ${result.summary?.skipped || 0} skipped`
                     });
+                    // Refetch to update button color
+                    refetchPrintableStatus();
                   } else {
                     throw new Error(result.error || 'Failed to generate');
                   }
@@ -353,7 +375,7 @@ export function UserBookCard({
               }}
             >
               <Printer className="h-4 w-4" />
-              {isGeneratingPrintable ? 'Generating...' : 'Create Printable ColorBook'}
+              {isGeneratingPrintable ? 'Generating...' : hasPrintableImages ? 'Printable ColorBook ✓' : 'Create Printable ColorBook'}
             </Button>
 
             {/* Landing Page Link - Uses daily_published.slug for consistency with OG metadata */}

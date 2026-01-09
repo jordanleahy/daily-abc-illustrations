@@ -21,7 +21,7 @@ import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateDigraphMarketingPost } from '@/utils/marketing/generateDigraphMarketingPost';
 import { generateGenericMarketingPost } from '@/utils/marketing/generateGenericMarketingPost';
 import { SITE_CONFIG } from '@/config/site';
-import { BookOpen, Copy, Link2, Share2, Archive, Palette } from 'lucide-react';
+import { BookOpen, Copy, Link2, Share2, Archive, Palette, Printer } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DailyPublished } from '@/types/dailyPublished';
 
@@ -65,6 +65,7 @@ export function UserBookCard({
   const { mutate: duplicateBook, isPending: isDuplicating } = useDuplicateBook();
   const { mutate: archiveBook, isPending: isArchiving } = useArchiveBook();
   const [isCopyingMarketingPost, setIsCopyingMarketingPost] = useState(false);
+  const [isGeneratingPrintable, setIsGeneratingPrintable] = useState(false);
   const coverImageUrl = book.coverImageUrl;
   
   const { ref, inView } = useIntersectionObserver({
@@ -308,8 +309,51 @@ export function UserBookCard({
                 }
               }}
             >
-              <Palette className="h-4 w-4" />
+            <Palette className="h-4 w-4" />
               Free ColorBook
+            </Button>
+
+            {/* Generate Printable Coloring Book */}
+            <Button 
+              variant="outline"
+              size="sm"
+              className="w-full gap-2"
+              disabled={isGeneratingPrintable}
+              onClick={async (e) => {
+                e.stopPropagation();
+                setIsGeneratingPrintable(true);
+                try {
+                  const { data: session } = await supabase.auth.getSession();
+                  const response = await fetch(
+                    `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/generate-printable-coloring-image`,
+                    {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${session?.session?.access_token || ''}`,
+                      },
+                      body: JSON.stringify({ batchProcess: true, bookId: book.id }),
+                    }
+                  );
+                  const result = await response.json();
+                  if (result.success) {
+                    toast({ 
+                      title: "Printable coloring book created!",
+                      description: `${result.summary?.success || 0} pages generated, ${result.summary?.skipped || 0} skipped`
+                    });
+                  } else {
+                    throw new Error(result.error || 'Failed to generate');
+                  }
+                } catch (error) {
+                  console.error('Failed to generate printable coloring book:', error);
+                  toast({ title: "Failed to generate", variant: "destructive" });
+                } finally {
+                  setIsGeneratingPrintable(false);
+                }
+              }}
+            >
+              <Printer className="h-4 w-4" />
+              {isGeneratingPrintable ? 'Generating...' : 'Create Printable ColorBook'}
             </Button>
 
             {/* Landing Page Link - Uses daily_published.slug for consistency with OG metadata */}

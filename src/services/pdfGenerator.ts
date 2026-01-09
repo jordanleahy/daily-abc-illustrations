@@ -425,48 +425,6 @@ export async function generateBookPDF(
 }
 
 /**
- * Generates and downloads a coloring book PDF for a book
- */
-export async function generateColoringBookPDF(
-  bookId: string, 
-  bookName: string,
-  options: PDFGenerationOptions = {}
-): Promise<void> {
-  try {
-    // Fetch coloring images
-    console.log(`[PDF] Fetching coloring images for book ${bookId}...`);
-    const pages = await fetchBookColoringImages(bookId);
-    console.log(`[PDF] Found ${pages.length} coloring pages`);
-    
-    if (pages.length === 0) {
-      throw new Error('No coloring pages found for this book');
-    }
-    
-    // Generate PDF
-    console.log(`[PDF] Starting coloring book PDF generation...`);
-    const pdfBytes = await generatePDF(pages, options);
-    console.log(`[PDF] Coloring book PDF generated successfully (${pdfBytes.length} bytes)`);
-    
-    // Create download
-    const blob = new Blob([new Uint8Array(pdfBytes)], { type: 'application/pdf' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${bookName.replace(/[^a-zA-Z0-9\s-]/g, '')}-coloring-pages.pdf`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    URL.revokeObjectURL(url);
-    console.log(`[PDF] Coloring book download initiated successfully`);
-  } catch (error) {
-    console.error('[PDF] Error during coloring book PDF generation:', error);
-    throw error;
-  }
-}
-
-/**
  * Generates and downloads a PDF for a single page
  */
 export async function generatePagePDF(

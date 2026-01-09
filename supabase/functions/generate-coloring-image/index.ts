@@ -13,37 +13,55 @@ const corsHeaders = {
 };
 
 /**
- * Convert an image to pure grayscale by averaging RGB values
+ * Convert an image to pure grayscale using pngjs
  * This ensures no color artifacts remain in B&W images
  */
 async function convertToGrayscale(imageBytes: Uint8Array): Promise<Uint8Array> {
-  // Decode PNG manually - simpler approach using canvas-like processing
-  // For Deno, we'll use a simple pixel manipulation approach
-  
-  // Import sharp-like library for image processing in Deno
-  const { ImageMagick, initialize, MagickFormat } = await import(
-    "https://deno.land/x/imagemagick_deno@0.0.31/mod.ts"
-  );
-  
-  await initialize();
-  
-  return new Promise((resolve, reject) => {
-    try {
-      ImageMagick.read(imageBytes, (image) => {
-        // Convert to grayscale
-        image.grayscale();
+  try {
+    // Use pngjs for PNG manipulation - works in Edge Runtime
+    const { PNG } = await import("npm:pngjs@7.0.0");
+    
+    return new Promise((resolve, reject) => {
+      const png = new PNG();
+      
+      png.parse(Buffer.from(imageBytes), (error: Error | null, data: any) => {
+        if (error) {
+          console.error('PNG parse error:', error);
+          resolve(imageBytes); // Return original on error
+          return;
+        }
         
-        // Write back to PNG
-        image.write(MagickFormat.Png, (data) => {
-          resolve(data);
-        });
+        // Convert each pixel to grayscale using luminance formula
+        for (let y = 0; y < data.height; y++) {
+          for (let x = 0; x < data.width; x++) {
+            const idx = (data.width * y + x) << 2;
+            
+            // Get RGB values
+            const r = data.data[idx];
+            const g = data.data[idx + 1];
+            const b = data.data[idx + 2];
+            
+            // Calculate grayscale using luminance formula (better than simple average)
+            const gray = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
+            
+            // Set all RGB channels to grayscale value
+            data.data[idx] = gray;     // R
+            data.data[idx + 1] = gray; // G
+            data.data[idx + 2] = gray; // B
+            // Alpha (idx + 3) remains unchanged
+          }
+        }
+        
+        // Pack back to PNG buffer
+        const outputBuffer = PNG.sync.write(data);
+        resolve(new Uint8Array(outputBuffer));
       });
-    } catch (error) {
-      console.error('Grayscale conversion error:', error);
-      // If conversion fails, return original bytes
-      resolve(imageBytes);
-    }
-  });
+    });
+  } catch (error) {
+    console.error('Grayscale conversion error:', error);
+    // If conversion fails, return original bytes
+    return imageBytes;
+  }
 }
 
 serve(async (req) => {

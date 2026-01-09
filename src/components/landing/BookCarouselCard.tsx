@@ -1,5 +1,5 @@
 import { memo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { BookImage } from '@/components/ui/book-image';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -18,12 +18,10 @@ interface BookCarouselCardProps {
 }
 
 export const BookCarouselCard = memo(({ book, viewMode, onImageClick }: BookCarouselCardProps) => {
-  const navigate = useNavigate();
   const bookData = book.book;
 
-  const handleCardClick = () => {
+  const handleLinkClick = () => {
     trackBookView(book.id);
-    navigate(`/library/${book.id}/detail`);
   };
 
   const handleImageClick = (e: React.MouseEvent) => {
@@ -56,14 +54,18 @@ export const BookCarouselCard = memo(({ book, viewMode, onImageClick }: BookCaro
               className="w-full h-full object-cover transition-opacity duration-300"
             />
           </AspectRatio>
-          <div className="p-4 space-y-2" onClick={handleCardClick}>
+          <Link 
+            to={`/book/${book.id}`} 
+            onClick={handleLinkClick}
+            className="block p-4 space-y-2 hover:bg-muted/50 transition-colors"
+          >
             <h3 className="font-semibold text-sm line-clamp-2">
               {bookData?.book_name || 'Untitled Book'}
             </h3>
             <Badge variant="secondary" className="text-xs">
               {publishedDate}
             </Badge>
-          </div>
+          </Link>
         </CardContent>
       </Card>
     </PremiumContentWrapper>

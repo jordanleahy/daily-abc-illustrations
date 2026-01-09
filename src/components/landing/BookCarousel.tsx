@@ -4,6 +4,7 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
+import { WheelGesturesPlugin } from "embla-carousel-wheel-gestures";
 import { BookCarouselCard } from "./BookCarouselCard";
 import { LibraryBookWithImages } from "@/hooks/useWinterThemedBooks";
 
@@ -28,11 +29,12 @@ export function BookCarousel({ books }: BookCarouselProps) {
           dragFree: false,
           containScroll: "trimSnaps",
         }}
+        plugins={[WheelGesturesPlugin()]}
         className="w-full"
       >
         <CarouselContent className="-ml-4">
           {books.map((book) => (
-            <CarouselItem key={book.id} className="pl-4 basis-[85vw] sm:basis-[70vw] md:basis-[45vw] lg:basis-[30vw]">
+            <CarouselItem key={book.id} className="pl-4 basis-[65vw] sm:basis-[45vw] md:basis-[35vw] lg:basis-[25vw] xl:basis-[20vw]">
               <BookCarouselCard 
                 book={book} 
                 viewMode={viewMode}

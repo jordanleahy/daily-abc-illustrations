@@ -181,7 +181,7 @@ export default function PublicBook() {
             <div className="p-6 rounded-lg border-2 border-primary/20 bg-primary/5">
               <div className="flex items-center gap-2 justify-center mb-4">
                 <Palette className="h-5 w-5 text-primary" />
-                <h3 className="text-xl font-semibold">Free Coloring Pages</h3>
+                <h3 className="text-xl font-semibold">Coloring Pages</h3>
               </div>
               <p className="text-muted-foreground text-center mb-6">
                 Get {coloringImages.length} printable coloring pages from this book!

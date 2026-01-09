@@ -165,6 +165,9 @@ verify_jwt = false
 [functions.edit-color-image]
 verify_jwt = true
 
+[functions.generate-printable-coloring-image]
+verify_jwt = true
+
 [api]
 enabled = true
 port = 54321

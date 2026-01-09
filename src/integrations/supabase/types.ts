@@ -1453,6 +1453,7 @@ export type Database = {
           image_url: string | null
           is_latest: boolean
           page_id: string
+          printable_coloring_image_url: string | null
           prompt_used: string | null
           source_type: string
           text_image_url: string | null
@@ -1474,6 +1475,7 @@ export type Database = {
           image_url?: string | null
           is_latest?: boolean
           page_id: string
+          printable_coloring_image_url?: string | null
           prompt_used?: string | null
           source_type?: string
           text_image_url?: string | null
@@ -1495,6 +1497,7 @@ export type Database = {
           image_url?: string | null
           is_latest?: boolean
           page_id?: string
+          printable_coloring_image_url?: string | null
           prompt_used?: string | null
           source_type?: string
           text_image_url?: string | null

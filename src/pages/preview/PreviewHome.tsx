@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useWinterThemedBooks } from '@/hooks/useWinterThemedBooks';
 import { BookCarousel } from '@/components/landing/BookCarousel';
 import { useAuthContext } from '@/contexts/AuthContext';
+import habitsFeatureImage from '@/assets/habits-feature.png';
 
 const PreviewHome = () => {
   const navigate = useNavigate();
@@ -60,6 +61,8 @@ const PreviewHome = () => {
           'Use a shared "store" so kids know which rewards are in reach'
         ]}
         imagePosition="left"
+        imageSrc={habitsFeatureImage}
+        imageAlt="Manage Habits interface showing daily habits with coin rewards"
       />
 
       {/* Deep Dive: Reading & Library */}

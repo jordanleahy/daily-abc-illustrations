@@ -9,6 +9,8 @@ interface DeepDiveSectionProps {
   ctaText?: string;
   ctaLink?: string;
   imagePosition: 'left' | 'right';
+  imageSrc?: string;
+  imageAlt?: string;
 }
 
 export const DeepDiveSection = ({
@@ -17,7 +19,9 @@ export const DeepDiveSection = ({
   features,
   ctaText,
   ctaLink,
-  imagePosition
+  imagePosition,
+  imageSrc,
+  imageAlt
 }: DeepDiveSectionProps) => {
   const navigate = useNavigate();
 
@@ -51,11 +55,19 @@ export const DeepDiveSection = ({
             )}
           </div>
 
-          {/* Image Placeholder */}
+          {/* Feature Image */}
           <div className={imagePosition === 'right' ? 'order-2' : 'order-2 md:order-1'}>
-            <div className="bg-muted/50 rounded-lg aspect-video flex items-center justify-center">
-              <span className="text-muted-foreground">Feature visualization</span>
-            </div>
+            {imageSrc ? (
+              <img 
+                src={imageSrc} 
+                alt={imageAlt || title} 
+                className="rounded-lg shadow-lg w-full"
+              />
+            ) : (
+              <div className="bg-muted/50 rounded-lg aspect-video flex items-center justify-center">
+                <span className="text-muted-foreground">Feature visualization</span>
+              </div>
+            )}
           </div>
         </div>
       </div>

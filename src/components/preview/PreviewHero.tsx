@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Link } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Book } from 'lucide-react';
 import { useLandingPageData } from '@/hooks/useLandingPageData';
 import { OptimizedImage } from '@/components/ui/optimized-image';
@@ -16,9 +16,20 @@ export const PreviewHero = () => {
   const dailyPublished = landingData?.dailyPublished;
   const pages = dailyPublished?.pages || [];
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
   
   // Lazy load carousel images on-demand
   useLazyCarouselImages(pages, currentPageIndex);
+  
+  // Force play on mount for mobile browsers
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video) {
+      video.play().catch(() => {
+        // Autoplay was prevented, that's okay
+      });
+    }
+  }, []);
   
   const handlePrevPage = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -34,10 +45,13 @@ export const PreviewHero = () => {
     <div className="relative min-h-[90vh] flex items-center overflow-hidden">
       {/* Video Background */}
       <video
+        ref={videoRef}
         autoPlay
         muted
         loop
         playsInline
+        // @ts-ignore - webkit-playsinline for older iOS
+        webkit-playsinline="true"
         className="absolute inset-0 w-full h-full object-cover"
       >
         <source src={heroVideo} type="video/quicktime" />

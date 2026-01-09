@@ -64,7 +64,7 @@ export const PreviewHero = () => {
           </div>
 
           {/* Right Column - Daily Book Card */}
-          <div className="flex justify-center md:justify-end">
+          <div className="hidden md:flex justify-center md:justify-end">
             <div className="bg-white/20 backdrop-blur-xl rounded-lg shadow-2xl p-5 border border-white/30 max-w-sm w-full">
             {!dailyPublished ? (
               <div className="space-y-4">

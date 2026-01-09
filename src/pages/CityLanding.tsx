@@ -104,8 +104,7 @@ const CityLanding = () => {
               </h1>
               
               <p className={`text-xl md:text-2xl mb-8 leading-relaxed ${cityVideo ? 'text-white/90 drop-shadow-md' : 'text-muted-foreground'}`}>
-                Which means she can educate {displayName}'s kids best. 
-                Local stories. Local landmarks. Local pride.
+                Focused on early phonics and positive habits creation, with daily published books.
               </p>
 
               <Button size="lg" asChild variant={cityVideo ? 'secondary' : 'default'}>

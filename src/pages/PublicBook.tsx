@@ -230,24 +230,6 @@ export default function PublicBook() {
             </div>
           )}
 
-          {/* CTA Section */}
-          <div className="mt-12 p-8 rounded-lg bg-muted text-center">
-            <h2 className="text-2xl font-bold mb-3">
-              Want to create your own ABC book?
-            </h2>
-            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-              Sign up to create custom educational books with AI-powered illustrations
-              and interactive learning activities.
-            </p>
-            <div className="flex gap-4 justify-center">
-              <Button asChild size="lg">
-                <Link to="/auth?mode=signup">Get Started Free</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link to="/pricing">View Pricing</Link>
-              </Button>
-            </div>
-          </div>
         </div>
       </StandardPageLayout>
     </>

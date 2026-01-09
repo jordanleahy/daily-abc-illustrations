@@ -8,6 +8,7 @@ export interface LibraryBookWithImages {
   description: string | null;
   published_at: string;
   created_at: string;
+  slug: string | null;
   book: {
     book_name: string;
     book_description: string | null;
@@ -37,6 +38,15 @@ export const useWinterThemedBooks = () => {
 
       const bookIds = books.map(b => b.id);
 
+      // Get slugs from daily_published
+      const { data: dailyPublished } = await supabase
+        .from('daily_published')
+        .select('book_id, slug')
+        .in('book_id', bookIds);
+
+      const slugMap = new Map<string, string | null>();
+      dailyPublished?.forEach(dp => slugMap.set(dp.book_id, dp.slug));
+
       // Get cover and educational pages for these books
       const { data: pages } = await supabase
         .from('pages')
@@ -52,6 +62,7 @@ export const useWinterThemedBooks = () => {
           description: book.book_description,
           published_at: book.created_at,
           created_at: book.created_at,
+          slug: slugMap.get(book.id) || null,
           book: {
             book_name: book.book_name,
             book_description: book.book_description,
@@ -98,6 +109,7 @@ export const useWinterThemedBooks = () => {
         description: book.book_description,
         published_at: book.created_at,
         created_at: book.created_at,
+        slug: slugMap.get(book.id) || null,
         book: {
           book_name: book.book_name,
           book_description: book.book_description,

@@ -26,10 +26,11 @@ export function BookCarousel({ books }: BookCarouselProps) {
       <Carousel
         opts={{
           align: "start",
-          dragFree: false,
-          containScroll: "trimSnaps",
+          dragFree: true,
+          containScroll: "keepSnaps",
+          skipSnaps: true,
         }}
-        plugins={[WheelGesturesPlugin()]}
+        plugins={[WheelGesturesPlugin({ forceWheelAxis: 'x' })]}
         className="w-full"
       >
         <CarouselContent className="-ml-4">

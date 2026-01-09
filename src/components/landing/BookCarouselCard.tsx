@@ -55,7 +55,7 @@ export const BookCarouselCard = memo(({ book, viewMode, onImageClick }: BookCaro
             />
           </AspectRatio>
           <Link 
-            to={`/book/${book.id}`} 
+            to={`/book/${book.slug || book.id}`}
             onClick={handleLinkClick}
             className="block p-4 space-y-2 hover:bg-muted/50 transition-colors"
           >

@@ -33,7 +33,8 @@ export const PageLayout = ({
   const location = useLocation();
   const { isAuthenticated, loading } = useAuthContext();
   
-  const shouldShowFooter = !isAuthenticated && !loading && location.pathname !== '/auth' && location.pathname !== '/snow';
+  const isPublicBookPage = location.pathname.startsWith('/book/');
+  const shouldShowFooter = !isAuthenticated && !loading && !isPublicBookPage && location.pathname !== '/auth' && location.pathname !== '/snow';
   
   return (
     <div className={cn('min-h-screen bg-background flex flex-col overflow-x-hidden', className)}>

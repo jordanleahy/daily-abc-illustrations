@@ -40,12 +40,19 @@ export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPubl
   const { data: hasOGAssets } = useQuery({
     queryKey: ['og-assets-exists', bookId],
     queryFn: async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('seo_metadata')
         .select('id, og_image_url, seo_title')
         .eq('book_id', bookId)
         .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(1)
         .maybeSingle();
+      
+      if (error) {
+        console.error('[OG Assets Check] Error:', error);
+        return false;
+      }
       
       return !!(data?.og_image_url && data?.seo_title);
     },

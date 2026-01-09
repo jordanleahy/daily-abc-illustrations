@@ -10,12 +10,12 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CategorizedBookSections } from '@/components/library/CategorizedBookSections';
 import { MapPin, Users, Sparkles, Building2, Book } from 'lucide-react';
 
-// City-specific video imports - add videos here as they're created
-// import jerseyCityVideo from '@/assets/cities/jerseycity-hero.mov';
+// City-specific video imports
+import jerseyCityVideo from '@/assets/cities/jerseycity-hero.mp4';
 
-// City video mapping - uncomment when video is added
+// City video mapping
 const cityVideos: Record<string, string> = {
-  // 'jerseycity': jerseyCityVideo,
+  'jerseycity': jerseyCityVideo,
 };
 
 const CityLanding = () => {

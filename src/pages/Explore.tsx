@@ -1,6 +1,6 @@
 import { PreviewPageLayout } from '@/components/preview/layout/PreviewPageLayout';
 import { CategorizedBookSections } from '@/components/library';
-import { useLibraryBooks } from '@/hooks/useLibraryBooks';
+import { usePublicLibraryBooks } from '@/hooks/usePublicLibraryBooks';
 import { MetaHead } from '@/components/common/MetaHead';
 import { SITE_CONFIG, getSiteTitle } from '@/config/site';
 import { Library } from 'lucide-react';
@@ -12,7 +12,7 @@ import { Library } from 'lucide-react';
  * accessible without authentication. Designed to showcase content and drive signups.
  */
 const Explore = () => {
-  const { data: libraryBooks = [], isLoading } = useLibraryBooks();
+  const { data: libraryBooks = [], isLoading } = usePublicLibraryBooks();
 
   return (
     <>

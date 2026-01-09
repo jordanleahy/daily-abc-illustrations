@@ -15,26 +15,30 @@ const CityLanding = () => {
   
   const displayName = cityName ? formatCityName(cityName) : 'Your City';
 
-  // City-specific OG images (generated via generate-og-image edge function)
-  const cityOgImages: Record<string, string> = {
-    'jerseycity': 'https://foxdnspwzhjxjxuicute.supabase.co/storage/v1/object/public/page-images/og-images/city-jerseycity-1767971860984.png',
+  // City-specific OG metadata (generated via generate-og-image edge function)
+  const cityOgData: Record<string, { image: string; title: string; description: string }> = {
+    'jerseycity': {
+      image: 'https://foxdnspwzhjxjxuicute.supabase.co/storage/v1/object/public/page-images/og-images/city-jerseycity-1767971860984.png',
+      title: 'A Better Approach to Jersey City Education',
+      description: 'Truly personalized, on-demand, relevant-based. Targeted specifically for Jersey City neighborhoods and diversity.',
+    },
   };
 
-  const ogImageUrl = cityName ? cityOgImages[cityName] : undefined;
+  const cityData = cityName ? cityOgData[cityName] : undefined;
 
   return (
     <>
       <MetaHead 
         metadata={{
-          title: `${displayName} Children's Books | ${getSiteTitle()}`,
-          description: `Discover educational children's books created specifically for ${displayName}. Local stories, local learning, local pride.`,
+          title: cityData?.title || `${displayName} Children's Books | ${getSiteTitle()}`,
+          description: cityData?.description || `Discover educational children's books created specifically for ${displayName}. Local stories, local learning, local pride.`,
           siteName: SITE_CONFIG.name,
           url: `https://dailyabcillustrations.com/city/${cityName}`,
-          image: ogImageUrl ? {
-            url: ogImageUrl,
+          image: cityData?.image ? {
+            url: cityData.image,
             width: 1200,
             height: 630,
-            alt: `${displayName} Children's Books`
+            alt: cityData.title || `${displayName} Children's Books`
           } : undefined,
         }}
       />

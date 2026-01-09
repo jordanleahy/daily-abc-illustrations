@@ -31,6 +31,7 @@ import UserLibraryDetail from "./pages/UserLibraryDetail";
 import BookReadingView from "./pages/BookReadingView";
 import PublicBook from "./pages/PublicBook";
 import PublicColorBook from "./pages/PublicColorBook";
+import PrintableColorBook from "./pages/PrintableColorBook";
 import Rewards from "./pages/Rewards";
 import RewardsManage from "./pages/RewardsManage";
 import DailyPublished from "./pages/DailyPublished";
@@ -189,6 +190,9 @@ const App = () => {
                 
                 {/* Public coloring book download (no auth required) */}
                 <Route path="/colorbook/:bookId" element={<PublicColorBook />} />
+                
+                {/* Printable coloring book with B&W + color thumbnail (no auth required) */}
+                <Route path="/printable-colorbook/:bookId" element={<PrintableColorBook />} />
                 
                 {/* Snow trick game (public) */}
                 <Route path="/snow" element={<Snow />} />

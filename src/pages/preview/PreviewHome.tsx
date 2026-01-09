@@ -3,7 +3,7 @@ import { PreviewPageLayout } from '@/components/preview/layout/PreviewPageLayout
 import { PreviewHero } from '@/components/preview/PreviewHero';
 import { FeatureGrid } from '@/components/preview/FeatureGrid';
 import { DeepDiveSection } from '@/components/preview/DeepDiveSection';
-import { SocialProof } from '@/components/preview/SocialProof';
+
 import { PreviewPricingSection } from '@/components/preview/PreviewPricingSection';
 import { PreviewSection } from '@/components/preview/layout/PreviewSection';
 import { Button } from '@/components/ui/button';
@@ -106,8 +106,6 @@ const PreviewHome = () => {
         </div>
       </PreviewSection>
 
-      {/* Social Proof */}
-      <SocialProof />
 
       {/* Pricing Teaser */}
       <PreviewPricingSection />

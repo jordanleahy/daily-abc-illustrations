@@ -18,6 +18,10 @@
   function = "public-book-meta"
   path = "/book/*"
 
+[[edge_functions]]
+  function = "city-meta"
+  path = "/city/*"
+
 # Headers for security and performance
 [[headers]]
   for = "/*"

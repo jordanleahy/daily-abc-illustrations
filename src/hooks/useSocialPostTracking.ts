@@ -18,17 +18,22 @@ export function useSocialPostTracking(bookId: string) {
   const queryClient = useQueryClient();
 
   const { data: postedPlatforms = [], isLoading } = useQuery({
-    queryKey: ['social-posts', bookId],
+    queryKey: ['social-posts', bookId, user?.id],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('book_social_posts')
         .select('platform')
         .eq('book_id', bookId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('[SocialPostTracking] Error fetching posts for book', bookId, error);
+        throw error;
+      }
+      console.log('[SocialPostTracking] Fetched platforms for book', bookId, data);
       return (data || []).map((p: { platform: string }) => p.platform as SocialPlatform);
     },
     enabled: !!bookId && !!user,
+    staleTime: 0, // Always refetch to ensure fresh data
   });
 
   const markAsPosted = useMutation({

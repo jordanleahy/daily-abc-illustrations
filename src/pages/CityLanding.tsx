@@ -100,9 +100,7 @@ const CityLanding = () => {
               </div>
               
               <h1 className={`text-4xl md:text-6xl font-bold mb-6 ${cityVideo ? 'text-white drop-shadow-lg' : 'text-foreground'}`}>
-                Shelly Knows{' '}
-                <span className={cityVideo ? 'text-white' : 'text-primary'}>{displayName}</span>{' '}
-                Best
+                Free Amazing Education in First 100 Days
               </h1>
               
               <p className={`text-xl md:text-2xl mb-8 leading-relaxed ${cityVideo ? 'text-white/90 drop-shadow-md' : 'text-muted-foreground'}`}>

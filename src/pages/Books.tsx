@@ -61,7 +61,13 @@ export default function Books() {
   const [selectionMode, setSelectionMode] = useState(false);
   const [selectedBookIds, setSelectedBookIds] = useState<Set<string>>(new Set());
   
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPageState] = useState(1);
+  
+  // Wrapper to scroll to top on page change
+  const setCurrentPage = (pageOrUpdater: number | ((prev: number) => number)) => {
+    setCurrentPageState(pageOrUpdater);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [completionFilter, setCompletionFilter] = useState<'completed' | 'not-completed' | 'archived'>('completed');
   const PAGE_SIZE = 24;

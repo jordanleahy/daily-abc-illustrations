@@ -93,7 +93,7 @@ export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPubl
         disabled={isGeneratingOG || ogComplete}
         title={ogComplete ? "OG assets generated" : "Generate OG assets"}
       >
-        <Image className={cn("h-4 w-4", isGeneratingOG && "animate-pulse")} />
+        <Image className={cn("h-4 w-4", isGeneratingOG && "animate-spin")} />
         {ogComplete && (
           <Check className="h-3 w-3 absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5" />
         )}

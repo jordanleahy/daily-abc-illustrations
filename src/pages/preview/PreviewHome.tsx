@@ -12,6 +12,7 @@ import { useWinterThemedBooks } from '@/hooks/useWinterThemedBooks';
 import { BookCarousel } from '@/components/landing/BookCarousel';
 import { useAuthContext } from '@/contexts/AuthContext';
 import habitsFeatureImage from '@/assets/habits-feature.png';
+import libraryFeatureImage from '@/assets/library-feature.png';
 
 const PreviewHome = () => {
   const navigate = useNavigate();
@@ -75,6 +76,8 @@ const PreviewHome = () => {
           'Word learning system that highlights new vocabulary and tracks exposure over time'
         ]}
         imagePosition="right"
+        imageSrc={libraryFeatureImage}
+        imageAlt="Book library showing Digraph, ABC, and Rhyming books"
       />
 
       {/* Daily AI Books Section */}

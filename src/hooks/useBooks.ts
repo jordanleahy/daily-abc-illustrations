@@ -199,7 +199,8 @@ export const useBooks = (
     gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
   });
 
-  // Set up real-time subscription
+  // Set up real-time subscription - only for INSERT/DELETE, not UPDATE
+  // UPDATE events would cause cards to reorder during user interactions
   useEffect(() => {
     if (!user?.id) return;
 
@@ -227,20 +228,9 @@ export const useBooks = (
           queryClient.invalidateQueries({ queryKey: ['books'] });
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'books',
-          ...(!showAllBooks && { filter: `user_id=eq.${user.id}` })
-        },
-        (payload) => {
-          console.log('Book updated:', payload.new);
-          // Refetch to get the updated data with daily_published status
-          queryClient.invalidateQueries({ queryKey: ['books'] });
-        }
-      )
+      // NOTE: UPDATE events intentionally NOT subscribed to prevent card reordering
+      // when users click buttons (which update updated_at). Cards maintain their
+      // position until page refresh or navigation.
       .on(
         'postgres_changes',
         {
@@ -255,19 +245,8 @@ export const useBooks = (
           queryClient.invalidateQueries({ queryKey: ['books'] });
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'daily_published'
-        },
-        (payload) => {
-          console.log('Daily published changed:', payload);
-          // Refetch books when daily_published status changes
-          queryClient.invalidateQueries({ queryKey: ['books'] });
-        }
-      )
+      // NOTE: daily_published changes don't affect card order, so we can still listen
+      // but we update cache in-place instead of refetching
       .subscribe();
 
     return () => {

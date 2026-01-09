@@ -203,17 +203,6 @@ export default function PublicBook() {
                   </AspectRatio>
                 ))}
               </div>
-              
-              <div className="text-center">
-                <Button 
-                  onClick={handleColoringSignup}
-                  className="gap-2"
-                  size="lg"
-                >
-                  <UserPlus className="h-4 w-4" />
-                  Create Account to Download
-                </Button>
-              </div>
             </div>
           )}
 

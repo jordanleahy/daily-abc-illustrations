@@ -163,36 +163,32 @@ export function ColorModeUploadSection({
           Paste
         </Button>
         
-        {onGenerate && (
-          <Button
-            onClick={onGenerate}
-            variant="default"
-            className="w-full h-12 gap-2"
-            disabled={disabled || isGenerating}
-          >
-            {isGenerating ? (
-              <Loader2 className="h-5 w-5 animate-spin" />
-            ) : (
-              <Wand2 className="h-5 w-5" />
-            )}
-            {isGenerating ? 'Generating...' : 'Generate'}
-          </Button>
-        )}
+        <Button
+          onClick={onGenerate}
+          variant="default"
+          className="w-full h-12 gap-2"
+          disabled={disabled || isGenerating || !onGenerate}
+        >
+          {isGenerating ? (
+            <Loader2 className="h-5 w-5 animate-spin" />
+          ) : (
+            <Wand2 className="h-5 w-5" />
+          )}
+          {isGenerating ? 'Generating...' : 'Generate'}
+        </Button>
 
-        {hasPrompt && onCopyPrompt && (
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              onCopyPrompt();
-            }}
-            variant="outline"
-            className="w-full h-12 gap-2"
-            disabled={disabled || isGenerating}
-          >
-            <Copy className="h-5 w-5" />
-            Copy Prompt
-          </Button>
-        )}
+        <Button
+          onClick={(e) => {
+            e.stopPropagation();
+            onCopyPrompt();
+          }}
+          variant="outline"
+          className="w-full h-12 gap-2"
+          disabled={disabled || isGenerating || !hasPrompt}
+        >
+          <Copy className="h-5 w-5" />
+          Copy Prompt
+        </Button>
       </div>
     </div>
   );

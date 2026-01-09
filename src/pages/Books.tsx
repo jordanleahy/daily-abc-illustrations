@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { StandardPageLayout } from '@/components/layout';
@@ -63,11 +63,11 @@ export default function Books() {
   
   const [currentPage, setCurrentPageState] = useState(1);
   
-  // Wrapper to scroll to top on page change
-  const setCurrentPage = (pageOrUpdater: number | ((prev: number) => number)) => {
+  // Wrapper to scroll to top on page change - memoized to prevent stale closures
+  const setCurrentPage = useCallback((pageOrUpdater: number | ((prev: number) => number)) => {
     setCurrentPageState(pageOrUpdater);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
+  }, []);
   const [selectedThemes, setSelectedThemes] = useState<string[]>([]);
   const [completionFilter, setCompletionFilter] = useState<'completed' | 'not-completed' | 'archived'>('completed');
   const PAGE_SIZE = 24;

@@ -436,15 +436,10 @@ serve(async (req) => {
     // Only inject if: no location selected yet, outline not ready, book not created, not forcing outline
     const shouldAskLocationQuestion = !location && !outlineReady && !bookCreated && !forceOutline;
 
-    // City question injection - ask AFTER location question, BEFORE title confirmation
-    // Only inject if: location is answered/skipped, no city selected yet, outline not ready, book not created
-    // Detect location skip by checking for skip-related phrases or location selection
-    const locationWasAnsweredOrSkipped = location || 
-      lastMessageContent.includes('skip') || 
-      lastMessageContent.includes('no specific location') || 
-      lastMessageContent.includes('no specific resort') ||
-      lastMessageContent.includes('skip-location');
-    const shouldAskCityQuestion = locationWasAnsweredOrSkipped && !city && !outlineReady && !bookCreated && !forceOutline;
+    // City question injection - ask as optional discovery, BEFORE title confirmation
+    // Only inject if: no city selected yet, outline not ready, book not created, not forcing outline
+    // City is independent of location - should be asked for all book types
+    const shouldAskCityQuestion = !city && !outlineReady && !bookCreated && !forceOutline;
 
     // Detect if user just approved title (clicked "Looks perfect, create the outline!" or similar)
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];
@@ -473,9 +468,9 @@ skip-location: ⏭️ Skip (no specific resort)
 ⚠️ CRITICAL FLOW ORDER: All optional questions (location, city, season, environment, etc.) MUST be asked BEFORE proposing the book title. The title confirmation ("Looks great!") should be the VERY LAST step before generating the outline.`
       : '';
 
-    // City question injection - shown AFTER location, BEFORE title proposal
+    // City question injection - shown BEFORE title proposal (independent of location)
     const cityQuestionInjection = shouldAskCityQuestion
-      ? `\n\n🏙️ OPTIONAL QUESTION - CITY (Ask AFTER location, BEFORE proposing title):
+      ? `\n\n🏙️ OPTIONAL QUESTION - CITY (Ask BEFORE proposing title):
 Ask this optional question:
 
 "Would you like to set this book in a specific city? This is optional."
@@ -487,7 +482,7 @@ NEW_YORK_CITY: 🗽 New York City
 skip-city: ⏭️ Skip (no specific city)
 [/SUGGEST]
 
-⚠️ CRITICAL: Ask this AFTER the resort location question and BEFORE proposing the book title.`
+⚠️ CRITICAL: Ask this BEFORE proposing the book title.`
       : '';
 
     // Check if all optional questions are complete - if so, prompt agent to propose title

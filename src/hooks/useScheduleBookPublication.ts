@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { getAppendPublishDate } from '@/utils/publishQueue';
+import { getPlaceholderPublishDate } from '@/utils/queueDateUtils';
 
 interface SchedulePublicationParams {
   bookId: string;
@@ -95,10 +95,10 @@ export const useScheduleBookPublication = () => {
         }
       }
 
-      // Get next available publish date using FIFO logic
-      const publishDate = await getAppendPublishDate(supabase);
+      // Use placeholder date - actual publish date is set on activation
+      const placeholderDate = getPlaceholderPublishDate();
 
-      // Create queued entry
+      // Create queued entry (ordered by created_at for FIFO)
       const { data, error } = await supabase
         .from('daily_published')
         .insert({
@@ -107,7 +107,7 @@ export const useScheduleBookPublication = () => {
           description,
           status: 'queued',
           is_active: false,
-          publish_date: publishDate,
+          publish_date: placeholderDate, // Placeholder - updated on activation
         })
         .select()
         .single();
@@ -140,15 +140,11 @@ export const useScheduleBookPublication = () => {
         generateBlogPost(bookId, title, description);
       }
 
-      return { ...data, publish_date: publishDate };
+      return data;
     },
-    onSuccess: (data) => {
-      toast.success('Book scheduled for publication', {
-        description: `Will publish on ${new Date(data.publish_date).toLocaleDateString('en-US', { 
-          month: 'long', 
-          day: 'numeric', 
-          year: 'numeric' 
-        })}`,
+    onSuccess: () => {
+      toast.success('Book added to publication queue', {
+        description: 'It will publish in order based on when it was added.',
       });
       queryClient.invalidateQueries({ queryKey: ['book'] });
       queryClient.invalidateQueries({ queryKey: ['books'] });

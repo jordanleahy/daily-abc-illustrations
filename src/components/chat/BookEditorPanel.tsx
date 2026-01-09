@@ -1087,6 +1087,9 @@ CRITICAL REQUIREMENTS:
                 <ColorModeUploadSection
                   onImageUpload={onImageUpload}
                   onCopyPrompt={handleCopyPrompt}
+                  onGenerate={handleGenerateWithBookCreation}
+                  isGenerating={isGeneratingColorImage}
+                  hasPrompt={!!getCurrentPagePrompt(currentPageNumber)}
                   disabled={createBookMutation.isPending}
                   onCancel={() => setIsReplacing(false)}
                 />

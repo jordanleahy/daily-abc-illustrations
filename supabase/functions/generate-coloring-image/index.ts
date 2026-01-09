@@ -319,6 +319,55 @@ SELF-CHECK: Is every pixel pure black or pure white? Are shapes large and simple
       }
     }
 
+    // Check if all pages in the book now have both color and coloring images
+    // If so, automatically generate printable coloring book
+    console.log('📊 Checking if all pages are complete for printable generation...');
+    
+    const { data: bookPages } = await supabase
+      .from('pages')
+      .select('id')
+      .eq('book_id', bookId);
+    
+    const totalPages = bookPages?.length || 0;
+    
+    if (totalPages > 0) {
+      const { data: completedPages } = await supabase
+        .from('page_image_urls')
+        .select('page_id')
+        .eq('book_id', bookId)
+        .eq('is_latest', true)
+        .not('image_url', 'is', null)
+        .not('coloring_image_url', 'is', null);
+      
+      const completedCount = completedPages?.length || 0;
+      console.log(`📖 Book progress: ${completedCount}/${totalPages} pages complete`);
+      
+      if (completedCount === totalPages) {
+        console.log('🎉 All pages complete! Triggering printable coloring book generation...');
+        
+        // Call the generate-printable-coloring-image function for batch processing
+        const printableResponse = await fetch(
+          `${supabaseUrl}/functions/v1/generate-printable-coloring-image`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${supabaseServiceKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ bookId, batchProcess: true })
+          }
+        );
+        
+        if (printableResponse.ok) {
+          const printableResult = await printableResponse.json();
+          console.log('✅ Printable coloring book generated:', printableResult);
+        } else {
+          console.error('⚠️ Printable generation failed:', await printableResponse.text());
+          // Don't fail the main request - printable generation is a bonus
+        }
+      }
+    }
+
     return new Response(
       JSON.stringify({ 
         success: true, 

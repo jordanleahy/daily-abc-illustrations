@@ -87,7 +87,7 @@ const PreviewHome = () => {
             Fresh stories, every morning
           </h2>
           <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
-            Each morning, Chairlift's AI agents add new daily books to your library at 7:01 AM Eastern Time. Use them for quick bedtime reads, morning routines, or screen-time swaps.
+            Each morning, Chairlift adds new daily books to your library at 7:01 AM Eastern Time. Use them for quick bedtime reads, morning routines, or screen-time swaps.
           </p>
           <div className="grid md:grid-cols-3 gap-6 text-left">
             <div className="p-6 rounded-lg border border-border bg-card">

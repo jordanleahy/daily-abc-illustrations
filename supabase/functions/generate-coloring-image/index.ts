@@ -19,11 +19,15 @@ serve(async (req) => {
   }
 
   try {
-    const { pageId, bookId, textImageUrl } = await req.json();
+    const { pageId, bookId, textImageUrl, sourceImageUrl, sourceType } = await req.json();
 
-    if (!pageId || !bookId || !textImageUrl) {
+    // Support both legacy textImageUrl and new sourceImageUrl/sourceType params
+    const imageUrl = sourceImageUrl || textImageUrl;
+    const imageSourceType = sourceType || 'text';
+
+    if (!pageId || !bookId || !imageUrl) {
       return new Response(
-        JSON.stringify({ success: false, error: 'Missing required parameters: pageId, bookId, textImageUrl' }),
+        JSON.stringify({ success: false, error: 'Missing required parameters: pageId, bookId, and image URL' }),
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -58,24 +62,10 @@ serve(async (req) => {
 
     console.log(`🎨 Generating coloring book image for page: ${pageId}`);
     console.log(`🤖 Using model: ${COLORING_IMAGE_MODEL}`);
+    console.log(`📸 Source type: ${imageSourceType}`);
 
-    // Call Lovable AI to convert the text image to a coloring book outline
-    // The text image has a text bar at the bottom that must be preserved
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: COLORING_IMAGE_MODEL,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `STYLE REFERENCE: Dover Publications coloring book, dollar store coloring book, rubber stamp line art, clip art outline, vector stroke-only illustration.
+    // Different prompts based on source type
+    const basePromptRules = `STYLE REFERENCE: Dover Publications coloring book, dollar store coloring book, rubber stamp line art, clip art outline, vector stroke-only illustration.
 
 TARGET AUDIENCE: Pre-K children (ages 3-5) who color with chunky crayons and have developing fine motor skills.
 
@@ -101,18 +91,47 @@ LINE REQUIREMENTS FOR SMALL HANDS:
 4. Round, friendly shapes preferred over sharp angular forms
 5. Every shape is HOLLOW/EMPTY inside - pure outlines only
 
-PURPOSE: A Pre-K child will PRINT this on white paper and COLOR IT WITH CHUNKY CRAYONS. If any area has color, gray fill, or is too small/detailed, the child cannot color it successfully.
+PURPOSE: A Pre-K child will PRINT this on white paper and COLOR IT WITH CHUNKY CRAYONS. If any area has color, gray fill, or is too small/detailed, the child cannot color it successfully.`;
+
+    // Text image prompt - preserves text bar at bottom
+    const textImageSuffix = `
 
 TEXT BAR AT BOTTOM - PRESERVE EXACTLY:
 - The text bar at the very bottom must remain unchanged with its original colors
 - Only convert the ILLUSTRATION AREA above it to line art
 
-SELF-CHECK: In the illustration area, is there ANY pixel that is not pure black or pure white? Are shapes large and simple enough for a 3-year-old? If not, FIX IT.`
+SELF-CHECK: In the illustration area, is there ANY pixel that is not pure black or pure white? Are shapes large and simple enough for a 3-year-old? If not, FIX IT.`;
+
+    // Color image prompt - converts entire image (no text bar to preserve)
+    const colorImageSuffix = `
+
+Note: Convert the ENTIRE image to line art. There is no text bar to preserve.
+
+SELF-CHECK: Is every pixel pure black or pure white? Are shapes large and simple enough for a 3-year-old? If not, FIX IT.`;
+
+    const prompt = basePromptRules + (imageSourceType === 'color' ? colorImageSuffix : textImageSuffix);
+
+    // Call Lovable AI to convert the image to a coloring book outline
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: COLORING_IMAGE_MODEL,
+        messages: [
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: prompt
               },
               {
                 type: "image_url",
                 image_url: {
-                  url: textImageUrl
+                  url: imageUrl
                 }
               }
             ]

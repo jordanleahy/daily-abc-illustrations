@@ -8,6 +8,8 @@ interface BWModeUploadSectionProps {
   onImageUpload: (base64: string, imageMode: 'color' | 'bw' | 'text') => void;
   onGenerate: () => void;
   hasTextImage: boolean;
+  hasColorImage?: boolean;
+  isSpecialPage?: boolean;
   isGenerating: boolean;
   disabled?: boolean;
   onCancel?: () => void;
@@ -17,6 +19,8 @@ export function BWModeUploadSection({
   onImageUpload,
   onGenerate,
   hasTextImage,
+  hasColorImage = false,
+  isSpecialPage = false,
   isGenerating,
   disabled = false,
   onCancel,
@@ -118,7 +122,8 @@ export function BWModeUploadSection({
           Paste
         </Button>
         
-        {hasTextImage && (
+        {/* Show generate button if has text image OR (is special page AND has color image) */}
+        {(hasTextImage || (isSpecialPage && hasColorImage)) && (
           <>
             <div className="flex items-center gap-2 my-1">
               <div className="flex-1 h-px bg-border" />
@@ -137,7 +142,11 @@ export function BWModeUploadSection({
               ) : (
                 <Wand2 className="h-5 w-5" />
               )}
-              {isGenerating ? 'Generating...' : 'Generate from Text Image'}
+              {isGenerating 
+                ? 'Generating...' 
+                : hasTextImage 
+                  ? 'Generate from Text Image' 
+                  : 'Generate from Color Image'}
             </Button>
           </>
         )}
@@ -146,7 +155,9 @@ export function BWModeUploadSection({
       <p className="text-xs text-muted-foreground mt-1">
         {hasTextImage 
           ? 'Upload your own or generate from text image'
-          : 'Generate a text image first, then create B&W version'
+          : isSpecialPage && hasColorImage
+            ? 'Upload your own or generate from color image'
+            : 'Generate a text image first, then create B&W version'
         }
       </p>
     </div>

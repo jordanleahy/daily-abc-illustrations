@@ -9,9 +9,7 @@ import { useLazyCarouselImages } from '@/hooks/useLazyCarouselImages';
 import { format } from 'date-fns';
 import { toZonedTime } from 'date-fns-tz';
 
-// TODO: Replace with your actual video import
-// import heroVideo from '@/assets/hero-video.mp4';
-const heroVideo = ''; // Placeholder - add your video URL or import here
+import heroVideo from '@/assets/hero-video.mov';
 
 export const PreviewHero = () => {
   const { data: landingData } = useLandingPageData();
@@ -35,17 +33,16 @@ export const PreviewHero = () => {
   return (
     <div className="relative min-h-[90vh] flex items-center justify-center overflow-hidden">
       {/* Video Background */}
-      {heroVideo && (
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          className="absolute inset-0 w-full h-full object-cover"
-        >
-          <source src={heroVideo} type="video/mp4" />
-        </video>
-      )}
+      <video
+        autoPlay
+        muted
+        loop
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover"
+      >
+        <source src={heroVideo} type="video/quicktime" />
+        <source src={heroVideo} type="video/mp4" />
+      </video>
       
       {/* Dark Overlay */}
       <div className="absolute inset-0 bg-black/60" />

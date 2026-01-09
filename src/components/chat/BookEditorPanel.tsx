@@ -257,18 +257,34 @@ export function BookEditorPanel({
     }
   };
 
-  // Handle generating coloring book image from text image using AI
-  // The text image includes the text bar at the bottom which will be preserved
+  // Handle generating coloring book image from text image or color image using AI
+  // For content pages: uses text image (has text bar at bottom to preserve)
+  // For cover/educational pages: can use color image (no text bar)
   const handleGenerateColoringImage = async () => {
-    const textImageUrl = displayTextImages[currentPageNumber];
+    const currentPage = pages?.find(p => p.page_number === currentPageNumber);
+    const pageType = currentPage?.page_type;
+    const pageId = currentPage?.id;
     
-    if (!textImageUrl) {
-      toast({ title: "No text image", description: "Generate a text image first", variant: "destructive" });
+    // Determine if this is a special page type (cover/educational)
+    const isSpecialPage = ['cover', 'educational'].includes(pageType || '');
+    
+    const textImageUrl = displayTextImages[currentPageNumber];
+    const colorImageUrl = currentPageNumber === 1 
+      ? (thumbnailUrl || displayImages[1]) 
+      : displayImages[currentPageNumber];
+    
+    // For special pages without text image, use color image
+    const sourceImageUrl = isSpecialPage && !textImageUrl ? colorImageUrl : textImageUrl;
+    const sourceType = isSpecialPage && !textImageUrl ? 'color' : 'text';
+    
+    if (!sourceImageUrl) {
+      const msg = sourceType === 'color' 
+        ? "Upload a color image first" 
+        : "Generate a text image first";
+      toast({ title: "No source image", description: msg, variant: "destructive" });
       return;
     }
 
-    // Get the current page ID
-    const pageId = pages?.find(p => p.page_number === currentPageNumber)?.id;
     if (!pageId || !bookId) {
       toast({ title: "Missing data", description: "Could not find page information", variant: "destructive" });
       return;
@@ -277,7 +293,7 @@ export function BookEditorPanel({
     setIsGeneratingColoringImage(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-coloring-image', {
-        body: { pageId, bookId, textImageUrl }
+        body: { pageId, bookId, sourceImageUrl, sourceType }
       });
 
       if (error) {
@@ -296,7 +312,10 @@ export function BookEditorPanel({
         onColoringImageGenerated(currentPageNumber, data.coloringImageUrl);
       }
 
-      toast({ title: "Coloring page created", description: "B&W coloring book version generated with text preserved" });
+      const successMsg = sourceType === 'color' 
+        ? "B&W coloring book version generated from color image"
+        : "B&W coloring book version generated with text preserved";
+      toast({ title: "Coloring page created", description: successMsg });
       
       // Invalidate the book editor data to refresh and show the new coloring image
       await queryClient.invalidateQueries({ queryKey: ['book-editor-data', bookId] });
@@ -1076,6 +1095,8 @@ CRITICAL REQUIREMENTS:
                   onImageUpload={onImageUpload}
                   onGenerate={handleGenerateColoringImage}
                   hasTextImage={hasTextImage}
+                  hasColorImage={hasColorImage}
+                  isSpecialPage={['cover', 'educational'].includes(pages?.find(p => p.page_number === currentPageNumber)?.page_type || '')}
                   isGenerating={isGeneratingColoringImage}
                   disabled={createBookMutation.isPending}
                   onCancel={() => setIsReplacing(false)}
@@ -1131,6 +1152,8 @@ CRITICAL REQUIREMENTS:
                 onImageUpload={onImageUpload}
                 onGenerate={handleGenerateColoringImage}
                 hasTextImage={hasTextImage}
+                hasColorImage={hasColorImage}
+                isSpecialPage={['cover', 'educational'].includes(pages?.find(p => p.page_number === currentPageNumber)?.page_type || '')}
                 isGenerating={isGeneratingColoringImage}
                 disabled={createBookMutation.isPending}
               />
@@ -1190,26 +1213,31 @@ CRITICAL REQUIREMENTS:
               Color
               {hasColorImage && <span className="text-green-500 ml-0.5">✓</span>}
             </button>
-            {hasTextImage && (
-              <button 
-                onClick={() => setImageMode('bw')}
-                className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
-                  imageMode === 'bw' 
-                    ? 'bg-primary text-primary-foreground' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                {pageBwCosts[currentPageNumber] ? (
-                  <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1 rounded">
-                    {(pageBwCosts[currentPageNumber] / 100).toFixed(2)}¢
-                  </span>
-                ) : (
-                  <span>⬜</span>
-                )}
-                B&W
-                {hasBwImage && <span className="text-green-500 ml-0.5">✓</span>}
-              </button>
-            )}
+            {/* Show B&W tab if: hasTextImage OR (hasColorImage AND page is cover/educational) */}
+            {(() => {
+              const currentPageType = pages?.find(p => p.page_number === currentPageNumber)?.page_type;
+              const canShowBwMode = hasTextImage || (hasColorImage && ['cover', 'educational'].includes(currentPageType || ''));
+              return canShowBwMode ? (
+                <button 
+                  onClick={() => setImageMode('bw')}
+                  className={`px-2 py-1 text-xs rounded-full transition-colors flex items-center gap-1 ${
+                    imageMode === 'bw' 
+                      ? 'bg-primary text-primary-foreground' 
+                      : 'text-muted-foreground hover:text-foreground'
+                  }`}
+                >
+                  {pageBwCosts[currentPageNumber] ? (
+                    <span className="text-[10px] font-mono bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 px-1 rounded">
+                      {(pageBwCosts[currentPageNumber] / 100).toFixed(2)}¢
+                    </span>
+                  ) : (
+                    <span>⬜</span>
+                  )}
+                  B&W
+                  {hasBwImage && <span className="text-green-500 ml-0.5">✓</span>}
+                </button>
+              ) : null;
+            })()}
           </div>
         </div>
 

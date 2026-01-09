@@ -15,6 +15,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { OptimizedImage } from '@/components/ui/optimized-image';
 import { Plus, Loader2, Palette, UserPlus } from 'lucide-react';
 import { PublicBookShareDrawer } from '@/components/book/PublicBookShareDrawer';
+import { PublicBookFooter } from '@/components/landing/PublicBookFooter';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const PublicBookPageCard = ({ page, index, isLocked }: { page: any; index: number; isLocked: boolean }) => {
@@ -231,6 +232,7 @@ export default function PublicBook() {
           )}
 
         </div>
+        <PublicBookFooter />
       </StandardPageLayout>
     </>
   );

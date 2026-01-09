@@ -96,7 +96,7 @@ const CityLanding = () => {
             <div className="text-center max-w-4xl mx-auto">
               <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 ${cityVideo ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
                 <MapPin className="h-4 w-4" />
-                <span className="text-sm font-medium">Jersey City Early Education Partnership</span>
+                <span className="text-sm font-medium">Solomon Administration Education Initiative</span>
               </div>
               
               <h1 className={`text-4xl md:text-6xl font-bold mb-6 ${cityVideo ? 'text-white drop-shadow-lg' : 'text-foreground'}`}>

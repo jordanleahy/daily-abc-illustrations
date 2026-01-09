@@ -33,7 +33,7 @@ import { toast } from '@/hooks/use-toast';
 import { SITE_CONFIG } from '@/config/site';
 import { DailyPublishedStatus } from '@/types/dailyPublished';
 import { PublicationStatus } from '@/types/shared';
-import { getAppendPublishDate } from '@/utils/publishQueue';
+import { getPlaceholderPublishDate } from '@/utils/queueDateUtils';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
 import { generateUniqueSlug } from '@/utils/slugUtils';
 
@@ -410,10 +410,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
     }
 
     try {
-      // Get next publish date (appends to end of queue - FIFO)
-      const nextDate = await getAppendPublishDate(supabase);
+      // Use placeholder date - actual date set on activation
+      const placeholderDate = getPlaceholderPublishDate();
       
-      // Create new daily publication scheduled for next available date
       // Generate unique slug for republished books
       const slug = await generateUniqueSlug(contentName, contentId);
 
@@ -425,8 +424,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
           status: 'queued' as const,
           is_active: false,
-          publish_date: nextDate,
-          slug: slug // Add slug to insert
+          publish_date: placeholderDate, // Placeholder - updated on activation
+          slug: slug
         })
         .select()
         .single();
@@ -466,16 +465,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
         // Don't fail the republish if SEO generation fails
       }
 
-      const formattedDate = new Date(nextDate).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric', 
-        month: 'long',
-        day: 'numeric'
-      });
-
       toast({
         title: "Republished Successfully!",  
-        description: `${contentName} has been scheduled for ${formattedDate} at 7:01 AM Eastern Time.`,
+        description: `${contentName} has been added to the publication queue.`,
       });
 
       // Update local state
@@ -826,8 +818,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
       try {
         // Check if there's already a draft entry for this book
         if (existingPublication && existingPublication.status === 'draft') {
-          // Convert draft to queued with next publish date (appends to end - FIFO)
-          const nextDate = await getAppendPublishDate(supabase);
+          // Convert draft to queued with placeholder date
+          const placeholderDate = getPlaceholderPublishDate();
           
           // Generate unique slug if not already present
           const slug = existingPublication.slug || await generateUniqueSlug(contentName, contentId);
@@ -836,9 +828,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
             .from('daily_published')
             .update({
               status: 'queued' as const,
-              publish_date: nextDate,
-              is_active: false, // Still not active until processed
-              slug: slug // Add slug to update
+              publish_date: placeholderDate, // Placeholder - updated on activation
+              is_active: false,
+              slug: slug
             })
             .eq('id', existingPublication.id)
             .select()
@@ -852,16 +844,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           // Generate SEO metadata for the converted draft
           await generateSeoMetadata(updatedPublication.id);
 
-          const formattedDate = new Date(nextDate).toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric', 
-            month: 'long',
-            day: 'numeric'
-          });
-
           toast({
-            title: "Scheduled for Publication!",
-            description: `${contentName} has been scheduled for ${formattedDate} at 7:01 AM Eastern Time.`,
+            title: "Added to Publication Queue!",
+            description: `${contentName} has been added to the queue and will publish in order.`,
           });
 
           // Update local state
@@ -870,13 +855,13 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           // Generate QR code automatically
           await generateQRCodeSafely();
         } else {
-          // Get next publish date (appends to end of queue - FIFO)
-          const nextDate = await getAppendPublishDate(supabase);
+          // Use placeholder date - actual date set on activation
+          const placeholderDate = getPlaceholderPublishDate();
           
           // Generate unique slug for new publications
           const slug = await generateUniqueSlug(contentName, contentId);
 
-          // Create new daily publication scheduled for next available date
+          // Create new daily publication (ordered by created_at for FIFO)
           const { data: newPublication, error: insertError } = await supabase
             .from('daily_published')
             .insert({
@@ -885,8 +870,8 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
               description: `${SITE_CONFIG.dailyContent.description} featuring ${contentName}`,
               status: 'queued' as const,
               is_active: false,
-              publish_date: nextDate,
-              slug: slug // Add slug to insert
+              publish_date: placeholderDate, // Placeholder - updated on activation
+              slug: slug
             })
             .select()
             .single();
@@ -899,16 +884,9 @@ export const ExportsSection: React.FC<ExportsSectionProps> = ({
           // Generate SEO metadata for the new publication
           await generateSeoMetadata(newPublication.id);
 
-          const formattedDate = new Date(nextDate).toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric', 
-            month: 'long',
-            day: 'numeric'
-          });
-
           toast({
-            title: "Scheduled for Publication!",  
-            description: `${contentName} has been scheduled for ${formattedDate} at 7:01 AM Eastern Time.`,
+            title: "Added to Publication Queue!",  
+            description: `${contentName} has been added to the queue and will publish in order.`,
           });
 
          // Update local state

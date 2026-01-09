@@ -1,25 +1,25 @@
 import { useDailyPublishedQueue } from './useDailyPublishedQueue';
-import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
-import { createEasternPublishDate } from '@/utils/timezone';
-import { getAppendPublishDate } from '@/utils/publishQueue';
+import { getPublishDateForPosition } from '@/utils/queueDateUtils';
 
+/**
+ * Hook to get the expected publication date for a new item added to the queue.
+ * Uses position-based calculation: new items go at the end of the queue.
+ */
 export const useExpectedPublicationDate = (contentId: string) => {
   const { data: queueItems = [], isLoading: queueLoading } = useDailyPublishedQueue();
 
   return useQuery({
     queryKey: ['expected-publication-date', contentId],
     queryFn: async () => {
-      // Get next publish date (appends to end of queue - FIFO)
-      const nextDate = await getAppendPublishDate(supabase);
+      // Count queued items to determine position for new item
+      const queuedCount = queueItems.filter(item => item.status === 'queued').length;
       
-      if (!nextDate) {
-        return null;
-      }
-
-      // Create publish date at 7:01 AM Eastern Time for the given date
-      // Use proper timezone conversion to get the correct UTC time
-      const publishDate = createEasternPublishDate(nextDate);
+      // New item would be at position queuedCount + 1
+      const nextPosition = queuedCount + 1;
+      
+      // Calculate the publish date based on position
+      const publishDate = getPublishDateForPosition(nextPosition);
       
       return publishDate;
     },

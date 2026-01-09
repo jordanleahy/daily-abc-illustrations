@@ -2,7 +2,8 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { BookImage } from '@/components/ui/book-image';
-import { formatTimeRemaining, formatFixedScheduleTime } from '@/utils/timeUtils';
+import { formatTimeRemaining } from '@/utils/timeUtils';
+import { formatQueuePositionFull } from '@/utils/queueDateUtils';
 import { DailyPublishedWithBook } from '@/types/dailyPublished';
 import { useSeoMetadata } from '@/hooks/useSeoMetadata';
 import { useBookCoverImage } from '@/hooks/useBookCoverImage';
@@ -13,29 +14,14 @@ import { useNavigate } from 'react-router-dom';
 interface DailyPublishedQueueCardProps {
   item: DailyPublishedWithBook;
   position: number | "active" | "expired";
-  expectedActivationTime?: string;
 }
 export function DailyPublishedQueueCard({
   item,
   position,
-  expectedActivationTime
 }: DailyPublishedQueueCardProps) {
   const navigate = useNavigate();
   const deleteMutation = useDeleteDailyPublished();
   const { data: userRole } = useUserRole();
-
-  // Format publish date in user's local timezone
-  const formatPublishDate = (dateString: string): string => {
-    const [year, month, day] = dateString.split('T')[0].split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
 
   // Check if item is expired (client-side detection)
   const isExpiredClientSide = item.expires_at && new Date() > new Date(item.expires_at);
@@ -109,11 +95,11 @@ export function DailyPublishedQueueCard({
         color: 'text-red-600'
       };
     }
-    if (effectiveStatus === 'queued' && expectedActivationTime) {
+    if (effectiveStatus === 'queued' && typeof position === 'number') {
       return {
         icon: Calendar,
-        label: 'Scheduled to activate',
-        value: formatFixedScheduleTime(expectedActivationTime),
+        label: 'Scheduled',
+        value: formatQueuePositionFull(position),
         color: 'text-blue-600'
       };
     }
@@ -187,14 +173,14 @@ export function DailyPublishedQueueCard({
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-muted-foreground" />
           <span className="text-sm font-medium text-muted-foreground">
-            {effectiveStatus === 'queued' && (
-              <>Scheduled: <span className="text-foreground">{formatPublishDate(item.publish_date)}</span></>
+            {effectiveStatus === 'queued' && typeof position === 'number' && (
+              <>Scheduled: <span className="text-foreground">{formatQueuePositionFull(position)}</span></>
             )}
             {effectiveStatus === 'active' && (
-              <>Published: <span className="text-green-600">{formatPublishDate(item.publish_date)}</span></>
+              <>Published: <span className="text-green-600">Today</span></>
             )}
             {effectiveStatus === 'expired' && (
-              <>Published: <span className="text-muted-foreground">{formatPublishDate(item.publish_date)}</span></>
+              <>Published: <span className="text-muted-foreground">{new Date(item.published_at).toLocaleDateString()}</span></>
             )}
           </span>
         </div>

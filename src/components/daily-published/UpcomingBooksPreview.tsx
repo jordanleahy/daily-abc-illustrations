@@ -4,34 +4,17 @@ import { BookImage } from '@/components/ui/book-image';
 import { Calendar, Clock } from 'lucide-react';
 import { useUpcomingDailyPublished } from '@/hooks/useUpcomingDailyPublished';
 import { useSeoMetadataByBook } from '@/hooks/useSeoMetadata';
-import { format } from 'date-fns';
+import { formatQueuePosition } from '@/utils/queueDateUtils';
 
 interface BookPreviewCardProps {
   bookId: string;
   title: string;
   description?: string;
-  publishDate: string;
+  position: number; // 1-indexed queue position
 }
 
-function BookPreviewCard({ bookId, title, description, publishDate }: BookPreviewCardProps) {
+function BookPreviewCard({ bookId, title, description, position }: BookPreviewCardProps) {
   const { data: seoMetadata } = useSeoMetadataByBook(bookId);
-  
-  const formatPublishDate = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      const today = new Date();
-      const tomorrow = new Date(today);
-      tomorrow.setDate(today.getDate() + 1);
-      
-      if (date.toDateString() === tomorrow.toDateString()) {
-        return 'Tomorrow';
-      } else {
-        return format(date, 'EEEE, MMM d');
-      }
-    } catch {
-      return dateString;
-    }
-  };
 
   return (
     <Card className="shrink-0 border border-border/50 bg-card/50 backdrop-blur-sm">
@@ -65,7 +48,7 @@ function BookPreviewCard({ bookId, title, description, publishDate }: BookPrevie
             )}
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="w-3 h-3" />
-              {formatPublishDate(publishDate)}
+              {formatQueuePosition(position)}
             </div>
           </div>
         </div>
@@ -112,13 +95,13 @@ export function UpcomingBooksPreview() {
       
       <ScrollArea className="h-64">
         <div className="space-y-3 pr-4">
-          {upcomingBooks.map((item) => (
+          {upcomingBooks.map((item, index) => (
             <BookPreviewCard
               key={item.id}
               bookId={item.book_id}
               title={item.title}
               description={item.description || item.book.book_description}
-              publishDate={item.publish_date}
+              position={index + 1}
             />
           ))}
         </div>

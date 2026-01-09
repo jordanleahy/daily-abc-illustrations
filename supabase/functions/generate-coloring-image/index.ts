@@ -18,6 +18,8 @@ const corsHeaders = {
  */
 async function convertToGrayscale(imageBytes: Uint8Array): Promise<Uint8Array> {
   try {
+    // Import Buffer from node:buffer for Deno compatibility
+    const { Buffer } = await import("node:buffer");
     // Use pngjs for PNG manipulation - works in Edge Runtime
     const { PNG } = await import("npm:pngjs@7.0.0");
     

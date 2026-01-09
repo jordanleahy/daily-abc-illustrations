@@ -12,6 +12,40 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+/**
+ * Convert an image to pure grayscale by averaging RGB values
+ * This ensures no color artifacts remain in B&W images
+ */
+async function convertToGrayscale(imageBytes: Uint8Array): Promise<Uint8Array> {
+  // Decode PNG manually - simpler approach using canvas-like processing
+  // For Deno, we'll use a simple pixel manipulation approach
+  
+  // Import sharp-like library for image processing in Deno
+  const { ImageMagick, initialize, MagickFormat } = await import(
+    "https://deno.land/x/imagemagick_deno@0.0.31/mod.ts"
+  );
+  
+  await initialize();
+  
+  return new Promise((resolve, reject) => {
+    try {
+      ImageMagick.read(imageBytes, (image) => {
+        // Convert to grayscale
+        image.grayscale();
+        
+        // Write back to PNG
+        image.write(MagickFormat.Png, (data) => {
+          resolve(data);
+        });
+      });
+    } catch (error) {
+      console.error('Grayscale conversion error:', error);
+      // If conversion fails, return original bytes
+      resolve(imageBytes);
+    }
+  });
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -184,7 +218,13 @@ SELF-CHECK: Is every pixel pure black or pure white? Are shapes large and simple
 
     // Convert base64 to blob
     const base64Data = generatedImageUrl.replace(/^data:image\/\w+;base64,/, '');
-    const imageBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    let imageBytes = Uint8Array.from(atob(base64Data), c => c.charCodeAt(0));
+    
+    // Force grayscale conversion to remove any color artifacts
+    console.log('🔲 Converting image to pure grayscale...');
+    imageBytes = await convertToGrayscale(imageBytes);
+    console.log('✅ Grayscale conversion complete');
+    
     const imageBlob = new Blob([imageBytes], { type: 'image/png' });
 
     // Upload to Supabase Storage

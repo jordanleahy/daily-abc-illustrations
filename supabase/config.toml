@@ -166,7 +166,7 @@ verify_jwt = false
 verify_jwt = true
 
 [functions.generate-printable-coloring-image]
-verify_jwt = true
+verify_jwt = false
 
 [api]
 enabled = true

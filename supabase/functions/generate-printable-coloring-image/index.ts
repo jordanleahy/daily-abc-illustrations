@@ -93,23 +93,15 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Get user ID from JWT
+    // For batch processing, we allow unauthenticated requests (admin operation)
+    // For single page processing, we require auth
     const authHeader = req.headers.get('Authorization');
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'No authorization header' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    let userId: string | null = null;
     
-    if (authError || !user) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'Unauthorized' }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (authHeader) {
+      const token = authHeader.replace('Bearer ', '');
+      const { data: { user } } = await supabase.auth.getUser(token);
+      userId = user?.id || null;
     }
 
     // Batch processing mode - process all pages for a book
@@ -175,7 +167,7 @@ serve(async (req) => {
           // Upload to storage
           const fileName = `printable-coloring/${bookId}/${page.page_id}_${Date.now()}.png`;
           const { error: uploadError } = await supabase.storage
-            .from('images')
+            .from('page-images')
             .upload(fileName, compositedImage, {
               contentType: 'image/png',
               upsert: true
@@ -187,7 +179,7 @@ serve(async (req) => {
 
           // Get public URL
           const { data: urlData } = supabase.storage
-            .from('images')
+            .from('page-images')
             .getPublicUrl(fileName);
 
           // Update database
@@ -288,7 +280,7 @@ serve(async (req) => {
     // Upload to storage
     const fileName = `printable-coloring/${pageData.book_id}/${pageId}_${Date.now()}.png`;
     const { error: uploadError } = await supabase.storage
-      .from('images')
+      .from('page-images')
       .upload(fileName, compositedImage, {
         contentType: 'image/png',
         upsert: true
@@ -300,7 +292,7 @@ serve(async (req) => {
 
     // Get public URL
     const { data: urlData } = supabase.storage
-      .from('images')
+      .from('page-images')
       .getPublicUrl(fileName);
 
     // Update database

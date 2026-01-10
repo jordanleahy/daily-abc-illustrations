@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Menu, User, LogOut, QrCode, Settings, Users, Activity, ArrowLeft, BookOpen, Book, MessageSquare, Snowflake } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { 
   DropdownMenu,
@@ -116,6 +117,10 @@ export function Header({
 
   /** Sign out handler with automatic redirect to authentication page */
   const handleSignOut = async () => {
+    toast({
+      title: "Signing out...",
+      description: "See you next time! 👋",
+    });
     // Navigate first, then sign out to avoid loading state issues
     navigate('/auth');
     await signOut();

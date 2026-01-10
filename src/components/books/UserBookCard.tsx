@@ -15,6 +15,7 @@ import { useArchiveBook } from '@/hooks/useArchiveBook';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { getThemeDisplayName } from '@/types/characterTheme';
+import { getClothingBrandLabel } from '@/types/clothingBrand';
 import { getBookTypeDisplayName } from '@/types/bookType';
 import { supabase } from '@/integrations/supabase/client';
 import { copyToClipboard } from '@/utils/clipboardHelpers';
@@ -230,6 +231,11 @@ export function UserBookCard({
           {book.metadata?.characterTheme && (
             <Badge variant="default">
               {getThemeDisplayName(book.metadata.characterTheme)}
+            </Badge>
+          )}
+          {book.metadata?.clothingBrand && book.metadata.clothingBrand !== 'NONE' && (
+            <Badge variant="default" className="bg-blue-600 hover:bg-blue-700">
+              🏂 {getClothingBrandLabel(book.metadata.clothingBrand)}
             </Badge>
           )}
           {book.metadata?.pageCount && (

@@ -24,5 +24,6 @@ export interface LibraryBook {
     bookType?: string;
     targetAge?: AgeRangeId;
     characterTheme?: CharacterThemeValue;
+    clothingBrand?: string;
   } | null;
 }

@@ -7,6 +7,7 @@ import { MetaHead } from '@/components/common';
 import { StandardPageLayout } from '@/components/layout';
 import { LoadingState } from '@/components/ui/loading-state';
 import { PremiumGate } from '@/components/subscription/PremiumGate';
+import { TrialBanner } from '@/components/subscription/TrialBanner';
 import { CategorizedBookSections } from '@/components/library/CategorizedBookSections';
 import { BookFilterBar } from '@/components/filters';
 import { LIBRARY_TEXT } from '@/config/libraryText';
@@ -67,6 +68,9 @@ const Library = memo(() => {
       />
       <StandardPageLayout>
         <div className={LIBRARY_STYLES.page.container}>
+          {/* Trial Status Banner - Only shows for users in trial */}
+          <TrialBanner />
+          
           <div className={LIBRARY_STYLES.page.header.container}>
             <h1 className={LIBRARY_STYLES.page.header.title}>{LIBRARY_TEXT.PAGE_TITLE}</h1>
             <p className={LIBRARY_STYLES.page.header.subtitle}>{LIBRARY_TEXT.PAGE_SUBTITLE}</p>

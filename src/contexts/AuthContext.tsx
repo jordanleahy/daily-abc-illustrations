@@ -34,6 +34,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         // Clear ALL access caches on sign out to prevent stale data
         if (event === 'SIGNED_OUT') {
           console.log('[AuthContext] Clearing all caches after SIGNED_OUT');
+          // Clear legacy and any lingering subscription cache keys
           SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
           SafeLocalStorage.remove(ROLE_CACHE_KEY);
           SafeLocalStorage.remove(ACCESS_STATE_CACHE_KEY);
@@ -41,8 +42,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         // Clear ALL access caches on auth change to force fresh data for new/returning users
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          console.log('[AuthContext] Clearing all access caches after', event);
+          const userId = session?.user?.id;
+          console.log('[AuthContext] Clearing all access caches after', event, 'for user', userId);
+          
+          // Clear both legacy and user-specific cache keys
           SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+          if (userId) {
+            SafeLocalStorage.remove(`${SUBSCRIPTION_CACHE_KEY}_${userId}`);
+          }
           SafeLocalStorage.remove(ACCESS_STATE_CACHE_KEY);
           
           // Trigger a subscription check after a brief delay to ensure trial status is fetched

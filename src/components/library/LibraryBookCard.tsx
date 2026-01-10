@@ -42,7 +42,8 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
       return;
     }
 
-    // Use unified access state - 'locked' means show upgrade modal
+    // Only block if we're certain the user is locked (not during loading)
+    // This gives benefit of the doubt during loading states
     if (accessState === 'locked') {
       setShowUpgradeModal(true);
       return;

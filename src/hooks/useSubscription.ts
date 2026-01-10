@@ -85,12 +85,16 @@ const isSubscriptionActive = (status: SubscriptionStatus): boolean => {
   return status.subscribed;
 };
 
+// Helper to get user-specific cache key
+const getUserCacheKey = (userId: string) => `${SUBSCRIPTION_CACHE_KEY}_${userId}`;
+
 // Singleton fetch function - guaranteed to only run once at a time globally
 const fetchSubscription = async (userId: string): Promise<SubscriptionStatus> => {
-  // Check 90-day cache first
-  const cached = SafeLocalStorage.get<SubscriptionStatus>(SUBSCRIPTION_CACHE_KEY);
+  // Check 90-day cache first - cache key includes userId to prevent cross-user contamination
+  const userCacheKey = getUserCacheKey(userId);
+  const cached = SafeLocalStorage.get<SubscriptionStatus>(userCacheKey);
   if (cached) {
-    console.log('[SUBSCRIPTION] Using 90-day cached data');
+    console.log('[SUBSCRIPTION] Using 90-day cached data for user', userId);
     return { ...cached, loading: false };
   }
 
@@ -112,7 +116,7 @@ const fetchSubscription = async (userId: string): Promise<SubscriptionStatus> =>
   // Create and store the pending request
   pendingRequest = (async () => {
     try {
-      console.log('[SUBSCRIPTION] Fetching fresh subscription from API');
+      console.log('[SUBSCRIPTION] Fetching fresh subscription from API for user', userId);
       lastRequestTime = Date.now();
       
       const { data, error } = await supabase.functions.invoke('check-subscription');
@@ -130,17 +134,13 @@ const fetchSubscription = async (userId: string): Promise<SubscriptionStatus> =>
         loading: false,
       };
 
-      // Cache for 90 days - instant loads for game app users
-      SafeLocalStorage.set(
-        SUBSCRIPTION_CACHE_KEY,
-        subscriptionData,
-        90 * 24
-      );
+      // Cache for 90 days with user-specific key
+      SafeLocalStorage.set(userCacheKey, subscriptionData, 90 * 24);
 
       return subscriptionData;
     } catch (error) {
       console.error('Error checking subscription:', error);
-      SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+      SafeLocalStorage.remove(userCacheKey);
       return {
         subscribed: false,
         loading: false,
@@ -155,6 +155,15 @@ const fetchSubscription = async (userId: string): Promise<SubscriptionStatus> =>
   return pendingRequest;
 };
 
+// Helper to clear subscription cache for a user
+export const clearSubscriptionCache = (userId?: string) => {
+  if (userId) {
+    SafeLocalStorage.remove(getUserCacheKey(userId));
+  }
+  // Also clear the legacy global key for backwards compatibility
+  SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+};
+
 export const useSubscription = () => {
   const { user, loading: authLoading } = useAuthContext();
 
@@ -166,7 +175,7 @@ export const useSubscription = () => {
     networkMode: 'online',
     queryFn: async (): Promise<SubscriptionStatus> => {
       if (!user) {
-        SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+        clearSubscriptionCache();
         return { subscribed: false, loading: false };
       }
       return fetchSubscription(user.id);
@@ -175,7 +184,8 @@ export const useSubscription = () => {
     staleTime: SUBSCRIPTION_CACHE_DAYS * 24 * 60 * 60 * 1000,
     gcTime: SUBSCRIPTION_CACHE_DAYS * 24 * 60 * 60 * 1000,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    // IMPORTANT: Refetch on mount if no data exists to ensure fresh users get subscription check
+    refetchOnMount: (query) => query.state.data === undefined ? 'always' : false,
     refetchOnReconnect: false,
   });
 
@@ -184,21 +194,21 @@ export const useSubscription = () => {
   const checkSubscription = useCallback(async () => {
     // Clear cache to force fresh API call
     console.log('[SUBSCRIPTION] Manual check triggered - clearing cache');
-    SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+    clearSubscriptionCache(user?.id);
     await query.refetch();
-  }, [query]);
+  }, [query, user?.id]);
 
   // Listen for auth-driven subscription checks
   useEffect(() => {
     const handleAuthCheck = () => {
       console.log('[SUBSCRIPTION] Auth-triggered check - clearing cache and refetching');
-      SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+      clearSubscriptionCache(user?.id);
       query.refetch();
     };
 
     window.addEventListener('auth-subscription-check', handleAuthCheck);
     return () => window.removeEventListener('auth-subscription-check', handleAuthCheck);
-  }, [query]);
+  }, [query, user?.id]);
 
   // Real-time subscription to user_subscription_cache table
   const queryClient = useQueryClient();
@@ -220,7 +230,7 @@ export const useSubscription = () => {
         (payload) => {
           console.log('[SUBSCRIPTION] Real-time update received:', payload);
           // Clear all access caches and invalidate query to fetch fresh data
-          SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+          clearSubscriptionCache(user.id);
           SafeLocalStorage.remove(ACCESS_STATE_CACHE_KEY);
           queryClient.invalidateQueries({ queryKey: ['subscription', user.id] });
         }
@@ -248,7 +258,7 @@ export const useSubscription = () => {
           const urlParams = new URLSearchParams(window.location.search);
           if (urlParams.has('checkout_success') || urlParams.has('session_id')) {
             console.log('[SUBSCRIPTION] Post-checkout refresh triggered');
-            SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+            clearSubscriptionCache(user.id);
             query.refetch();
             // Clean up URL params
             urlParams.delete('checkout_success');
@@ -402,7 +412,7 @@ export const useSubscription = () => {
       if (error) throw error;
 
       // Clear cache and refresh subscription status after update
-      SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+      clearSubscriptionCache(user.id);
       await query.refetch();
 
       console.log(autoRenew 

@@ -69,6 +69,11 @@ export const SUBSCRIPTION_TIERS = {
 
 // Helper to check if subscription is active
 const isSubscriptionActive = (status: SubscriptionStatus): boolean => {
+  // Trial users are considered active subscribers
+  if (status.is_trial && status.trial_ends_at) {
+    return new Date(status.trial_ends_at) > new Date();
+  }
+  
   if (!status.subscribed) return false;
   
   // If subscription_end exists, check if it's in the future

@@ -31,16 +31,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Clear subscription cache on auth change to force refresh
+        // Clear ALL access caches on auth change to force fresh data for new/returning users
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-          console.log('[AuthContext] Clearing subscription cache after', event);
+          console.log('[AuthContext] Clearing all access caches after', event);
           SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+          SafeLocalStorage.remove(ACCESS_STATE_CACHE_KEY);
           
-          // Trigger a subscription check after a brief delay
+          // Trigger a subscription check after a brief delay to ensure trial status is fetched
           setTimeout(() => {
-            console.log('[AuthContext] Triggering subscription check');
+            console.log('[AuthContext] Triggering subscription check for fresh trial/subscription data');
             window.dispatchEvent(new CustomEvent('auth-subscription-check'));
-          }, 100);
+          }, 300);
         }
       }
     );

@@ -2,6 +2,8 @@ import { useMemo, useEffect } from 'react';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useRole } from '@/contexts/RoleContext';
 import { useSubscription } from '@/hooks/useSubscription';
+
+// Trial users get full access for 7 days
 import { SafeLocalStorage, ACCESS_STATE_CACHE_KEY, ACCESS_STATE_CACHE_HOURS } from '@/utils/storage';
 
 export type AccessState = 'loading' | 'unlocked' | 'locked';
@@ -12,6 +14,7 @@ interface CachedAccessState {
   isAdmin: boolean;
   isTeacher: boolean;
   hasSubscription: boolean;
+  isInTrial: boolean;
   cachedAt: number;
 }
 
@@ -39,7 +42,7 @@ interface AccessResolverResult {
 export const useAccessResolver = (): AccessResolverResult => {
   const { user, loading: authLoading } = useAuthContext();
   const { hasRole, isLoading: roleLoading } = useRole();
-  const { hasActiveSubscription, loading: subscriptionLoading } = useSubscription();
+  const { hasActiveSubscription, loading: subscriptionLoading, isInTrial } = useSubscription();
 
   // Step 1: Check cache SYNCHRONOUSLY for instant first render
   const cachedState = useMemo(() => {
@@ -63,9 +66,11 @@ export const useAccessResolver = (): AccessResolverResult => {
   const isUnlocked = useMemo(() => {
     // Privileged users always have access
     if (isPrivileged) return true;
+    // Trial users get full access
+    if (isInTrial) return true;
     // Check subscription
     return hasActiveSubscription;
-  }, [isPrivileged, hasActiveSubscription]);
+  }, [isPrivileged, hasActiveSubscription, isInTrial]);
 
   // Step 5: Update cache when we have fresh data (useEffect for side effects)
   useEffect(() => {
@@ -77,11 +82,12 @@ export const useAccessResolver = (): AccessResolverResult => {
       isAdmin,
       isTeacher,
       hasSubscription: hasActiveSubscription,
+      isInTrial: isInTrial || false,
       cachedAt: Date.now(),
     };
     
     SafeLocalStorage.set(ACCESS_STATE_CACHE_KEY, newCacheState, ACCESS_STATE_CACHE_HOURS);
-  }, [user?.id, isLoading, isUnlocked, isAdmin, isTeacher, hasActiveSubscription]);
+  }, [user?.id, isLoading, isUnlocked, isAdmin, isTeacher, hasActiveSubscription, isInTrial]);
 
   // Step 6: Determine access state with cache-first approach
   const result = useMemo((): AccessResolverResult => {
@@ -98,7 +104,7 @@ export const useAccessResolver = (): AccessResolverResult => {
 
     // If we have valid cache for this user, use it immediately
     if (cachedState) {
-      const cachedUnlocked = cachedState.isAdmin || cachedState.isTeacher || cachedState.hasSubscription;
+      const cachedUnlocked = cachedState.isAdmin || cachedState.isTeacher || cachedState.hasSubscription || cachedState.isInTrial;
       return {
         accessState: cachedUnlocked ? 'unlocked' : 'locked',
         isReady: true, // Cache means we're ready instantly

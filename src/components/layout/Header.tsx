@@ -116,8 +116,9 @@ export function Header({
 
   /** Sign out handler with automatic redirect to authentication page */
   const handleSignOut = async () => {
-    await signOut();
+    // Navigate first, then sign out to avoid loading state issues
     navigate('/auth');
+    await signOut();
   };
 
   /** Navigate back one path in browser history */

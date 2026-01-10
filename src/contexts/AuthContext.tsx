@@ -31,6 +31,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setUser(session?.user ?? null);
         setLoading(false);
         
+        // Clear ALL access caches on sign out to prevent stale data
+        if (event === 'SIGNED_OUT') {
+          console.log('[AuthContext] Clearing all caches after SIGNED_OUT');
+          SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+          SafeLocalStorage.remove(ROLE_CACHE_KEY);
+          SafeLocalStorage.remove(ACCESS_STATE_CACHE_KEY);
+        }
+        
         // Clear ALL access caches on auth change to force fresh data for new/returning users
         if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
           console.log('[AuthContext] Clearing all access caches after', event);

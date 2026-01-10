@@ -121,9 +121,12 @@ export function Header({
       title: "Signing out...",
       description: "See you next time! 👋",
     });
-    // Navigate first, then sign out to avoid loading state issues
-    navigate('/auth');
+    // Sign out first, then navigate after auth state clears
     await signOut();
+    // Small delay to ensure auth state is fully cleared before navigation
+    setTimeout(() => {
+      navigate('/auth', { replace: true });
+    }, 100);
   };
 
   /** Navigate back one path in browser history */

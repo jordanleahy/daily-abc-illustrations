@@ -19,7 +19,7 @@ const Auth = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAuthenticated } = useAuthContext();
+  const { isAuthenticated, loading: authLoading } = useAuthContext();
   
   const searchParams = new URLSearchParams(location.search);
   const mode = searchParams.get('mode');
@@ -34,12 +34,15 @@ const Auth = () => {
   const [acceptTerms, setAcceptTerms] = useState(true);
 
 
-  // Redirect authenticated users to home
+  // Redirect authenticated users to home (wait for auth to finish loading first)
   useEffect(() => {
+    // Don't redirect while auth is still loading (prevents race condition on sign out)
+    if (authLoading) return;
+    
     if (isAuthenticated) {
       navigate('/');
     }
-  }, [isAuthenticated, navigate]);
+  }, [isAuthenticated, authLoading, navigate]);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);

@@ -26,22 +26,26 @@ function isCrawler(userAgent: string): boolean {
 }
 
 // City display names and metadata
-const cityData: Record<string, { name: string; description: string }> = {
+const cityData: Record<string, { name: string; description: string; ogImage?: string }> = {
   jerseycity: {
     name: 'Jersey City',
     description: 'Discover personalized ABC books featuring Jersey City landmarks, culture, and community. Educational content designed for local families.',
+    ogImage: '/images/cities/jerseycity-cover.jpeg',
   },
   hoboken: {
     name: 'Hoboken',
     description: 'Explore ABC books celebrating Hoboken\'s unique character and community. Engaging educational content for local children and families.',
+    ogImage: '/images/cities/hoboken-cover.jpeg',
   },
   newyork: {
     name: 'New York City',
     description: 'NYC-themed ABC books bringing the Big Apple to life for young learners. Educational adventures through iconic neighborhoods and landmarks.',
+    ogImage: '/images/cities/newyork-cover.jpeg',
   },
   newyorkcity: {
     name: 'New York City',
     description: 'NYC-themed ABC books bringing the Big Apple to life for young learners. Educational adventures through iconic neighborhoods and landmarks.',
+    ogImage: '/images/cities/newyork-cover.jpeg',
   },
 };
 
@@ -70,10 +74,12 @@ export default async function handler(req: Request, context: Context) {
     const cityDescription = city?.description || 
       `Discover personalized ABC books for ${cityName}. Educational content designed for local families and children.`;
     
-    const siteUrl = 'https://dailyabcillustrations.com';
+    const siteUrl = 'https://chairlifthabits.com';
     const canonicalUrl = `${siteUrl}/city/${citySlug}`;
-    const ogTitle = `${cityName} ABC Books | Daily ABC Illustrations`;
-    const ogImage = `${siteUrl}/og-default.png`; // Default OG image
+    const ogTitle = `${cityName} ABC Books | Chairlift Habits`;
+    const ogImage = city?.ogImage 
+      ? `${siteUrl}${city.ogImage}`
+      : `${siteUrl}/images/cities/default-cover.jpeg`;
     
     // Return HTML with meta tags for crawlers
     const html = `<!DOCTYPE html>
@@ -90,7 +96,7 @@ export default async function handler(req: Request, context: Context) {
   <meta property="og:title" content="${ogTitle}">
   <meta property="og:description" content="${cityDescription}">
   <meta property="og:image" content="${ogImage}">
-  <meta property="og:site_name" content="Daily ABC Illustrations">
+  <meta property="og:site_name" content="Chairlift Habits">
   <meta property="og:locale" content="en_US">
   
   <!-- Twitter Card -->

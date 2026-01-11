@@ -22,10 +22,10 @@ export const SITE_CONFIG = {
   // SEO and OpenGraph
   locale: 'en_US',
   defaultImage: {
-    url: 'https://lovable.dev/opengraph-image-p98pqg.png',
+    url: 'https://chairlifthabits.com/images/og-homepage.png',
     width: 1200,
     height: 630,
-    alt: 'Chairlift Habits - New books published daily at 7:01 AM Eastern Time',
+    alt: 'Chairlift Habits - Helping toddlers grow one habit at a time',
   },
   
   // Content specific

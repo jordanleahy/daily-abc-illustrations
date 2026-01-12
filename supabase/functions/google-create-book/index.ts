@@ -6,6 +6,8 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
 import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange, BOOK_TYPE_TO_AGENT_TYPE, AgentType } from '../_shared/types.ts';
 import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
+import { getResortVisualPrompt, isValidLocation, type ValidLocation } from '../_shared/locations.ts';
+import { getCityVisualPrompt, isValidCity, type ValidCity } from '../_shared/cities.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -456,6 +458,24 @@ IMPORTANT - WORD LEARNING FOCUS:
       if (characterConstraints) {
         systemPrompt += `\n${characterConstraints}`;
         console.log(`[Character Enforcement] Applied constraints for ${characterTheme}:`, selectedCharacterIds);
+      }
+    }
+
+    // Add location visual profile if a resort was selected
+    if (location && isValidLocation(location as ValidLocation)) {
+      const resortVisualPrompt = getResortVisualPrompt(location as ValidLocation);
+      if (resortVisualPrompt) {
+        systemPrompt += `\n${resortVisualPrompt}`;
+        console.log(`[Location Context] Applied visual profile for: ${location}`);
+      }
+    }
+
+    // Add city visual profile if a city was selected
+    if (city && isValidCity(city as ValidCity)) {
+      const cityVisualPrompt = getCityVisualPrompt(city as ValidCity);
+      if (cityVisualPrompt) {
+        systemPrompt += `\n${cityVisualPrompt}`;
+        console.log(`[City Context] Applied visual profile for: ${city}`);
       }
     }
 

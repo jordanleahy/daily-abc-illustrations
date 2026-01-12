@@ -23,6 +23,9 @@ const Auth = () => {
   
   const searchParams = new URLSearchParams(location.search);
   const mode = searchParams.get('mode');
+  const redirectPath = searchParams.get('redirect');
+  const plan = searchParams.get('plan');
+  const coupon = searchParams.get('coupon');
   
   const [isLogin, setIsLogin] = useState(mode !== 'signup');
   const [isForgotPassword, setIsForgotPassword] = useState(false);
@@ -34,15 +37,24 @@ const Auth = () => {
   const [acceptTerms, setAcceptTerms] = useState(true);
 
 
-  // Redirect authenticated users to home (wait for auth to finish loading first)
+  // Redirect authenticated users (wait for auth to finish loading first)
   useEffect(() => {
     // Don't redirect while auth is still loading (prevents race condition on sign out)
     if (authLoading) return;
     
     if (isAuthenticated) {
-      navigate('/');
+      // If there's a redirect path with plan/coupon, build the full redirect URL
+      if (redirectPath) {
+        const params = new URLSearchParams();
+        if (plan) params.set('plan', plan);
+        if (coupon) params.set('coupon', coupon);
+        const queryString = params.toString();
+        navigate(queryString ? `${redirectPath}?${queryString}` : redirectPath);
+      } else {
+        navigate('/');
+      }
     }
-  }, [isAuthenticated, authLoading, navigate]);
+  }, [isAuthenticated, authLoading, navigate, redirectPath, plan, coupon]);
 
   const handleGoogleSignIn = async () => {
     setLoading(true);

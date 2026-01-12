@@ -20,6 +20,7 @@ const cityVideos: Record<string, string> = {
 
 const CityLanding = () => {
   const { cityName } = useParams<{ cityName: string }>();
+  const navigate = useNavigate();
   const { data: books = [], isLoading } = useCityBooks(cityName);
   const videoRef = useRef<HTMLVideoElement>(null);
   
@@ -107,8 +108,14 @@ const CityLanding = () => {
                 Focused on early phonics and positive habits creation, with daily published books.
               </p>
 
-              <Button size="lg" asChild variant={cityVideo ? 'secondary' : 'default'}>
-                <a href="mailto:jordanwilliamleahy@gmail.com">Contact</a>
+              <Button 
+                size="lg" 
+                variant={cityVideo ? 'secondary' : 'default'}
+                onClick={() => navigate('/auth?mode=signup&redirect=/subscription/checkout&plan=annual&coupon=Solomon')}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-5 w-5" />
+                Free Annual Subscription – Coupon Code Solomon
               </Button>
             </div>
           </div>

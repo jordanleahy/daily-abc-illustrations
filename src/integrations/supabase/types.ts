@@ -729,6 +729,63 @@ export type Database = {
           },
         ]
       }
+      cities: {
+        Row: {
+          architecture: string | null
+          atmosphere: string | null
+          color_palette: string | null
+          created_at: string | null
+          description: string | null
+          emoji: string
+          id: string
+          is_active: boolean | null
+          label: string
+          landmarks: string[] | null
+          og_image: string | null
+          seo_description: string | null
+          sort_order: number | null
+          spelling_guide: string | null
+          terrain: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          architecture?: string | null
+          atmosphere?: string | null
+          color_palette?: string | null
+          created_at?: string | null
+          description?: string | null
+          emoji?: string
+          id: string
+          is_active?: boolean | null
+          label: string
+          landmarks?: string[] | null
+          og_image?: string | null
+          seo_description?: string | null
+          sort_order?: number | null
+          spelling_guide?: string | null
+          terrain?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          architecture?: string | null
+          atmosphere?: string | null
+          color_palette?: string | null
+          created_at?: string | null
+          description?: string | null
+          emoji?: string
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          landmarks?: string[] | null
+          og_image?: string | null
+          seo_description?: string | null
+          sort_order?: number | null
+          spelling_guide?: string | null
+          terrain?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       color_palettes: {
         Row: {
           accent_hex: string

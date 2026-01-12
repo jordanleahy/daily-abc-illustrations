@@ -1,56 +1,39 @@
-// City constants for book creation flow
+// City utilities for book creation flow
 // Cities are asked as an optional discovery question after resort location
+// Now database-driven with caching
 
-export const VALID_CITIES = [
-  'JERSEY_CITY',
-  'HOBOKEN',
-  'NEW_YORK_CITY',
-  'NONE' // Represents "skipped" - no specific city
-] as const;
+import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-export type ValidCity = typeof VALID_CITIES[number];
+// Database record structure (matches cities table)
+export interface CityRecord {
+  id: string;
+  label: string;
+  emoji: string;
+  description: string | null;
+  spelling_guide: string | null;
+  terrain: string | null;
+  architecture: string | null;
+  landmarks: string[] | null;
+  color_palette: string | null;
+  atmosphere: string | null;
+  og_image: string | null;
+  seo_description: string | null;
+  is_active: boolean;
+  sort_order: number;
+}
 
+// Legacy type for backward compatibility
+export type ValidCity = string;
+
+// Legacy interface for backward compatibility
 export interface CityOption {
-  id: ValidCity;
+  id: string;
   label: string;
   emoji: string;
   description: string;
 }
 
-// Static city options
-export const CITY_OPTIONS: CityOption[] = [
-  { id: 'JERSEY_CITY', label: 'Jersey City', emoji: '🌅', description: 'NJ, waterfront views, diverse neighborhoods' },
-  { id: 'HOBOKEN', label: 'Hoboken', emoji: '🚂', description: 'NJ, historic mile-square city' },
-  { id: 'NEW_YORK_CITY', label: 'New York City', emoji: '🗽', description: 'The Big Apple, iconic landmarks' },
-];
-
-/**
- * Type guard for valid city IDs
- */
-export function isValidCity(value: string): value is ValidCity {
-  return VALID_CITIES.includes(value as ValidCity);
-}
-
-/**
- * Get city label for display
- */
-export function getCityLabel(cityId: ValidCity): string {
-  const option = CITY_OPTIONS.find(c => c.id === cityId);
-  return option?.label || cityId;
-}
-
-/**
- * Get city with emoji for display
- */
-export function getCityDisplay(cityId: ValidCity): string {
-  const option = CITY_OPTIONS.find(c => c.id === cityId);
-  return option ? `${option.emoji} ${option.label}` : cityId;
-}
-
-/**
- * Visual characteristics and landmarks for each city
- * Used to ensure AI-generated images authentically represent each location
- */
+// Visual profile interface for AI image generation
 export interface CityVisualProfile {
   terrain: string;
   architecture: string;
@@ -59,77 +42,181 @@ export interface CityVisualProfile {
   atmosphere: string;
 }
 
-const CITY_VISUAL_PROFILES: Partial<Record<ValidCity, CityVisualProfile>> = {
-  'JERSEY_CITY': {
-    terrain: 'Waterfront urban grid along Hudson River, elevated Heights neighborhood, varied density from downtown skyscrapers to residential brownstone blocks, parks integrated throughout',
-    architecture: 'Historic brownstones with stoops, modern glass waterfront towers, converted warehouse lofts, Art Deco civic buildings, diverse housing styles mixing old and new',
-    landmarks: [
-      'Liberty State Park (green lawns, Liberty Science Center, Statue of Liberty views, ferry terminal, Central Railroad of NJ terminal)',
-      'Downtown/Exchange Place (Goldman Sachs tower, Colgate Clock, waterfront esplanade, PATH station plaza)',
-      'Journal Square (Loew\'s Theatre historic marquee, transportation hub, India Square, diverse restaurants and shops)',
-      'Lincoln Park (duck pond, playground, running paths, historic Victorian homes surrounding, Hamilton Park neighborhood)',
-      'The Heights (elevated views, Riverview-Fisk Park, Congress Street overlook with panoramic NYC views, Pershing Field)',
-      'Hamilton Park (Victorian-era park, central fountain, brownstone-lined streets)',
-      'Newport (modern shopping center, waterfront boardwalk, marina)',
-      'Van Vorst Park (historic neighborhood, farmers market, tree-lined streets)',
-      'LSP Light Rail (distinctive blue train connecting waterfront)',
-      'Paulus Hook (cobblestone streets, historic pier, ferry landing)'
-    ],
-    colorPalette: 'Hudson River blues, brick and terracotta reds, green park spaces, concrete urban grays, golden sunset reflections off Manhattan skyline, brownstone earth tones',
-    atmosphere: 'Diverse multicultural community, family-friendly waterfront parks, Manhattan skyline as constant backdrop, urban-meets-nature feel, accessible public transit culture, neighborhood pride, artistic and creative energy'
-  },
-  'HOBOKEN': {
-    terrain: 'Mile-square city on Hudson waterfront, compact urban grid, waterfront parks and piers, elevated western edge',
-    architecture: 'Classic brownstones with stoops, narrow tree-lined streets, historic train terminal, waterfront high-rises, preserved 19th century character',
-    landmarks: [
-      'Washington Street (main commercial strip, restaurants, boutiques)',
-      'Stevens Institute of Technology (hilltop campus, castle-like buildings)',
-      'Hoboken Terminal (historic Lackawanna train station, copper roof)',
-      'Pier A (waterfront park, Manhattan views, playground)',
-      'Carlo\'s Bakery (Cake Boss location)',
-      'Sinatra Park (named for Frank Sinatra, born here)',
-      'Elysian Park (oldest park, baseball birthplace claim)',
-      'Church Square Park (historic fountain, neighborhood gathering)'
-    ],
-    colorPalette: 'Brownstone reds and tans, Hudson River blues, green park spaces, vintage brick textures, copper and brass accents from historic buildings',
-    atmosphere: 'Walkable urban village, young professional energy, historic charm, strong Italian-American heritage, vibrant nightlife, community-oriented, NYC commuter culture'
-  },
-  'NEW_YORK_CITY': {
-    terrain: 'Five boroughs spanning islands and mainland, dramatic vertical skyline, grid street system in Manhattan, varied topography across boroughs',
-    architecture: 'Iconic skyscrapers (Empire State, Chrysler, One WTC), brownstone neighborhoods, Art Deco masterpieces, modern glass towers, historic bridges, diverse architectural eras',
-    landmarks: [
-      'Central Park (Great Lawn, Bethesda Fountain, Central Park Zoo)',
-      'Times Square (bright lights, Broadway theaters, crowds)',
-      'Brooklyn Bridge (iconic suspension bridge, pedestrian walkway)',
-      'Empire State Building (Art Deco spire, observation deck)',
-      'Statue of Liberty (Lady Liberty, Ellis Island)',
-      'Grand Central Terminal (Beaux-Arts ceiling, main concourse)',
-      'High Line (elevated park, Chelsea views)',
-      'One World Trade Center (Freedom Tower, memorial pools)',
-      'Rockefeller Center (skating rink, Christmas tree)',
-      'Fifth Avenue (shopping, landmarks)'
-    ],
-    colorPalette: 'Yellow taxi cab, iconic red and white signage, gray concrete and steel, green park spaces, bright neon lights, limestone and granite building facades',
-    atmosphere: 'Bustling energy, iconic and larger-than-life, cultural melting pot, ambitious and fast-paced, 24/7 city that never sleeps, world stage presence'
-  },
-};
+// Cache for cities to avoid repeated DB calls
+let citiesCache: CityRecord[] | null = null;
+let cacheTimestamp: number = 0;
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour cache (cities change rarely)
+
+/**
+ * Fetch all active cities from the database
+ */
+export async function fetchCities(
+  supabase: SupabaseClient
+): Promise<CityRecord[]> {
+  const now = Date.now();
+  
+  // Return cached data if still valid
+  if (citiesCache && (now - cacheTimestamp) < CACHE_TTL_MS) {
+    return citiesCache;
+  }
+
+  const { data, error } = await supabase
+    .from('cities')
+    .select('*')
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching cities:', error);
+    // Return cached data if available, otherwise fallback
+    if (citiesCache) return citiesCache;
+    return getDefaultCities();
+  }
+
+  citiesCache = data || [];
+  cacheTimestamp = now;
+  return citiesCache;
+}
+
+/**
+ * Fallback cities if database is unavailable
+ */
+function getDefaultCities(): CityRecord[] {
+  return [
+    { id: 'JERSEY_CITY', label: 'Jersey City', emoji: '🌅', description: 'NJ, waterfront views, diverse neighborhoods', spelling_guide: 'Jersey City (two words)', terrain: 'Hudson River waterfront', architecture: 'Mix of historic brownstones and modern high-rises', landmarks: ['Liberty State Park', 'Exchange Place'], color_palette: 'Urban blues, sunset oranges', atmosphere: 'Diverse, artistic', og_image: '/images/cities/jerseycity-cover.jpeg', seo_description: 'Discover personalized ABC books featuring Jersey City', is_active: true, sort_order: 1 },
+    { id: 'HOBOKEN', label: 'Hoboken', emoji: '🚂', description: 'NJ, historic mile-square city', spelling_guide: 'Hoboken (one word)', terrain: 'Compact mile-square city', architecture: 'Classic brownstones', landmarks: ['Hoboken Terminal', 'Washington Street'], color_palette: 'Brick reds, river blues', atmosphere: 'Historic, walkable', og_image: '/images/cities/hoboken-cover.jpeg', seo_description: 'Explore ABC books celebrating Hoboken', is_active: true, sort_order: 2 },
+    { id: 'NEW_YORK_CITY', label: 'New York City', emoji: '🗽', description: 'The Big Apple, iconic landmarks', spelling_guide: 'New York City (NYC acceptable)', terrain: 'Manhattan skyline, five boroughs', architecture: 'Iconic skyscrapers, brownstones', landmarks: ['Statue of Liberty', 'Central Park'], color_palette: 'Yellow taxi, urban grays', atmosphere: 'Iconic, energetic', og_image: '/images/cities/newyork-cover.jpeg', seo_description: 'NYC-themed ABC books', is_active: true, sort_order: 3 },
+  ];
+}
+
+/**
+ * Get all valid city IDs from database
+ */
+export async function getValidCityIds(supabase: SupabaseClient): Promise<string[]> {
+  const cities = await fetchCities(supabase);
+  return ['NONE', ...cities.map(c => c.id)];
+}
+
+/**
+ * Type guard for valid city IDs (checks against cached data)
+ */
+export function isValidCity(value: string): boolean {
+  if (value === 'NONE') return true;
+  if (!citiesCache) return false;
+  return citiesCache.some(c => c.id === value);
+}
+
+/**
+ * Async type guard that fetches from DB if needed
+ */
+export async function isValidCityAsync(value: string, supabase: SupabaseClient): Promise<boolean> {
+  if (value === 'NONE') return true;
+  const cities = await fetchCities(supabase);
+  return cities.some(c => c.id === value);
+}
+
+/**
+ * Get city options for UI display (legacy format)
+ */
+export async function getCityOptions(supabase: SupabaseClient): Promise<CityOption[]> {
+  const cities = await fetchCities(supabase);
+  return cities.map(c => ({
+    id: c.id,
+    label: c.label,
+    emoji: c.emoji,
+    description: c.description || '',
+  }));
+}
+
+/**
+ * Get city label for display
+ */
+export async function getCityLabel(cityId: string, supabase: SupabaseClient): Promise<string> {
+  if (cityId === 'NONE') return 'No specific city';
+  const cities = await fetchCities(supabase);
+  const city = cities.find(c => c.id === cityId);
+  return city?.label || cityId;
+}
+
+/**
+ * Get city label synchronously (requires cache to be populated)
+ */
+export function getCityLabelSync(cityId: string): string {
+  if (cityId === 'NONE') return 'No specific city';
+  if (!citiesCache) return cityId;
+  const city = citiesCache.find(c => c.id === cityId);
+  return city?.label || cityId;
+}
+
+/**
+ * Get city with emoji for display
+ */
+export async function getCityDisplay(cityId: string, supabase: SupabaseClient): Promise<string> {
+  if (cityId === 'NONE') return 'No specific city';
+  const cities = await fetchCities(supabase);
+  const city = cities.find(c => c.id === cityId);
+  return city ? `${city.emoji} ${city.label}` : cityId;
+}
+
+/**
+ * Get city with emoji synchronously (requires cache to be populated)
+ */
+export function getCityDisplaySync(cityId: string): string {
+  if (cityId === 'NONE') return 'No specific city';
+  if (!citiesCache) return cityId;
+  const city = citiesCache.find(c => c.id === cityId);
+  return city ? `${city.emoji} ${city.label}` : cityId;
+}
 
 /**
  * Get visual profile for a city to inject into image generation prompts
  */
-export function getCityVisualProfile(cityId: ValidCity): CityVisualProfile | null {
-  return CITY_VISUAL_PROFILES[cityId] || null;
+export async function getCityVisualProfile(cityId: string, supabase: SupabaseClient): Promise<CityVisualProfile | null> {
+  if (cityId === 'NONE') return null;
+  
+  const cities = await fetchCities(supabase);
+  const city = cities.find(c => c.id === cityId);
+  
+  if (!city || !city.terrain) return null;
+  
+  return {
+    terrain: city.terrain,
+    architecture: city.architecture || '',
+    landmarks: city.landmarks || [],
+    colorPalette: city.color_palette || '',
+    atmosphere: city.atmosphere || '',
+  };
+}
+
+/**
+ * Get visual profile synchronously (requires cache to be populated)
+ */
+export function getCityVisualProfileSync(cityId: string): CityVisualProfile | null {
+  if (cityId === 'NONE' || !citiesCache) return null;
+  
+  const city = citiesCache.find(c => c.id === cityId);
+  if (!city || !city.terrain) return null;
+  
+  return {
+    terrain: city.terrain,
+    architecture: city.architecture || '',
+    landmarks: city.landmarks || [],
+    colorPalette: city.color_palette || '',
+    atmosphere: city.atmosphere || '',
+  };
 }
 
 /**
  * Format city visual profile as prompt injection text
  */
-export function getCityVisualPrompt(cityId: ValidCity): string | null {
-  const profile = CITY_VISUAL_PROFILES[cityId];
+export async function getCityVisualPrompt(cityId: string, supabase: SupabaseClient): Promise<string | null> {
+  const profile = await getCityVisualProfile(cityId, supabase);
   if (!profile) return null;
   
+  const label = await getCityLabel(cityId, supabase);
+  
   return `
-🏙️ CITY VISUAL REQUIREMENTS FOR ${getCityLabel(cityId).toUpperCase()}:
+🏙️ CITY VISUAL REQUIREMENTS FOR ${label.toUpperCase()}:
 • TERRAIN/LAYOUT: ${profile.terrain}
 • ARCHITECTURE: ${profile.architecture}
 • KEY LANDMARKS (include when possible): ${profile.landmarks.join('; ')}
@@ -138,3 +225,80 @@ export function getCityVisualPrompt(cityId: ValidCity): string | null {
 
 ⚠️ DO NOT use generic city imagery. This city has DISTINCT visual identity and neighborhoods.`;
 }
+
+/**
+ * Format city visual profile synchronously (requires cache to be populated)
+ */
+export function getCityVisualPromptSync(cityId: string): string | null {
+  const profile = getCityVisualProfileSync(cityId);
+  if (!profile) return null;
+  
+  const label = getCityLabelSync(cityId);
+  
+  return `
+🏙️ CITY VISUAL REQUIREMENTS FOR ${label.toUpperCase()}:
+• TERRAIN/LAYOUT: ${profile.terrain}
+• ARCHITECTURE: ${profile.architecture}
+• KEY LANDMARKS (include when possible): ${profile.landmarks.join('; ')}
+• COLOR PALETTE: ${profile.colorPalette}
+• ATMOSPHERE/MOOD: ${profile.atmosphere}
+
+⚠️ DO NOT use generic city imagery. This city has DISTINCT visual identity and neighborhoods.`;
+}
+
+/**
+ * Get city record by ID
+ */
+export async function getCityById(cityId: string, supabase: SupabaseClient): Promise<CityRecord | null> {
+  if (cityId === 'NONE') return null;
+  const cities = await fetchCities(supabase);
+  return cities.find(c => c.id === cityId) || null;
+}
+
+/**
+ * Get SEO metadata for a city
+ */
+export async function getCitySeoData(cityId: string, supabase: SupabaseClient): Promise<{
+  name: string;
+  description: string;
+  ogImage: string | null;
+} | null> {
+  const city = await getCityById(cityId, supabase);
+  if (!city) return null;
+  
+  return {
+    name: city.label,
+    description: city.seo_description || city.description || '',
+    ogImage: city.og_image,
+  };
+}
+
+/**
+ * Initialize the cache - call this at the start of edge function execution
+ */
+export async function initCitiesCache(supabase: SupabaseClient): Promise<void> {
+  await fetchCities(supabase);
+}
+
+/**
+ * Clears the cache - useful for testing or force refresh
+ */
+export function clearCitiesCache(): void {
+  citiesCache = null;
+  cacheTimestamp = 0;
+}
+
+// ============================================
+// LEGACY EXPORTS FOR BACKWARD COMPATIBILITY
+// ============================================
+
+// These maintain compatibility with existing code that imports static arrays
+// They will be populated on first fetch and use cached values
+
+export const VALID_CITIES = ['JERSEY_CITY', 'HOBOKEN', 'NEW_YORK_CITY', 'NONE'] as const;
+
+export const CITY_OPTIONS: CityOption[] = [
+  { id: 'JERSEY_CITY', label: 'Jersey City', emoji: '🌅', description: 'NJ, waterfront views, diverse neighborhoods' },
+  { id: 'HOBOKEN', label: 'Hoboken', emoji: '🚂', description: 'NJ, historic mile-square city' },
+  { id: 'NEW_YORK_CITY', label: 'New York City', emoji: '🗽', description: 'The Big Apple, iconic landmarks' },
+];

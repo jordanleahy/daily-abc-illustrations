@@ -115,7 +115,7 @@ export default function PrintableColorBook() {
     );
   }
 
-  const previewImages = printableImages.slice(0, 6);
+  
 
   return (
     <>
@@ -176,11 +176,11 @@ export default function PrintableColorBook() {
             </div>
           )}
 
-          {/* Preview Grid */}
+          {/* All Pages Grid */}
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-center">Preview</h2>
+            <h2 className="text-xl font-semibold text-center">All Pages</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {previewImages.map((image) => (
+              {printableImages.map((image) => (
                 <Card key={image.page_id} className="overflow-hidden">
                   <CardContent className="p-0">
                     <AspectRatio ratio={1} className="bg-white">
@@ -197,12 +197,6 @@ export default function PrintableColorBook() {
                 </Card>
               ))}
             </div>
-            
-            {printableImages.length > 6 && (
-              <p className="text-center text-muted-foreground">
-                +{printableImages.length - 6} more pages in the download
-              </p>
-            )}
           </div>
 
         </div>

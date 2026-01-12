@@ -10,7 +10,7 @@ import { getWordsForLevel, getTopWordsForLevel, isValidSightWordLevel, getSightW
 import { getSeasonDisplay, isValidSeason, type ValidSeason } from '../_shared/seasons.ts';
 import { getEnvironmentDisplay, isValidEnvironment, type ValidEnvironment } from '../_shared/environments.ts';
 import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothingBrand, type ValidClothingBrand } from '../_shared/clothingBrands.ts';
-import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, type ValidLocation } from '../_shared/locations.ts';
+import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, initLocationsCache, getLocationSuggestBlock, type ValidLocation } from '../_shared/locations.ts';
 import { getCityDisplay, getCityVisualPrompt, isValidCity, type ValidCity } from '../_shared/cities.ts';
 
 interface MessageContent {
@@ -187,6 +187,9 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Initialize locations cache from database
+    await initLocationsCache();
 
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
@@ -447,6 +450,9 @@ serve(async (req) => {
 
     // Location question injection - shown BEFORE title proposal (optional questions come before title)
     // This ensures title confirmation is the VERY LAST step before outline generation
+    // Build dynamic location suggest block from database
+    const locationSuggestBlock = shouldAskLocationQuestion ? await getLocationSuggestBlock() : '';
+    
     const locationQuestionInjection = shouldAskLocationQuestion
       ? `\n\n📍 OPTIONAL QUESTION - LOCATION (Ask BEFORE proposing title):
 Before proposing the book title, ask this optional question:
@@ -454,15 +460,7 @@ Before proposing the book title, ask this optional question:
 "Would you like to set this book at a specific resort? This is optional."
 
 [SUGGEST]
-VAIL_RESORT: 🏔️ Vail Resort
-SUGARBUSH_RESORT: 🍁 Sugarbush Resort
-STRATTON: ⛷️ Stratton
-KILLINGTON: 🏂 Killington Mountain
-MOUNTAIN_CREEK: 🎿 Mountain Creek
-COPPER_MOUNTAIN: 🥉 Copper Mountain
-BRECKENRIDGE: 🏘️ Breckenridge
-KEYSTONE: 🌙 Keystone
-skip-location: ⏭️ Skip (no specific resort)
+${locationSuggestBlock}
 [/SUGGEST]
 
 ⚠️ CRITICAL FLOW ORDER: All optional questions (location, city, season, environment, etc.) MUST be asked BEFORE proposing the book title. The title confirmation ("Looks great!") should be the VERY LAST step before generating the outline.`

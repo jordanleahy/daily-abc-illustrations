@@ -2,7 +2,8 @@ import { memo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookImage } from '@/components/ui/book-image';
 import { Badge } from '@/components/ui/badge';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, Palette } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { trackBookView } from '@/utils/bookViewTracking';
@@ -119,6 +120,21 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
               </div>
             </div>
           )}
+        </div>
+
+        <div className="px-1 pt-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-1.5"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/printable-colorbook/${book.id}`);
+            }}
+          >
+            <Palette className="w-4 h-4" />
+            ColorBook
+          </Button>
         </div>
 
         <div className={LIBRARY_STYLES.bookCard.content}>

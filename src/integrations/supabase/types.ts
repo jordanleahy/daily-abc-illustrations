@@ -786,6 +786,56 @@ export type Database = {
         }
         Relationships: []
       }
+      city_landmarks: {
+        Row: {
+          city_id: string
+          created_at: string | null
+          description: string
+          id: string
+          is_active: boolean | null
+          is_major: boolean | null
+          name: string
+          sort_order: number | null
+          type: string
+          updated_at: string | null
+          visual_cues: string[] | null
+        }
+        Insert: {
+          city_id: string
+          created_at?: string | null
+          description: string
+          id?: string
+          is_active?: boolean | null
+          is_major?: boolean | null
+          name: string
+          sort_order?: number | null
+          type?: string
+          updated_at?: string | null
+          visual_cues?: string[] | null
+        }
+        Update: {
+          city_id?: string
+          created_at?: string | null
+          description?: string
+          id?: string
+          is_active?: boolean | null
+          is_major?: boolean | null
+          name?: string
+          sort_order?: number | null
+          type?: string
+          updated_at?: string | null
+          visual_cues?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "city_landmarks_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       color_palettes: {
         Row: {
           accent_hex: string

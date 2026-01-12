@@ -1,6 +1,6 @@
 // City utilities for book creation flow
 // Cities are asked as an optional discovery question after resort location
-// Now database-driven with caching
+// Now database-driven with caching, including rich landmark details
 
 import { SupabaseClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -20,6 +20,19 @@ export interface CityRecord {
   seo_description: string | null;
   is_active: boolean;
   sort_order: number;
+}
+
+// Database record structure for city landmarks
+export interface CityLandmark {
+  id: string;
+  city_id: string;
+  name: string;
+  type: string;
+  description: string;
+  visual_cues: string[];
+  is_major: boolean;
+  sort_order: number;
+  is_active: boolean;
 }
 
 // Legacy type for backward compatibility
@@ -47,6 +60,10 @@ let citiesCache: CityRecord[] | null = null;
 let cacheTimestamp: number = 0;
 const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour cache (cities change rarely)
 
+// Cache for landmarks by city
+const landmarksCache: Map<string, CityLandmark[]> = new Map();
+let landmarksCacheTimestamp: number = 0;
+
 /**
  * Fetch all active cities from the database
  */
@@ -72,6 +89,78 @@ export async function fetchCities(
     if (citiesCache) return citiesCache;
     return getDefaultCities();
   }
+
+  citiesCache = data || [];
+  cacheTimestamp = now;
+  return citiesCache;
+}
+
+/**
+ * Fetch landmarks for a specific city
+ */
+export async function fetchCityLandmarks(
+  cityId: string,
+  supabase: SupabaseClient
+): Promise<CityLandmark[]> {
+  const now = Date.now();
+  
+  // Check cache
+  if ((now - landmarksCacheTimestamp) < CACHE_TTL_MS && landmarksCache.has(cityId)) {
+    return landmarksCache.get(cityId) || [];
+  }
+
+  const { data, error } = await supabase
+    .from('city_landmarks')
+    .select('*')
+    .eq('city_id', cityId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching landmarks:', error);
+    return [];
+  }
+
+  landmarksCache.set(cityId, data || []);
+  landmarksCacheTimestamp = now;
+  return data || [];
+}
+
+/**
+ * Format landmarks into rich prompt text grouped by type
+ */
+function formatLandmarksForPrompt(landmarks: CityLandmark[]): string {
+  if (!landmarks.length) return '';
+
+  // Group by type
+  const byType = new Map<string, CityLandmark[]>();
+  for (const lm of landmarks) {
+    const existing = byType.get(lm.type) || [];
+    existing.push(lm);
+    byType.set(lm.type, existing);
+  }
+
+  const typeLabels: Record<string, string> = {
+    park: '🌳 PARKS',
+    cafe: '☕ CAFES & EATERIES',
+    street: '🛤️ STREETS & PLAZAS',
+    neighborhood: '🏘️ NEIGHBORHOODS',
+    landmark: '🏛️ LANDMARKS',
+    venue: '🎭 VENUES',
+  };
+
+  const sections: string[] = [];
+  for (const [type, lms] of byType) {
+    const header = typeLabels[type] || type.toUpperCase();
+    const items = lms.map(lm => {
+      const cues = lm.visual_cues.length ? `\n    Visual cues: ${lm.visual_cues.join(', ')}` : '';
+      return `  • ${lm.name}: ${lm.description}${cues}`;
+    });
+    sections.push(`${header}:\n${items.join('\n')}`);
+  }
+
+  return sections.join('\n\n');
+}
 
   citiesCache = data || [];
   cacheTimestamp = now;
@@ -207,23 +296,27 @@ export function getCityVisualProfileSync(cityId: string): CityVisualProfile | nu
 }
 
 /**
- * Format city visual profile as prompt injection text
+ * Format city visual profile as prompt injection text with rich landmark details
  */
 export async function getCityVisualPrompt(cityId: string, supabase: SupabaseClient): Promise<string | null> {
   const profile = await getCityVisualProfile(cityId, supabase);
   if (!profile) return null;
   
   const label = await getCityLabel(cityId, supabase);
+  const landmarks = await fetchCityLandmarks(cityId, supabase);
+  const landmarkSection = formatLandmarksForPrompt(landmarks);
   
   return `
 🏙️ CITY VISUAL REQUIREMENTS FOR ${label.toUpperCase()}:
 • TERRAIN/LAYOUT: ${profile.terrain}
 • ARCHITECTURE: ${profile.architecture}
-• KEY LANDMARKS (include when possible): ${profile.landmarks.join('; ')}
 • COLOR PALETTE: ${profile.colorPalette}
 • ATMOSPHERE/MOOD: ${profile.atmosphere}
 
-⚠️ DO NOT use generic city imagery. This city has DISTINCT visual identity and neighborhoods.`;
+📍 LOCAL LANDMARKS & SETTINGS (use these for authentic backgrounds):
+${landmarkSection || `  • ${profile.landmarks.join('; ')}`}
+
+⚠️ DO NOT use generic city imagery. This city has DISTINCT visual identity. Use the specific landmarks above for authentic, locally-recognizable scenes.`;
 }
 
 /**

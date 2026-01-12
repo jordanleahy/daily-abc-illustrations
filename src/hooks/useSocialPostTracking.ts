@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 
-export type SocialPlatform = 'instagram' | 'facebook' | 'tiktok' | 'linkedin';
+export type SocialPlatform = 'instagram' | 'facebook' | 'tiktok' | 'linkedin' | 'ig_subscribers';
 
 interface SocialPost {
   id: string;

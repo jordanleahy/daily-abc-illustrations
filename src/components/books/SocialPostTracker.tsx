@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Instagram, Facebook, Linkedin, Check, Image } from 'lucide-react';
+import { Instagram, Facebook, Linkedin, Check, Image, Circle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useSocialPostTracking, SocialPlatform } from '@/hooks/useSocialPostTracking';
 import { useGenerateOGAssets } from '@/hooks/useGenerateOGAssets';
@@ -25,11 +25,12 @@ interface SocialPostTrackerProps {
   dailyPublishedId: string;
 }
 
-const PLATFORMS: { id: SocialPlatform; icon: React.ReactNode; label: string }[] = [
+const PLATFORMS: { id: SocialPlatform; icon: React.ReactNode; iconPosted?: React.ReactNode; label: string }[] = [
   { id: 'instagram', icon: <Instagram className="h-4 w-4" />, label: 'Instagram' },
   { id: 'facebook', icon: <Facebook className="h-4 w-4" />, label: 'Facebook' },
   { id: 'tiktok', icon: <TikTokIcon className="h-4 w-4" />, label: 'TikTok' },
   { id: 'linkedin', icon: <Linkedin className="h-4 w-4" />, label: 'LinkedIn' },
+  { id: 'ig_subscribers', icon: <Circle className="h-4 w-4" />, iconPosted: <Circle className="h-4 w-4 fill-current" />, label: 'IG Subscribers' },
 ];
 
 export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPublishedId }: SocialPostTrackerProps) {
@@ -107,7 +108,7 @@ export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPubl
       </Button>
 
       {/* Social platform buttons */}
-      {PLATFORMS.map(({ id, icon, label }) => {
+      {PLATFORMS.map(({ id, icon, iconPosted, label }) => {
         const isPosted = postedPlatforms.includes(id);
         
         return (
@@ -125,7 +126,7 @@ export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPubl
             disabled={isMarking || isPosted}
             title={isPosted ? `Posted to ${label}` : `Mark as posted to ${label}`}
           >
-            {icon}
+            {isPosted && iconPosted ? iconPosted : icon}
             {isPosted && (
               <Check className="h-3 w-3 absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5" />
             )}

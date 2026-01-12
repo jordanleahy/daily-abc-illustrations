@@ -1440,6 +1440,57 @@ export type Database = {
           },
         ]
       }
+      locations: {
+        Row: {
+          architecture: string | null
+          atmosphere: string | null
+          color_palette: string | null
+          created_at: string | null
+          description: string | null
+          emoji: string
+          id: string
+          is_active: boolean | null
+          label: string
+          landmarks: string[] | null
+          sort_order: number | null
+          spelling_guide: string | null
+          terrain: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          architecture?: string | null
+          atmosphere?: string | null
+          color_palette?: string | null
+          created_at?: string | null
+          description?: string | null
+          emoji: string
+          id: string
+          is_active?: boolean | null
+          label: string
+          landmarks?: string[] | null
+          sort_order?: number | null
+          spelling_guide?: string | null
+          terrain?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          architecture?: string | null
+          atmosphere?: string | null
+          color_palette?: string | null
+          created_at?: string | null
+          description?: string | null
+          emoji?: string
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          landmarks?: string[] | null
+          sort_order?: number | null
+          spelling_guide?: string | null
+          terrain?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       page_image_urls: {
         Row: {
           book_id: string

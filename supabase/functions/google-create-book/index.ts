@@ -6,7 +6,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 import { stripHexCodes } from '../_shared/templateProcessor.ts';
 import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange, BOOK_TYPE_TO_AGENT_TYPE, AgentType } from '../_shared/types.ts';
 import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
-import { getResortVisualPrompt, isValidLocation, type ValidLocation } from '../_shared/locations.ts';
+import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
 import { getCityVisualPrompt, isValidCity, type ValidCity } from '../_shared/cities.ts';
 
 const conversationMessageSchema = z.object({
@@ -140,7 +140,9 @@ serve(async (req) => {
     // Normalize and validate target age
     const targetAge = normalizeAgeRange(rawTargetAge);
     console.log(`[Book Creation] Raw target age: ${rawTargetAge}, Normalized: ${targetAge}`);
-    
+
+    // Initialize locations cache from database
+    await initLocationsCache();
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
       return text

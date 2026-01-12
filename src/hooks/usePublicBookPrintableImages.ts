@@ -45,6 +45,21 @@ export function usePublicBookPrintableImages(bookId: string | undefined) {
         }
       }
 
+      // Sort: COVER first, FOCUS second, then alphabetically by letter
+      const letterOrder = (letter: string): number => {
+        const upper = letter.toUpperCase();
+        if (upper === 'COVER') return -2;
+        if (upper === 'FOCUS') return -1;
+        // Single letters A-Z come in alphabetical order
+        if (upper.length === 1 && upper >= 'A' && upper <= 'Z') {
+          return upper.charCodeAt(0) - 'A'.charCodeAt(0);
+        }
+        // Other multi-letter values (digraphs, sight words) come after A-Z
+        return 100 + upper.charCodeAt(0);
+      };
+
+      printableImages.sort((a, b) => letterOrder(a.letter) - letterOrder(b.letter));
+
       return printableImages;
     },
     enabled: !!bookId,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { usePublicBookPrintableImages } from '@/hooks/usePublicBookPrintableImages';
 import { MetaHead } from '@/components/common';
@@ -19,6 +19,7 @@ export default function PrintableColorBook() {
   const [progress, setProgress] = useState(0);
   const [bookName, setBookName] = useState<string | null>(null);
   const [bookLoading, setBookLoading] = useState(true);
+  const [visibleRows, setVisibleRows] = useState(1); // Start with 1 row (2 images)
   
   const { data: printableImages, isLoading: imagesLoading } = usePublicBookPrintableImages(bookId);
   
@@ -36,6 +37,34 @@ export default function PrintableColorBook() {
         });
     }
   }, [bookId]);
+
+  // Progressive row loading - load rows in staggered batches
+  useEffect(() => {
+    if (!printableImages || printableImages.length === 0) return;
+    
+    const totalRows = Math.ceil(printableImages.length / 2); // 2 columns on mobile
+    
+    // Load rows progressively: row 1 immediately, then 2, 3, 4... with delays
+    const delays = [0, 150, 300, 500, 700, 900]; // Staggered delays for each row
+    
+    const timers: NodeJS.Timeout[] = [];
+    for (let row = 1; row <= totalRows; row++) {
+      const delay = delays[Math.min(row - 1, delays.length - 1)] + (row > 6 ? (row - 6) * 100 : 0);
+      const timer = setTimeout(() => {
+        setVisibleRows(prev => Math.max(prev, row));
+      }, delay);
+      timers.push(timer);
+    }
+    
+    return () => timers.forEach(t => clearTimeout(t));
+  }, [printableImages]);
+
+  // Calculate visible images based on current visible rows
+  const visibleImages = useMemo(() => {
+    if (!printableImages) return [];
+    const itemsPerRow = 2; // Mobile-first: 2 columns
+    return printableImages.slice(0, visibleRows * itemsPerRow);
+  }, [printableImages, visibleRows]);
 
   const handleDownloadPDF = async () => {
     if (!printableImages || printableImages.length === 0) return;
@@ -176,19 +205,23 @@ export default function PrintableColorBook() {
             </div>
           )}
 
-          {/* All Pages Grid */}
+          {/* All Pages Grid - Progressive Loading */}
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-center">All Pages</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {printableImages.map((image, index) => (
-                <Card key={image.page_id} className="overflow-hidden">
+              {visibleImages.map((image, index) => (
+                <Card 
+                  key={image.page_id} 
+                  className="overflow-hidden animate-in fade-in-0 duration-300"
+                  style={{ animationDelay: `${Math.min(index * 50, 300)}ms` }}
+                >
                   <CardContent className="p-0">
                     <AspectRatio ratio={1} className="bg-white">
                       <OptimizedImage
                         src={image.printable_coloring_image_url}
                         alt={`Printable coloring page for letter ${image.letter}`}
                         className="w-full h-full object-cover"
-                        priority={index < 6}
+                        priority={index < 4}
                         width={400}
                         srcSetSizes={[300, 400, 500]}
                         quality={70}
@@ -200,6 +233,21 @@ export default function PrintableColorBook() {
                   </CardContent>
                 </Card>
               ))}
+              {/* Placeholder skeletons for remaining images */}
+              {printableImages && visibleImages.length < printableImages.length && (
+                Array.from({ length: Math.min(4, printableImages.length - visibleImages.length) }).map((_, i) => (
+                  <Card key={`skeleton-${i}`} className="overflow-hidden">
+                    <CardContent className="p-0">
+                      <AspectRatio ratio={1} className="bg-muted">
+                        <Skeleton className="w-full h-full" />
+                      </AspectRatio>
+                      <div className="p-2">
+                        <Skeleton className="h-4 w-20 mx-auto" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              )}
             </div>
           </div>
 

@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { LibraryBookWithImages } from '@/hooks/useWinterThemedBooks';
 import { trackBookView } from '@/utils/bookViewTracking';
 import { formatDistanceToNow } from 'date-fns';
-import { PremiumContentWrapper } from '@/components/subscription/PremiumContentWrapper';
+
 
 type ViewMode = 'cover' | 'educational';
 
@@ -38,8 +38,7 @@ export const BookCarouselCard = memo(({ book, viewMode, onImageClick }: BookCaro
     : book.educational_image_url;
 
   return (
-    <PremiumContentWrapper showOverlay={true}>
-      <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+    <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
         <CardContent className="p-0">
           <AspectRatio 
             ratio={1/1} 
@@ -68,7 +67,6 @@ export const BookCarouselCard = memo(({ book, viewMode, onImageClick }: BookCaro
           </Link>
         </CardContent>
       </Card>
-    </PremiumContentWrapper>
   );
 });
 

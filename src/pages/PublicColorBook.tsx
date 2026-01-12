@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { usePublicBookColoringImages } from '@/hooks/usePublicBookColoringImages';
 import { MetaHead } from '@/components/common';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
@@ -7,16 +7,13 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { OptimizedImage } from '@/components/ui/optimized-image';
-import { Progress } from '@/components/ui/progress';
-import { Palette, Download, Loader2, BookOpen } from 'lucide-react';
+import { Palette, Sparkles, BookOpen } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { generatePDF, PageImageData } from '@/services/pdfGenerator';
 import { supabase } from '@/integrations/supabase/client';
 
 export default function PublicColorBook() {
   const { bookId } = useParams<{ bookId: string }>();
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const navigate = useNavigate();
   const [bookName, setBookName] = useState<string | null>(null);
   const [bookLoading, setBookLoading] = useState(true);
   
@@ -37,46 +34,8 @@ export default function PublicColorBook() {
     }
   }, [bookId]);
 
-  const handleDownloadPDF = async () => {
-    if (!coloringImages || coloringImages.length === 0) return;
-    
-    setIsGenerating(true);
-    setProgress(0);
-    
-    try {
-      // Map to the PageImageData format expected by generatePDF
-      // Use printable version (with color thumbnail) if available
-      const pages: PageImageData[] = coloringImages.map(img => ({
-        id: img.page_id,
-        page_number: img.page_number,
-        letter: img.letter,
-        title: `Letter ${img.letter}`,
-        image_url: img.printable_coloring_image_url || img.coloring_image_url
-      }));
-      
-      const pdfBytes = await generatePDF(pages, {
-        onProgress: (current, total) => {
-          setProgress(Math.round((current / total) * 100));
-        }
-      });
-      
-      // Create download - convert to ArrayBuffer for Blob compatibility
-      const arrayBuffer = pdfBytes.buffer.slice(pdfBytes.byteOffset, pdfBytes.byteOffset + pdfBytes.byteLength) as ArrayBuffer;
-      const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${bookName || 'ColorBook'}-Coloring-Pages.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to generate PDF:', error);
-    } finally {
-      setIsGenerating(false);
-      setProgress(0);
-    }
+  const handleStartTrial = () => {
+    navigate('/auth?mode=signup');
   };
 
   const isLoading = imagesLoading || bookLoading;
@@ -142,37 +101,17 @@ export default function PublicColorBook() {
             </p>
           </div>
 
-          {/* Download Button */}
+          {/* Start Trial Button */}
           <div className="flex justify-center">
             <Button 
               size="lg" 
-              onClick={handleDownloadPDF}
-              disabled={isGenerating}
+              onClick={handleStartTrial}
               className="gap-2"
             >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                  Generating PDF...
-                </>
-              ) : (
-                <>
-                  <Download className="h-5 w-5" />
-                  Download All ({coloringImages.length} Pages)
-                </>
-              )}
+              <Sparkles className="h-5 w-5" />
+              Start Free Trial
             </Button>
           </div>
-
-          {/* Progress Bar */}
-          {isGenerating && (
-            <div className="max-w-md mx-auto space-y-2">
-              <Progress value={progress} className="h-2" />
-              <p className="text-sm text-center text-muted-foreground">
-                Processing page {Math.ceil((progress / 100) * coloringImages.length)} of {coloringImages.length}
-              </p>
-            </div>
-          )}
 
           {/* Preview Grid */}
           <div className="space-y-4">

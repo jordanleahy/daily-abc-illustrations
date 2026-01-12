@@ -180,7 +180,7 @@ export default function PrintableColorBook() {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-center">All Pages</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {printableImages.map((image) => (
+              {printableImages.map((image, index) => (
                 <Card key={image.page_id} className="overflow-hidden">
                   <CardContent className="p-0">
                     <AspectRatio ratio={1} className="bg-white">
@@ -188,6 +188,10 @@ export default function PrintableColorBook() {
                         src={image.printable_coloring_image_url}
                         alt={`Printable coloring page for letter ${image.letter}`}
                         className="w-full h-full object-cover"
+                        priority={index < 6}
+                        width={400}
+                        srcSetSizes={[300, 400, 500]}
+                        quality={70}
                       />
                     </AspectRatio>
                     <div className="p-2 text-center">

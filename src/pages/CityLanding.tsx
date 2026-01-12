@@ -1,4 +1,4 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useRef, useEffect } from 'react';
 import { PreviewPageLayout } from '@/components/preview/layout/PreviewPageLayout';
 import { PreviewSection } from '@/components/preview/layout/PreviewSection';

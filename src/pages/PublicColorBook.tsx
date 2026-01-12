@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { usePublicBookColoringImages } from '@/hooks/usePublicBookColoringImages';
+import { useImagePreloader } from '@/hooks/useImagePreloader';
 import { MetaHead } from '@/components/common';
 import { StandardPageLayout } from '@/components/layout/StandardPageLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,6 +20,16 @@ export default function PublicColorBook() {
   
   const { data: coloringImages, isLoading: imagesLoading } = usePublicBookColoringImages(bookId);
   
+  // Preload images 3-6 while user views first images (enhancement #2)
+  const preloadUrls = useMemo(() => {
+    if (!coloringImages) return [];
+    return coloringImages
+      .slice(2, 6)
+      .map(img => img.printable_coloring_image_url || img.coloring_image_url)
+      .filter(Boolean);
+  }, [coloringImages]);
+  
+  useImagePreloader(preloadUrls, { width: 400, quality: 75 });
   // Fetch book name on mount
   useEffect(() => {
     if (bookId) {
@@ -117,7 +128,7 @@ export default function PublicColorBook() {
           <div className="space-y-4">
             <h2 className="text-xl font-semibold text-center">Preview</h2>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {previewImages.map((image) => (
+              {previewImages.map((image, index) => (
                 <Card key={image.page_id} className="overflow-hidden">
                   <CardContent className="p-0">
                     <AspectRatio ratio={1} className="bg-white">
@@ -125,6 +136,9 @@ export default function PublicColorBook() {
                         src={image.printable_coloring_image_url || image.coloring_image_url}
                         alt={`Coloring page for letter ${image.letter}`}
                         className="w-full h-full object-cover"
+                        priority={index < 2}
+                        width={400}
+                        srcSetSizes={[200, 400]}
                       />
                     </AspectRatio>
                     <div className="p-2 text-center">

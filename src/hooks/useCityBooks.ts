@@ -83,12 +83,26 @@ export const useCityBooks = (citySlug: string | undefined) => {
             pageImage = fallbackImage;
           }
 
+          // Fetch the slug from daily_published for this book
+          const { data: dailyPublished } = await supabase
+            .from('daily_published')
+            .select('slug')
+            .eq('book_id', book.id)
+            .limit(1)
+            .maybeSingle();
+
           // Ensure bookType is set from category for proper carousel categorization
           const existingMetadata = (book.metadata || {}) as LibraryBook['metadata'];
           const bookType = existingMetadata?.bookType || book.category || 'other';
           
+          // Use daily_published slug, or fall back to marketing_url from metadata
+          const bookMetadata = book.metadata as Record<string, unknown> | null;
+          const marketingUrl = bookMetadata?.marketing_url as string | undefined;
+          const slug = dailyPublished?.slug || marketingUrl || book.id;
+          
           return {
             id: book.id,
+            slug,
             book_name: book.book_name,
             book_description: book.book_description,
             created_at: book.created_at,

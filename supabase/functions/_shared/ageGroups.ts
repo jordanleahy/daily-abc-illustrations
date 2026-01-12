@@ -12,7 +12,7 @@ export interface AgeGroup {
 // In-memory cache for age groups
 let cachedAgeGroups: AgeGroup[] | null = null;
 let cacheTimestamp: number = 0;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour (age groups change rarely)
 
 /**
  * Fetches age groups from database with in-memory caching

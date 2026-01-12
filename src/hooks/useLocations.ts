@@ -43,8 +43,8 @@ export function useLocations() {
 
       return data || [];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes (formerly cacheTime)
+    staleTime: 60 * 60 * 1000, // 1 hour (locations change rarely)
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
   });
 }
 

@@ -27,7 +27,8 @@ export function useGradeLevels() {
       
       return data as GradeLevel[];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 60 * 60 * 1000, // 1 hour (grade levels change rarely)
+    gcTime: 2 * 60 * 60 * 1000, // 2 hours
   });
 }
 

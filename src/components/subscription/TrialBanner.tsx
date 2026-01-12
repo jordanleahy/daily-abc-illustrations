@@ -61,9 +61,18 @@ export const TrialBanner = memo(({ variant = 'inline' }: { variant?: 'inline' | 
           </p>
         </div>
         
-        <div className="flex-shrink-0 hidden sm:flex items-center gap-1.5 text-xs text-muted-foreground bg-background/50 px-2.5 py-1.5 rounded-full">
-          <Clock className="w-3.5 h-3.5" />
-          <span>{daysLeftInTrial}d remaining</span>
+        <div className="flex-shrink-0 hidden sm:flex items-center gap-3">
+          <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-background/50 px-2.5 py-1.5 rounded-full">
+            <Clock className="w-3.5 h-3.5" />
+            <span>{daysLeftInTrial}d remaining</span>
+          </div>
+          <Button 
+            size="sm" 
+            onClick={() => navigate('/subscription/checkout')}
+            className="font-semibold"
+          >
+            Subscribe
+          </Button>
         </div>
       </div>
     </div>

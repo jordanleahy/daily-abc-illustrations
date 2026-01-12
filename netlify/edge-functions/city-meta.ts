@@ -1,4 +1,5 @@
 import type { Context } from "https://edge.netlify.com";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 // Crawler user agents that need server-rendered meta tags
 const CRAWLER_USER_AGENTS = [
@@ -25,8 +26,13 @@ function isCrawler(userAgent: string): boolean {
   return CRAWLER_USER_AGENTS.some(crawler => ua.includes(crawler.toLowerCase()));
 }
 
-// City display names and metadata
-const cityData: Record<string, { name: string; description: string; ogImage?: string }> = {
+// City data cache for edge function
+let cityCache: Map<string, { name: string; description: string; ogImage: string | null }> | null = null;
+let cacheTimestamp = 0;
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+// Fallback city data if database unavailable
+const fallbackCityData: Record<string, { name: string; description: string; ogImage: string | null }> = {
   jerseycity: {
     name: 'Jersey City',
     description: 'Discover personalized ABC books featuring Jersey City landmarks, culture, and community. Educational content designed for local families.',
@@ -49,6 +55,54 @@ const cityData: Record<string, { name: string; description: string; ogImage?: st
   },
 };
 
+async function getCityData(supabase: ReturnType<typeof createClient>): Promise<Map<string, { name: string; description: string; ogImage: string | null }>> {
+  const now = Date.now();
+  
+  // Return cached data if still valid
+  if (cityCache && (now - cacheTimestamp) < CACHE_TTL_MS) {
+    return cityCache;
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('cities')
+      .select('id, label, seo_description, description, og_image')
+      .eq('is_active', true);
+
+    if (error || !data) {
+      console.error('Error fetching cities for meta:', error);
+      return new Map(Object.entries(fallbackCityData));
+    }
+
+    cityCache = new Map();
+    for (const city of data) {
+      // Map various slug formats to city data
+      const slugs = [
+        city.id.toLowerCase().replace(/_/g, ''),
+        city.id.toLowerCase().replace(/_/g, '-'),
+        city.label.toLowerCase().replace(/\s+/g, ''),
+        city.label.toLowerCase().replace(/\s+/g, '-'),
+      ];
+      
+      const cityInfo = {
+        name: city.label,
+        description: city.seo_description || city.description || `Discover personalized ABC books for ${city.label}. Educational content designed for local families.`,
+        ogImage: city.og_image,
+      };
+      
+      for (const slug of slugs) {
+        cityCache.set(slug, cityInfo);
+      }
+    }
+    
+    cacheTimestamp = now;
+    return cityCache;
+  } catch (err) {
+    console.error('Failed to fetch cities:', err);
+    return new Map(Object.entries(fallbackCityData));
+  }
+}
+
 export default async function handler(req: Request, context: Context) {
   const userAgent = req.headers.get('user-agent') || '';
   
@@ -67,7 +121,15 @@ export default async function handler(req: Request, context: Context) {
     }
     
     const citySlug = pathParts[1].toLowerCase();
-    const city = cityData[citySlug];
+    
+    // Initialize Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
+    
+    // Fetch city data from database
+    const cityDataMap = await getCityData(supabase);
+    const city = cityDataMap.get(citySlug);
     
     // Fallback for unknown cities
     const cityName = city?.name || citySlug.charAt(0).toUpperCase() + citySlug.slice(1);

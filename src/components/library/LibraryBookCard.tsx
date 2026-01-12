@@ -122,13 +122,27 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
           )}
         </div>
 
-        <div className="px-1 pt-2">
+        <div
+          className="px-1 pt-2"
+          onPointerDown={(e) => e.stopPropagation()}
+          onPointerUp={(e) => e.stopPropagation()}
+          onTouchStart={(e) => e.stopPropagation()}
+          onTouchEnd={(e) => e.stopPropagation()}
+        >
           <Button
             variant="outline"
             size="sm"
             className="w-full gap-1.5"
-            onPointerDown={(e) => e.stopPropagation()}
-            onPointerUp={(e) => e.stopPropagation()}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onPointerUp={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+            }}
+            onTouchStart={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/colorbook/${book.id}`);

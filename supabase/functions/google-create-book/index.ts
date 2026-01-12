@@ -7,7 +7,7 @@ import { stripHexCodes } from '../_shared/templateProcessor.ts';
 import { normalizeBookType, normalizeAgeRange, validateNumberRange, ValidBookType, ValidAgeRange, BOOK_TYPE_TO_AGENT_TYPE, AgentType } from '../_shared/types.ts';
 import { getSelectedCharacterConstraints } from '../_shared/styleGuides.ts';
 import { getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
-import { getCityVisualPrompt, isValidCity, type ValidCity } from '../_shared/cities.ts';
+import { getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
 
 const conversationMessageSchema = z.object({
   role: z.enum(['user', 'assistant', 'system']),
@@ -141,8 +141,10 @@ serve(async (req) => {
     const targetAge = normalizeAgeRange(rawTargetAge);
     console.log(`[Book Creation] Raw target age: ${rawTargetAge}, Normalized: ${targetAge}`);
 
-    // Initialize locations cache from database
+    // Initialize caches from database
     await initLocationsCache();
+    await initCitiesCache(supabase);
+
     // Sanitization utility
     const sanitizeText = (text: string, maxLength: number): string => {
       return text
@@ -473,8 +475,8 @@ IMPORTANT - WORD LEARNING FOCUS:
     }
 
     // Add city visual profile if a city was selected
-    if (city && isValidCity(city as ValidCity)) {
-      const cityVisualPrompt = getCityVisualPrompt(city as ValidCity);
+    if (city && isValidCity(city)) {
+      const cityVisualPrompt = getCityVisualPromptSync(city);
       if (cityVisualPrompt) {
         systemPrompt += `\n${cityVisualPrompt}`;
         console.log(`[City Context] Applied visual profile for: ${city}`);

@@ -11,7 +11,7 @@ import { getSeasonDisplay, isValidSeason, type ValidSeason } from '../_shared/se
 import { getEnvironmentDisplay, isValidEnvironment, type ValidEnvironment } from '../_shared/environments.ts';
 import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothingBrand, type ValidClothingBrand } from '../_shared/clothingBrands.ts';
 import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, initLocationsCache, getLocationSuggestBlock, type ValidLocation } from '../_shared/locations.ts';
-import { getCityDisplay, getCityVisualPrompt, isValidCity, type ValidCity } from '../_shared/cities.ts';
+import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCache, getCitySuggestBlock, type ValidCity } from '../_shared/cities.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -188,13 +188,14 @@ serve(async (req) => {
       );
     }
 
-    // Initialize locations cache from database
-    await initLocationsCache();
-
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // Initialize caches from database
+    await initLocationsCache();
+    await initCitiesCache(supabase);
 
     // Get authorization header
     const authHeader = req.headers.get('Authorization');
@@ -425,9 +426,9 @@ serve(async (req) => {
       : '';
 
     // City context - optional discovery question for urban setting (asked after resort)
-    const cityVisualPrompt = city && isValidCity(city) ? getCityVisualPrompt(city) : null;
+    const cityVisualPrompt = city && isValidCity(city) ? getCityVisualPromptSync(city) : null;
     const cityContext = city && isValidCity(city)
-      ? `\n\n⚠️ CRITICAL - CITY STATUS:\n🏙️ CITY ALREADY SELECTED: ${getCityDisplay(city)}\n❌ DO NOT ask "Which city?" - this step is COMPLETE.${cityVisualPrompt || ''}`
+      ? `\n\n⚠️ CRITICAL - CITY STATUS:\n🏙️ CITY ALREADY SELECTED: ${getCityDisplaySync(city)}\n❌ DO NOT ask "Which city?" - this step is COMPLETE.${cityVisualPrompt || ''}`
       : '';
 
     // Check if user is forcing outline creation (e.g., typing "create outline")
@@ -467,6 +468,9 @@ ${locationSuggestBlock}
       : '';
 
     // City question injection - shown BEFORE title proposal (independent of location)
+    // Build dynamic city suggest block from database
+    const citySuggestBlock = shouldAskCityQuestion ? await getCitySuggestBlock(supabase) : '';
+    
     const cityQuestionInjection = shouldAskCityQuestion
       ? `\n\n🏙️ OPTIONAL QUESTION - CITY (Ask BEFORE proposing title):
 Ask this optional question:
@@ -474,10 +478,7 @@ Ask this optional question:
 "Would you like to set this book in a specific city? This is optional."
 
 [SUGGEST]
-JERSEY_CITY: 🌅 Jersey City
-HOBOKEN: 🚂 Hoboken
-NEW_YORK_CITY: 🗽 New York City
-skip-city: ⏭️ Skip (no specific city)
+${citySuggestBlock}
 [/SUGGEST]
 
 ⚠️ CRITICAL: Ask this BEFORE proposing the book title.`

@@ -45,15 +45,16 @@ serve(async (req) => {
     const CheckoutRequestSchema = z.object({
       price_id: z.string().optional(),
       product_id: z.string().optional(),
-      plan_type: z.enum(['monthly', 'annual']).optional()
+      plan_type: z.enum(['monthly', 'annual']).optional(),
+      coupon_code: z.string().optional()
     }).refine(
       (data) => data.price_id || data.product_id || data.plan_type,
       { message: "At least one of price_id, product_id, or plan_type must be provided" }
     );
     
     const body = await req.json();
-    const { price_id, product_id, plan_type } = CheckoutRequestSchema.parse(body);
-    logStep("Request data received", { price_id, product_id, plan_type });
+    const { price_id, product_id, plan_type, coupon_code } = CheckoutRequestSchema.parse(body);
+    logStep("Request data received", { price_id, product_id, plan_type, coupon_code });
 
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     
@@ -107,7 +108,7 @@ serve(async (req) => {
     const origin = req.headers.get("origin") || "https://dailyabcillustrations.com";
     
     // Prepare checkout session configuration
-    const sessionConfig = {
+    const sessionConfig: any = {
       customer: customerId,
       customer_email: customerId ? undefined : user.email,
       line_items: [
@@ -122,9 +123,34 @@ serve(async (req) => {
       metadata: {
         user_id: user.id,
       },
-      // Allow promotion codes to be entered during checkout
-      allow_promotion_codes: true,
     };
+
+    // If a coupon code is provided, apply it directly (disables promo code field)
+    // Otherwise, allow users to enter promotion codes manually
+    if (coupon_code) {
+      // Look up the coupon to get its ID
+      try {
+        const coupons = await stripe.coupons.list({ limit: 100 });
+        const matchingCoupon = coupons.data.find(
+          c => c.name?.toLowerCase() === coupon_code.toLowerCase() || c.id.toLowerCase() === coupon_code.toLowerCase()
+        );
+        
+        if (matchingCoupon && matchingCoupon.valid) {
+          sessionConfig.discounts = [{ coupon: matchingCoupon.id }];
+          logStep("Applied coupon", { coupon_code, coupon_id: matchingCoupon.id });
+        } else {
+          logStep("Coupon not found or invalid", { coupon_code });
+          // Fall back to allowing manual promo code entry
+          sessionConfig.allow_promotion_codes = true;
+        }
+      } catch (couponError) {
+        logStep("Error looking up coupon", { error: couponError });
+        sessionConfig.allow_promotion_codes = true;
+      }
+    } else {
+      // Allow promotion codes to be entered during checkout
+      sessionConfig.allow_promotion_codes = true;
+    }
 
     const session = await stripe.checkout.sessions.create(sessionConfig);
 

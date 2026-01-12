@@ -155,25 +155,6 @@ export default function PublicColorBook() {
               </p>
             )}
           </div>
-
-          {/* CTA Section */}
-          <div className="mt-12 p-8 rounded-lg bg-muted text-center">
-            <BookOpen className="h-12 w-12 mx-auto mb-4 text-primary" />
-            <h2 className="text-2xl font-bold mb-3">
-              Want more ABC books?
-            </h2>
-            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-              Explore our library of AI-generated educational books with illustrations and activities.
-            </p>
-            <div className="flex gap-4 justify-center flex-wrap">
-              <Button asChild size="lg">
-                <Link to="/auth?mode=signup">Get Started Free</Link>
-              </Button>
-              <Button asChild size="lg" variant="outline">
-                <Link to="/">Explore Books</Link>
-              </Button>
-            </div>
-          </div>
         </div>
       </StandardPageLayout>
     </>

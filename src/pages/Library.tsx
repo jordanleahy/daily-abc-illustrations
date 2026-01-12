@@ -85,6 +85,7 @@ const Library = memo(() => {
                 selectedThemes={selectedThemes}
                 onThemesChange={setSelectedThemes}
                 availableThemes={availableThemes}
+                showThemeFilter={false}
                 placeholder={isSearching ? "Searching..." : "Search library books..."}
               />
             </div>

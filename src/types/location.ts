@@ -14,6 +14,7 @@ export const LOCATION_IDS = [
   'BRECKENRIDGE',
   'KEYSTONE',
   'WHISTLER_BLACKCOMB',
+  'PLATTEKILL',
   'NONE' // Represents "skipped" - no specific location
 ] as const;
 
@@ -37,6 +38,7 @@ export const LOCATION_OPTIONS: LocationOption[] = [
   { id: 'BRECKENRIDGE', label: 'Breckenridge', emoji: '🏘️', description: 'Colorado, historic mountain town' },
   { id: 'KEYSTONE', label: 'Keystone', emoji: '🌙', description: 'Colorado, night skiing' },
   { id: 'WHISTLER_BLACKCOMB', label: 'Whistler Blackcomb', emoji: '🇨🇦', description: 'British Columbia, largest ski resort in North America' },
+  { id: 'PLATTEKILL', label: 'Plattekill Mountain', emoji: '🗽', description: 'New York, Catskills family-owned gem' },
 ];
 
 /**

@@ -11,6 +11,7 @@ export const VALID_LOCATIONS = [
   'BRECKENRIDGE',
   'KEYSTONE',
   'WHISTLER_BLACKCOMB',
+  'PLATTEKILL',
   'NONE' // Represents "skipped" - no specific location
 ] as const;
 
@@ -34,6 +35,7 @@ export const LOCATION_OPTIONS: LocationOption[] = [
   { id: 'BRECKENRIDGE', label: 'Breckenridge', emoji: '🏘️', description: 'Colorado, historic mountain town' },
   { id: 'KEYSTONE', label: 'Keystone', emoji: '🌙', description: 'Colorado, night skiing' },
   { id: 'WHISTLER_BLACKCOMB', label: 'Whistler Blackcomb', emoji: '🇨🇦', description: 'British Columbia, largest ski resort in North America' },
+  { id: 'PLATTEKILL', label: 'Plattekill Mountain', emoji: '🗽', description: 'New York, Catskills family-owned gem' },
 ];
 
 /**
@@ -67,6 +69,7 @@ const LOCATION_SPELLING_GUIDE: Partial<Record<ValidLocation, string>> = {
   'BRECKENRIDGE': 'SPELLING: B-R-E-C-K-E-N-R-I-D-G-E',
   'KEYSTONE': 'SPELLING: K-E-Y-S-T-O-N-E',
   'WHISTLER_BLACKCOMB': 'SPELLING: W-H-I-S-T-L-E-R B-L-A-C-K-C-O-M-B (two words, Whistler Blackcomb)',
+  'PLATTEKILL': 'SPELLING: P-L-A-T-T-E-K-I-L-L (double T, single L at end)',
 };
 
 /**
@@ -144,6 +147,13 @@ const RESORT_VISUAL_PROFILES: Partial<Record<ValidLocation, ResortVisualProfile>
     landmarks: ['Peak 2 Peak Gondola (record-breaking)', 'Whistler Village stroll', 'Blackcomb Glacier', 'Harmony Bowl', 'Horstman Glacier', '7th Heaven Express', 'Roundhouse Lodge'],
     colorPalette: 'Pacific coastal blues, glacial whites, deep evergreen forests, dramatic cloud-shrouded peaks, Canadian red maple accents',
     atmosphere: 'World-class luxury, Olympic heritage (2010 Winter Games), vibrant après-ski culture, cosmopolitan international vibe, raw coastal mountain grandeur'
+  },
+  'PLATTEKILL': {
+    terrain: 'Western Catskill Mountains terrain with 41 trails across 1,100 vertical feet, dense hardwood and hemlock forests, natural glades, classic Northeast mountain character with moderate steeps and rolling terrain',
+    architecture: 'Authentic family-owned lodge with rustic upstate New York character, weathered wood-sided base lodge, no-frills practical design, vintage ski area aesthetic preserved from old-school era',
+    landmarks: ['Double-black diamond Blockbuster trail', 'North Face steeps', 'Triple chairlift', 'Historic base lodge', 'Terrain park', 'Tubing hill'],
+    colorPalette: 'Catskill autumn colors (burnt orange, deep red, golden yellow), hardwood forest browns, hemlock greens, upstate New York gray skies, vintage lodge warm tones',
+    atmosphere: 'Throwback family-owned charm, last family-owned resort in northern Catskills, old-school Northeast skiing culture, unpretentious local vibe, 3 hours from NYC, no crowds, authentic upstate New York mountain experience'
   },
 };
 

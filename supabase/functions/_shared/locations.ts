@@ -34,7 +34,7 @@ export type ValidLocation = string;
 // Cache for locations to avoid repeated DB calls within a single request
 let locationsCache: LocationRecord[] | null = null;
 let cacheTimestamp: number = 0;
-const CACHE_TTL_MS = 60000; // 1 minute cache
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour cache (locations change rarely)
 
 /**
  * Fetch all active locations from the database
@@ -58,7 +58,9 @@ export async function fetchLocations(): Promise<LocationRecord[]> {
 
   if (error) {
     console.error('Error fetching locations:', error);
-    return [];
+    // Return cached data if available, otherwise fallback
+    if (locationsCache) return locationsCache;
+    return getDefaultLocations();
   }
 
   locationsCache = data || [];
@@ -220,8 +222,27 @@ export async function getLocationSuggestBlock(): Promise<string> {
 }
 
 /**
+ * Fallback locations if database is unavailable
+ */
+function getDefaultLocations(): LocationRecord[] {
+  return [
+    { id: 'PLATTEKILL', label: 'Plattekill Mountain', emoji: '🏔️', description: 'Family-friendly Catskills resort', spelling_guide: 'Plattekill (not Platekill)', terrain: 'Catskill Mountains', architecture: 'Classic ski lodge', landmarks: ['Triple Chair', 'Block Buster'], color_palette: 'Forest greens, autumn colors', atmosphere: 'Family-friendly, authentic', is_active: true, sort_order: 1 },
+    { id: 'PARK_CITY', label: 'Park City', emoji: '⛷️', description: 'Utah\'s premier resort', spelling_guide: 'Park City (two words)', terrain: 'Wasatch Range', architecture: 'Historic mining town', landmarks: ['Main Street', 'Town Lift'], color_palette: 'Mountain blues, historic reds', atmosphere: 'Historic, upscale', is_active: true, sort_order: 2 },
+    { id: 'WHISTLER', label: 'Whistler Blackcomb', emoji: '🎿', description: 'World-class BC resort', spelling_guide: 'Whistler Blackcomb', terrain: 'Coast Mountains', architecture: 'Modern alpine village', landmarks: ['Peak 2 Peak Gondola', 'Whistler Village'], color_palette: 'Pacific blues, forest greens', atmosphere: 'World-class, vibrant', is_active: true, sort_order: 3 },
+  ];
+}
+
+/**
  * Initialize the cache - call this at the start of edge function execution
  */
 export async function initLocationsCache(): Promise<void> {
   await fetchLocations();
+}
+
+/**
+ * Clears the cache - useful for testing or force refresh
+ */
+export function clearLocationsCache(): void {
+  locationsCache = null;
+  cacheTimestamp = 0;
 }

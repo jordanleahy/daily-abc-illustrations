@@ -14,7 +14,7 @@ export interface GradeLevel {
 // In-memory cache for grade levels
 let cachedGradeLevels: GradeLevel[] | null = null;
 let cacheTimestamp: number = 0;
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour (grade levels change rarely)
 
 /**
  * Type guard for valid grade IDs

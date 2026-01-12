@@ -7,6 +7,7 @@ import { AgeRangeId } from './ageRange';
  */
 export interface LibraryBook {
   id: string;
+  slug?: string;
   book_name: string;
   book_description?: string | null;
   created_at: string;

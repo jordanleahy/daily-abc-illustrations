@@ -45,12 +45,13 @@ export default function PublicColorBook() {
     
     try {
       // Map to the PageImageData format expected by generatePDF
+      // Use printable version (with color thumbnail) if available
       const pages: PageImageData[] = coloringImages.map(img => ({
         id: img.page_id,
         page_number: img.page_number,
         letter: img.letter,
         title: `Letter ${img.letter}`,
-        image_url: img.coloring_image_url
+        image_url: img.printable_coloring_image_url || img.coloring_image_url
       }));
       
       const pdfBytes = await generatePDF(pages, {
@@ -182,7 +183,7 @@ export default function PublicColorBook() {
                   <CardContent className="p-0">
                     <AspectRatio ratio={1} className="bg-white">
                       <OptimizedImage
-                        src={image.coloring_image_url}
+                        src={image.printable_coloring_image_url || image.coloring_image_url}
                         alt={`Coloring page for letter ${image.letter}`}
                         className="w-full h-full object-cover"
                       />

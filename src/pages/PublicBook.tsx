@@ -196,7 +196,7 @@ export default function PublicBook() {
                     className="rounded-lg overflow-hidden border border-border bg-white"
                   >
                     <OptimizedImage 
-                      src={coloringImage.coloring_image_url} 
+                      src={coloringImage.printable_coloring_image_url || coloringImage.coloring_image_url} 
                       alt={`Coloring page for letter ${coloringImage.letter}`}
                       className="w-full h-full object-cover"
                     />

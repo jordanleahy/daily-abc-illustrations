@@ -37,8 +37,10 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleCardClick = () => {
+    // Non-authenticated users go to public book page
     if (!user) {
-      navigate('/auth?mode=signup');
+      const slug = 'slug' in book ? book.slug : book.id;
+      navigate(`/book/${slug}`);
       return;
     }
 

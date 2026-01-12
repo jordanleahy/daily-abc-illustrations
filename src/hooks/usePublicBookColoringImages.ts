@@ -6,6 +6,7 @@ export interface ColoringImageData {
   page_number: number;
   letter: string;
   coloring_image_url: string;
+  printable_coloring_image_url?: string;
 }
 
 export function usePublicBookColoringImages(bookId: string | undefined) {
@@ -29,7 +30,7 @@ export function usePublicBookColoringImages(bookId: string | undefined) {
       for (const page of pages) {
         const { data: imageData } = await supabase
           .from('page_image_urls')
-          .select('coloring_image_url')
+          .select('coloring_image_url, printable_coloring_image_url')
           .eq('page_id', page.id)
           .eq('is_latest', true)
           .not('coloring_image_url', 'is', null)
@@ -40,7 +41,8 @@ export function usePublicBookColoringImages(bookId: string | undefined) {
             page_id: page.id,
             page_number: page.page_number,
             letter: page.letter,
-            coloring_image_url: imageData.coloring_image_url
+            coloring_image_url: imageData.coloring_image_url,
+            printable_coloring_image_url: imageData.printable_coloring_image_url ?? undefined
           });
         }
       }

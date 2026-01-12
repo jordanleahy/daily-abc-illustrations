@@ -288,6 +288,23 @@ export function clearCitiesCache(): void {
   cacheTimestamp = 0;
 }
 
+/**
+ * Build a dynamic SUGGEST block for city selection from database
+ * Used in chat agent to show available city options
+ */
+export async function getCitySuggestBlock(supabase: SupabaseClient): Promise<string> {
+  const cities = await fetchCities(supabase);
+  
+  const cityLines = cities.map(city => 
+    `${city.id}: ${city.emoji} ${city.label}`
+  );
+  
+  // Add skip option
+  cityLines.push('skip-city: ⏭️ Skip (no specific city)');
+  
+  return cityLines.join('\n');
+}
+
 // ============================================
 // LEGACY EXPORTS FOR BACKWARD COMPATIBILITY
 // ============================================

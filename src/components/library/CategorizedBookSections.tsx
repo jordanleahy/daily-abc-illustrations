@@ -1,7 +1,8 @@
-import { memo, useMemo } from 'react';
+import { memo, useMemo, useState, useEffect } from 'react';
 import { BookOpen } from 'lucide-react';
 import { useBookTypes } from '@/hooks/useBookTypes';
 import { CategoryBookCarousel } from './CategoryBookCarousel';
+import { LazyCategorySection } from './LazyCategorySection';
 import { Card } from '@/components/ui/card';
 import type { LibraryBook } from '@/types/library';
 import type { LandingLibraryBook } from '@/types/book-extended';
@@ -106,11 +107,27 @@ export const CategorizedBookSections = memo(({
 
   return (
     <div className={LIBRARY_STYLES.page.content}>
-      {categoriesWithBooks.map((category) => {
+      {categoriesWithBooks.map((category, index) => {
         const categoryBooks = booksByCategory[category.id] || [];
 
+        // First category loads immediately, rest are lazy loaded
+        if (index === 0) {
+          return (
+            <CategoryBookCarousel
+              key={category.id}
+              categoryId={category.id}
+              categoryLabel={category.label}
+              categoryIcon={category.icon}
+              categoryColor={category.color}
+              books={categoryBooks}
+              showViewAll={showViewAllLinks}
+              maxBooks={maxBooksPerCategory}
+            />
+          );
+        }
+
         return (
-          <CategoryBookCarousel
+          <LazyCategorySection
             key={category.id}
             categoryId={category.id}
             categoryLabel={category.label}

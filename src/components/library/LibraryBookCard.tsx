@@ -127,6 +127,8 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
             variant="outline"
             size="sm"
             className="w-full gap-1.5"
+            onPointerDown={(e) => e.stopPropagation()}
+            onPointerUp={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
               navigate(`/printable-colorbook/${book.id}`);

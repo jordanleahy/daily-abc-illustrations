@@ -1,7 +1,7 @@
 import { PageLayout } from '@/components/layout/PageLayout';
 import { LandingHero } from '@/components/landing/LandingHero';
 import { CategorizedBookSections } from '@/components/library';
-import { SignupSection } from '@/components/landing/SignupSection';
+
 import { useLandingPageData } from '@/hooks/useLandingPageData';
 import { useLandingPageImagePreloader } from '@/hooks/useLandingPageImagePreloader';
 import { useLandingPageSubscription } from '@/hooks/useLandingPageSubscription';
@@ -35,7 +35,6 @@ const Landing = () => {
             showAllCategories={true}
             isLoading={isLoadingBooks}
           />
-          <SignupSection />
         </div>
       </PageLayout>
     </>

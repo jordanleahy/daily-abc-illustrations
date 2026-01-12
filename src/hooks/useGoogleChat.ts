@@ -423,11 +423,13 @@ export const useGoogleChat = (
                 { id: 'VAIL_RESORT', label: '🏔️ Vail Resort', value: 'Vail Resort', locationId: 'VAIL_RESORT' as LocationId },
                 { id: 'SUGARBUSH_RESORT', label: '🍁 Sugarbush Resort', value: 'Sugarbush Resort', locationId: 'SUGARBUSH_RESORT' as LocationId },
                 { id: 'STRATTON', label: '⛷️ Stratton', value: 'Stratton', locationId: 'STRATTON' as LocationId },
-                { id: 'KILLINGTON', label: '🏂 Killington', value: 'Killington', locationId: 'KILLINGTON' as LocationId },
+                { id: 'KILLINGTON', label: '🏂 Killington Mountain', value: 'Killington Mountain', locationId: 'KILLINGTON' as LocationId },
                 { id: 'MOUNTAIN_CREEK', label: '🎿 Mountain Creek', value: 'Mountain Creek', locationId: 'MOUNTAIN_CREEK' as LocationId },
                 { id: 'COPPER_MOUNTAIN', label: '🥉 Copper Mountain', value: 'Copper Mountain', locationId: 'COPPER_MOUNTAIN' as LocationId },
                 { id: 'BRECKENRIDGE', label: '🏘️ Breckenridge', value: 'Breckenridge', locationId: 'BRECKENRIDGE' as LocationId },
                 { id: 'KEYSTONE', label: '🌙 Keystone', value: 'Keystone', locationId: 'KEYSTONE' as LocationId },
+                { id: 'WHISTLER_BLACKCOMB', label: '🇨🇦 Whistler Blackcomb', value: 'Whistler Blackcomb', locationId: 'WHISTLER_BLACKCOMB' as LocationId },
+                { id: 'PLATTEKILL', label: '🗽 Plattekill Mountain', value: 'Plattekill Mountain', locationId: 'PLATTEKILL' as LocationId },
                 { id: 'skip-location', label: '⏭️ Skip (no specific resort)', value: 'No specific resort', locationId: 'NONE' as LocationId },
               ]
             };

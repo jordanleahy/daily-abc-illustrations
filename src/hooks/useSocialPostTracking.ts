@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
 
 export type SocialPlatform = 'instagram' | 'facebook' | 'tiktok' | 'linkedin' | 'ig_subscribers';
 
@@ -66,7 +67,9 @@ export function useSocialPostTracking(bookId: string) {
       
       return { previous };
     },
-    onError: (_err, _platform, context) => {
+    onError: (err, platform, context) => {
+      console.error('[SocialPostTracking] Failed to mark as posted:', platform, err);
+      toast.error(`Failed to save ${platform} post status`);
       if (context?.previous) {
         queryClient.setQueryData(['social-posts', bookId, user?.id], context.previous);
       }
@@ -97,7 +100,9 @@ export function useSocialPostTracking(bookId: string) {
       
       return { previous };
     },
-    onError: (_err, _platform, context) => {
+    onError: (err, platform, context) => {
+      console.error('[SocialPostTracking] Failed to unmark as posted:', platform, err);
+      toast.error(`Failed to remove ${platform} post status`);
       if (context?.previous) {
         queryClient.setQueryData(['social-posts', bookId, user?.id], context.previous);
       }

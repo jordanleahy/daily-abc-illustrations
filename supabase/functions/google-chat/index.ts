@@ -479,42 +479,49 @@ serve(async (req) => {
     let selectedMannerCategory: string | null = null;
     
     if (bookType === 'manners') {
-      // Detect selected manner category from conversation (parent level)
-      const categoryKeys = Object.keys(MANNER_TYPES);
-      for (const msg of messages) {
-        if (msg.role === 'user' && typeof msg.content === 'string') {
-          const content = msg.content.toLowerCase();
-          for (const catKey of categoryKeys) {
-            // Match category key or label
-            const catData = MANNER_TYPES[catKey as keyof typeof MANNER_TYPES];
-            if (content.includes(catKey) || content.toLowerCase().includes(catData.label.toLowerCase())) {
-              selectedMannerCategory = catKey;
-              break;
+      // Only check the LAST user message for category/manner selection (not all messages)
+      // This prevents false matches from earlier conversation context
+      const lastUserMessage = messages.slice().reverse().find(m => m.role === 'user' && typeof m.content === 'string');
+      
+      if (lastUserMessage && typeof lastUserMessage.content === 'string') {
+        const content = lastUserMessage.content.toLowerCase();
+        
+        // Detect category selection - require explicit category labels (not just keywords)
+        if (content.includes('daily routine')) selectedMannerCategory = 'daily';
+        else if (content.includes('social interaction')) selectedMannerCategory = 'social';
+        else if (content.includes('out and about')) selectedMannerCategory = 'places';
+        else if (content.includes('behavior and safety')) selectedMannerCategory = 'behavior';
+        // Also check for "back to categories" to reset
+        else if (content.includes('back to categories')) selectedMannerCategory = null;
+        
+        // Detect specific manner selection (child level)
+        const allMannerOptions = Object.values(MANNER_TYPES).flatMap(cat => cat.options);
+        for (const option of allMannerOptions) {
+          // Match by full label (more specific matching)
+          if (content.includes(option.label.toLowerCase()) || content.includes(option.key.replace('_', ' '))) {
+            selectedMannerType = option.key;
+            // Also set the category if manner is selected
+            for (const [catKey, catData] of Object.entries(MANNER_TYPES)) {
+              if (catData.options.some(o => o.key === option.key)) {
+                selectedMannerCategory = catKey;
+                break;
+              }
             }
+            break;
           }
-          if (selectedMannerCategory) break;
         }
       }
       
-      // Detect selected manner type from conversation (child level)
-      const allMannerKeys = Object.values(MANNER_TYPES).flatMap(cat => cat.options.map(o => o.key));
-      for (const msg of messages) {
-        if (msg.role === 'user' && typeof msg.content === 'string') {
-          const content = msg.content.toLowerCase();
-          for (const key of allMannerKeys) {
-            if (content.includes(key) || content.includes(key.replace('_', ' '))) {
-              selectedMannerType = key;
-              // Also set the category if manner is selected
-              for (const [catKey, catData] of Object.entries(MANNER_TYPES)) {
-                if (catData.options.some(o => o.key === key)) {
-                  selectedMannerCategory = catKey;
-                  break;
-                }
-              }
-              break;
-            }
+      // Also check conversation history for previously selected category (if user is in Step 3b)
+      if (!selectedMannerCategory && !selectedMannerType) {
+        for (const msg of messages) {
+          if (msg.role === 'user' && typeof msg.content === 'string') {
+            const content = msg.content.toLowerCase();
+            if (content.includes('daily routine')) { selectedMannerCategory = 'daily'; break; }
+            else if (content.includes('social interaction')) { selectedMannerCategory = 'social'; break; }
+            else if (content.includes('out and about')) { selectedMannerCategory = 'places'; break; }
+            else if (content.includes('behavior and safety')) { selectedMannerCategory = 'behavior'; break; }
           }
-          if (selectedMannerType) break;
         }
       }
       
@@ -628,14 +635,20 @@ back: ⬅️ Back to categories
 ⬜ Step 3b: Specific Manner - Pending
 ⬜ Step 4: Confirmation - Pending
 
-📋 ASK: "Perfect! What type of manners would you like this book to teach?"
+📋 YOU MUST RESPOND WITH EXACTLY THIS FORMAT (including the [SUGGEST] block):
+"Perfect! What type of manners would you like this book to teach?"
 
 [SUGGEST]
 ${getMannerCategoriesSuggestBlock()}
 [/SUGGEST]
 
-⚠️ CRITICAL: Show ONLY the 4 category buttons above. The user selects a category first, then chooses a specific manner.
-❌ DO NOT ask about grade level, age, location, city, season, or ANY other questions.`;
+⚠️ CRITICAL REQUIREMENTS:
+1. THE [SUGGEST] BLOCK IS REQUIRED - do NOT list options as text bullets or numbered lists
+2. Show ONLY the 4 category buttons above
+3. The user selects a category first, then chooses a specific manner
+
+❌ DO NOT ask about grade level, age, location, city, season, environment, or ANY other questions.
+❌ DO NOT say "specific moment" or list all 12 manners. Show ONLY the 4 categories.`;
         console.log(`📋 Manners Step 3a - Manner category (theme: ${characterTheme}, chars: ${selectedCharacterIds?.length})`);
         
       } else if (hasTheme) {

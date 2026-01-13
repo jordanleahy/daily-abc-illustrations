@@ -354,9 +354,13 @@ export const useGoogleChat = (
             };
           }
           
-          // Manners category selection fallback (parent level)
+          // Manners category selection fallback (parent level) - expanded pattern matching
           if (cleanedText.toLowerCase().includes('what type of manners') || 
-              cleanedText.toLowerCase().includes('manner category')) {
+              cleanedText.toLowerCase().includes('manner category') ||
+              cleanedText.toLowerCase().includes('specific moment') ||
+              cleanedText.toLowerCase().includes('what would you like this book to teach') ||
+              cleanedText.toLowerCase().includes('manners would you like') ||
+              cleanedText.toLowerCase().includes('what manners')) {
             return { 
               cleanContent: cleanedText, 
               suggestedActions: [

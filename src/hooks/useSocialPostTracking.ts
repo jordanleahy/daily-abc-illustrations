@@ -56,10 +56,10 @@ export function useSocialPostTracking(bookId: string) {
     },
     onMutate: async (platform) => {
       // Optimistic update
-      await queryClient.cancelQueries({ queryKey: ['social-posts', bookId] });
-      const previous = queryClient.getQueryData<SocialPlatform[]>(['social-posts', bookId]);
+      await queryClient.cancelQueries({ queryKey: ['social-posts', bookId, user?.id] });
+      const previous = queryClient.getQueryData<SocialPlatform[]>(['social-posts', bookId, user?.id]);
       
-      queryClient.setQueryData<SocialPlatform[]>(['social-posts', bookId], (old = []) => {
+      queryClient.setQueryData<SocialPlatform[]>(['social-posts', bookId, user?.id], (old = []) => {
         if (old.includes(platform)) return old;
         return [...old, platform];
       });
@@ -68,11 +68,11 @@ export function useSocialPostTracking(bookId: string) {
     },
     onError: (_err, _platform, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(['social-posts', bookId], context.previous);
+        queryClient.setQueryData(['social-posts', bookId, user?.id], context.previous);
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['social-posts', bookId] });
+      queryClient.invalidateQueries({ queryKey: ['social-posts', bookId, user?.id] });
     },
   });
 
@@ -88,10 +88,10 @@ export function useSocialPostTracking(bookId: string) {
       return platform;
     },
     onMutate: async (platform) => {
-      await queryClient.cancelQueries({ queryKey: ['social-posts', bookId] });
-      const previous = queryClient.getQueryData<SocialPlatform[]>(['social-posts', bookId]);
+      await queryClient.cancelQueries({ queryKey: ['social-posts', bookId, user?.id] });
+      const previous = queryClient.getQueryData<SocialPlatform[]>(['social-posts', bookId, user?.id]);
       
-      queryClient.setQueryData<SocialPlatform[]>(['social-posts', bookId], (old = []) => {
+      queryClient.setQueryData<SocialPlatform[]>(['social-posts', bookId, user?.id], (old = []) => {
         return old.filter(p => p !== platform);
       });
       
@@ -99,11 +99,11 @@ export function useSocialPostTracking(bookId: string) {
     },
     onError: (_err, _platform, context) => {
       if (context?.previous) {
-        queryClient.setQueryData(['social-posts', bookId], context.previous);
+        queryClient.setQueryData(['social-posts', bookId, user?.id], context.previous);
       }
     },
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['social-posts', bookId] });
+      queryClient.invalidateQueries({ queryKey: ['social-posts', bookId, user?.id] });
     },
   });
 

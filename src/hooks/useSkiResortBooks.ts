@@ -4,8 +4,8 @@ import type { LibraryBook } from '@/types/library';
 import type { AgeRangeId } from '@/types/ageRange';
 import { isValidAgeRange } from '@/types/ageRange';
 
-// Map URL slugs to metadata.locationId values
-const slugToLocationId: Record<string, string> = {
+// Map URL slugs to metadata.location values
+const slugToLocation: Record<string, string> = {
   killington: 'KILLINGTON',
   vail: 'VAIL_RESORT',
   stratton: 'STRATTON',
@@ -43,15 +43,15 @@ export const useSkiResortBooks = (resortSlug: string | undefined) => {
     queryFn: async (): Promise<LibraryBook[]> => {
       if (!resortSlug) return [];
 
-      const locationId = slugToLocationId[resortSlug.toLowerCase()];
-      if (!locationId) return [];
+      const location = slugToLocation[resortSlug.toLowerCase()];
+      if (!location) return [];
 
-      // Query books where metadata->>locationId matches
+      // Query books where metadata->>location matches
       const { data: books, error } = await supabase
         .from('books')
         .select('id, book_name, book_description, category, metadata, is_highlighted, created_at, updated_at, total_pages')
         .eq('status', 'published')
-        .filter('metadata->>locationId', 'eq', locationId);
+        .filter('metadata->>location', 'eq', location);
 
       if (error) {
         console.error('Error fetching ski resort books:', error);

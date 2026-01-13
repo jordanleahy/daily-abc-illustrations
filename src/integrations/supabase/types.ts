@@ -651,6 +651,9 @@ export type Database = {
           id: string
           is_active: boolean
           is_special: boolean
+          og_image_url: string | null
+          seo_description: string | null
+          seo_title: string | null
           sort_order: number
           thumbnail_url: string
           updated_at: string
@@ -662,6 +665,9 @@ export type Database = {
           id: string
           is_active?: boolean
           is_special?: boolean
+          og_image_url?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           sort_order?: number
           thumbnail_url: string
           updated_at?: string
@@ -673,6 +679,9 @@ export type Database = {
           id?: string
           is_active?: boolean
           is_special?: boolean
+          og_image_url?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           sort_order?: number
           thumbnail_url?: string
           updated_at?: string

@@ -1,8 +1,47 @@
 import { SITE_CONFIG } from '@/config/site';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 export const PublicBookFooter = () => {
   const currentYear = new Date().getFullYear();
+
+  // Fetch resorts that have books
+  const { data: resortsWithBooks } = useQuery({
+    queryKey: ['footer-resorts-with-books'],
+    queryFn: async () => {
+      // Get distinct locations from books metadata
+      const { data: books } = await supabase
+        .from('books')
+        .select('metadata')
+        .not('metadata->location', 'is', null)
+        .eq('status', 'published')
+        .limit(100);
+      
+      if (!books) return [];
+      
+      // Extract unique locations
+      const locationIds = [...new Set(
+        books
+          .map(b => (b.metadata as any)?.location)
+          .filter(Boolean)
+      )];
+      
+      if (locationIds.length === 0) return [];
+      
+      // Fetch location details
+      const { data: locations } = await supabase
+        .from('locations')
+        .select('id, label')
+        .in('id', locationIds)
+        .eq('is_active', true)
+        .order('sort_order')
+        .limit(4);
+      
+      return locations || [];
+    },
+    staleTime: 1000 * 60 * 10, // 10 minutes
+  });
 
   return (
     <footer className="border-t border-border mt-12">
@@ -40,30 +79,35 @@ export const PublicBookFooter = () => {
             </ul>
           </div>
 
-          {/* Families */}
+          {/* Resorts */}
           <div>
-            <h4 className="font-semibold mb-4">Families</h4>
+            <h4 className="font-semibold mb-4">Resorts</h4>
             <ul className="space-y-2 text-sm">
-              <li>
-                <Link to="/for-toddlers" className="text-muted-foreground hover:text-foreground transition-colors">
-                  For toddlers
-                </Link>
-              </li>
-              <li>
-                <Link to="/for-early-readers" className="text-muted-foreground hover:text-foreground transition-colors">
-                  For early readers
-                </Link>
-              </li>
-              <li>
-                <Link to="/for-busy-parents" className="text-muted-foreground hover:text-foreground transition-colors">
-                  For busy parents
-                </Link>
-              </li>
-              <li>
-                <Link to="/for-grandparents" className="text-muted-foreground hover:text-foreground transition-colors">
-                  For grandparents
-                </Link>
-              </li>
+              {resortsWithBooks && resortsWithBooks.length > 0 ? (
+                resortsWithBooks.map((resort) => (
+                  <li key={resort.id}>
+                    <Link 
+                      to={`/resorts/${resort.id.toLowerCase().replace(/_/g, '-')}`} 
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      {resort.label}
+                    </Link>
+                  </li>
+                ))
+              ) : (
+                <>
+                  <li>
+                    <Link to="/resorts" className="text-muted-foreground hover:text-foreground transition-colors">
+                      Ski Resorts
+                    </Link>
+                  </li>
+                  <li>
+                    <Link to="/resorts" className="text-muted-foreground hover:text-foreground transition-colors">
+                      Mountain Destinations
+                    </Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 

@@ -26,65 +26,85 @@ function isCrawler(userAgent: string): boolean {
   return CRAWLER_USER_AGENTS.some(crawler => ua.includes(crawler.toLowerCase()));
 }
 
-// Theme display names and descriptions
-const THEME_METADATA: Record<string, { displayName: string; description: string }> = {
+// Fallback metadata for book types (used if DB doesn't have SEO data)
+const BOOK_TYPE_FALLBACK: Record<string, { label: string; description: string }> = {
+  abc: {
+    label: 'ABC Books',
+    description: 'Explore our collection of themed ABC books for children. Educational, illustrated content designed to make learning fun for kids of all ages.',
+  },
+  opposites: {
+    label: 'Opposites Books',
+    description: 'Learn about opposites with our illustrated books. Big and small, hot and cold - discover contrasting concepts through engaging visuals.',
+  },
+  rhyming: {
+    label: 'Rhyming Books',
+    description: 'Fun rhyming books that help develop phonemic awareness. Engaging stories with rhythmic patterns for early readers.',
+  },
+  numbers: {
+    label: 'Numbers Books',
+    description: 'Count along with our numbers books. Learn 1-10, 1-20, and beyond with colorful illustrations and fun activities.',
+  },
+  shapes: {
+    label: 'Shapes Books',
+    description: 'Discover geometric shapes through engaging illustrated books. Circles, squares, triangles, and more for young learners.',
+  },
+  colors: {
+    label: 'Colors Books',
+    description: 'Explore the world of colors with vibrant illustrated books. Learn color names and recognition through fun activities.',
+  },
+  emotions: {
+    label: 'Emotions Books',
+    description: 'Help children understand and express emotions. Social-emotional learning through relatable illustrated stories.',
+  },
   animals: {
-    displayName: 'Animals',
-    description: 'Explore our collection of animal-themed ABC books. Fun, educational content featuring creatures from A to Z for young learners.',
+    label: 'Animals Books',
+    description: 'Discover the animal kingdom through illustrated books. Learn about creatures big and small from around the world.',
   },
-  dinosaurs: {
-    displayName: 'Dinosaurs',
-    description: 'Discover dinosaur ABC books that bring prehistoric creatures to life. Educational adventures through the age of dinosaurs.',
+  bedtime: {
+    label: 'Bedtime Books',
+    description: 'Soothing bedtime stories to help children wind down. Calming illustrations and gentle narratives for sweet dreams.',
   },
-  vehicles: {
-    displayName: 'Vehicles',
-    description: 'Transportation-themed ABC books featuring cars, trucks, planes, and more. Perfect for kids who love things that go!',
+  cvc: {
+    label: 'CVC Words Books',
+    description: 'Build reading skills with CVC word books. Consonant-vowel-consonant patterns for beginning readers.',
   },
-  space: {
-    displayName: 'Space',
-    description: 'Journey through the cosmos with space-themed ABC books. Rockets, planets, and stars for curious young astronomers.',
+  'sight-words': {
+    label: 'Sight Words Books',
+    description: 'Master essential sight words with our illustrated books. High-frequency words for fluent reading development.',
   },
-  nature: {
-    displayName: 'Nature',
-    description: 'Nature-themed ABC books celebrating the outdoors. Plants, seasons, and natural wonders from A to Z.',
+  digraphs: {
+    label: 'Digraphs Books',
+    description: 'Learn digraphs like ch, sh, th, and wh. Phonics-focused books for developing reading skills.',
   },
-  fantasy: {
-    displayName: 'Fantasy',
-    description: 'Magical ABC books filled with fantasy creatures and enchanted worlds. Spark imagination with every letter.',
-  },
-  sports: {
-    displayName: 'Sports',
-    description: 'Active ABC books featuring sports and athletics. Get kids moving and learning with athletic adventures.',
-  },
-  music: {
-    displayName: 'Music',
-    description: 'Musical ABC books introducing instruments, notes, and rhythm. A symphony of learning from A to Z.',
-  },
-  food: {
-    displayName: 'Food',
-    description: 'Delicious ABC books featuring fruits, vegetables, and treats. Tasty learning adventures for hungry minds.',
-  },
-  ocean: {
-    displayName: 'Ocean',
-    description: 'Dive into ocean-themed ABC books. Explore sea creatures and underwater wonders from A to Z.',
+  'first-words': {
+    label: 'First Words Books',
+    description: 'Introduce vocabulary with first words books. Essential words for toddlers and early language learners.',
   },
 };
 
-// Default metadata for the main ABC books page
+// Default metadata when no specific book type
 const DEFAULT_METADATA = {
-  displayName: 'ABC Books',
-  description: 'Explore our collection of themed ABC books for children. Educational, illustrated content designed to make learning fun for kids of all ages.',
+  label: 'Book Collection',
+  description: 'Explore our collection of educational books for children. Illustrated content designed to make learning fun.',
 };
 
-async function getThemeFromDatabase(
+interface BookTypeMetadata {
+  label: string;
+  description: string;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  ogImageUrl?: string | null;
+}
+
+async function getBookTypeFromDatabase(
   supabase: ReturnType<typeof createClient>,
-  themeSlug: string
-): Promise<{ displayName: string; description: string } | null> {
+  bookTypeId: string
+): Promise<BookTypeMetadata | null> {
   try {
     const { data, error } = await supabase
-      .from('character_themes')
-      .select('display_name, alt_text')
-      .eq('id', themeSlug)
+      .from('book_types')
+      .select('label, description, seo_title, seo_description, og_image_url')
+      .eq('id', bookTypeId)
       .eq('is_active', true)
       .single();
 
@@ -93,21 +113,24 @@ async function getThemeFromDatabase(
     }
 
     return {
-      displayName: data.display_name,
-      description: data.alt_text || `Explore our collection of ${data.display_name} ABC books. Educational content for young learners.`,
+      label: data.label,
+      description: data.description || '',
+      seoTitle: data.seo_title,
+      seoDescription: data.seo_description,
+      ogImageUrl: data.og_image_url,
     };
   } catch {
     return null;
   }
 }
 
-async function getFirstBookImage(
+async function getBookTypeImage(
   supabase: ReturnType<typeof createClient>,
-  themeSlug?: string
+  bookTypeId: string
 ): Promise<string | null> {
   try {
-    // Get a published book with this theme to use as OG image
-    let query = supabase
+    // Get a published book with this book type to use as OG image
+    const { data: publishedBooks } = await supabase
       .from('daily_published')
       .select(`
         id,
@@ -116,19 +139,14 @@ async function getFirstBookImage(
       `)
       .eq('status', 'active')
       .eq('is_publicly_visible', true)
-      .eq('books.metadata->>bookType', 'abc');
-
-    if (themeSlug) {
-      query = query.eq('books.metadata->>characterTheme', themeSlug);
-    }
-
-    const { data: publishedBooks } = await query.limit(1);
+      .eq('books.metadata->>bookType', bookTypeId)
+      .limit(1);
 
     if (!publishedBooks?.length) {
       return null;
     }
 
-    // Get the cover image for this book
+    // Get the OG image for this book from seo_metadata
     const bookId = publishedBooks[0].book_id;
     const { data: seoData } = await supabase
       .from('seo_metadata')
@@ -156,55 +174,44 @@ export default async function handler(req: Request, context: Context) {
     const url = new URL(req.url);
     const pathParts = url.pathname.split('/').filter(Boolean);
     
-    // Extract theme slug from /abc-books/:theme?
+    // Extract book type from /abc-books or similar paths
+    // For now, this handles /abc-books which maps to book type "abc"
     if (pathParts[0] !== 'abc-books') {
       return context.next();
     }
     
-    const themeSlug = pathParts[1]?.toLowerCase();
+    // The route is /abc-books - this is for the "abc" book type
+    const bookTypeId = 'abc';
     
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
     
-    let metadata = DEFAULT_METADATA;
+    // Try to get book type metadata from database
+    const dbBookType = await getBookTypeFromDatabase(supabase, bookTypeId);
     
-    if (themeSlug) {
-      // Try to get theme from hardcoded list first, then database
-      const hardcodedTheme = THEME_METADATA[themeSlug];
-      if (hardcodedTheme) {
-        metadata = hardcodedTheme;
-      } else {
-        const dbTheme = await getThemeFromDatabase(supabase, themeSlug);
-        if (dbTheme) {
-          metadata = dbTheme;
-        } else {
-          // Fallback: capitalize the slug
-          metadata = {
-            displayName: themeSlug.charAt(0).toUpperCase() + themeSlug.slice(1),
-            description: `Explore our collection of ${themeSlug} ABC books. Educational content for young learners.`,
-          };
-        }
-      }
+    // Build metadata with priority: DB SEO fields > DB description > fallback
+    const fallback = BOOK_TYPE_FALLBACK[bookTypeId] || DEFAULT_METADATA;
+    
+    const displayName = dbBookType?.label || fallback.label;
+    const description = dbBookType?.seoDescription || dbBookType?.description || fallback.description;
+    
+    // Get OG image - prefer db og_image_url, then try to find a book image
+    let ogImage = dbBookType?.ogImageUrl || null;
+    if (!ogImage) {
+      ogImage = await getBookTypeImage(supabase, bookTypeId);
     }
     
-    // Try to get a representative image
-    const bookImage = await getFirstBookImage(supabase, themeSlug);
+    const siteUrl = 'https://dailyabcillustrations.com';
+    const canonicalUrl = `${siteUrl}/abc-books`;
     
-    const siteUrl = 'https://chairlifthabits.com';
-    const canonicalUrl = themeSlug 
-      ? `${siteUrl}/abc-books/${themeSlug}`
-      : `${siteUrl}/abc-books`;
-    
-    const ogTitle = themeSlug
-      ? `${metadata.displayName} ABC Books | Daily ABC Illustrations`
-      : 'ABC Books Collection | Daily ABC Illustrations';
-    
-    const ogDescription = metadata.description;
+    // Use SEO title from DB if available, otherwise construct one
+    const ogTitle = dbBookType?.seoTitle || `${displayName} | Daily ABC Illustrations`;
+    const ogDescription = description;
     
     // Use book image if available, otherwise use a default
-    const ogImage = bookImage || `${siteUrl}/og-image.png`;
+    const finalOgImage = ogImage || `${siteUrl}/og-image.png`;
     
     // Return HTML with meta tags for crawlers
     const html = `<!DOCTYPE html>
@@ -220,7 +227,7 @@ export default async function handler(req: Request, context: Context) {
   <meta property="og:url" content="${canonicalUrl}">
   <meta property="og:title" content="${ogTitle}">
   <meta property="og:description" content="${ogDescription}">
-  <meta property="og:image" content="${ogImage}">
+  <meta property="og:image" content="${finalOgImage}">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta property="og:site_name" content="Daily ABC Illustrations">
@@ -230,7 +237,7 @@ export default async function handler(req: Request, context: Context) {
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${ogTitle}">
   <meta name="twitter:description" content="${ogDescription}">
-  <meta name="twitter:image" content="${ogImage}">
+  <meta name="twitter:image" content="${finalOgImage}">
   
   <!-- Canonical -->
   <link rel="canonical" href="${canonicalUrl}">

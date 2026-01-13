@@ -485,7 +485,10 @@ export type Database = {
           is_active: boolean | null
           label: string
           needs_clarification: boolean | null
+          og_image_url: string | null
           prompt: string | null
+          seo_description: string | null
+          seo_title: string | null
           sort_order: number | null
           updated_at: string | null
         }
@@ -500,7 +503,10 @@ export type Database = {
           is_active?: boolean | null
           label: string
           needs_clarification?: boolean | null
+          og_image_url?: string | null
           prompt?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           sort_order?: number | null
           updated_at?: string | null
         }
@@ -515,7 +521,10 @@ export type Database = {
           is_active?: boolean | null
           label?: string
           needs_clarification?: boolean | null
+          og_image_url?: string | null
           prompt?: string | null
+          seo_description?: string | null
+          seo_title?: string | null
           sort_order?: number | null
           updated_at?: string | null
         }

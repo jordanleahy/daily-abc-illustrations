@@ -1,6 +1,8 @@
 /**
  * Generates a generic social media marketing post for any book type
  * Designed for Instagram, Facebook, and LinkedIn
+ * 
+ * AGGRESSIVE HASHTAG STRATEGY: Generates 25-30+ hashtags from metadata
  */
 
 interface GenericMarketingPostParams {
@@ -14,6 +16,10 @@ interface GenericMarketingPostParams {
   environment?: string | null;
   clothingBrand?: string | null;
   location?: string | null;
+  // Extended metadata for aggressive hashtags
+  selectedCharacterIds?: string[] | null;
+  targetAge?: string | null;
+  city?: string | null;
 }
 
 /**
@@ -76,71 +82,241 @@ function getBookTypeInfo(bookType: string | null): { displayName: string; hashta
 }
 
 /**
- * Gets hashtag for season
+ * Gets education-focused hashtags based on book type
  */
-function getSeasonHashtag(season: string | null): string {
-  if (!season) return '';
+function getEducationHashtags(bookType: string | null): string[] {
+  const baseHashtags = ['#LearnToRead', '#EarlyLiteracy', '#PhonicsForKids'];
   
-  const seasonMap: Record<string, string> = {
-    'SPRING': '#SpringReads',
-    'SUMMER': '#SummerReading',
-    'FALL': '#FallBooks',
-    'WINTER': '#WinterReading',
+  const typeSpecificHashtags: Record<string, string[]> = {
+    'abc': ['#AlphabetLearning', '#LetterRecognition', '#ABCFun'],
+    'sight-words': ['#SightWordPractice', '#ReadingFluency', '#HighFrequencyWords'],
+    'digraphs': ['#PhonicsRules', '#BlendingSounds', '#ReadingSkills'],
+    'cvc': ['#CVCPractice', '#DecodingSkills', '#PhonicsBasics'],
+    'numbers': ['#CountingForKids', '#NumberSense', '#MathForKids'],
+    'rhyming': ['#RhymingWords', '#PhonologicalAwareness', '#RhymeTime'],
   };
   
-  return seasonMap[season.toUpperCase()] || '';
+  return [...baseHashtags, ...(typeSpecificHashtags[bookType || ''] || [])];
 }
 
 /**
- * Gets hashtags for environment
+ * Gets age/grade level hashtags
  */
-function getEnvironmentHashtag(env: string | null): string {
-  if (!env) return '';
-  
-  const envMap: Record<string, string> = {
-    'SNOWBOARD_RESORT': '#Snowboarding #SnowboardKids',
-    'SKI_RESORT': '#Skiing #SkiKids',
-    'ISLAND': '#BeachLife #IslandAdventure',
-    'DESERT': '#DesertAdventure',
-    'MOUNTAIN': '#MountainAdventure',
-    'CITY': '#CityKids #UrbanAdventure',
-    'PARK': '#OutdoorKids',
+function getAgeGradeHashtags(targetAge: string | null): string[] {
+  const ageMap: Record<string, string[]> = {
+    'toddler': ['#ToddlerMom', '#ToddlerActivities', '#ToddlerLife'],
+    'preschool': ['#Preschool', '#PreschoolActivities', '#PreschoolMom', '#PreK'],
+    'prek': ['#PreK', '#PreKActivities', '#PreschoolReading'],
+    'kindergarten': ['#Kindergarten', '#KindergartenReading', '#KinderTeacher'],
+    'first-grade': ['#FirstGrade', '#1stGrade', '#FirstGradeReading'],
   };
   
-  return envMap[env.toUpperCase()] || '';
+  // Default to preschool if no target age
+  return ageMap[targetAge || 'preschool'] || ['#Preschool', '#PreK', '#Kindergarten'];
 }
 
 /**
- * Gets hashtags for clothing brand
+ * Gets activity-type hashtags (always included)
  */
-function getClothingBrandHashtag(brand: string | null): string {
-  if (!brand || brand === 'NONE' || brand.toUpperCase() === 'NONE') return '';
-  
-  const brandMap: Record<string, string> = {
-    'BURTON': '#Burton #BurtonKids',
-  };
-  
-  return brandMap[brand.toUpperCase()] || '';
+function getActivityHashtags(): string[] {
+  return [
+    '#ColoringBook',
+    '#ColoringPages', 
+    '#PrintableActivities',
+    '#KidsActivities',
+    '#ColoringFun',
+  ];
 }
 
 /**
- * Gets hashtags for location
+ * Gets parent/teacher audience hashtags (always included)
  */
-function getLocationHashtag(loc: string | null): string {
-  if (!loc) return '';
+function getAudienceHashtags(): string[] {
+  return [
+    '#MomLife',
+    '#DadLife',
+    '#ParentingWin',
+    '#HomeschoolMom',
+    '#TeacherResources',
+    '#PreschoolTeacher',
+  ];
+}
+
+/**
+ * Gets hashtags for individual character selections
+ */
+function getCharacterHashtags(characterIds: string[] | null): string[] {
+  if (!characterIds || characterIds.length === 0) return [];
   
-  const locationMap: Record<string, string> = {
-    'VAIL_RESORT': '#Vail #VailResort',
-    'SUGARBUSH_RESORT': '#Sugarbush #Vermont',
-    'STRATTON': '#Stratton #VermontSki',
-    'KILLINGTON': '#Killington #BeastOfTheEast',
-    'MOUNTAIN_CREEK': '#MountainCreek #NJSki',
-    'COPPER_MOUNTAIN': '#CopperMountain #Colorado',
-    'BRECKENRIDGE': '#Breckenridge #Breck',
-    'KEYSTONE': '#Keystone #KeystoneResort',
+  const characterMap: Record<string, string> = {
+    // Bluey characters
+    'bluey': '#Bluey',
+    'bingo': '#Bingo',
+    'bandit': '#Bandit',
+    'chilli': '#Chilli',
+    // Paw Patrol characters
+    'chase': '#Chase',
+    'marshall': '#Marshall',
+    'skye': '#Skye',
+    'rubble': '#Rubble',
+    'rocky': '#Rocky',
+    'zuma': '#Zuma',
+    'everest': '#Everest',
+    // Frozen characters
+    'elsa': '#Elsa',
+    'anna': '#Anna',
+    'olaf': '#Olaf',
+    'kristoff': '#Kristoff',
+    // Peppa Pig characters
+    'peppa': '#PeppaPig',
+    'george': '#GeorgePig',
+    // Cocomelon characters
+    'jj': '#JJ',
+    'coco': '#Coco',
+    // Moana characters  
+    'moana': '#Moana',
+    'maui': '#Maui',
+    // Mickey Mouse characters
+    'mickey': '#MickeyMouse',
+    'minnie': '#MinnieMouse',
+    'donald': '#DonaldDuck',
+    'goofy': '#Goofy',
+    // Mario characters
+    'mario': '#Mario',
+    'luigi': '#Luigi',
+    'peach': '#PrincessPeach',
+    'yoshi': '#Yoshi',
+    // Sesame Street characters
+    'elmo': '#Elmo',
+    'cookie-monster': '#CookieMonster',
+    'big-bird': '#BigBird',
+    'oscar': '#OscarTheGrouch',
   };
   
-  return locationMap[loc.toUpperCase()] || '';
+  return characterIds
+    .map(id => characterMap[id.toLowerCase()])
+    .filter(Boolean) as string[];
+}
+
+/**
+ * Gets hashtags for season with additional seasonal events
+ */
+function getSeasonHashtags(season: string | null): string[] {
+  if (!season) return [];
+  
+  const seasonMap: Record<string, string[]> = {
+    'SPRING': ['#SpringReads', '#SpringActivities', '#SpringBreak'],
+    'SUMMER': ['#SummerReading', '#SummerActivities', '#SummerBreak', '#SummerFun'],
+    'FALL': ['#FallBooks', '#FallActivities', '#BackToSchool', '#AutumnReading'],
+    'WINTER': ['#WinterReading', '#WinterBreak', '#SnowDay', '#WinterActivities'],
+  };
+  
+  return seasonMap[season.toUpperCase()] || [];
+}
+
+/**
+ * Gets hashtags for environment with expanded options
+ */
+function getEnvironmentHashtags(env: string | null): string[] {
+  if (!env) return [];
+  
+  const envMap: Record<string, string[]> = {
+    'SNOWBOARD_RESORT': ['#Snowboarding', '#SnowboardKids', '#SnowboardLife', '#ShredTheGnar'],
+    'SKI_RESORT': ['#Skiing', '#SkiKids', '#SkiFamily', '#SkiWithKids', '#SkiLife'],
+    'ISLAND': ['#BeachLife', '#IslandAdventure', '#BeachKids', '#TropicalVacation'],
+    'DESERT': ['#DesertAdventure', '#DesertVibes', '#OutdoorKids'],
+    'MOUNTAIN': ['#MountainAdventure', '#MountainKids', '#HikingWithKids', '#NatureKids'],
+    'CITY': ['#CityKids', '#UrbanAdventure', '#CityLife'],
+    'PARK': ['#OutdoorKids', '#ParkPlay', '#NaturePlay'],
+    'BEACH': ['#BeachDay', '#BeachKids', '#OceanLife', '#SandAndSun'],
+  };
+  
+  return envMap[env.toUpperCase()] || [];
+}
+
+/**
+ * Gets hashtags for clothing brand with lifestyle tags
+ */
+function getClothingBrandHashtags(brand: string | null): string[] {
+  if (!brand || brand === 'NONE' || brand.toUpperCase() === 'NONE') return [];
+  
+  const brandMap: Record<string, string[]> = {
+    'BURTON': ['#Burton', '#BurtonKids', '#BurtonSnowboards', '#BurtonFamily'],
+    'PATAGONIA': ['#Patagonia', '#PatagoniaKids'],
+    'NORTH_FACE': ['#TheNorthFace', '#NorthFaceKids'],
+  };
+  
+  return brandMap[brand.toUpperCase()] || [];
+}
+
+/**
+ * Gets hashtags for ski/snowboard resort locations
+ */
+function getLocationHashtags(loc: string | null): string[] {
+  if (!loc) return [];
+  
+  const locationMap: Record<string, string[]> = {
+    'VAIL_RESORT': ['#Vail', '#VailResort', '#VailColorado', '#SkiVail'],
+    'SUGARBUSH_RESORT': ['#Sugarbush', '#Vermont', '#VermontSki', '#MadRiver'],
+    'STRATTON': ['#Stratton', '#VermontSki', '#StrattonMountain'],
+    'KILLINGTON': ['#Killington', '#BeastOfTheEast', '#VermontSki', '#KillingtonResort'],
+    'MOUNTAIN_CREEK': ['#MountainCreek', '#NJSki', '#NewJerseySki'],
+    'COPPER_MOUNTAIN': ['#CopperMountain', '#Colorado', '#ColoradoSki'],
+    'BRECKENRIDGE': ['#Breckenridge', '#Breck', '#ColoradoSki', '#BreckLife'],
+    'KEYSTONE': ['#Keystone', '#KeystoneResort', '#ColoradoSki'],
+    'PARK_CITY': ['#ParkCity', '#ParkCityUtah', '#UtahSki'],
+    'MAMMOTH': ['#MammothMountain', '#Mammoth', '#CaliforniaSki'],
+    'STEAMBOAT': ['#Steamboat', '#SteamboatSprings', '#ColoradoSki'],
+    'ASPEN': ['#Aspen', '#AspenSnowmass', '#ColoradoSki'],
+    'JACKSON_HOLE': ['#JacksonHole', '#Wyoming', '#JHMountainResort'],
+  };
+  
+  return locationMap[loc.toUpperCase()] || [];
+}
+
+/**
+ * Gets city-specific hashtags
+ */
+function getCityHashtags(city: string | null): string[] {
+  if (!city) return [];
+  
+  const cityMap: Record<string, string[]> = {
+    'new-york': ['#NYCMom', '#NYCKids', '#NewYorkKids', '#NYCFamily'],
+    'los-angeles': ['#LAMom', '#LAKids', '#LosAngelesFamily'],
+    'chicago': ['#ChicagoMom', '#ChicagoKids', '#ChiTown'],
+    'jersey-city': ['#JerseyCityMom', '#JCKids', '#JerseyCityFamily'],
+    'hoboken': ['#HobokenMom', '#HobokenKids', '#HobokenFamily'],
+    'denver': ['#DenverMom', '#DenverKids', '#ColoradoFamily'],
+    'seattle': ['#SeattleMom', '#SeattleKids', '#PNWFamily'],
+    'austin': ['#AustinMom', '#AustinKids', '#AustinFamily'],
+    'miami': ['#MiamiMom', '#MiamiKids', '#MiamiFamily'],
+    'boston': ['#BostonMom', '#BostonKids', '#BostonFamily'],
+    'san-francisco': ['#SFMom', '#SFKids', '#BayAreaFamily'],
+    'portland': ['#PortlandMom', '#PortlandKids', '#PDXFamily'],
+  };
+  
+  // Try to match with flexible key formatting
+  const normalizedCity = city.toLowerCase().replace(/\s+/g, '-');
+  return cityMap[normalizedCity] || [];
+}
+
+/**
+ * Deduplicates and limits hashtags
+ */
+function deduplicateHashtags(hashtags: string[], maxCount: number = 30): string[] {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  
+  for (const tag of hashtags) {
+    const normalized = tag.toLowerCase();
+    if (!seen.has(normalized) && tag.startsWith('#')) {
+      seen.add(normalized);
+      result.push(tag);
+      if (result.length >= maxCount) break;
+    }
+  }
+  
+  return result;
 }
 
 export function generateGenericMarketingPost({
@@ -153,14 +329,13 @@ export function generateGenericMarketingPost({
   environment,
   clothingBrand,
   location,
+  selectedCharacterIds,
+  targetAge,
+  city,
 }: GenericMarketingPostParams): string {
   const themeName = formatTheme(characterTheme);
   const themeHashtag = getThemeHashtag(characterTheme);
   const { displayName: typeDisplayName, hashtag: typeHashtag } = getBookTypeInfo(bookType);
-  const seasonHashtag = getSeasonHashtag(season);
-  const environmentHashtag = getEnvironmentHashtag(environment);
-  const brandHashtag = getClothingBrandHashtag(clothingBrand);
-  const locationHashtag = getLocationHashtag(location);
   
   // Build tagline
   let tagline = `🎨 NEW: ${bookName}`;
@@ -173,18 +348,47 @@ export function generateGenericMarketingPost({
   // Build description
   const description = bookDescription || `A fun ${typeDisplayName.toLowerCase()} adventure for early learners!`;
   
-  // Build hashtags
-  const hashtags = [
+  // AGGRESSIVE HASHTAG COLLECTION - gather from ALL metadata sources
+  const allHashtags: string[] = [
+    // Core education hashtags
     '#phonics',
     typeHashtag,
     '#earlyreading',
-    '#preschool',
-    seasonHashtag,
-    environmentHashtag,
-    brandHashtag,
-    locationHashtag,
     themeHashtag,
-  ].filter(Boolean).join(' ');
+    
+    // Education-focused (3-6 tags)
+    ...getEducationHashtags(bookType),
+    
+    // Age/Grade level (3-4 tags)
+    ...getAgeGradeHashtags(targetAge),
+    
+    // Activity type (5 tags - always included)
+    ...getActivityHashtags(),
+    
+    // Parent/Teacher audience (6 tags - always included)
+    ...getAudienceHashtags(),
+    
+    // Character-specific (0-4 tags depending on selection)
+    ...getCharacterHashtags(selectedCharacterIds),
+    
+    // Seasonal (0-4 tags)
+    ...getSeasonHashtags(season),
+    
+    // Environment (0-4 tags)
+    ...getEnvironmentHashtags(environment),
+    
+    // Clothing brand (0-4 tags)
+    ...getClothingBrandHashtags(clothingBrand),
+    
+    // Location/Resort (0-4 tags)
+    ...getLocationHashtags(location),
+    
+    // City-specific (0-4 tags)
+    ...getCityHashtags(city),
+  ];
+  
+  // Deduplicate and limit to 30 (Instagram max)
+  const finalHashtags = deduplicateHashtags(allHashtags.filter(Boolean), 30);
   
   // Assemble full post
   const post = `${tagline}
@@ -197,7 +401,7 @@ ${description}
 
 📚 Read free: ${marketingUrl}
 
-${hashtags}`;
+${finalHashtags.join(' ')}`;
 
   return post;
 }

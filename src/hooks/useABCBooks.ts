@@ -91,7 +91,7 @@ export function useABCBooks({ themeSlug }: UseABCBooksOptions = {}) {
           created_at: book.created_at,
           updated_at: book.updated_at,
           total_pages: book.total_pages,
-          coverImageUrl: null,
+          cover_image: null,
         }));
       }
 
@@ -127,7 +127,7 @@ export function useABCBooks({ themeSlug }: UseABCBooksOptions = {}) {
         created_at: book.created_at,
         updated_at: book.updated_at,
         total_pages: book.total_pages,
-        coverImageUrl: coverMap.get(book.id) || null,
+        cover_image: coverMap.get(book.id) || null,
       }));
     },
     staleTime: 5 * 60 * 1000,

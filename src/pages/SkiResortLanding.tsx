@@ -1,8 +1,8 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { Mountain, Snowflake, BookOpen, Users, Heart, Book } from 'lucide-react';
+import { useRef, useEffect } from 'react';
+import { Mountain, Snowflake, BookOpen, Users, Heart, Book, MapPin, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { MetaHead } from '@/components/common/MetaHead';
 import { PreviewPageLayout } from '@/components/preview/layout/PreviewPageLayout';
 import { PreviewSection } from '@/components/preview/layout/PreviewSection';
@@ -15,14 +15,34 @@ import {
   getResortOgMetadata,
 } from '@/hooks/useSkiResortBooks';
 
+// Placeholder video - reusing Jersey City video until resort-specific videos are available
+import jerseyCityVideo from '@/assets/cities/jerseycity-hero.mp4';
+
+// Resort video mapping (placeholder for now)
+const resortVideos: Record<string, string> = {
+  'killington': jerseyCityVideo, // Placeholder - replace with actual Killington video
+};
+
 const SkiResortLanding = () => {
   const { resortId } = useParams<{ resortId: string }>();
   const navigate = useNavigate();
   const { data: books = [], isLoading } = useSkiResortBooks(resortId);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   const displayName = resortId ? formatResortName(resortId) : 'Ski Resort';
   const resortMeta = resortId ? getResortMetadata(resortId) : null;
   const ogMeta = resortId ? getResortOgMetadata(resortId) : null;
+  const resortVideo = resortId ? resortVideos[resortId] : undefined;
+
+  // Force play on mount for mobile browsers
+  useEffect(() => {
+    const video = videoRef.current;
+    if (video && resortVideo) {
+      video.play().catch(() => {
+        // Autoplay was prevented, that's okay
+      });
+    }
+  }, [resortVideo]);
 
   return (
     <>
@@ -37,48 +57,59 @@ const SkiResortLanding = () => {
       />
 
       <PreviewPageLayout>
-        {/* Hero Section with Gradient Background */}
+        {/* Hero Section with Video Background */}
         <section className="relative min-h-[70vh] flex items-center overflow-hidden">
-          {/* Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-sky-500/20 via-background to-blue-600/20" />
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-cyan-400/10 via-transparent to-transparent" />
+          {/* Video Background (when available) */}
+          {resortVideo && (
+            <>
+              <video
+                ref={videoRef}
+                autoPlay
+                muted
+                loop
+                playsInline
+                // @ts-ignore - webkit-playsinline for older iOS
+                webkit-playsinline="true"
+                className="absolute inset-0 w-full h-full object-cover"
+              >
+                <source src={resortVideo} type="video/quicktime" />
+                <source src={resortVideo} type="video/mp4" />
+              </video>
+              {/* Dark Overlay for video */}
+              <div className="absolute inset-0 bg-black/60" />
+            </>
+          )}
+
+          {/* Gradient Background (fallback when no video) */}
+          {!resortVideo && (
+            <div className="absolute inset-0 bg-gradient-to-br from-sky-500/20 via-background to-blue-600/20" />
+          )}
 
           {/* Content */}
           <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-32">
             <div className="text-center max-w-4xl mx-auto">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 bg-primary/10 text-primary">
+              <div className={`inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 ${resortVideo ? 'bg-white/20 text-white' : 'bg-primary/10 text-primary'}`}>
                 <Mountain className="h-4 w-4" />
                 <span className="text-sm font-medium">{resortMeta?.emoji} {displayName}</span>
               </div>
 
-              <h1 className="text-4xl md:text-6xl font-bold text-foreground mb-6">
-                Learn While You Ski at{' '}
-                <span className="text-primary">{displayName}</span>
+              <h1 className={`text-4xl md:text-6xl font-bold mb-6 ${resortVideo ? 'text-white drop-shadow-lg' : 'text-foreground'}`}>
+                Learn While You Ski at {displayName}
               </h1>
 
-              <p className="text-xl md:text-2xl text-muted-foreground mb-8 leading-relaxed">
+              <p className={`text-xl md:text-2xl mb-8 leading-relaxed ${resortVideo ? 'text-white/90 drop-shadow-md' : 'text-muted-foreground'}`}>
                 {resortMeta?.description || 'Discover personalized children\'s books that bring learning to life on the mountain.'}
               </p>
 
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Button 
-                  size="lg" 
-                  className="flex items-center gap-2"
-                  onClick={() => navigate('/pricing')}
-                >
-                  <Snowflake className="h-5 w-5" />
-                  Get Free Access
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="lg" 
-                  className="flex items-center gap-2"
-                  onClick={() => navigate('/library')}
-                >
-                  <BookOpen className="h-5 w-5" />
-                  Browse Library
-                </Button>
-              </div>
+              <Button 
+                size="lg" 
+                variant={resortVideo ? 'secondary' : 'default'}
+                onClick={() => navigate('/pricing')}
+                className="flex items-center gap-2"
+              >
+                <Sparkles className="h-5 w-5" />
+                Get Free Access
+              </Button>
             </div>
           </div>
         </section>

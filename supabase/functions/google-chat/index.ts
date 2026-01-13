@@ -329,8 +329,8 @@ serve(async (req) => {
       console.log('🔍 No book type selected');
     }
 
-    // Add context about grade level if already provided
-    const gradeContext = gradeLevel 
+    // Add context about grade level if already provided (skip for manners - uses simplified 4-step flow)
+    const gradeContext = (gradeLevel && bookType !== 'manners')
       ? `\n\n⚠️ CRITICAL - GRADE STATUS:\n📚 GRADE ALREADY SELECTED: ${getGradeLabel(gradeLevel)}\n❌ DO NOT ask "What grade level?" - Step 2 is COMPLETE.\n✅ PROCEED to the next step in the flow.\nTailor all educational content, vocabulary, and complexity to ${getGradeLabel(gradeLevel)}.`
       : '';
 
@@ -452,9 +452,11 @@ serve(async (req) => {
       }
     }
 
-    // Manners book type detection - check if manner type was selected
+    // Manners book type detection - SIMPLIFIED 4-STEP FLOW:
+    // Step 1: Character Theme → Step 2: Character Selection → Step 3: Manner Type → Step 4: Confirmation
     let mannerTypeContext = '';
     let selectedMannerType: string | null = null;
+    
     if (bookType === 'manners') {
       // Check conversation for selected manner type
       const allMannerKeys = Object.values(MANNER_TYPES).flatMap(cat => cat.options.map(o => o.key));
@@ -471,8 +473,13 @@ serve(async (req) => {
         }
       }
       
-      if (selectedMannerType) {
-        // Find the label for the selected manner type
+      // Determine which step we're on in the 4-step flow
+      const hasCharacterTheme = !!characterTheme && characterTheme !== 'no-theme';
+      const hasCharacters = selectedCharacterIds && selectedCharacterIds.length > 0;
+      const hasMannerType = !!selectedMannerType;
+      
+      if (hasMannerType) {
+        // Step 4: All selections complete - show confirmation
         let mannerLabel = selectedMannerType;
         for (const cat of Object.values(MANNER_TYPES)) {
           const found = cat.options.find(o => o.key === selectedMannerType);
@@ -481,12 +488,34 @@ serve(async (req) => {
             break;
           }
         }
-        mannerTypeContext = `\n\n⚠️ CRITICAL - MANNER TYPE STATUS:\n📋 MANNER TYPE ALREADY SELECTED: ${mannerLabel}\n❌ DO NOT ask "What type of manners?" - this step is COMPLETE.\n✅ PROCEED to the next step in the flow.\nFocus the entire book on ${mannerLabel}.`;
-        console.log(`📋 Manner type selected: ${selectedMannerType} (${mannerLabel})`);
-      } else if (gradeLevel) {
-        // Grade selected but no manner type yet - inject the question with full list
-        mannerTypeContext = `\n\n📋 REQUIRED QUESTION - MANNER TYPE (Ask IMMEDIATELY after grade):
-Grade level is set. NOW ask which type of manners the book should focus on.
+        mannerTypeContext = `\n\n⚠️ MANNERS AGENT - SIMPLIFIED 4-STEP FLOW (Step 4: CONFIRMATION)
+📋 ALL STEPS COMPLETE:
+✅ Step 1: Character Theme - DONE
+✅ Step 2: Character Selection - DONE
+✅ Step 3: Manner Type - "${mannerLabel}" - DONE
+
+🎯 NOW: Present a summary and ask "Does this look good?"
+Show the user:
+- Selected character theme: ${characterTheme}
+- Selected characters: ${selectedCharacterIds?.length || 0} characters
+- Selected manner type: ${mannerLabel}
+
+Ask for confirmation: "Does this look good? Ready to create your manners book?"
+
+[SUGGEST]
+yes: ✅ Yes, create my book!
+edit_theme: 🎨 Change character theme
+edit_manner: 📋 Change manner type
+[/SUGGEST]
+
+❌ DO NOT ask any other questions. Only ask for final confirmation.`;
+        console.log(`📋 Manners flow Step 4 - Confirmation (manner: ${selectedMannerType})`);
+      } else if (hasCharacters) {
+        // Step 3: Characters selected, need manner type
+        mannerTypeContext = `\n\n⚠️ MANNERS AGENT - SIMPLIFIED 4-STEP FLOW (Step 3: MANNER TYPE)
+✅ Step 1: Character Theme - "${characterTheme}" - DONE
+✅ Step 2: Character Selection - ${selectedCharacterIds?.length || 0} characters - DONE
+👉 Step 3: CURRENT - Ask which manner type
 
 "What type of manners would you like this book to teach?"
 
@@ -494,8 +523,30 @@ Grade level is set. NOW ask which type of manners the book should focus on.
 ${getMannerTypesSuggestBlock()}
 [/SUGGEST]
 
-⚠️ CRITICAL: You MUST display ALL options above. Do NOT skip any categories or options.`;
-        console.log(`📋 Manner type question will be injected (grade: ${gradeLevel})`);
+⚠️ CRITICAL: You MUST display ALL manner type options above. Do NOT skip any categories or options.
+❌ DO NOT ask about grade level, age, location, city, season, or any other questions.`;
+        console.log(`📋 Manners flow Step 3 - Manner type question (theme: ${characterTheme}, chars: ${selectedCharacterIds?.length})`);
+      } else if (hasCharacterTheme) {
+        // Step 2: Theme selected, need character selection (handled by character selection injection)
+        mannerTypeContext = `\n\n⚠️ MANNERS AGENT - SIMPLIFIED 4-STEP FLOW (Step 2: CHARACTER SELECTION)
+✅ Step 1: Character Theme - "${characterTheme}" - DONE
+👉 Step 2: CURRENT - Character selection is being handled by the UI
+
+Wait for user to select their characters from the theme.
+❌ DO NOT ask about grade level, age, manner type yet, location, city, season, or any other questions.
+❌ DO NOT proceed until characters are selected.`;
+        console.log(`📋 Manners flow Step 2 - Waiting for character selection (theme: ${characterTheme})`);
+      } else {
+        // Step 1: Need character theme
+        mannerTypeContext = `\n\n⚠️ MANNERS AGENT - SIMPLIFIED 4-STEP FLOW (Step 1: CHARACTER THEME)
+👉 Step 1: CURRENT - Ask which character theme
+
+"Let's create your manners book! First, which character theme would you like?"
+
+The character theme selection UI will be shown to the user.
+❌ DO NOT ask about grade level, age, manner type, location, city, season, or any other questions yet.
+❌ This is the ONLY question to ask right now.`;
+        console.log(`📋 Manners flow Step 1 - Need character theme`);
       }
     }
 

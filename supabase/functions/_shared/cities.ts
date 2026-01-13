@@ -162,11 +162,6 @@ function formatLandmarksForPrompt(landmarks: CityLandmark[]): string {
   return sections.join('\n\n');
 }
 
-  citiesCache = data || [];
-  cacheTimestamp = now;
-  return citiesCache;
-}
-
 /**
  * Fallback cities if database is unavailable
  */

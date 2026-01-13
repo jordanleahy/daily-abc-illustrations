@@ -16,6 +16,7 @@ const slugToLocation: Record<string, string> = {
   jackson: 'JACKSON_HOLE',
   'whistler-blackcomb': 'WHISTLER_BLACKCOMB',
   'lake-tahoe': 'LAKE_TAHOE',
+  'copper-mountain': 'COPPER_MOUNTAIN',
 };
 
 // Resort display metadata

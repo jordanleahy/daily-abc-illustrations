@@ -328,6 +328,33 @@ export const useGoogleChat = (
           }
         }
 
+        // Manners book character theme selection fallback
+        if (!match && effectiveBookType === 'manners') {
+          if (cleanedText.toLowerCase().includes('character theme') || 
+              cleanedText.toLowerCase().includes('which character') ||
+              cleanedText.toLowerCase().includes('let\'s create your manners book')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'bluey', label: '🐕 Bluey', value: 'Bluey', themeId: 'bluey' as CharacterThemeValue },
+                { id: 'frozen', label: '❄️ Frozen', value: 'Frozen', themeId: 'frozen' as CharacterThemeValue },
+                { id: 'paw-patrol', label: '🐾 PAW Patrol', value: 'PAW Patrol', themeId: 'paw-patrol' as CharacterThemeValue },
+                { id: 'peppa-pig', label: '🐷 Peppa Pig', value: 'Peppa Pig', themeId: 'peppa-pig' as CharacterThemeValue },
+                { id: 'cocomelon', label: '🍉 CoComelon', value: 'CoComelon', themeId: 'cocomelon' as CharacterThemeValue },
+                { id: 'moana', label: '🌊 Moana', value: 'Moana', themeId: 'moana' as CharacterThemeValue },
+                { id: 'mickey-mouse', label: '🐭 Mickey Mouse', value: 'Mickey Mouse', themeId: 'mickey-mouse' as CharacterThemeValue },
+                { id: 'mario', label: '🍄 Mario', value: 'Mario', themeId: 'mario' as CharacterThemeValue },
+                { id: 'sesame-street', label: '🍪 Sesame Street', value: 'Sesame Street', themeId: 'sesame-street' as CharacterThemeValue },
+                { id: 'dora', label: '🎒 Dora', value: 'Dora', themeId: 'dora' as CharacterThemeValue },
+                { id: 'little-mermaid', label: '🧜 Little Mermaid', value: 'Little Mermaid', themeId: 'little-mermaid' as CharacterThemeValue },
+                { id: 'benji-davies', label: '🎨 Benji Davies Style', value: 'Benji Davies Style', themeId: 'benji-davies' as CharacterThemeValue },
+                { id: 'bear-stories', label: '🐻 Bear Stories', value: 'Bear Stories', themeId: 'bear-stories' as CharacterThemeValue },
+                { id: 'custom', label: '✏️ Custom Theme', value: '', themeId: 'custom' as CharacterThemeValue },
+              ]
+            };
+          }
+        }
+
         // Generic fallbacks for common discovery patterns across all book types
         if (!match) {
           // Grade level selection fallback

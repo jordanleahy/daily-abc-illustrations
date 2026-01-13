@@ -567,9 +567,27 @@ The character selection UI is being shown. Wait for user to select characters.
 ⬜ Step 3: Manner Type - Pending
 ⬜ Step 4: Confirmation - Pending
 
-📋 ASK: "Let's create your manners book! First, which character theme would you like?"
+📋 RESPOND WITH THIS EXACT MESSAGE:
+"Let's create your manners book! 🎉 First, which character theme would you like?"
 
-The character theme selection UI will be shown.
+[SUGGEST]
+bluey: 🐕 Bluey
+frozen: ❄️ Frozen
+paw-patrol: 🐾 PAW Patrol
+peppa-pig: 🐷 Peppa Pig
+cocomelon: 🍉 CoComelon
+moana: 🌊 Moana
+mickey-mouse: 🐭 Mickey Mouse
+mario: 🍄 Mario
+sesame-street: 🍪 Sesame Street
+dora: 🎒 Dora
+little-mermaid: 🧜 Little Mermaid
+benji-davies: 🎨 Benji Davies Style
+bear-stories: 🐻 Bear Stories
+custom: ✏️ Custom Theme
+[/SUGGEST]
+
+⚠️ CRITICAL: You MUST include the [SUGGEST] block above in your response.
 ❌ DO NOT ask about manner type, grade level, age, location, city, or ANY other questions.
 ❌ This is the ONLY question to ask right now.`;
         console.log(`📋 Manners Step 1 - Character theme`);

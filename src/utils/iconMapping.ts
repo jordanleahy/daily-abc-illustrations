@@ -1,4 +1,4 @@
-import { LucideIcon, Sparkles, Hash, Shapes, Palette, Music, ArrowLeftRight, Heart, PawPrint, MessageCircle, Moon, BookOpen, Eye, Package } from 'lucide-react';
+import { LucideIcon, Sparkles, Hash, Shapes, Palette, Music, ArrowLeftRight, Heart, PawPrint, MessageCircle, Moon, BookOpen, Eye, Package, HandHeart } from 'lucide-react';
 
 const ICON_MAP: Record<string, LucideIcon> = {
   'Sparkles': Sparkles,
@@ -14,6 +14,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   'BookOpen': BookOpen,
   'Eye': Eye,
   'Package': Package,
+  'HandHeart': HandHeart,
 };
 
 /**

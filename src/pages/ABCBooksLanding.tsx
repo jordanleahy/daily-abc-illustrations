@@ -21,7 +21,7 @@ const ABCBooksLanding = () => {
   const { data: books = [], isLoading } = useABCBooks({ themeSlug: name });
 
   const displayName = name ? getABCThemeDisplayName(name) : 'ABC';
-  const isValid = name ? isValidABCTheme(name) : false;
+  const isValid = name ? isValidABCTheme(name) : true; // Valid when no name (shows all)
 
   // Force play on mount for mobile browsers
   useEffect(() => {

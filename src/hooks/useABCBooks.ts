@@ -39,25 +39,29 @@ export function isValidABCTheme(slug: string): boolean {
 }
 
 interface UseABCBooksOptions {
-  themeSlug: string | undefined;
+  themeSlug?: string | undefined;
 }
 
-export function useABCBooks({ themeSlug }: UseABCBooksOptions) {
+export function useABCBooks({ themeSlug }: UseABCBooksOptions = {}) {
   return useQuery({
-    queryKey: ['abc-books', themeSlug],
+    queryKey: ['abc-books', themeSlug || 'all'],
     queryFn: async (): Promise<LibraryBook[]> => {
-      if (!themeSlug) return [];
-
-      const theme = slugToTheme[themeSlug.toLowerCase()];
-      if (!theme) return [];
-
-      // Query books where category is 'abc' and metadata->>characterTheme matches
-      const { data: books, error } = await supabase
+      // Build query - get all ABC books, optionally filtered by theme
+      let query = supabase
         .from('books')
         .select('id, book_name, book_description, category, metadata, is_highlighted, created_at, updated_at, total_pages')
         .eq('status', 'published')
-        .eq('category', 'abc')
-        .filter('metadata->>characterTheme', 'eq', theme);
+        .eq('category', 'abc');
+
+      // If theme provided and valid, filter by it
+      if (themeSlug) {
+        const theme = slugToTheme[themeSlug.toLowerCase()];
+        if (theme) {
+          query = query.filter('metadata->>characterTheme', 'eq', theme);
+        }
+      }
+
+      const { data: books, error } = await query;
 
       if (error) {
         console.error('Error fetching ABC books:', error);

@@ -109,12 +109,45 @@ interface BookContext {
   theme?: string;
   characterTheme?: string;
   targetAge?: string;
+  gradeLevel?: string; // Preferred over targetAge (e.g., 'PRE_K', 'K', 'GRADE_1')
   bookType?: string;
   metadata?: {
     countingObject?: string; // For numbers books: specific object being counted (e.g., "apple", "balloon")
     color?: string; // For colors books: specific color
     [key: string]: any;
   };
+}
+
+/**
+ * Get display text for grade level on Educational Focus image
+ * Prefers gradeLevel if available, falls back to targetAge for backward compatibility
+ */
+function getGradeDisplayText(gradeLevel?: string, targetAge?: string): string {
+  // Prefer gradeLevel if available
+  if (gradeLevel) {
+    const gradeLabels: Record<string, string> = {
+      'PRE_K': 'Pre-K (Ages 3-4)',
+      'K': 'Kindergarten (Ages 5-6)',
+      'GRADE_1': '1st Grade (Ages 6-7)',
+      'GRADE_2': '2nd Grade (Ages 7-8)',
+    };
+    return gradeLabels[gradeLevel] || gradeLevel;
+  }
+  
+  // Fallback to targetAge for backward compatibility
+  if (targetAge) {
+    // If it already has "Ages" prefix, return as-is
+    if (targetAge.toLowerCase().includes('age')) {
+      return targetAge;
+    }
+    // Format age ranges properly
+    if (targetAge.includes('-')) {
+      return `Ages ${targetAge}`;
+    }
+    return targetAge;
+  }
+  
+  return 'Ages 3-5'; // Default fallback
 }
 
 interface PageContext {
@@ -173,7 +206,7 @@ ${textOverlayEnabled ? `Include the book title "${book.bookName.toUpperCase()}" 
 Create a vibrant, clean educational information card with three distinct badge sections arranged vertically using ${book.characterTheme ? `${book.characterTheme}'s characteristic color palette` : 'bright, cheerful colors (red, blue, green, yellow, pink pastels)'}:
 
 1. TOP BADGE (Pink/Primary Color):
-   - Text: "AGE: ${book.targetAge || '1-3 YEARS'}"
+   - Text: "AGE: ${getGradeDisplayText(book.gradeLevel, book.targetAge)}"
    - Include a simple child icon
    - Rounded, cheerful badge design
 

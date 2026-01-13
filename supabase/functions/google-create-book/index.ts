@@ -27,7 +27,8 @@ const requestSchema = z.object({
   qaImages: z.record(z.string()).optional(),
   bookType: z.string().optional(),
   characterTheme: z.string().optional(), // Validated character theme from enum
-  targetAge: z.string().optional(), // Target age range
+  targetAge: z.string().optional(), // Target age range (legacy)
+  gradeLevel: z.string().optional(), // Target grade level (preferred)
   textOverlayPreference: z.enum(['with-text', 'without-text']).optional(),
   referenceBookId: z.string().uuid().optional(),
   fullPrompts: z.record(z.string()).optional(), // Full image prompts by page number
@@ -75,6 +76,7 @@ const BookDataSchema = z.object({
     letterCase: z.string().optional().nullable(),
     characterTheme: z.string().optional().nullable(),
     targetAge: z.string().optional().nullable(),
+    gradeLevel: z.string().optional().nullable(), // Target grade level (e.g., 'PRE_K', 'K')
     numberRange: z.string().optional().nullable(),
     countingStyle: z.string().optional().nullable(),
     shapeComplexity: z.string().optional().nullable(),
@@ -131,15 +133,22 @@ serve(async (req) => {
 
     const body = await req.json();
     const validatedData = requestSchema.parse(body);
-    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId, selectedCharacterIds, season, environment, clothingBrand, location, city } = validatedData;
+    const { conversationHistory, pageDetails, qaImages, bookType: rawBookType, characterTheme, targetAge: rawTargetAge, gradeLevel: rawGradeLevel, textOverlayPreference, referenceBookId, educationalFocus, fullPrompts, targetWords, sessionId, selectedCharacterIds, season, environment, clothingBrand, location, city } = validatedData;
     
     // Normalize and validate book type
     const bookType = normalizeBookType(rawBookType);
     console.log(`[Book Creation] Raw book type: ${rawBookType}, Normalized: ${bookType}`);
     
-    // Normalize and validate target age
+    // Normalize and validate target age (legacy)
     const targetAge = normalizeAgeRange(rawTargetAge);
     console.log(`[Book Creation] Raw target age: ${rawTargetAge}, Normalized: ${targetAge}`);
+    
+    // Validate grade level (preferred)
+    const { isValidGrade, ValidGrade } = await import('../_shared/gradeLevels.ts');
+    const gradeLevel: string | undefined = rawGradeLevel && isValidGrade(rawGradeLevel) 
+      ? rawGradeLevel 
+      : undefined;
+    console.log(`[Book Creation] Raw grade level: ${rawGradeLevel}, Validated: ${gradeLevel}`);
 
     // Initialize caches from database
     await initLocationsCache();
@@ -756,6 +765,7 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
       bookType: normalizeBookType(metadata.bookType) || bookType,
       pageCount: bookData.pages.length,
       targetAge: normalizeAgeRange(metadata.targetAge) || targetAge,
+      gradeLevel: gradeLevel || metadata.gradeLevel || undefined, // Preferred over targetAge
       letterCase: metadata.letterCase,
       numberRange: validateNumberRange(metadata.numberRange),
       countingStyle: metadata.countingStyle,

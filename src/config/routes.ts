@@ -59,6 +59,7 @@ export const ROUTES = {
   AUTH: '/auth',
   PROFILE: '/profile',
   LANDING: '/',
+  SKI_RESORT: '/skiresort/:resortId',
 } as const;
 
 /**

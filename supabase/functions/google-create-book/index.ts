@@ -595,6 +595,16 @@ Return ONLY valid JSON, no other text, no markdown code blocks.`;
     
     try {
       const parsed = JSON.parse(content);
+      
+      // Normalize pageType values before validation (AI sometimes returns "education" instead of "educational")
+      if (parsed.pages && Array.isArray(parsed.pages)) {
+        parsed.pages = parsed.pages.map((page: any) => ({
+          ...page,
+          pageType: page.pageType === 'education' ? 'educational' : page.pageType
+        }));
+        console.log('[Normalization] Applied pageType normalization to', parsed.pages.length, 'pages');
+      }
+      
       bookData = BookDataSchema.parse(parsed);
       console.log('✅ JSON parsed and validated successfully');
       console.log('Book:', bookData.bookName, 'Pages:', bookData.pages.length);

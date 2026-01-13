@@ -3198,6 +3198,7 @@ export type Database = {
           is_library_book: boolean
           last_completed_at: string
           metadata: Json
+          slug: string
           updated_at: string
         }[]
       }

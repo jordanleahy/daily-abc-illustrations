@@ -7,6 +7,7 @@ import type { Json } from '@/integrations/supabase/types';
 
 interface LibraryBookByCompletionRow {
   id: string;
+  slug: string | null;
   book_name: string;
   book_description: string | null;
   category: string | null;
@@ -72,6 +73,7 @@ export function useLibraryBooksByCompletion() {
       // Map to LibraryBook format for component compatibility
       return (data || []).map((book: LibraryBookByCompletionRow) => ({
         id: book.id,
+        slug: book.slug || undefined,
         book_name: book.book_name,
         book_description: book.book_description,
         created_at: book.created_at,

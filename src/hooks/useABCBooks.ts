@@ -79,7 +79,8 @@ export function useABCBooks({ themeSlug }: UseABCBooksOptions = {}) {
           page_image_urls!inner(image_url, is_latest)
         `)
         .in('book_id', bookIds)
-        .eq('page_number', 1);
+        .eq('page_number', 1)
+        .eq('page_image_urls.is_latest', true);
 
       // Create a map of book_id to cover image
       const coverMap = new Map<string, string>();

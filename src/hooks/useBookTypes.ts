@@ -15,6 +15,7 @@ import {
   BookOpen,
   Eye,
   Package,
+  HandHeart,
   LucideIcon
 } from 'lucide-react';
 
@@ -47,6 +48,7 @@ const ICON_MAP: Record<string, LucideIcon> = {
   BookOpen,
   Eye,
   Package,
+  HandHeart,
 };
 
 // Convert database record to frontend BookType format

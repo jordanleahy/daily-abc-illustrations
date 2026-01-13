@@ -18,6 +18,7 @@ export const BOOK_TYPE_IDS = [
   'general',
   'digraphs',
   'parent-education',
+  'manners',
   'other'
 ] as const;
 

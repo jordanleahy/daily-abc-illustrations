@@ -12,7 +12,8 @@ import {
   BookOpen,
   Eye,
   Package,
-  GraduationCap
+  GraduationCap,
+  HandHeart
 } from 'lucide-react';
 import { BookTypeId } from '@/types/bookType';
 
@@ -178,6 +179,17 @@ export const BOOK_TYPES = [
     description: 'Science-backed reading development guides for parents',
     prompt: 'I want to create a parent education book that helps parents understand how to support their child\'s reading development with science-backed methods and practical daily habits.',
     color: 'text-teal-500',
+    expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
+  },
+  {
+    id: 'manners' as const,
+    label: 'Manners Book',
+    icon: HandHeart,
+    description: 'Positive behavior guidance for toddlers with a story arc (10 content pages)',
+    prompt: 'I want to create a manners book for toddlers that teaches positive behaviors through a gentle story arc.',
+    color: 'text-rose-400',
+    needsClarification: true,
+    clarificationContext: 'Ask which specific manner type to focus on. Each book tells a story while teaching one manner category through the Manners Mastery Arc.',
     expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
   },
   {

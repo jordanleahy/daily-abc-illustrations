@@ -2,6 +2,10 @@
  * Character Theme validation utilities
  * Synced with frontend CharacterTheme enum in src/types/characterTheme.ts
  */
+
+// Re-export grade level validation utilities
+export { isValidGrade, getGradeLabel, type ValidGrade } from './gradeLevels.ts';
+
 export const VALID_CHARACTER_THEMES = [
   'paw-patrol', 'frozen', 'peppa-pig', 'bluey', 'cocomelon', 
   'moana', 'mickey-mouse', 'mario', 'sesame-street', 

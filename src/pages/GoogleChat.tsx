@@ -871,7 +871,8 @@ export default function GoogleChat() {
         qaImages: Object.keys(editorPageImages).length > 0 ? editorPageImages : undefined,
         bookType: selectedBookType || undefined,
         characterTheme: characterFlow.themeId || undefined, // Pass validated theme from flow
-        targetAge: selectedAgeRange || undefined, // Pass validated age range
+        targetAge: selectedAgeRange || undefined, // Pass validated age range (legacy)
+        gradeLevel: selectedGradeLevel || undefined, // Pass validated grade level (preferred)
         textOverlayPreference,
         referenceBookId,
         targetWords: targetWords.length > 0 ? targetWords : undefined,
@@ -922,7 +923,7 @@ export default function GoogleChat() {
       console.error('Book creation error:', error);
       // Error toast is handled by the mutation
     }
-  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, selectedCity]);
+  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, selectedCity]);
 
   // Create book and wait for result - returns book ID and pages for immediate image generation
   const handleCreateBookAndWait = useCallback(async (): Promise<{ bookId: string; pages: Array<{ id: string; page_number: number }> } | null> => {
@@ -1032,6 +1033,7 @@ export default function GoogleChat() {
         bookType: selectedBookType || undefined,
         characterTheme: characterFlow.themeId || undefined,
         targetAge: selectedAgeRange || undefined,
+        gradeLevel: selectedGradeLevel || undefined, // Pass validated grade level (preferred)
         textOverlayPreference,
         referenceBookId,
         targetWords: targetWords.length > 0 ? targetWords : undefined,
@@ -1090,7 +1092,7 @@ export default function GoogleChat() {
       console.error('Book creation error:', error);
       return null;
     }
-  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, targetWords, createdBookId]);
+  }, [currentSessionId, messages, bookOutline, editorPageImages, editorPagePrompts, createBookMutation, linkBookToSession, updateQAPagePrompts, updateSessionName, selectedBookType, characterFlow.themeId, characterFlow.selectedCharacterIds, selectedAgeRange, selectedGradeLevel, targetWords, createdBookId, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, selectedCity]);
 
   const handleQuickReply = useCallback(async (action: SuggestedAction) => {
     // Handle special actions

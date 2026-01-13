@@ -46,12 +46,12 @@ export function useABCBooks({ themeSlug }: UseABCBooksOptions = {}) {
   return useQuery({
     queryKey: ['abc-books', themeSlug || 'all'],
     queryFn: async (): Promise<LibraryBook[]> => {
-      // Build query - get all ABC books, optionally filtered by theme
+      // Build query - get all ABC books by bookType in metadata
       let query = supabase
         .from('books')
         .select('id, book_name, book_description, category, metadata, is_highlighted, created_at, updated_at, total_pages')
         .eq('status', 'published')
-        .eq('category', 'abc');
+        .filter('metadata->>bookType', 'eq', 'abc');
 
       // If theme provided and valid, filter by it
       if (themeSlug) {
@@ -105,7 +105,6 @@ export function useABCBooks({ themeSlug }: UseABCBooksOptions = {}) {
         coverImageUrl: coverMap.get(book.id) || null,
       }));
     },
-    enabled: !!themeSlug,
     staleTime: 5 * 60 * 1000,
   });
 }

@@ -22,6 +22,10 @@
   function = "city-meta"
   path = "/city/*"
 
+[[edge_functions]]
+  function = "abc-books-meta"
+  path = "/abc-books/*"
+
 # Headers for security and performance
 [[headers]]
   for = "/*"

@@ -56,7 +56,6 @@ export const VALID_BOOK_TYPES = [
   'general',
   'digraphs',
   'parent-education',
-  'manners',
   'other'
 ] as const;
 
@@ -310,8 +309,7 @@ export type AgentType =
   | 'book-creation-bedtime'
   | 'book-creation-general'
   | 'book-creation-digraphs'
-  | 'book-creation-parent-education'
-  | 'book-creation-manners';
+  | 'book-creation-parent-education';
 
 /**
  * Maps book types to specialized agent types
@@ -332,7 +330,6 @@ export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
   'general': 'book-creation-general',
   'digraphs': 'book-creation-digraphs',
   'parent-education': 'book-creation-parent-education',
-  'manners': 'book-creation-manners',
   'other': 'book-creation'
 } as const;
 

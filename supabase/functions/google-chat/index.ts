@@ -123,92 +123,6 @@ function getCuratedItemsList(themeKey: string): string {
     .join('\n');
 }
 
-// Hardcoded manner types - definitive list that never changes
-const MANNER_TYPES = {
-  daily: {
-    label: 'Daily Routine Manners',
-    options: [
-      { key: 'eating', label: '🍽️ Eating manners' },
-      { key: 'morning', label: '☀️ Morning manners' },
-      { key: 'bedtime', label: '🌙 Bedtime manners' },
-      { key: 'cleanup', label: '🧹 Cleanup manners' },
-      { key: 'potty', label: '🚽 Potty and hygiene' },
-      { key: 'food_prep', label: '🥗 Food preparation' },
-      { key: 'kitchen_safety', label: '🍳 Kitchen safety' },
-      { key: 'helping', label: '🙋 Helping manners' },
-    ]
-  },
-  social: {
-    label: 'Social Interaction Manners',
-    options: [
-      { key: 'sharing', label: '🤝 Sharing manners' },
-      { key: 'greeting', label: '👋 Greeting manners' },
-      { key: 'listening', label: '👂 Listening manners' },
-      { key: 'interrupting', label: '🙊 Interrupting manners' },
-      { key: 'apologizing', label: '💝 Apologizing manners' },
-      { key: 'personal_space', label: '🤗 Personal space and consent' },
-      { key: 'kindness', label: '🌟 Complimenting and kindness' },
-      { key: 'sibling', label: '👶 Sibling and baby manners' },
-      { key: 'guest_hosting', label: '🏠 Guest and hosting' },
-    ]
-  },
-  places: {
-    label: 'Out and About Manners',
-    options: [
-      { key: 'public', label: '🏙️ Public manners' },
-      { key: 'playground', label: '🛝 Playground manners' },
-      { key: 'store_restaurant', label: '🏪 Store and restaurant' },
-      { key: 'library', label: '📚 Library and quiet spaces' },
-      { key: 'car_travel', label: '🚗 Car and travel' },
-      { key: 'healthcare', label: '🏥 Doctor visits' },
-      { key: 'celebration', label: '🎉 Celebration and party' },
-      { key: 'swimming', label: '🏊 Swimming pool' },
-      { key: 'classroom', label: '📖 Classroom manners' },
-    ]
-  },
-  behavior: {
-    label: 'Behavior and Safety Manners',
-    options: [
-      { key: 'emotional', label: '💖 Emotional manners' },
-      { key: 'noise', label: '🔇 Noise manners' },
-      { key: 'waiting', label: '⏳ Waiting and patience' },
-      { key: 'safety', label: '⚠️ Safety manners' },
-      { key: 'animal', label: '🐕 Animal manners' },
-      { key: 'digital', label: '📱 Screen manners' },
-      { key: 'phone_call', label: '📞 Phone and video calls' },
-    ]
-  }
-} as const;
-
-// Get manner category suggest block (parent level)
-function getMannerCategoriesSuggestBlock(): string {
-  const lines: string[] = [];
-  for (const [categoryKey, data] of Object.entries(MANNER_TYPES)) {
-    // Use first emoji from the category as indicator
-    const emoji = data.options[0]?.label.match(/^\S+/)?.[0] || '📋';
-    lines.push(`${categoryKey}: ${emoji} ${data.label}`);
-  }
-  return lines.join('\n');
-}
-
-// Get manner options for a specific category (child level)
-function getMannerOptionsForCategory(categoryKey: string): string {
-  const category = MANNER_TYPES[categoryKey as keyof typeof MANNER_TYPES];
-  if (!category) return '';
-  return category.options.map(opt => `${opt.key}: ${opt.label}`).join('\n');
-}
-
-function getMannerTypesSuggestBlock(): string {
-  const lines: string[] = [];
-  for (const [category, data] of Object.entries(MANNER_TYPES)) {
-    lines.push(`\n**${data.label}:**`);
-    for (const opt of data.options) {
-      lines.push(`${opt.key}: ${opt.label}`);
-    }
-  }
-  return lines.join('\n');
-}
-
 // Optional parser for AI suggestions
 function parseSuggestions(aiResponse: string): { 
   cleanContent: string; 
@@ -347,8 +261,8 @@ serve(async (req) => {
       console.log('🔍 No book type selected');
     }
 
-    // Add context about grade level if already provided (skip for manners - uses simplified 4-step flow)
-    const gradeContext = (gradeLevel && bookType !== 'manners')
+    // Add context about grade level if already provided
+    const gradeContext = gradeLevel
       ? `\n\n⚠️ CRITICAL - GRADE STATUS:\n📚 GRADE ALREADY SELECTED: ${getGradeLabel(gradeLevel)}\n❌ DO NOT ask "What grade level?" - Step 2 is COMPLETE.\n✅ PROCEED to the next step in the flow.\nTailor all educational content, vocabulary, and complexity to ${getGradeLabel(gradeLevel)}.`
       : '';
 
@@ -470,239 +384,6 @@ serve(async (req) => {
       }
     }
 
-    // ============================================================================
-    // MANNERS BOOK - SIMPLIFIED 4-STEP FLOW (NO OTHER QUESTIONS)
-    // Step 1: Character Theme → Step 2: Characters → Step 3: Manner Type → Step 4: Confirmation
-    // ============================================================================
-    let mannerTypeContext = '';
-    let selectedMannerType: string | null = null;
-    let selectedMannerCategory: string | null = null;
-    
-    if (bookType === 'manners') {
-      // Only check the LAST user message for category/manner selection (not all messages)
-      // This prevents false matches from earlier conversation context
-      const lastUserMessage = messages.slice().reverse().find(m => m.role === 'user' && typeof m.content === 'string');
-      
-      if (lastUserMessage && typeof lastUserMessage.content === 'string') {
-        const content = lastUserMessage.content.toLowerCase();
-        
-        // Detect category selection - require explicit category labels (not just keywords)
-        if (content.includes('daily routine')) selectedMannerCategory = 'daily';
-        else if (content.includes('social interaction')) selectedMannerCategory = 'social';
-        else if (content.includes('out and about')) selectedMannerCategory = 'places';
-        else if (content.includes('behavior and safety')) selectedMannerCategory = 'behavior';
-        // Also check for "back to categories" to reset
-        else if (content.includes('back to categories')) selectedMannerCategory = null;
-        
-        // Detect specific manner selection (child level)
-        const allMannerOptions = Object.values(MANNER_TYPES).flatMap(cat => cat.options);
-        for (const option of allMannerOptions) {
-          // Match by full label (more specific matching)
-          if (content.includes(option.label.toLowerCase()) || content.includes(option.key.replace('_', ' '))) {
-            selectedMannerType = option.key;
-            // Also set the category if manner is selected
-            for (const [catKey, catData] of Object.entries(MANNER_TYPES)) {
-              if (catData.options.some(o => o.key === option.key)) {
-                selectedMannerCategory = catKey;
-                break;
-              }
-            }
-            break;
-          }
-        }
-      }
-      
-      // Also check conversation history for previously selected category (if user is in Step 3b)
-      if (!selectedMannerCategory && !selectedMannerType) {
-        for (const msg of messages) {
-          if (msg.role === 'user' && typeof msg.content === 'string') {
-            const content = msg.content.toLowerCase();
-            if (content.includes('daily routine')) { selectedMannerCategory = 'daily'; break; }
-            else if (content.includes('social interaction')) { selectedMannerCategory = 'social'; break; }
-            else if (content.includes('out and about')) { selectedMannerCategory = 'places'; break; }
-            else if (content.includes('behavior and safety')) { selectedMannerCategory = 'behavior'; break; }
-          }
-        }
-      }
-      
-      // Determine current step in the 4-step flow
-      const hasTheme = !!characterTheme && characterTheme !== 'no-theme';
-      const hasCharacters = selectedCharacterIds && selectedCharacterIds.length > 0;
-      const hasCategory = !!selectedMannerCategory && !selectedMannerType;
-      const hasManner = !!selectedMannerType;
-      
-      // Get manner label for display
-      const getMannerLabel = (key: string): string => {
-        for (const cat of Object.values(MANNER_TYPES)) {
-          const found = cat.options.find(o => o.key === key);
-          if (found) return found.label;
-        }
-        return key;
-      };
-
-      // Get category label for display
-      const getCategoryLabel = (key: string): string => {
-        const cat = MANNER_TYPES[key as keyof typeof MANNER_TYPES];
-        return cat ? cat.label : key;
-      };
-
-      // Fetch character names for display
-      let characterNames: string[] = [];
-      if (selectedCharacterIds && selectedCharacterIds.length > 0 && characterTheme) {
-        const characters = await fetchCharactersForTheme(supabase, characterTheme);
-        characterNames = characters
-          .filter(c => selectedCharacterIds.includes(c.id))
-          .map(c => c.name);
-      }
-      const characterNamesDisplay = characterNames.length > 0 
-        ? characterNames.join(', ') 
-        : `${selectedCharacterIds?.length || 0} characters`;
-      
-      if (hasManner) {
-        // ═══ STEP 4: CONFIRMATION ═══
-        const mannerLabel = getMannerLabel(selectedMannerType);
-        mannerTypeContext = `\n\n═══════════════════════════════════════════════════════════════════
-🎯 MANNERS BOOK - STEP 4 of 4: CONFIRMATION
-═══════════════════════════════════════════════════════════════════
-
-✅ Step 1: Character Theme - "${characterTheme}" ✓
-✅ Step 2: Character Selection - ${characterNamesDisplay} ✓
-✅ Step 3: Manner Type - "${mannerLabel}" ✓
-👉 Step 4: CURRENT - Ask "Does this look good?"
-
-⚠️ CHARACTER NAMES FOR OUTLINE:
-${characterNames.map(name => `- ${name}`).join('\n') || 'No characters selected'}
-
-📋 RESPOND WITH THIS EXACT FORMAT:
-"Great choices! Here's your manners book summary:
-
-📚 **Character Theme:** ${characterTheme}
-🎭 **Characters:** ${characterNamesDisplay}
-📋 **Manner Type:** ${mannerLabel}
-
-Does this look good? Ready to create your manners book?"
-
-[SUGGEST]
-yes: ✅ Yes, create my book!
-edit_theme: 🎨 Change character theme
-edit_manner: 📋 Change manner type
-[/SUGGEST]
-
-⚠️ CRITICAL FOR OUTLINE GENERATION:
-When generating the book outline, you MUST use these exact character names: ${characterNamesDisplay}
-- Use "${characterNames[0] || 'the character'}" as the primary character in page titles
-${characterNames.length > 1 ? `- Alternate focus between ${characterNames.join(' and ')} across pages` : ''}
-- NEVER use generic terms like "the character" or "the main character"
-
-❌ DO NOT ask about grade level, age, location, city, season, environment, or ANY other questions.
-❌ This is a 4-step flow ONLY. No additional steps.`;
-        console.log(`📋 Manners Step 4 - Confirmation (theme: ${characterTheme}, chars: ${characterNamesDisplay}, manner: ${selectedMannerType})`);
-        
-      } else if (hasCategory && hasCharacters) {
-        // ═══ STEP 3b: SPECIFIC MANNER SELECTION (within category) ═══
-        const categoryLabel = getCategoryLabel(selectedMannerCategory);
-        const categoryOptions = getMannerOptionsForCategory(selectedMannerCategory);
-        mannerTypeContext = `\n\n═══════════════════════════════════════════════════════════════════
-🎯 MANNERS BOOK - STEP 3b of 4: SPECIFIC MANNER
-═══════════════════════════════════════════════════════════════════
-
-✅ Step 1: Character Theme - "${characterTheme}" ✓
-✅ Step 2: Character Selection - ${selectedCharacterIds?.length} characters ✓
-✅ Step 3a: Manner Category - "${categoryLabel}" ✓
-👉 Step 3b: CURRENT - Select specific manner type
-⬜ Step 4: Confirmation - Pending
-
-📋 ASK: "Great choice! Which specific ${categoryLabel.toLowerCase()} would you like to focus on?"
-
-[SUGGEST]
-${categoryOptions}
-back: ⬅️ Back to categories
-[/SUGGEST]
-
-⚠️ CRITICAL: Only show options from the "${categoryLabel}" category.
-❌ DO NOT ask about grade level, age, location, city, season, or ANY other questions.`;
-        console.log(`📋 Manners Step 3b - Specific manner (category: ${selectedMannerCategory})`);
-        
-      } else if (hasCharacters) {
-        // ═══ STEP 3a: MANNER CATEGORY SELECTION ═══
-        mannerTypeContext = `\n\n═══════════════════════════════════════════════════════════════════
-🎯 MANNERS BOOK - STEP 3a of 4: MANNER CATEGORY
-═══════════════════════════════════════════════════════════════════
-
-✅ Step 1: Character Theme - "${characterTheme}" ✓
-✅ Step 2: Character Selection - ${selectedCharacterIds?.length} characters ✓
-👉 Step 3a: CURRENT - Select manner category
-⬜ Step 3b: Specific Manner - Pending
-⬜ Step 4: Confirmation - Pending
-
-📋 YOU MUST RESPOND WITH EXACTLY THIS FORMAT (including the [SUGGEST] block):
-"Perfect! What type of manners would you like this book to teach?"
-
-[SUGGEST]
-${getMannerCategoriesSuggestBlock()}
-[/SUGGEST]
-
-⚠️ CRITICAL REQUIREMENTS:
-1. THE [SUGGEST] BLOCK IS REQUIRED - do NOT list options as text bullets or numbered lists
-2. Show ONLY the 4 category buttons above
-3. The user selects a category first, then chooses a specific manner
-
-❌ DO NOT ask about grade level, age, location, city, season, environment, or ANY other questions.
-❌ DO NOT say "specific moment" or list all 12 manners. Show ONLY the 4 categories.`;
-        console.log(`📋 Manners Step 3a - Manner category (theme: ${characterTheme}, chars: ${selectedCharacterIds?.length})`);
-        
-      } else if (hasTheme) {
-        // ═══ STEP 2: CHARACTER SELECTION (UI handles this) ═══
-        mannerTypeContext = `\n\n═══════════════════════════════════════════════════════════════════
-🎯 MANNERS BOOK - STEP 2 of 4: CHARACTER SELECTION
-═══════════════════════════════════════════════════════════════════
-
-✅ Step 1: Character Theme - "${characterTheme}" ✓
-👉 Step 2: CURRENT - Waiting for character selection (UI handles this)
-⬜ Step 3: Manner Type - Pending
-⬜ Step 4: Confirmation - Pending
-
-The character selection UI is being shown. Wait for user to select characters.
-❌ DO NOT ask about manner type, grade level, age, location, city, or ANY other questions yet.`;
-        console.log(`📋 Manners Step 2 - Character selection (theme: ${characterTheme})`);
-        
-      } else {
-        // ═══ STEP 1: CHARACTER THEME ═══
-        mannerTypeContext = `\n\n═══════════════════════════════════════════════════════════════════
-🎯 MANNERS BOOK - STEP 1 of 4: CHARACTER THEME
-═══════════════════════════════════════════════════════════════════
-
-👉 Step 1: CURRENT - Ask which character theme
-⬜ Step 2: Character Selection - Pending
-⬜ Step 3: Manner Type - Pending
-⬜ Step 4: Confirmation - Pending
-
-📋 RESPOND WITH THIS EXACT MESSAGE:
-"Let's create your manners book! 🎉 First, which character theme would you like?"
-
-[SUGGEST]
-bluey: 🐕 Bluey
-frozen: ❄️ Frozen
-paw-patrol: 🐾 PAW Patrol
-peppa-pig: 🐷 Peppa Pig
-cocomelon: 🍉 CoComelon
-moana: 🌊 Moana
-mickey-mouse: 🐭 Mickey Mouse
-mario: 🍄 Mario
-sesame-street: 🍪 Sesame Street
-dora: 🎒 Dora
-little-mermaid: 🧜 Little Mermaid
-benji-davies: 🎨 Benji Davies Style
-bear-stories: 🐻 Bear Stories
-custom: ✏️ Custom Theme
-[/SUGGEST]
-
-⚠️ CRITICAL: You MUST include the [SUGGEST] block above in your response.
-❌ DO NOT ask about manner type, grade level, age, location, city, or ANY other questions.
-❌ This is the ONLY question to ask right now.`;
-        console.log(`📋 Manners Step 1 - Character theme`);
-      }
-    }
 
     const themeContext = characterTheme
       ? characterTheme === 'custom'
@@ -758,15 +439,11 @@ custom: ✏️ Custom Theme
 
     // Location question injection - ask BEFORE city question (optional questions come before title)
     // Only inject if: no location selected yet, outline not ready, book not created, not forcing outline
-  // Manners agent handles location/city in its own instructions - don't inject globally
-  const shouldAskLocationQuestion = !location && !outlineReady && !bookCreated && !forceOutline && 
-    !['manners'].includes(bookType || '');
+    const shouldAskLocationQuestion = !location && !outlineReady && !bookCreated && !forceOutline;
 
     // City question injection - ask as optional discovery, BEFORE title confirmation
     // Only inject if: no city selected yet, outline not ready, book not created, not forcing outline
-    // City is independent of location - should be asked for all book types
-  const shouldAskCityQuestion = !city && !outlineReady && !bookCreated && !forceOutline && 
-    !['manners'].includes(bookType || '');
+    const shouldAskCityQuestion = !city && !outlineReady && !bookCreated && !forceOutline;
 
     // Detect if user just approved title (clicked "Looks perfect, create the outline!" or similar)
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];
@@ -838,14 +515,13 @@ ${citySuggestBlock}
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + mannerTypeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
     console.log(`📊 System prompt length: ${systemMessage.content.length} characters`);
     console.log(`📊 Conversation stage: ${outlineReady ? 'Outline Ready' : bookCreated ? 'Book Created' : 'Discovery'}`);
     console.log(`📚 Grade level: ${gradeLevel || 'None'}`);
-    console.log(`📋 Manner type: ${selectedMannerType || 'None'}`);
     console.log(`🎨 Character theme: ${characterTheme || 'None'}`);
     console.log(`🗓️ Season: ${season || 'None'}`);
     console.log(`🌍 Environment: ${environment || 'None'}`);

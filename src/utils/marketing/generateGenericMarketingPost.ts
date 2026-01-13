@@ -250,25 +250,97 @@ function getClothingBrandHashtags(brand: string | null): string[] {
 }
 
 /**
- * Gets hashtags for ski/snowboard resort locations
+ * Gets hashtags for ski/snowboard resort locations - EXTRA HEAVY coverage
  */
 function getLocationHashtags(loc: string | null): string[] {
   if (!loc) return [];
   
   const locationMap: Record<string, string[]> = {
-    'VAIL_RESORT': ['#Vail', '#VailResort', '#VailColorado', '#SkiVail'],
-    'SUGARBUSH_RESORT': ['#Sugarbush', '#Vermont', '#VermontSki', '#MadRiver'],
-    'STRATTON': ['#Stratton', '#VermontSki', '#StrattonMountain'],
-    'KILLINGTON': ['#Killington', '#BeastOfTheEast', '#VermontSki', '#KillingtonResort'],
-    'MOUNTAIN_CREEK': ['#MountainCreek', '#NJSki', '#NewJerseySki'],
-    'COPPER_MOUNTAIN': ['#CopperMountain', '#Colorado', '#ColoradoSki'],
-    'BRECKENRIDGE': ['#Breckenridge', '#Breck', '#ColoradoSki', '#BreckLife'],
-    'KEYSTONE': ['#Keystone', '#KeystoneResort', '#ColoradoSki'],
-    'PARK_CITY': ['#ParkCity', '#ParkCityUtah', '#UtahSki'],
-    'MAMMOTH': ['#MammothMountain', '#Mammoth', '#CaliforniaSki'],
-    'STEAMBOAT': ['#Steamboat', '#SteamboatSprings', '#ColoradoSki'],
-    'ASPEN': ['#Aspen', '#AspenSnowmass', '#ColoradoSki'],
-    'JACKSON_HOLE': ['#JacksonHole', '#Wyoming', '#JHMountainResort'],
+    'VAIL_RESORT': [
+      '#Vail', '#VailResort', '#VailMountain', '#VailColorado', '#SkiVail',
+      '#VailSki', '#VailSnowboard', '#VailKids', '#VailFamily', '#VailCO'
+    ],
+    'SUGARBUSH_RESORT': [
+      '#Sugarbush', '#SugarbushResort', '#SugarbushMountain', '#SugarbushVT',
+      '#Vermont', '#VermontSki', '#MadRiver', '#MadRiverValley', '#SkiVermont'
+    ],
+    'STRATTON': [
+      '#Stratton', '#StrattonMountain', '#StrattonResort', '#StrattonVT',
+      '#VermontSki', '#StrattonVermont', '#SkiStratton', '#StrattonKids'
+    ],
+    'KILLINGTON': [
+      '#Killington', '#KillingtonResort', '#KillingtonMountain', '#KillingtonVT',
+      '#BeastOfTheEast', '#VermontSki', '#SkiKillington', '#KillingtonVermont',
+      '#KillingtonKids', '#KillingtonSki', '#KillingtonSnowboard'
+    ],
+    'MOUNTAIN_CREEK': [
+      '#MountainCreek', '#MountainCreekResort', '#MountainCreekNJ',
+      '#NJSki', '#NewJerseySki', '#SkiNJ', '#MountainCreekKids'
+    ],
+    'COPPER_MOUNTAIN': [
+      '#CopperMountain', '#CopperMountainResort', '#CopperCO', '#CopperColorado',
+      '#Colorado', '#ColoradoSki', '#SkiCopper', '#CopperKids'
+    ],
+    'BRECKENRIDGE': [
+      '#Breckenridge', '#Breck', '#BreckResort', '#BreckenridgeColorado',
+      '#BreckCO', '#ColoradoSki', '#BreckLife', '#SkiBreck', '#BreckKids'
+    ],
+    'KEYSTONE': [
+      '#Keystone', '#KeystoneResort', '#KeystoneMountain', '#KeystoneColorado',
+      '#KeystoneCO', '#ColoradoSki', '#SkiKeystone', '#KeystoneKids'
+    ],
+    'PARK_CITY': [
+      '#ParkCity', '#ParkCityResort', '#ParkCityMountain', '#ParkCityUtah',
+      '#UtahSki', '#SkiParkCity', '#PCMR', '#ParkCityKids'
+    ],
+    'MAMMOTH': [
+      '#MammothMountain', '#Mammoth', '#MammothLakes', '#MammothCA',
+      '#CaliforniaSki', '#SkiMammoth', '#MammothKids', '#MammothResort'
+    ],
+    'STEAMBOAT': [
+      '#Steamboat', '#SteamboatSprings', '#SteamboatResort', '#SteamboatCO',
+      '#ColoradoSki', '#SkiSteamboat', '#SteamboatKids', '#SteamboatMountain'
+    ],
+    'ASPEN': [
+      '#Aspen', '#AspenSnowmass', '#AspenMountain', '#AspenColorado',
+      '#AspenCO', '#ColoradoSki', '#SkiAspen', '#AspenKids', '#Snowmass'
+    ],
+    'JACKSON_HOLE': [
+      '#JacksonHole', '#JacksonHoleMountain', '#JacksonHoleResort', '#JHMR',
+      '#Wyoming', '#JHMountainResort', '#SkiJacksonHole', '#JacksonHoleKids'
+    ],
+    'DEER_VALLEY': [
+      '#DeerValley', '#DeerValleyResort', '#DeerValleyUtah', '#UtahSki',
+      '#SkiDeerValley', '#DeerValleyKids', '#DeerValleyMountain'
+    ],
+    'STOWE': [
+      '#Stowe', '#StoweMountain', '#StoweMountainResort', '#StoweVT',
+      '#VermontSki', '#SkiStowe', '#StoweVermont', '#StoweKids'
+    ],
+    'OKEMO': [
+      '#Okemo', '#OkemoMountain', '#OkemoResort', '#OkemoVT',
+      '#VermontSki', '#SkiOkemo', '#OkemoVermont', '#OkemoKids'
+    ],
+    'MOUNT_SNOW': [
+      '#MountSnow', '#MtSnow', '#MountSnowResort', '#MountSnowVT',
+      '#VermontSki', '#SkiMountSnow', '#MountSnowKids'
+    ],
+    'JAY_PEAK': [
+      '#JayPeak', '#JayPeakResort', '#JayPeakVT', '#VermontSki',
+      '#SkiJayPeak', '#JayPeakVermont', '#JayPeakKids'
+    ],
+    'WHITEFACE': [
+      '#Whiteface', '#WhitefaceMountain', '#WhitefaceNY', '#LakePlacid',
+      '#AdirondacksSki', '#SkiWhiteface', '#WhitefaceKids'
+    ],
+    'HUNTER': [
+      '#HunterMountain', '#Hunter', '#HunterNY', '#CatskillsSki',
+      '#SkiHunter', '#HunterMountainNY', '#HunterKids'
+    ],
+    'WINDHAM': [
+      '#Windham', '#WindhamMountain', '#WindhamNY', '#CatskillsSki',
+      '#SkiWindham', '#WindhamKids'
+    ],
   };
   
   return locationMap[loc.toUpperCase()] || [];

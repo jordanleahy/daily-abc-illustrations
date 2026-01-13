@@ -180,6 +180,24 @@ const MANNER_TYPES = {
   }
 } as const;
 
+// Get manner category suggest block (parent level)
+function getMannerCategoriesSuggestBlock(): string {
+  const lines: string[] = [];
+  for (const [categoryKey, data] of Object.entries(MANNER_TYPES)) {
+    // Use first emoji from the category as indicator
+    const emoji = data.options[0]?.label.match(/^\S+/)?.[0] || '📋';
+    lines.push(`${categoryKey}: ${emoji} ${data.label}`);
+  }
+  return lines.join('\n');
+}
+
+// Get manner options for a specific category (child level)
+function getMannerOptionsForCategory(categoryKey: string): string {
+  const category = MANNER_TYPES[categoryKey as keyof typeof MANNER_TYPES];
+  if (!category) return '';
+  return category.options.map(opt => `${opt.key}: ${opt.label}`).join('\n');
+}
+
 function getMannerTypesSuggestBlock(): string {
   const lines: string[] = [];
   for (const [category, data] of Object.entries(MANNER_TYPES)) {
@@ -458,9 +476,27 @@ serve(async (req) => {
     // ============================================================================
     let mannerTypeContext = '';
     let selectedMannerType: string | null = null;
+    let selectedMannerCategory: string | null = null;
     
     if (bookType === 'manners') {
-      // Detect selected manner type from conversation
+      // Detect selected manner category from conversation (parent level)
+      const categoryKeys = Object.keys(MANNER_TYPES);
+      for (const msg of messages) {
+        if (msg.role === 'user' && typeof msg.content === 'string') {
+          const content = msg.content.toLowerCase();
+          for (const catKey of categoryKeys) {
+            // Match category key or label
+            const catData = MANNER_TYPES[catKey as keyof typeof MANNER_TYPES];
+            if (content.includes(catKey) || content.toLowerCase().includes(catData.label.toLowerCase())) {
+              selectedMannerCategory = catKey;
+              break;
+            }
+          }
+          if (selectedMannerCategory) break;
+        }
+      }
+      
+      // Detect selected manner type from conversation (child level)
       const allMannerKeys = Object.values(MANNER_TYPES).flatMap(cat => cat.options.map(o => o.key));
       for (const msg of messages) {
         if (msg.role === 'user' && typeof msg.content === 'string') {
@@ -468,6 +504,13 @@ serve(async (req) => {
           for (const key of allMannerKeys) {
             if (content.includes(key) || content.includes(key.replace('_', ' '))) {
               selectedMannerType = key;
+              // Also set the category if manner is selected
+              for (const [catKey, catData] of Object.entries(MANNER_TYPES)) {
+                if (catData.options.some(o => o.key === key)) {
+                  selectedMannerCategory = catKey;
+                  break;
+                }
+              }
               break;
             }
           }
@@ -478,6 +521,7 @@ serve(async (req) => {
       // Determine current step in the 4-step flow
       const hasTheme = !!characterTheme && characterTheme !== 'no-theme';
       const hasCharacters = selectedCharacterIds && selectedCharacterIds.length > 0;
+      const hasCategory = !!selectedMannerCategory && !selectedMannerType;
       const hasManner = !!selectedMannerType;
       
       // Get manner label for display
@@ -487,6 +531,12 @@ serve(async (req) => {
           if (found) return found.label;
         }
         return key;
+      };
+
+      // Get category label for display
+      const getCategoryLabel = (key: string): string => {
+        const cat = MANNER_TYPES[key as keyof typeof MANNER_TYPES];
+        return cat ? cat.label : key;
       };
       
       if (hasManner) {
@@ -520,26 +570,52 @@ edit_manner: 📋 Change manner type
 ❌ This is a 4-step flow ONLY. No additional steps.`;
         console.log(`📋 Manners Step 4 - Confirmation (theme: ${characterTheme}, chars: ${selectedCharacterIds?.length}, manner: ${selectedMannerType})`);
         
-      } else if (hasCharacters) {
-        // ═══ STEP 3: MANNER TYPE SELECTION ═══
+      } else if (hasCategory && hasCharacters) {
+        // ═══ STEP 3b: SPECIFIC MANNER SELECTION (within category) ═══
+        const categoryLabel = getCategoryLabel(selectedMannerCategory);
+        const categoryOptions = getMannerOptionsForCategory(selectedMannerCategory);
         mannerTypeContext = `\n\n═══════════════════════════════════════════════════════════════════
-🎯 MANNERS BOOK - STEP 3 of 4: MANNER TYPE
+🎯 MANNERS BOOK - STEP 3b of 4: SPECIFIC MANNER
 ═══════════════════════════════════════════════════════════════════
 
 ✅ Step 1: Character Theme - "${characterTheme}" ✓
 ✅ Step 2: Character Selection - ${selectedCharacterIds?.length} characters ✓
-👉 Step 3: CURRENT - Ask which manner type
+✅ Step 3a: Manner Category - "${categoryLabel}" ✓
+👉 Step 3b: CURRENT - Select specific manner type
 ⬜ Step 4: Confirmation - Pending
 
-📋 ASK: "What type of manners would you like this book to teach?"
+📋 ASK: "Great choice! Which specific ${categoryLabel.toLowerCase()} would you like to focus on?"
 
 [SUGGEST]
-${getMannerTypesSuggestBlock()}
+${categoryOptions}
+back: ⬅️ Back to categories
 [/SUGGEST]
 
-⚠️ CRITICAL: Display ALL manner options above. Every category, every option.
+⚠️ CRITICAL: Only show options from the "${categoryLabel}" category.
 ❌ DO NOT ask about grade level, age, location, city, season, or ANY other questions.`;
-        console.log(`📋 Manners Step 3 - Manner type (theme: ${characterTheme}, chars: ${selectedCharacterIds?.length})`);
+        console.log(`📋 Manners Step 3b - Specific manner (category: ${selectedMannerCategory})`);
+        
+      } else if (hasCharacters) {
+        // ═══ STEP 3a: MANNER CATEGORY SELECTION ═══
+        mannerTypeContext = `\n\n═══════════════════════════════════════════════════════════════════
+🎯 MANNERS BOOK - STEP 3a of 4: MANNER CATEGORY
+═══════════════════════════════════════════════════════════════════
+
+✅ Step 1: Character Theme - "${characterTheme}" ✓
+✅ Step 2: Character Selection - ${selectedCharacterIds?.length} characters ✓
+👉 Step 3a: CURRENT - Select manner category
+⬜ Step 3b: Specific Manner - Pending
+⬜ Step 4: Confirmation - Pending
+
+📋 ASK: "Perfect! What type of manners would you like this book to teach?"
+
+[SUGGEST]
+${getMannerCategoriesSuggestBlock()}
+[/SUGGEST]
+
+⚠️ CRITICAL: Show ONLY the 4 category buttons above. The user selects a category first, then chooses a specific manner.
+❌ DO NOT ask about grade level, age, location, city, season, or ANY other questions.`;
+        console.log(`📋 Manners Step 3a - Manner category (theme: ${characterTheme}, chars: ${selectedCharacterIds?.length})`);
         
       } else if (hasTheme) {
         // ═══ STEP 2: CHARACTER SELECTION (UI handles this) ═══

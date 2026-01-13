@@ -353,6 +353,97 @@ export const useGoogleChat = (
               ]
             };
           }
+          
+          // Manners category selection fallback (parent level)
+          if (cleanedText.toLowerCase().includes('what type of manners') || 
+              cleanedText.toLowerCase().includes('manner category')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'daily', label: '🍽️ Daily Routine Manners', value: 'Daily Routine Manners' },
+                { id: 'social', label: '🤝 Social Interaction Manners', value: 'Social Interaction Manners' },
+                { id: 'places', label: '🏙️ Out and About Manners', value: 'Out and About Manners' },
+                { id: 'behavior', label: '💖 Behavior and Safety Manners', value: 'Behavior and Safety Manners' },
+              ]
+            };
+          }
+          
+          // Daily routine manners fallback (child level)
+          if (cleanedText.toLowerCase().includes('daily routine') || 
+              cleanedText.toLowerCase().includes('which specific daily')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'eating', label: '🍽️ Eating manners', value: 'Eating manners' },
+                { id: 'morning', label: '☀️ Morning manners', value: 'Morning manners' },
+                { id: 'bedtime', label: '🌙 Bedtime manners', value: 'Bedtime manners' },
+                { id: 'cleanup', label: '🧹 Cleanup manners', value: 'Cleanup manners' },
+                { id: 'potty', label: '🚽 Potty and hygiene', value: 'Potty and hygiene' },
+                { id: 'food_prep', label: '🥗 Food preparation', value: 'Food preparation' },
+                { id: 'kitchen_safety', label: '🍳 Kitchen safety', value: 'Kitchen safety' },
+                { id: 'helping', label: '🙋 Helping manners', value: 'Helping manners' },
+                { id: 'back', label: '⬅️ Back to categories', value: 'Back to categories' },
+              ]
+            };
+          }
+          
+          // Social interaction manners fallback (child level)
+          if (cleanedText.toLowerCase().includes('social interaction') || 
+              cleanedText.toLowerCase().includes('which specific social')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'sharing', label: '🤝 Sharing manners', value: 'Sharing manners' },
+                { id: 'greeting', label: '👋 Greeting manners', value: 'Greeting manners' },
+                { id: 'listening', label: '👂 Listening manners', value: 'Listening manners' },
+                { id: 'interrupting', label: '🙊 Interrupting manners', value: 'Interrupting manners' },
+                { id: 'apologizing', label: '💝 Apologizing manners', value: 'Apologizing manners' },
+                { id: 'personal_space', label: '🤗 Personal space and consent', value: 'Personal space and consent' },
+                { id: 'kindness', label: '🌟 Complimenting and kindness', value: 'Complimenting and kindness' },
+                { id: 'sibling', label: '👶 Sibling and baby manners', value: 'Sibling and baby manners' },
+                { id: 'guest_hosting', label: '🏠 Guest and hosting', value: 'Guest and hosting' },
+                { id: 'back', label: '⬅️ Back to categories', value: 'Back to categories' },
+              ]
+            };
+          }
+          
+          // Out and about manners fallback (child level)
+          if (cleanedText.toLowerCase().includes('out and about') || 
+              cleanedText.toLowerCase().includes('which specific out')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'public', label: '🏙️ Public manners', value: 'Public manners' },
+                { id: 'playground', label: '🛝 Playground manners', value: 'Playground manners' },
+                { id: 'store_restaurant', label: '🏪 Store and restaurant', value: 'Store and restaurant' },
+                { id: 'library', label: '📚 Library and quiet spaces', value: 'Library and quiet spaces' },
+                { id: 'car_travel', label: '🚗 Car and travel', value: 'Car and travel' },
+                { id: 'healthcare', label: '🏥 Doctor visits', value: 'Doctor visits' },
+                { id: 'celebration', label: '🎉 Celebration and party', value: 'Celebration and party' },
+                { id: 'swimming', label: '🏊 Swimming pool', value: 'Swimming pool' },
+                { id: 'classroom', label: '📖 Classroom manners', value: 'Classroom manners' },
+                { id: 'back', label: '⬅️ Back to categories', value: 'Back to categories' },
+              ]
+            };
+          }
+          
+          // Behavior and safety manners fallback (child level)
+          if (cleanedText.toLowerCase().includes('behavior and safety') || 
+              cleanedText.toLowerCase().includes('which specific behavior')) {
+            return { 
+              cleanContent: cleanedText, 
+              suggestedActions: [
+                { id: 'emotional', label: '💖 Emotional manners', value: 'Emotional manners' },
+                { id: 'noise', label: '🔇 Noise manners', value: 'Noise manners' },
+                { id: 'waiting', label: '⏳ Waiting and patience', value: 'Waiting and patience' },
+                { id: 'safety', label: '⚠️ Safety manners', value: 'Safety manners' },
+                { id: 'animal', label: '🐕 Animal manners', value: 'Animal manners' },
+                { id: 'digital', label: '📱 Screen manners', value: 'Screen manners' },
+                { id: 'phone_call', label: '📞 Phone and video calls', value: 'Phone and video calls' },
+                { id: 'back', label: '⬅️ Back to categories', value: 'Back to categories' },
+              ]
+            };
+          }
         }
 
         // Generic fallbacks for common discovery patterns across all book types

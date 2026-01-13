@@ -74,6 +74,7 @@ import Explore from "./pages/Explore";
 import About from "./pages/About";
 import CityLanding from "./pages/CityLanding";
 import SkiResortLanding from "./pages/SkiResortLanding";
+import ABCBooksLanding from "./pages/ABCBooksLanding";
 import { useEffect } from "react";
 import { scheduleCacheCleanup } from "./utils/cacheCleanup";
 import { initializeCacheWarming } from "./utils/cacheWarming";
@@ -159,6 +160,7 @@ const App = () => {
                 <Route path="/about" element={<About />} />
                 <Route path="/city/:cityName" element={<CityLanding />} />
                 <Route path="/skiresort/:resortId" element={<SkiResortLanding />} />
+                <Route path="/abc-books/:name" element={<ABCBooksLanding />} />
                 <Route path="/welcome" element={<Landing />} />
                 
                 <Route path="/home" element={<ProtectedRoute requireSubscription={false}><Index /></ProtectedRoute>} />

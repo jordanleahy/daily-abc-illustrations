@@ -34,6 +34,11 @@ const SkiResortLanding = () => {
   const ogMeta = resortId ? getResortOgMetadata(resortId) : null;
   const resortVideo = resortId ? resortVideos[resortId] : undefined;
 
+  // Scroll to top when resortId changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [resortId]);
+
   // Force play on mount for mobile browsers
   useEffect(() => {
     const video = videoRef.current;

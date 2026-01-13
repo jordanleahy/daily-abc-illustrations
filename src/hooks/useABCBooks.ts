@@ -70,25 +70,49 @@ export function useABCBooks({ themeSlug }: UseABCBooksOptions = {}) {
 
       if (!books || books.length === 0) return [];
 
-      // Get cover images for each book
+      // Get page 1 for each book, then get their images
       const bookIds = books.map(b => b.id);
-      const { data: pages } = await supabase
+      
+      // Step 1: Get page 1 for each book
+      const { data: firstPages } = await supabase
         .from('pages')
-        .select(`
-          book_id,
-          page_image_urls!inner(image_url, is_latest)
-        `)
+        .select('id, book_id')
         .in('book_id', bookIds)
-        .eq('page_number', 1)
-        .eq('page_image_urls.is_latest', true);
+        .eq('page_number', 1);
 
-      // Create a map of book_id to cover image
+      if (!firstPages || firstPages.length === 0) {
+        return books.map(book => ({
+          id: book.id,
+          book_name: book.book_name,
+          book_description: book.book_description,
+          category: book.category,
+          metadata: book.metadata as LibraryBook['metadata'],
+          is_highlighted: book.is_highlighted,
+          created_at: book.created_at,
+          updated_at: book.updated_at,
+          total_pages: book.total_pages,
+          coverImageUrl: null,
+        }));
+      }
+
+      // Step 2: Get latest images for those pages
+      const pageIds = firstPages.map(p => p.id);
+      const { data: images } = await supabase
+        .from('page_image_urls')
+        .select('page_id, image_url')
+        .in('page_id', pageIds)
+        .eq('is_latest', true)
+        .not('image_url', 'is', null);
+
+      // Build page_id -> book_id map
+      const pageToBook = new Map(firstPages.map(p => [p.id, p.book_id]));
+      
+      // Build book_id -> image_url map
       const coverMap = new Map<string, string>();
-      pages?.forEach(page => {
-        const imageUrls = page.page_image_urls as unknown as Array<{ image_url: string; is_latest: boolean }>;
-        const latestImage = imageUrls?.find(img => img.is_latest);
-        if (latestImage?.image_url && page.book_id) {
-          coverMap.set(page.book_id, latestImage.image_url);
+      images?.forEach(img => {
+        const bookId = pageToBook.get(img.page_id);
+        if (bookId && img.image_url) {
+          coverMap.set(bookId, img.image_url);
         }
       });
 

@@ -4,7 +4,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
 import { fetchGradeLevels, getGradeLabel, type ValidGrade } from '../_shared/gradeLevels.ts';
-import { buildCharacterConstraints } from '../_shared/characterConstraints.ts';
+import { buildCharacterConstraints, fetchCharactersForTheme } from '../_shared/characterConstraints.ts';
 import { getWordsForDigraphThroughGrade, isValidDigraph, type GradeLevel } from '../_shared/digraphCorpus.ts';
 import { getWordsForLevel, getTopWordsForLevel, isValidSightWordLevel, getSightWordLevelLabel, type SightWordLevel } from '../_shared/sightWordsCorpus.ts';
 import { getSeasonDisplay, isValidSeason, type ValidSeason } from '../_shared/seasons.ts';
@@ -538,6 +538,18 @@ serve(async (req) => {
         const cat = MANNER_TYPES[key as keyof typeof MANNER_TYPES];
         return cat ? cat.label : key;
       };
+
+      // Fetch character names for display
+      let characterNames: string[] = [];
+      if (selectedCharacterIds && selectedCharacterIds.length > 0 && characterTheme) {
+        const characters = await fetchCharactersForTheme(supabase, characterTheme);
+        characterNames = characters
+          .filter(c => selectedCharacterIds.includes(c.id))
+          .map(c => c.name);
+      }
+      const characterNamesDisplay = characterNames.length > 0 
+        ? characterNames.join(', ') 
+        : `${selectedCharacterIds?.length || 0} characters`;
       
       if (hasManner) {
         // ═══ STEP 4: CONFIRMATION ═══
@@ -547,15 +559,18 @@ serve(async (req) => {
 ═══════════════════════════════════════════════════════════════════
 
 ✅ Step 1: Character Theme - "${characterTheme}" ✓
-✅ Step 2: Character Selection - ${selectedCharacterIds?.length || 0} characters ✓
+✅ Step 2: Character Selection - ${characterNamesDisplay} ✓
 ✅ Step 3: Manner Type - "${mannerLabel}" ✓
 👉 Step 4: CURRENT - Ask "Does this look good?"
+
+⚠️ CHARACTER NAMES FOR OUTLINE:
+${characterNames.map(name => `- ${name}`).join('\n') || 'No characters selected'}
 
 📋 RESPOND WITH THIS EXACT FORMAT:
 "Great choices! Here's your manners book summary:
 
 📚 **Character Theme:** ${characterTheme}
-🎭 **Characters:** ${selectedCharacterIds?.length || 0} characters selected
+🎭 **Characters:** ${characterNamesDisplay}
 📋 **Manner Type:** ${mannerLabel}
 
 Does this look good? Ready to create your manners book?"
@@ -566,9 +581,15 @@ edit_theme: 🎨 Change character theme
 edit_manner: 📋 Change manner type
 [/SUGGEST]
 
+⚠️ CRITICAL FOR OUTLINE GENERATION:
+When generating the book outline, you MUST use these exact character names: ${characterNamesDisplay}
+- Use "${characterNames[0] || 'the character'}" as the primary character in page titles
+${characterNames.length > 1 ? `- Alternate focus between ${characterNames.join(' and ')} across pages` : ''}
+- NEVER use generic terms like "the character" or "the main character"
+
 ❌ DO NOT ask about grade level, age, location, city, season, environment, or ANY other questions.
 ❌ This is a 4-step flow ONLY. No additional steps.`;
-        console.log(`📋 Manners Step 4 - Confirmation (theme: ${characterTheme}, chars: ${selectedCharacterIds?.length}, manner: ${selectedMannerType})`);
+        console.log(`📋 Manners Step 4 - Confirmation (theme: ${characterTheme}, chars: ${characterNamesDisplay}, manner: ${selectedMannerType})`);
         
       } else if (hasCategory && hasCharacters) {
         // ═══ STEP 3b: SPECIFIC MANNER SELECTION (within category) ═══

@@ -438,12 +438,15 @@ serve(async (req) => {
 
     // Location question injection - ask BEFORE city question (optional questions come before title)
     // Only inject if: no location selected yet, outline not ready, book not created, not forcing outline
-    const shouldAskLocationQuestion = !location && !outlineReady && !bookCreated && !forceOutline;
+  // Manners agent handles location/city in its own instructions - don't inject globally
+  const shouldAskLocationQuestion = !location && !outlineReady && !bookCreated && !forceOutline && 
+    !['manners'].includes(bookType || '');
 
     // City question injection - ask as optional discovery, BEFORE title confirmation
     // Only inject if: no city selected yet, outline not ready, book not created, not forcing outline
     // City is independent of location - should be asked for all book types
-    const shouldAskCityQuestion = !city && !outlineReady && !bookCreated && !forceOutline;
+  const shouldAskCityQuestion = !city && !outlineReady && !bookCreated && !forceOutline && 
+    !['manners'].includes(bookType || '');
 
     // Detect if user just approved title (clicked "Looks perfect, create the outline!" or similar)
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];

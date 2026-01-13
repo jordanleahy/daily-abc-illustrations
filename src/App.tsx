@@ -160,6 +160,7 @@ const App = () => {
                 <Route path="/about" element={<About />} />
                 <Route path="/city/:cityName" element={<CityLanding />} />
                 <Route path="/skiresort/:resortId" element={<SkiResortLanding />} />
+                <Route path="/resorts/:resortId" element={<SkiResortLanding />} />
                 <Route path="/abc-books" element={<ABCBooksLanding />} />
                 <Route path="/abc-books/:name" element={<ABCBooksLanding />} />
                 <Route path="/welcome" element={<Landing />} />

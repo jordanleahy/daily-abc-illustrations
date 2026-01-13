@@ -123,6 +123,74 @@ function getCuratedItemsList(themeKey: string): string {
     .join('\n');
 }
 
+// Hardcoded manner types - definitive list that never changes
+const MANNER_TYPES = {
+  daily: {
+    label: 'Daily Routine Manners',
+    options: [
+      { key: 'eating', label: '🍽️ Eating manners' },
+      { key: 'morning', label: '☀️ Morning manners' },
+      { key: 'bedtime', label: '🌙 Bedtime manners' },
+      { key: 'cleanup', label: '🧹 Cleanup manners' },
+      { key: 'potty', label: '🚽 Potty and hygiene' },
+      { key: 'food_prep', label: '🥗 Food preparation' },
+      { key: 'kitchen_safety', label: '🍳 Kitchen safety' },
+      { key: 'helping', label: '🙋 Helping manners' },
+    ]
+  },
+  social: {
+    label: 'Social Interaction Manners',
+    options: [
+      { key: 'sharing', label: '🤝 Sharing manners' },
+      { key: 'greeting', label: '👋 Greeting manners' },
+      { key: 'listening', label: '👂 Listening manners' },
+      { key: 'interrupting', label: '🙊 Interrupting manners' },
+      { key: 'apologizing', label: '💝 Apologizing manners' },
+      { key: 'personal_space', label: '🤗 Personal space and consent' },
+      { key: 'kindness', label: '🌟 Complimenting and kindness' },
+      { key: 'sibling', label: '👶 Sibling and baby manners' },
+      { key: 'guest_hosting', label: '🏠 Guest and hosting' },
+    ]
+  },
+  places: {
+    label: 'Out and About Manners',
+    options: [
+      { key: 'public', label: '🏙️ Public manners' },
+      { key: 'playground', label: '🛝 Playground manners' },
+      { key: 'store_restaurant', label: '🏪 Store and restaurant' },
+      { key: 'library', label: '📚 Library and quiet spaces' },
+      { key: 'car_travel', label: '🚗 Car and travel' },
+      { key: 'healthcare', label: '🏥 Doctor visits' },
+      { key: 'celebration', label: '🎉 Celebration and party' },
+      { key: 'swimming', label: '🏊 Swimming pool' },
+      { key: 'classroom', label: '📖 Classroom manners' },
+    ]
+  },
+  behavior: {
+    label: 'Behavior and Safety Manners',
+    options: [
+      { key: 'emotional', label: '💖 Emotional manners' },
+      { key: 'noise', label: '🔇 Noise manners' },
+      { key: 'waiting', label: '⏳ Waiting and patience' },
+      { key: 'safety', label: '⚠️ Safety manners' },
+      { key: 'animal', label: '🐕 Animal manners' },
+      { key: 'digital', label: '📱 Screen manners' },
+      { key: 'phone_call', label: '📞 Phone and video calls' },
+    ]
+  }
+} as const;
+
+function getMannerTypesSuggestBlock(): string {
+  const lines: string[] = [];
+  for (const [category, data] of Object.entries(MANNER_TYPES)) {
+    lines.push(`\n**${data.label}:**`);
+    for (const opt of data.options) {
+      lines.push(`${opt.key}: ${opt.label}`);
+    }
+  }
+  return lines.join('\n');
+}
+
 // Optional parser for AI suggestions
 function parseSuggestions(aiResponse: string): { 
   cleanContent: string; 
@@ -384,6 +452,53 @@ serve(async (req) => {
       }
     }
 
+    // Manners book type detection - check if manner type was selected
+    let mannerTypeContext = '';
+    let selectedMannerType: string | null = null;
+    if (bookType === 'manners') {
+      // Check conversation for selected manner type
+      const allMannerKeys = Object.values(MANNER_TYPES).flatMap(cat => cat.options.map(o => o.key));
+      for (const msg of messages) {
+        if (msg.role === 'user' && typeof msg.content === 'string') {
+          const content = msg.content.toLowerCase();
+          for (const key of allMannerKeys) {
+            if (content.includes(key) || content.includes(key.replace('_', ' '))) {
+              selectedMannerType = key;
+              break;
+            }
+          }
+          if (selectedMannerType) break;
+        }
+      }
+      
+      if (selectedMannerType) {
+        // Find the label for the selected manner type
+        let mannerLabel = selectedMannerType;
+        for (const cat of Object.values(MANNER_TYPES)) {
+          const found = cat.options.find(o => o.key === selectedMannerType);
+          if (found) {
+            mannerLabel = found.label;
+            break;
+          }
+        }
+        mannerTypeContext = `\n\n⚠️ CRITICAL - MANNER TYPE STATUS:\n📋 MANNER TYPE ALREADY SELECTED: ${mannerLabel}\n❌ DO NOT ask "What type of manners?" - this step is COMPLETE.\n✅ PROCEED to the next step in the flow.\nFocus the entire book on ${mannerLabel}.`;
+        console.log(`📋 Manner type selected: ${selectedMannerType} (${mannerLabel})`);
+      } else if (gradeLevel) {
+        // Grade selected but no manner type yet - inject the question with full list
+        mannerTypeContext = `\n\n📋 REQUIRED QUESTION - MANNER TYPE (Ask IMMEDIATELY after grade):
+Grade level is set. NOW ask which type of manners the book should focus on.
+
+"What type of manners would you like this book to teach?"
+
+[SUGGEST]
+${getMannerTypesSuggestBlock()}
+[/SUGGEST]
+
+⚠️ CRITICAL: You MUST display ALL options above. Do NOT skip any categories or options.`;
+        console.log(`📋 Manner type question will be injected (grade: ${gradeLevel})`);
+      }
+    }
+
     const themeContext = characterTheme
       ? characterTheme === 'custom'
         ? `\n\n⚠️ CRITICAL - THEME STATUS:\n🎨 CUSTOM THEME REQUESTED - The user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.\n\n❌ DO NOT ask "What character theme would you like?" - this step is complete.`
@@ -518,13 +633,14 @@ ${citySuggestBlock}
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + mannerTypeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
     console.log(`📊 System prompt length: ${systemMessage.content.length} characters`);
     console.log(`📊 Conversation stage: ${outlineReady ? 'Outline Ready' : bookCreated ? 'Book Created' : 'Discovery'}`);
     console.log(`📚 Grade level: ${gradeLevel || 'None'}`);
+    console.log(`📋 Manner type: ${selectedMannerType || 'None'}`);
     console.log(`🎨 Character theme: ${characterTheme || 'None'}`);
     console.log(`🗓️ Season: ${season || 'None'}`);
     console.log(`🌍 Environment: ${environment || 'None'}`);

@@ -16,6 +16,40 @@ const corsHeaders = {
 // Page types that use the pro model for better text accuracy
 const PRO_MODEL_PAGE_TYPES = ['cover', 'educational'];
 
+/**
+ * Sanitizes image prompts for manners books to ensure clean, text-free images.
+ * - Removes any "Text:" fields or text-to-display instructions
+ * - Strips hex color codes that might confuse the model
+ * - Ensures the prompt ends with no-text instructions
+ */
+function sanitizeMannersPrompt(prompt: string): string {
+  let sanitized = prompt;
+  
+  // Remove any "Text:" or "- Text:" sections (case-insensitive)
+  sanitized = sanitized.replace(/[-–]?\s*Text:.*?(?=\n[-–]|\n\n|$)/gis, '');
+  
+  // Remove any "text overlay:" sections
+  sanitized = sanitized.replace(/[-–]?\s*text overlay:.*?(?=\n[-–]|\n\n|$)/gis, '');
+  
+  // Remove hex color codes that might be interpreted as text
+  sanitized = sanitized.replace(/#[0-9A-Fa-f]{6}\b/g, '');
+  sanitized = sanitized.replace(/#[0-9A-Fa-f]{3}\b/g, '');
+  
+  // Clean up any double newlines created by removals
+  sanitized = sanitized.replace(/\n{3,}/g, '\n\n').trim();
+  
+  // Ensure it ends with the no-text instruction if not already present
+  const noTextSuffix = 'Full frame. No text overlays. Clean illustration only. DO NOT include any text, letters, words, or numbers in this image.';
+  if (!sanitized.toLowerCase().includes('no text overlay') && !sanitized.toLowerCase().includes('clean illustration only')) {
+    sanitized = sanitized + '\n\n' + noTextSuffix;
+  } else if (!sanitized.toLowerCase().includes('do not include any text')) {
+    // Reinforce the instruction
+    sanitized = sanitized + ' DO NOT include any text, letters, words, or numbers in this image.';
+  }
+  
+  return sanitized;
+}
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -64,17 +98,36 @@ serve(async (req) => {
     const useProModel = pageType && PRO_MODEL_PAGE_TYPES.includes(pageType);
     const selectedModel = useProModel ? IMAGE_GENERATION_MODEL_PRO : IMAGE_GENERATION_MODEL;
     
+    // Fetch book category to check if it's a manners book
+    const { data: bookData } = await supabase
+      .from('books')
+      .select('category')
+      .eq('id', bookId)
+      .single();
+    
+    const isManners = bookData?.category === 'manners';
+    
     // Enforce 1:1 aspect ratio for cover and educational pages
     const requiresSquareFormat = pageType && PRO_MODEL_PAGE_TYPES.includes(pageType);
     const aspectRatioPrefix = requiresSquareFormat 
       ? `CRITICAL - IMAGE DIMENSIONS: Generate a SQUARE image with 1:1 aspect ratio. The width and height MUST be equal. This is mandatory.\n\n`
       : '';
-    const enhancedPrompt = aspectRatioPrefix + prompt;
+    
+    // Apply manners-specific prompt sanitization for clean, text-free images
+    let processedPrompt = prompt;
+    if (isManners) {
+      processedPrompt = sanitizeMannersPrompt(prompt);
+      console.log('🎭 Manners book detected - applying prompt sanitization');
+    }
+    
+    const enhancedPrompt = aspectRatioPrefix + processedPrompt;
     
     console.log('🎨 Generating color image for page:', pageId);
     console.log('📄 Page type:', pageType || 'unknown');
+    console.log('📚 Book category:', bookData?.category || 'unknown');
     console.log('🤖 Using model:', selectedModel, useProModel ? '(PRO - better text accuracy)' : '(standard)');
     console.log('📐 Square format enforced:', requiresSquareFormat);
+    console.log('🎭 Manners sanitization applied:', isManners);
     console.log('📝 Prompt length:', enhancedPrompt.length);
 
     // Call Lovable AI to generate the color image

@@ -1,1 +1,4 @@
 project_id = "foxdnspwzhjxjxuicute"
+
+[functions.analyze-bites]
+verify_jwt = false

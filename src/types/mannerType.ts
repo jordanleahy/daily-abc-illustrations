@@ -1,28 +1,24 @@
 /**
  * Valid manner type identifiers for Manners book agent
+ * Aligned with agent instructions v1.5.0
  */
 export type MannerTypeId = 
   | 'eating-habits'
-  | 'greeting-others'
+  | 'social-skills'
   | 'sharing'
-  | 'saying-please-thank-you'
-  | 'respecting-personal-space'
-  | 'listening-skills'
-  | 'taking-turns'
-  | 'being-kind';
+  | 'respect'
+  | 'hygiene';
 
 /**
  * Display labels for manner types
+ * Must match the [SUGGEST] block in the Manners agent instructions
  */
 export const MANNER_TYPE_LABELS: Record<MannerTypeId, string> = {
-  'eating-habits': '🍽️ Eating Habits',
-  'greeting-others': '👋 Greeting Others',
-  'sharing': '🤝 Sharing',
-  'saying-please-thank-you': '🙏 Saying Please & Thank You',
-  'respecting-personal-space': '🧍 Respecting Personal Space',
-  'listening-skills': '👂 Listening Skills',
-  'taking-turns': '🔄 Taking Turns',
-  'being-kind': '💗 Being Kind',
+  'eating-habits': '🍽️ Table Manners & Eating Habits',
+  'social-skills': '🤝 Social Skills & Politeness',
+  'sharing': '🎁 Sharing & Taking Turns',
+  'respect': '🙏 Respect & Kindness',
+  'hygiene': '🧼 Hygiene & Self-Care',
 };
 
 /**

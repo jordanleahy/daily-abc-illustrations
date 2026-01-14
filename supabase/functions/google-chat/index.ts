@@ -405,7 +405,9 @@ serve(async (req) => {
         console.log(`🎭 Character constraints applied for ${characterTheme}:`, selectedCharacterIds);
       }
       // CRITICAL: Tell AI not to re-ask for character theme/selection - they're already confirmed
-      characterThemeContext = `\n\n⚠️ CRITICAL - CHARACTER STATUS:\n🎨 CHARACTER THEME ALREADY SELECTED: ${characterTheme}\n🎭 CHARACTERS CONFIRMED: ${selectedCharacterIds.join(', ')}\n❌ DO NOT ask "Which character theme?" or show character selection - this step is COMPLETE.\n✅ Proceed to the NEXT step in the conversation flow (e.g., manner type, environment, etc.).`;
+      const characterCount = selectedCharacterIds.length;
+      const characterWord = characterCount === 1 ? 'CHARACTER' : 'CHARACTERS';
+      characterThemeContext = `\n\n⚠️ CRITICAL - CHARACTER SELECTION COMPLETE:\n🎨 THEME: ${characterTheme}\n🎭 ${characterWord} CONFIRMED (${characterCount}): ${selectedCharacterIds.join(', ')}\n\n🚫 FORBIDDEN ACTIONS:\n- DO NOT ask "Which character theme would you like?"\n- DO NOT ask "Which characters should appear?"\n- DO NOT show character selection UI\n- DO NOT re-confirm character selection\n\n✅ REQUIRED ACTION: Proceed IMMEDIATELY to the NEXT step in the conversation flow.\nFor Manners books: Ask about manner type (eating habits, greeting others, etc.)\nFor other books: Ask about grade level or other discovery questions.`;
     }
 
     // Season context - optional discovery question

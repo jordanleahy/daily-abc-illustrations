@@ -83,10 +83,16 @@ export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: Messa
                     .filter(c => selectedIds.includes(c.id))
                     .map(c => c.name);
                   
+                  // Use singular/plural based on selection count
+                  const characterWord = selectedNames.length === 1 ? 'character' : 'characters';
+                  const characterPhrase = selectedNames.length === 1 
+                    ? `I want ${selectedNames[0]} in my book.`
+                    : `I want these characters in my book: ${selectedNames.join(', ')}`;
+                  
                   onQuickReply?.({
                     id: 'character-selection-confirm',
                     label: `Selected: ${selectedNames.join(', ')}`,
-                    value: `I want these characters in my book: ${selectedNames.join(', ')}`,
+                    value: characterPhrase,
                     themeId: characterSelectionAction.characterSelection!.themeId as any,
                     selectedCharacterIds: selectedIds, // Pass selected character IDs for enforcement
                   });

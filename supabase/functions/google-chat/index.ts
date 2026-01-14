@@ -13,6 +13,7 @@ import { getMannersEnvironmentDisplay, isValidMannersEnvironment, getMannersEnvi
 import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothingBrand, type ValidClothingBrand } from '../_shared/clothingBrands.ts';
 import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, initLocationsCache, getLocationSuggestBlock, type ValidLocation } from '../_shared/locations.ts';
 import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCache, getCitySuggestBlock, type ValidCity } from '../_shared/cities.ts';
+import { fetchTypeDiscoveries, getDiscoverySuggestions, type TypeSpecificDiscovery } from '../_shared/typeDiscoveries.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -458,20 +459,44 @@ serve(async (req) => {
       'being-kind': '💗 Being Kind',
     };
     // Manners environment question injection - shown after manner type is selected
-    const shouldAskMannersEnvironment = isMannerBook && mannerType && !environment && !outlineReady && !bookCreated;
-    const mannersEnvironmentQuestionInjection = shouldAskMannersEnvironment
-      ? `\n\n🏠 MANNERS ENVIRONMENT QUESTION (REQUIRED):
-Ask: "Where should this manners book take place?"
+    // Use type_specific_discoveries for dynamic question fetching
+    const shouldAskMannersDiscoveries = isMannerBook && mannerType && !outlineReady && !bookCreated;
+    let mannersDiscoveryQuestionsContext = '';
+    
+    if (shouldAskMannersDiscoveries) {
+      // Fetch discoveries from database using the shared module
+      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+      const mannersDiscoveries = await fetchTypeDiscoveries(supabaseUrl, supabaseKey, 'book-creation-manners');
+      
+      // Filter out questions that have already been answered
+      const unansweredDiscoveries = mannersDiscoveries.filter(d => {
+        if (d.question_key === 'setting' && environment) return false;
+        if (d.question_key === 'season' && season) return false;
+        if (d.question_key === 'city' && city) return false;
+        // Skip location/clothing brand for manners (not applicable)
+        if (d.question_key === 'location' || d.question_key === 'clothing_brand') return false;
+        return true;
+      });
+      
+      if (unansweredDiscoveries.length > 0) {
+        const nextQuestion = unansweredDiscoveries[0]; // Ask ONE at a time
+        mannersDiscoveryQuestionsContext = `\n\n📋 NEXT OPTIONAL QUESTION (Ask ONE at a time):
+${nextQuestion.question_text}
 
 [SUGGEST]
-${getMannersEnvironmentSuggestBlock()}
+${nextQuestion.options.map(opt => `${opt.key}: ${opt.label}`).join('\n')}
 [/SUGGEST]
 
-⚠️ CRITICAL: ONLY offer Home and School as options. Do NOT suggest City, Resort, Island, or other environments - they are NOT appropriate for manners books.`
-      : '';
+⚠️ CRITICAL: Ask this question BEFORE proposing the book title. After user responds, proceed to the next optional question or title proposal.`;
+        console.log(`📋 Manners discovery: Asking "${nextQuestion.question_key}" (${unansweredDiscoveries.length} remaining)`);
+      } else {
+        console.log('📋 Manners discovery: All optional questions answered');
+      }
+    }
 
     const mannerTypeContext = mannerType && MANNER_TYPE_LABELS[mannerType]
-      ? `\n\n⚠️ CRITICAL - MANNER TYPE STATUS:\n📚 MANNER TYPE ALREADY SELECTED: ${MANNER_TYPE_LABELS[mannerType]}\n❌ DO NOT ask "What type of manners?" or "What manners would you like to teach?" - this step is COMPLETE.\n✅ Proceed to the NEXT step (environment selection: home or school).`
+      ? `\n\n⚠️ CRITICAL - MANNER TYPE STATUS:\n📚 MANNER TYPE ALREADY SELECTED: ${MANNER_TYPE_LABELS[mannerType]}\n❌ DO NOT ask "What type of manners?" or "What manners would you like to teach?" - this step is COMPLETE.\n✅ Proceed to the NEXT optional question.`
       : '';
 
     // Check if user is forcing outline creation (e.g., typing "create outline")
@@ -529,8 +554,12 @@ ${citySuggestBlock}
       : '';
 
     // Check if all optional questions are complete - if so, prompt agent to propose title
-    // For Manners books: only need characterTheme, mannerType, and environment (no season, location, city, clothingBrand)
-    const mannersQuestionsComplete = isMannerBook && characterTheme && mannerType && environment;
+    // For Manners books: check if discovery questions are exhausted using database-driven approach
+    // Since we now use type_specific_discoveries, check if mannersDiscoveryQuestionsContext is empty
+    const mannersQuestionsComplete = isMannerBook && characterTheme && mannerType && (
+      mannersDiscoveryQuestionsContext === '' || 
+      (environment && (season || lastMessageContent.includes('skip-season')))
+    );
     const standardQuestionsComplete = !isMannerBook && (
       (season || lastMessageContent.includes('skip')) && 
       (environment || lastMessageContent.includes('skip')) && 
@@ -542,9 +571,7 @@ ${citySuggestBlock}
     
     // Proceed to title context - when all optional questions are answered, prompt title proposal
     const proceedToTitleContext = allOptionalQuestionsComplete && !outlineReady && !bookCreated && !titleWasJustApproved
-      ? isMannerBook
-        ? `\n\n✅ ALL MANNERS QUESTIONS COMPLETE: Character theme, manner type, and environment are selected. NOW present the book summary and ask for confirmation to create the outline. Do NOT ask about season, location, city, or clothing brand - these do NOT apply to Manners books.`
-        : `\n\n✅ ALL OPTIONAL QUESTIONS COMPLETE: Season, environment, clothing brand, and location have all been answered or skipped. NOW proceed to propose a book title and description for user approval. Do NOT ask any more optional questions.`
+      ? `\n\n✅ ALL OPTIONAL QUESTIONS COMPLETE: All discovery questions have been answered or skipped. NOW propose a book title and description for user approval. The title confirmation ("✅ Create My Book!") is the VERY LAST step before generating the outline.`
       : '';
 
     // Title confirmation is the FINAL step - when title is approved, generate outline immediately
@@ -566,7 +593,7 @@ ${citySuggestBlock}
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersEnvironmentQuestionInjection + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersDiscoveryQuestionsContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

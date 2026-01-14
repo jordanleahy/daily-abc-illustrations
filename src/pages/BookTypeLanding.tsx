@@ -1,5 +1,5 @@
-import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
-import { useRef, useEffect, useMemo } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useRef, useEffect } from 'react';
 import { BookOpen, Sparkles, Star, Users, Heart, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,34 +8,31 @@ import { PreviewPageLayout } from '@/components/preview/layout/PreviewPageLayout
 import { PreviewSection } from '@/components/preview/layout/PreviewSection';
 import { CategorizedBookSections } from '@/components/library/CategorizedBookSections';
 import { SITE_CONFIG, getSiteTitle } from '@/config/site';
-import { useABCBooks, getABCThemeDisplayName, isValidABCTheme } from '@/hooks/useABCBooks';
+import { useBookTypes } from '@/hooks/useBookTypes';
+import { useBooksByType } from '@/hooks/useBooksByType';
+import type { BookTypeId } from '@/types/bookType';
 
 // Placeholder video - reusing Jersey City video until theme-specific videos are available
 import jerseyCityVideo from '@/assets/cities/jerseycity-hero.mp4';
 
-// Standalone routes that map to book types
-const STANDALONE_ROUTES: Record<string, string> = {
-  '/rhyming': 'rhyming',
-  '/numbers': 'numbers',
-  '/opposites': 'opposites',
-};
-
-const ABCBooksLanding = () => {
-  const { name } = useParams<{ name: string }>();
-  const location = useLocation();
+const BookTypeLanding = () => {
+  const { bookType } = useParams<{ bookType: string }>();
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  // Determine theme from either URL param or standalone route
-  const themeSlug = useMemo(() => {
-    if (name) return name;
-    return STANDALONE_ROUTES[location.pathname] || undefined;
-  }, [name, location.pathname]);
+  // Fetch all book types from database
+  const { bookTypes, isLoading: isLoadingTypes } = useBookTypes();
 
-  const { data: books = [], isLoading } = useABCBooks({ themeSlug });
+  // Find the current book type - support both 'abc-books' legacy URL and direct IDs
+  const normalizedType = bookType === 'abc-books' ? 'abc' : bookType;
+  const currentBookType = bookTypes.find(bt => bt.id === normalizedType);
 
-  const displayName = themeSlug ? getABCThemeDisplayName(themeSlug) : 'ABC';
-  const isValid = themeSlug ? isValidABCTheme(themeSlug) : true; // Valid when no theme (shows all)
+  // Fetch books for this type
+  const { data: books = [], isLoading: isLoadingBooks } = useBooksByType({ 
+    bookType: (normalizedType || 'abc') as BookTypeId 
+  });
+
+  const isLoading = isLoadingTypes || isLoadingBooks;
 
   // Force play on mount for mobile browsers
   useEffect(() => {
@@ -47,25 +44,36 @@ const ABCBooksLanding = () => {
     }
   }, []);
 
-  // Invalid theme - show not found state
-  if (!isValid && themeSlug) {
+  // Still loading types - show loading state
+  if (isLoadingTypes) {
+    return (
+      <PreviewPageLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="animate-pulse text-muted-foreground">Loading...</div>
+        </div>
+      </PreviewPageLayout>
+    );
+  }
+
+  // Invalid book type - show not found state
+  if (!currentBookType && bookType && bookType !== 'abc-books') {
     return (
       <>
         <MetaHead
           metadata={{
-            title: `ABC Books | ${getSiteTitle()}`,
-            description: 'Explore our collection of ABC books for children.',
+            title: `Book Collection | ${getSiteTitle()}`,
+            description: 'Explore our collection of educational books for children.',
             siteName: SITE_CONFIG.name,
-            url: `https://dailyabcillustrations.com/${themeSlug}`,
+            url: `https://dailyabcillustrations.com/${bookType}`,
             type: 'website',
           }}
         />
         <PreviewPageLayout>
           <div className="flex flex-col items-center justify-center min-h-[60vh] text-center px-4">
             <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
-            <h1 className="text-2xl font-bold mb-2">Theme Not Found</h1>
+            <h1 className="text-2xl font-bold mb-2">Collection Not Found</h1>
             <p className="text-muted-foreground mb-6">
-              We couldn't find an ABC book collection for "{themeSlug}".
+              We couldn't find a book collection for "{bookType}".
             </p>
             <Button asChild>
               <Link to="/library">Browse Library</Link>
@@ -76,14 +84,21 @@ const ABCBooksLanding = () => {
     );
   }
 
+  // Use database SEO fields or fallback to generated values
+  const displayName = currentBookType?.label || 'ABC Books';
+  const seoTitle = `${displayName} | ${getSiteTitle()}`;
+  const seoDescription = currentBookType?.description || 
+    `Explore our collection of ${displayName.toLowerCase()} for children. Beautiful illustrations and educational content.`;
+  const canonicalUrl = `https://dailyabcillustrations.com/${normalizedType || 'abc-books'}`;
+
   return (
     <>
       <MetaHead
         metadata={{
-          title: `${displayName} ABC Books | ${getSiteTitle()}`,
-          description: `Explore our collection of ${displayName.toLowerCase()}-themed ABC books for children. Beautiful illustrations and educational content.`,
+          title: seoTitle,
+          description: seoDescription,
           siteName: SITE_CONFIG.name,
-          url: `https://dailyabcillustrations.com/${themeSlug || 'abc-books'}`,
+          url: canonicalUrl,
           type: 'website',
         }}
       />
@@ -113,15 +128,15 @@ const ABCBooksLanding = () => {
             <div className="text-center max-w-4xl mx-auto">
               <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-6 bg-white/20 text-white">
                 <Sparkles className="h-4 w-4" />
-                <span className="text-sm font-medium">ABC Book Collection</span>
+                <span className="text-sm font-medium">Book Collection</span>
               </div>
 
               <h1 className="text-4xl md:text-6xl font-bold mb-6 text-white drop-shadow-lg">
-                {displayName} ABC Books
+                {displayName}
               </h1>
 
               <p className="text-xl md:text-2xl mb-8 leading-relaxed text-white/90 drop-shadow-md">
-                Discover the alphabet through beautiful {displayName.toLowerCase()}-themed illustrations
+                {currentBookType?.description || `Discover beautiful ${displayName.toLowerCase()} for early learners`}
               </p>
 
               <Button 
@@ -142,10 +157,10 @@ const ABCBooksLanding = () => {
           <div className="max-w-7xl mx-auto">
             <div className="text-center mb-8">
               <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                {displayName} Book Collection
+                {displayName} Collection
               </h2>
               <p className="text-lg text-muted-foreground">
-                Browse our {displayName.toLowerCase()}-themed ABC book collection
+                Browse our {displayName.toLowerCase()} collection
               </p>
             </div>
 
@@ -162,7 +177,7 @@ const ABCBooksLanding = () => {
                 </div>
                 <h3 className="text-xl font-semibold mb-2">Coming Soon</h3>
                 <p className="text-muted-foreground mb-6 max-w-md mx-auto">
-                  We're creating {displayName.toLowerCase()}-themed ABC books. Check back soon!
+                  We're creating {displayName.toLowerCase()}. Check back soon!
                 </p>
                 <Button asChild variant="outline">
                   <Link to="/library">Explore Other Books</Link>
@@ -176,7 +191,7 @@ const ABCBooksLanding = () => {
         <PreviewSection variant="feature">
           <div className="max-w-6xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-foreground text-center mb-12">
-              Why {displayName} ABC Books?
+              Why {displayName}?
             </h2>
 
             <div className="grid md:grid-cols-3 gap-8">
@@ -187,7 +202,7 @@ const ABCBooksLanding = () => {
                   </div>
                   <h3 className="text-xl font-semibold mb-3">Themed Learning</h3>
                   <p className="text-muted-foreground">
-                    Each letter features beautiful {displayName.toLowerCase()}-themed illustrations.
+                    Beautiful illustrations designed for early learners.
                   </p>
                 </CardContent>
               </Card>
@@ -211,7 +226,7 @@ const ABCBooksLanding = () => {
                   </div>
                   <h3 className="text-xl font-semibold mb-3">Educational Fun</h3>
                   <p className="text-muted-foreground">
-                    Learn the alphabet while exploring {displayName.toLowerCase()}.
+                    Learn through engaging, age-appropriate content.
                   </p>
                 </CardContent>
               </Card>
@@ -227,7 +242,7 @@ const ABCBooksLanding = () => {
               Ready to Start Learning?
             </h2>
             <p className="text-lg text-muted-foreground mb-8">
-              Get free access to our library of {displayName.toLowerCase()}-themed ABC books and more.
+              Get free access to our library of {displayName.toLowerCase()} and more.
             </p>
             <Button size="lg" onClick={() => navigate('/pricing')}>
               Get Started Free
@@ -239,4 +254,4 @@ const ABCBooksLanding = () => {
   );
 };
 
-export default ABCBooksLanding;
+export default BookTypeLanding;

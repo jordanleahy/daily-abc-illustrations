@@ -1162,10 +1162,15 @@ export default function GoogleChat() {
         characterFlow.selectTheme(action.themeId);
       }
       
-      // Capture grade level if present in the action
+      // Capture grade level if present in the action OR if action.id is a valid grade ID
+      const validGradeIds = ['PRE_K', 'K', 'GRADE_1', 'GRADE_2'] as const;
+      const isGradeId = validGradeIds.includes(action.id as typeof validGradeIds[number]);
       if (action.gradeId) {
-        console.log('[Grade Level Selection] User selected grade:', action.gradeId);
+        console.log('[Grade Level Selection] User selected grade via gradeId:', action.gradeId);
         setSelectedGradeLevel(action.gradeId as GradeId);
+      } else if (isGradeId) {
+        console.log('[Grade Level Selection] User selected grade via action.id:', action.id);
+        setSelectedGradeLevel(action.id as GradeId);
       }
       
       // Capture season if present in the action
@@ -1222,13 +1227,18 @@ export default function GoogleChat() {
         ? (action.id === 'skip-setting' ? null : action.id)
         : selectedMannersSetting;
       
+      // Determine gradeLevel value for this message (check both action.gradeId and action.id)
+      const gradeIdOptions = ['PRE_K', 'K', 'GRADE_1', 'GRADE_2'] as const;
+      const actionIsGradeId = gradeIdOptions.includes(action.id as typeof gradeIdOptions[number]);
+      const gradeLevelValue = action.gradeId || (actionIsGradeId ? action.id as GradeId : null) || selectedGradeLevel;
+      
       await sendMessage(action.value, undefined, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
         bookCreated: !!createdBookId,
         characterTheme: action.themeId || characterFlow.themeId,
         bookType: selectedBookType,
         selectedCharacterIds: characterIdsToUse,
-        gradeLevel: action.gradeId || selectedGradeLevel,
+        gradeLevel: gradeLevelValue,
         season: action.seasonId || selectedSeason,
         environment: action.environmentId || selectedEnvironment,
         clothingBrand: action.clothingBrandId || selectedClothingBrand,

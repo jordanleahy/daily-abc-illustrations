@@ -1,5 +1,5 @@
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useRef, useEffect } from 'react';
+import { useParams, Link, useNavigate, useLocation } from 'react-router-dom';
+import { useRef, useEffect, useMemo } from 'react';
 import { BookOpen, Sparkles, Star, Users, Heart, Book } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -13,15 +13,29 @@ import { useABCBooks, getABCThemeDisplayName, isValidABCTheme } from '@/hooks/us
 // Placeholder video - reusing Jersey City video until theme-specific videos are available
 import jerseyCityVideo from '@/assets/cities/jerseycity-hero.mp4';
 
+// Standalone routes that map to book types
+const STANDALONE_ROUTES: Record<string, string> = {
+  '/rhyming': 'rhyming',
+  '/numbers': 'numbers',
+  '/opposites': 'opposites',
+};
+
 const ABCBooksLanding = () => {
   const { name } = useParams<{ name: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const videoRef = useRef<HTMLVideoElement>(null);
 
-  const { data: books = [], isLoading } = useABCBooks({ themeSlug: name });
+  // Determine theme from either URL param or standalone route
+  const themeSlug = useMemo(() => {
+    if (name) return name;
+    return STANDALONE_ROUTES[location.pathname] || undefined;
+  }, [name, location.pathname]);
 
-  const displayName = name ? getABCThemeDisplayName(name) : 'ABC';
-  const isValid = name ? isValidABCTheme(name) : true; // Valid when no name (shows all)
+  const { data: books = [], isLoading } = useABCBooks({ themeSlug });
+
+  const displayName = themeSlug ? getABCThemeDisplayName(themeSlug) : 'ABC';
+  const isValid = themeSlug ? isValidABCTheme(themeSlug) : true; // Valid when no theme (shows all)
 
   // Force play on mount for mobile browsers
   useEffect(() => {
@@ -34,7 +48,7 @@ const ABCBooksLanding = () => {
   }, []);
 
   // Invalid theme - show not found state
-  if (!isValid && name) {
+  if (!isValid && themeSlug) {
     return (
       <>
         <MetaHead
@@ -42,7 +56,7 @@ const ABCBooksLanding = () => {
             title: `ABC Books | ${getSiteTitle()}`,
             description: 'Explore our collection of ABC books for children.',
             siteName: SITE_CONFIG.name,
-            url: `https://dailyabcillustrations.com/abc-books/${name}`,
+            url: `https://dailyabcillustrations.com/${themeSlug}`,
             type: 'website',
           }}
         />
@@ -51,7 +65,7 @@ const ABCBooksLanding = () => {
             <BookOpen className="h-16 w-16 text-muted-foreground mb-4" />
             <h1 className="text-2xl font-bold mb-2">Theme Not Found</h1>
             <p className="text-muted-foreground mb-6">
-              We couldn't find an ABC book collection for "{name}".
+              We couldn't find an ABC book collection for "{themeSlug}".
             </p>
             <Button asChild>
               <Link to="/library">Browse Library</Link>
@@ -69,7 +83,7 @@ const ABCBooksLanding = () => {
           title: `${displayName} ABC Books | ${getSiteTitle()}`,
           description: `Explore our collection of ${displayName.toLowerCase()}-themed ABC books for children. Beautiful illustrations and educational content.`,
           siteName: SITE_CONFIG.name,
-          url: `https://dailyabcillustrations.com/abc-books/${name}`,
+          url: `https://dailyabcillustrations.com/${themeSlug || 'abc-books'}`,
           type: 'website',
         }}
       />

@@ -23,7 +23,7 @@ serve(async (req) => {
   }
 
   try {
-    const { pageId, bookId, prompt, pageType } = await req.json();
+    const { pageId, bookId, prompt, pageType, bookTitle } = await req.json();
 
     if (!pageId || !bookId || !prompt) {
       return new Response(
@@ -70,12 +70,19 @@ serve(async (req) => {
       ? `CRITICAL - IMAGE DIMENSIONS: Generate a SQUARE image with 1:1 aspect ratio. The width and height MUST be equal. This is mandatory.\n\n`
       : '';
     
-    const enhancedPrompt = aspectRatioPrefix + prompt;
+    // For cover pages, ensure the book title is prominently featured
+    const isCoverPage = pageType === 'cover';
+    const coverTitlePrefix = isCoverPage && bookTitle
+      ? `CRITICAL - BOOK COVER: This is a COVER PAGE for the book titled "${bookTitle}". The title "${bookTitle}" MUST be prominently displayed as a BIG, BUBBLY, CENTERED text overlay in the upper-middle area of the image. Use extra large bubble-letter font (rounded, playful, child-friendly). The title should be the most prominent text element.\n\n`
+      : '';
+    
+    const enhancedPrompt = aspectRatioPrefix + coverTitlePrefix + prompt;
     
     console.log('🎨 Generating color image for page:', pageId);
     console.log('📄 Page type:', pageType || 'unknown');
     console.log('🤖 Using model:', selectedModel, useProModel ? '(PRO - better text accuracy)' : '(standard)');
     console.log('📐 Square format enforced:', requiresSquareFormat);
+    console.log('📕 Cover title included:', isCoverPage && bookTitle ? bookTitle : 'N/A');
     console.log('📝 Prompt length:', enhancedPrompt.length);
 
     // Call Lovable AI to generate the color image

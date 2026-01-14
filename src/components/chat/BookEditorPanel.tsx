@@ -349,7 +349,7 @@ export function BookEditorPanel({
     setIsGeneratingColorImage(true);
     try {
       const { data, error } = await supabase.functions.invoke('generate-color-image', {
-        body: { pageId, bookId, prompt, pageType }
+        body: { pageId, bookId, prompt, pageType, bookTitle }
       });
 
       if (error) {
@@ -421,7 +421,7 @@ export function BookEditorPanel({
 
       // Now generate the image with the new book and page IDs
       const { data, error } = await supabase.functions.invoke('generate-color-image', {
-        body: { pageId: pageData.id, bookId: result.bookId, prompt, pageType: derivedPageType }
+        body: { pageId: pageData.id, bookId: result.bookId, prompt, pageType: derivedPageType, bookTitle }
       });
 
       if (error) {

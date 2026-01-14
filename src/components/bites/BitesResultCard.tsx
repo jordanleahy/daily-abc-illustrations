@@ -1,7 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { OptimizedImage } from '@/components/ui/optimized-image';
-import { UtensilsCrossed } from 'lucide-react';
+import { UtensilsCrossed, AlertCircle, CheckCircle2 } from 'lucide-react';
 
 interface FoodItem {
   name: string;
@@ -9,6 +8,8 @@ interface FoodItem {
   recommendedAmount: string;
   bites: number;
   category: string;
+  texture?: string;
+  confidence?: number;
 }
 
 interface BitesAnalysis {
@@ -17,6 +18,8 @@ interface BitesAnalysis {
   plateDescription: string;
   childAge: number;
   portionPercentage: number;
+  excludedItems?: string[];
+  overallConfidence?: number;
 }
 
 interface BitesResultCardProps {
@@ -31,9 +34,32 @@ const categoryColors: Record<string, string> = {
   vegetable: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200',
   fruit: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200',
   dairy: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200',
-  pizza: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200',
-  other: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200',
 };
+
+const textureLabels: Record<string, string> = {
+  soft: '🥄 Soft',
+  medium: '🍗 Medium',
+  tough: '🥩 Tough',
+  mixed: '🥘 Mixed',
+};
+
+function ConfidenceIndicator({ confidence }: { confidence: number }) {
+  if (confidence >= 0.8) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
+        <CheckCircle2 className="w-3 h-3" />
+      </span>
+    );
+  }
+  if (confidence >= 0.6) {
+    return null; // Medium confidence, no indicator
+  }
+  return (
+    <span className="inline-flex items-center gap-1 text-xs text-amber-600 dark:text-amber-400" title="Uncertain identification">
+      <AlertCircle className="w-3 h-3" />
+    </span>
+  );
+}
 
 export function BitesResultCard({ originalImage, portionImage, analysis }: BitesResultCardProps) {
   return (
@@ -96,6 +122,11 @@ export function BitesResultCard({ originalImage, portionImage, analysis }: Bites
           <p className="text-sm text-muted-foreground mt-1">
             Recommended for a {analysis.childAge}-year-old
           </p>
+          {analysis.overallConfidence !== undefined && (
+            <p className="text-xs text-muted-foreground mt-2">
+              Analysis confidence: {Math.round(analysis.overallConfidence * 100)}%
+            </p>
+          )}
         </CardContent>
       </Card>
 
@@ -118,14 +149,22 @@ export function BitesResultCard({ originalImage, portionImage, analysis }: Bites
               className="flex items-center justify-between py-2 border-b border-border last:border-0"
             >
               <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="font-medium">{food.name}</span>
+                  {food.confidence !== undefined && (
+                    <ConfidenceIndicator confidence={food.confidence} />
+                  )}
                   <Badge 
                     variant="secondary" 
-                    className={categoryColors[food.category] || categoryColors.other}
+                    className={categoryColors[food.category] || 'bg-muted text-muted-foreground'}
                   >
                     {food.category}
                   </Badge>
+                  {food.texture && (
+                    <span className="text-xs text-muted-foreground">
+                      {textureLabels[food.texture] || food.texture}
+                    </span>
+                  )}
                 </div>
                 <div className="text-sm text-muted-foreground">
                   {food.plateAmount} → {food.recommendedAmount}
@@ -139,6 +178,23 @@ export function BitesResultCard({ originalImage, portionImage, analysis }: Bites
           ))}
         </CardContent>
       </Card>
+
+      {/* Excluded Items */}
+      {analysis.excludedItems && analysis.excludedItems.length > 0 && (
+        <Card className="bg-muted/50">
+          <CardContent className="py-4">
+            <div className="text-sm">
+              <span className="font-medium text-muted-foreground">Not counted: </span>
+              <span className="text-muted-foreground">
+                {analysis.excludedItems.join(', ')}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 opacity-75">
+              Garnishes, condiments, and sauces don't count as bites
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,5 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import {
+  ImageMagick,
+  initializeImageMagick,
+  MagickFormat,
+  MagickGeometry,
+  Gravity,
+  CompositeOperator,
+  MagickColor,
+} from "https://deno.land/x/imagemagick_deno@0.0.31/mod.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -7,77 +16,94 @@ const corsHeaders = {
 };
 
 // Configuration for thumbnail placement
-const THUMBNAIL_SCALE = 0.15; // 15% of image width
-const PADDING = 15;
-const BORDER_WIDTH = 3;
-const BORDER_COLOR = '#333333';
-const SHADOW_BLUR = 8;
+const THUMBNAIL_SCALE = 0.20; // 20% of image width (increased from 15% for better quality)
+const PADDING = 20;
+const BORDER_WIDTH = 4;
+const SHADOW_OFFSET = 3;
+
+// Initialize ImageMagick once
+let imageMagickInitialized = false;
+
+async function ensureImageMagickInitialized() {
+  if (!imageMagickInitialized) {
+    await initializeImageMagick();
+    imageMagickInitialized = true;
+  }
+}
 
 /**
  * Composites a color reference image onto a B&W coloring page
- * Places the color image as a 15% thumbnail in the top-left corner
+ * Places the color image as a 20% thumbnail in the top-left corner
+ * Uses ImageMagick for high-quality Lanczos resampling
  */
 async function compositeImages(
   bwImageBuffer: ArrayBuffer,
   colorImageBuffer: ArrayBuffer
 ): Promise<Uint8Array> {
-  // Use Deno's native image processing via canvas-like approach
-  // Since Deno doesn't have Canvas API natively, we'll use imagescript
-  const { Image } = await import("https://deno.land/x/imagescript@1.3.0/mod.ts");
+  await ensureImageMagickInitialized();
 
-  // Decode both images
-  const bwImage = await Image.decode(new Uint8Array(bwImageBuffer));
-  const colorImage = await Image.decode(new Uint8Array(colorImageBuffer));
+  const bwData = new Uint8Array(bwImageBuffer);
+  const colorData = new Uint8Array(colorImageBuffer);
 
-  // Calculate thumbnail dimensions (15% of B&W width, maintain aspect ratio)
-  const thumbnailWidth = Math.round(bwImage.width * THUMBNAIL_SCALE);
-  const thumbnailHeight = Math.round(
-    (colorImage.height / colorImage.width) * thumbnailWidth
-  );
+  let resultBytes: Uint8Array | null = null;
 
-  // Resize color image to thumbnail size
-  const thumbnail = colorImage.resize(thumbnailWidth, thumbnailHeight);
+  // Process the B&W image (base)
+  ImageMagick.read(bwData, (bwImage) => {
+    // Calculate thumbnail dimensions (20% of B&W width, maintain aspect ratio)
+    const thumbnailWidth = Math.round(bwImage.width * THUMBNAIL_SCALE);
+    
+    // Scale padding and border based on image size
+    const scaleFactor = bwImage.width / 800;
+    const scaledPadding = Math.round(PADDING * scaleFactor);
+    const scaledBorderWidth = Math.max(2, Math.round(BORDER_WIDTH * scaleFactor));
+    const scaledShadowOffset = Math.max(2, Math.round(SHADOW_OFFSET * scaleFactor));
 
-  // Scale padding and border based on image size
-  const scaleFactor = bwImage.width / 800;
-  const scaledPadding = Math.round(PADDING * scaleFactor);
-  const scaledBorderWidth = Math.max(2, Math.round(BORDER_WIDTH * scaleFactor));
+    // Process the color image (thumbnail)
+    ImageMagick.read(colorData, (colorImage) => {
+      // Calculate height maintaining aspect ratio
+      const aspectRatio = colorImage.height / colorImage.width;
+      const thumbnailHeight = Math.round(thumbnailWidth * aspectRatio);
 
-  // Position for thumbnail (top-left with padding)
-  const thumbnailX = scaledPadding + scaledBorderWidth;
-  const thumbnailY = scaledPadding + scaledBorderWidth;
+      // Resize the color image using high-quality Lanczos resampling
+      const geometry = new MagickGeometry(thumbnailWidth, thumbnailHeight);
+      geometry.ignoreAspectRatio = false;
+      colorImage.resize(geometry);
 
-  // Draw white background rectangle for the thumbnail area (including border)
-  const bgX = scaledPadding;
-  const bgY = scaledPadding;
-  const bgWidth = thumbnailWidth + scaledBorderWidth * 2;
-  const bgHeight = thumbnailHeight + scaledBorderWidth * 2;
+      // Create a border around the thumbnail
+      colorImage.border(scaledBorderWidth, scaledBorderWidth);
+      colorImage.borderColor = new MagickColor('#333333');
 
-  // Parse border color
-  const borderColorInt = parseInt(BORDER_COLOR.slice(1), 16);
-  const borderR = (borderColorInt >> 16) & 0xFF;
-  const borderG = (borderColorInt >> 8) & 0xFF;
-  const borderB = borderColorInt & 0xFF;
+      // Calculate position for thumbnail (top-left with padding)
+      const thumbnailX = scaledPadding + scaledShadowOffset;
+      const thumbnailY = scaledPadding + scaledShadowOffset;
 
-  // Draw border (dark rectangle)
-  for (let y = bgY; y < bgY + bgHeight && y < bwImage.height; y++) {
-    for (let x = bgX; x < bgX + bgWidth && x < bwImage.width; x++) {
-      bwImage.setPixelAt(x + 1, y + 1, Image.rgbaToColor(borderR, borderG, borderB, 255));
-    }
+      // Draw a subtle shadow effect by compositing a dark rectangle first
+      // Create shadow by drawing the thumbnail offset
+      ImageMagick.read(colorData, (shadowImage) => {
+        shadowImage.resize(new MagickGeometry(thumbnailWidth, thumbnailHeight));
+        shadowImage.border(scaledBorderWidth, scaledBorderWidth);
+        shadowImage.modulate(30, 0, 100); // Make it very dark for shadow effect
+        shadowImage.blur(scaledShadowOffset * 2, scaledShadowOffset);
+        
+        // Composite shadow onto base image
+        bwImage.composite(shadowImage, scaledPadding + scaledShadowOffset * 2, scaledPadding + scaledShadowOffset * 2, CompositeOperator.Over);
+      });
+
+      // Composite the color thumbnail onto the B&W image
+      bwImage.composite(colorImage, thumbnailX, thumbnailY, CompositeOperator.Over);
+
+      // Encode as PNG
+      bwImage.write(MagickFormat.Png, (data) => {
+        resultBytes = data;
+      });
+    });
+  });
+
+  if (!resultBytes) {
+    throw new Error('Failed to composite images');
   }
 
-  // Draw white background
-  for (let y = bgY; y < bgY + bgHeight - scaledBorderWidth && y < bwImage.height; y++) {
-    for (let x = bgX; x < bgX + bgWidth - scaledBorderWidth && x < bwImage.width; x++) {
-      bwImage.setPixelAt(x + 1, y + 1, Image.rgbaToColor(255, 255, 255, 255));
-    }
-  }
-
-  // Composite the thumbnail onto the B&W image
-  bwImage.composite(thumbnail, thumbnailX, thumbnailY);
-
-  // Encode as PNG
-  return await bwImage.encode();
+  return resultBytes;
 }
 
 serve(async (req) => {

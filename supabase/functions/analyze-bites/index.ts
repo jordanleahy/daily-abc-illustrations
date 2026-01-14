@@ -48,7 +48,21 @@ async function analyzeFood(imageBase64: string, age: number, apiKey: string): Pr
   const ageGroup = getAgeGroup(age);
   const portionMultiplier = PORTION_MULTIPLIERS[ageGroup];
 
-  const systemPrompt = `You are a child nutrition expert analyzing food plates. Analyze the image and identify all food items.
+  const systemPrompt = `You are a child nutrition expert analyzing food plates based on the USDA Food Pyramid / MyPlate guidelines.
+
+IMPORTANT: Only count foods from these USDA FOOD GROUPS that provide nutritional value:
+1. GRAINS - bread, pasta, rice, cereal, tortillas, crackers
+2. VEGETABLES - all cooked/raw veggies, potatoes, corn, peas
+3. FRUITS - fresh fruits meant to be eaten (NOT garnishes like lemon wedges)
+4. PROTEIN - meat, poultry, fish, eggs, beans, nuts, tofu
+5. DAIRY - milk, cheese, yogurt
+
+DO NOT COUNT as food items (these are 0 bites):
+- Garnishes (lemon wedges, parsley, herb sprigs, decorative items)
+- Condiments & sauces (ketchup, mayo, garlic sauce, dipping sauces, gravy)
+- Seasonings & toppings (salt, pepper, herbs on top)
+- Beverages
+- Non-edible items
 
 For a ${age}-year-old child, they should eat approximately ${Math.round(portionMultiplier * 100)}% of an adult serving.
 
@@ -58,23 +72,23 @@ Return a JSON object with this exact structure:
     {
       "name": "Food item name",
       "plateAmount": "Amount on plate (e.g., '1 slice', '1/2 cup', '4 pieces')",
-      "category": "protein|grain|vegetable|fruit|dairy|pizza|other",
+      "category": "protein|grain|vegetable|fruit|dairy",
       "estimatedCalories": number,
-      "estimatedBites": number (estimate how many child-sized bites for the RECOMMENDED portion, not the full plate)
+      "estimatedBites": number (child-sized bites for RECOMMENDED portion)
     }
   ],
-  "plateDescription": "Brief description of the overall plate"
+  "excludedItems": ["list of items seen but not counted as bites (garnishes, sauces, etc.)"],
+  "plateDescription": "Brief description focusing on the main nutritious foods"
 }
 
-Bite estimation guidelines for a ${age}-year-old:
-- Pizza slice: 4-6 bites per half slice
-- Protein (chicken, meat): 2-3 bites per oz
-- Pasta/rice: 1 bite per tablespoon
+Bite estimation for a ${age}-year-old (RECOMMENDED portion = ${Math.round(portionMultiplier * 100)}% of plate):
+- Protein (fish, chicken, meat): 2-3 bites per oz of recommended portion
+- Grains (pasta, rice, bread): 1 bite per tablespoon
 - Vegetables: 1 bite per tablespoon
-- Fruit pieces: 1 bite per small piece
-- Bread: 2-3 bites per small piece
+- Fruits: 1 bite per small piece
+- Dairy: 2 bites per oz
 
-Remember: Calculate bites for the RECOMMENDED portion (${Math.round(portionMultiplier * 100)}% of what's on the plate), not the full amount.`;
+Only calculate bites for the RECOMMENDED portion, not the full plate amount.`;
 
   const response = await fetch(LOVABLE_AI_GATEWAY, {
     method: 'POST',

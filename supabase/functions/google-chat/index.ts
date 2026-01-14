@@ -9,6 +9,7 @@ import { getWordsForDigraphThroughGrade, isValidDigraph, type GradeLevel } from 
 import { getWordsForLevel, getTopWordsForLevel, isValidSightWordLevel, getSightWordLevelLabel, type SightWordLevel } from '../_shared/sightWordsCorpus.ts';
 import { getSeasonDisplay, isValidSeason, type ValidSeason } from '../_shared/seasons.ts';
 import { getEnvironmentDisplay, isValidEnvironment, type ValidEnvironment } from '../_shared/environments.ts';
+import { getMannersEnvironmentDisplay, isValidMannersEnvironment, getMannersEnvironmentSuggestBlock, type ValidMannersEnvironment } from '../_shared/mannersEnvironments.ts';
 import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothingBrand, type ValidClothingBrand } from '../_shared/clothingBrands.ts';
 import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, initLocationsCache, getLocationSuggestBlock, type ValidLocation } from '../_shared/locations.ts';
 import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCache, getCitySuggestBlock, type ValidCity } from '../_shared/cities.ts';
@@ -416,9 +417,16 @@ serve(async (req) => {
       : '';
 
     // Environment context - optional discovery question
-    const environmentContext = environment && isValidEnvironment(environment)
+    // For Manners books, use manners-specific environments (home/school)
+    // For other books, use standard environments (city, resort, etc.)
+    const isMannerBook = bookType === 'manners';
+    const mannersEnvironmentContext = isMannerBook && environment && isValidMannersEnvironment(environment)
+      ? `\n\n⚠️ CRITICAL - MANNERS ENVIRONMENT STATUS:\n🏠 ENVIRONMENT ALREADY SELECTED: ${getMannersEnvironmentDisplay(environment as ValidMannersEnvironment)}\n❌ DO NOT ask "Where should this take place?" or "What environment?" - this step is COMPLETE.\nSet all illustrations and content in a ${getMannersEnvironmentDisplay(environment as ValidMannersEnvironment)} environment with appropriate settings and scenarios.`
+      : '';
+    const standardEnvironmentContext = !isMannerBook && environment && isValidEnvironment(environment)
       ? `\n\n⚠️ CRITICAL - ENVIRONMENT STATUS:\n🌍 ENVIRONMENT ALREADY SELECTED: ${getEnvironmentDisplay(environment)}\n❌ DO NOT ask "What environment/setting?" - this step is COMPLETE.\nSet all illustrations and content in a ${getEnvironmentDisplay(environment)} environment with appropriate scenery, landmarks, and atmosphere.`
       : '';
+    const environmentContext = mannersEnvironmentContext || standardEnvironmentContext;
 
     // Clothing brand context - optional discovery question for character attire
     const clothingBrandContext = clothingBrand && isValidClothingBrand(clothingBrand)
@@ -449,6 +457,19 @@ serve(async (req) => {
       'taking-turns': '🔄 Taking Turns',
       'being-kind': '💗 Being Kind',
     };
+    // Manners environment question injection - shown after manner type is selected
+    const shouldAskMannersEnvironment = isMannerBook && mannerType && !environment && !outlineReady && !bookCreated;
+    const mannersEnvironmentQuestionInjection = shouldAskMannersEnvironment
+      ? `\n\n🏠 MANNERS ENVIRONMENT QUESTION (REQUIRED):
+Ask: "Where should this manners book take place?"
+
+[SUGGEST]
+${getMannersEnvironmentSuggestBlock()}
+[/SUGGEST]
+
+⚠️ CRITICAL: ONLY offer Home and School as options. Do NOT suggest City, Resort, Island, or other environments - they are NOT appropriate for manners books.`
+      : '';
+
     const mannerTypeContext = mannerType && MANNER_TYPE_LABELS[mannerType]
       ? `\n\n⚠️ CRITICAL - MANNER TYPE STATUS:\n📚 MANNER TYPE ALREADY SELECTED: ${MANNER_TYPE_LABELS[mannerType]}\n❌ DO NOT ask "What type of manners?" or "What manners would you like to teach?" - this step is COMPLETE.\n✅ Proceed to the NEXT step (environment selection: home or school).`
       : '';
@@ -461,7 +482,6 @@ serve(async (req) => {
     // Location question injection - ask BEFORE city question (optional questions come before title)
     // Only inject if: no location selected yet, outline not ready, book not created, not forcing outline
     // SKIP for Manners books - they use simple environments (home/school), not resorts/cities
-    const isMannerBook = bookType === 'manners';
     const shouldAskLocationQuestion = !isMannerBook && !location && !outlineReady && !bookCreated && !forceOutline;
 
     // City question injection - ask as optional discovery, BEFORE title confirmation
@@ -546,7 +566,7 @@ ${citySuggestBlock}
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersEnvironmentQuestionInjection + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

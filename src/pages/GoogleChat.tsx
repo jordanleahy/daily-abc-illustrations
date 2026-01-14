@@ -38,6 +38,7 @@ import type { EnvironmentId } from '@/types/environment';
 import type { ClothingBrandId } from '@/types/clothingBrand';
 import type { LocationId } from '@/types/location';
 import type { CityId } from '@/types/city';
+import type { MannerTypeId } from '@/types/mannerType';
 import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useCharacterSelectionFlow } from '@/hooks/useCharacterSelectionFlow';
 import { useCharacterSelectionInjection } from '@/components/chat/CharacterSelectionStep';
@@ -62,6 +63,7 @@ export default function GoogleChat() {
   const [selectedClothingBrand, setSelectedClothingBrand] = useState<ClothingBrandId | null>(null);
   const [selectedLocation, setSelectedLocation] = useState<LocationId | null>(null);
   const [selectedCity, setSelectedCity] = useState<CityId | null>(null);
+  const [selectedMannerType, setSelectedMannerType] = useState<MannerTypeId | null>(null);
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
   
   // Get kid profiles (kept for backwards compatibility with existing UI)
@@ -680,7 +682,8 @@ export default function GoogleChat() {
       environment: selectedEnvironment,
       clothingBrand: selectedClothingBrand,
       location: selectedLocation,
-      city: selectedCity
+      city: selectedCity,
+      mannerType: selectedMannerType
     });
     setInput('');
   };
@@ -708,7 +711,8 @@ export default function GoogleChat() {
         environment: selectedEnvironment,
         clothingBrand: selectedClothingBrand,
         location: selectedLocation,
-        city: selectedCity
+        city: selectedCity,
+        mannerType: selectedMannerType
       });
     };
     reader.readAsDataURL(file);
@@ -743,7 +747,8 @@ export default function GoogleChat() {
       environment: selectedEnvironment,
       clothingBrand: selectedClothingBrand,
       location: selectedLocation,
-      city: selectedCity
+      city: selectedCity,
+      mannerType: selectedMannerType
     });
   }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId]);
 
@@ -1188,6 +1193,12 @@ export default function GoogleChat() {
         setSelectedCity((action as any).cityId as CityId);
       }
       
+      // Capture manner type if present in the action
+      if ((action as any).mannerTypeId) {
+        console.log('[Manner Type Selection] User selected manner type:', (action as any).mannerTypeId);
+        setSelectedMannerType((action as any).mannerTypeId as MannerTypeId);
+      }
+      
       // Send the predefined response - include newly selected character IDs if present
       const characterIdsToUse = action.selectedCharacterIds?.length > 0 
         ? action.selectedCharacterIds 
@@ -1237,6 +1248,7 @@ export default function GoogleChat() {
         setSelectedEnvironment(null); // Reset environment selection
         setSelectedClothingBrand(null); // Reset clothing brand selection
         setSelectedLocation(null); // Reset location selection
+        setSelectedMannerType(null); // Reset manner type selection
         setReplacePageMode({});
         // Close mobile sidebar when creating new session
         setIsMobileSidebarOpen(false);

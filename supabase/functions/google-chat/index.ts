@@ -166,7 +166,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment, clothingBrand, location, city } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment, clothingBrand, location, city, mannerType } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
@@ -179,6 +179,7 @@ serve(async (req) => {
       clothingBrand?: ValidClothingBrand;
       location?: ValidLocation;
       city?: ValidCity;
+      mannerType?: string;
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -435,6 +436,21 @@ serve(async (req) => {
       ? `\n\n⚠️ CRITICAL - CITY STATUS:\n🏙️ CITY ALREADY SELECTED: ${getCityDisplaySync(city)}\n❌ DO NOT ask "Which city?" - this step is COMPLETE.${cityVisualPrompt || ''}`
       : '';
 
+    // Manner type context - for Manners book agent
+    const MANNER_TYPE_LABELS: Record<string, string> = {
+      'eating-habits': '🍽️ Eating Habits',
+      'greeting-others': '👋 Greeting Others',
+      'sharing': '🤝 Sharing',
+      'saying-please-thank-you': '🙏 Saying Please & Thank You',
+      'respecting-personal-space': '🧍 Respecting Personal Space',
+      'listening-skills': '👂 Listening Skills',
+      'taking-turns': '🔄 Taking Turns',
+      'being-kind': '💗 Being Kind',
+    };
+    const mannerTypeContext = mannerType && MANNER_TYPE_LABELS[mannerType]
+      ? `\n\n⚠️ CRITICAL - MANNER TYPE STATUS:\n📚 MANNER TYPE ALREADY SELECTED: ${MANNER_TYPE_LABELS[mannerType]}\n❌ DO NOT ask "What type of manners?" or "What manners would you like to teach?" - this step is COMPLETE.\n✅ Proceed to the NEXT step (environment selection: home or school).`
+      : '';
+
     // Check if user is forcing outline creation (e.g., typing "create outline")
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
@@ -518,7 +534,7 @@ ${citySuggestBlock}
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
@@ -531,6 +547,7 @@ ${citySuggestBlock}
     console.log(`👕 Clothing brand: ${clothingBrand || 'None'}`);
     console.log(`📍 Location: ${location || 'None'}`);
     console.log(`🏙️ City: ${city || 'None'}`);
+    console.log(`📚 Manner type: ${mannerType || 'None'}`);
     console.log(`✅ All optional questions complete: ${allOptionalQuestionsComplete}`);
     console.log(`📝 Proceed to title: ${proceedToTitleContext ? 'Yes' : 'No'}`);
     console.log(`🎯 Title approved: ${titleWasJustApproved}`);

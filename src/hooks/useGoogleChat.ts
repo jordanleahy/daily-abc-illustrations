@@ -10,6 +10,7 @@ import type { EnvironmentId } from '@/types/environment';
 import type { ClothingBrandId } from '@/types/clothingBrand';
 import type { LocationId } from '@/types/location';
 import type { CityId } from '@/types/city';
+import type { MannerTypeId } from '@/types/mannerType';
 interface MessageContent {
   type: 'text' | 'image_url';
   text?: string;
@@ -38,6 +39,7 @@ export interface SuggestedAction {
   clothingBrandId?: ClothingBrandId;
   locationId?: LocationId;
   cityId?: CityId;
+  mannerTypeId?: MannerTypeId;
   characterSelection?: CharacterSelectionData;
   selectedCharacterIds?: string[]; // IDs of characters selected for enforcement
 }
@@ -74,6 +76,7 @@ export const useGoogleChat = (
       clothingBrand?: ClothingBrandId | null; // For clothing brand selection
       location?: LocationId | null; // For location selection
       city?: CityId | null; // For city selection
+      mannerType?: MannerTypeId | null; // For manners book manner type selection
     }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
@@ -149,7 +152,8 @@ export const useGoogleChat = (
             environment: context?.environment,
             clothingBrand: context?.clothingBrand,
             location: context?.location,
-            city: context?.city
+            city: context?.city,
+            mannerType: context?.mannerType
           })
         }
       );
@@ -615,6 +619,7 @@ export const useGoogleChat = (
         clothingBrand?: ClothingBrandId | null;
         location?: LocationId | null;
         city?: CityId | null;
+        mannerType?: MannerTypeId | null;
       }
     ) => {
       return sendMessage(

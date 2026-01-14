@@ -60,10 +60,11 @@ const PageContentSchema = z.object({
 const PageSchema = z.object({
   pageNumber: z.number(),
   pageType: z.enum(['cover', 'educational', 'content']),
-  letter: z.string(),
+  letter: z.string().optional(), // Optional for non-ABC book types (manners, emotions, etc.)
   title: z.string().min(1, 'Page title is required'),
   description: z.string().min(1, 'Page description is required'),
-  content: PageContentSchema
+  content: PageContentSchema,
+  imagePrompt: z.string().optional() // Image prompt may be included in AI response
 });
 
 const BookDataSchema = z.object({

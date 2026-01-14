@@ -15,7 +15,6 @@ type ViewState = 'upload' | 'analyzing' | 'results' | 'counting';
 
 interface AnalysisResult {
   originalImage: string;
-  portionImage: string | null;
   analysis: {
     foods: Array<{
       name: string;
@@ -251,7 +250,6 @@ export default function Bites() {
             <div className="space-y-6 animate-fade-in">
               <BitesResultCard
                 originalImage={result.originalImage}
-                portionImage={result.portionImage}
                 analysis={result.analysis}
               />
 

@@ -1,14 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import {
-  ImageMagick,
-  initializeImageMagick,
-  MagickFormat,
-  MagickGeometry,
-  Gravity,
-  CompositeOperator,
-  MagickColor,
-} from "https://deno.land/x/imagemagick_deno@0.0.31/mod.ts";
+import sharp from "npm:sharp@0.33.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -16,94 +8,77 @@ const corsHeaders = {
 };
 
 // Configuration for thumbnail placement
-const THUMBNAIL_SCALE = 0.20; // 20% of image width (increased from 15% for better quality)
+const THUMBNAIL_SCALE = 0.20; // 20% of image width
 const PADDING = 20;
 const BORDER_WIDTH = 4;
-const SHADOW_OFFSET = 3;
-
-// Initialize ImageMagick once
-let imageMagickInitialized = false;
-
-async function ensureImageMagickInitialized() {
-  if (!imageMagickInitialized) {
-    await initializeImageMagick();
-    imageMagickInitialized = true;
-  }
-}
 
 /**
  * Composites a color reference image onto a B&W coloring page
  * Places the color image as a 20% thumbnail in the top-left corner
- * Uses ImageMagick for high-quality Lanczos resampling
+ * Uses Sharp for reliable image processing in Deno edge runtime
  */
 async function compositeImages(
   bwImageBuffer: ArrayBuffer,
   colorImageBuffer: ArrayBuffer
 ): Promise<Uint8Array> {
-  await ensureImageMagickInitialized();
-
-  const bwData = new Uint8Array(bwImageBuffer);
-  const colorData = new Uint8Array(colorImageBuffer);
-
-  let resultBytes: Uint8Array | null = null;
-
-  // Process the B&W image (base)
-  ImageMagick.read(bwData, (bwImage) => {
-    // Calculate thumbnail dimensions (20% of B&W width, maintain aspect ratio)
-    const thumbnailWidth = Math.round(bwImage.width * THUMBNAIL_SCALE);
-    
-    // Scale padding and border based on image size
-    const scaleFactor = bwImage.width / 800;
-    const scaledPadding = Math.round(PADDING * scaleFactor);
-    const scaledBorderWidth = Math.max(2, Math.round(BORDER_WIDTH * scaleFactor));
-    const scaledShadowOffset = Math.max(2, Math.round(SHADOW_OFFSET * scaleFactor));
-
-    // Process the color image (thumbnail)
-    ImageMagick.read(colorData, (colorImage) => {
-      // Calculate height maintaining aspect ratio
-      const aspectRatio = colorImage.height / colorImage.width;
-      const thumbnailHeight = Math.round(thumbnailWidth * aspectRatio);
-
-      // Resize the color image using high-quality Lanczos resampling
-      const geometry = new MagickGeometry(thumbnailWidth, thumbnailHeight);
-      geometry.ignoreAspectRatio = false;
-      colorImage.resize(geometry);
-
-      // Create a border around the thumbnail
-      colorImage.border(scaledBorderWidth, scaledBorderWidth);
-      colorImage.borderColor = new MagickColor('#333333');
-
-      // Calculate position for thumbnail (top-left with padding)
-      const thumbnailX = scaledPadding + scaledShadowOffset;
-      const thumbnailY = scaledPadding + scaledShadowOffset;
-
-      // Draw a subtle shadow effect by compositing a dark rectangle first
-      // Create shadow by drawing the thumbnail offset
-      ImageMagick.read(colorData, (shadowImage) => {
-        shadowImage.resize(new MagickGeometry(thumbnailWidth, thumbnailHeight));
-        shadowImage.border(scaledBorderWidth, scaledBorderWidth);
-        shadowImage.modulate(30, 0, 100); // Make it very dark for shadow effect
-        shadowImage.blur(scaledShadowOffset * 2, scaledShadowOffset);
-        
-        // Composite shadow onto base image
-        bwImage.composite(shadowImage, scaledPadding + scaledShadowOffset * 2, scaledPadding + scaledShadowOffset * 2, CompositeOperator.Over);
-      });
-
-      // Composite the color thumbnail onto the B&W image
-      bwImage.composite(colorImage, thumbnailX, thumbnailY, CompositeOperator.Over);
-
-      // Encode as PNG
-      bwImage.write(MagickFormat.Png, (data) => {
-        resultBytes = data;
-      });
-    });
-  });
-
-  if (!resultBytes) {
-    throw new Error('Failed to composite images');
+  // Get B&W image metadata for sizing calculations
+  const bwImage = sharp(Buffer.from(bwImageBuffer));
+  const bwMetadata = await bwImage.metadata();
+  
+  if (!bwMetadata.width || !bwMetadata.height) {
+    throw new Error('Could not read B&W image dimensions');
   }
 
-  return resultBytes;
+  // Calculate thumbnail dimensions (20% of B&W width)
+  const thumbnailWidth = Math.round(bwMetadata.width * THUMBNAIL_SCALE);
+  
+  // Scale padding and border based on image size
+  const scaleFactor = bwMetadata.width / 800;
+  const scaledPadding = Math.round(PADDING * scaleFactor);
+  const scaledBorderWidth = Math.max(2, Math.round(BORDER_WIDTH * scaleFactor));
+
+  // Process the color thumbnail - resize and add border
+  const colorImage = sharp(Buffer.from(colorImageBuffer));
+  const colorMetadata = await colorImage.metadata();
+  
+  if (!colorMetadata.width || !colorMetadata.height) {
+    throw new Error('Could not read color image dimensions');
+  }
+
+  // Calculate height maintaining aspect ratio
+  const aspectRatio = colorMetadata.height / colorMetadata.width;
+  const thumbnailHeight = Math.round(thumbnailWidth * aspectRatio);
+
+  // Create the thumbnail with border
+  const thumbnailWithBorder = await sharp(Buffer.from(colorImageBuffer))
+    .resize(thumbnailWidth, thumbnailHeight, { fit: 'fill' })
+    .extend({
+      top: scaledBorderWidth,
+      bottom: scaledBorderWidth,
+      left: scaledBorderWidth,
+      right: scaledBorderWidth,
+      background: { r: 51, g: 51, b: 51, alpha: 1 } // #333333 border
+    })
+    .png()
+    .toBuffer();
+
+  // Calculate position for thumbnail (top-left with padding)
+  const thumbnailX = scaledPadding;
+  const thumbnailY = scaledPadding;
+
+  // Composite the thumbnail onto the B&W image
+  const result = await sharp(Buffer.from(bwImageBuffer))
+    .composite([
+      {
+        input: thumbnailWithBorder,
+        top: thumbnailY,
+        left: thumbnailX,
+      }
+    ])
+    .png()
+    .toBuffer();
+
+  return new Uint8Array(result);
 }
 
 serve(async (req) => {

@@ -28,13 +28,17 @@ const slugify = (text: string): string => {
 export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: MessageItemProps) => {
   const isUser = message.role === 'user';
   
-  // Strip out internal tags that should never be shown to users
+  // Strip out internal tags and metadata JSON that should never be shown to users
   let content = typeof message.content === 'string' ? message.content : 'Uploaded an image';
   if (typeof content === 'string') {
     content = content
       .replace(/\[CLARIFICATION_NEEDED:.*?\]/g, '')
       .replace(/\[INTAKE_COMPLETE\]/g, '')
       .replace(/\[SUGGEST\][\s\S]*?\[\/SUGGEST\]/g, '')
+      // Strip JSON code blocks (```json ... ```) that contain metadata
+      .replace(/```json\s*\{[\s\S]*?"metadata"[\s\S]*?\}\s*```/gi, '')
+      // Strip any remaining fenced code blocks with JSON-like content containing metadata keys
+      .replace(/```\s*\{[\s\S]*?"(characterTheme|selectedCharacters|mannerType|environment|totalPages)"[\s\S]*?\}\s*```/gi, '')
       .trim();
   }
 

@@ -78,15 +78,15 @@ Only proceed to outline generation after explicit approval.
 `.trim(),
 
   // Educational focus page template
-  educationalFocusPage: (learningType: string, skillFocus: string) => `
+  educationalFocusPage: (gradeLevel: string, learningType: string, skillFocus: string) => `
 ## Educational Focus Page (Page 2)
 
 Generate Page 2 with three vertically-stacked colorful badges:
-- **Grade Level Badge** (teal background): Display selected grade level
+- **Grade Level Badge** (teal background): "${gradeLevel}"
 - **Learning Type Badge** (coral background): "${learningType}"
 - **Skill Focus Badge** (gold background): "${skillFocus}"
 
-Image prompt for educational focus page must be 200-350 characters describing the badges with theme-specific styling.
+Image prompt for educational focus page must be 200-350 characters describing the badges with theme-specific styling. End with "No text overlays. Clean illustration only."
 `.trim(),
 
   // Cover page template
@@ -167,6 +167,7 @@ export interface AgentConfig {
   typeName: string;
   typeId: string;
   typeDescription: string;
+  gradeLevel: string;
   learningType: string;
   skillFocus: string;
   pageTitleFormat: string;
@@ -222,7 +223,7 @@ Wait for user selection before proceeding.
   sections.push(TEMPLATES.coverPage);
 
   // 8. Educational focus page
-  sections.push(TEMPLATES.educationalFocusPage(config.learningType, config.skillFocus));
+  sections.push(TEMPLATES.educationalFocusPage(config.gradeLevel, config.learningType, config.skillFocus));
 
   // 9. Content page guidelines (type-specific)
   sections.push(`

@@ -60,6 +60,7 @@ export const ROUTES = {
   PROFILE: '/profile',
   LANDING: '/',
   SKI_RESORT: '/skiresort/:resortId',
+  BITES: '/bites',
 } as const;
 
 /**

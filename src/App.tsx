@@ -72,6 +72,7 @@ import PreviewPricing from "./pages/preview/PreviewPricing";
 import BlogHome from "./pages/preview/BlogHome";
 import Explore from "./pages/Explore";
 import About from "./pages/About";
+import Bites from "./pages/Bites";
 import CityLanding from "./pages/CityLanding";
 import SkiResortLanding from "./pages/SkiResortLanding";
 import ABCBooksLanding from "./pages/ABCBooksLanding";
@@ -203,6 +204,9 @@ const App = () => {
                 
                 {/* Snow trick game (public) */}
                 <Route path="/snow" element={<Snow />} />
+                
+                {/* Bites - food portion analyzer (public) */}
+                <Route path="/bites" element={<Bites />} />
                 
                 {/* Habits & Rewards routes - Plus tier only */}
                 <Route path="/rewards" element={<ProtectedRoute requireFeature="habits_rewards"><Rewards /></ProtectedRoute>} />

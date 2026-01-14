@@ -164,6 +164,9 @@ const App = () => {
                 <Route path="/resorts/:resortId" element={<SkiResortLanding />} />
                 <Route path="/abc-books" element={<ABCBooksLanding />} />
                 <Route path="/abc-books/:name" element={<ABCBooksLanding />} />
+                <Route path="/rhyming" element={<ABCBooksLanding />} />
+                <Route path="/numbers" element={<ABCBooksLanding />} />
+                <Route path="/opposites" element={<ABCBooksLanding />} />
                 <Route path="/welcome" element={<Landing />} />
                 
                 <Route path="/home" element={<ProtectedRoute requireSubscription={false}><Index /></ProtectedRoute>} />

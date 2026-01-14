@@ -47,9 +47,9 @@ export const PreviewFooter = () => {
       title: 'Categories',
       links: [
         { label: 'ABC Books', href: '/abc-books' },
-        { label: 'Rhyming Books', href: '/abc-books/rhyming' },
-        { label: 'Numbers Books', href: '/abc-books/numbers' },
-        { label: 'Opposites Books', href: '/abc-books/opposites' },
+        { label: 'Rhyming Books', href: '/rhyming' },
+        { label: 'Numbers Books', href: '/numbers' },
+        { label: 'Opposites Books', href: '/opposites' },
         { label: 'All Categories', href: '/library' }
       ]
     },

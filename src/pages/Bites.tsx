@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,11 +6,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ImageUpload } from '@/components/ImageUpload';
 import { BitesResultCard } from '@/components/bites/BitesResultCard';
 import { BiteCounterGame } from '@/components/bites/BiteCounterGame';
-import { ArrowLeft, Loader2, Sparkles, UtensilsCrossed, Camera, Upload } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, UtensilsCrossed, Camera } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
-import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 type ViewState = 'upload' | 'analyzing' | 'results' | 'counting';
 
@@ -34,6 +33,7 @@ interface AnalysisResult {
 
 export default function Bites() {
   const navigate = useNavigate();
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   const [viewState, setViewState] = useState<ViewState>('upload');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -52,32 +52,17 @@ export default function Bites() {
     reader.readAsDataURL(file);
   }, []);
 
-  // Take photo using Capacitor Camera
-  const handleTakePhoto = async () => {
-    try {
-      const photo = await CapacitorCamera.getPhoto({
-        quality: 90,
-        allowEditing: false,
-        resultType: CameraResultType.DataUrl,
-        source: CameraSource.Camera,
-        correctOrientation: true,
-      });
-
-      if (photo.dataUrl) {
-        setImagePreview(photo.dataUrl);
-        // Create a dummy file for consistency with the existing flow
-        const response = await fetch(photo.dataUrl);
-        const blob = await response.blob();
-        const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
-        setSelectedImage(file);
-      }
-    } catch (error) {
-      // User cancelled or camera not available
-      if (error instanceof Error && !error.message.includes('User cancelled')) {
-        console.error('Camera error:', error);
-        toast.error('Could not access camera. Try uploading a photo instead.');
-      }
+  // Handle camera capture from file input
+  const handleCameraCapture = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleImageSelect(file);
     }
+  }, [handleImageSelect]);
+
+  // Trigger camera input
+  const handleTakePhoto = () => {
+    cameraInputRef.current?.click();
   };
 
   const handleAnalyze = async () => {
@@ -170,6 +155,16 @@ export default function Bites() {
               {/* Photo Options */}
               <Card>
                 <CardContent className="pt-6 space-y-4">
+                  {/* Hidden camera input for mobile */}
+                  <input
+                    ref={cameraInputRef}
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    onChange={handleCameraCapture}
+                    className="hidden"
+                  />
+
                   {/* Take Photo Button - Primary action */}
                   <Button
                     size="lg"

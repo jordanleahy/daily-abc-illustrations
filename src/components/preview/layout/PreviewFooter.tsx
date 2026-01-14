@@ -44,13 +44,13 @@ export const PreviewFooter = () => {
 
   const staticSections = [
     {
-      title: 'Product',
+      title: 'Categories',
       links: [
-        { label: 'Product overview', href: '/product' },
-        { label: 'Reading & Library', href: '/tracking' },
-        { label: 'Habits & Rewards', href: '/habits-info' },
-        { label: 'AI Book Studio', href: '/ai-studio' },
-        { label: 'Parent Dashboard', href: '/dashboard-info' }
+        { label: 'ABC Books', href: '/abc-books' },
+        { label: 'Rhyming Books', href: '/abc-books/rhyming' },
+        { label: 'Numbers Books', href: '/abc-books/numbers' },
+        { label: 'Opposites Books', href: '/abc-books/opposites' },
+        { label: 'All Categories', href: '/library' }
       ]
     },
     {

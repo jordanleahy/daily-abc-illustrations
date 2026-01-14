@@ -145,7 +145,7 @@ export const LibraryBookCard = memo(({ book, priority = false, size = 'medium' }
             onTouchEnd={(e) => e.stopPropagation()}
             onClick={(e) => {
               e.stopPropagation();
-              navigate(`/colorbook/${book.id}`);
+              navigate(`/printable-colorbook/${book.id}`);
             }}
           >
             <Palette className="w-4 h-4" />

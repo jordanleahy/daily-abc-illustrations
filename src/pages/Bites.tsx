@@ -23,11 +23,15 @@ interface AnalysisResult {
       recommendedAmount: string;
       bites: number;
       category: string;
+      texture: string;
+      confidence: number;
     }>;
     totalBites: number;
     plateDescription: string;
     childAge: number;
     portionPercentage: number;
+    excludedItems?: string[];
+    overallConfidence?: number;
   };
 }
 

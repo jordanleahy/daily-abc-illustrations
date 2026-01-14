@@ -1,4 +1,4 @@
-import { LucideIcon, Home, BookOpen, Book, MessageSquare, Gift, Calendar, Users, Search, Video, BarChart, Target, Snowflake } from 'lucide-react';
+import { LucideIcon, Home, BookOpen, Book, MessageSquare, Gift, Calendar, Users, Search, Video, BarChart, Target, Snowflake, UtensilsCrossed } from 'lucide-react';
 import { NavigateFunction } from 'react-router-dom';
 
 /**
@@ -114,6 +114,14 @@ export const navigationConfig: RouteConfig[] = [
     path: ROUTES.GOOGLE_CHAT,
     name: 'Create Book',
     icon: MessageSquare,
+    group: 'admin',
+    permission: { role: 'admin' },
+    activeMatch: { exact: true },
+  },
+  {
+    path: ROUTES.BITES,
+    name: 'Bites',
+    icon: UtensilsCrossed,
     group: 'admin',
     permission: { role: 'admin' },
     activeMatch: { exact: true },

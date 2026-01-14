@@ -330,6 +330,7 @@ export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
   'general': 'book-creation-general',
   'digraphs': 'book-creation-digraphs',
   'parent-education': 'book-creation-parent-education',
+  'manners': 'book-creation-manners',
   'other': 'book-creation'
 } as const;
 

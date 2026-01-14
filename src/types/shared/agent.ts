@@ -23,6 +23,7 @@ export type AgentType =
   | 'book-creation-general'          // Custom topic books
   | 'book-creation-digraphs'         // Digraph phonics
   | 'book-creation-dr-seuss'         // Dr. Seuss whimsical style
+  | 'book-creation-manners'          // Social skills and manners
   | 'book-creation-parent-education'; // Parent literacy education
 
 /**
@@ -44,6 +45,7 @@ export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
   'general': 'book-creation-general',
   'digraphs': 'book-creation-digraphs',
   'dr-seuss': 'book-creation-dr-seuss',
+  'manners': 'book-creation-manners',
   'parent-education': 'book-creation-parent-education',
   // Fallback for unknown types
   'other': 'book-creation'

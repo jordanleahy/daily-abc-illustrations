@@ -10,9 +10,15 @@ const corsHeaders = {
  * Uses Lovable AI Gateway to composite a color reference thumbnail onto a B&W coloring page.
  * The AI places a small color reference in the top-left corner of the coloring page.
  */
+// Helper to wait between requests
+function delay(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function compositeImagesWithAI(
   bwImageUrl: string,
-  colorImageUrl: string
+  colorImageUrl: string,
+  maxRetries: number = 3
 ): Promise<Uint8Array> {
   const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
   if (!lovableApiKey) {
@@ -27,55 +33,83 @@ async function compositeImagesWithAI(
 5. Keep the rest of the coloring page exactly as-is
 6. Output should be a clean printable image`;
 
-  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${lovableApiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: "google/gemini-2.5-flash-image-preview",
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: prompt },
-            { type: "image_url", image_url: { url: bwImageUrl } },
-            { type: "image_url", image_url: { url: colorImageUrl } }
-          ]
+  let lastError: Error | null = null;
+  
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 Attempt ${attempt}/${maxRetries} for AI compositing`);
+      
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${lovableApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash-image-preview",
+          messages: [
+            {
+              role: "user",
+              content: [
+                { type: "text", text: prompt },
+                { type: "image_url", image_url: { url: bwImageUrl } },
+                { type: "image_url", image_url: { url: colorImageUrl } }
+              ]
+            }
+          ],
+          modalities: ["image", "text"]
+        })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        
+        // Check for rate limiting
+        if (response.status === 429 || response.status === 500) {
+          const waitTime = attempt * 3000; // Exponential backoff: 3s, 6s, 9s
+          console.log(`⏳ Rate limited or server error, waiting ${waitTime}ms before retry...`);
+          await delay(waitTime);
+          lastError = new Error(`AI Gateway error: ${response.status}`);
+          continue;
         }
-      ],
-      modalities: ["image", "text"]
-    })
-  });
+        
+        throw new Error(`AI Gateway error: ${response.status} - ${errorText.substring(0, 200)}`);
+      }
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`AI Gateway error: ${response.status} - ${errorText}`);
-  }
+      const data = await response.json();
+      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
-  const data = await response.json();
-  const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+      if (!imageUrl) {
+        throw new Error('No image returned from AI Gateway');
+      }
 
-  if (!imageUrl) {
-    throw new Error('No image returned from AI Gateway');
-  }
+      // Convert base64 data URL to Uint8Array
+      if (imageUrl.startsWith('data:image/')) {
+        const base64Data = imageUrl.split(',')[1];
+        const binaryString = atob(base64Data);
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes;
+      }
 
-  // Convert base64 data URL to Uint8Array
-  if (imageUrl.startsWith('data:image/')) {
-    const base64Data = imageUrl.split(',')[1];
-    const binaryString = atob(base64Data);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
+      // If it's a URL, fetch it
+      const imageResponse = await fetch(imageUrl);
+      const arrayBuffer = await imageResponse.arrayBuffer();
+      return new Uint8Array(arrayBuffer);
+      
+    } catch (error) {
+      lastError = error;
+      if (attempt < maxRetries) {
+        const waitTime = attempt * 2000;
+        console.log(`⏳ Error occurred, waiting ${waitTime}ms before retry: ${error.message}`);
+        await delay(waitTime);
+      }
     }
-    return bytes;
   }
-
-  // If it's a URL, fetch it
-  const imageResponse = await fetch(imageUrl);
-  const arrayBuffer = await imageResponse.arrayBuffer();
-  return new Uint8Array(arrayBuffer);
+  
+  throw lastError || new Error('Failed after max retries');
 }
 
 serve(async (req) => {
@@ -122,6 +156,8 @@ serve(async (req) => {
       console.log(`📄 Found ${pages.length} pages to process`);
 
       const results = [];
+      let processedCount = 0;
+      
       for (const page of pages) {
         // Skip if already has printable image
         if (page.printable_coloring_image_url) {
@@ -131,12 +167,19 @@ serve(async (req) => {
         }
 
         try {
+          // Add delay between requests to avoid rate limiting (except for first)
+          if (processedCount > 0) {
+            console.log(`⏳ Waiting 2s between requests to avoid rate limiting...`);
+            await delay(2000);
+          }
+          
           console.log(`🎨 Processing page ${page.page_id} with AI compositing`);
           
           // Use AI to composite the images
           const compositedImage = await compositeImagesWithAI(
             page.coloring_image_url,
-            page.image_url
+            page.image_url,
+            3 // max retries
           );
 
           // Upload to storage
@@ -173,6 +216,7 @@ serve(async (req) => {
             status: 'success', 
             url: urlData.publicUrl 
           });
+          processedCount++;
 
         } catch (pageError) {
           console.error(`❌ Error processing page ${page.page_id}:`, pageError);

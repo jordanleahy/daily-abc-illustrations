@@ -6,10 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { ImageUpload } from '@/components/ImageUpload';
 import { BitesResultCard } from '@/components/bites/BitesResultCard';
 import { BiteCounterGame } from '@/components/bites/BiteCounterGame';
-import { ArrowLeft, Loader2, Sparkles, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, Loader2, Sparkles, UtensilsCrossed, Camera, Upload } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
+import { Camera as CapacitorCamera, CameraResultType, CameraSource } from '@capacitor/camera';
 
 type ViewState = 'upload' | 'analyzing' | 'results' | 'counting';
 
@@ -50,6 +51,34 @@ export default function Bites() {
     };
     reader.readAsDataURL(file);
   }, []);
+
+  // Take photo using Capacitor Camera
+  const handleTakePhoto = async () => {
+    try {
+      const photo = await CapacitorCamera.getPhoto({
+        quality: 90,
+        allowEditing: false,
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+        correctOrientation: true,
+      });
+
+      if (photo.dataUrl) {
+        setImagePreview(photo.dataUrl);
+        // Create a dummy file for consistency with the existing flow
+        const response = await fetch(photo.dataUrl);
+        const blob = await response.blob();
+        const file = new File([blob], 'photo.jpg', { type: 'image/jpeg' });
+        setSelectedImage(file);
+      }
+    } catch (error) {
+      // User cancelled or camera not available
+      if (error instanceof Error && !error.message.includes('User cancelled')) {
+        console.error('Camera error:', error);
+        toast.error('Could not access camera. Try uploading a photo instead.');
+      }
+    }
+  };
 
   const handleAnalyze = async () => {
     if (!selectedImage || !imagePreview) {
@@ -138,9 +167,31 @@ export default function Bites() {
                 </p>
               </div>
 
-              {/* Image Upload */}
+              {/* Photo Options */}
               <Card>
-                <CardContent className="pt-6">
+                <CardContent className="pt-6 space-y-4">
+                  {/* Take Photo Button - Primary action */}
+                  <Button
+                    size="lg"
+                    variant="outline"
+                    className="w-full h-24 flex flex-col gap-2"
+                    onClick={handleTakePhoto}
+                  >
+                    <Camera className="w-8 h-8" />
+                    <span className="text-base font-medium">Take Photo</span>
+                  </Button>
+
+                  {/* Divider */}
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <span className="w-full border-t" />
+                    </div>
+                    <div className="relative flex justify-center text-xs uppercase">
+                      <span className="bg-card px-2 text-muted-foreground">or</span>
+                    </div>
+                  </div>
+
+                  {/* Image Upload */}
                   <ImageUpload
                     onImageSelect={handleImageSelect}
                     existingImageUrl={imagePreview || undefined}

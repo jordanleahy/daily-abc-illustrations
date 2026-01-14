@@ -64,6 +64,7 @@ export default function GoogleChat() {
   const [selectedLocation, setSelectedLocation] = useState<LocationId | null>(null);
   const [selectedCity, setSelectedCity] = useState<CityId | null>(null);
   const [selectedMannerType, setSelectedMannerType] = useState<MannerTypeId | null>(null);
+  const [selectedMannersSetting, setSelectedMannersSetting] = useState<string | null>(null); // home, school, both
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
   
   // Get kid profiles (kept for backwards compatibility with existing UI)
@@ -683,7 +684,8 @@ export default function GoogleChat() {
       clothingBrand: selectedClothingBrand,
       location: selectedLocation,
       city: selectedCity,
-      mannerType: selectedMannerType
+      mannerType: selectedMannerType,
+      mannersSetting: selectedMannersSetting
     });
     setInput('');
   };
@@ -712,7 +714,8 @@ export default function GoogleChat() {
         clothingBrand: selectedClothingBrand,
         location: selectedLocation,
         city: selectedCity,
-        mannerType: selectedMannerType
+        mannerType: selectedMannerType,
+        mannersSetting: selectedMannersSetting
       });
     };
     reader.readAsDataURL(file);
@@ -748,9 +751,10 @@ export default function GoogleChat() {
       clothingBrand: selectedClothingBrand,
       location: selectedLocation,
       city: selectedCity,
-      mannerType: selectedMannerType
+      mannerType: selectedMannerType,
+      mannersSetting: selectedMannersSetting
     });
-  }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId]);
+  }, [currentSessionId, sendMessage, updateSessionName, shouldShowReviewButton, createdBookId, selectedMannersSetting]);
 
   const handleCreateBook = useCallback(async () => {
     // Guard 1: No active session
@@ -1200,10 +1204,23 @@ export default function GoogleChat() {
         setSelectedMannerType((action as any).mannerTypeId as MannerTypeId);
       }
       
+      // Capture manners setting if present in the action (home, school, both)
+      const mannersSettingIds = new Set(['home', 'school', 'both', 'skip-setting']);
+      if (mannersSettingIds.has(action.id)) {
+        const settingValue = action.id === 'skip-setting' ? null : action.id;
+        console.log('[Manners Setting Selection] User selected setting:', settingValue);
+        setSelectedMannersSetting(settingValue);
+      }
+      
       // Send the predefined response - include newly selected character IDs if present
       const characterIdsToUse = action.selectedCharacterIds?.length > 0 
         ? action.selectedCharacterIds 
         : characterFlow.selectedCharacterIds;
+      
+      // Determine mannersSetting value for this message
+      const mannersSettingValue = mannersSettingIds.has(action.id) 
+        ? (action.id === 'skip-setting' ? null : action.id)
+        : selectedMannersSetting;
       
       await sendMessage(action.value, undefined, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
@@ -1216,7 +1233,9 @@ export default function GoogleChat() {
         environment: action.environmentId || selectedEnvironment,
         clothingBrand: action.clothingBrandId || selectedClothingBrand,
         location: action.locationId || selectedLocation,
-        city: (action as any).cityId || selectedCity
+        city: (action as any).cityId || selectedCity,
+        mannerType: (action as any).mannerTypeId || selectedMannerType,
+        mannersSetting: mannersSettingValue
       });
     } else {
       // "Custom" option - just focus the input field
@@ -1225,7 +1244,7 @@ export default function GoogleChat() {
         inputElement.focus();
       }
     }
-  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, selectedCity, characterFlow]);
+  }, [handleCreateBook, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, selectedCity, selectedMannerType, selectedMannersSetting, characterFlow]);
   // Note: handleOpenEditorPanel, handleViewCreatedBook, handleCreateNewSession are not in deps
   // because they're useCallback functions defined below and are stable
 
@@ -1250,6 +1269,7 @@ export default function GoogleChat() {
         setSelectedClothingBrand(null); // Reset clothing brand selection
         setSelectedLocation(null); // Reset location selection
         setSelectedMannerType(null); // Reset manner type selection
+        setSelectedMannersSetting(null); // Reset manners setting selection
         setReplacePageMode({});
         // Close mobile sidebar when creating new session
         setIsMobileSidebarOpen(false);

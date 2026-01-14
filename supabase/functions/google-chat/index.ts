@@ -168,7 +168,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment, clothingBrand, location, city, mannerType } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment, clothingBrand, location, city, mannerType, mannersSetting } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
@@ -182,6 +182,7 @@ serve(async (req) => {
       location?: ValidLocation;
       city?: ValidCity;
       mannerType?: string;
+      mannersSetting?: string; // home, school, both, or skip-setting
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -471,11 +472,11 @@ serve(async (req) => {
       
       // Filter out questions that have already been answered
       const unansweredDiscoveries = mannersDiscoveries.filter(d => {
-        if (d.question_key === 'setting' && environment) return false;
+        if (d.question_key === 'manners_setting' && mannersSetting) return false;
         if (d.question_key === 'season' && season) return false;
         if (d.question_key === 'city' && city) return false;
         // Skip location/clothing brand for manners (not applicable)
-        if (d.question_key === 'location' || d.question_key === 'clothing_brand') return false;
+        if (d.question_key === 'location' || d.question_key === 'clothing_brand' || d.question_key === 'environment') return false;
         return true;
       });
       
@@ -497,6 +498,16 @@ ${nextQuestion.options.map(opt => `${opt.key}: ${opt.label}`).join('\n')}
 
     const mannerTypeContext = mannerType && MANNER_TYPE_LABELS[mannerType]
       ? `\n\n⚠️ CRITICAL - MANNER TYPE STATUS:\n📚 MANNER TYPE ALREADY SELECTED: ${MANNER_TYPE_LABELS[mannerType]}\n❌ DO NOT ask "What type of manners?" or "What manners would you like to teach?" - this step is COMPLETE.\n✅ Proceed to the NEXT optional question.`
+      : '';
+
+    // Manners setting context - where the manners should take place (home, school, both)
+    const MANNERS_SETTING_LABELS: Record<string, string> = {
+      'home': '🏠 Home',
+      'school': '🏫 School', 
+      'both': '🏠🏫 Both Home & School',
+    };
+    const mannersSettingContext = mannersSetting && MANNERS_SETTING_LABELS[mannersSetting]
+      ? `\n\n⚠️ CRITICAL - MANNERS SETTING STATUS:\n🏠 SETTING ALREADY SELECTED: ${MANNERS_SETTING_LABELS[mannersSetting]}\n❌ DO NOT ask "Where should this manners book take place?" - this step is COMPLETE.\nSet all illustrations and content in a ${MANNERS_SETTING_LABELS[mannersSetting].replace(/🏠|🏫/g, '').trim()} environment with appropriate settings and scenarios.`
       : '';
 
     // Check if user is forcing outline creation (e.g., typing "create outline")
@@ -555,11 +566,8 @@ ${citySuggestBlock}
 
     // Check if all optional questions are complete - if so, prompt agent to propose title
     // For Manners books: check if discovery questions are exhausted using database-driven approach
-    // Since we now use type_specific_discoveries, check if mannersDiscoveryQuestionsContext is empty
-    const mannersQuestionsComplete = isMannerBook && characterTheme && mannerType && (
-      mannersDiscoveryQuestionsContext === '' || 
-      (environment && (season || lastMessageContent.includes('skip-season')))
-    );
+    // When mannersDiscoveryQuestionsContext is empty, all questions have been answered
+    const mannersQuestionsComplete = isMannerBook && characterTheme && mannerType && mannersDiscoveryQuestionsContext === '';
     const standardQuestionsComplete = !isMannerBook && (
       (season || lastMessageContent.includes('skip')) && 
       (environment || lastMessageContent.includes('skip')) && 
@@ -593,7 +601,7 @@ ${citySuggestBlock}
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersDiscoveryQuestionsContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersSettingContext + mannersDiscoveryQuestionsContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
@@ -607,9 +615,11 @@ ${citySuggestBlock}
     console.log(`📍 Location: ${location || 'None'}`);
     console.log(`🏙️ City: ${city || 'None'}`);
     console.log(`📚 Manner type: ${mannerType || 'None'}`);
+    console.log(`🏠 Manners setting: ${mannersSetting || 'None'}`);
     console.log(`✅ All optional questions complete: ${allOptionalQuestionsComplete}`);
     console.log(`📝 Proceed to title: ${proceedToTitleContext ? 'Yes' : 'No'}`);
     console.log(`🎯 Title approved: ${titleWasJustApproved}`);
+    console.log(`📋 Manners questions complete: ${mannersQuestionsComplete}`);
 
     const allMessages = [systemMessage, ...messages];
 

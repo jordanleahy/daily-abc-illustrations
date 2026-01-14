@@ -77,6 +77,7 @@ export const useGoogleChat = (
       location?: LocationId | null; // For location selection
       city?: CityId | null; // For city selection
       mannerType?: MannerTypeId | null; // For manners book manner type selection
+      mannersSetting?: string | null; // For manners book setting (home, school, both)
     }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
@@ -620,6 +621,7 @@ export const useGoogleChat = (
         location?: LocationId | null;
         city?: CityId | null;
         mannerType?: MannerTypeId | null;
+        mannersSetting?: string | null;
       }
     ) => {
       return sendMessage(

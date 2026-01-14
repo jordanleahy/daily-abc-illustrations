@@ -1,7 +1,10 @@
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 
-export const VALID_GRADES = ['PRE_K', 'K', 'GRADE_1', 'GRADE_2'] as const;
-export type ValidGrade = typeof VALID_GRADES[number];
+// Unified naming: GRADE_IDS matches frontend src/types/grade.ts
+export const GRADE_IDS = ['PRE_K', 'K', 'GRADE_1', 'GRADE_2'] as const;
+export type ValidGrade = typeof GRADE_IDS[number];
+// Alias for backward compatibility
+export const VALID_GRADES = GRADE_IDS;
 
 export interface GradeLevel {
   id: ValidGrade;

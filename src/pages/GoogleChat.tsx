@@ -31,7 +31,7 @@ import { PublicationStatus } from '@/types/shared/status';
 import { useWordMetadata } from '@/hooks/useWordMetadata';
 import { BookTypeId } from '@/types/bookType';
 import { AgeRangeId } from '@/types/ageRange';
-import type { GradeId } from '@/types/grade';
+import { type GradeId, GRADE_IDS, isValidGrade } from '@/types/grade';
 import type { CharacterThemeValue } from '@/types/characterTheme';
 import type { SeasonId } from '@/types/season';
 import type { EnvironmentId } from '@/types/environment';
@@ -1163,14 +1163,10 @@ export default function GoogleChat() {
       }
       
       // Capture grade level if present in the action OR if action.id is a valid grade ID
-      const validGradeIds = ['PRE_K', 'K', 'GRADE_1', 'GRADE_2'] as const;
-      const isGradeId = validGradeIds.includes(action.id as typeof validGradeIds[number]);
-      if (action.gradeId) {
-        console.log('[Grade Level Selection] User selected grade via gradeId:', action.gradeId);
-        setSelectedGradeLevel(action.gradeId as GradeId);
-      } else if (isGradeId) {
-        console.log('[Grade Level Selection] User selected grade via action.id:', action.id);
-        setSelectedGradeLevel(action.id as GradeId);
+      const detectedGradeId = action.gradeId || (isValidGrade(action.id) ? action.id : null);
+      if (detectedGradeId) {
+        console.log('[Grade Level Selection] User selected grade:', detectedGradeId);
+        setSelectedGradeLevel(detectedGradeId);
       }
       
       // Capture season if present in the action
@@ -1198,15 +1194,15 @@ export default function GoogleChat() {
       }
       
       // Capture city if present in the action
-      if ((action as any).cityId) {
-        console.log('[City Selection] User selected city:', (action as any).cityId);
-        setSelectedCity((action as any).cityId as CityId);
+      if (action.cityId) {
+        console.log('[City Selection] User selected city:', action.cityId);
+        setSelectedCity(action.cityId);
       }
       
       // Capture manner type if present in the action
-      if ((action as any).mannerTypeId) {
-        console.log('[Manner Type Selection] User selected manner type:', (action as any).mannerTypeId);
-        setSelectedMannerType((action as any).mannerTypeId as MannerTypeId);
+      if (action.mannerTypeId) {
+        console.log('[Manner Type Selection] User selected manner type:', action.mannerTypeId);
+        setSelectedMannerType(action.mannerTypeId);
       }
       
       // Capture manners setting if present in the action (home, school, both)
@@ -1227,10 +1223,8 @@ export default function GoogleChat() {
         ? (action.id === 'skip-setting' ? null : action.id)
         : selectedMannersSetting;
       
-      // Determine gradeLevel value for this message (check both action.gradeId and action.id)
-      const gradeIdOptions = ['PRE_K', 'K', 'GRADE_1', 'GRADE_2'] as const;
-      const actionIsGradeId = gradeIdOptions.includes(action.id as typeof gradeIdOptions[number]);
-      const gradeLevelValue = action.gradeId || (actionIsGradeId ? action.id as GradeId : null) || selectedGradeLevel;
+      // Determine gradeLevel value for this message - reuse detected grade from above
+      const gradeLevelValue = action.gradeId || (isValidGrade(action.id) ? action.id : null) || selectedGradeLevel;
       
       await sendMessage(action.value, undefined, messages, {
         outlineReady: shouldShowReviewButton && !createdBookId,
@@ -1243,8 +1237,8 @@ export default function GoogleChat() {
         environment: action.environmentId || selectedEnvironment,
         clothingBrand: action.clothingBrandId || selectedClothingBrand,
         location: action.locationId || selectedLocation,
-        city: (action as any).cityId || selectedCity,
-        mannerType: (action as any).mannerTypeId || selectedMannerType,
+        city: action.cityId || selectedCity,
+        mannerType: action.mannerTypeId || selectedMannerType,
         mannersSetting: mannersSettingValue
       });
     } else {

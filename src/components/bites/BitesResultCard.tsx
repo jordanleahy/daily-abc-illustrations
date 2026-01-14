@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UtensilsCrossed, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { PortionOverlay } from './PortionOverlay';
 
 interface FoodItem {
   name: string;
@@ -24,7 +25,6 @@ interface BitesAnalysis {
 
 interface BitesResultCardProps {
   originalImage: string;
-  portionImage: string | null;
   analysis: BitesAnalysis;
 }
 
@@ -61,7 +61,7 @@ function ConfidenceIndicator({ confidence }: { confidence: number }) {
   );
 }
 
-export function BitesResultCard({ originalImage, portionImage, analysis }: BitesResultCardProps) {
+export function BitesResultCard({ originalImage, analysis }: BitesResultCardProps) {
   return (
     <div className="space-y-6">
       {/* Image Comparison */}
@@ -91,20 +91,10 @@ export function BitesResultCard({ originalImage, portionImage, analysis }: Bites
           </CardHeader>
           <CardContent className="p-2">
             <div className="aspect-square rounded-lg overflow-hidden bg-muted">
-              {portionImage ? (
-                <img 
-                  src={portionImage} 
-                  alt="Recommended portion" 
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                  <div className="text-center p-4">
-                    <UtensilsCrossed className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-xs">Eat {analysis.portionPercentage}% of the plate</p>
-                  </div>
-                </div>
-              )}
+              <PortionOverlay 
+                imageUrl={originalImage} 
+                portionPercentage={analysis.portionPercentage} 
+              />
             </div>
           </CardContent>
         </Card>

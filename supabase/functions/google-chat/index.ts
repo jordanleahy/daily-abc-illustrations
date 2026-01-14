@@ -509,15 +509,22 @@ ${citySuggestBlock}
       : '';
 
     // Check if all optional questions are complete - if so, prompt agent to propose title
-    const allOptionalQuestionsComplete = (season || lastMessageContent.includes('skip')) && 
-                                          (environment || lastMessageContent.includes('skip')) && 
-                                          (clothingBrand || lastMessageContent.includes('skip') || lastMessageContent.includes('burton') || lastMessageContent.includes('no brand')) && 
-                                          (location || lastMessageContent.includes('skip') || lastMessageContent.includes('resort') || lastMessageContent.includes('killington') || lastMessageContent.includes('vail') || lastMessageContent.includes('stratton')) &&
-                                          (city || lastMessageContent.includes('skip') || lastMessageContent.includes('jersey') || lastMessageContent.includes('hoboken') || lastMessageContent.includes('new york'));
+    // For Manners books: only need characterTheme, mannerType, and environment (no season, location, city, clothingBrand)
+    const mannersQuestionsComplete = isMannerBook && characterTheme && mannerType && environment;
+    const standardQuestionsComplete = !isMannerBook && (
+      (season || lastMessageContent.includes('skip')) && 
+      (environment || lastMessageContent.includes('skip')) && 
+      (clothingBrand || lastMessageContent.includes('skip') || lastMessageContent.includes('burton') || lastMessageContent.includes('no brand')) && 
+      (location || lastMessageContent.includes('skip') || lastMessageContent.includes('resort') || lastMessageContent.includes('killington') || lastMessageContent.includes('vail') || lastMessageContent.includes('stratton')) &&
+      (city || lastMessageContent.includes('skip') || lastMessageContent.includes('jersey') || lastMessageContent.includes('hoboken') || lastMessageContent.includes('new york'))
+    );
+    const allOptionalQuestionsComplete = mannersQuestionsComplete || standardQuestionsComplete;
     
     // Proceed to title context - when all optional questions are answered, prompt title proposal
     const proceedToTitleContext = allOptionalQuestionsComplete && !outlineReady && !bookCreated && !titleWasJustApproved
-      ? `\n\n✅ ALL OPTIONAL QUESTIONS COMPLETE: Season, environment, clothing brand, and location have all been answered or skipped. NOW proceed to propose a book title and description for user approval. Do NOT ask any more optional questions.`
+      ? isMannerBook
+        ? `\n\n✅ ALL MANNERS QUESTIONS COMPLETE: Character theme, manner type, and environment are selected. NOW present the book summary and ask for confirmation to create the outline. Do NOT ask about season, location, city, or clothing brand - these do NOT apply to Manners books.`
+        : `\n\n✅ ALL OPTIONAL QUESTIONS COMPLETE: Season, environment, clothing brand, and location have all been answered or skipped. NOW proceed to propose a book title and description for user approval. Do NOT ask any more optional questions.`
       : '';
 
     // Title confirmation is the FINAL step - when title is approved, generate outline immediately

@@ -1146,15 +1146,15 @@ export default function GoogleChat() {
         return;
       }
       
-      // Theme without character selection handled above
-      if (action.themeId) {
-        characterFlow.selectTheme(action.themeId);
-      }
-      
       // Capture selected character IDs for enforcement
+      // IMPORTANT: Must check this BEFORE calling selectTheme, because selectTheme resets selectedCharacterIds
       if (action.selectedCharacterIds && action.selectedCharacterIds.length > 0) {
         console.log('[Character Selection] User selected characters:', action.selectedCharacterIds);
         characterFlow.confirmSelection(action.selectedCharacterIds);
+      } else if (action.themeId) {
+        // Only call selectTheme if we're NOT confirming a character selection
+        // (selectTheme resets character IDs which would break the flow)
+        characterFlow.selectTheme(action.themeId);
       }
       
       // Capture grade level if present in the action

@@ -75,7 +75,7 @@ import About from "./pages/About";
 import Bites from "./pages/Bites";
 import CityLanding from "./pages/CityLanding";
 import SkiResortLanding from "./pages/SkiResortLanding";
-import ABCBooksLanding from "./pages/ABCBooksLanding";
+import BookTypeLanding from "./pages/BookTypeLanding";
 import { useEffect } from "react";
 import { scheduleCacheCleanup } from "./utils/cacheCleanup";
 import { initializeCacheWarming } from "./utils/cacheWarming";
@@ -162,11 +162,7 @@ const App = () => {
                 <Route path="/city/:cityName" element={<CityLanding />} />
                 <Route path="/skiresort/:resortId" element={<SkiResortLanding />} />
                 <Route path="/resorts/:resortId" element={<SkiResortLanding />} />
-                <Route path="/abc-books" element={<ABCBooksLanding />} />
-                <Route path="/abc-books/:name" element={<ABCBooksLanding />} />
-                <Route path="/rhyming" element={<ABCBooksLanding />} />
-                <Route path="/numbers" element={<ABCBooksLanding />} />
-                <Route path="/opposites" element={<ABCBooksLanding />} />
+                <Route path="/abc-books" element={<BookTypeLanding />} />
                 <Route path="/welcome" element={<Landing />} />
                 
                 <Route path="/home" element={<ProtectedRoute requireSubscription={false}><Index /></ProtectedRoute>} />
@@ -236,7 +232,9 @@ const App = () => {
                <Route path="/subscription/manage" element={<ProtectedRoute><SubscriptionManage /></ProtectedRoute>} />
                <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                <Route path="/terms-of-service" element={<TermsOfService />} />
-               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                {/* Dynamic book type route - catches /rhyming, /numbers, /opposites, etc. */}
+                <Route path="/:bookType" element={<BookTypeLanding />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
               </BrowserRouter>

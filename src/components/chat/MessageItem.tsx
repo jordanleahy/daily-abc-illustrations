@@ -39,6 +39,11 @@ export const MessageItem = memo(({ message, onQuickReply, isBookCreated }: Messa
       .replace(/```json\s*\{[\s\S]*?"metadata"[\s\S]*?\}\s*```/gi, '')
       // Strip any remaining fenced code blocks with JSON-like content containing metadata keys
       .replace(/```\s*\{[\s\S]*?"(characterTheme|selectedCharacters|mannerType|environment|totalPages)"[\s\S]*?\}\s*```/gi, '')
+      // Strip raw JSON objects with metadata (not in code blocks) - matches { ... "metadata": { ... } ... }
+      .replace(/\{\s*"pages"[\s\S]*?"metadata"[\s\S]*?\}\s*\}\s*```?/gi, '')
+      // Strip trailing backticks that may be left over
+      .replace(/^```\s*/gm, '')
+      .replace(/\s*```$/gm, '')
       .trim();
   }
 

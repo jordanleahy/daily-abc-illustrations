@@ -1109,7 +1109,8 @@ export default function GoogleChat() {
       handleViewCreatedBook();
       return;
     }
-    if (action.value === 'create_book') {
+    // Handle book creation - support both 'create_book' value and 'confirm' id (used by Manners agent)
+    if (action.value === 'create_book' || action.id === 'confirm') {
       handleCreateBook();
       return;
     }
@@ -1131,7 +1132,7 @@ export default function GoogleChat() {
     // Regular quick reply
     if (action.value) {
       // Capture book type if the action ID matches a valid book type
-      const validBookTypes = ['abc', 'numbers', 'colors', 'shapes', 'rhyming', 'opposites', 'emotions', 'animals', 'first-words', 'bedtime', 'cvc', 'sight-words', 'digraphs', 'general', 'parent-education'];
+      const validBookTypes = ['abc', 'numbers', 'colors', 'shapes', 'rhyming', 'opposites', 'emotions', 'animals', 'first-words', 'bedtime', 'cvc', 'sight-words', 'digraphs', 'manners', 'general', 'parent-education'];
       if (validBookTypes.includes(action.id)) {
         console.log('[Book Type Selection] User selected book type:', action.id);
         setSelectedBookType(action.id as BookTypeId);

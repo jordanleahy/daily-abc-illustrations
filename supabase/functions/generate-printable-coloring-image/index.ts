@@ -1,84 +1,81 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
-import sharp from "npm:sharp@0.33.2";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-// Configuration for thumbnail placement
-const THUMBNAIL_SCALE = 0.20; // 20% of image width
-const PADDING = 20;
-const BORDER_WIDTH = 4;
-
 /**
- * Composites a color reference image onto a B&W coloring page
- * Places the color image as a 20% thumbnail in the top-left corner
- * Uses Sharp for reliable image processing in Deno edge runtime
+ * Uses Lovable AI Gateway to composite a color reference thumbnail onto a B&W coloring page.
+ * The AI places a small color reference in the top-left corner of the coloring page.
  */
-async function compositeImages(
-  bwImageBuffer: ArrayBuffer,
-  colorImageBuffer: ArrayBuffer
+async function compositeImagesWithAI(
+  bwImageUrl: string,
+  colorImageUrl: string
 ): Promise<Uint8Array> {
-  // Get B&W image metadata for sizing calculations
-  const bwImage = sharp(Buffer.from(bwImageBuffer));
-  const bwMetadata = await bwImage.metadata();
-  
-  if (!bwMetadata.width || !bwMetadata.height) {
-    throw new Error('Could not read B&W image dimensions');
+  const lovableApiKey = Deno.env.get('LOVABLE_API_KEY');
+  if (!lovableApiKey) {
+    throw new Error('LOVABLE_API_KEY not configured');
   }
 
-  // Calculate thumbnail dimensions (20% of B&W width)
-  const thumbnailWidth = Math.round(bwMetadata.width * THUMBNAIL_SCALE);
-  
-  // Scale padding and border based on image size
-  const scaleFactor = bwMetadata.width / 800;
-  const scaledPadding = Math.round(PADDING * scaleFactor);
-  const scaledBorderWidth = Math.max(2, Math.round(BORDER_WIDTH * scaleFactor));
+  const prompt = `Create a printable coloring page by compositing these two images:
+1. Use the BLACK AND WHITE coloring image as the main background (full size)
+2. Place the COLOR image as a small reference thumbnail in the TOP-LEFT corner
+3. The thumbnail should be about 15-20% of the image width
+4. Add a thin dark border around the thumbnail
+5. Keep the rest of the coloring page exactly as-is
+6. Output should be a clean printable image`;
 
-  // Process the color thumbnail - resize and add border
-  const colorImage = sharp(Buffer.from(colorImageBuffer));
-  const colorMetadata = await colorImage.metadata();
-  
-  if (!colorMetadata.width || !colorMetadata.height) {
-    throw new Error('Could not read color image dimensions');
-  }
-
-  // Calculate height maintaining aspect ratio
-  const aspectRatio = colorMetadata.height / colorMetadata.width;
-  const thumbnailHeight = Math.round(thumbnailWidth * aspectRatio);
-
-  // Create the thumbnail with border
-  const thumbnailWithBorder = await sharp(Buffer.from(colorImageBuffer))
-    .resize(thumbnailWidth, thumbnailHeight, { fit: 'fill' })
-    .extend({
-      top: scaledBorderWidth,
-      bottom: scaledBorderWidth,
-      left: scaledBorderWidth,
-      right: scaledBorderWidth,
-      background: { r: 51, g: 51, b: 51, alpha: 1 } // #333333 border
+  const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${lovableApiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "google/gemini-2.5-flash-image-preview",
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: prompt },
+            { type: "image_url", image_url: { url: bwImageUrl } },
+            { type: "image_url", image_url: { url: colorImageUrl } }
+          ]
+        }
+      ],
+      modalities: ["image", "text"]
     })
-    .png()
-    .toBuffer();
+  });
 
-  // Calculate position for thumbnail (top-left with padding)
-  const thumbnailX = scaledPadding;
-  const thumbnailY = scaledPadding;
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`AI Gateway error: ${response.status} - ${errorText}`);
+  }
 
-  // Composite the thumbnail onto the B&W image
-  const result = await sharp(Buffer.from(bwImageBuffer))
-    .composite([
-      {
-        input: thumbnailWithBorder,
-        top: thumbnailY,
-        left: thumbnailX,
-      }
-    ])
-    .png()
-    .toBuffer();
+  const data = await response.json();
+  const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
 
-  return new Uint8Array(result);
+  if (!imageUrl) {
+    throw new Error('No image returned from AI Gateway');
+  }
+
+  // Convert base64 data URL to Uint8Array
+  if (imageUrl.startsWith('data:image/')) {
+    const base64Data = imageUrl.split(',')[1];
+    const binaryString = atob(base64Data);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    return bytes;
+  }
+
+  // If it's a URL, fetch it
+  const imageResponse = await fetch(imageUrl);
+  const arrayBuffer = await imageResponse.arrayBuffer();
+  return new Uint8Array(arrayBuffer);
 }
 
 serve(async (req) => {
@@ -93,17 +90,6 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // For batch processing, we allow unauthenticated requests (admin operation)
-    // For single page processing, we require auth
-    const authHeader = req.headers.get('Authorization');
-    let userId: string | null = null;
-    
-    if (authHeader) {
-      const token = authHeader.replace('Bearer ', '');
-      const { data: { user } } = await supabase.auth.getUser(token);
-      userId = user?.id || null;
-    }
 
     // Batch processing mode - process all pages for a book
     if (batchProcess && bookId) {
@@ -145,25 +131,13 @@ serve(async (req) => {
         }
 
         try {
-          // Download both images
-          console.log(`⬇️ Downloading images for page ${page.page_id}`);
-          const [bwResponse, colorResponse] = await Promise.all([
-            fetch(page.coloring_image_url),
-            fetch(page.image_url)
-          ]);
-
-          if (!bwResponse.ok || !colorResponse.ok) {
-            throw new Error('Failed to download images');
-          }
-
-          const [bwBuffer, colorBuffer] = await Promise.all([
-            bwResponse.arrayBuffer(),
-            colorResponse.arrayBuffer()
-          ]);
-
-          // Composite the images
-          console.log(`🎨 Compositing images for page ${page.page_id}`);
-          const compositedImage = await compositeImages(bwBuffer, colorBuffer);
+          console.log(`🎨 Processing page ${page.page_id} with AI compositing`);
+          
+          // Use AI to composite the images
+          const compositedImage = await compositeImagesWithAI(
+            page.coloring_image_url,
+            page.image_url
+          );
 
           // Upload to storage
           const fileName = `printable-coloring/${bookId}/${page.page_id}_${Date.now()}.png`;
@@ -260,23 +234,11 @@ serve(async (req) => {
       );
     }
 
-    // Download both images
-    const [bwResponse, colorResponse] = await Promise.all([
-      fetch(pageData.coloring_image_url),
-      fetch(pageData.image_url)
-    ]);
-
-    if (!bwResponse.ok || !colorResponse.ok) {
-      throw new Error('Failed to download images');
-    }
-
-    const [bwBuffer, colorBuffer] = await Promise.all([
-      bwResponse.arrayBuffer(),
-      colorResponse.arrayBuffer()
-    ]);
-
-    // Composite the images
-    const compositedImage = await compositeImages(bwBuffer, colorBuffer);
+    // Use AI to composite the images
+    const compositedImage = await compositeImagesWithAI(
+      pageData.coloring_image_url,
+      pageData.image_url
+    );
 
     // Upload to storage
     const fileName = `printable-coloring/${pageData.book_id}/${pageId}_${Date.now()}.png`;

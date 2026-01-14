@@ -395,6 +395,7 @@ serve(async (req) => {
 
     // Character constraints for selected characters - now fetched from database
     let characterConstraintsContext = '';
+    let characterThemeContext = '';
     console.log(`🎭 Character selection received:`, { characterTheme, selectedCharacterIds });
     if (selectedCharacterIds && selectedCharacterIds.length > 0 && characterTheme) {
       const constraints = await buildCharacterConstraints(supabase, characterTheme, selectedCharacterIds);
@@ -402,6 +403,8 @@ serve(async (req) => {
         characterConstraintsContext = `\n\n${constraints}`;
         console.log(`🎭 Character constraints applied for ${characterTheme}:`, selectedCharacterIds);
       }
+      // CRITICAL: Tell AI not to re-ask for character theme/selection - they're already confirmed
+      characterThemeContext = `\n\n⚠️ CRITICAL - CHARACTER STATUS:\n🎨 CHARACTER THEME ALREADY SELECTED: ${characterTheme}\n🎭 CHARACTERS CONFIRMED: ${selectedCharacterIds.join(', ')}\n❌ DO NOT ask "Which character theme?" or show character selection - this step is COMPLETE.\n✅ Proceed to the NEXT step in the conversation flow (e.g., manner type, environment, etc.).`;
     }
 
     // Season context - optional discovery question
@@ -515,7 +518,7 @@ ${citySuggestBlock}
     // Combine base prompt with contextual additions
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);

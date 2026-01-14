@@ -12,7 +12,8 @@ import {
   BookOpen,
   Eye,
   Package,
-  GraduationCap
+  GraduationCap,
+  HandHeart
 } from 'lucide-react';
 import { BookTypeId } from '@/types/bookType';
 
@@ -169,6 +170,15 @@ export const BOOK_TYPES = [
     color: 'text-rose-500',
     needsClarification: true,
     clarificationContext: 'Ask about digraph focus: random digraphs for mixed practice OR specific digraph for targeted instruction on one sound.',
+    expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
+  },
+  {
+    id: 'manners' as const,
+    label: 'Manners Book',
+    icon: HandHeart,
+    description: 'Social skills and proper behavior (10 content pages)',
+    prompt: 'I want to create a manners book that teaches children social skills and proper behavior in everyday situations.',
+    color: 'text-rose-400',
     expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
   },
   {

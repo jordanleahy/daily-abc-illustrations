@@ -79,18 +79,23 @@ export function UserBookCard({
         .eq('book_id', book.id)
         .eq('is_latest', true);
       
-      if (error || !data) return { hasPrintable: false, missingColor: false, missingBW: false };
+      if (error || !data) return { hasPrintable: false, allPrintable: false, missingColor: false, missingBW: false };
       
+      // Pages that have both color and coloring images (eligible for printable)
+      const eligiblePages = data.filter(p => p.image_url && p.coloring_image_url);
+      // Check if ALL eligible pages have printable images
+      const allPrintable = eligiblePages.length > 0 && eligiblePages.every(p => p.printable_coloring_image_url);
       const hasPrintable = data.some(p => p.printable_coloring_image_url);
       const missingColor = data.some(p => !p.image_url);
       const missingBW = data.some(p => !p.coloring_image_url);
       
-      return { hasPrintable, missingColor, missingBW };
+      return { hasPrintable, allPrintable, missingColor, missingBW };
     },
     staleTime: 5 * 60 * 1000,
   });
   
   const hasPrintableImages = printableStatus?.hasPrintable ?? false;
+  const allPrintableComplete = printableStatus?.allPrintable ?? false;
   const hasMissingImages = (printableStatus?.missingColor || printableStatus?.missingBW) ?? false;
   
   const { ref, inView } = useIntersectionObserver({
@@ -345,19 +350,20 @@ export function UserBookCard({
 
             {/* Generate Printable Coloring Book */}
             <Button 
-              variant={hasPrintableImages ? "default" : "outline"}
+              variant={allPrintableComplete ? "default" : "outline"}
               size="sm"
               className={cn(
                 "w-full gap-2",
-                hasPrintableImages && "bg-green-600 hover:bg-green-700 text-white",
+                allPrintableComplete && "bg-green-600 hover:bg-green-700 text-white",
+                hasPrintableImages && !allPrintableComplete && "bg-amber-500 hover:bg-amber-600 text-white",
                 hasMissingImages && !hasPrintableImages && "opacity-50"
               )}
               disabled={isGeneratingPrintable || (hasMissingImages && !hasPrintableImages)}
               onClick={async (e) => {
                 e.stopPropagation();
                 
-                // If already generated, open the printable colorbook in a new tab
-                if (hasPrintableImages) {
+                // If all complete, open the printable colorbook in a new tab
+                if (allPrintableComplete) {
                   const printableUrl = `${SITE_CONFIG.productionUrl}/printable-colorbook/${book.id}`;
                   window.open(printableUrl, '_blank');
                   return;
@@ -400,11 +406,13 @@ export function UserBookCard({
               <Printer className="h-4 w-4" />
               {isGeneratingPrintable 
                 ? 'Generating...' 
-                : hasPrintableImages 
+                : allPrintableComplete 
                   ? 'Printable ColorBook ✓' 
-                  : hasMissingImages 
-                    ? 'Missing Pages' 
-                    : 'Create Printable ColorBook'}
+                  : hasPrintableImages
+                    ? 'Continue Printable...'
+                    : hasMissingImages 
+                      ? 'Missing Pages' 
+                      : 'Create Printable ColorBook'}
             </Button>
 
             {/* Landing Page Link - Uses daily_published.slug for consistency with OG metadata */}

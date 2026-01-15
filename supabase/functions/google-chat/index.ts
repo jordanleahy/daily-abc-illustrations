@@ -2,7 +2,7 @@ import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.57.2';
 import { corsHeaders } from '../_shared/cors.ts';
-import { BOOK_TYPE_TO_AGENT_TYPE } from '../_shared/types.ts';
+import { BOOK_TYPE_TO_AGENT_TYPE, getBookTypeCategoryWord, normalizeBookType } from '../_shared/types.ts';
 import { fetchGradeLevels, getGradeLabel, type ValidGrade } from '../_shared/gradeLevels.ts';
 import { buildCharacterConstraints, fetchCharactersForTheme } from '../_shared/characterConstraints.ts';
 import { getWordsForDigraphThroughGrade, isValidDigraph, type GradeLevel } from '../_shared/digraphCorpus.ts';
@@ -480,9 +480,18 @@ This is Step 4 in the conversation flow. Step 5 (Title Approval) and Step 6 (Out
     );
     const allOptionalQuestionsComplete = mannersQuestionsComplete || standardQuestionsComplete;
     
-    // Proceed to title context
+    // Get category word for title requirement
+    const categoryWord = bookType ? getBookTypeCategoryWord(normalizeBookType(bookType)) : 'Adventure';
+    
+    // Proceed to title context with category requirement
     const proceedToTitleContext = allOptionalQuestionsComplete && !outlineReady && !bookCreated && !titleWasJustApproved
-      ? `\n\n✅ ALL OPTIONAL QUESTIONS COMPLETE: All discovery questions have been answered or skipped. NOW propose a book title and description for user approval. The title confirmation ("✅ Create My Book!") is the VERY LAST step before generating the outline.`
+      ? `\n\n✅ ALL OPTIONAL QUESTIONS COMPLETE: All discovery questions have been answered or skipped. NOW propose a book title and description for user approval.
+
+📛 TITLE REQUIREMENT: The book title MUST include the category word "${categoryWord}" somewhere in the title.
+✅ Good examples: "Bluey's ${categoryWord} Adventure", "Chase's ${categoryWord} Fun", "${categoryWord} with Elsa"
+❌ Bad examples: Titles without "${categoryWord}" in them
+
+The title confirmation ("✅ Create My Book!") is the VERY LAST step before generating the outline.`
       : '';
 
     // Title confirmation is the FINAL step - when title is approved, generate outline immediately

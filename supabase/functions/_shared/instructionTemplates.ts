@@ -94,9 +94,15 @@ Image prompt for educational focus page must be 200-350 characters describing th
 ## Cover Page (Page 1)
 
 Generate a cover page with:
-- Book title prominently displayed
+- Book title prominently displayed (MUST include the book category in the title)
 - Character theme integration (if selected)
 - Engaging, colorful illustration
+
+⚠️ TITLE CATEGORY RULE: The book title MUST contain the book type/category word. For example:
+- ABC books: Title includes "ABC" (e.g., "Bluey's ABC Adventure")
+- Manners books: Title includes "Manners" (e.g., "Chase's Manners Fun")
+- Numbers books: Title includes "Numbers" (e.g., "Elsa's Numbers Journey")
+- Rhyming books: Title includes "Rhyming" (e.g., "Peppa's Rhyming Time")
 
 CRITICAL INSTRUCTION: Display the book title in large, bold, CENTERED letters at the center of the cover image, taking up 50-60% of the visual space.
 `.trim(),

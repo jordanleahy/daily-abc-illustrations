@@ -110,9 +110,9 @@ serve(async (req) => {
     }
 
     // Add educational lead-up for isolated "ph" digraphs:
-    // Spell out the letters, then pronounce the sound clearly
-    // Format: "p... h... makes the sound... [f sound]"
-    const phLeadUp = '<break time="300ms"/>p<break time="200ms"/>h<break time="400ms"/>makes the sound<break time="300ms"/><prosody volume="loud" rate="slow"><phoneme alphabet="ipa" ph="ɛf">f</phoneme></prosody><break time="300ms"/>';
+    // Spell out the letters individually using IPA for letter names, then pronounce the sound
+    // "p" = /piː/ (pee), "h" = /eɪtʃ/ (aitch), then "makes the sound" + /f/
+    const phLeadUp = '<break time="300ms"/><phoneme alphabet="ipa" ph="piː">p</phoneme><break time="300ms"/><phoneme alphabet="ipa" ph="eɪtʃ">h</phoneme><break time="400ms"/>makes the sound<break time="300ms"/><prosody volume="loud" rate="slow"><phoneme alphabet="ipa" ph="f">f</phoneme></prosody><break time="300ms"/>';
     
     const processedText = text
       .replace(/"ph"/gi, `"${phLeadUp}"`)

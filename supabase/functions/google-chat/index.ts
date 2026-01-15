@@ -430,13 +430,11 @@ ${nextQuestion.options.map(opt => `${opt.key}: ${opt.label}`).join('\n')}
 
     // Location question injection - ask BEFORE city question (optional questions come before title)
     // Only inject if: no location selected yet, outline not ready, book not created, not forcing outline
-    // SKIP for Manners books - they use simple environments (home/school), not resorts/cities
-    const shouldAskLocationQuestion = !isMannerBook && !location && !outlineReady && !bookCreated && !forceOutline;
+    const shouldAskLocationQuestion = !location && !outlineReady && !bookCreated && !forceOutline;
 
     // City question injection - ask as optional discovery, BEFORE title confirmation
     // Only inject if: no city selected yet, outline not ready, book not created, not forcing outline
-    // SKIP for Manners books - they use simple environments (home/school), not cities
-    const shouldAskCityQuestion = !isMannerBook && !city && !outlineReady && !bookCreated && !forceOutline;
+    const shouldAskCityQuestion = !city && !outlineReady && !bookCreated && !forceOutline;
 
     // Detect if user just approved title (clicked "Looks perfect, create the outline!" or similar)
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];

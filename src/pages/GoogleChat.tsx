@@ -2015,32 +2015,68 @@ export default function GoogleChat() {
                   isBookCreated={!!createdBookId}
                 />
                 
-                {/* Frontend-driven discovery questions */}
-                {discoveryFlow.currentQuestion && !discoveryFlow.isComplete && !isLoading && (
-                  <div className="flex justify-start mt-4">
-                    <div className="max-w-[80%] rounded-lg px-4 py-3 bg-muted">
-                      <DiscoveryQuestionInline
-                        question={discoveryFlow.currentQuestion}
-                        onAnswer={handleDiscoveryAnswer}
-                        onSkip={discoveryFlow.currentQuestion.is_skippable ? handleDiscoverySkip : undefined}
-                        progress={discoveryFlow.progress}
-                        answeredQuestions={
-                          discoveryFlow.questions
-                            .slice(0, discoveryFlow.currentStep)
-                            .filter(q => discoveryFlow.answers[q.question_key])
-                            .map(q => {
-                              const selectedKey = discoveryFlow.answers[q.question_key];
-                              const selectedOption = q.options.find(opt => opt.key === selectedKey);
-                              return {
-                                question: q,
-                                selectedKey,
-                                selectedLabel: selectedOption?.label || selectedKey,
-                              };
-                            })
-                        }
-                      />
-                    </div>
-                  </div>
+                {/* Frontend-driven discovery questions - chat-like vertical flow */}
+                {discoveryFlow.questions.length > 0 && !discoveryFlow.isComplete && !isLoading && (
+                  <>
+                    {/* Show answered questions as completed items */}
+                    {discoveryFlow.questions
+                      .slice(0, discoveryFlow.currentStep)
+                      .map((q) => {
+                        const selectedKey = discoveryFlow.answers[q.question_key];
+                        const isSkipped = discoveryFlow.skippedQuestions.has(q.question_key);
+                        const selectedOption = q.options.find(opt => opt.key === selectedKey);
+                        const displayValue = isSkipped ? 'Skipped' : (selectedOption?.label || selectedKey);
+                        
+                        return (
+                          <div key={q.id} className="space-y-2 mt-4">
+                            {/* Question */}
+                            <div className="flex justify-start">
+                              <div className="max-w-[80%] rounded-lg px-4 py-2 bg-muted">
+                                <p className="text-sm text-muted-foreground">{q.question_text}</p>
+                              </div>
+                            </div>
+                            {/* Answer */}
+                            <div className="flex justify-end">
+                              <div className="rounded-lg px-4 py-2 bg-primary text-primary-foreground">
+                                <p className="text-sm">{displayValue}</p>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    
+                    {/* Current question with options */}
+                    {discoveryFlow.currentQuestion && (
+                      <div className="flex justify-start mt-4">
+                        <div className="max-w-[80%] rounded-lg px-4 py-3 bg-muted">
+                          <p className="text-foreground font-medium mb-3">{discoveryFlow.currentQuestion.question_text}</p>
+                          <div className="flex flex-wrap gap-2">
+                            {discoveryFlow.currentQuestion.options.map((option) => (
+                              <Button
+                                key={option.key}
+                                variant="secondary"
+                                size="sm"
+                                className="h-auto py-2 px-3"
+                                onClick={() => handleDiscoveryAnswer(discoveryFlow.currentQuestion!.question_key, option.key)}
+                              >
+                                {option.label}
+                              </Button>
+                            ))}
+                            {discoveryFlow.currentQuestion.is_skippable && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-auto py-2 px-3 text-muted-foreground"
+                                onClick={() => handleDiscoverySkip(discoveryFlow.currentQuestion!.question_key)}
+                              >
+                                ⏭️ Skip
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
                 
                 {isLoading && (

@@ -12,7 +12,8 @@ serve(async (req) => {
   }
 
   try {
-    const { text, voiceId = 'XrExE9yKIg1WjnnlVkGX' } = await req.json();
+// Default to Lily voice - soft, gentle voice ideal for children's books
+    const { text, voiceId = 'pFZP5JQG7iQjIQuC4Bku' } = await req.json();
     
     if (!text || typeof text !== 'string') {
       return new Response(
@@ -45,10 +46,11 @@ serve(async (req) => {
           text,
           model_id: 'eleven_turbo_v2_5',
           voice_settings: {
-            stability: 0.5,
+            stability: 0.4,           // More expressive for storytelling
             similarity_boost: 0.75,
-            style: 0.3,
+            style: 0.6,               // More stylized for engaging delivery
             use_speaker_boost: true,
+            speed: 0.9,               // Slightly slower for children's comprehension
           },
         }),
       }

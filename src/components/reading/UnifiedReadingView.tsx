@@ -154,6 +154,10 @@ export interface UnifiedReadingViewConfig {
   
   /** Daily published content ID for tracking (daily published only) */
   contentId?: string;
+  
+  // ========== Video Export ==========
+  /** Function to get image URL for current page (for video export) */
+  getImageUrl?: (page: Page) => string | undefined;
 }
 
 /**
@@ -191,6 +195,7 @@ export function UnifiedReadingView({
   expiresAt,
   onTapToAdvance = false,
   contentId,
+  getImageUrl,
 }: UnifiedReadingViewConfig) {
   const navigate = useNavigate();
   const { startSession, trackPageView, endSession } = useReadingSessionAnalytics();
@@ -495,6 +500,8 @@ export function UnifiedReadingView({
           isLastWord={readingState.currentWordIndex === currentPageWords.length - 1}
           hasReachedLastWord={readingState.hasReachedLastWord}
           speakText={currentPage.title}
+          imageUrl={getImageUrl?.(currentPage)}
+          pageLetter={currentPage.letter}
         />
     </div>
   );

@@ -133,6 +133,7 @@ export default function LibraryBookView() {
       onBack={handleBack}
       showUploadButton={false}
       entryPoint={entryPoint}
+      getImageUrl={(page) => imageMap[page.page_number]}
       imageComponent={(page, pageIndex, currentWordData) => (
         <BookImage
           src={imageMap[page.page_number]}

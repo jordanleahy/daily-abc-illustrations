@@ -474,9 +474,10 @@ serve(async (req) => {
       const unansweredDiscoveries = mannersDiscoveries.filter(d => {
         if (d.question_key === 'manners_setting' && mannersSetting) return false;
         if (d.question_key === 'season' && season) return false;
+        if (d.question_key === 'location' && location) return false; // Location now supported for Manners
         if (d.question_key === 'city' && city) return false;
-        // Skip location/clothing brand for manners (not applicable)
-        if (d.question_key === 'location' || d.question_key === 'clothing_brand' || d.question_key === 'environment') return false;
+        // Skip clothing brand/environment for manners (not applicable)
+        if (d.question_key === 'clothing_brand' || d.question_key === 'environment') return false;
         return true;
       });
       

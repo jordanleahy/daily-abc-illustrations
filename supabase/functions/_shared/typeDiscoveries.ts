@@ -12,6 +12,10 @@ export interface TypeSpecificDiscovery {
   question_text: string;
   options: DiscoveryOption[];
   sort_order: number;
+  step_number: number | null;
+  frontend_state_key: string | null;
+  context_value_key: string | null;
+  is_skippable: boolean;
   is_active: boolean;
 }
 
@@ -61,7 +65,11 @@ export async function fetchTypeDiscoveries(
       const existing = discoveriesCache.get(discovery.agent_type) || [];
       existing.push({
         ...discovery,
-        options: discovery.options as DiscoveryOption[]
+        options: discovery.options as DiscoveryOption[],
+        step_number: discovery.step_number ?? null,
+        frontend_state_key: discovery.frontend_state_key ?? null,
+        context_value_key: discovery.context_value_key ?? null,
+        is_skippable: discovery.is_skippable ?? true,
       });
       discoveriesCache.set(discovery.agent_type, existing);
     }
@@ -123,6 +131,10 @@ function getDefaultDiscoveries(agentType?: string): TypeSpecificDiscovery[] {
         { key: 'custom', label: '✏️ Custom Theme' }
       ],
       sort_order: 1,
+      step_number: 1,
+      frontend_state_key: 'selectedSubjectTheme',
+      context_value_key: 'subjectTheme',
+      is_skippable: false,
       is_active: true
     },
     {
@@ -136,6 +148,10 @@ function getDefaultDiscoveries(agentType?: string): TypeSpecificDiscovery[] {
         { key: 'mixed', label: 'Mixed Case (Aa, Bb, Cc)' }
       ],
       sort_order: 2,
+      step_number: 2,
+      frontend_state_key: 'selectedLetterCase',
+      context_value_key: 'letterCase',
+      is_skippable: false,
       is_active: true
     }
   ];

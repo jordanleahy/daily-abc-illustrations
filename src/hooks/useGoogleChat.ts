@@ -154,7 +154,8 @@ export const useGoogleChat = (
             clothingBrand: context?.clothingBrand,
             location: context?.location,
             city: context?.city,
-            mannerType: context?.mannerType
+            mannerType: context?.mannerType,
+            mannersSetting: context?.mannersSetting
           })
         }
       );

@@ -392,18 +392,3 @@ export async function getCitySuggestBlock(supabase: SupabaseClient): Promise<str
   
   return cityLines.join('\n');
 }
-
-// ============================================
-// LEGACY EXPORTS FOR BACKWARD COMPATIBILITY
-// ============================================
-
-// These maintain compatibility with existing code that imports static arrays
-// They will be populated on first fetch and use cached values
-
-export const VALID_CITIES = ['JERSEY_CITY', 'HOBOKEN', 'NEW_YORK_CITY', 'NONE'] as const;
-
-export const CITY_OPTIONS: CityOption[] = [
-  { id: 'JERSEY_CITY', label: 'Jersey City', emoji: '🌅', description: 'NJ, waterfront views, diverse neighborhoods' },
-  { id: 'HOBOKEN', label: 'Hoboken', emoji: '🚂', description: 'NJ, historic mile-square city' },
-  { id: 'NEW_YORK_CITY', label: 'New York City', emoji: '🗽', description: 'The Big Apple, iconic landmarks' },
-];

@@ -8,8 +8,8 @@ import type { GradeId } from '@/types/grade';
 import { SEASON_OPTIONS, type SeasonId } from '@/types/season';
 import { ENVIRONMENT_OPTIONS, type EnvironmentId } from '@/types/environment';
 import { CLOTHING_BRAND_OPTIONS, type ClothingBrandId } from '@/types/clothingBrand';
-import { LOCATION_OPTIONS, type LocationId } from '@/types/location';
-import { CITY_OPTIONS, type CityId } from '@/types/city';
+import type { LocationId } from '@/types/location';
+import type { CityId } from '@/types/city';
 import { MANNER_TYPE_LABELS, type MannerTypeId } from '@/types/mannerType';
 import { MANNERS_SETTING_OPTIONS, type MannersSettingId } from '@/types/mannersSetting';
 interface MessageContent {
@@ -413,33 +413,25 @@ export const useGoogleChat = (
           }
 
           // Location selection fallback - optional discovery question for specific resort
+          // Note: Locations are now database-driven, so we return a generic message
+          // The actual options come from the agent's [SUGGEST] block which uses DB data
           if (cleanedText.toLowerCase().includes('resort') || 
               cleanedText.toLowerCase().includes('which resort') || 
               cleanedText.toLowerCase().includes('specific resort') ||
               cleanedText.toLowerCase().includes('specific location') ||
               cleanedText.toLowerCase().includes('set this book at')) {
-            const locationActions: SuggestedAction[] = LOCATION_OPTIONS.map(l => ({
-              id: l.id,
-              label: `${l.emoji} ${l.label}`,
-              value: l.label,
-              locationId: l.id as LocationId,
-            }));
-            locationActions.push({ id: 'skip-location', label: '⏭️ Skip (no specific resort)', value: 'No specific resort', locationId: 'NONE' as LocationId });
-            return { cleanContent: cleanedText, suggestedActions: locationActions };
+            // Return without actions - agent provides them via [SUGGEST] block
+            return { cleanContent: cleanedText, suggestedActions: undefined };
           }
 
           // City selection fallback - optional discovery question for urban setting
+          // Note: Cities are now database-driven, so we return a generic message
+          // The actual options come from the agent's [SUGGEST] block which uses DB data
           if (cleanedText.toLowerCase().includes('specific city') || 
               cleanedText.toLowerCase().includes('which city') || 
               cleanedText.toLowerCase().includes('set this book in a specific city')) {
-            const cityActions: SuggestedAction[] = CITY_OPTIONS.map(c => ({
-              id: c.id,
-              label: `${c.emoji} ${c.label}`,
-              value: c.label,
-              cityId: c.id as CityId,
-            }));
-            cityActions.push({ id: 'skip-city', label: '⏭️ Skip (no specific city)', value: 'No specific city', cityId: 'NONE' as CityId });
-            return { cleanContent: cleanedText, suggestedActions: cityActions };
+            // Return without actions - agent provides them via [SUGGEST] block
+            return { cleanContent: cleanedText, suggestedActions: undefined };
           }
 
           // Manners setting selection fallback - where manners scenarios take place
@@ -470,11 +462,14 @@ export const useGoogleChat = (
         ]);
 
         // Known IDs - derived from type files for single source of truth
+        // Note: Location and City IDs are now database-driven, so we accept any ID
+        // that matches the pattern (uppercase with underscores) as valid
         const seasonIds: Set<string> = new Set(SEASON_OPTIONS.map(s => s.id));
         const environmentIds: Set<string> = new Set(ENVIRONMENT_OPTIONS.map(e => e.id));
         const clothingBrandIds: Set<string> = new Set(CLOTHING_BRAND_OPTIONS.map(b => b.id));
-        const locationIds: Set<string> = new Set([...LOCATION_OPTIONS.map(l => l.id), 'skip-location', 'NONE']);
-        const cityIds: Set<string> = new Set([...CITY_OPTIONS.map(c => c.id), 'skip-city', 'NONE']);
+        // Location/city IDs are validated by pattern matching rather than static list
+        const isLocationId = (id: string) => /^[A-Z][A-Z_]+$/.test(id) || id === 'skip-location' || id === 'NONE';
+        const isCityId = (id: string) => /^[A-Z][A-Z_]+$/.test(id) || id === 'skip-city' || id === 'NONE';
         const mannerTypeIds: Set<string> = new Set(Object.keys(MANNER_TYPE_LABELS));
         const mannersSettingIds: Set<string> = new Set([...MANNERS_SETTING_OPTIONS.map(s => s.id), 'skip-setting']);
 
@@ -511,12 +506,12 @@ export const useGoogleChat = (
             if (clothingBrandIds.has(id)) {
               action.clothingBrandId = id as ClothingBrandId;
             }
-            // Check for location IDs
-            if (locationIds.has(id)) {
+            // Check for location IDs (using pattern matching for database-driven IDs)
+            if (isLocationId(id)) {
               action.locationId = id as LocationId;
             }
-            // Check for city IDs
-            if (cityIds.has(id)) {
+            // Check for city IDs (using pattern matching for database-driven IDs)
+            if (isCityId(id)) {
               action.cityId = id as CityId;
             }
             // Check for manner type IDs (Manners book agent)

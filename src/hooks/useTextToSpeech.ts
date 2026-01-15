@@ -37,9 +37,14 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
   const objectUrlRef = useRef<string | null>(null);
   const animationFrameRef = useRef<number | null>(null);
   const wordTimingsRef = useRef<WordTiming[]>([]);
+  
+  // Refs for instant replay of same audio
+  const lastCacheKeyRef = useRef<string | null>(null);
+  const cachedAudioRef = useRef<HTMLAudioElement | null>(null);
+  const cachedObjectUrlRef = useRef<string | null>(null);
 
-  // Cleanup function
-  const cleanup = useCallback(() => {
+  // Cleanup function - preserves cached audio for instant replay
+  const cleanup = useCallback((preserveCache: boolean = true) => {
     if (animationFrameRef.current) {
       cancelAnimationFrame(animationFrameRef.current);
       animationFrameRef.current = null;
@@ -53,6 +58,17 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
       URL.revokeObjectURL(objectUrlRef.current);
       objectUrlRef.current = null;
     }
+    
+    // Only clear cached audio when explicitly requested (e.g., unmount)
+    if (!preserveCache) {
+      if (cachedObjectUrlRef.current) {
+        URL.revokeObjectURL(cachedObjectUrlRef.current);
+        cachedObjectUrlRef.current = null;
+      }
+      cachedAudioRef.current = null;
+      lastCacheKeyRef.current = null;
+    }
+    
     setIsPlaying(false);
     setCurrentWordIndex(-1);
     wordTimingsRef.current = [];
@@ -101,11 +117,12 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
     animationFrameRef.current = requestAnimationFrame(updateWordIndex);
   }, [onWordChange]);
 
-  // Helper to play audio blob
+  // Helper to play audio blob and cache for instant replay
   const playAudioBlob = useCallback(async (
     audioBlob: Blob,
     timings: WordTiming[],
-    withSync: boolean
+    withSync: boolean,
+    cacheKey: string
   ) => {
     const audioUrl = URL.createObjectURL(audioBlob);
     objectUrlRef.current = audioUrl;
@@ -115,6 +132,15 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
 
     const audio = new Audio(audioUrl);
     audioRef.current = audio;
+    
+    // Cache for instant replay
+    lastCacheKeyRef.current = cacheKey;
+    cachedAudioRef.current = audio;
+    // Keep a separate reference to the URL for the cached audio
+    if (cachedObjectUrlRef.current && cachedObjectUrlRef.current !== audioUrl) {
+      URL.revokeObjectURL(cachedObjectUrlRef.current);
+    }
+    cachedObjectUrlRef.current = audioUrl;
 
     audio.onended = () => {
       setIsPlaying(false);
@@ -145,24 +171,56 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
   const speak = useCallback(async (text: string, withSync: boolean = true) => {
     if (!text) return;
     
-    // Stop any current playback
-    cleanup();
+    const effectiveVoiceId = voiceId || 'default';
+    const cacheKey = generateTTSCacheKey(text, effectiveVoiceId);
+    
+    // 0. Instant replay - same audio element, no cache lookup needed
+    if (lastCacheKeyRef.current === cacheKey && cachedAudioRef.current) {
+      console.log('[TTS] Instant replay - same audio:', cacheKey);
+      
+      // Stop animation frame if running
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      
+      setIsCacheHit(true);
+      setIsLoading(false);
+      setIsPlaying(true);
+      setCurrentWordIndex(-1);
+      
+      cachedAudioRef.current.currentTime = 0;
+      
+      // Restart word sync if needed
+      if (withSync && wordTimingsRef.current.length > 0) {
+        syncWords(cachedAudioRef.current);
+      }
+      
+      try {
+        await cachedAudioRef.current.play();
+      } catch (err) {
+        console.error('[TTS] Replay failed:', err);
+        setIsPlaying(false);
+      }
+      return;
+    }
+    
+    // Stop any current playback (but preserve cached audio for potential replay)
+    cleanup(true);
     setError(null);
     setIsLoading(true);
     setWordTimings([]);
     setIsCacheHit(false);
 
     try {
-      const effectiveVoiceId = voiceId || 'default';
-      const cacheKey = generateTTSCacheKey(text, effectiveVoiceId);
-      
-      // 1. Check cache first (permanent cache - no expiry)
+      // 1. Check cache first (memory → Service Worker)
       const cached = await getTTSFromCache(cacheKey);
       
       if (cached && cached.audioBlob) {
         console.log('[TTS] Cache hit - instant playback:', cacheKey);
         setIsCacheHit(true);
-        await playAudioBlob(cached.audioBlob, cached.wordTimings || [], withSync);
+        wordTimingsRef.current = cached.wordTimings || [];
+        await playAudioBlob(cached.audioBlob, cached.wordTimings || [], withSync, cacheKey);
         return;
       }
       
@@ -221,7 +279,7 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
         });
       
       // 4. Play the audio
-      await playAudioBlob(audioBlob, timings, withSync);
+      await playAudioBlob(audioBlob, timings, withSync, cacheKey);
       
     } catch (err) {
       console.error('TTS error:', err);
@@ -229,11 +287,11 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
       setIsLoading(false);
       setIsPlaying(false);
     }
-  }, [voiceId, cleanup, playAudioBlob]);
+  }, [voiceId, cleanup, playAudioBlob, syncWords]);
 
-  // Cleanup on unmount
+  // Full cleanup on unmount (including cached audio)
   useEffect(() => {
-    return cleanup;
+    return () => cleanup(false);
   }, [cleanup]);
 
   return { speak, stop, isLoading, isPlaying, error, currentWordIndex, wordTimings, isCacheHit };

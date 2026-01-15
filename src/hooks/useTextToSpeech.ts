@@ -159,11 +159,12 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
     setIsLoading(false);
     setIsPlaying(true);
     
+    await audio.play();
+    
+    // Start word sync AFTER play() resolves to avoid race condition
     if (withSync && timings.length > 0) {
       syncWords(audio);
     }
-    
-    await audio.play();
   }, [syncWords]);
 
   // Speak text with cache-first strategy
@@ -190,13 +191,13 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
       
       cachedAudioRef.current.currentTime = 0;
       
-      // Restart word sync if needed
-      if (withSync && wordTimingsRef.current.length > 0) {
-        syncWords(cachedAudioRef.current);
-      }
-      
       try {
         await cachedAudioRef.current.play();
+        
+        // Start word sync AFTER play() resolves to avoid race condition
+        if (withSync && wordTimingsRef.current.length > 0) {
+          syncWords(cachedAudioRef.current);
+        }
       } catch (err) {
         console.error('[TTS] Replay failed:', err);
         setIsPlaying(false);

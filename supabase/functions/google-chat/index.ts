@@ -381,14 +381,14 @@ serve(async (req) => {
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const mannersDiscoveries = await fetchTypeDiscoveries(supabaseUrl, supabaseKey, 'book-creation-manners');
       
-      // Filter out questions that have already been answered
+      // Filter out questions that have already been answered - database-driven, no book type conditionals
       const unansweredDiscoveries = mannersDiscoveries.filter(d => {
         if (d.question_key === 'manners_setting' && mannersSetting) return false;
         if (d.question_key === 'season' && season) return false;
-        if (d.question_key === 'location' && location) return false; // Location now supported for Manners
+        if (d.question_key === 'location' && location) return false;
         if (d.question_key === 'city' && city) return false;
-        // Skip clothing brand/environment for manners (not applicable)
-        if (d.question_key === 'clothing_brand' || d.question_key === 'environment') return false;
+        if (d.question_key === 'environment' && environment) return false;
+        if (d.question_key === 'clothing_brand' && clothingBrand) return false;
         return true;
       });
       

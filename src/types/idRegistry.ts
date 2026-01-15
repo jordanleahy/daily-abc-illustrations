@@ -87,12 +87,10 @@ export const LEGACY_ID_MAP: Record<string, string> = {
   'SPRING': 'SEASON_SPRING',
   'SUMMER': 'SEASON_SUMMER',
   'FALL': 'SEASON_FALL',
-  // Grades
+  // Grades - keep original format (already have GRADE_ prefix for 1+)
   'PRE_K': 'GRADE_PRE_K',
   'K': 'GRADE_K',
-  'GRADE_1': 'GRADE_GRADE_1',
-  'GRADE_2': 'GRADE_GRADE_2',
-  'GRADE_3': 'GRADE_GRADE_3',
+  // GRADE_1, GRADE_2, etc. are already prefixed, no mapping needed
   // Manner settings
   'home': 'SETTING_home',
   'school': 'SETTING_school',

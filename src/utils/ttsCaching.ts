@@ -123,11 +123,13 @@ export async function isTTSCached(cacheKey: string): Promise<boolean> {
  */
 export async function prefetchTTSAudio(
   text: string,
-  voiceId: string = 'default'
+  voiceId?: string
 ): Promise<boolean> {
   if (!text?.trim()) return false;
   
-  const cacheKey = generateTTSCacheKey(text, voiceId);
+  // Use empty string for cache key when no voiceId (will use server default)
+  const effectiveVoiceId = voiceId || '';
+  const cacheKey = generateTTSCacheKey(text, effectiveVoiceId);
   
   // Check if already cached
   const cached = await getTTSFromCache(cacheKey);
@@ -143,6 +145,12 @@ export async function prefetchTTSAudio(
     const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
     const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
     
+    // Only include voiceId if explicitly provided (let server use default otherwise)
+    const bodyPayload: Record<string, unknown> = { text, withTimestamps: true };
+    if (voiceId) {
+      bodyPayload.voiceId = voiceId;
+    }
+    
     const response = await fetch(
       `${supabaseUrl}/functions/v1/elevenlabs-tts`,
       {
@@ -152,7 +160,7 @@ export async function prefetchTTSAudio(
           'apikey': supabaseKey,
           'Authorization': `Bearer ${supabaseKey}`,
         },
-        body: JSON.stringify({ text, voiceId, withTimestamps: true }),
+        body: JSON.stringify(bodyPayload),
       }
     );
     

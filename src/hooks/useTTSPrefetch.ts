@@ -12,7 +12,7 @@ interface UseTTSPrefetchOptions {
   prefetchCount?: number;
   /** Delay between prefetch requests in ms (default: 500) */
   delayBetweenRequests?: number;
-  /** Voice ID for TTS (default: 'default') */
+  /** Voice ID for TTS (optional - uses server default if not provided) */
   voiceId?: string;
   /** Enable/disable prefetching (default: true) */
   enabled?: boolean;
@@ -34,7 +34,7 @@ export function useTTSPrefetch(
   const {
     prefetchCount = 3,
     delayBetweenRequests = 500,
-    voiceId = 'default',
+    voiceId,
     enabled = true,
   } = options;
 

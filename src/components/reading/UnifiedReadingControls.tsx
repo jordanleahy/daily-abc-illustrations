@@ -1,8 +1,10 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight, Volume2, Loader2 } from 'lucide-react';
+import { ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight, Volume2, Loader2, Video } from 'lucide-react';
 import { WordCarousel } from './WordCarousel';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
+import { generatePageVideo, downloadBlob } from '@/services/pageVideoGenerator';
+import { toast } from 'sonner';
 import type { PageType } from '@/types/book';
 
 interface UnifiedReadingControlsProps {
@@ -42,6 +44,10 @@ interface UnifiedReadingControlsProps {
   
   // Word sync callback - called when TTS is speaking a word
   onTTSWordChange?: (wordIndex: number) => void;
+  
+  // Video export props
+  imageUrl?: string;
+  pageLetter?: string;
 }
 
 export function UnifiedReadingControls({
@@ -68,7 +74,12 @@ export function UnifiedReadingControls({
   pageType,
   speakText,
   onTTSWordChange,
+  imageUrl,
+  pageLetter,
 }: UnifiedReadingControlsProps) {
+  // Video export state
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
   // Handle word change from TTS - maps TTS word index to overlay word index
   const handleTTSWordChange = useCallback((ttsWordIndex: number, word: string) => {
     if (!overlayWords || !onTTSWordChange) return;
@@ -110,6 +121,35 @@ export function UnifiedReadingControls({
       stop();
     } else if (speakText) {
       speak(speakText, true); // Enable word sync
+    }
+  };
+
+  const handleExportVideo = async () => {
+    if (!imageUrl || !overlayText) {
+      toast.error('No image or text available for video');
+      return;
+    }
+
+    setIsGeneratingVideo(true);
+    setVideoProgress(0);
+
+    try {
+      const videoBlob = await generatePageVideo({
+        imageUrl,
+        text: overlayText,
+        aspectRatio: 'portrait',
+        onProgress: setVideoProgress,
+      });
+
+      const filename = `${pageLetter || 'page'}-${overlayText.toLowerCase().replace(/\s+/g, '-')}.webm`;
+      downloadBlob(videoBlob, filename);
+      toast.success('Video exported!');
+    } catch (error) {
+      console.error('Video export failed:', error);
+      toast.error('Failed to generate video');
+    } finally {
+      setIsGeneratingVideo(false);
+      setVideoProgress(0);
     }
   };
 
@@ -280,6 +320,27 @@ export function UnifiedReadingControls({
               <Loader2 className="w-6 h-6 text-foreground animate-spin" />
             ) : (
               <Volume2 className={`w-6 h-6 ${isPlaying ? 'text-primary animate-pulse' : 'text-foreground'}`} />
+            )}
+          </button>
+        )}
+
+        {/* Video Export Button */}
+        {imageUrl && overlayText && (
+          <button
+            onClick={handleExportVideo}
+            disabled={isGeneratingVideo}
+            className={`flex items-center justify-center h-14 w-14 rounded-full transition-all active:scale-[0.98] shrink-0 ${
+              isGeneratingVideo
+                ? 'opacity-50 cursor-not-allowed bg-muted/30'
+                : 'bg-muted/30 hover:bg-muted/50 cursor-pointer'
+            }`}
+            aria-label={isGeneratingVideo ? `Generating video ${videoProgress}%` : "Export video"}
+            title={isGeneratingVideo ? `Generating video ${videoProgress}%` : "Export video with audio"}
+          >
+            {isGeneratingVideo ? (
+              <Loader2 className="w-6 h-6 text-foreground animate-spin" />
+            ) : (
+              <Video className="w-6 h-6 text-foreground" />
             )}
           </button>
         )}

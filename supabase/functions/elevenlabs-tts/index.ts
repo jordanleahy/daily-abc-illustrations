@@ -17,51 +17,73 @@ interface WordTiming {
   endTime: number;
 }
 
+// Extract words from original text (without SSML tags)
+function extractOriginalWords(text: string): string[] {
+  return text.match(/[a-zA-Z0-9''-]+/g) || [];
+}
+
 // Convert character-level alignment to word-level timing
-function getWordTimings(text: string, alignment: AlignmentData): WordTiming[] {
-  const words: WordTiming[] = [];
+// Uses original text for word list, alignment data for timing
+function getWordTimings(originalText: string, alignment: AlignmentData): WordTiming[] {
+  const originalWords = extractOriginalWords(originalText);
   const characters = alignment.characters;
   const startTimes = alignment.character_start_times_seconds;
   const endTimes = alignment.character_end_times_seconds;
   
+  const words: WordTiming[] = [];
+  let originalWordIndex = 0;
   let currentWord = '';
   let wordStartTime = 0;
   let wordEndTime = 0;
   let inWord = false;
+  let inTag = false;
   
   for (let i = 0; i < characters.length; i++) {
     const char = characters[i];
+    
+    // Skip SSML tag characters
+    if (char === '<') {
+      inTag = true;
+      continue;
+    }
+    if (char === '>') {
+      inTag = false;
+      continue;
+    }
+    if (inTag) continue;
+    
     const isWordChar = /[a-zA-Z0-9''-]/.test(char);
     
     if (isWordChar) {
       if (!inWord) {
-        // Start of new word
         inWord = true;
         wordStartTime = startTimes[i];
         currentWord = char;
       } else {
-        // Continue current word
         currentWord += char;
       }
       wordEndTime = endTimes[i];
     } else {
       if (inWord && currentWord.trim()) {
-        // End of word - save it
-        words.push({
-          word: currentWord,
-          startTime: wordStartTime,
-          endTime: wordEndTime,
-        });
+        // Map to original word (preserves "ph" instead of just the spoken characters)
+        if (originalWordIndex < originalWords.length) {
+          words.push({
+            word: originalWords[originalWordIndex],
+            startTime: wordStartTime,
+            endTime: wordEndTime,
+          });
+          originalWordIndex++;
+        }
         currentWord = '';
         inWord = false;
       }
     }
   }
   
-  // Don't forget the last word if text doesn't end with punctuation
-  if (inWord && currentWord.trim()) {
+  // Don't forget the last word
+  if (inWord && currentWord.trim() && originalWordIndex < originalWords.length) {
     words.push({
-      word: currentWord,
+      word: originalWords[originalWordIndex],
       startTime: wordStartTime,
       endTime: wordEndTime,
     });
@@ -87,13 +109,12 @@ serve(async (req) => {
       );
     }
 
-    // Preprocess text for children's book digraph pronunciation
-    // Replace isolated "ph" or "Ph" with "f" sound (not "p-h")
+    // Wrap isolated "ph" digraphs with SSML phoneme tags for correct pronunciation
+    // This preserves the original text while telling ElevenLabs to pronounce it as "f"
     const processedText = text
-      .replace(/\bph\b/gi, 'f')           // isolated "ph" → "f"
-      .replace(/\bPh\b/g, 'F')            // preserve capitalization
-      .replace(/\"ph\"/gi, '"f"')         // quoted "ph" → "f"
-      .replace(/\'ph\'/gi, "'f'");        // single-quoted 'ph' → 'f'
+      .replace(/"ph"/gi, '"<phoneme alphabet="ipa" ph="ɛf">ph</phoneme>"')
+      .replace(/'ph'/gi, "'<phoneme alphabet=\"ipa\" ph=\"ɛf\">ph</phoneme>'")
+      .replace(/\bph\b/gi, '<phoneme alphabet="ipa" ph="ɛf">ph</phoneme>');
 
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
     
@@ -143,7 +164,8 @@ serve(async (req) => {
     if (withTimestamps) {
       // Parse JSON response with timestamps
       const data = await response.json();
-      const wordTimings = getWordTimings(processedText, data.alignment);
+      // Use original text for word timings (preserves "ph" digraph for highlighting)
+      const wordTimings = getWordTimings(text, data.alignment);
       
       console.log(`Generated audio with ${wordTimings.length} word timings`);
       
@@ -152,7 +174,6 @@ serve(async (req) => {
           audio_base64: data.audio_base64,
           wordTimings,
           originalText: text,
-          processedText,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );

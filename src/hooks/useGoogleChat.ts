@@ -80,6 +80,7 @@ export const useGoogleChat = (
       city?: CityId | null; // For city selection
       mannerType?: MannerTypeId | null; // For manners book manner type selection
       mannersSetting?: string | null; // For manners book setting (home, school, both)
+      discoveryContext?: Record<string, string>; // For frontend-driven discovery flow
     }
   ) => {
     console.log('[useGoogleChat Debug] sendMessage called:', {
@@ -157,7 +158,8 @@ export const useGoogleChat = (
             location: context?.location,
             city: context?.city,
             mannerType: context?.mannerType,
-            mannersSetting: context?.mannersSetting
+            mannersSetting: context?.mannersSetting,
+            discoveryContext: context?.discoveryContext,
           })
         }
       );

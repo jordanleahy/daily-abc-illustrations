@@ -1,5 +1,5 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { generateTTSCacheKey, getTTSFromCache, cacheTTSAudio } from '@/utils/ttsCaching';
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { ttsManager } from '@/services/ttsManager';
 
 interface WordTiming {
   word: string;
@@ -23,8 +23,13 @@ interface UseTextToSpeechReturn {
   isCacheHit: boolean;
 }
 
+/**
+ * React hook wrapper around the imperative TTSManager.
+ * Bridges the manager's callbacks to React state.
+ */
 export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextToSpeechReturn {
   const { voiceId, onWordChange } = options;
+  
   const [isLoading, setIsLoading] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,209 +37,49 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
   const [wordTimings, setWordTimings] = useState<WordTiming[]>([]);
   const [isCacheHit, setIsCacheHit] = useState(false);
   
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const objectUrlRef = useRef<string | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const wordTimingsRef = useRef<WordTiming[]>([]);
+  // Store onWordChange in ref to avoid stale closures
+  const onWordChangeRef = useRef(onWordChange);
+  onWordChangeRef.current = onWordChange;
 
-  // Cleanup function
-  const cleanup = useCallback(() => {
-    if (animationFrameRef.current) {
-      cancelAnimationFrame(animationFrameRef.current);
-      animationFrameRef.current = null;
-    }
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.src = '';
-      audioRef.current = null;
-    }
-    if (objectUrlRef.current) {
-      URL.revokeObjectURL(objectUrlRef.current);
-      objectUrlRef.current = null;
-    }
+  const speak = useCallback(async (text: string, withSync: boolean = true) => {
+    setError(null);
+    setCurrentWordIndex(-1);
+    setWordTimings([]);
+    
+    await ttsManager.speak(text, voiceId || 'default', withSync, {
+      onWordChange: (index, word) => {
+        setCurrentWordIndex(index);
+        onWordChangeRef.current?.(index, word);
+      },
+      onPlayingChange: setIsPlaying,
+      onLoadingChange: setIsLoading,
+      onError: setError,
+      onTimingsReady: setWordTimings,
+      onCacheHit: setIsCacheHit,
+    });
+  }, [voiceId]);
+
+  const stop = useCallback(() => {
+    ttsManager.stop();
     setIsPlaying(false);
     setCurrentWordIndex(-1);
-    wordTimingsRef.current = [];
   }, []);
-
-  // Stop playback
-  const stop = useCallback(() => {
-    cleanup();
-  }, [cleanup]);
-
-  // Word sync animation loop
-  const syncWords = useCallback((audio: HTMLAudioElement) => {
-    const updateWordIndex = () => {
-      if (!audio || audio.paused || audio.ended) {
-        return;
-      }
-      
-      const currentTime = audio.currentTime;
-      const timings = wordTimingsRef.current;
-      
-      // Find the word that should be highlighted at current time
-      let newIndex = -1;
-      for (let i = 0; i < timings.length; i++) {
-        if (currentTime >= timings[i].startTime && currentTime <= timings[i].endTime) {
-          newIndex = i;
-          break;
-        }
-        // If we're between words, show the previous word
-        if (currentTime > timings[i].endTime && (i === timings.length - 1 || currentTime < timings[i + 1].startTime)) {
-          newIndex = i;
-          break;
-        }
-      }
-      
-      setCurrentWordIndex(prev => {
-        if (prev !== newIndex && newIndex >= 0) {
-          const word = timings[newIndex]?.word || '';
-          onWordChange?.(newIndex, word);
-        }
-        return newIndex;
-      });
-      
-      animationFrameRef.current = requestAnimationFrame(updateWordIndex);
-    };
-    
-    animationFrameRef.current = requestAnimationFrame(updateWordIndex);
-  }, [onWordChange]);
-
-  // Helper to play audio blob
-  const playAudioBlob = useCallback(async (
-    audioBlob: Blob,
-    timings: WordTiming[],
-    withSync: boolean
-  ) => {
-    const audioUrl = URL.createObjectURL(audioBlob);
-    objectUrlRef.current = audioUrl;
-    
-    wordTimingsRef.current = timings;
-    setWordTimings(timings);
-
-    const audio = new Audio(audioUrl);
-    audioRef.current = audio;
-
-    audio.onended = () => {
-      setIsPlaying(false);
-      setCurrentWordIndex(-1);
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-        animationFrameRef.current = null;
-      }
-    };
-
-    audio.onerror = () => {
-      setError('Failed to play audio');
-      setIsPlaying(false);
-      setCurrentWordIndex(-1);
-    };
-
-    setIsLoading(false);
-    setIsPlaying(true);
-    
-    await audio.play();
-    
-    // Start word sync AFTER play() resolves to avoid race condition
-    if (withSync && timings.length > 0) {
-      syncWords(audio);
-    }
-  }, [syncWords]);
-
-  // Speak text with cache-first strategy
-  const speak = useCallback(async (text: string, withSync: boolean = true) => {
-    if (!text) return;
-    
-    const effectiveVoiceId = voiceId || 'default';
-    const cacheKey = generateTTSCacheKey(text, effectiveVoiceId);
-    
-    // Stop any current playback
-    cleanup();
-    setError(null);
-    setIsLoading(true);
-    setWordTimings([]);
-    setIsCacheHit(false);
-
-    try {
-      // 1. Check cache first (memory → Service Worker)
-      const cached = await getTTSFromCache(cacheKey);
-      
-      if (cached && cached.audioBlob) {
-        console.log('[TTS] Cache hit - instant playback:', cacheKey);
-        setIsCacheHit(true);
-        await playAudioBlob(cached.audioBlob, cached.wordTimings || [], withSync);
-        return;
-      }
-      
-      // 2. Cache miss - fetch from API
-      console.log('[TTS] Cache miss - fetching from ElevenLabs:', cacheKey);
-      
-      const response = await fetch(
-        'https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/elevenlabs-tts',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
-            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
-          },
-          body: JSON.stringify({ text, voiceId, withTimestamps: withSync }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `Request failed: ${response.status}`);
-      }
-
-      let audioBlob: Blob;
-      let timings: WordTiming[] = [];
-      
-      if (withSync) {
-        // Parse JSON response with timestamps
-        const data = await response.json();
-        
-        // Convert base64 to blob
-        const binaryString = atob(data.audio_base64);
-        const bytes = new Uint8Array(binaryString.length);
-        for (let i = 0; i < binaryString.length; i++) {
-          bytes[i] = binaryString.charCodeAt(i);
-        }
-        audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
-        timings = data.wordTimings || [];
-        
-        console.log('[TTS] Word timings received:', timings.length);
-      } else {
-        // Regular audio blob response
-        audioBlob = await response.blob();
-      }
-      
-      // 3. Cache the response for future use (permanent)
-      cacheTTSAudio(cacheKey, audioBlob, timings, text, effectiveVoiceId)
-        .then((success) => {
-          if (success) {
-            console.log('[TTS] Audio cached for future use:', cacheKey);
-          }
-        })
-        .catch((err) => {
-          console.warn('[TTS] Failed to cache audio:', err);
-        });
-      
-      // 4. Play the audio
-      await playAudioBlob(audioBlob, timings, withSync);
-      
-    } catch (err) {
-      console.error('TTS error:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate speech');
-      setIsLoading(false);
-      setIsPlaying(false);
-    }
-  }, [voiceId, cleanup, playAudioBlob]);
 
   // Cleanup on unmount
   useEffect(() => {
-    return () => cleanup();
-  }, [cleanup]);
+    return () => {
+      ttsManager.stop();
+    };
+  }, []);
 
-  return { speak, stop, isLoading, isPlaying, error, currentWordIndex, wordTimings, isCacheHit };
+  return { 
+    speak, 
+    stop, 
+    isLoading, 
+    isPlaying, 
+    error, 
+    currentWordIndex, 
+    wordTimings, 
+    isCacheHit 
+  };
 }

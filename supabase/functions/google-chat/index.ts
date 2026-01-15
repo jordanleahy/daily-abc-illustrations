@@ -401,9 +401,13 @@ There are still ${remainingCount} optional question(s) to ask before you can pro
 📋 YOU MUST ASK THIS QUESTION NOW:
 ${nextQuestion.question_text}
 
-[SUGGEST]
-${nextQuestion.options.map(opt => `${opt.key}: ${opt.label}`).join('\n')}
-[/SUGGEST]
+${(() => {
+  const hasSkipOption = nextQuestion.options.some(opt => opt.key.toLowerCase().includes('skip'));
+  const optionsWithSkip = hasSkipOption 
+    ? nextQuestion.options 
+    : [...nextQuestion.options, { key: `skip-${nextQuestion.question_key}`, label: '⏭️ Skip' }];
+  return `[SUGGEST]\n${optionsWithSkip.map(opt => `${opt.key}: ${opt.label}`).join('\n')}\n[/SUGGEST]`;
+})()}
 
 ⚠️ CRITICAL RULES:
 1. DO NOT propose a book title yet

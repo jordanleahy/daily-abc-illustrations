@@ -20,7 +20,6 @@ interface UseTextToSpeechReturn {
   error: string | null;
   currentWordIndex: number;
   wordTimings: WordTiming[];
-  isCacheHit: boolean;
 }
 
 /**
@@ -35,7 +34,6 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
   const [error, setError] = useState<string | null>(null);
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
   const [wordTimings, setWordTimings] = useState<WordTiming[]>([]);
-  const [isCacheHit, setIsCacheHit] = useState(false);
   
   // Store onWordChange in ref to avoid stale closures
   const onWordChangeRef = useRef(onWordChange);
@@ -46,7 +44,7 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
     setCurrentWordIndex(-1);
     setWordTimings([]);
     
-    await ttsManager.speak(text, voiceId || 'default', withSync, {
+    await ttsManager.speak(text, voiceId, withSync, {
       onWordChange: (index, word) => {
         setCurrentWordIndex(index);
         onWordChangeRef.current?.(index, word);
@@ -55,7 +53,6 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
       onLoadingChange: setIsLoading,
       onError: setError,
       onTimingsReady: setWordTimings,
-      onCacheHit: setIsCacheHit,
     });
   }, [voiceId]);
 
@@ -79,7 +76,6 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
     isPlaying, 
     error, 
     currentWordIndex, 
-    wordTimings, 
-    isCacheHit 
+    wordTimings
   };
 }

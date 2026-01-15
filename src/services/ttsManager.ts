@@ -1,5 +1,3 @@
-import { generateTTSCacheKey, getTTSFromCache, cacheTTSAudio } from '@/utils/ttsCaching';
-
 interface WordTiming {
   word: string;
   startTime: number;
@@ -12,12 +10,11 @@ interface PlaybackCallbacks {
   onLoadingChange?: (isLoading: boolean) => void;
   onError?: (error: string) => void;
   onTimingsReady?: (timings: WordTiming[]) => void;
-  onCacheHit?: (hit: boolean) => void;
 }
 
 /**
- * Imperative TTS Manager - handles audio playback outside React's render cycle.
- * This eliminates race conditions between React state updates and audio timing.
+ * Minimal imperative TTS Manager - no caching, just fetch and play.
+ * Handles audio playback outside React's render cycle.
  */
 class TTSManager {
   private audio: HTMLAudioElement | null = null;
@@ -27,20 +24,21 @@ class TTSManager {
   private callbacks: PlaybackCallbacks = {};
   private currentWordIndex: number = -1;
 
-  /**
-   * Play text with optional word synchronization
-   */
-  // Default to Lily voice (pFZP5JQG7iQjIQuC4Bku) if no voiceId provided
   private static readonly DEFAULT_VOICE_ID = 'pFZP5JQG7iQjIQuC4Bku';
 
+  /**
+   * Play text with word synchronization
+   */
   async speak(
     text: string,
-    voiceId: string = TTSManager.DEFAULT_VOICE_ID,
+    voiceId?: string,
     withSync: boolean = true,
     callbacks: PlaybackCallbacks = {}
   ): Promise<void> {
     if (!text) return;
 
+    const effectiveVoiceId = voiceId || TTSManager.DEFAULT_VOICE_ID;
+    
     // Store callbacks for this playback session
     this.callbacks = callbacks;
     
@@ -48,23 +46,9 @@ class TTSManager {
     this.cleanup();
     
     callbacks.onLoadingChange?.(true);
-    callbacks.onCacheHit?.(false);
-
-    const cacheKey = generateTTSCacheKey(text, voiceId);
 
     try {
-      // 1. Check cache first
-      const cached = await getTTSFromCache(cacheKey);
-      
-      if (cached?.audioBlob) {
-        console.log('[TTSManager] Cache hit:', cacheKey);
-        callbacks.onCacheHit?.(true);
-        await this.playBlob(cached.audioBlob, cached.wordTimings || [], withSync);
-        return;
-      }
-
-      // 2. Cache miss - fetch from API
-      console.log('[TTSManager] Cache miss - fetching:', cacheKey);
+      console.log('[TTSManager] Fetching audio for:', text.substring(0, 50) + '...');
       
       const response = await fetch(
         'https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/elevenlabs-tts',
@@ -75,7 +59,11 @@ class TTSManager {
             'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
             'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
           },
-          body: JSON.stringify({ text, voiceId, withTimestamps: withSync }),
+          body: JSON.stringify({ 
+            text, 
+            voiceId: effectiveVoiceId, 
+            withTimestamps: withSync 
+          }),
         }
       );
 
@@ -96,17 +84,12 @@ class TTSManager {
         }
         audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
         timings = data.wordTimings || [];
-        console.log('[TTSManager] Word timings received:', timings.length);
+        console.log('[TTSManager] Received', timings.length, 'word timings');
       } else {
         audioBlob = await response.blob();
       }
 
-      // 3. Cache for future use
-      cacheTTSAudio(cacheKey, audioBlob, timings, text, voiceId)
-        .then(success => success && console.log('[TTSManager] Cached:', cacheKey))
-        .catch(err => console.warn('[TTSManager] Cache failed:', err));
-
-      // 4. Play
+      // Play the audio
       await this.playBlob(audioBlob, timings, withSync);
 
     } catch (err) {
@@ -132,12 +115,14 @@ class TTSManager {
 
     // Setup event handlers
     this.audio.onended = () => {
+      console.log('[TTSManager] Audio ended');
       this.callbacks.onPlayingChange?.(false);
       this.callbacks.onWordChange?.(-1, '');
       this.stopSyncLoop();
     };
 
-    this.audio.onerror = () => {
+    this.audio.onerror = (e) => {
+      console.error('[TTSManager] Audio error:', e);
       this.callbacks.onError?.('Audio playback failed');
       this.callbacks.onPlayingChange?.(false);
       this.stopSyncLoop();
@@ -147,10 +132,13 @@ class TTSManager {
     this.callbacks.onLoadingChange?.(false);
     this.callbacks.onPlayingChange?.(true);
 
+    console.log('[TTSManager] Starting playback, withSync:', withSync, 'timings:', timings.length);
+    
     await this.audio.play();
 
     // Start sync loop AFTER play() resolves
     if (withSync && timings.length > 0) {
+      console.log('[TTSManager] Starting sync loop');
       this.startSyncLoop();
     }
   }
@@ -225,14 +213,6 @@ class TTSManager {
     
     this.wordTimings = [];
     this.currentWordIndex = -1;
-  }
-
-  /**
-   * Cleanup on app unmount
-   */
-  destroy(): void {
-    this.cleanup();
-    this.callbacks = {};
   }
 }
 

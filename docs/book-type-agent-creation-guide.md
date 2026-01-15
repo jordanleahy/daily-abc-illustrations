@@ -13,8 +13,12 @@
 3. [Section-by-Section Guide](#3-section-by-section-guide)
 4. [Decision Framework](#4-decision-framework)
 5. [Validation Checklist](#5-validation-checklist)
-6. [Appendix A: Copy-Paste Blocks](#appendix-a-copy-paste-blocks)
-7. [Appendix B: Working Examples](#appendix-b-working-examples)
+6. [Edge Function Configuration](#6-edge-function-configuration) *(NEW)*
+7. [Type Definition Requirements](#7-type-definition-requirements) *(NEW)*
+8. [Testing & Debugging](#8-testing--debugging) *(NEW)*
+9. [Appendix A: Copy-Paste Blocks](#appendix-a-copy-paste-blocks)
+10. [Appendix B: Working Examples](#appendix-b-working-examples)
+11. [Appendix C: ID Collision Prevention](#appendix-c-id-collision-prevention) *(NEW)*
 
 ---
 
@@ -736,8 +740,219 @@ Page 3: "The cat sat down" + Page 4: "Upon the mat"
 
 ---
 
+## 6. Edge Function Configuration
+
+When your agent needs custom logic beyond the standard flow, you must update the edge function.
+
+### 6.1 When Custom Logic is Needed
+
+Update `supabase/functions/google-chat/index.ts` when:
+- Your agent has optional discovery questions (stored in `type_specific_discoveries` table)
+- Your agent needs to inject corpus data (like sight words, digraphs)
+- Your agent requires special context (locations, seasons, etc.)
+- Your agent has a unique conversation flow
+
+### 6.2 Edge Function Update Pattern
+
+```typescript
+// 1. Add book type detection (near line 166)
+const isYourTypeBook = bookType === 'your-type';
+
+// 2. Extract state from request body (near line 180)
+const yourField = requestBody.yourField || null;
+
+// 3. Build context string
+let yourTypeContext = '';
+if (isYourTypeBook && yourField) {
+  yourTypeContext = `\n\n📚 Selected Option: ${yourField}`;
+}
+
+// 4. For discovery questions, add blocking logic
+let yourDiscoveryContext = '';
+if (isYourTypeBook) {
+  const discoveries = await fetchTypeDiscoveries('book-creation-your-type');
+  // ... check which questions are answered
+  // ... inject HARD BLOCK if questions remain
+}
+
+// 5. Inject into system message (near line 480)
+const systemMessage = basePrompt + yourTypeContext + yourDiscoveryContext;
+```
+
+### 6.3 Discovery Question Blocking Pattern
+
+To enforce that optional questions are asked before title approval:
+
+```typescript
+if (unansweredDiscoveries.length > 0) {
+  const nextQuestion = unansweredDiscoveries[0];
+  discoveryContext = `\n\n🚫 HARD BLOCK - DO NOT GENERATE OUTLINE YET 🚫
+There are still ${unansweredDiscoveries.length} optional question(s) remaining.
+
+📋 YOU MUST ASK THIS QUESTION NOW:
+${nextQuestion.question_text}
+
+[SUGGEST]
+${nextQuestion.options.map(opt => `${opt.key}: ${opt.label}`).join('\n')}
+[/SUGGEST]
+
+⚠️ CRITICAL: DO NOT propose title or generate outline until all questions answered.`;
+}
+```
+
+---
+
+## 7. Type Definition Requirements
+
+Every agent with custom options needs frontend type definitions.
+
+### 7.1 Create Type Definition File
+
+Create `src/types/{yourType}.ts`:
+
+```typescript
+/**
+ * {YourType} Types and Constants
+ * IDs use PREFIX_ to prevent collisions.
+ */
+
+export type YourTypeId = 'PREFIX_option1' | 'PREFIX_option2';
+
+export const YOUR_TYPE_LABELS: Record<YourTypeId, string> = {
+  'PREFIX_option1': 'Option 1',
+  'PREFIX_option2': 'Option 2',
+};
+
+export function isValidYourType(value: string): value is YourTypeId {
+  return value in YOUR_TYPE_LABELS;
+}
+
+export function getYourTypeLabel(id: YourTypeId): string {
+  return YOUR_TYPE_LABELS[id] || id;
+}
+```
+
+### 7.2 Update ID Registry
+
+Edit `src/types/idRegistry.ts`:
+
+```typescript
+export const ID_PREFIX = {
+  // ... existing
+  YOUR_TYPE: 'PREFIX_',
+} as const;
+
+export const isYourTypeId = (id: string): boolean => 
+  hasPrefix(id, ID_PREFIX.YOUR_TYPE);
+```
+
+### 7.3 Update Agent Type Definitions
+
+Edit `src/types/shared/agent.ts`:
+
+```typescript
+// Add to AgentType union
+export type AgentType = 
+  | 'book-creation-your-type';
+
+// Add to mapping
+export const BOOK_TYPE_TO_AGENT_TYPE = {
+  'your-type': 'book-creation-your-type',
+};
+```
+
+---
+
+## 8. Testing & Debugging
+
+### 8.1 Conversation Flow Testing
+
+Test each step sequentially:
+
+| Step | What to Verify |
+|------|----------------|
+| 1 | Character theme buttons appear |
+| 2 | Grade level buttons appear |
+| 3 | All optional questions appear ONE at a time |
+| 4 | Title proposal only after ALL questions answered |
+| 5 | Outline generates with correct page count |
+| 6 | "Create My Book!" button appears |
+
+### 8.2 Edge Function Debugging
+
+```bash
+# Watch logs during conversation
+supabase functions logs google-chat --follow
+
+# Filter for your agent type
+supabase functions logs google-chat | grep "your-type"
+```
+
+### 8.3 Common Issues
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| Questions appear at wrong time | Missing HARD BLOCK logic | Add blocking context injection |
+| Options not recognized | ID not prefixed | Add prefix in database and code |
+| Context not reaching AI | Missing concatenation | Add to systemMessage |
+| Type not detected | Typo in bookType check | Verify exact string match |
+
+### 8.4 Database Verification
+
+```sql
+-- Check agent exists
+SELECT type, name FROM agents WHERE type LIKE 'book-creation-your-type%';
+
+-- Check discovery questions
+SELECT question_key, sort_order FROM type_specific_discoveries 
+WHERE agent_type = 'book-creation-your-type' AND is_active = true;
+```
+
+---
+
+## Appendix C: ID Collision Prevention
+
+### Why Prefixes Matter
+
+Without prefixes, the same ID could match multiple domains:
+- `WINTER` could be a season, a location theme, or a book title word
+- `home` could be a setting, an environment, or a character location
+
+### Standard Prefix Convention
+
+| Domain | Prefix | Example IDs |
+|--------|--------|-------------|
+| Seasons | `SEASON_` | `SEASON_WINTER`, `SEASON_SPRING`, `SEASON_SUMMER`, `SEASON_FALL` |
+| Locations | `LOCATION_` | `LOCATION_VAIL_RESORT`, `LOCATION_PARK_CITY` |
+| Cities | `CITY_` | `CITY_JERSEY_CITY`, `CITY_DENVER`, `CITY_HOBOKEN` |
+| Environments | `ENV_` | `ENV_mountain`, `ENV_beach`, `ENV_forest` |
+| Clothing Brands | `BRAND_` | `BRAND_patagonia`, `BRAND_northface` |
+| Manner Types | `MANNER_` | `MANNER_eating-habits`, `MANNER_respect` |
+| Manner Settings | `SETTING_` | `SETTING_home`, `SETTING_school`, `SETTING_both` |
+| Themes | `THEME_` | `THEME_adventure`, `THEME_friendship` |
+
+### Implementation Checklist
+
+1. **Database**: Use prefixed IDs in `type_specific_discoveries.options[].key`
+2. **ID Registry**: Add prefix constant to `src/types/idRegistry.ts`
+3. **Type Guard**: Add type guard function (e.g., `isMannerTypeId`)
+4. **Frontend Detection**: Use `hasPrefix()` to detect ID type
+5. **Labels**: Create labels constant with prefixed keys
+
+### Migration Strategy
+
+When adding prefixes to existing IDs:
+
+1. Update `LEGACY_ID_MAP` in `idRegistry.ts` to map old → new
+2. Update database options to use new prefixed IDs
+3. Update frontend code to use new IDs
+4. Keep legacy mapping for backward compatibility
+
+---
+
 ## Document Version History
 
 | Version | Date | Changes |
 |---------|------|---------|
 | 1.0 | 2024-12-04 | Initial creation based on ABC and Rhyming agent analysis |
+| 1.1 | 2026-01-15 | Added Edge Function Configuration, Type Definition Requirements, Testing & Debugging, and ID Collision Prevention sections based on Manners agent learnings |

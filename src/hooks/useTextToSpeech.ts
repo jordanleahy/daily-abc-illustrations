@@ -1,5 +1,4 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
 import { generateTTSCacheKey, getTTSFromCache, cacheTTSAudio } from '@/utils/ttsCaching';
 
 interface WordTiming {

@@ -1,3 +1,4 @@
+import { useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight, Volume2, Loader2 } from 'lucide-react';
 import { WordCarousel } from './WordCarousel';
@@ -38,6 +39,9 @@ interface UnifiedReadingControlsProps {
   
   // TTS props
   speakText?: string;
+  
+  // Word sync callback - called when TTS is speaking a word
+  onTTSWordChange?: (wordIndex: number) => void;
 }
 
 export function UnifiedReadingControls({
@@ -63,14 +67,49 @@ export function UnifiedReadingControls({
   hasReachedLastWord = false,
   pageType,
   speakText,
+  onTTSWordChange,
 }: UnifiedReadingControlsProps) {
-  const { speak, stop, isLoading, isPlaying } = useTextToSpeech();
+  // Handle word change from TTS - maps TTS word index to overlay word index
+  const handleTTSWordChange = useCallback((ttsWordIndex: number, word: string) => {
+    if (!overlayWords || !onTTSWordChange) return;
+    
+    // Find the matching word in overlayWords by comparing the word text
+    // TTS may process text differently, so we match by word content
+    const matchingIndex = overlayWords.findIndex((w, idx) => {
+      // Check if this word matches (case-insensitive, ignore punctuation)
+      const cleanWord = word.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const cleanOverlay = w.word.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return cleanWord === cleanOverlay;
+    });
+    
+    // If no match found, try sequential matching based on TTS word index
+    const targetIndex = matchingIndex >= 0 ? matchingIndex : Math.min(ttsWordIndex, overlayWords.length - 1);
+    
+    if (targetIndex >= 0 && targetIndex < overlayWords.length) {
+      onTTSWordChange(targetIndex);
+    }
+  }, [overlayWords, onTTSWordChange]);
+
+  const { speak, stop, isLoading, isPlaying, currentWordIndex: ttsWordIndex } = useTextToSpeech({
+    onWordChange: handleTTSWordChange,
+  });
+
+  // Sync TTS word index to overlay when playing
+  useEffect(() => {
+    if (isPlaying && ttsWordIndex >= 0 && onTTSWordChange && overlayWords) {
+      // Direct index mapping - TTS word order should match overlay word order
+      const targetIndex = Math.min(ttsWordIndex, overlayWords.length - 1);
+      if (targetIndex >= 0) {
+        onTTSWordChange(targetIndex);
+      }
+    }
+  }, [isPlaying, ttsWordIndex, onTTSWordChange, overlayWords]);
 
   const handleSpeakClick = () => {
     if (isPlaying) {
       stop();
     } else if (speakText) {
-      speak(speakText);
+      speak(speakText, true); // Enable word sync
     }
   };
 
@@ -98,15 +137,30 @@ export function UnifiedReadingControls({
           <div className="w-full h-[40px] flex items-center justify-start">
             {overlayWords && overlayWords.length > 0 ? (
               isReadMode ? (
-                // Read Mode: Show full sentence
+                // Read Mode: Show full sentence with highlighted word during TTS
                 <p className="text-left font-semibold text-lg text-gray-900 dark:text-gray-100">
-                  {overlayText}
+                  {isPlaying && ttsWordIndex >= 0 ? (
+                    // Show words with current word highlighted in yellow
+                    overlayWords.map((w, idx) => (
+                      <span
+                        key={idx}
+                        className={idx === Math.min(ttsWordIndex, overlayWords.length - 1) 
+                          ? 'bg-yellow-300 dark:bg-yellow-500 rounded px-0.5 transition-colors duration-150' 
+                          : 'transition-colors duration-150'
+                        }
+                      >
+                        {w.word}{idx < overlayWords.length - 1 ? ' ' : ''}
+                      </span>
+                    ))
+                  ) : (
+                    overlayText
+                  )}
                 </p>
               ) : (
-                // Focus Mode: Show word carousel
+                // Focus Mode: Show word carousel (TTS controls the word index when playing)
                 <WordCarousel
                   words={overlayWords}
-                  currentWordIndex={overlayCurrentWordIndex}
+                  currentWordIndex={isPlaying && ttsWordIndex >= 0 ? Math.min(ttsWordIndex, overlayWords.length - 1) : overlayCurrentWordIndex}
                   wordStatuses={overlayWordStatuses}
                 />
               )

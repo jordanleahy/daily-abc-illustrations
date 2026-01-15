@@ -18,7 +18,7 @@ export interface TypeSpecificDiscovery {
 // In-memory cache for type-specific discoveries
 let discoveriesCache: Map<string, TypeSpecificDiscovery[]> | null = null;
 let cacheTimestamp: number = 0;
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour (discoveries change rarely)
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes (shorter for development/iteration)
 
 /**
  * Fetch type-specific discoveries from database with caching

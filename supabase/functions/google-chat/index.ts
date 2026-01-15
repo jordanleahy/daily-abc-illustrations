@@ -381,6 +381,10 @@ serve(async (req) => {
       const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
       const mannersDiscoveries = await fetchTypeDiscoveries(supabaseUrl, supabaseKey, 'book-creation-manners');
       
+      // 🔍 DIAGNOSTIC: Log what discovery questions were fetched from DB/cache
+      console.log(`📋 Manners discoveries fetched: ${mannersDiscoveries.length} questions`, 
+        mannersDiscoveries.map(d => d.question_key));
+      
       // Filter out questions that have already been answered - database-driven, no book type conditionals
       const unansweredDiscoveries = mannersDiscoveries.filter(d => {
         if (d.question_key === 'manners_setting' && mannersSetting) return false;
@@ -391,6 +395,10 @@ serve(async (req) => {
         if (d.question_key === 'clothing_brand' && clothingBrand) return false;
         return true;
       });
+      
+      // 🔍 DIAGNOSTIC: Log what questions remain unanswered
+      console.log(`📋 Unanswered discoveries: ${unansweredDiscoveries.length}`, 
+        unansweredDiscoveries.map(d => d.question_key));
       
       if (unansweredDiscoveries.length > 0) {
         const nextQuestion = unansweredDiscoveries[0]; // Ask ONE at a time

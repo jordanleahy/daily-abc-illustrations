@@ -12,6 +12,7 @@ import type { LocationId } from '@/types/location';
 import type { CityId } from '@/types/city';
 import { MANNER_TYPE_LABELS, type MannerTypeId } from '@/types/mannerType';
 import { MANNERS_SETTING_OPTIONS, type MannersSettingId } from '@/types/mannersSetting';
+import { ID_PREFIX, hasPrefix } from '@/types/idRegistry';
 interface MessageContent {
   type: 'text' | 'image_url';
   text?: string;
@@ -461,31 +462,18 @@ export const useGoogleChat = (
           'black-and-white', 'bear-stories', 'dora', 'little-mermaid'
         ]);
 
-        // Known IDs - derived from type files for single source of truth
-        // Note: Location and City IDs are now database-driven, so we accept any ID
-        // that matches the pattern (uppercase with underscores) as valid
-        const seasonIds: Set<string> = new Set(SEASON_OPTIONS.map(s => s.id));
-        const environmentIds: Set<string> = new Set(ENVIRONMENT_OPTIONS.map(e => e.id));
-        const clothingBrandIds: Set<string> = new Set(CLOTHING_BRAND_OPTIONS.map(b => b.id));
-        // Grade IDs to exclude from location/city matching
-        const gradeIds: Set<string> = new Set(['PRE_K', 'K', 'GRADE_1', 'GRADE_2', 'GRADE_3', 'GRADE_4', 'GRADE_5']);
-        // Location IDs - exclude seasons, environments, grades, and clothing brands
-        const isLocationId = (id: string) => {
-          if (seasonIds.has(id) || environmentIds.has(id) || clothingBrandIds.has(id) || gradeIds.has(id)) return false;
-          // Known location patterns: RESORT names or skip-location
-          return id === 'skip-location' || id === 'NONE' || 
-                 (id.includes('RESORT') || id.includes('MOUNTAIN') || id.includes('CREEK') || 
-                  id.includes('WHISTLER') || id.includes('PLATTEKILL'));
-        };
-        // City IDs - exclude seasons, environments, grades, and clothing brands
-        const isCityId = (id: string) => {
-          if (seasonIds.has(id) || environmentIds.has(id) || clothingBrandIds.has(id) || gradeIds.has(id)) return false;
-          // Known city patterns: CITY names or skip-city
-          return id === 'skip-city' || id === 'NONE' || 
-                 (id.includes('CITY') || id.includes('HOBOKEN') || id.includes('YORK'))
-        };
+        // Known IDs - use prefix-based detection from ID registry for collision prevention
+        // Season IDs now use SEASON_ prefix (e.g., SEASON_WINTER)
+        const isSeasonId = (id: string) => hasPrefix(id, ID_PREFIX.SEASON) || SEASON_OPTIONS.some(s => s.id === id);
+        const isEnvironmentId = (id: string) => hasPrefix(id, ID_PREFIX.ENVIRONMENT) || ENVIRONMENT_OPTIONS.some(e => e.id === id);
+        const isClothingBrandId = (id: string) => hasPrefix(id, ID_PREFIX.CLOTHING_BRAND) || CLOTHING_BRAND_OPTIONS.some(b => b.id === id);
+        // Location IDs use LOCATION_ prefix (e.g., LOCATION_VAIL_RESORT)
+        const isLocationId = (id: string) => hasPrefix(id, ID_PREFIX.LOCATION) || id === 'skip-location';
+        // City IDs use CITY_ prefix (e.g., CITY_JERSEY_CITY)
+        const isCityId = (id: string) => hasPrefix(id, ID_PREFIX.CITY) || id === 'skip-city';
+        // Manner setting IDs use SETTING_ prefix (e.g., SETTING_home)
+        const isMannerSettingId = (id: string) => hasPrefix(id, ID_PREFIX.MANNER_SETTING) || id === 'skip-setting' || MANNERS_SETTING_OPTIONS.some(s => s.id === id);
         const mannerTypeIds: Set<string> = new Set(Object.keys(MANNER_TYPE_LABELS));
-        const mannersSettingIds: Set<string> = new Set([...MANNERS_SETTING_OPTIONS.map(s => s.id), 'skip-setting']);
 
         const actions = suggestionsText
           .split('\n')
@@ -508,16 +496,16 @@ export const useGoogleChat = (
             if (isTheme) {
               action.themeId = id as CharacterThemeValue;
             }
-            // Check for season IDs
-            if (seasonIds.has(id)) {
+            // Check for season IDs (prefix-based: SEASON_WINTER)
+            if (isSeasonId(id)) {
               action.seasonId = id as SeasonId;
             }
-            // Check for environment IDs
-            if (environmentIds.has(id)) {
+            // Check for environment IDs (prefix-based: ENV_)
+            if (isEnvironmentId(id)) {
               action.environmentId = id as EnvironmentId;
             }
-            // Check for clothing brand IDs
-            if (clothingBrandIds.has(id)) {
+            // Check for clothing brand IDs (prefix-based: BRAND_)
+            if (isClothingBrandId(id)) {
               action.clothingBrandId = id as ClothingBrandId;
             }
             // Check for location IDs (using pattern matching for database-driven IDs)

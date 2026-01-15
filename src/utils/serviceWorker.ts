@@ -5,9 +5,10 @@
 const IMAGE_CACHE_NAME = 'dailyabc-images-v1';
 const VIDEO_CACHE_NAME = 'dailyabc-videos-v1';
 const THUMBNAIL_CACHE_NAME = 'dailyabc-thumbnails-v1';
+const TTS_CACHE_NAME = 'dailyabc-tts-v1';
 
 /**
- * Clear all caches (images, videos, thumbnails)
+ * Clear all caches (images, videos, thumbnails, TTS)
  */
 export async function clearAllCaches(): Promise<boolean> {
   if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
@@ -49,26 +50,32 @@ export async function getCacheStats(): Promise<{
   images: number; 
   videos: number; 
   thumbnails: number;
+  tts: number;
   total: number;
 }> {
   if ('caches' in window) {
     try {
-      const [imageCache, videoCache, thumbnailCache] = await Promise.all([
+      const [imageCache, videoCache, thumbnailCache, ttsCache] = await Promise.all([
         caches.open(IMAGE_CACHE_NAME).then(cache => cache.keys()),
         caches.open(VIDEO_CACHE_NAME).then(cache => cache.keys()).catch(() => []),
         caches.open(THUMBNAIL_CACHE_NAME).then(cache => cache.keys()).catch(() => []),
+        caches.open(TTS_CACHE_NAME).then(cache => cache.keys()).catch(() => []),
       ]);
+      
+      // TTS cache stores 2 entries per audio (audio + metadata), so divide by 2
+      const ttsCount = Math.floor(ttsCache.length / 2);
       
       return { 
         images: imageCache.length,
         videos: videoCache.length,
         thumbnails: thumbnailCache.length,
-        total: imageCache.length + videoCache.length + thumbnailCache.length,
+        tts: ttsCount,
+        total: imageCache.length + videoCache.length + thumbnailCache.length + ttsCount,
       };
     } catch (error) {
       console.error('Error getting cache stats:', error);
-      return { images: 0, videos: 0, thumbnails: 0, total: 0 };
+      return { images: 0, videos: 0, thumbnails: 0, tts: 0, total: 0 };
     }
   }
-  return { images: 0, videos: 0, thumbnails: 0, total: 0 };
+  return { images: 0, videos: 0, thumbnails: 0, tts: 0, total: 0 };
 }

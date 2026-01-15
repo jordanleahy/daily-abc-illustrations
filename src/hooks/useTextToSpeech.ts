@@ -1,5 +1,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { generateTTSCacheKey, getTTSFromCache, cacheTTSAudio } from '@/utils/ttsCaching';
 
 interface WordTiming {
   word: string;
@@ -20,6 +21,7 @@ interface UseTextToSpeechReturn {
   error: string | null;
   currentWordIndex: number;
   wordTimings: WordTiming[];
+  isCacheHit: boolean;
 }
 
 export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextToSpeechReturn {
@@ -29,6 +31,7 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
   const [error, setError] = useState<string | null>(null);
   const [currentWordIndex, setCurrentWordIndex] = useState(-1);
   const [wordTimings, setWordTimings] = useState<WordTiming[]>([]);
+  const [isCacheHit, setIsCacheHit] = useState(false);
   
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const objectUrlRef = useRef<string | null>(null);
@@ -98,7 +101,47 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
     animationFrameRef.current = requestAnimationFrame(updateWordIndex);
   }, [onWordChange]);
 
-  // Speak text
+  // Helper to play audio blob
+  const playAudioBlob = useCallback(async (
+    audioBlob: Blob,
+    timings: WordTiming[],
+    withSync: boolean
+  ) => {
+    const audioUrl = URL.createObjectURL(audioBlob);
+    objectUrlRef.current = audioUrl;
+    
+    wordTimingsRef.current = timings;
+    setWordTimings(timings);
+
+    const audio = new Audio(audioUrl);
+    audioRef.current = audio;
+
+    audio.onended = () => {
+      setIsPlaying(false);
+      setCurrentWordIndex(-1);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+
+    audio.onerror = () => {
+      setError('Failed to play audio');
+      setIsPlaying(false);
+      setCurrentWordIndex(-1);
+    };
+
+    setIsLoading(false);
+    setIsPlaying(true);
+    
+    if (withSync && timings.length > 0) {
+      syncWords(audio);
+    }
+    
+    await audio.play();
+  }, [syncWords]);
+
+  // Speak text with cache-first strategy
   const speak = useCallback(async (text: string, withSync: boolean = true) => {
     if (!text) return;
     
@@ -107,9 +150,25 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
     setError(null);
     setIsLoading(true);
     setWordTimings([]);
+    setIsCacheHit(false);
 
     try {
-      // Get the Supabase URL from the client
+      const effectiveVoiceId = voiceId || 'default';
+      const cacheKey = generateTTSCacheKey(text, effectiveVoiceId);
+      
+      // 1. Check cache first (permanent cache - no expiry)
+      const cached = await getTTSFromCache(cacheKey);
+      
+      if (cached && cached.audioBlob) {
+        console.log('[TTS] Cache hit - instant playback:', cacheKey);
+        setIsCacheHit(true);
+        await playAudioBlob(cached.audioBlob, cached.wordTimings || [], withSync);
+        return;
+      }
+      
+      // 2. Cache miss - fetch from API
+      console.log('[TTS] Cache miss - fetching from ElevenLabs:', cacheKey);
+      
       const supabaseUrl = (supabase as any).supabaseUrl;
       
       const response = await fetch(
@@ -130,7 +189,8 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
         throw new Error(errorData.error || `Request failed: ${response.status}`);
       }
 
-      let audioUrl: string;
+      let audioBlob: Blob;
+      let timings: WordTiming[] = [];
       
       if (withSync) {
         // Parse JSON response with timestamps
@@ -142,61 +202,41 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
         for (let i = 0; i < binaryString.length; i++) {
           bytes[i] = binaryString.charCodeAt(i);
         }
-        const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
-        audioUrl = URL.createObjectURL(audioBlob);
+        audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
+        timings = data.wordTimings || [];
         
-        // Store word timings
-        wordTimingsRef.current = data.wordTimings || [];
-        setWordTimings(data.wordTimings || []);
-        
-        console.log('[TTS] Word timings received:', data.wordTimings?.length || 0);
+        console.log('[TTS] Word timings received:', timings.length);
       } else {
         // Regular audio blob response
-        const audioBlob = await response.blob();
-        audioUrl = URL.createObjectURL(audioBlob);
+        audioBlob = await response.blob();
       }
       
-      objectUrlRef.current = audioUrl;
-
-      const audio = new Audio(audioUrl);
-      audioRef.current = audio;
-
-      audio.onended = () => {
-        setIsPlaying(false);
-        setCurrentWordIndex(-1);
-        if (animationFrameRef.current) {
-          cancelAnimationFrame(animationFrameRef.current);
-          animationFrameRef.current = null;
-        }
-      };
-
-      audio.onerror = () => {
-        setError('Failed to play audio');
-        setIsPlaying(false);
-        setCurrentWordIndex(-1);
-      };
-
-      setIsLoading(false);
-      setIsPlaying(true);
+      // 3. Cache the response for future use (permanent)
+      cacheTTSAudio(cacheKey, audioBlob, timings, text, effectiveVoiceId)
+        .then((success) => {
+          if (success) {
+            console.log('[TTS] Audio cached for future use:', cacheKey);
+          }
+        })
+        .catch((err) => {
+          console.warn('[TTS] Failed to cache audio:', err);
+        });
       
-      // Start word sync if we have timings
-      if (withSync && wordTimingsRef.current.length > 0) {
-        syncWords(audio);
-      }
+      // 4. Play the audio
+      await playAudioBlob(audioBlob, timings, withSync);
       
-      await audio.play();
     } catch (err) {
       console.error('TTS error:', err);
       setError(err instanceof Error ? err.message : 'Failed to generate speech');
       setIsLoading(false);
       setIsPlaying(false);
     }
-  }, [voiceId, cleanup, syncWords]);
+  }, [voiceId, cleanup, playAudioBlob]);
 
   // Cleanup on unmount
   useEffect(() => {
     return cleanup;
   }, [cleanup]);
 
-  return { speak, stop, isLoading, isPlaying, error, currentWordIndex, wordTimings };
+  return { speak, stop, isLoading, isPlaying, error, currentWordIndex, wordTimings, isCacheHit };
 }

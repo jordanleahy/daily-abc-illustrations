@@ -477,14 +477,17 @@ ${citySuggestBlock}
 
     // Check if all optional questions are complete - if so, prompt agent to propose title
     // For Manners books: check if discovery questions are exhausted using database-driven approach
-    // When mannersDiscoveryQuestionsContext is empty, all questions have been answered
-    const mannersQuestionsComplete = isMannerBook && characterTheme && mannerType && mannersDiscoveryQuestionsContext === '';
+    // When mannersDiscoveryQuestionsContext is empty, all type_specific_discoveries have been answered
+    // Also require location and city to be answered/skipped (now enabled for Manners books)
+    const locationAnswered = location || lastMessageContent.includes('skip') || lastMessageContent.includes('resort') || lastMessageContent.includes('killington') || lastMessageContent.includes('vail') || lastMessageContent.includes('stratton') || lastMessageContent.includes('no resort');
+    const cityAnswered = city || lastMessageContent.includes('skip') || lastMessageContent.includes('jersey') || lastMessageContent.includes('hoboken') || lastMessageContent.includes('new york') || lastMessageContent.includes('no city');
+    const mannersQuestionsComplete = isMannerBook && characterTheme && mannerType && mannersDiscoveryQuestionsContext === '' && locationAnswered && cityAnswered;
     const standardQuestionsComplete = !isMannerBook && (
       (season || lastMessageContent.includes('skip')) && 
       (environment || lastMessageContent.includes('skip')) && 
       (clothingBrand || lastMessageContent.includes('skip') || lastMessageContent.includes('burton') || lastMessageContent.includes('no brand')) && 
-      (location || lastMessageContent.includes('skip') || lastMessageContent.includes('resort') || lastMessageContent.includes('killington') || lastMessageContent.includes('vail') || lastMessageContent.includes('stratton')) &&
-      (city || lastMessageContent.includes('skip') || lastMessageContent.includes('jersey') || lastMessageContent.includes('hoboken') || lastMessageContent.includes('new york'))
+      locationAnswered &&
+      cityAnswered
     );
     const allOptionalQuestionsComplete = mannersQuestionsComplete || standardQuestionsComplete;
     

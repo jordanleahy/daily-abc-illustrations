@@ -336,6 +336,33 @@ export const BOOK_TYPE_TO_AGENT_TYPE: Record<string, AgentType> = {
   'other': 'book-creation'
 } as const;
 
+/**
+ * Gets the category word for a book type
+ * Used to ensure titles include the category (e.g., "ABC", "Manners", "Rhyming")
+ */
+export function getBookTypeCategoryWord(bookType: ValidBookType): string {
+  const categoryMap: Record<ValidBookType, string> = {
+    'abc': 'ABC',
+    'numbers': 'Numbers',
+    'shapes': 'Shapes',
+    'colors': 'Colors',
+    'rhyming': 'Rhyming',
+    'opposites': 'Opposites',
+    'emotions': 'Emotions',
+    'animals': 'Animals',
+    'first-words': 'First Words',
+    'bedtime': 'Bedtime',
+    'cvc': 'CVC',
+    'sight-words': 'Sight Words',
+    'digraphs': 'Digraph',
+    'manners': 'Manners',
+    'parent-education': 'Parent',
+    'general': 'Adventure',
+    'other': 'Adventure'
+  };
+  return categoryMap[bookType] || 'Adventure';
+}
+
 export interface AgentConfig {
   /** Unique identifier for the agent */
   id: string;

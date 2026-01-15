@@ -76,6 +76,7 @@ import Bites from "./pages/Bites";
 import CityLanding from "./pages/CityLanding";
 import SkiResortLanding from "./pages/SkiResortLanding";
 import BookTypeLanding from "./pages/BookTypeLanding";
+import VideoExportTest from "./pages/VideoExportTest";
 import { useEffect } from "react";
 import { scheduleCacheCleanup } from "./utils/cacheCleanup";
 import { initializeCacheWarming } from "./utils/cacheWarming";
@@ -175,6 +176,7 @@ const App = () => {
                 <Route path="/admin-chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
                 <Route path="/admin/personas" element={<ProtectedRoute requireRole="admin"><AdminPersonas /></ProtectedRoute>} />
                 <Route path="/blog/admin" element={<ProtectedRoute requireRole="admin"><BlogAdmin /></ProtectedRoute>} />
+                <Route path="/test-video-export" element={<ProtectedRoute requireRole="admin"><VideoExportTest /></ProtectedRoute>} />
                 <Route path="/blog" element={<Blog />} />
                 <Route path="/blog/:slug" element={<BlogPost />} />
                {/* User book routes - Own books only */}

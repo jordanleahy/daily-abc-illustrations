@@ -2023,6 +2023,21 @@ export default function GoogleChat() {
                         question={discoveryFlow.currentQuestion}
                         onAnswer={handleDiscoveryAnswer}
                         onSkip={discoveryFlow.currentQuestion.is_skippable ? handleDiscoverySkip : undefined}
+                        progress={discoveryFlow.progress}
+                        answeredQuestions={
+                          discoveryFlow.questions
+                            .slice(0, discoveryFlow.currentStep)
+                            .filter(q => discoveryFlow.answers[q.question_key])
+                            .map(q => {
+                              const selectedKey = discoveryFlow.answers[q.question_key];
+                              const selectedOption = q.options.find(opt => opt.key === selectedKey);
+                              return {
+                                question: q,
+                                selectedKey,
+                                selectedLabel: selectedOption?.label || selectedKey,
+                              };
+                            })
+                        }
                       />
                     </div>
                   </div>

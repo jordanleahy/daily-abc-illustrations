@@ -430,11 +430,13 @@ ${nextQuestion.options.map(opt => `${opt.key}: ${opt.label}`).join('\n')}
 
     // Location question injection - ask BEFORE city question (optional questions come before title)
     // Only inject if: no location selected yet, outline not ready, book not created, not forcing outline
-    const shouldAskLocationQuestion = !location && !outlineReady && !bookCreated && !forceOutline;
+    // For Manners books: location/city are handled via type_specific_discoveries, so skip injection here
+    const shouldAskLocationQuestion = !isMannerBook && !location && !outlineReady && !bookCreated && !forceOutline;
 
     // City question injection - ask as optional discovery, BEFORE title confirmation
     // Only inject if: no city selected yet, outline not ready, book not created, not forcing outline
-    const shouldAskCityQuestion = !city && !outlineReady && !bookCreated && !forceOutline;
+    // For Manners books: location/city are handled via type_specific_discoveries, so skip injection here
+    const shouldAskCityQuestion = !isMannerBook && !city && !outlineReady && !bookCreated && !forceOutline;
 
     // Detect if user just approved title (clicked "Looks perfect, create the outline!" or similar)
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];
@@ -477,11 +479,12 @@ ${citySuggestBlock}
 
     // Check if all optional questions are complete - if so, prompt agent to propose title
     // For Manners books: check if discovery questions are exhausted using database-driven approach
-    // When mannersDiscoveryQuestionsContext is empty, all type_specific_discoveries have been answered
-    // Also require location and city to be answered/skipped (now enabled for Manners books)
+    // When mannersDiscoveryQuestionsContext is empty, ALL type_specific_discoveries (including location/city) have been answered
+    const mannersQuestionsComplete = isMannerBook && characterTheme && mannerType && mannersDiscoveryQuestionsContext === '';
+    
+    // For standard books: check individual question states
     const locationAnswered = location || lastMessageContent.includes('skip') || lastMessageContent.includes('resort') || lastMessageContent.includes('killington') || lastMessageContent.includes('vail') || lastMessageContent.includes('stratton') || lastMessageContent.includes('no resort');
     const cityAnswered = city || lastMessageContent.includes('skip') || lastMessageContent.includes('jersey') || lastMessageContent.includes('hoboken') || lastMessageContent.includes('new york') || lastMessageContent.includes('no city');
-    const mannersQuestionsComplete = isMannerBook && characterTheme && mannerType && mannersDiscoveryQuestionsContext === '' && locationAnswered && cityAnswered;
     const standardQuestionsComplete = !isMannerBook && (
       (season || lastMessageContent.includes('skip')) && 
       (environment || lastMessageContent.includes('skip')) && 

@@ -467,9 +467,23 @@ export const useGoogleChat = (
         const seasonIds: Set<string> = new Set(SEASON_OPTIONS.map(s => s.id));
         const environmentIds: Set<string> = new Set(ENVIRONMENT_OPTIONS.map(e => e.id));
         const clothingBrandIds: Set<string> = new Set(CLOTHING_BRAND_OPTIONS.map(b => b.id));
-        // Location/city IDs are validated by pattern matching rather than static list
-        const isLocationId = (id: string) => /^[A-Z][A-Z_]+$/.test(id) || id === 'skip-location' || id === 'NONE';
-        const isCityId = (id: string) => /^[A-Z][A-Z_]+$/.test(id) || id === 'skip-city' || id === 'NONE';
+        // Grade IDs to exclude from location/city matching
+        const gradeIds: Set<string> = new Set(['PRE_K', 'K', 'GRADE_1', 'GRADE_2', 'GRADE_3', 'GRADE_4', 'GRADE_5']);
+        // Location IDs - exclude seasons, environments, grades, and clothing brands
+        const isLocationId = (id: string) => {
+          if (seasonIds.has(id) || environmentIds.has(id) || clothingBrandIds.has(id) || gradeIds.has(id)) return false;
+          // Known location patterns: RESORT names or skip-location
+          return id === 'skip-location' || id === 'NONE' || 
+                 (id.includes('RESORT') || id.includes('MOUNTAIN') || id.includes('CREEK') || 
+                  id.includes('WHISTLER') || id.includes('PLATTEKILL'));
+        };
+        // City IDs - exclude seasons, environments, grades, and clothing brands
+        const isCityId = (id: string) => {
+          if (seasonIds.has(id) || environmentIds.has(id) || clothingBrandIds.has(id) || gradeIds.has(id)) return false;
+          // Known city patterns: CITY names or skip-city
+          return id === 'skip-city' || id === 'NONE' || 
+                 (id.includes('CITY') || id.includes('HOBOKEN') || id.includes('YORK'))
+        };
         const mannerTypeIds: Set<string> = new Set(Object.keys(MANNER_TYPE_LABELS));
         const mannersSettingIds: Set<string> = new Set([...MANNERS_SETTING_OPTIONS.map(s => s.id), 'skip-setting']);
 

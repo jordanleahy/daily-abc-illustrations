@@ -134,19 +134,21 @@ export function UnifiedReadingControls({
     setVideoProgress(0);
 
     try {
-      const videoBlob = await generatePageVideo({
+      const result = await generatePageVideo({
         imageUrl,
         text: overlayText,
         aspectRatio: 'portrait',
         onProgress: setVideoProgress,
       });
 
-      const filename = `${pageLetter || 'page'}-${overlayText.toLowerCase().replace(/\s+/g, '-')}.webm`;
-      downloadBlob(videoBlob, filename);
-      toast.success('Video exported!');
+      // Use correct extension based on format
+      const extension = result.format === 'mp4' ? 'mp4' : 'webm';
+      const filename = `${pageLetter || 'page'}-${overlayText.toLowerCase().replace(/\s+/g, '-')}.${extension}`;
+      downloadBlob(result.blob, filename);
+      toast.success(`Video exported as ${extension.toUpperCase()}!`);
     } catch (error) {
       console.error('Video export failed:', error);
-      toast.error('Failed to generate video');
+      toast.error('Failed to generate video. Your browser may not support video recording.');
     } finally {
       setIsGeneratingVideo(false);
       setVideoProgress(0);

@@ -490,13 +490,45 @@ export default function GoogleChat() {
   });
 
   // Add quick reply buttons when AI indicates book is ready to create
+  // Also suppress AI-generated suggestedActions when frontend discovery flow has active questions
   const messagesWithCreateOptions = useMemo(() => {
     if (messagesWithCharacterSelection.length === 0) return messagesWithCharacterSelection;
     
     // If character selection is already injected, just return those messages
     if (characterFlow.needsCharacterSelection) return messagesWithCharacterSelection;
     
-    const lastMessage = messagesWithCharacterSelection[messagesWithCharacterSelection.length - 1];
+    let processedMessages = [...messagesWithCharacterSelection];
+    
+    // If discovery flow has an active question, suppress AI-generated suggestedActions on the last message
+    // This prevents duplicate question UI (AI [SUGGEST] blocks + frontend DiscoveryQuestionInline)
+    if (discoveryFlow.currentQuestion && !discoveryFlow.isComplete) {
+      const lastMessage = processedMessages[processedMessages.length - 1];
+      if (lastMessage?.role === 'assistant' && lastMessage.suggestedActions) {
+        // Check if the AI's suggested actions overlap with the current discovery question
+        // by looking for similar option patterns (both are asking the same type of question)
+        const aiActions = lastMessage.suggestedActions;
+        const discoveryOptions = discoveryFlow.currentQuestion.options;
+        
+        // If the AI is asking the same question as the frontend discovery flow, suppress AI actions
+        // Heuristic: if any AI action label/value contains similar text to discovery options, it's a duplicate
+        const hasDuplicateQuestion = aiActions.some((action: SuggestedAction) => {
+          const actionText = (action.label + ' ' + action.value).toLowerCase();
+          return discoveryOptions.some(opt => 
+            actionText.includes(opt.label.toLowerCase().slice(0, 10)) ||
+            opt.label.toLowerCase().includes(actionText.slice(0, 10))
+          );
+        });
+        
+        if (hasDuplicateQuestion) {
+          processedMessages[processedMessages.length - 1] = {
+            ...lastMessage,
+            suggestedActions: undefined
+          };
+        }
+      }
+    }
+    
+    const lastMessage = processedMessages[processedMessages.length - 1];
     if (lastMessage?.role === 'assistant' && !lastMessage.suggestedActions) {
       const content = typeof lastMessage.content === 'string' ? lastMessage.content.toLowerCase() : '';
       const isReady = content.includes('create book') || 
@@ -506,8 +538,7 @@ export default function GoogleChat() {
       
       if (isReady && pageCount >= 3) {
         // Return messages with suggested actions added to last message
-        const updatedMessages = [...messagesWithCharacterSelection];
-        updatedMessages[updatedMessages.length - 1] = {
+        processedMessages[processedMessages.length - 1] = {
           ...lastMessage,
           suggestedActions: [
             { id: 'open_qa', label: '📖 View Pages & Add Photos', value: 'open_qa' },
@@ -515,11 +546,10 @@ export default function GoogleChat() {
             { id: 'start_over', label: 'Start Over', value: 'start_over' }
           ]
         };
-        return updatedMessages;
       }
     }
-    return messagesWithCharacterSelection;
-  }, [messagesWithCharacterSelection, pageCount, characterFlow.needsCharacterSelection]);
+    return processedMessages;
+  }, [messagesWithCharacterSelection, pageCount, characterFlow.needsCharacterSelection, discoveryFlow.currentQuestion, discoveryFlow.isComplete]);
 
   // Smart scroll: only auto-scroll when user sends a message
   // Keep viewport at top when AI responds so user sees text first

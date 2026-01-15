@@ -15,6 +15,10 @@ export interface TypeSpecificDiscovery {
   question_text: string;
   options: DiscoveryOption[];
   sort_order: number;
+  step_number: number | null;
+  frontend_state_key: string | null;
+  context_value_key: string | null;
+  is_skippable: boolean | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -39,7 +43,11 @@ export const useTypeDiscoveries = (agentType?: string) => {
       if (error) throw error;
       return (data || []).map(d => ({
         ...d,
-        options: (d.options as unknown as DiscoveryOption[]) || []
+        options: (d.options as unknown as DiscoveryOption[]) || [],
+        step_number: d.step_number ?? null,
+        frontend_state_key: d.frontend_state_key ?? null,
+        context_value_key: d.context_value_key ?? null,
+        is_skippable: d.is_skippable ?? true,
       })) as TypeSpecificDiscovery[];
     },
   });

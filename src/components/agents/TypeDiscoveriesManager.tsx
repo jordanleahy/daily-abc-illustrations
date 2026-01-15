@@ -28,6 +28,10 @@ export const TypeDiscoveriesManager = () => {
     question_text: '',
     options: [] as DiscoveryOption[],
     sort_order: 0,
+    step_number: 1 as number | null,
+    frontend_state_key: '' as string | null,
+    context_value_key: '' as string | null,
+    is_skippable: true as boolean | null,
     is_active: true,
   });
   const [newOptionKey, setNewOptionKey] = useState('');
@@ -55,6 +59,10 @@ export const TypeDiscoveriesManager = () => {
       question_text: '',
       options: [],
       sort_order: 0,
+      step_number: 1,
+      frontend_state_key: '',
+      context_value_key: '',
+      is_skippable: true,
       is_active: true,
     });
     setNewOptionKey('');
@@ -69,6 +77,10 @@ export const TypeDiscoveriesManager = () => {
       question_text: discovery.question_text,
       options: [...discovery.options],
       sort_order: discovery.sort_order,
+      step_number: discovery.step_number ?? 1,
+      frontend_state_key: discovery.frontend_state_key ?? '',
+      context_value_key: discovery.context_value_key ?? '',
+      is_skippable: discovery.is_skippable ?? true,
       is_active: discovery.is_active,
     });
     setIsAddingNew(false);

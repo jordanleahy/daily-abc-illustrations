@@ -169,16 +169,14 @@ export function useTextToSpeech(options: UseTextToSpeechOptions = {}): UseTextTo
       // 2. Cache miss - fetch from API
       console.log('[TTS] Cache miss - fetching from ElevenLabs:', cacheKey);
       
-      const supabaseUrl = (supabase as any).supabaseUrl;
-      
       const response = await fetch(
-        `${supabaseUrl}/functions/v1/elevenlabs-tts`,
+        'https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/elevenlabs-tts',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZveGRuc3B3emhqeGp4dWljdXRlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTcxNjcyNzQsImV4cCI6MjA3Mjc0MzI3NH0.3VchRK3xfYxZCWBjZpWUwkKTsIB4qAqvNbje_ByXnLI',
           },
           body: JSON.stringify({ text, voiceId, withTimestamps: withSync }),
         }

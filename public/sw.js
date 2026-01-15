@@ -1,6 +1,7 @@
 const CACHE_NAME = 'dailyabc-images-v1';
 const VIDEO_CACHE_NAME = 'dailyabc-videos-v1';
 const THUMBNAIL_CACHE_NAME = 'dailyabc-thumbnails-v1';
+const TTS_CACHE_NAME = 'dailyabc-tts-v1';
 const CACHE_DURATION = 90 * 24 * 60 * 60 * 1000; // 90 days in milliseconds
 const VIDEO_CACHE_DURATION = 7 * 24 * 60 * 60 * 1000; // 7 days for videos
 
@@ -10,14 +11,17 @@ self.addEventListener('install', (event) => {
   self.skipWaiting();
 });
 
-// Activate event - cleanup old caches
+// Activate event - cleanup old caches (preserve TTS cache - permanent)
 self.addEventListener('activate', (event) => {
   console.log('[Service Worker] Activating...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          if (cacheName !== CACHE_NAME && cacheName !== VIDEO_CACHE_NAME && cacheName !== THUMBNAIL_CACHE_NAME) {
+          if (cacheName !== CACHE_NAME && 
+              cacheName !== VIDEO_CACHE_NAME && 
+              cacheName !== THUMBNAIL_CACHE_NAME &&
+              cacheName !== TTS_CACHE_NAME) {
             console.log('[Service Worker] Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
@@ -173,11 +177,122 @@ self.addEventListener('message', (event) => {
       Promise.all([
         caches.delete(CACHE_NAME),
         caches.delete(VIDEO_CACHE_NAME),
-        caches.delete(THUMBNAIL_CACHE_NAME)
+        caches.delete(THUMBNAIL_CACHE_NAME),
+        caches.delete(TTS_CACHE_NAME)
       ]).then(() => {
         console.log('[Service Worker] All caches cleared');
         if (event.ports[0]) {
           event.ports[0].postMessage({ success: true });
+        }
+      })
+    );
+  }
+  
+  // TTS Cache: Store audio with metadata (permanent - no TTL)
+  if (event.data && event.data.type === 'CACHE_TTS_AUDIO') {
+    const { cacheKey, audioBlob, wordTimings, metadata } = event.data;
+    console.log('[Service Worker] Caching TTS audio:', cacheKey);
+    
+    event.waitUntil(
+      caches.open(TTS_CACHE_NAME).then(async (cache) => {
+        try {
+          // Store metadata as JSON
+          const metadataBlob = new Blob([JSON.stringify({
+            wordTimings,
+            ...metadata
+          })], { type: 'application/json' });
+          
+          // Store audio blob
+          const audioResponse = new Response(audioBlob, {
+            headers: {
+              'Content-Type': 'audio/mpeg',
+              'X-TTS-Cache-Key': cacheKey,
+              'X-TTS-Cached-At': new Date().toISOString()
+            }
+          });
+          
+          // Store metadata
+          const metadataResponse = new Response(metadataBlob, {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+          });
+          
+          await cache.put(`tts-audio://${cacheKey}`, audioResponse);
+          await cache.put(`tts-meta://${cacheKey}`, metadataResponse);
+          
+          console.log('[Service Worker] TTS audio cached successfully:', cacheKey);
+          
+          if (event.ports[0]) {
+            event.ports[0].postMessage({ success: true });
+          }
+        } catch (error) {
+          console.error('[Service Worker] Error caching TTS:', error);
+          if (event.ports[0]) {
+            event.ports[0].postMessage({ success: false, error: error.message });
+          }
+        }
+      })
+    );
+  }
+  
+  // TTS Cache: Retrieve audio by cache key
+  if (event.data && event.data.type === 'GET_TTS_AUDIO') {
+    const { cacheKey } = event.data;
+    
+    event.waitUntil(
+      caches.open(TTS_CACHE_NAME).then(async (cache) => {
+        try {
+          const [audioResponse, metadataResponse] = await Promise.all([
+            cache.match(`tts-audio://${cacheKey}`),
+            cache.match(`tts-meta://${cacheKey}`)
+          ]);
+          
+          if (audioResponse && metadataResponse) {
+            const audioBlob = await audioResponse.blob();
+            const metadata = await metadataResponse.json();
+            
+            console.log('[Service Worker] TTS cache hit:', cacheKey);
+            
+            if (event.ports[0]) {
+              event.ports[0].postMessage({
+                audioBlob,
+                wordTimings: metadata.wordTimings || [],
+                text: metadata.text,
+                voiceId: metadata.voiceId,
+                cachedAt: metadata.cachedAt
+              });
+            }
+          } else {
+            console.log('[Service Worker] TTS cache miss:', cacheKey);
+            if (event.ports[0]) {
+              event.ports[0].postMessage(null);
+            }
+          }
+        } catch (error) {
+          console.error('[Service Worker] Error retrieving TTS:', error);
+          if (event.ports[0]) {
+            event.ports[0].postMessage(null);
+          }
+        }
+      })
+    );
+  }
+  
+  // TTS Cache: Clear all TTS cache
+  if (event.data && event.data.type === 'CLEAR_TTS_CACHE') {
+    console.log('[Service Worker] Clearing TTS cache');
+    
+    event.waitUntil(
+      caches.delete(TTS_CACHE_NAME).then(() => {
+        console.log('[Service Worker] TTS cache cleared');
+        if (event.ports[0]) {
+          event.ports[0].postMessage({ success: true });
+        }
+      }).catch((error) => {
+        console.error('[Service Worker] Error clearing TTS cache:', error);
+        if (event.ports[0]) {
+          event.ports[0].postMessage({ success: false, error: error.message });
         }
       })
     );

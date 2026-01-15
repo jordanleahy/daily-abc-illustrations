@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-// Default to Lily voice - soft, gentle voice ideal for children's books
+    // Default to Lily voice - soft, gentle voice ideal for children's books
     const { text, voiceId = 'pFZP5JQG7iQjIQuC4Bku' } = await req.json();
     
     if (!text || typeof text !== 'string') {
@@ -21,6 +21,14 @@ serve(async (req) => {
         { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Preprocess text for children's book digraph pronunciation
+    // Replace isolated "ph" or "Ph" with "f" sound (not "p-h")
+    const processedText = text
+      .replace(/\bph\b/gi, 'f')           // isolated "ph" → "f"
+      .replace(/\bPh\b/g, 'F')            // preserve capitalization
+      .replace(/\"ph\"/gi, '"f"')         // quoted "ph" → "f"
+      .replace(/\'ph\'/gi, "'f'");        // single-quoted 'ph' → 'f'
 
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
     
@@ -32,7 +40,7 @@ serve(async (req) => {
       );
     }
 
-    console.log(`Generating TTS for text: "${text.substring(0, 50)}..." with voice: ${voiceId}`);
+    console.log(`Generating TTS for text: "${processedText.substring(0, 50)}..." with voice: ${voiceId}`);
 
     const response = await fetch(
       `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}?output_format=mp3_44100_128`,
@@ -43,7 +51,7 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          text,
+          text: processedText,
           model_id: 'eleven_turbo_v2_5',
           voice_settings: {
             stability: 0.4,           // More expressive for storytelling

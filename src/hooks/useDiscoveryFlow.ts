@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Json } from '@/integrations/supabase/types';
+import { BOOK_TYPE_TO_AGENT_TYPE } from '@/types/shared/agent';
 
 export interface DiscoveryOption {
   key: string;
@@ -156,27 +157,11 @@ export function useDiscoveryFlow(agentType: string | null) {
 }
 
 /**
- * Maps book type to agent type for discovery questions
+ * Maps book type to agent type for discovery questions.
+ * Uses the canonical BOOK_TYPE_TO_AGENT_TYPE mapping from shared types
+ * to ensure consistency with edge functions and agents table.
  */
 export function getAgentTypeForBookType(bookType: string | null): string | null {
   if (!bookType) return null;
-  
-  const mapping: Record<string, string> = {
-    'abc': 'abc',
-    'numbers': 'numbers',
-    'colors': 'colors',
-    'shapes': 'shapes',
-    'animals': 'animals',
-    'rhyming': 'rhyming',
-    'opposites': 'opposites',
-    'emotions': 'emotions',
-    'first-words': 'first-words',
-    'cvc': 'cvc',
-    'sight-words': 'sight-words',
-    'digraph': 'digraph',
-    'bedtime': 'bedtime',
-    'manners': 'book-creation-manners',
-  };
-  
-  return mapping[bookType] || null;
+  return BOOK_TYPE_TO_AGENT_TYPE[bookType] || null;
 }

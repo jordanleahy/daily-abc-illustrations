@@ -11,8 +11,23 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Plus, Pencil, Trash2, X } from 'lucide-react';
 
 const AGENT_TYPES = [
-  'abc', 'numbers', 'colors', 'shapes', 'rhyming', 'cvc',
-  'opposites', 'emotions', 'animals', 'sight-words', 'first-words', 'bedtime'
+  'book-creation-abc',
+  'book-creation-numbers', 
+  'book-creation-colors',
+  'book-creation-shapes',
+  'book-creation-rhyming',
+  'book-creation-cvc',
+  'book-creation-opposites',
+  'book-creation-emotions',
+  'book-creation-animals',
+  'book-creation-sight-words',
+  'book-creation-first-words',
+  'book-creation-bedtime',
+  'book-creation-digraphs',
+  'book-creation-general',
+  'book-creation-dr-seuss',
+  'book-creation-manners',
+  'book-creation-parent-education',
 ];
 
 export const TypeDiscoveriesManager = () => {

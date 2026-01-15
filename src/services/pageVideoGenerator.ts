@@ -1,10 +1,12 @@
 /**
  * Page Video Generator Service
  * 
- * Generates WebM videos with:
+ * Generates videos with:
  * - Static background illustration
  * - Word-by-word highlighted text overlay
  * - Synced ElevenLabs TTS audio
+ * 
+ * Supports MP4 on iOS/Safari for compatibility
  */
 
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +31,12 @@ interface TTSResponse {
   originalText: string;
 }
 
+export interface VideoResult {
+  blob: Blob;
+  format: 'mp4' | 'webm';
+  mimeType: string;
+}
+
 const DIMENSIONS = {
   portrait: { width: 1080, height: 1920 },
   landscape: { width: 1920, height: 1080 },
@@ -36,6 +44,58 @@ const DIMENSIONS = {
 };
 
 const DEFAULT_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'; // George
+
+/**
+ * Detect iOS or Safari browser for MP4 compatibility
+ */
+function isIOSOrSafari(): boolean {
+  const ua = navigator.userAgent;
+  
+  // iOS detection
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  
+  // Safari detection (not Chrome on Mac)
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+  
+  return isIOS || isSafari;
+}
+
+/**
+ * Get the best supported video mime type for the current browser
+ */
+function getBestMimeType(): { mimeType: string; format: 'mp4' | 'webm' } {
+  // On iOS/Safari, try MP4 first
+  if (isIOSOrSafari()) {
+    // Try various MP4 codec strings Safari might support
+    const mp4Types = [
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+      'video/mp4;codecs=avc1.4d002a',
+      'video/mp4',
+    ];
+    
+    for (const type of mp4Types) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        console.log('Using MP4 format for iOS/Safari:', type);
+        return { mimeType: type, format: 'mp4' };
+      }
+    }
+    
+    // Fallback to WebM even on Safari if MP4 not supported
+    console.warn('MP4 not supported on this Safari/iOS device, trying WebM');
+  }
+  
+  // Default to WebM (best browser support for recording)
+  if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+    return { mimeType: 'video/webm;codecs=vp9,opus', format: 'webm' };
+  }
+  
+  if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+    return { mimeType: 'video/webm;codecs=vp8,opus', format: 'webm' };
+  }
+  
+  return { mimeType: 'video/webm', format: 'webm' };
+}
 
 /**
  * Fetch TTS audio with word timings from ElevenLabs edge function
@@ -193,8 +253,9 @@ function drawFrame(
 
 /**
  * Generate a video from page content
+ * Returns VideoResult with blob, format, and mimeType
  */
-export async function generatePageVideo(config: PageVideoConfig): Promise<Blob> {
+export async function generatePageVideo(config: PageVideoConfig): Promise<VideoResult> {
   const {
     imageUrl,
     text,
@@ -240,10 +301,9 @@ export async function generatePageVideo(config: PageVideoConfig): Promise<Blob> 
     canvasStream.addTrack(track);
   });
 
-  // Set up MediaRecorder
-  const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-    ? 'video/webm;codecs=vp9,opus'
-    : 'video/webm';
+  // Get best mime type for this browser
+  const { mimeType, format } = getBestMimeType();
+  console.log(`Recording video with format: ${format}, mimeType: ${mimeType}`);
 
   const mediaRecorder = new MediaRecorder(canvasStream, {
     mimeType,
@@ -265,7 +325,7 @@ export async function generatePageVideo(config: PageVideoConfig): Promise<Blob> 
     mediaRecorder.onstop = () => {
       const blob = new Blob(chunks, { type: mimeType });
       audioContext.close();
-      resolve(blob);
+      resolve({ blob, format, mimeType });
     };
 
     mediaRecorder.onerror = (e) => {

@@ -46,22 +46,23 @@ export function VideoExportButton({
     setProgress(0);
 
     try {
-      const videoBlob = await generatePageVideo({
+      const result = await generatePageVideo({
         imageUrl,
         text,
         aspectRatio,
         onProgress: setProgress,
       });
 
+      const extension = result.format === 'mp4' ? 'mp4' : 'webm';
       const filename = pageTitle
-        ? `${pageLetter}-is-for-${pageTitle.toLowerCase().replace(/\s+/g, '-')}.webm`
-        : `${pageLetter}-page.webm`;
+        ? `${pageLetter}-is-for-${pageTitle.toLowerCase().replace(/\s+/g, '-')}.${extension}`
+        : `${pageLetter}-page.${extension}`;
 
-      downloadBlob(videoBlob, filename);
-      toast.success('Video exported successfully!');
+      downloadBlob(result.blob, filename);
+      toast.success(`Video exported as ${extension.toUpperCase()}!`);
     } catch (error) {
       console.error('Video export failed:', error);
-      toast.error('Failed to generate video. Please try again.');
+      toast.error('Failed to generate video. Your browser may not support video recording.');
     } finally {
       setIsGenerating(false);
       setProgress(0);

@@ -109,6 +109,82 @@ export async function cacheTTSAudio(
 }
 
 /**
+ * Check if TTS audio is already cached (lightweight check)
+ */
+export async function isTTSCached(cacheKey: string): Promise<boolean> {
+  const cached = await getTTSFromCache(cacheKey);
+  return cached?.audioBlob != null;
+}
+
+/**
+ * Prefetch TTS audio for given text (silent - no playback)
+ * Useful for preloading upcoming page audio
+ * Returns true if successfully prefetched or already cached
+ */
+export async function prefetchTTSAudio(
+  text: string,
+  voiceId: string = 'default'
+): Promise<boolean> {
+  if (!text?.trim()) return false;
+  
+  const cacheKey = generateTTSCacheKey(text, voiceId);
+  
+  // Check if already cached
+  const cached = await getTTSFromCache(cacheKey);
+  if (cached?.audioBlob) {
+    console.log('[TTS Prefetch] Already cached:', text.slice(0, 30));
+    return true;
+  }
+  
+  // Fetch from API (silent - no playback)
+  try {
+    console.log('[TTS Prefetch] Fetching:', text.slice(0, 30));
+    
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/elevenlabs-tts`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabaseKey,
+          'Authorization': `Bearer ${supabaseKey}`,
+        },
+        body: JSON.stringify({ text, voiceId, withTimestamps: true }),
+      }
+    );
+    
+    if (!response.ok) {
+      console.warn('[TTS Prefetch] API error:', response.status);
+      return false;
+    }
+    
+    const data = await response.json();
+    
+    // Convert base64 to blob
+    const binaryString = atob(data.audio_base64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+    const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
+    const timings = data.wordTimings || [];
+    
+    // Store in cache
+    const success = await cacheTTSAudio(cacheKey, audioBlob, timings, text, voiceId);
+    if (success) {
+      console.log('[TTS Prefetch] Cached:', text.slice(0, 30));
+    }
+    return success;
+  } catch (error) {
+    console.warn('[TTS Prefetch] Failed:', error);
+    return false;
+  }
+}
+
+/**
  * Get TTS cache statistics
  */
 export async function getTTSCacheStats(): Promise<{ count: number }> {

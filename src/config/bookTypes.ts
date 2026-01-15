@@ -173,6 +173,15 @@ export const BOOK_TYPES = [
     expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
   },
   {
+    id: 'dr-seuss' as const,
+    label: 'Dr. Seuss Style',
+    icon: Sparkles,
+    description: 'Whimsical rhyming books with playful language',
+    prompt: 'I want to create a whimsical, rhyming book in the style of Dr. Seuss with playful language, invented words, and imaginative scenarios.',
+    color: 'text-yellow-500',
+    expectedPageCount: 12 // 1 cover + 1 education + 10 content pages
+  },
+  {
     id: 'manners' as const,
     label: 'Manners Book',
     icon: HandHeart,

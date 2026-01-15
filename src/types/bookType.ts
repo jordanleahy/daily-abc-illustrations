@@ -17,6 +17,7 @@ export const BOOK_TYPE_IDS = [
   'sight-words',
   'general',
   'digraphs',
+  'dr-seuss',
   'manners',
   'parent-education',
   'other'

@@ -499,32 +499,15 @@ export default function GoogleChat() {
     
     let processedMessages = [...messagesWithCharacterSelection];
     
-    // If discovery flow has an active question, suppress AI-generated suggestedActions on the last message
-    // This prevents duplicate question UI (AI [SUGGEST] blocks + frontend DiscoveryQuestionInline)
+    // If discovery flow has an active question, suppress ALL AI-generated suggestedActions
+    // The frontend discovery flow is the single source of truth for these questions
     if (discoveryFlow.currentQuestion && !discoveryFlow.isComplete) {
       const lastMessage = processedMessages[processedMessages.length - 1];
       if (lastMessage?.role === 'assistant' && lastMessage.suggestedActions) {
-        // Check if the AI's suggested actions overlap with the current discovery question
-        // by looking for similar option patterns (both are asking the same type of question)
-        const aiActions = lastMessage.suggestedActions;
-        const discoveryOptions = discoveryFlow.currentQuestion.options;
-        
-        // If the AI is asking the same question as the frontend discovery flow, suppress AI actions
-        // Heuristic: if any AI action label/value contains similar text to discovery options, it's a duplicate
-        const hasDuplicateQuestion = aiActions.some((action: SuggestedAction) => {
-          const actionText = (action.label + ' ' + action.value).toLowerCase();
-          return discoveryOptions.some(opt => 
-            actionText.includes(opt.label.toLowerCase().slice(0, 10)) ||
-            opt.label.toLowerCase().includes(actionText.slice(0, 10))
-          );
-        });
-        
-        if (hasDuplicateQuestion) {
-          processedMessages[processedMessages.length - 1] = {
-            ...lastMessage,
-            suggestedActions: undefined
-          };
-        }
+        processedMessages[processedMessages.length - 1] = {
+          ...lastMessage,
+          suggestedActions: undefined
+        };
       }
     }
     

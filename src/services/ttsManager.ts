@@ -30,9 +30,12 @@ class TTSManager {
   /**
    * Play text with optional word synchronization
    */
+  // Default to Lily voice (pFZP5JQG7iQjIQuC4Bku) if no voiceId provided
+  private static readonly DEFAULT_VOICE_ID = 'pFZP5JQG7iQjIQuC4Bku';
+
   async speak(
     text: string,
-    voiceId: string = 'default',
+    voiceId: string = TTSManager.DEFAULT_VOICE_ID,
     withSync: boolean = true,
     callbacks: PlaybackCallbacks = {}
   ): Promise<void> {

@@ -487,6 +487,9 @@ export const useGoogleChat = (
         // Known city IDs
         const cityIds = new Set(['JERSEY_CITY', 'HOBOKEN', 'NEW_YORK_CITY', 'skip-city', 'NONE']);
 
+        // Known manner type IDs (for Manners book agent)
+        const mannerTypeIds = new Set(['eating-habits', 'social-skills', 'sharing', 'please-thank-you', 'personal-space', 'listening', 'taking-turns', 'kindness']);
+
         const actions = suggestionsText
           .split('\n')
           .filter(line => line.trim())
@@ -527,6 +530,10 @@ export const useGoogleChat = (
             // Check for city IDs
             if (cityIds.has(id)) {
               action.cityId = id as CityId;
+            }
+            // Check for manner type IDs (Manners book agent)
+            if (mannerTypeIds.has(id)) {
+              action.mannerTypeId = id as MannerTypeId;
             }
             return action;
           })

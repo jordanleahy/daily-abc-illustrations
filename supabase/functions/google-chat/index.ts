@@ -14,6 +14,7 @@ import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothi
 import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, initLocationsCache, getLocationSuggestBlock, type ValidLocation } from '../_shared/locations.ts';
 import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCache, getCitySuggestBlock, type ValidCity } from '../_shared/cities.ts';
 import { fetchTypeDiscoveries, getDiscoverySuggestions, type TypeSpecificDiscovery } from '../_shared/typeDiscoveries.ts';
+import { getCuratedItemsList } from '../_shared/abcCuratedItems.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -36,94 +37,6 @@ interface Message {
   content: string | MessageContent[];
 }
 
-// Curated ABC items for themed books
-const ABC_CURATED_ITEMS: Record<string, Record<string, string[]>> = {
-  'animals': {
-    A: ['Alligator', 'Ant', 'Anteater'], B: ['Bear', 'Butterfly', 'Bee'], C: ['Cat', 'Cow', 'Caterpillar'],
-    D: ['Dog', 'Duck', 'Dolphin'], E: ['Elephant', 'Eagle', 'Emu'], F: ['Fox', 'Frog', 'Fish'],
-    G: ['Giraffe', 'Gorilla', 'Goat'], H: ['Horse', 'Hippo', 'Hedgehog'], I: ['Iguana', 'Ibis'],
-    J: ['Jaguar', 'Jellyfish'], K: ['Kangaroo', 'Koala', 'Kiwi'], L: ['Lion', 'Llama', 'Leopard'],
-    M: ['Monkey', 'Mouse', 'Moose'], N: ['Newt', 'Narwhal'], O: ['Owl', 'Octopus', 'Otter'],
-    P: ['Penguin', 'Pig', 'Panda'], Q: ['Quail', 'Queen Bee'], R: ['Rabbit', 'Raccoon', 'Rhinoceros'],
-    S: ['Snake', 'Squirrel', 'Seal'], T: ['Tiger', 'Turtle', 'Turkey'], U: ['Urchin', 'Umbrellabird'],
-    V: ['Vulture', 'Viper'], W: ['Wolf', 'Whale', 'Walrus'], X: ['X-ray Fish', 'Xenops'],
-    Y: ['Yak', 'Yellow Jacket'], Z: ['Zebra', 'Zebu']
-  },
-  'food': {
-    A: ['Apple', 'Avocado', 'Apricot'], B: ['Banana', 'Bread', 'Broccoli'], C: ['Carrot', 'Cookie', 'Corn'],
-    D: ['Donut', 'Date', 'Dragon Fruit'], E: ['Egg', 'Eggplant'], F: ['Fish', 'Fries', 'Fig'],
-    G: ['Grapes', 'Grapefruit', 'Guava'], H: ['Hot Dog', 'Honey', 'Ham'], I: ['Ice Cream', 'Ice Pop'],
-    J: ['Juice', 'Jam', 'Jellybean'], K: ['Kiwi', 'Kale'], L: ['Lemon', 'Lettuce', 'Lollipop'],
-    M: ['Milk', 'Muffin', 'Mango'], N: ['Noodles', 'Nut', 'Nectarine'], O: ['Orange', 'Olive', 'Oatmeal'],
-    P: ['Pizza', 'Pear', 'Popcorn'], Q: ['Quiche', 'Quinoa'], R: ['Rice', 'Raisin', 'Radish'],
-    S: ['Strawberry', 'Sandwich', 'Soup'], T: ['Tomato', 'Toast', 'Taco'], U: ['Udon', 'Upside-down Cake'],
-    V: ['Vegetable', 'Vanilla'], W: ['Watermelon', 'Waffle', 'Walnut'], X: ['Xigua'],
-    Y: ['Yogurt', 'Yam'], Z: ['Zucchini', 'Ziti']
-  },
-  'nature': {
-    A: ['Acorn', 'Acacia Tree'], B: ['Butterfly', 'Branch', 'Brook'], C: ['Cloud', 'Creek', 'Clover'],
-    D: ['Dandelion', 'Dew', 'Daisy'], E: ['Earth', 'Evergreen'], F: ['Flower', 'Fern', 'Forest'],
-    G: ['Grass', 'Garden', 'Grove'], H: ['Hill', 'Honeybee', 'Hive'], I: ['Ivy', 'Island'],
-    J: ['Jungle', 'Jay'], K: ['Kelp', 'Kite'], L: ['Leaf', 'Lake', 'Lightning'],
-    M: ['Mountain', 'Moon', 'Meadow'], N: ['Nest', 'Night Sky'], O: ['Ocean', 'Oak Tree', 'Orchid'],
-    P: ['Pine Tree', 'Pebble', 'Pond'], Q: ['Quartz', 'Quiet Stream'], R: ['River', 'Rock', 'Rainbow'],
-    S: ['Sun', 'Stone', 'Stream'], T: ['Tree', 'Thunder', 'Tide'], U: ['Umbrella Leaf'],
-    V: ['Valley', 'Vine', 'Volcano'], W: ['Waterfall', 'Wind', 'Willow'], X: ['Xerophyte'],
-    Y: ['Yew Tree', 'Yellow Flower'], Z: ['Zinnia', 'Zen Garden']
-  },
-  'vehicles': {
-    A: ['Airplane', 'Ambulance', 'ATV'], B: ['Bus', 'Boat', 'Bicycle'], C: ['Car', 'Crane', 'Cement Truck'],
-    D: ['Dump Truck', 'Digger'], E: ['Excavator', 'Engine'], F: ['Fire Truck', 'Ferry', 'Fork Lift'],
-    G: ['Garbage Truck', 'Go-Kart'], H: ['Helicopter', 'Hot Air Balloon', 'Hovercraft'], I: ['Ice Cream Truck'],
-    J: ['Jet', 'Jeep'], K: ['Kayak', 'Kite'], L: ['Limousine', 'Loader'],
-    M: ['Motorcycle', 'Monster Truck'], N: ['NASCAR', 'Navy Ship'], O: ['Oil Tanker'],
-    P: ['Police Car', 'Plane', 'Pickup Truck'], Q: ['Quad Bike'], R: ['Race Car', 'Rocket', 'Rowboat'],
-    S: ['Submarine', 'Scooter', 'Sailboat'], T: ['Train', 'Tractor', 'Taxi'], U: ['Unicycle', 'Utility Truck'],
-    V: ['Van', 'Vespa'], W: ['Wagon', 'Water Ski'], X: ['X-15'], Y: ['Yacht', 'Yellow Bus'],
-    Z: ['Zamboni', 'Zeppelin']
-  },
-  'mixed': {
-    A: ['Apple', 'Alligator', 'Airplane'], B: ['Ball', 'Bear', 'Boat'], C: ['Cat', 'Car', 'Cookie'],
-    D: ['Dog', 'Drum', 'Door'], E: ['Elephant', 'Egg', 'Ear'], F: ['Fish', 'Flower', 'Fire Truck'],
-    G: ['Goat', 'Grapes', 'Guitar'], H: ['Horse', 'Hat', 'House'], I: ['Ice Cream', 'Iguana', 'Igloo'],
-    J: ['Jump Rope', 'Jellyfish', 'Juice'], K: ['Kite', 'Kangaroo', 'Key'], L: ['Lion', 'Leaf', 'Lemon'],
-    M: ['Moon', 'Monkey', 'Milk'], N: ['Nest', 'Nose', 'Nut'], O: ['Octopus', 'Orange', 'Owl'],
-    P: ['Pig', 'Pizza', 'Penguin'], Q: ['Queen', 'Quilt', 'Question Mark'], R: ['Rainbow', 'Rabbit', 'Ring'],
-    S: ['Sun', 'Snake', 'Star'], T: ['Tiger', 'Tree', 'Turtle'], U: ['Umbrella', 'Unicorn'],
-    V: ['Volcano', 'Violin', 'Vest'], W: ['Whale', 'Watermelon', 'Watch'], X: ['Xylophone', 'X-ray'],
-    Y: ['Yo-yo', 'Yak', 'Yarn'], Z: ['Zebra', 'Zipper', 'Zoo']
-  },
-  'mountain-village': {
-    A: ['Apron', 'Alpine Cottage', 'Axe'], B: ['Bakery', 'Bridge', 'Barn'],
-    C: ['Church', 'Cottage', 'Café'], D: ['Door', 'Dog', 'Dairy'], E: ['Evergreen Tree', 'Entrance Gate'],
-    F: ['Fountain', 'Fence', 'Flower Box'], G: ['Garden', 'Goat', 'Gate'], H: ['House', 'Hill', 'Horse'],
-    I: ['Inn', 'Icicle'], J: ['Jug', 'Junction'], K: ['Kitchen', 'Kettle'], L: ['Lodge', 'Ladder', 'Lantern'],
-    M: ['Mill', 'Market', 'Mountain'], N: ['Nest', 'Narrow Path'], O: ['Oven', 'Old Oak'],
-    P: ['Path', 'Post Office', 'Porch'], Q: ['Quilt', 'Quiet Square'], R: ['Roof', 'River', 'Railing'],
-    S: ['School', 'Stone Wall', 'Shop'], T: ['Tower', 'Tavern', 'Terrace'], U: ['Umbrella', 'Upstairs Window'],
-    V: ['Village Square', 'Vegetable Garden', 'Valley View'], W: ['Well', 'Window Box', 'Wheelbarrow'],
-    X: ['X-Crossing'], Y: ['Yard', 'Yellow Door'], Z: ['Zigzag Roofline', 'Zone']
-  },
-  'snowboarding': {
-    A: ['Aerial', 'Air', 'Alley-Oop'], B: ['Board', 'Backside', 'Binding'], C: ['Carve', 'Chairlift', 'Cornice'],
-    D: ['Drop', 'Deck', 'Downhill'], E: ['Edge', 'Eject'], F: ['Freestyle', 'Fakie', 'Fifty-Fifty'],
-    G: ['Grab', 'Goofy', 'Grind'], H: ['Halfpipe', 'Heel Edge', 'High Five'], I: ['Indy Grab', 'Invert'],
-    J: ['Jump', 'Jib', 'Japan Grab'], K: ['Kicker', 'Knuckle'], L: ['Landing', 'Lift', 'Lip'],
-    M: ['Method', 'Mute Grab', 'Mountain'], N: ['Nose Grab', 'Nollie'], O: ['Ollie', 'Off-Axis'],
-    P: ['Park', 'Powder', 'Pipe'], Q: ['Quarter Pipe'], R: ['Rail', 'Run', 'Regular'],
-    S: ['Slope', 'Spin', 'Stomp'], T: ['Terrain Park', 'Toe Edge', 'Tail'], U: ['Underflip', 'Uphill'],
-    V: ['Vert', 'Vitelli Flip'], W: ['Wipe Out', 'Wildcat', 'Wall Ride'], X: ['X-Games'],
-    Y: ['Yard Sale', 'Yawning'], Z: ['Zeach', 'Zone']
-  }
-};
-
-function getCuratedItemsList(themeKey: string): string {
-  const items = ABC_CURATED_ITEMS[themeKey];
-  if (!items) return '';
-  return Object.entries(items)
-    .map(([letter, options]) => `${letter}: ${options.join(' / ')}`)
-    .join('\n');
-}
 
 // Optional parser for AI suggestions
 function parseSuggestions(aiResponse: string): { 

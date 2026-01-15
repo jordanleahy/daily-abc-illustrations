@@ -449,15 +449,13 @@ serve(async (req) => {
       : '';
 
     // Manner type context - for Manners book agent
+    // IDs MUST match Agent Instructions v1.5.0: eating-habits, social-skills, sharing, respect, hygiene
     const MANNER_TYPE_LABELS: Record<string, string> = {
-      'eating-habits': '🍽️ Eating Habits',
-      'greeting-others': '👋 Greeting Others',
-      'sharing': '🤝 Sharing',
-      'saying-please-thank-you': '🙏 Saying Please & Thank You',
-      'respecting-personal-space': '🧍 Respecting Personal Space',
-      'listening-skills': '👂 Listening Skills',
-      'taking-turns': '🔄 Taking Turns',
-      'being-kind': '💗 Being Kind',
+      'eating-habits': '🍽️ Table Manners & Eating Habits',
+      'social-skills': '🤝 Social Skills & Politeness',
+      'sharing': '🎁 Sharing & Taking Turns',
+      'respect': '🙏 Respect & Kindness',
+      'hygiene': '🧼 Hygiene & Self-Care',
     };
     // Manners environment question injection - shown after manner type is selected
     // Use type_specific_discoveries for dynamic question fetching

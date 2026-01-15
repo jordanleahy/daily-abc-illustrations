@@ -487,8 +487,8 @@ export const useGoogleChat = (
         // Known city IDs
         const cityIds = new Set(['JERSEY_CITY', 'HOBOKEN', 'NEW_YORK_CITY', 'skip-city', 'NONE']);
 
-        // Known manner type IDs (for Manners book agent)
-        const mannerTypeIds = new Set(['eating-habits', 'social-skills', 'sharing', 'please-thank-you', 'personal-space', 'listening', 'taking-turns', 'kindness']);
+        // Known manner type IDs (for Manners book agent) - MUST match Agent Instructions v1.5.0
+        const mannerTypeIds = new Set(['eating-habits', 'social-skills', 'sharing', 'respect', 'hygiene']);
 
         const actions = suggestionsText
           .split('\n')

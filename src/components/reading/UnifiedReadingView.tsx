@@ -66,6 +66,7 @@ import { useKidProfiles } from '@/hooks/useKidProfiles';
 import { useKidPoints } from '@/hooks/useKidPoints';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
+import { useTTSPrefetch } from '@/hooks/useTTSPrefetch';
 // Toast notifications removed
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
@@ -221,6 +222,9 @@ export function UnifiedReadingView({
   const [sessionStarted, setSessionStarted] = useState(false);
   const [initialPageTracked, setInitialPageTracked] = useState(false);
   const [selectedKidId, setSelectedKidId] = useState<string | undefined>(undefined);
+  
+  // Prefetch TTS audio for upcoming pages (improves audio playback performance)
+  useTTSPrefetch(reorderedPages, currentPageIndex, { enabled: reorderedPages.length > 0 });
   
   // Per-page word learning state persistence
   const [pageWordStates, setPageWordStates] = useState<Record<string, {

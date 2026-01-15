@@ -394,15 +394,26 @@ serve(async (req) => {
       
       if (unansweredDiscoveries.length > 0) {
         const nextQuestion = unansweredDiscoveries[0]; // Ask ONE at a time
-        mannersDiscoveryQuestionsContext = `\n\n📋 NEXT OPTIONAL QUESTION (Ask ONE at a time):
+        const remainingCount = unansweredDiscoveries.length;
+        mannersDiscoveryQuestionsContext = `\n\n🚫 HARD BLOCK - DO NOT GENERATE OUTLINE YET 🚫
+There are still ${remainingCount} optional question(s) to ask before you can propose a title or generate the outline.
+
+📋 YOU MUST ASK THIS QUESTION NOW:
 ${nextQuestion.question_text}
 
 [SUGGEST]
 ${nextQuestion.options.map(opt => `${opt.key}: ${opt.label}`).join('\n')}
 [/SUGGEST]
 
-⚠️ CRITICAL: Ask this question BEFORE proposing the book title. After user responds, proceed to the next optional question or title proposal.`;
-        console.log(`📋 Manners discovery: Asking "${nextQuestion.question_key}" (${unansweredDiscoveries.length} remaining)`);
+⚠️ CRITICAL RULES:
+1. DO NOT propose a book title yet
+2. DO NOT generate any page outline or content
+3. DO NOT show "✅ Create My Book!" button
+4. ASK the above question and WAIT for user response
+5. After user responds, check for the NEXT optional question
+
+This is Step 4 in the conversation flow. Step 5 (Title Approval) and Step 6 (Outline Generation) come AFTER all optional questions are complete.`;
+        console.log(`📋 Manners discovery: Asking "${nextQuestion.question_key}" (${remainingCount} remaining)`);
       } else {
         console.log('📋 Manners discovery: All optional questions answered');
       }

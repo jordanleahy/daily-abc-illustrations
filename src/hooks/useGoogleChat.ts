@@ -5,12 +5,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import type { CharacterThemeValue } from '@/types/characterTheme';
 import type { BookTypeId } from '@/types/bookType';
 import type { GradeId } from '@/types/grade';
-import type { SeasonId } from '@/types/season';
-import type { EnvironmentId } from '@/types/environment';
-import type { ClothingBrandId } from '@/types/clothingBrand';
-import type { LocationId } from '@/types/location';
-import type { CityId } from '@/types/city';
-import type { MannerTypeId } from '@/types/mannerType';
+import { SEASON_OPTIONS, type SeasonId } from '@/types/season';
+import { ENVIRONMENT_OPTIONS, type EnvironmentId } from '@/types/environment';
+import { CLOTHING_BRAND_OPTIONS, type ClothingBrandId } from '@/types/clothingBrand';
+import { LOCATION_OPTIONS, type LocationId } from '@/types/location';
+import { CITY_OPTIONS, type CityId } from '@/types/city';
+import { MANNER_TYPE_LABELS, type MannerTypeId } from '@/types/mannerType';
+import { MANNERS_SETTING_OPTIONS, type MannersSettingId } from '@/types/mannersSetting';
 interface MessageContent {
   type: 'text' | 'image_url';
   text?: string;
@@ -377,84 +378,80 @@ export const useGoogleChat = (
 
           // Season selection fallback - asked as final discovery question (optional)
           if (cleanedText.toLowerCase().includes('season') || cleanedText.toLowerCase().includes('time of year')) {
-            return { 
-              cleanContent: cleanedText, 
-              suggestedActions: [
-                { id: 'SPRING', label: '🌸 Spring', value: 'Spring', seasonId: 'SPRING' as SeasonId },
-                { id: 'SUMMER', label: '☀️ Summer', value: 'Summer', seasonId: 'SUMMER' as SeasonId },
-                { id: 'FALL', label: '🍂 Fall', value: 'Fall', seasonId: 'FALL' as SeasonId },
-                { id: 'WINTER', label: '❄️ Winter', value: 'Winter', seasonId: 'WINTER' as SeasonId },
-                { id: 'skip-season', label: '⏭️ Skip', value: 'No specific season' },
-              ]
-            };
+            const seasonActions: SuggestedAction[] = SEASON_OPTIONS.map(s => ({
+              id: s.id,
+              label: `${s.emoji} ${s.label}`,
+              value: s.label,
+              seasonId: s.id as SeasonId,
+            }));
+            seasonActions.push({ id: 'skip-season', label: '⏭️ Skip', value: 'No specific season' });
+            return { cleanContent: cleanedText, suggestedActions: seasonActions };
           }
 
           // Environment selection fallback - optional discovery question
           if (cleanedText.toLowerCase().includes('environment') || cleanedText.toLowerCase().includes('setting') || cleanedText.toLowerCase().includes('location') || cleanedText.toLowerCase().includes('where should')) {
-            return { 
-              cleanContent: cleanedText, 
-              suggestedActions: [
-                { id: 'CITY', label: '🏙️ City', value: 'City', environmentId: 'CITY' as EnvironmentId },
-                { id: 'SNOWBOARD_RESORT', label: '🏂 Snowboard Resort', value: 'Snowboard Resort', environmentId: 'SNOWBOARD_RESORT' as EnvironmentId },
-                { id: 'SKI_RESORT', label: '⛷️ Ski Resort', value: 'Ski Resort', environmentId: 'SKI_RESORT' as EnvironmentId },
-                { id: 'ISLAND', label: '🏝️ Island', value: 'Island', environmentId: 'ISLAND' as EnvironmentId },
-                { id: 'DESERT', label: '🏜️ Desert', value: 'Desert', environmentId: 'DESERT' as EnvironmentId },
-                { id: 'MOUNTAIN', label: '🏔️ Mountain', value: 'Mountain', environmentId: 'MOUNTAIN' as EnvironmentId },
-                { id: 'PARK', label: '🌳 Park', value: 'Park', environmentId: 'PARK' as EnvironmentId },
-                { id: 'skip-environment', label: '⏭️ Skip', value: 'No specific environment' },
-              ]
-            };
+            const envActions: SuggestedAction[] = ENVIRONMENT_OPTIONS.map(e => ({
+              id: e.id,
+              label: `${e.emoji} ${e.label}`,
+              value: e.label,
+              environmentId: e.id as EnvironmentId,
+            }));
+            envActions.push({ id: 'skip-environment', label: '⏭️ Skip', value: 'No specific environment' });
+            return { cleanContent: cleanedText, suggestedActions: envActions };
           }
 
           // Clothing brand selection fallback - optional discovery question for character attire
           if (cleanedText.toLowerCase().includes('clothing brand') || cleanedText.toLowerCase().includes('branded clothing') || cleanedText.toLowerCase().includes('wear branded')) {
-            return { 
-              cleanContent: cleanedText, 
-              suggestedActions: [
-                { id: 'BURTON', label: '🏂 Burton', value: 'Burton', clothingBrandId: 'BURTON' as ClothingBrandId },
-                { id: 'NONE', label: '👕 No brand', value: 'No brand', clothingBrandId: 'NONE' as ClothingBrandId },
-                { id: 'skip-clothing-brand', label: '⏭️ Skip', value: 'No specific brand' },
-              ]
-            };
+            const brandActions: SuggestedAction[] = CLOTHING_BRAND_OPTIONS.map(b => ({
+              id: b.id,
+              label: `${b.emoji} ${b.label}`,
+              value: b.label,
+              clothingBrandId: b.id as ClothingBrandId,
+            }));
+            brandActions.push({ id: 'skip-clothing-brand', label: '⏭️ Skip', value: 'No specific brand' });
+            return { cleanContent: cleanedText, suggestedActions: brandActions };
           }
 
-          // Location selection fallback - optional discovery question for specific resort (FINAL question before outline)
+          // Location selection fallback - optional discovery question for specific resort
           if (cleanedText.toLowerCase().includes('resort') || 
               cleanedText.toLowerCase().includes('which resort') || 
               cleanedText.toLowerCase().includes('specific resort') ||
               cleanedText.toLowerCase().includes('specific location') ||
               cleanedText.toLowerCase().includes('set this book at')) {
-            return { 
-              cleanContent: cleanedText, 
-              suggestedActions: [
-                { id: 'VAIL_RESORT', label: '🏔️ Vail Resort', value: 'Vail Resort', locationId: 'VAIL_RESORT' as LocationId },
-                { id: 'SUGARBUSH_RESORT', label: '🍁 Sugarbush Resort', value: 'Sugarbush Resort', locationId: 'SUGARBUSH_RESORT' as LocationId },
-                { id: 'STRATTON', label: '⛷️ Stratton', value: 'Stratton', locationId: 'STRATTON' as LocationId },
-                { id: 'KILLINGTON', label: '🏂 Killington Mountain', value: 'Killington Mountain', locationId: 'KILLINGTON' as LocationId },
-                { id: 'MOUNTAIN_CREEK', label: '🎿 Mountain Creek', value: 'Mountain Creek', locationId: 'MOUNTAIN_CREEK' as LocationId },
-                { id: 'COPPER_MOUNTAIN', label: '🥉 Copper Mountain', value: 'Copper Mountain', locationId: 'COPPER_MOUNTAIN' as LocationId },
-                { id: 'BRECKENRIDGE', label: '🏘️ Breckenridge', value: 'Breckenridge', locationId: 'BRECKENRIDGE' as LocationId },
-                { id: 'KEYSTONE', label: '🌙 Keystone', value: 'Keystone', locationId: 'KEYSTONE' as LocationId },
-                { id: 'WHISTLER_BLACKCOMB', label: '🇨🇦 Whistler Blackcomb', value: 'Whistler Blackcomb', locationId: 'WHISTLER_BLACKCOMB' as LocationId },
-                { id: 'PLATTEKILL', label: '🗽 Plattekill Mountain', value: 'Plattekill Mountain', locationId: 'PLATTEKILL' as LocationId },
-                { id: 'skip-location', label: '⏭️ Skip (no specific resort)', value: 'No specific resort', locationId: 'NONE' as LocationId },
-              ]
-            };
+            const locationActions: SuggestedAction[] = LOCATION_OPTIONS.map(l => ({
+              id: l.id,
+              label: `${l.emoji} ${l.label}`,
+              value: l.label,
+              locationId: l.id as LocationId,
+            }));
+            locationActions.push({ id: 'skip-location', label: '⏭️ Skip (no specific resort)', value: 'No specific resort', locationId: 'NONE' as LocationId });
+            return { cleanContent: cleanedText, suggestedActions: locationActions };
           }
 
           // City selection fallback - optional discovery question for urban setting
           if (cleanedText.toLowerCase().includes('specific city') || 
               cleanedText.toLowerCase().includes('which city') || 
               cleanedText.toLowerCase().includes('set this book in a specific city')) {
-            return { 
-              cleanContent: cleanedText, 
-              suggestedActions: [
-                { id: 'JERSEY_CITY', label: '🌅 Jersey City', value: 'Jersey City', cityId: 'JERSEY_CITY' as CityId },
-                { id: 'HOBOKEN', label: '🚂 Hoboken', value: 'Hoboken', cityId: 'HOBOKEN' as CityId },
-                { id: 'NEW_YORK_CITY', label: '🗽 New York City', value: 'New York City', cityId: 'NEW_YORK_CITY' as CityId },
-                { id: 'skip-city', label: '⏭️ Skip (no specific city)', value: 'No specific city', cityId: 'NONE' as CityId },
-              ]
-            };
+            const cityActions: SuggestedAction[] = CITY_OPTIONS.map(c => ({
+              id: c.id,
+              label: `${c.emoji} ${c.label}`,
+              value: c.label,
+              cityId: c.id as CityId,
+            }));
+            cityActions.push({ id: 'skip-city', label: '⏭️ Skip (no specific city)', value: 'No specific city', cityId: 'NONE' as CityId });
+            return { cleanContent: cleanedText, suggestedActions: cityActions };
+          }
+
+          // Manners setting selection fallback - where manners scenarios take place
+          if (cleanedText.toLowerCase().includes('take place') || 
+              cleanedText.toLowerCase().includes('manners book take')) {
+            const settingActions: SuggestedAction[] = MANNERS_SETTING_OPTIONS.map(s => ({
+              id: s.id,
+              label: `${s.emoji} ${s.label}`,
+              value: s.label,
+            }));
+            settingActions.push({ id: 'skip-setting', label: '⏭️ Skip', value: 'No specific setting' });
+            return { cleanContent: cleanedText, suggestedActions: settingActions };
           }
         }
         
@@ -472,23 +469,14 @@ export const useGoogleChat = (
           'black-and-white', 'bear-stories', 'dora', 'little-mermaid'
         ]);
 
-        // Known season IDs
-        const seasonIds = new Set(['SPRING', 'SUMMER', 'FALL', 'WINTER']);
-
-        // Known environment IDs
-        const environmentIds = new Set(['CITY', 'SNOWBOARD_RESORT', 'SKI_RESORT', 'ISLAND', 'DESERT', 'MOUNTAIN', 'PARK']);
-
-        // Known clothing brand IDs
-        const clothingBrandIds = new Set(['BURTON', 'NONE']);
-
-        // Known location IDs (includes skip-location and NONE to prevent re-asking)
-        const locationIds = new Set(['VAIL_RESORT', 'SUGARBUSH_RESORT', 'STRATTON', 'KILLINGTON', 'MOUNTAIN_CREEK', 'COPPER_MOUNTAIN', 'BRECKENRIDGE', 'KEYSTONE', 'WHISTLER_BLACKCOMB', 'skip-location', 'NONE']);
-
-        // Known city IDs
-        const cityIds = new Set(['JERSEY_CITY', 'HOBOKEN', 'NEW_YORK_CITY', 'skip-city', 'NONE']);
-
-        // Known manner type IDs (for Manners book agent) - MUST match Agent Instructions v1.5.0
-        const mannerTypeIds = new Set(['eating-habits', 'social-skills', 'sharing', 'respect', 'hygiene']);
+        // Known IDs - derived from type files for single source of truth
+        const seasonIds: Set<string> = new Set(SEASON_OPTIONS.map(s => s.id));
+        const environmentIds: Set<string> = new Set(ENVIRONMENT_OPTIONS.map(e => e.id));
+        const clothingBrandIds: Set<string> = new Set(CLOTHING_BRAND_OPTIONS.map(b => b.id));
+        const locationIds: Set<string> = new Set([...LOCATION_OPTIONS.map(l => l.id), 'skip-location', 'NONE']);
+        const cityIds: Set<string> = new Set([...CITY_OPTIONS.map(c => c.id), 'skip-city', 'NONE']);
+        const mannerTypeIds: Set<string> = new Set(Object.keys(MANNER_TYPE_LABELS));
+        const mannersSettingIds: Set<string> = new Set([...MANNERS_SETTING_OPTIONS.map(s => s.id), 'skip-setting']);
 
         const actions = suggestionsText
           .split('\n')

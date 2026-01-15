@@ -500,6 +500,7 @@ ${nextQuestion.options.map(opt => `${opt.key}: ${opt.label}`).join('\n')}
       : '';
 
     // Manners setting context - where the manners should take place (home, school, both)
+    // IDs defined in _shared/mannersSettings.ts for consistency
     const MANNERS_SETTING_LABELS: Record<string, string> = {
       'home': '🏠 Home',
       'school': '🏫 School', 

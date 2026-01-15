@@ -1,6 +1,7 @@
 /**
  * TTS Audio Caching Utilities
  * Permanent cache - audio is deterministic (same text + voice = same audio forever)
+ * Uses two-tier caching: in-memory (instant) + Service Worker (persistent)
  */
 
 import { ttsRequestQueue } from './ttsRequestQueue';
@@ -22,6 +23,12 @@ export interface TTSCacheEntry {
 const TTS_CACHE_NAME = 'dailyabc-tts-v1';
 
 /**
+ * In-memory cache for instant access (< 1ms vs 50-100ms for Service Worker)
+ * This is the first tier of our two-tier cache system
+ */
+const memoryCache = new Map<string, TTSCacheEntry>();
+
+/**
  * Generate unique cache key from text + voice settings
  * Uses a simple hash function for fast key generation
  */
@@ -37,10 +44,18 @@ export function generateTTSCacheKey(text: string, voiceId: string): string {
 }
 
 /**
- * Get TTS audio from cache via Service Worker
- * Returns null if not cached or service worker unavailable
+ * Get TTS audio from cache (memory first, then Service Worker)
+ * Returns null if not cached
  */
 export async function getTTSFromCache(cacheKey: string): Promise<TTSCacheEntry | null> {
+  // Tier 1: Check in-memory cache first (instant)
+  const memoryCached = memoryCache.get(cacheKey);
+  if (memoryCached) {
+    console.log('[TTS Cache] Memory hit:', cacheKey);
+    return memoryCached;
+  }
+  
+  // Tier 2: Fall back to Service Worker cache
   if (!navigator.serviceWorker?.controller) {
     console.log('[TTS Cache] Service worker not available');
     return null;
@@ -57,7 +72,15 @@ export async function getTTSFromCache(cacheKey: string): Promise<TTSCacheEntry |
     
     channel.port1.onmessage = (event) => {
       clearTimeout(timeout);
-      resolve(event.data);
+      const result = event.data;
+      
+      // Populate memory cache from Service Worker hit for future instant access
+      if (result?.audioBlob) {
+        console.log('[TTS Cache] SW hit, promoting to memory:', cacheKey);
+        memoryCache.set(cacheKey, result);
+      }
+      
+      resolve(result);
     };
     
     navigator.serviceWorker.controller.postMessage(
@@ -68,7 +91,7 @@ export async function getTTSFromCache(cacheKey: string): Promise<TTSCacheEntry |
 }
 
 /**
- * Store TTS audio in cache via Service Worker
+ * Store TTS audio in cache (memory + Service Worker)
  * Audio is stored permanently (no TTL) since TTS is deterministic
  */
 export async function cacheTTSAudio(
@@ -78,9 +101,23 @@ export async function cacheTTSAudio(
   text: string,
   voiceId: string
 ): Promise<boolean> {
+  const cachedAt = new Date().toISOString();
+  
+  // Tier 1: Store in memory immediately for instant access
+  const entry: TTSCacheEntry = {
+    audioBlob,
+    wordTimings,
+    text,
+    voiceId,
+    cachedAt
+  };
+  memoryCache.set(cacheKey, entry);
+  console.log('[TTS Cache] Stored in memory:', cacheKey);
+  
+  // Tier 2: Persist to Service Worker for cross-session persistence
   if (!navigator.serviceWorker?.controller) {
-    console.log('[TTS Cache] Service worker not available for caching');
-    return false;
+    console.log('[TTS Cache] Service worker not available for persistence');
+    return true; // Memory cache succeeded
   }
   
   return new Promise((resolve) => {
@@ -88,13 +125,13 @@ export async function cacheTTSAudio(
     
     // Set timeout
     const timeout = setTimeout(() => {
-      console.log('[TTS Cache] Timeout waiting for cache confirmation');
-      resolve(false);
+      console.log('[TTS Cache] Timeout waiting for SW cache confirmation');
+      resolve(true); // Memory cache succeeded even if SW fails
     }, 5000);
     
     channel.port1.onmessage = (event) => {
       clearTimeout(timeout);
-      resolve(event.data?.success ?? false);
+      resolve(event.data?.success ?? true);
     };
     
     navigator.serviceWorker.controller.postMessage(
@@ -103,7 +140,7 @@ export async function cacheTTSAudio(
         cacheKey, 
         audioBlob, 
         wordTimings,
-        metadata: { text, voiceId, cachedAt: new Date().toISOString() }
+        metadata: { text, voiceId, cachedAt }
       },
       [channel.port2]
     );
@@ -130,8 +167,8 @@ export async function prefetchTTSAudio(
 ): Promise<boolean> {
   if (!text?.trim()) return false;
   
-  // Use empty string for cache key when no voiceId (will use server default)
-  const effectiveVoiceId = voiceId || '';
+  // Use 'default' to match useTextToSpeech.speak() cache key generation
+  const effectiveVoiceId = voiceId || 'default';
   const cacheKey = generateTTSCacheKey(text, effectiveVoiceId);
   
   // Check global tracking first (prevents duplicate in-flight requests)
@@ -223,10 +260,14 @@ export async function getTTSCacheStats(): Promise<{ count: number }> {
 }
 
 /**
- * Clear all TTS cache (for settings/manual clear)
+ * Clear all TTS cache (memory + Service Worker)
  */
 export async function clearTTSCache(): Promise<boolean> {
-  // Also clear the request queue's tracking
+  // Clear memory cache
+  memoryCache.clear();
+  console.log('[TTS Cache] Memory cache cleared');
+  
+  // Clear the request queue's tracking
   ttsRequestQueue.clearPrefetchedTracking();
   
   if (!navigator.serviceWorker?.controller) {

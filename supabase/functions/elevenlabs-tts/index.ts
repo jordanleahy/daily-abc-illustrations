@@ -144,13 +144,13 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         text: processedText,
-        model_id: 'eleven_turbo_v2_5',
+        model_id: 'eleven_multilingual_v2', // Full SSML support for phoneme tags
         voice_settings: {
           stability: 0.5,           // Balanced for clear pronunciation
           similarity_boost: 0.8,    // Higher for clearer voice
           style: 0.4,               // Less stylized for educational clarity
           use_speaker_boost: true,
-          speed: 0.8,               // Slower for children's comprehension
+          speed: 0.85,              // Slightly slower for children's comprehension
         },
       }),
     });

@@ -894,6 +894,9 @@ export default function GoogleChat() {
         clothingBrand: selectedClothingBrand || undefined,
         location: selectedLocation || undefined,
         city: selectedCity || undefined,
+        // Manners-specific discovery attributes
+        mannerType: selectedMannerType || undefined,
+        mannersSetting: selectedMannersSetting || undefined,
       });
       
       console.log('[Book Creation] Created book with', Object.keys(promptsToStore).length, 'stored prompts');

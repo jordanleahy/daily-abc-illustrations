@@ -34,6 +34,9 @@ export interface CreateBookParams {
   clothingBrand?: string;
   location?: string;
   city?: string;
+  // Manners-specific discovery attributes
+  mannerType?: string;
+  mannersSetting?: string;
 }
 
 interface CreateBookResponse {
@@ -112,6 +115,9 @@ export const useGoogleCreateBook = () => {
           clothingBrand: params.clothingBrand || undefined,
           location: params.location || undefined,
           city: params.city || undefined,
+          // Manners-specific discovery attributes
+          mannerType: params.mannerType || undefined,
+          mannersSetting: params.mannersSetting || undefined,
         },
       });
 

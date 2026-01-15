@@ -428,73 +428,41 @@ ${nextQuestion.options.map(opt => `${opt.key}: ${opt.label}`).join('\n')}
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
     const forceOutline = lastMessageContent.includes('create outline') || lastMessageContent.includes('generate outline');
 
-    // Location question injection - ask BEFORE city question (optional questions come before title)
-    // Only inject if: no location selected yet, outline not ready, book not created, not forcing outline
-    // For Manners books: location/city are handled via type_specific_discoveries, so skip injection here
+    // Location/City question injection - ONLY for non-Manners books
+    // Manners books use 100% database-driven questions via mannersDiscoveryQuestionsContext
     const shouldAskLocationQuestion = !isMannerBook && !location && !outlineReady && !bookCreated && !forceOutline;
-
-    // City question injection - ask as optional discovery, BEFORE title confirmation
-    // Only inject if: no city selected yet, outline not ready, book not created, not forcing outline
-    // For Manners books: location/city are handled via type_specific_discoveries, so skip injection here
     const shouldAskCityQuestion = !isMannerBook && !city && !outlineReady && !bookCreated && !forceOutline;
 
-    // Detect if user just approved title (clicked "Looks perfect, create the outline!" or similar)
+    // Detect if user just approved title
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];
     const titleWasJustApproved = titleApprovalPhrases.some(phrase => lastMessageContent.includes(phrase));
 
-    // Location question injection - shown BEFORE title proposal (optional questions come before title)
-    // This ensures title confirmation is the VERY LAST step before outline generation
-    // Build dynamic location suggest block from database
+    // Build location/city injection blocks ONLY for non-Manners books
     const locationSuggestBlock = shouldAskLocationQuestion ? await getLocationSuggestBlock() : '';
-    
     const locationQuestionInjection = shouldAskLocationQuestion
-      ? `\n\n📍 OPTIONAL QUESTION - LOCATION (Ask BEFORE proposing title):
-Before proposing the book title, ask this optional question:
-
-"Would you like to set this book at a specific resort? This is optional."
-
-[SUGGEST]
-${locationSuggestBlock}
-[/SUGGEST]
-
-⚠️ CRITICAL FLOW ORDER: All optional questions (location, city, season, environment, etc.) MUST be asked BEFORE proposing the book title. The title confirmation ("Looks great!") should be the VERY LAST step before generating the outline.`
+      ? `\n\n📍 OPTIONAL QUESTION - LOCATION:\n"Would you like to set this book at a specific resort? This is optional."\n\n[SUGGEST]\n${locationSuggestBlock}\n[/SUGGEST]`
       : '';
 
-    // City question injection - shown BEFORE title proposal (independent of location)
-    // Build dynamic city suggest block from database
     const citySuggestBlock = shouldAskCityQuestion ? await getCitySuggestBlock(supabase) : '';
-    
     const cityQuestionInjection = shouldAskCityQuestion
-      ? `\n\n🏙️ OPTIONAL QUESTION - CITY (Ask BEFORE proposing title):
-Ask this optional question:
-
-"Would you like to set this book in a specific city? This is optional."
-
-[SUGGEST]
-${citySuggestBlock}
-[/SUGGEST]
-
-⚠️ CRITICAL: Ask this BEFORE proposing the book title.`
+      ? `\n\n🏙️ OPTIONAL QUESTION - CITY:\n"Would you like to set this book in a specific city? This is optional."\n\n[SUGGEST]\n${citySuggestBlock}\n[/SUGGEST]`
       : '';
 
-    // Check if all optional questions are complete - if so, prompt agent to propose title
-    // For Manners books: check if discovery questions are exhausted using database-driven approach
-    // When mannersDiscoveryQuestionsContext is empty, ALL type_specific_discoveries (including location/city) have been answered
+    // Check if all optional questions are complete
+    // For Manners books: 100% database-driven - when mannersDiscoveryQuestionsContext is empty, ALL questions answered
     const mannersQuestionsComplete = isMannerBook && characterTheme && mannerType && mannersDiscoveryQuestionsContext === '';
     
-    // For standard books: check individual question states
-    const locationAnswered = location || lastMessageContent.includes('skip') || lastMessageContent.includes('resort') || lastMessageContent.includes('killington') || lastMessageContent.includes('vail') || lastMessageContent.includes('stratton') || lastMessageContent.includes('no resort');
-    const cityAnswered = city || lastMessageContent.includes('skip') || lastMessageContent.includes('jersey') || lastMessageContent.includes('hoboken') || lastMessageContent.includes('new york') || lastMessageContent.includes('no city');
+    // For standard books: check individual question states (legacy approach)
     const standardQuestionsComplete = !isMannerBook && (
       (season || lastMessageContent.includes('skip')) && 
       (environment || lastMessageContent.includes('skip')) && 
       (clothingBrand || lastMessageContent.includes('skip') || lastMessageContent.includes('burton') || lastMessageContent.includes('no brand')) && 
-      locationAnswered &&
-      cityAnswered
+      (location || lastMessageContent.includes('skip') || lastMessageContent.includes('resort')) &&
+      (city || lastMessageContent.includes('skip') || lastMessageContent.includes('city'))
     );
     const allOptionalQuestionsComplete = mannersQuestionsComplete || standardQuestionsComplete;
     
-    // Proceed to title context - when all optional questions are answered, prompt title proposal
+    // Proceed to title context
     const proceedToTitleContext = allOptionalQuestionsComplete && !outlineReady && !bookCreated && !titleWasJustApproved
       ? `\n\n✅ ALL OPTIONAL QUESTIONS COMPLETE: All discovery questions have been answered or skipped. NOW propose a book title and description for user approval. The title confirmation ("✅ Create My Book!") is the VERY LAST step before generating the outline.`
       : '';

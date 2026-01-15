@@ -109,12 +109,15 @@ serve(async (req) => {
       );
     }
 
-    // Wrap isolated "ph" digraphs with SSML phoneme tags for correct pronunciation
-    // This preserves the original text while telling ElevenLabs to pronounce it as "f"
+    // Add educational lead-up for isolated "ph" digraphs:
+    // Spell out the letters, then pronounce the sound clearly
+    // Format: "p... h... makes the sound... [f sound]"
+    const phLeadUp = '<break time="300ms"/>p<break time="200ms"/>h<break time="400ms"/>makes the sound<break time="300ms"/><prosody volume="loud" rate="slow"><phoneme alphabet="ipa" ph="ɛf">f</phoneme></prosody><break time="300ms"/>';
+    
     const processedText = text
-      .replace(/"ph"/gi, '"<phoneme alphabet="ipa" ph="ɛf">ph</phoneme>"')
-      .replace(/'ph'/gi, "'<phoneme alphabet=\"ipa\" ph=\"ɛf\">ph</phoneme>'")
-      .replace(/\bph\b/gi, '<phoneme alphabet="ipa" ph="ɛf">ph</phoneme>');
+      .replace(/"ph"/gi, `"${phLeadUp}"`)
+      .replace(/'ph'/gi, `'${phLeadUp}'`)
+      .replace(/\bph\b/gi, phLeadUp);
 
     const ELEVENLABS_API_KEY = Deno.env.get('ELEVENLABS_API_KEY');
     
@@ -143,11 +146,11 @@ serve(async (req) => {
         text: processedText,
         model_id: 'eleven_turbo_v2_5',
         voice_settings: {
-          stability: 0.4,           // More expressive for storytelling
-          similarity_boost: 0.75,
-          style: 0.6,               // More stylized for engaging delivery
+          stability: 0.5,           // Balanced for clear pronunciation
+          similarity_boost: 0.8,    // Higher for clearer voice
+          style: 0.4,               // Less stylized for educational clarity
           use_speaker_boost: true,
-          speed: 0.9,               // Slightly slower for children's comprehension
+          speed: 0.8,               // Slower for children's comprehension
         },
       }),
     });

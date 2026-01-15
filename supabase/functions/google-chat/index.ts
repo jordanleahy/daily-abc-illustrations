@@ -15,7 +15,6 @@ import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, is
 import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
 import { getCuratedItemsList } from '../_shared/abcCuratedItems.ts';
 // Note: Discovery questions now handled by frontend via useDiscoveryFlow - no longer fetched here
-import { getCuratedItemsList } from '../_shared/abcCuratedItems.ts';
 
 interface MessageContent {
   type: 'text' | 'image_url';
@@ -82,7 +81,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment, clothingBrand, location, city, mannerType, mannersSetting } = await req.json() as { 
+    const { messages, outlineReady, bookCreated, gradeLevel, bookType, characterTheme, selectedCharacterIds, season, environment, clothingBrand, location, city, mannerType, mannersSetting, discoveryContext } = await req.json() as { 
       messages: Message[];
       outlineReady?: boolean;
       bookCreated?: boolean;
@@ -97,6 +96,7 @@ serve(async (req) => {
       city?: ValidCity;
       mannerType?: string;
       mannersSetting?: string; // home, school, both, or skip-setting
+      discoveryContext?: Record<string, string>; // Frontend-driven discovery answers
     };
 
     if (!messages || !Array.isArray(messages)) {
@@ -374,6 +374,12 @@ serve(async (req) => {
       ? `\n\n⚠️ CRITICAL - MANNERS SETTING STATUS:\n🏠 SETTING ALREADY SELECTED: ${mannersSetting}\n❌ DO NOT ask "Where should this manners book take place?" - this step is COMPLETE.`
       : '';
 
+    // Frontend-driven discovery context - all answers collected by useDiscoveryFlow
+    // This provides context from type-specific discovery questions answered in the frontend
+    const discoveryContextInjection = discoveryContext && Object.keys(discoveryContext).length > 0
+      ? `\n\n📋 DISCOVERY CONTEXT (from frontend):\n${Object.entries(discoveryContext).map(([key, value]) => `- ${key}: ${value}`).join('\n')}\n\n⚠️ These discovery questions have already been answered. DO NOT re-ask any of these questions.`
+      : '';
+
     // Check if user is forcing outline creation (e.g., typing "create outline")
     const lastUserMessage = messages.filter(m => m.role === 'user').pop();
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
@@ -422,7 +428,7 @@ The title confirmation ("✅ Create My Book!") is the VERY LAST step before gene
     // Note: Discovery questions are now handled by frontend via useDiscoveryFlow
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersSettingContext + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersSettingContext + discoveryContextInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
@@ -437,6 +443,7 @@ The title confirmation ("✅ Create My Book!") is the VERY LAST step before gene
     console.log(`🏙️ City: ${city || 'None'}`);
     console.log(`📚 Manner type: ${mannerType || 'None'}`);
     console.log(`🏠 Manners setting: ${mannersSetting || 'None'}`);
+    console.log(`📋 Discovery context: ${discoveryContext ? JSON.stringify(discoveryContext) : 'None'}`);
     console.log(`📝 Proceed to title: ${proceedToTitleContext ? 'Yes' : 'No'}`);
     console.log(`🎯 Title approved: ${titleWasJustApproved}`);
 

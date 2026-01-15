@@ -44,6 +44,8 @@ import { useCharacterSelectionFlow } from '@/hooks/useCharacterSelectionFlow';
 import { useCharacterSelectionInjection } from '@/components/chat/CharacterSelectionStep';
 import { AdminOnly } from '@/components/AdminOnly';
 import { compositeTextOnImage } from '@/utils/imageTextCompositor';
+import { useDiscoveryFlow, getAgentTypeForBookType } from '@/hooks/useDiscoveryFlow';
+import { DiscoveryQuestionInline } from '@/components/chat/DiscoveryQuestion';
 
 export default function GoogleChat() {
   const navigate = useNavigate();
@@ -66,6 +68,10 @@ export default function GoogleChat() {
   const [selectedMannerType, setSelectedMannerType] = useState<MannerTypeId | null>(null);
   const [selectedMannersSetting, setSelectedMannersSetting] = useState<string | null>(null); // home, school, both
   const [selectedKidId, setSelectedKidId] = useState<string | null>(null);
+  
+  // Discovery flow for type-specific questions (frontend-driven)
+  const agentType = getAgentTypeForBookType(selectedBookType);
+  const discoveryFlow = useDiscoveryFlow(agentType);
   
   // Get kid profiles (kept for backwards compatibility with existing UI)
   const { data: kidProfiles = [] } = useKidProfiles();
@@ -727,6 +733,95 @@ export default function GoogleChat() {
     console.log('Cover prompt generation skipped - using external image generation');
   }, []);
 
+  // Handle discovery question answers from frontend flow
+  const handleDiscoveryAnswer = useCallback(async (questionKey: string, value: string) => {
+    console.log('[Discovery Flow] Answer:', questionKey, '=', value);
+    discoveryFlow.answerQuestion(questionKey, value);
+    
+    // Update frontend state based on frontend_state_key mapping
+    const question = discoveryFlow.questions.find(q => q.question_key === questionKey);
+    if (question?.frontend_state_key) {
+      switch (question.frontend_state_key) {
+        case 'selectedMannerType':
+          setSelectedMannerType(value as MannerTypeId);
+          break;
+        case 'selectedMannersSetting':
+          setSelectedMannersSetting(value);
+          break;
+        case 'selectedGradeLevel':
+          setSelectedGradeLevel(value as GradeId);
+          break;
+        case 'selectedSeason':
+          setSelectedSeason(value as SeasonId);
+          break;
+        case 'selectedEnvironment':
+          setSelectedEnvironment(value as EnvironmentId);
+          break;
+        case 'selectedLocation':
+          setSelectedLocation(value as LocationId);
+          break;
+        case 'selectedCity':
+          setSelectedCity(value as CityId);
+          break;
+        case 'selectedClothingBrand':
+          setSelectedClothingBrand(value as ClothingBrandId);
+          break;
+      }
+    }
+    
+    // If flow is complete after this answer, send message to AI with context
+    const newStep = discoveryFlow.currentStep + 1;
+    if (newStep >= discoveryFlow.questions.length) {
+      // Get context with ALL answers including the one just answered
+      const updatedAnswers = { ...discoveryFlow.answers, [questionKey]: value };
+      const context: Record<string, string> = {};
+      discoveryFlow.questions.forEach(q => {
+        if (q.context_value_key && updatedAnswers[q.question_key]) {
+          context[q.context_value_key] = updatedAnswers[q.question_key];
+        }
+      });
+      
+      // Find the option label for the answer
+      const option = question?.options.find(o => o.key === value);
+      const answerLabel = option?.label || value;
+      
+      // Send a summary message to AI with discovery context
+      await sendMessage(`I'd like a book about ${answerLabel}`, undefined, messages, {
+        outlineReady: shouldShowReviewButton && !createdBookId,
+        bookCreated: !!createdBookId,
+        bookType: selectedBookType,
+        gradeLevel: selectedGradeLevel,
+        season: selectedSeason,
+        environment: selectedEnvironment,
+        clothingBrand: selectedClothingBrand,
+        location: selectedLocation,
+        city: selectedCity,
+        mannerType: selectedMannerType,
+        mannersSetting: selectedMannersSetting,
+        discoveryContext: context,
+      });
+    }
+  }, [discoveryFlow, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel, selectedSeason, selectedEnvironment, selectedClothingBrand, selectedLocation, selectedCity, selectedMannerType, selectedMannersSetting]);
+
+  // Handle skipping discovery questions
+  const handleDiscoverySkip = useCallback((questionKey: string) => {
+    console.log('[Discovery Flow] Skip:', questionKey);
+    discoveryFlow.skipQuestion(questionKey);
+    
+    // If flow is complete after skip, send message to AI
+    const newStep = discoveryFlow.currentStep + 1;
+    if (newStep >= discoveryFlow.questions.length) {
+      const context = discoveryFlow.getContext();
+      sendMessage(`Let's create my book!`, undefined, messages, {
+        outlineReady: shouldShowReviewButton && !createdBookId,
+        bookCreated: !!createdBookId,
+        bookType: selectedBookType,
+        gradeLevel: selectedGradeLevel,
+        discoveryContext: context,
+      });
+    }
+  }, [discoveryFlow, sendMessage, messages, shouldShowReviewButton, createdBookId, selectedBookType, selectedGradeLevel]);
+
   const handleBookTypeSelect = useCallback(async (bookType: BookType) => {
     // Store the book type ID for later use  
     setSelectedBookType(bookType.id as BookTypeId);
@@ -1279,6 +1374,7 @@ export default function GoogleChat() {
         setSelectedMannerType(null); // Reset manner type selection
         setSelectedMannersSetting(null); // Reset manners setting selection
         setReplacePageMode({});
+        discoveryFlow.reset(); // Reset discovery flow
         // Close mobile sidebar when creating new session
         setIsMobileSidebarOpen(false);
       });
@@ -1905,6 +2001,20 @@ export default function GoogleChat() {
                   onQuickReply={handleQuickReply}
                   isBookCreated={!!createdBookId}
                 />
+                
+                {/* Frontend-driven discovery questions */}
+                {discoveryFlow.currentQuestion && !discoveryFlow.isComplete && !isLoading && (
+                  <div className="flex justify-start mt-4">
+                    <div className="max-w-[80%] rounded-lg px-4 py-3 bg-muted">
+                      <DiscoveryQuestionInline
+                        question={discoveryFlow.currentQuestion}
+                        onAnswer={handleDiscoveryAnswer}
+                        onSkip={discoveryFlow.currentQuestion.is_skippable ? handleDiscoverySkip : undefined}
+                      />
+                    </div>
+                  </div>
+                )}
+                
                 {isLoading && (
                   <div className="flex justify-start mt-4">
                     <div className="max-w-[80%] rounded-lg px-4 py-3 bg-muted">

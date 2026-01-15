@@ -2,7 +2,9 @@ import { useState, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Copy, Trash2, Upload, Download } from 'lucide-react';
+import { Copy, Trash2, Upload, Download, Video, Loader2 } from 'lucide-react';
+import { generatePageVideo, downloadBlob } from '@/services/pageVideoGenerator';
+import { toast } from 'sonner';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,7 +57,8 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
   // Optimistic inline editing for title
   const titleEdit = useOptimisticInlineEdit({
     initialValue: page.title,
@@ -222,6 +225,35 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
       console.error('Failed to download image');
     }
   };
+
+  const handleExportVideo = async () => {
+    if (!currentImage?.image_url) {
+      toast.error('No image available for video');
+      return;
+    }
+
+    setIsGeneratingVideo(true);
+    setVideoProgress(0);
+
+    try {
+      const videoBlob = await generatePageVideo({
+        imageUrl: currentImage.image_url,
+        text: page.title,
+        aspectRatio: 'portrait',
+        onProgress: setVideoProgress,
+      });
+
+      const filename = `${page.letter || page.page_number}-${page.title.toLowerCase().replace(/\s+/g, '-')}.webm`;
+      downloadBlob(videoBlob, filename);
+      toast.success('Video exported!');
+    } catch (error) {
+      console.error('Video export failed:', error);
+      toast.error('Failed to generate video');
+    } finally {
+      setIsGeneratingVideo(false);
+      setVideoProgress(0);
+    }
+  };
   
   return (
     <Card className="hover:shadow-md transition-shadow relative group">
@@ -288,6 +320,21 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
               aria-label="Download page image as PNG"
             >
               <Download className="w-3 h-3" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="w-6 h-6"
+              onClick={handleExportVideo}
+              disabled={!currentImage?.image_url || isGeneratingVideo}
+              title={isGeneratingVideo ? `Generating video ${videoProgress}%` : "Export video with audio"}
+              aria-label="Export video with audio"
+            >
+              {isGeneratingVideo ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <Video className="w-3 h-3" />
+              )}
             </Button>
             <Button
               variant="ghost"

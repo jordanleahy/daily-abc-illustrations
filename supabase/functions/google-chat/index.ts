@@ -11,9 +11,10 @@ import { getSeasonDisplay, isValidSeason, type ValidSeason } from '../_shared/se
 import { getEnvironmentDisplay, isValidEnvironment, type ValidEnvironment } from '../_shared/environments.ts';
 import { getMannersEnvironmentDisplay, isValidMannersEnvironment, getMannersEnvironmentSuggestBlock, type ValidMannersEnvironment } from '../_shared/mannersEnvironments.ts';
 import { getClothingBrandDisplay, getClothingBrandPromptInjection, isValidClothingBrand, type ValidClothingBrand } from '../_shared/clothingBrands.ts';
-import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, initLocationsCache, getLocationSuggestBlock, type ValidLocation } from '../_shared/locations.ts';
-import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCache, getCitySuggestBlock, type ValidCity } from '../_shared/cities.ts';
-import { fetchTypeDiscoveries, getDiscoverySuggestions, type TypeSpecificDiscovery } from '../_shared/typeDiscoveries.ts';
+import { getLocationDisplay, getLocationSpellingGuide, getResortVisualPrompt, isValidLocation, initLocationsCache, type ValidLocation } from '../_shared/locations.ts';
+import { getCityDisplaySync, getCityVisualPromptSync, isValidCity, initCitiesCache, type ValidCity } from '../_shared/cities.ts';
+import { getCuratedItemsList } from '../_shared/abcCuratedItems.ts';
+// Note: Discovery questions now handled by frontend via useDiscoveryFlow - no longer fetched here
 import { getCuratedItemsList } from '../_shared/abcCuratedItems.ts';
 
 interface MessageContent {
@@ -362,95 +363,15 @@ serve(async (req) => {
       : '';
 
     // Manner type context - for Manners book agent
-    // IDs MUST match Agent Instructions v1.5.0: eating-habits, social-skills, sharing, respect, hygiene
-    const MANNER_TYPE_LABELS: Record<string, string> = {
-      'eating-habits': '🍽️ Table Manners & Eating Habits',
-      'social-skills': '🤝 Social Skills & Politeness',
-      'sharing': '🎁 Sharing & Taking Turns',
-      'respect': '🙏 Respect & Kindness',
-      'hygiene': '🧼 Hygiene & Self-Care',
-    };
-    // Manners environment question injection - shown after manner type is selected
-    // Use type_specific_discoveries for dynamic question fetching
-    const shouldAskMannersDiscoveries = isMannerBook && mannerType && !outlineReady && !bookCreated;
-    let mannersDiscoveryQuestionsContext = '';
-    
-    if (shouldAskMannersDiscoveries) {
-      // Fetch discoveries from database using the shared module
-      const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-      const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-      const mannersDiscoveries = await fetchTypeDiscoveries(supabaseUrl, supabaseKey, 'book-creation-manners');
-      
-      // 🔍 DIAGNOSTIC: Log what discovery questions were fetched from DB/cache
-      console.log(`📋 Manners discoveries fetched: ${mannersDiscoveries.length} questions`, 
-        mannersDiscoveries.map(d => d.question_key));
-      
-      // Filter out questions that have already been answered - database-driven, no book type conditionals
-      const unansweredDiscoveries = mannersDiscoveries.filter(d => {
-        if (d.question_key === 'manners_setting' && mannersSetting) return false;
-        if (d.question_key === 'season' && season) return false;
-        if (d.question_key === 'location' && location) return false;
-        if (d.question_key === 'city' && city) return false;
-        if (d.question_key === 'environment' && environment) return false;
-        if (d.question_key === 'clothing_brand' && clothingBrand) return false;
-        return true;
-      });
-      
-      // 🔍 DIAGNOSTIC: Log what questions remain unanswered
-      console.log(`📋 Unanswered discoveries: ${unansweredDiscoveries.length}`, 
-        unansweredDiscoveries.map(d => d.question_key));
-      
-      if (unansweredDiscoveries.length > 0) {
-        const nextQuestion = unansweredDiscoveries[0]; // Ask ONE at a time
-        const remainingCount = unansweredDiscoveries.length;
-        const suggestBlock = (() => {
-          const hasSkipOption = nextQuestion.options.some(opt => opt.key.toLowerCase().includes('skip'));
-          const optionsWithSkip = hasSkipOption 
-            ? nextQuestion.options 
-            : [...nextQuestion.options, { key: `skip-${nextQuestion.question_key}`, label: '⏭️ Skip' }];
-          return `[SUGGEST]\n${optionsWithSkip.map(opt => `${opt.key}: ${opt.label}`).join('\n')}\n[/SUGGEST]`;
-        })();
-        
-        mannersDiscoveryQuestionsContext = `\n\n🚫 HARD BLOCK - DO NOT GENERATE OUTLINE YET 🚫
-There are still ${remainingCount} optional question(s) to ask before you can propose a title or generate the outline.
-
-📋 ASK THIS QUESTION AND INCLUDE THE SUGGEST BLOCK EXACTLY AS SHOWN:
-
-${nextQuestion.question_text}
-
-${suggestBlock}
-
-⚠️ CRITICAL OUTPUT RULES:
-1. Your response MUST include the [SUGGEST] block EXACTLY as shown above - copy it verbatim
-2. DO NOT paraphrase or summarize the options - include the full [SUGGEST]...[/SUGGEST] block
-3. DO NOT propose a book title yet
-4. DO NOT generate any page outline or content
-5. DO NOT show "✅ Create My Book!" button
-6. After user responds, check for the NEXT optional question
-
-This is Step 4 in the conversation flow. Step 5 (Title Approval) and Step 6 (Outline Generation) come AFTER all optional questions are complete.`;
-        console.log(`📋 Manners discovery: Asking "${nextQuestion.question_key}" (${remainingCount} remaining)`);
-      } else {
-        console.log('📋 Manners discovery: All optional questions answered');
-      }
-    }
-
-    const mannerTypeContext = mannerType && MANNER_TYPE_LABELS[mannerType]
-      ? `\n\n⚠️ CRITICAL - MANNER TYPE STATUS:\n📚 MANNER TYPE ALREADY SELECTED: ${MANNER_TYPE_LABELS[mannerType]}\n❌ DO NOT ask "What type of manners?" or "What manners would you like to teach?" - this step is COMPLETE.\n✅ Proceed to the NEXT optional question.`
+    // Labels now fetched from database via frontend - only need context injection here
+    const mannerTypeContext = mannerType
+      ? `\n\n⚠️ CRITICAL - MANNER TYPE STATUS:\n📚 MANNER TYPE ALREADY SELECTED: ${mannerType}\n❌ DO NOT ask "What type of manners?" - this step is COMPLETE.`
       : '';
 
     // Manners setting context - where the manners should take place (home, school, both)
-    // IDs now use SETTING_ prefix for collision prevention (e.g., SETTING_home)
-    const MANNERS_SETTING_LABELS: Record<string, string> = {
-      'home': '🏠 Home',
-      'school': '🏫 School', 
-      'both': '🏠🏫 Both Home & School',
-      'SETTING_home': '🏠 Home',
-      'SETTING_school': '🏫 School', 
-      'SETTING_both': '🏠🏫 Both Home & School',
-    };
-    const mannersSettingContext = mannersSetting && MANNERS_SETTING_LABELS[mannersSetting]
-      ? `\n\n⚠️ CRITICAL - MANNERS SETTING STATUS:\n🏠 SETTING ALREADY SELECTED: ${MANNERS_SETTING_LABELS[mannersSetting]}\n❌ DO NOT ask "Where should this manners book take place?" - this step is COMPLETE.\nSet all illustrations and content in a ${MANNERS_SETTING_LABELS[mannersSetting].replace(/🏠|🏫/g, '').trim()} environment with appropriate settings and scenarios.`
+    // Frontend handles question display via useDiscoveryFlow - edge function just receives answers
+    const mannersSettingContext = mannersSetting
+      ? `\n\n⚠️ CRITICAL - MANNERS SETTING STATUS:\n🏠 SETTING ALREADY SELECTED: ${mannersSetting}\n❌ DO NOT ask "Where should this manners book take place?" - this step is COMPLETE.`
       : '';
 
     // Check if user is forcing outline creation (e.g., typing "create outline")
@@ -458,39 +379,14 @@ This is Step 4 in the conversation flow. Step 5 (Title Approval) and Step 6 (Out
     const lastMessageContent = typeof lastUserMessage?.content === 'string' ? lastUserMessage.content.toLowerCase() : '';
     const forceOutline = lastMessageContent.includes('create outline') || lastMessageContent.includes('generate outline');
 
-    // Location/City question injection - ONLY for non-Manners books
-    // Manners books use 100% database-driven questions via mannersDiscoveryQuestionsContext
-    const shouldAskLocationQuestion = !isMannerBook && !location && !outlineReady && !bookCreated && !forceOutline;
-    const shouldAskCityQuestion = !isMannerBook && !city && !outlineReady && !bookCreated && !forceOutline;
-
     // Detect if user just approved title
     const titleApprovalPhrases = ['looks perfect', 'create the outline', 'create outline', 'looks great', 'perfect!', 'approved', 'let\'s create'];
     const titleWasJustApproved = titleApprovalPhrases.some(phrase => lastMessageContent.includes(phrase));
 
-    // Build location/city injection blocks ONLY for non-Manners books
-    const locationSuggestBlock = shouldAskLocationQuestion ? await getLocationSuggestBlock() : '';
-    const locationQuestionInjection = shouldAskLocationQuestion
-      ? `\n\n📍 OPTIONAL QUESTION - LOCATION:\n"Would you like to set this book at a specific resort? This is optional."\n\n[SUGGEST]\n${locationSuggestBlock}\n[/SUGGEST]`
-      : '';
-
-    const citySuggestBlock = shouldAskCityQuestion ? await getCitySuggestBlock(supabase) : '';
-    const cityQuestionInjection = shouldAskCityQuestion
-      ? `\n\n🏙️ OPTIONAL QUESTION - CITY:\n"Would you like to set this book in a specific city? This is optional."\n\n[SUGGEST]\n${citySuggestBlock}\n[/SUGGEST]`
-      : '';
-
-    // Check if all optional questions are complete
-    // For Manners books: 100% database-driven - when mannersDiscoveryQuestionsContext is empty, ALL questions answered
-    const mannersQuestionsComplete = isMannerBook && characterTheme && mannerType && mannersDiscoveryQuestionsContext === '';
-    
-    // For standard books: check individual question states (legacy approach)
-    const standardQuestionsComplete = !isMannerBook && (
-      (season || lastMessageContent.includes('skip')) && 
-      (environment || lastMessageContent.includes('skip')) && 
-      (clothingBrand || lastMessageContent.includes('skip') || lastMessageContent.includes('burton') || lastMessageContent.includes('no brand')) && 
-      (location || lastMessageContent.includes('skip') || lastMessageContent.includes('resort')) &&
-      (city || lastMessageContent.includes('skip') || lastMessageContent.includes('city'))
-    );
-    const allOptionalQuestionsComplete = mannersQuestionsComplete || standardQuestionsComplete;
+    // All optional questions are now handled by frontend via useDiscoveryFlow
+    // Edge function receives completed answers - no need to track unanswered questions here
+    // When frontend finishes discovery flow, it passes all answers in context
+    const allOptionalQuestionsComplete = true; // Frontend controls this now
     
     // Get category word for title requirement
     const categoryWord = bookType ? getBookTypeCategoryWord(normalizeBookType(bookType)) : 'Adventure';
@@ -523,9 +419,10 @@ The title confirmation ("✅ Create My Book!") is the VERY LAST step before gene
     const languageContext = `\n\n🌍 LANGUAGE INSTRUCTION: Detect the language the user is writing in and respond in that SAME language throughout the entire conversation. This applies to all responses including discovery questions, suggestions, title/description proposals, and the complete book outline. Maintain all content safety guidelines and age-appropriateness regardless of language. Do NOT translate internal instruction tags like [SUGGEST] or markdown formatting.`;
 
     // Combine base prompt with contextual additions
+    // Note: Discovery questions are now handled by frontend via useDiscoveryFlow
     const systemMessage: Message = {
       role: 'system',
-      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersSettingContext + mannersDiscoveryQuestionsContext + locationQuestionInjection + cityQuestionInjection + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
+      content: systemPromptContent + languageContext + gradeContext + curatedItemsContext + digraphWordsContext + sightWordsContext + themeContext + characterConstraintsContext + characterThemeContext + seasonContext + environmentContext + clothingBrandContext + locationContext + cityContext + mannerTypeContext + mannersSettingContext + proceedToTitleContext + titleConfirmationContext + conversationStageContext,
     };
 
     console.log(`🤖 Agent source: ${agentSource}`);
@@ -540,10 +437,8 @@ The title confirmation ("✅ Create My Book!") is the VERY LAST step before gene
     console.log(`🏙️ City: ${city || 'None'}`);
     console.log(`📚 Manner type: ${mannerType || 'None'}`);
     console.log(`🏠 Manners setting: ${mannersSetting || 'None'}`);
-    console.log(`✅ All optional questions complete: ${allOptionalQuestionsComplete}`);
     console.log(`📝 Proceed to title: ${proceedToTitleContext ? 'Yes' : 'No'}`);
     console.log(`🎯 Title approved: ${titleWasJustApproved}`);
-    console.log(`📋 Manners questions complete: ${mannersQuestionsComplete}`);
 
     const allMessages = [systemMessage, ...messages];
 

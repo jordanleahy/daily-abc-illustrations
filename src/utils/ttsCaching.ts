@@ -3,6 +3,8 @@
  * Permanent cache - audio is deterministic (same text + voice = same audio forever)
  */
 
+import { ttsRequestQueue } from './ttsRequestQueue';
+
 interface WordTiming {
   word: string;
   startTime: number;
@@ -120,6 +122,7 @@ export async function isTTSCached(cacheKey: string): Promise<boolean> {
  * Prefetch TTS audio for given text (silent - no playback)
  * Useful for preloading upcoming page audio
  * Returns true if successfully prefetched or already cached
+ * Uses global request queue to prevent 429 rate limit errors
  */
 export async function prefetchTTSAudio(
   text: string,
@@ -131,65 +134,76 @@ export async function prefetchTTSAudio(
   const effectiveVoiceId = voiceId || '';
   const cacheKey = generateTTSCacheKey(text, effectiveVoiceId);
   
-  // Check if already cached
+  // Check global tracking first (prevents duplicate in-flight requests)
+  if (ttsRequestQueue.isPrefetched(cacheKey)) {
+    console.log('[TTS Prefetch] Already prefetched/in-progress:', text.slice(0, 30));
+    return true;
+  }
+  
+  // Mark as being processed immediately to prevent duplicates
+  ttsRequestQueue.markPrefetched(cacheKey);
+  
+  // Check if already cached in Service Worker
   const cached = await getTTSFromCache(cacheKey);
   if (cached?.audioBlob) {
     console.log('[TTS Prefetch] Already cached:', text.slice(0, 30));
     return true;
   }
   
-  // Fetch from API (silent - no playback)
-  try {
-    console.log('[TTS Prefetch] Fetching:', text.slice(0, 30));
-    
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-    
-    // Only include voiceId if explicitly provided (let server use default otherwise)
-    const bodyPayload: Record<string, unknown> = { text, withTimestamps: true };
-    if (voiceId) {
-      bodyPayload.voiceId = voiceId;
-    }
-    
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/elevenlabs-tts`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': supabaseKey,
-          'Authorization': `Bearer ${supabaseKey}`,
-        },
-        body: JSON.stringify(bodyPayload),
+  // Queue the API request to prevent rate limiting
+  return ttsRequestQueue.enqueue(async () => {
+    try {
+      console.log('[TTS Prefetch] Fetching:', text.slice(0, 30));
+      
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      
+      // Only include voiceId if explicitly provided (let server use default otherwise)
+      const bodyPayload: Record<string, unknown> = { text, withTimestamps: true };
+      if (voiceId) {
+        bodyPayload.voiceId = voiceId;
       }
-    );
-    
-    if (!response.ok) {
-      console.warn('[TTS Prefetch] API error:', response.status);
+      
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/elevenlabs-tts`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabaseKey,
+            'Authorization': `Bearer ${supabaseKey}`,
+          },
+          body: JSON.stringify(bodyPayload),
+        }
+      );
+      
+      if (!response.ok) {
+        console.warn('[TTS Prefetch] API error:', response.status);
+        return false;
+      }
+      
+      const data = await response.json();
+      
+      // Convert base64 to blob
+      const binaryString = atob(data.audio_base64);
+      const bytes = new Uint8Array(binaryString.length);
+      for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+      }
+      const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
+      const timings = data.wordTimings || [];
+      
+      // Store in cache
+      const success = await cacheTTSAudio(cacheKey, audioBlob, timings, text, effectiveVoiceId);
+      if (success) {
+        console.log('[TTS Prefetch] Cached:', text.slice(0, 30));
+      }
+      return success;
+    } catch (error) {
+      console.warn('[TTS Prefetch] Failed:', error);
       return false;
     }
-    
-    const data = await response.json();
-    
-    // Convert base64 to blob
-    const binaryString = atob(data.audio_base64);
-    const bytes = new Uint8Array(binaryString.length);
-    for (let i = 0; i < binaryString.length; i++) {
-      bytes[i] = binaryString.charCodeAt(i);
-    }
-    const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
-    const timings = data.wordTimings || [];
-    
-    // Store in cache
-    const success = await cacheTTSAudio(cacheKey, audioBlob, timings, text, voiceId);
-    if (success) {
-      console.log('[TTS Prefetch] Cached:', text.slice(0, 30));
-    }
-    return success;
-  } catch (error) {
-    console.warn('[TTS Prefetch] Failed:', error);
-    return false;
-  }
+  });
 }
 
 /**
@@ -212,6 +226,9 @@ export async function getTTSCacheStats(): Promise<{ count: number }> {
  * Clear all TTS cache (for settings/manual clear)
  */
 export async function clearTTSCache(): Promise<boolean> {
+  // Also clear the request queue's tracking
+  ttsRequestQueue.clearPrefetchedTracking();
+  
   if (!navigator.serviceWorker?.controller) {
     // Fallback: try direct cache deletion
     if ('caches' in window) {

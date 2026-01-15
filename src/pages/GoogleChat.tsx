@@ -1209,7 +1209,8 @@ export default function GoogleChat() {
       }
       
       // Capture manners setting if present in the action (home, school, both)
-      const mannersSettingIds = new Set(['home', 'school', 'both', 'skip-setting']);
+      // Supports both legacy IDs and new prefixed IDs (SETTING_home, SETTING_school, SETTING_both)
+      const mannersSettingIds = new Set(['home', 'school', 'both', 'skip-setting', 'SETTING_home', 'SETTING_school', 'SETTING_both']);
       if (mannersSettingIds.has(action.id)) {
         const settingValue = action.id === 'skip-setting' ? null : action.id;
         console.log('[Manners Setting Selection] User selected setting:', settingValue);

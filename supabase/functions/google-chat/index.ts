@@ -413,11 +413,14 @@ ${nextQuestion.options.map(opt => `${opt.key}: ${opt.label}`).join('\n')}
       : '';
 
     // Manners setting context - where the manners should take place (home, school, both)
-    // IDs defined in _shared/mannersSettings.ts for consistency
+    // IDs now use SETTING_ prefix for collision prevention (e.g., SETTING_home)
     const MANNERS_SETTING_LABELS: Record<string, string> = {
       'home': '🏠 Home',
       'school': '🏫 School', 
       'both': '🏠🏫 Both Home & School',
+      'SETTING_home': '🏠 Home',
+      'SETTING_school': '🏫 School', 
+      'SETTING_both': '🏠🏫 Both Home & School',
     };
     const mannersSettingContext = mannersSetting && MANNERS_SETTING_LABELS[mannersSetting]
       ? `\n\n⚠️ CRITICAL - MANNERS SETTING STATUS:\n🏠 SETTING ALREADY SELECTED: ${MANNERS_SETTING_LABELS[mannersSetting]}\n❌ DO NOT ask "Where should this manners book take place?" - this step is COMPLETE.\nSet all illustrations and content in a ${MANNERS_SETTING_LABELS[mannersSetting].replace(/🏠|🏫/g, '').trim()} environment with appropriate settings and scenarios.`

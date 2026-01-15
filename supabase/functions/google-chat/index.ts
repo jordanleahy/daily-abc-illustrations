@@ -403,26 +403,30 @@ serve(async (req) => {
       if (unansweredDiscoveries.length > 0) {
         const nextQuestion = unansweredDiscoveries[0]; // Ask ONE at a time
         const remainingCount = unansweredDiscoveries.length;
+        const suggestBlock = (() => {
+          const hasSkipOption = nextQuestion.options.some(opt => opt.key.toLowerCase().includes('skip'));
+          const optionsWithSkip = hasSkipOption 
+            ? nextQuestion.options 
+            : [...nextQuestion.options, { key: `skip-${nextQuestion.question_key}`, label: '⏭️ Skip' }];
+          return `[SUGGEST]\n${optionsWithSkip.map(opt => `${opt.key}: ${opt.label}`).join('\n')}\n[/SUGGEST]`;
+        })();
+        
         mannersDiscoveryQuestionsContext = `\n\n🚫 HARD BLOCK - DO NOT GENERATE OUTLINE YET 🚫
 There are still ${remainingCount} optional question(s) to ask before you can propose a title or generate the outline.
 
-📋 YOU MUST ASK THIS QUESTION NOW:
+📋 ASK THIS QUESTION AND INCLUDE THE SUGGEST BLOCK EXACTLY AS SHOWN:
+
 ${nextQuestion.question_text}
 
-${(() => {
-  const hasSkipOption = nextQuestion.options.some(opt => opt.key.toLowerCase().includes('skip'));
-  const optionsWithSkip = hasSkipOption 
-    ? nextQuestion.options 
-    : [...nextQuestion.options, { key: `skip-${nextQuestion.question_key}`, label: '⏭️ Skip' }];
-  return `[SUGGEST]\n${optionsWithSkip.map(opt => `${opt.key}: ${opt.label}`).join('\n')}\n[/SUGGEST]`;
-})()}
+${suggestBlock}
 
-⚠️ CRITICAL RULES:
-1. DO NOT propose a book title yet
-2. DO NOT generate any page outline or content
-3. DO NOT show "✅ Create My Book!" button
-4. ASK the above question and WAIT for user response
-5. After user responds, check for the NEXT optional question
+⚠️ CRITICAL OUTPUT RULES:
+1. Your response MUST include the [SUGGEST] block EXACTLY as shown above - copy it verbatim
+2. DO NOT paraphrase or summarize the options - include the full [SUGGEST]...[/SUGGEST] block
+3. DO NOT propose a book title yet
+4. DO NOT generate any page outline or content
+5. DO NOT show "✅ Create My Book!" button
+6. After user responds, check for the NEXT optional question
 
 This is Step 4 in the conversation flow. Step 5 (Title Approval) and Step 6 (Outline Generation) come AFTER all optional questions are complete.`;
         console.log(`📋 Manners discovery: Asking "${nextQuestion.question_key}" (${remainingCount} remaining)`);

@@ -1,9 +1,9 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChevronLeft, SkipForward } from 'lucide-react';
+import { ChevronLeft, SkipForward, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { DiscoveryQuestion as DiscoveryQuestionType } from '@/hooks/useDiscoveryFlow';
+import type { DiscoveryQuestion as DiscoveryQuestionType, DiscoveryAnswers } from '@/hooks/useDiscoveryFlow';
 
 interface DiscoveryQuestionProps {
   question: DiscoveryQuestionType;
@@ -99,17 +99,66 @@ export function DiscoveryQuestion({
   );
 }
 
+interface DiscoveryQuestionInlineProps {
+  question: DiscoveryQuestionType;
+  onAnswer: (questionKey: string, value: string) => void;
+  onSkip?: (questionKey: string) => void;
+  // New props for showing history
+  answeredQuestions?: Array<{
+    question: DiscoveryQuestionType;
+    selectedKey: string;
+    selectedLabel: string;
+  }>;
+  progress?: {
+    current: number;
+    total: number;
+    percentage: number;
+  };
+  className?: string;
+}
+
 /**
- * Compact inline version for chat messages
+ * Compact inline version for chat messages with answered question history
  */
 export function DiscoveryQuestionInline({
   question,
   onAnswer,
   onSkip,
+  answeredQuestions = [],
+  progress,
   className,
-}: Omit<DiscoveryQuestionProps, 'onBack' | 'canGoBack' | 'progress'>) {
+}: DiscoveryQuestionInlineProps) {
   return (
     <div className={cn('space-y-3', className)}>
+      {/* Progress indicator */}
+      {progress && progress.total > 1 && (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+          <span>Step {progress.current} of {progress.total}</span>
+          <div className="flex-1 h-1 bg-muted rounded-full overflow-hidden max-w-20">
+            <div 
+              className="h-full bg-primary transition-all duration-300"
+              style={{ width: `${progress.percentage}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Show answered questions summary */}
+      {answeredQuestions.length > 0 && (
+        <div className="space-y-1 mb-3 pb-2 border-b border-border/50">
+          {answeredQuestions.map((answered) => (
+            <div 
+              key={answered.question.question_key} 
+              className="flex items-center gap-2 text-sm text-muted-foreground"
+            >
+              <Check className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+              <span className="truncate">{answered.selectedLabel}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Current question */}
       <p className="text-foreground font-medium">{question.question_text}</p>
       
       <div className="flex flex-wrap gap-2">

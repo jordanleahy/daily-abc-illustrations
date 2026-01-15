@@ -490,6 +490,7 @@ export function UnifiedReadingView({
           onToggleReadMode={readingState.toggleReadMode}
           isLastWord={readingState.currentWordIndex === currentPageWords.length - 1}
           hasReachedLastWord={readingState.hasReachedLastWord}
+          speakText={currentPage.title}
         />
     </div>
   );

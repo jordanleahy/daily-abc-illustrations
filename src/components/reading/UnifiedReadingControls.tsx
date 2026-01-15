@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
-import { ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight, Volume2, Loader2 } from 'lucide-react';
 import { WordCarousel } from './WordCarousel';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import type { PageType } from '@/types/book';
 
 interface UnifiedReadingControlsProps {
@@ -34,6 +35,9 @@ interface UnifiedReadingControlsProps {
   
   // Page type filtering
   pageType?: PageType;
+  
+  // TTS props
+  speakText?: string;
 }
 
 export function UnifiedReadingControls({
@@ -58,7 +62,18 @@ export function UnifiedReadingControls({
   isLastWord = false,
   hasReachedLastWord = false,
   pageType,
+  speakText,
 }: UnifiedReadingControlsProps) {
+  const { speak, stop, isLoading, isPlaying } = useTextToSpeech();
+
+  const handleSpeakClick = () => {
+    if (isPlaying) {
+      stop();
+    } else if (speakText) {
+      speak(speakText);
+    }
+  };
+
   return (
     <div 
       className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur-sm border-t z-50 py-3 px-2"
@@ -162,34 +177,58 @@ export function UnifiedReadingControls({
       )}
 
       {/* Row 2: Page Navigation */}
-      <div className="flex items-center h-14 rounded-full bg-muted/30 overflow-hidden max-w-md mx-auto w-full">
-        {/* Previous/Left Arrow */}
-        <button
-          onClick={onPreviousPage}
-          disabled={disablePreviousPage || !onPreviousPage}
-          className={`flex items-center justify-center h-full rounded-l-full transition-all active:scale-[0.98] shrink-0 w-1/2 ${
-            disablePreviousPage || !onPreviousPage
-              ? 'opacity-30 cursor-not-allowed pointer-events-none'
-              : 'hover:bg-muted/50 cursor-pointer'
-          }`}
-          aria-label="Previous page"
-        >
-          <ChevronLeft className="w-6 h-6 text-foreground flex-shrink-0" />
-        </button>
+      <div className="flex items-center gap-2 max-w-md mx-auto w-full">
+        <div className="flex items-center h-14 rounded-full bg-muted/30 overflow-hidden flex-1">
+          {/* Previous/Left Arrow */}
+          <button
+            onClick={onPreviousPage}
+            disabled={disablePreviousPage || !onPreviousPage}
+            className={`flex items-center justify-center h-full rounded-l-full transition-all active:scale-[0.98] shrink-0 w-1/2 ${
+              disablePreviousPage || !onPreviousPage
+                ? 'opacity-30 cursor-not-allowed pointer-events-none'
+                : 'hover:bg-muted/50 cursor-pointer'
+            }`}
+            aria-label="Previous page"
+          >
+            <ChevronLeft className="w-6 h-6 text-foreground flex-shrink-0" />
+          </button>
 
-        {/* Next/Right Arrow - Wide button with dark background */}
-        <button
-          onClick={onNextPage}
-          disabled={disableNextPage || !onNextPage}
-          className={`flex items-center justify-center h-full rounded-r-full transition-all active:scale-[0.98] shrink-0 w-1/2 ${
-            disableNextPage || !onNextPage
-              ? 'opacity-30 cursor-not-allowed pointer-events-none'
-              : 'hover:opacity-90 cursor-pointer bg-[hsl(220,40%,15%)]'
-          }`}
-          aria-label="Next page"
-        >
-          <ChevronRight className="w-6 h-6 text-white flex-shrink-0" />
-        </button>
+          {/* Next/Right Arrow - Wide button with dark background */}
+          <button
+            onClick={onNextPage}
+            disabled={disableNextPage || !onNextPage}
+            className={`flex items-center justify-center h-full rounded-r-full transition-all active:scale-[0.98] shrink-0 w-1/2 ${
+              disableNextPage || !onNextPage
+                ? 'opacity-30 cursor-not-allowed pointer-events-none'
+                : 'hover:opacity-90 cursor-pointer bg-[hsl(220,40%,15%)]'
+            }`}
+            aria-label="Next page"
+          >
+            <ChevronRight className="w-6 h-6 text-white flex-shrink-0" />
+          </button>
+        </div>
+
+        {/* TTS Audio Button */}
+        {speakText && (
+          <button
+            onClick={handleSpeakClick}
+            disabled={isLoading}
+            className={`flex items-center justify-center h-14 w-14 rounded-full transition-all active:scale-[0.98] shrink-0 ${
+              isLoading
+                ? 'opacity-50 cursor-not-allowed bg-muted/30'
+                : isPlaying
+                  ? 'bg-primary/20 hover:bg-primary/30 cursor-pointer'
+                  : 'bg-muted/30 hover:bg-muted/50 cursor-pointer'
+            }`}
+            aria-label={isPlaying ? "Stop reading" : "Read aloud"}
+          >
+            {isLoading ? (
+              <Loader2 className="w-6 h-6 text-foreground animate-spin" />
+            ) : (
+              <Volume2 className={`w-6 h-6 ${isPlaying ? 'text-primary animate-pulse' : 'text-foreground'}`} />
+            )}
+          </button>
+        )}
       </div>
     </div>
   );

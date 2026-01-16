@@ -190,12 +190,15 @@ function drawFrame(
   
   ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
 
-  // Draw text bar at bottom
+  // Safe padding from edges (16px minimum, scaled for resolution)
+  const safePadding = Math.max(16, Math.round(width * 0.03));
+  
+  // Draw text bar at bottom with padding from bottom edge
   const barHeight = Math.round(height * 0.1);
-  const barY = height - barHeight;
+  const barY = height - barHeight - safePadding;
   
   ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
-  ctx.fillRect(0, barY, width, barHeight);
+  ctx.fillRect(safePadding, barY, width - safePadding * 2, barHeight);
 
   // Find current word index
   let currentWordIndex = -1;
@@ -206,18 +209,33 @@ function drawFrame(
     }
   }
 
-  // Configure text
-  const fontSize = Math.round(height * 0.04);
+  // Configure text - scale font size to fit within safe area
+  const maxTextWidth = width - safePadding * 4; // Leave padding on both sides
+  let fontSize = Math.round(height * 0.04);
   ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`;
   ctx.textBaseline = 'middle';
 
-  // Calculate total text width for centering
-  const wordWidths = words.map(w => ctx.measureText(w).width);
-  const spaceWidth = ctx.measureText(' ').width;
-  const totalWidth = wordWidths.reduce((sum, w) => sum + w, 0) + spaceWidth * (words.length - 1);
+  // Calculate total text width
+  const getTextMetrics = () => {
+    const wordWidths = words.map(w => ctx.measureText(w).width);
+    const spaceWidth = ctx.measureText(' ').width;
+    const totalWidth = wordWidths.reduce((sum, w) => sum + w, 0) + spaceWidth * (words.length - 1);
+    return { wordWidths, spaceWidth, totalWidth };
+  };
 
-  // Starting X position (centered)
-  let x = (width - totalWidth) / 2;
+  let metrics = getTextMetrics();
+  
+  // Reduce font size if text is too wide for safe area
+  while (metrics.totalWidth > maxTextWidth && fontSize > 12) {
+    fontSize -= 2;
+    ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`;
+    metrics = getTextMetrics();
+  }
+
+  const { wordWidths, spaceWidth, totalWidth } = metrics;
+
+  // Starting X position (centered within safe area)
+  let x = Math.max(safePadding * 2, (width - totalWidth) / 2);
   const y = barY + barHeight / 2;
 
   // Draw each word

@@ -143,7 +143,11 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
                 "h-7 px-2 text-xs gap-1 transition-all",
                 "bg-primary/10 border-primary text-primary hover:bg-primary/20"
               )}
-              onClick={() => handleOpenVideo(existingVideo.publicUrl)}
+              onClick={(e) => {
+                e.stopPropagation();
+                e.preventDefault();
+                handleOpenVideo(existingVideo.publicUrl);
+              }}
               title={`Open ${label} video`}
             >
               <Video className="h-3 w-3" />
@@ -177,7 +181,11 @@ export function VideoAspectBadges({ bookId, bookName }: VideoAspectBadgesProps) 
             variant="outline"
             size="sm"
             className="h-7 px-2 text-xs gap-1 text-muted-foreground hover:text-foreground"
-            onClick={() => handleGenerate(ratio)}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleGenerate(ratio);
+            }}
             title={`Generate ${label} video`}
           >
             <Video className="h-3 w-3" />

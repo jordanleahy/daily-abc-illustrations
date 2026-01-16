@@ -1,18 +1,22 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuthContext } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { SafeLocalStorage, SUBSCRIPTION_CACHE_KEY, SUBSCRIPTION_CACHE_DAYS, ACCESS_STATE_CACHE_KEY } from '@/utils/storage';
 
-// Global request lock to prevent concurrent API calls
+// Global singleton state - prevents ALL concurrent API calls across all hook instances
 let pendingRequest: Promise<SubscriptionStatus> | null = null;
 let lastRequestTime = 0;
-const MIN_REQUEST_INTERVAL = 5000; // Minimum 5 seconds between requests (increased from 2s)
+const MIN_REQUEST_INTERVAL = 30000; // 30 seconds minimum between API calls
+let lastCacheResult: SubscriptionStatus | null = null;
+let lastCacheTime = 0;
+const MEMORY_CACHE_TTL = 60000; // 1 minute in-memory cache
 
-// Module-level flags to prevent multiple instances from checking
+// Module-level flags 
 let globalMountCheckDone = false;
 let globalLastFocusCheck = 0;
+let realtimeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 interface SubscriptionStatus {
   subscribed: boolean;
@@ -27,15 +31,12 @@ interface SubscriptionStatus {
   error?: string;
 }
 
-// Define our subscription tiers with their corresponding Stripe IDs
 export const SUBSCRIPTION_TIERS = {
-  // Plus tier - Full features (habits + rewards + library)
-  // These are the existing products, now labeled as "Plus"
   plus_monthly: {
     price_id: "price_1SV26WC8Q85n0xWFQYibK0Jg",
     product_id: "prod_T7a3qkxm69uttK",
     name: "Plus Monthly",
-    price: 1499, // Price in cents ($14.99)
+    price: 1499,
     interval: "month",
     features: {
       library_access: true,
@@ -46,74 +47,62 @@ export const SUBSCRIPTION_TIERS = {
     price_id: "price_1SEEd8C8Q85n0xWFLL92SUJy",
     product_id: "prod_T7a5vTweAt6UZm",
     name: "Plus Annual",
-    price: 9900, // Price in cents ($99.00)
+    price: 9900,
     interval: "year",
     features: {
       library_access: true,
       habits_rewards: true,
     }
   }
-  // Note: Basic tier to be added when Stripe products are created
-  // basic_monthly: {
-  //   price_id: "price_xxx",
-  //   product_id: "prod_xxx",
-  //   name: "Basic Monthly",
-  //   price: 299, // $2.99
-  //   interval: "month",
-  //   features: {
-  //     library_access: true,
-  //     habits_rewards: false,
-  //   }
-  // }
 } as const;
 
 // Helper to check if subscription is active
 const isSubscriptionActive = (status: SubscriptionStatus): boolean => {
-  // Trial users are considered active subscribers
   if (status.is_trial && status.trial_ends_at) {
     return new Date(status.trial_ends_at) > new Date();
   }
-  
   if (!status.subscribed) return false;
-  
-  // If subscription_end exists, check if it's in the future
   if (status.subscription_end) {
     return new Date(status.subscription_end) > new Date();
   }
-  
-  // If no subscription_end, use subscribed status
   return status.subscribed;
 };
 
-// Helper to get user-specific cache key
 const getUserCacheKey = (userId: string) => `${SUBSCRIPTION_CACHE_KEY}_${userId}`;
 
-// Singleton fetch function - guaranteed to only run once at a time globally
+// Singleton fetch function with aggressive deduplication
 const fetchSubscription = async (userId: string): Promise<SubscriptionStatus> => {
-  // Check 90-day cache first - cache key includes userId to prevent cross-user contamination
+  // 1. Check in-memory cache first (fastest)
+  const now = Date.now();
+  if (lastCacheResult && (now - lastCacheTime) < MEMORY_CACHE_TTL) {
+    console.log('[SUBSCRIPTION] Using in-memory cache');
+    return { ...lastCacheResult, loading: false };
+  }
+
+  // 2. Check localStorage cache
   const userCacheKey = getUserCacheKey(userId);
   const cached = SafeLocalStorage.get<SubscriptionStatus>(userCacheKey);
   if (cached) {
-    console.log('[SUBSCRIPTION] Using 90-day cached data for user', userId);
+    console.log('[SUBSCRIPTION] Using localStorage cached data for user', userId);
+    lastCacheResult = cached;
+    lastCacheTime = now;
     return { ...cached, loading: false };
   }
 
-  // If there's already a pending request, wait for it
+  // 3. If there's already a pending request, wait for it
   if (pendingRequest) {
     console.log('[SUBSCRIPTION] Request already in progress, waiting...');
     return pendingRequest;
   }
 
-  // Enforce minimum time between requests
-  const now = Date.now();
+  // 4. Enforce minimum time between API requests
   const timeSinceLastRequest = now - lastRequestTime;
-  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL) {
-    const waitTime = MIN_REQUEST_INTERVAL - timeSinceLastRequest;
-    console.log(`[SUBSCRIPTION] Rate limiting - waiting ${waitTime}ms before next request`);
-    await new Promise(resolve => setTimeout(resolve, waitTime));
+  if (timeSinceLastRequest < MIN_REQUEST_INTERVAL && lastCacheResult) {
+    console.log('[SUBSCRIPTION] Rate limiting - returning last known result');
+    return { ...lastCacheResult, loading: false };
   }
 
-  // Create and store the pending request
+  // 5. Create the actual request
   pendingRequest = (async () => {
     try {
       console.log('[SUBSCRIPTION] Fetching fresh subscription from API for user', userId);
@@ -134,20 +123,24 @@ const fetchSubscription = async (userId: string): Promise<SubscriptionStatus> =>
         loading: false,
       };
 
-      // Cache for 90 days with user-specific key
+      // Update both caches
       SafeLocalStorage.set(userCacheKey, subscriptionData, 90 * 24);
+      lastCacheResult = subscriptionData;
+      lastCacheTime = Date.now();
 
       return subscriptionData;
     } catch (error) {
       console.error('Error checking subscription:', error);
-      SafeLocalStorage.remove(userCacheKey);
+      // On error, return last known good result if available
+      if (lastCacheResult) {
+        return { ...lastCacheResult, loading: false };
+      }
       return {
         subscribed: false,
         loading: false,
         error: error instanceof Error ? error.message : 'Failed to check subscription',
       };
     } finally {
-      // Clear the pending request after completion
       pendingRequest = null;
     }
   })();
@@ -155,13 +148,12 @@ const fetchSubscription = async (userId: string): Promise<SubscriptionStatus> =>
   return pendingRequest;
 };
 
-// Helper to clear subscription cache for a user
 export const clearSubscriptionCache = (userId?: string) => {
   if (userId) {
     SafeLocalStorage.remove(getUserCacheKey(userId));
   }
-  // Also clear the legacy global key for backwards compatibility
   SafeLocalStorage.remove(SUBSCRIPTION_CACHE_KEY);
+  // Don't clear in-memory cache to prevent immediate re-fetch storms
 };
 
 export const useSubscription = () => {
@@ -198,19 +190,27 @@ export const useSubscription = () => {
     await query.refetch();
   }, [query, user?.id]);
 
-  // Listen for auth-driven subscription checks
+  // Listen for auth-driven subscription checks - with debounce
   useEffect(() => {
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    
     const handleAuthCheck = () => {
-      console.log('[SUBSCRIPTION] Auth-triggered check - clearing cache and refetching');
-      clearSubscriptionCache(user?.id);
-      query.refetch();
+      // Debounce auth checks to prevent storm
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        console.log('[SUBSCRIPTION] Auth-triggered check (debounced)');
+        query.refetch();
+      }, 1000);
     };
 
     window.addEventListener('auth-subscription-check', handleAuthCheck);
-    return () => window.removeEventListener('auth-subscription-check', handleAuthCheck);
-  }, [query, user?.id]);
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      window.removeEventListener('auth-subscription-check', handleAuthCheck);
+    };
+  }, [query]);
 
-  // Real-time subscription to user_subscription_cache table
+  // Real-time subscription to user_subscription_cache table - with heavy debounce
   const queryClient = useQueryClient();
   useEffect(() => {
     if (!user?.id) return;
@@ -222,25 +222,29 @@ export const useSubscription = () => {
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen for INSERT, UPDATE, DELETE
+          event: '*',
           schema: 'public',
           table: 'user_subscription_cache',
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log('[SUBSCRIPTION] Real-time update received:', payload);
-          // Clear all access caches and invalidate query to fetch fresh data
-          clearSubscriptionCache(user.id);
-          SafeLocalStorage.remove(ACCESS_STATE_CACHE_KEY);
-          queryClient.invalidateQueries({ queryKey: ['subscription', user.id] });
+          console.log('[SUBSCRIPTION] Real-time update received');
+          // Debounce real-time updates to prevent storm
+          if (realtimeDebounceTimer) clearTimeout(realtimeDebounceTimer);
+          realtimeDebounceTimer = setTimeout(() => {
+            console.log('[SUBSCRIPTION] Processing real-time update (debounced)');
+            SafeLocalStorage.remove(ACCESS_STATE_CACHE_KEY);
+            // Don't clear subscription cache - just invalidate query
+            // The query will use in-memory cache if recent
+            queryClient.invalidateQueries({ queryKey: ['subscription', user.id] });
+          }, 2000); // 2 second debounce
         }
       )
-      .subscribe((status) => {
-        console.log('[SUBSCRIPTION] Real-time subscription status:', status);
-      });
+      .subscribe();
 
     return () => {
       console.log('[SUBSCRIPTION] Cleaning up real-time subscription');
+      if (realtimeDebounceTimer) clearTimeout(realtimeDebounceTimer);
       supabase.removeChannel(channel);
     };
   }, [user?.id, queryClient]);

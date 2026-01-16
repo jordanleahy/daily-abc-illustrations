@@ -15,7 +15,7 @@
  */
 
 import { useState } from 'react';
-import { Eye, EyeOff, BookOpen, Copy, Check, Volume2, Video } from 'lucide-react';
+import { Eye, EyeOff, BookOpen, Copy, Check, Volume2, Video, Smartphone, Monitor, Square } from 'lucide-react';
 import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 import { createImageLoadTracker } from '@/utils/performanceMonitoring';
 import { WordDetailView } from '@/components/reading/WordDetailView';
@@ -43,8 +43,8 @@ interface BookImageProps {
   currentWordData?: WordMetadata;
   /** Callback for audio/TTS button */
   onAudioClick?: () => void;
-  /** Callback for video/download button */
-  onVideoClick?: () => void;
+  /** Callback for video/download button with aspect ratio selection */
+  onVideoClick?: (aspectRatio: 'portrait' | 'landscape' | 'square') => void;
   /** Whether audio is currently playing */
   isAudioPlaying?: boolean;
   /** Whether video export is in progress */
@@ -80,6 +80,7 @@ export function BookImage({
   const [showWordDetail, setShowWordDetail] = useState(false);
   const [isCopyingImage, setIsCopyingImage] = useState(false);
   const [imageCopied, setImageCopied] = useState(false);
+  const [showAspectRatioOptions, setShowAspectRatioOptions] = useState(false);
   const { toast } = useToast();
   
   // Runtime validation (development only)
@@ -304,19 +305,71 @@ export function BookImage({
               <Volume2 className="w-5 h-5" />
             </button>
           )}
-          {/* Video/Download button */}
+          {/* Video/Download button with aspect ratio options */}
           {onVideoClick && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onVideoClick();
-              }}
-              disabled={isVideoExporting}
-              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 disabled:opacity-50"
-              aria-label="Export video"
-            >
-              <Video className="w-5 h-5" />
-            </button>
+            <div className="flex flex-col gap-2 items-end">
+              {/* Main video button - toggles aspect ratio options */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowAspectRatioOptions(prev => !prev);
+                }}
+                disabled={isVideoExporting}
+                className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full backdrop-blur-sm text-white shadow-lg transition-all duration-200 active:scale-95 disabled:opacity-50 ${
+                  showAspectRatioOptions ? 'bg-primary/70 hover:bg-primary/80' : 'bg-black/50 hover:bg-black/70'
+                }`}
+                aria-label="Export video options"
+              >
+                <Video className="w-5 h-5" />
+              </button>
+              
+              {/* Aspect ratio options - shown when video button is clicked */}
+              {showAspectRatioOptions && !isVideoExporting && (
+                <div className="flex flex-col gap-1.5 animate-in slide-in-from-top-2 duration-200">
+                  {/* Portrait 9:16 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAspectRatioOptions(false);
+                      onVideoClick('portrait');
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 text-xs font-medium"
+                    aria-label="Export 9:16 portrait video"
+                  >
+                    <Smartphone className="w-4 h-4" />
+                    <span>9:16</span>
+                  </button>
+                  
+                  {/* Landscape 16:9 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAspectRatioOptions(false);
+                      onVideoClick('landscape');
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 text-xs font-medium"
+                    aria-label="Export 16:9 landscape video"
+                  >
+                    <Monitor className="w-4 h-4" />
+                    <span>16:9</span>
+                  </button>
+                  
+                  {/* Square 1:1 */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowAspectRatioOptions(false);
+                      onVideoClick('square');
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 text-xs font-medium"
+                    aria-label="Export 1:1 square video"
+                  >
+                    <Square className="w-4 h-4" />
+                    <span>1:1</span>
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}

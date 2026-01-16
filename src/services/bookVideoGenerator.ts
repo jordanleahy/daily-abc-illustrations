@@ -526,11 +526,18 @@ export function downloadBookVideo(result: VideoResult, bookName: string, aspectR
   const filename = `${sanitizedName}-${aspectRatio}.${extension}`;
   
   const url = URL.createObjectURL(result.blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
+  // Open in new tab - user can play and save from browser
+  const newTab = window.open(url, '_blank');
+  
+  // If popup was blocked, fall back to download
+  if (!newTab) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  // Note: Don't revoke URL immediately for new tab - browser needs it for playback
 }

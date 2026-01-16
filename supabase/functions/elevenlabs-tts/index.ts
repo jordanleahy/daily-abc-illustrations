@@ -150,7 +150,7 @@ serve(async (req) => {
           similarity_boost: 0.75,   // Natural voice quality
           style: 0.3,               // Less stylized for clear pronunciation
           use_speaker_boost: true,
-          speed: 0.75,              // Much slower for toddler comprehension
+          speed: 0.6,               // Very slow for toddler comprehension
         },
       }),
     });

@@ -99,8 +99,8 @@ serve(async (req) => {
   }
 
   try {
-    // Default to Lily voice - soft, gentle voice ideal for children's books
-    const { text, voiceId = 'pFZP5JQG7iQjIQuC4Bku', withTimestamps = false } = await req.json();
+    // Default to Matilda voice - warm, nurturing voice perfect for toddlers
+    const { text, voiceId = 'XrExE9yKIg1WjnnlVkGX', withTimestamps = false } = await req.json();
     
     if (!text || typeof text !== 'string') {
       return new Response(
@@ -146,11 +146,11 @@ serve(async (req) => {
         text: processedText,
         model_id: 'eleven_multilingual_v2', // Full SSML support for phoneme tags
         voice_settings: {
-          stability: 0.5,           // Balanced for clear pronunciation
-          similarity_boost: 0.8,    // Higher for clearer voice
-          style: 0.4,               // Less stylized for educational clarity
+          stability: 0.7,           // Higher for consistent, soothing delivery
+          similarity_boost: 0.75,   // Natural voice quality
+          style: 0.3,               // Less stylized for clear pronunciation
           use_speaker_boost: true,
-          speed: 0.85,              // Slightly slower for children's comprehension
+          speed: 0.75,              // Much slower for toddler comprehension
         },
       }),
     });

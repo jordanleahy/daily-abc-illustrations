@@ -141,7 +141,7 @@ export default function BookReadingView() {
       showSwipeDrawer={false}
       entryPoint={entryPoint}
       getImageUrl={(page) => imageMap[page.page_number]}
-      imageComponent={(page, pageIndex, currentWordData) => (
+      imageComponent={(page, pageIndex, currentWordData, controlsProps) => (
         <PublicPageImage 
           pageId={page.id}
           bookId={book.id}
@@ -151,6 +151,10 @@ export default function BookReadingView() {
           disableHoverEffects={true}
           enableVisibilityToggle={true}
           currentWordData={currentWordData}
+          onAudioClick={controlsProps?.onAudioClick}
+          onVideoClick={controlsProps?.onVideoClick}
+          isAudioPlaying={controlsProps?.isAudioPlaying}
+          isVideoExporting={controlsProps?.isVideoExporting}
         />
       )}
     />

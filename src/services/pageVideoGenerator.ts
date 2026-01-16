@@ -165,27 +165,43 @@ function drawFrame(
 ) {
   const { width, height } = ctx.canvas;
 
-  // Clear canvas
+  // Clear canvas with a blurred background
   ctx.clearRect(0, 0, width, height);
 
-  // Draw background image (cover)
+  // Draw background image using CONTAIN logic (show full image, centered)
   const imgRatio = image.width / image.height;
   const canvasRatio = width / height;
   
   let drawWidth, drawHeight, drawX, drawY;
   
+  // First, draw a blurred/darkened version as background to fill empty space
+  ctx.save();
+  ctx.filter = 'blur(30px) brightness(0.4)';
+  // Draw cover version for background blur
   if (imgRatio > canvasRatio) {
-    // Image is wider - fit by height
-    drawHeight = height;
-    drawWidth = height * imgRatio;
-    drawX = (width - drawWidth) / 2;
-    drawY = 0;
+    const bgHeight = height;
+    const bgWidth = height * imgRatio;
+    ctx.drawImage(image, (width - bgWidth) / 2, 0, bgWidth, bgHeight);
   } else {
-    // Image is taller - fit by width
+    const bgWidth = width;
+    const bgHeight = width / imgRatio;
+    ctx.drawImage(image, 0, (height - bgHeight) / 2, bgWidth, bgHeight);
+  }
+  ctx.restore();
+  
+  // Now draw the main image using CONTAIN (fit entirely within canvas)
+  if (imgRatio > canvasRatio) {
+    // Image is wider than canvas - fit by width
     drawWidth = width;
     drawHeight = width / imgRatio;
     drawX = 0;
     drawY = (height - drawHeight) / 2;
+  } else {
+    // Image is taller/square - fit by height (this is the square image case)
+    drawHeight = height;
+    drawWidth = height * imgRatio;
+    drawX = (width - drawWidth) / 2;
+    drawY = 0;
   }
   
   ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);

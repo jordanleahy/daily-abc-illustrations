@@ -338,6 +338,11 @@ export async function generatePageVideo(config: PageVideoConfig): Promise<VideoR
   // Parse words from text
   const words = text.split(/\s+/).filter(Boolean);
 
+  // Timing configuration
+  const introHoldDuration = 2.0; // 2 seconds before audio starts
+  const outroHoldDuration = 2.0; // 2 seconds after audio ends
+  const totalDuration = introHoldDuration + audioDuration + outroHoldDuration;
+
   // Start recording
   return new Promise((resolve, reject) => {
     mediaRecorder.onstop = () => {
@@ -352,7 +357,9 @@ export async function generatePageVideo(config: PageVideoConfig): Promise<VideoR
     };
 
     mediaRecorder.start();
-    audioSource.start();
+    
+    // Schedule audio to start after intro hold
+    audioSource.start(audioContext.currentTime + introHoldDuration);
 
     const startTime = performance.now();
     let animationId: number;
@@ -361,14 +368,19 @@ export async function generatePageVideo(config: PageVideoConfig): Promise<VideoR
       const elapsed = (performance.now() - startTime) / 1000;
       
       // Update progress (40-95%)
-      const progressPercent = Math.min(40 + (elapsed / audioDuration) * 55, 95);
+      const progressPercent = Math.min(40 + (elapsed / totalDuration) * 55, 95);
       onProgress?.(Math.round(progressPercent));
 
-      // Draw current frame
-      drawFrame(ctx, image, words, ttsData.wordTimings, elapsed);
+      // Calculate audio time (offset by intro hold duration)
+      // During intro: audioTime will be negative (no word highlighted)
+      // During audio: audioTime syncs with word timings
+      // During outro: audioTime will be past the last word timing
+      const audioTime = elapsed - introHoldDuration;
 
-      if (elapsed < audioDuration + 0.5) {
-        // Add 0.5s buffer after audio ends
+      // Draw current frame with adjusted time for word highlighting
+      drawFrame(ctx, image, words, ttsData.wordTimings, audioTime);
+
+      if (elapsed < totalDuration) {
         animationId = requestAnimationFrame(animate);
       } else {
         // Stop recording

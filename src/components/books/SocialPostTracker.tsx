@@ -6,6 +6,8 @@ import { useGenerateOGAssets } from '@/hooks/useGenerateOGAssets';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { cn } from '@/lib/utils';
+import { VideoAspectBadges } from './VideoAspectBadges';
+import { Separator } from '@/components/ui/separator';
 
 // TikTok icon (Lucide doesn't have one)
 const TikTokIcon = ({ className }: { className?: string }) => (
@@ -86,53 +88,59 @@ export function SocialPostTracker({ bookId, bookName, bookDescription, dailyPubl
   };
 
   return (
-    <div className="flex items-center justify-center gap-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
-      {/* OG Assets button */}
-      <Button
-        variant="outline"
-        size="icon"
-        className={cn(
-          "h-8 w-8 relative transition-all",
-          ogComplete 
-            ? "bg-primary/10 border-primary text-primary hover:bg-primary/20" 
-            : "text-muted-foreground hover:text-foreground"
-        )}
-        onClick={handleOGClick}
-        disabled={isGeneratingOG || ogComplete}
-        title={ogComplete ? "OG assets generated" : "Generate OG assets"}
-      >
-        <Image className={cn("h-4 w-4", isGeneratingOG && "animate-spin")} />
-        {ogComplete && (
-          <Check className="h-3 w-3 absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5" />
-        )}
-      </Button>
+    <div className="flex flex-col items-center gap-2 pt-2 animate-in fade-in slide-in-from-top-2 duration-200">
+      {/* Row 1: OG + Social icons */}
+      <div className="flex items-center justify-center gap-2">
+        {/* OG Assets button */}
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn(
+            "h-8 w-8 relative transition-all",
+            ogComplete 
+              ? "bg-primary/10 border-primary text-primary hover:bg-primary/20" 
+              : "text-muted-foreground hover:text-foreground"
+          )}
+          onClick={handleOGClick}
+          disabled={isGeneratingOG || ogComplete}
+          title={ogComplete ? "OG assets generated" : "Generate OG assets"}
+        >
+          <Image className={cn("h-4 w-4", isGeneratingOG && "animate-spin")} />
+          {ogComplete && (
+            <Check className="h-3 w-3 absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5" />
+          )}
+        </Button>
 
-      {/* Social platform buttons */}
-      {PLATFORMS.map(({ id, icon, iconPosted, label }) => {
-        const isPosted = postedPlatforms.includes(id);
-        
-        return (
-          <Button
-            key={id}
-            variant="outline"
-            size="icon"
-            className={cn(
-              "h-8 w-8 relative transition-all",
-              isPosted 
-                ? "bg-primary/10 border-primary text-primary hover:bg-primary/20" 
-                : "text-muted-foreground hover:text-foreground"
-            )}
-            onClick={(e) => handlePlatformClick(id, e)}
-            disabled={isMarking || isPosted}
-            title={isPosted ? `Posted to ${label}` : `Mark as posted to ${label}`}
-          >
-            {isPosted && iconPosted ? iconPosted : icon}
-            {isPosted && (
-              <Check className="h-3 w-3 absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5" />
-            )}
-          </Button>
-        );
-      })}
+        {/* Social platform buttons */}
+        {PLATFORMS.map(({ id, icon, iconPosted, label }) => {
+          const isPosted = postedPlatforms.includes(id);
+          
+          return (
+            <Button
+              key={id}
+              variant="outline"
+              size="icon"
+              className={cn(
+                "h-8 w-8 relative transition-all",
+                isPosted 
+                  ? "bg-primary/10 border-primary text-primary hover:bg-primary/20" 
+                  : "text-muted-foreground hover:text-foreground"
+              )}
+              onClick={(e) => handlePlatformClick(id, e)}
+              disabled={isMarking || isPosted}
+              title={isPosted ? `Posted to ${label}` : `Mark as posted to ${label}`}
+            >
+              {isPosted && iconPosted ? iconPosted : icon}
+              {isPosted && (
+                <Check className="h-3 w-3 absolute -top-1 -right-1 bg-primary text-primary-foreground rounded-full p-0.5" />
+              )}
+            </Button>
+          );
+        })}
+      </div>
+
+      {/* Row 2: Video aspect ratio badges */}
+      <VideoAspectBadges bookId={bookId} bookName={bookName} />
     </div>
   );
 }

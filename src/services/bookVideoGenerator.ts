@@ -5,11 +5,17 @@
  * 1. Processing each page sequentially using generatePageVideo
  * 2. Concatenating all page video blobs into a single video
  * 3. Providing detailed progress feedback throughout
+ * 
+ * Performance optimizations:
+ * - Yields between pages to prevent browser freezing
+ * - Prefetches next page's image and TTS while current page processes
+ * - Sequential processing to manage memory (~50-100MB peak)
  */
 
 import { generatePageVideo, downloadBlob, type VideoResult } from './pageVideoGenerator';
 import type { Page } from '@/types/book';
 import { isContentPage } from '@/types/book';
+import { ttsRequestQueue } from '@/utils/ttsRequestQueue';
 
 export interface BookVideoConfig {
   bookId: string;
@@ -23,7 +29,7 @@ export interface BookVideoConfig {
 }
 
 export interface BookVideoProgress {
-  phase: 'preparing' | 'generating' | 'concatenating' | 'complete' | 'error' | 'cancelled';
+  phase: 'preparing' | 'prefetching' | 'generating' | 'concatenating' | 'complete' | 'error' | 'cancelled';
   currentPage: number;
   totalPages: number;
   currentLetter?: string;
@@ -32,6 +38,69 @@ export interface BookVideoProgress {
   overallProgress: number;   // 0-100 for entire book
   estimatedTimeRemaining?: number; // seconds
   error?: string;
+}
+
+interface PrefetchedData {
+  imageUrl: string;
+  image: HTMLImageElement | null;
+  ttsData: TTSData | null;
+  error?: string;
+}
+
+interface TTSData {
+  audio_base64: string;
+  wordTimings: Array<{ word: string; startTime: number; endTime: number }>;
+  originalText: string;
+}
+
+const DEFAULT_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'; // George
+
+/**
+ * Yield to browser event loop to prevent freezing
+ */
+function yieldToBrowser(): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, 0));
+}
+
+/**
+ * Load an image from URL
+ */
+function loadImage(url: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
+/**
+ * Fetch TTS audio with word timings from ElevenLabs edge function
+ */
+async function fetchTTSWithTimings(text: string, voiceId: string): Promise<TTSData> {
+  const response = await fetch(
+    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({
+        text,
+        voiceId,
+        withTimestamps: true,
+      }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`TTS request failed: ${response.status}`);
+  }
+
+  return response.json();
 }
 
 /**
@@ -54,6 +123,30 @@ function getPageNarrationText(page: Page): string {
 }
 
 /**
+ * Prefetch image and TTS for a page
+ */
+async function prefetchPageData(
+  page: Page,
+  imageUrl: string,
+  voiceId: string
+): Promise<PrefetchedData> {
+  const text = getPageNarrationText(page);
+  
+  try {
+    // Load image and TTS in parallel
+    const [image, ttsData] = await Promise.all([
+      loadImage(imageUrl),
+      ttsRequestQueue.enqueue(() => fetchTTSWithTimings(text, voiceId)),
+    ]);
+    
+    return { imageUrl, image, ttsData };
+  } catch (error) {
+    console.warn(`Prefetch failed for page ${page.letter}:`, error);
+    return { imageUrl, image: null, ttsData: null, error: String(error) };
+  }
+}
+
+/**
  * Generate a complete book video from all pages
  */
 export async function generateBookVideo(config: BookVideoConfig): Promise<VideoResult> {
@@ -62,6 +155,7 @@ export async function generateBookVideo(config: BookVideoConfig): Promise<VideoR
     pages,
     getImageUrl,
     aspectRatio,
+    voiceId = DEFAULT_VOICE_ID,
     onProgress,
     abortSignal,
   } = config;
@@ -88,6 +182,7 @@ export async function generateBookVideo(config: BookVideoConfig): Promise<VideoR
   });
 
   // Validate all pages have images
+  const pageImageUrls: string[] = [];
   for (let i = 0; i < contentPages.length; i++) {
     const page = contentPages[i];
     const imageUrl = getImageUrl(page);
@@ -95,6 +190,35 @@ export async function generateBookVideo(config: BookVideoConfig): Promise<VideoR
     if (!imageUrl) {
       throw new Error(`Page ${page.letter} (${page.title}) is missing an image`);
     }
+    pageImageUrls.push(imageUrl);
+  }
+
+  // Yield to browser after validation
+  await yieldToBrowser();
+
+  onProgress?.({
+    phase: 'prefetching',
+    currentPage: 0,
+    totalPages,
+    pageProgress: 0,
+    overallProgress: 3,
+  });
+
+  // Prefetch first 2 pages to get started
+  const prefetchCache = new Map<number, Promise<PrefetchedData>>();
+  const PREFETCH_AHEAD = 2;
+  
+  const startPrefetch = (pageIndex: number) => {
+    if (pageIndex < contentPages.length && !prefetchCache.has(pageIndex)) {
+      const page = contentPages[pageIndex];
+      const imageUrl = pageImageUrls[pageIndex];
+      prefetchCache.set(pageIndex, prefetchPageData(page, imageUrl, voiceId));
+    }
+  };
+
+  // Start prefetching first few pages
+  for (let i = 0; i < Math.min(PREFETCH_AHEAD, contentPages.length); i++) {
+    startPrefetch(i);
   }
 
   onProgress?.({
@@ -124,9 +248,14 @@ export async function generateBookVideo(config: BookVideoConfig): Promise<VideoR
     }
 
     const page = contentPages[i];
-    const imageUrl = getImageUrl(page);
+    const imageUrl = pageImageUrls[i];
     const text = getPageNarrationText(page);
     const pageStartTime = Date.now();
+
+    // Start prefetching next pages while processing current
+    for (let j = i + 1; j <= i + PREFETCH_AHEAD && j < contentPages.length; j++) {
+      startPrefetch(j);
+    }
 
     onProgress?.({
       phase: 'generating',
@@ -165,6 +294,12 @@ export async function generateBookVideo(config: BookVideoConfig): Promise<VideoR
       const pageTime = (Date.now() - pageStartTime) / 1000;
       pageTimings.push(pageTime);
 
+      // Clean up prefetch cache for completed pages
+      prefetchCache.delete(i);
+
+      // Yield to browser between pages to prevent freezing
+      await yieldToBrowser();
+
     } catch (error) {
       console.error(`Failed to generate video for page ${page.letter}:`, error);
       throw new Error(`Failed to generate video for page ${page.letter}: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -184,6 +319,9 @@ export async function generateBookVideo(config: BookVideoConfig): Promise<VideoR
     pageProgress: 100,
     overallProgress: 92,
   });
+
+  // Yield before concatenation
+  await yieldToBrowser();
 
   // Combine all video blobs
   // For WebM format, we can concatenate the blobs directly

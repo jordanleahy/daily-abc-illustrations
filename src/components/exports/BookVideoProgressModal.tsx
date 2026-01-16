@@ -24,6 +24,8 @@ function getPhaseLabel(phase: BookVideoProgress['phase']): string {
   switch (phase) {
     case 'preparing':
       return 'Preparing...';
+    case 'prefetching':
+      return 'Loading assets...';
     case 'generating':
       return 'Generating Pages';
     case 'concatenating':

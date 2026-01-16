@@ -43,7 +43,7 @@ const DIMENSIONS = {
   square: { width: 1080, height: 1080 },
 };
 
-const DEFAULT_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'; // George
+const DEFAULT_VOICE_ID = 'XrExE9yKIg1WjnnlVkGX'; // Matilda - warm, nurturing voice for toddlers
 
 /**
  * Detect iOS or Safari browser for MP4 compatibility

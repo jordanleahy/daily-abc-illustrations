@@ -22,6 +22,14 @@ interface PublicPageImageProps {
   enableVisibilityToggle?: boolean;
   /** Current word metadata for word detail view */
   currentWordData?: WordMetadata;
+  /** Callback for audio/TTS button */
+  onAudioClick?: () => void;
+  /** Callback for video/download button */
+  onVideoClick?: () => void;
+  /** Whether audio is currently playing */
+  isAudioPlaying?: boolean;
+  /** Whether video export is in progress */
+  isVideoExporting?: boolean;
 }
 
 export function PublicPageImage({ 
@@ -34,6 +42,10 @@ export function PublicPageImage({
   disableHoverEffects = false,
   enableVisibilityToggle = false,
   currentWordData,
+  onAudioClick,
+  onVideoClick,
+  isAudioPlaying,
+  isVideoExporting,
 }: PublicPageImageProps) {
   const { data: imageData, isLoading } = usePublicPageImage(pageId);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -66,6 +78,10 @@ export function PublicPageImage({
           disableHoverEffects={disableHoverEffects}
           enableVisibilityToggle={enableVisibilityToggle}
           currentWordData={currentWordData}
+          onAudioClick={onAudioClick}
+          onVideoClick={onVideoClick}
+          isAudioPlaying={isAudioPlaying}
+          isVideoExporting={isVideoExporting}
         />
       </div>
       

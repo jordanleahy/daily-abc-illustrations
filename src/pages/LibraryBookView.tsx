@@ -24,10 +24,13 @@ import { trackBookView } from '@/utils/bookViewTracking';
 import { Card } from '@/components/ui/card';
 import { BookImage } from '@/components/ui/book-image';
 import { UnifiedReadingView } from '@/components/reading';
+import type { ImageComponentControlsProps } from '@/components/reading';
 import { RoleDebugger } from '@/components/RoleDebugger';
 import { Calendar } from 'lucide-react';
 import { isValidUUID } from '@/utils/uuid';
 import { useEffect } from 'react';
+import type { Page } from '@/types/book';
+import type { WordMetadata } from '@/utils/wordParser';
 
 export default function LibraryBookView() {
   const { bookId } = useParams<{ bookId: string }>();
@@ -134,7 +137,7 @@ export default function LibraryBookView() {
       showUploadButton={false}
       entryPoint={entryPoint}
       getImageUrl={(page) => imageMap[page.page_number]}
-      imageComponent={(page, pageIndex, currentWordData) => (
+      imageComponent={(page: Page, _pageIndex: number, currentWordData?: WordMetadata, controlsProps?: ImageComponentControlsProps) => (
         <BookImage
           src={imageMap[page.page_number]}
           alt={`Letter ${page.letter} - ${page.title}`}
@@ -143,6 +146,10 @@ export default function LibraryBookView() {
           disableHoverEffects={true}
           enableVisibilityToggle={true}
           currentWordData={currentWordData}
+          onAudioClick={controlsProps?.onAudioClick}
+          onVideoClick={controlsProps?.onVideoClick}
+          isAudioPlaying={controlsProps?.isAudioPlaying}
+          isVideoExporting={controlsProps?.isVideoExporting}
         />
       )}
     />

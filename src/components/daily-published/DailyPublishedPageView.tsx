@@ -111,7 +111,7 @@ export function DailyPublishedPageView({
       expiresAt={expiresAt}
       onTapToAdvance={true}
       contentId={contentId}
-      imageComponent={(currentPage, pageIndex, currentWordData) => (
+      imageComponent={(currentPage, pageIndex, currentWordData, controlsProps) => (
         <PublicPageImage 
           pageId={currentPage.id} 
           bookId={bookId}
@@ -119,6 +119,10 @@ export function DailyPublishedPageView({
           disableHoverEffects={true}
           enableVisibilityToggle={true}
           currentWordData={currentWordData}
+          onAudioClick={controlsProps?.onAudioClick}
+          onVideoClick={controlsProps?.onVideoClick}
+          isAudioPlaying={controlsProps?.isAudioPlaying}
+          isVideoExporting={controlsProps?.isVideoExporting}
         />
       )}
     />

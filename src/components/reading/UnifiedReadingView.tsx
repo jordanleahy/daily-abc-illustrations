@@ -56,7 +56,7 @@
  * ============================================================================
  */
 
-import { useState, useEffect, useMemo, ReactNode } from 'react';
+import { useState, useEffect, useMemo, ReactNode, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { reorderPagesFromStartingLetter } from '@/utils/pageNavigation';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
@@ -67,6 +67,9 @@ import { useKidPoints } from '@/hooks/useKidPoints';
 import { useCompleteBookHabit } from '@/hooks/useCompleteBookHabit';
 import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { useTTSPrefetch } from '@/hooks/useTTSPrefetch';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
+import { generatePageVideo, downloadBlob } from '@/services/pageVideoGenerator';
+import { toast } from 'sonner';
 // Toast notifications removed
 import { MetaHead } from '@/components/common';
 import { ReadingHeader } from '@/components/layout/ReadingHeader';
@@ -75,6 +78,14 @@ import { RewardContainer } from '@/components/ui/reward-container';
 import type { Page } from '@/types/book';
 import { isContentPage } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
+
+/** Props passed to image component for overlay controls */
+export interface ImageComponentControlsProps {
+  onAudioClick?: () => void;
+  onVideoClick?: () => void;
+  isAudioPlaying?: boolean;
+  isVideoExporting?: boolean;
+}
 
 /**
  * Configuration interface for UnifiedReadingView
@@ -128,7 +139,12 @@ export interface UnifiedReadingViewConfig {
   customHeader?: ReactNode;
   
   /** Custom image renderer. All views pass PublicPageImage component */
-  imageComponent?: (page: Page, pageIndex: number, currentWordData?: import('@/utils/wordParser').WordMetadata) => ReactNode;
+  imageComponent?: (
+    page: Page, 
+    pageIndex: number, 
+    currentWordData?: import('@/utils/wordParser').WordMetadata,
+    controlsProps?: ImageComponentControlsProps
+  ) => ReactNode;
   
   /** Custom drawer content. Currently unused (showSwipeDrawer is false) */
   drawerContent?: (page: Page) => ReactNode;
@@ -227,6 +243,8 @@ export function UnifiedReadingView({
   const [sessionStarted, setSessionStarted] = useState(false);
   const [initialPageTracked, setInitialPageTracked] = useState(false);
   const [selectedKidId, setSelectedKidId] = useState<string | undefined>(undefined);
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [videoProgress, setVideoProgress] = useState(0);
   
   // Prefetch TTS audio for upcoming pages (improves audio playback performance)
   useTTSPrefetch(reorderedPages, currentPageIndex, { enabled: reorderedPages.length > 0 });
@@ -267,6 +285,69 @@ export function UnifiedReadingView({
     initialWordIndex: savedState?.currentWordIndex,
     initialWordStatuses: savedState?.wordStatuses,
   });
+  
+  // TTS hook for overlay audio controls
+  const { speak, stop, isLoading: isTTSLoading, isPlaying: isTTSPlaying } = useTextToSpeech({
+    onWordChange: useCallback((ttsWordIndex: number) => {
+      if (currentPageWords && readingState.setCurrentWordIndex) {
+        const targetIndex = Math.min(ttsWordIndex, currentPageWords.length - 1);
+        if (targetIndex >= 0) {
+          readingState.setCurrentWordIndex(targetIndex);
+        }
+      }
+    }, [currentPageWords, readingState]),
+  });
+  
+  // Audio handler for image overlay
+  const handleAudioClick = useCallback(() => {
+    if (isTTSPlaying) {
+      stop();
+    } else if (currentPage?.title) {
+      speak(currentPage.title, true);
+    }
+  }, [isTTSPlaying, stop, speak, currentPage?.title]);
+  
+  // Video export handler for image overlay
+  const handleVideoExport = useCallback(async () => {
+    const imageUrl = getImageUrl?.(currentPage);
+    const overlayText = currentPage?.title;
+    
+    if (!imageUrl || !overlayText) {
+      toast.error('No image or text available for video');
+      return;
+    }
+
+    setIsGeneratingVideo(true);
+    setVideoProgress(0);
+
+    try {
+      const result = await generatePageVideo({
+        imageUrl,
+        text: overlayText,
+        aspectRatio: 'portrait',
+        onProgress: setVideoProgress,
+      });
+
+      const extension = result.format === 'mp4' ? 'mp4' : 'webm';
+      const filename = `${currentPage?.letter || 'page'}-${overlayText.toLowerCase().replace(/\s+/g, '-')}.${extension}`;
+      downloadBlob(result.blob, filename);
+      toast.success(`Video exported as ${extension.toUpperCase()}!`);
+    } catch (error) {
+      console.error('Video export failed:', error);
+      toast.error('Failed to generate video. Your browser may not support video recording.');
+    } finally {
+      setIsGeneratingVideo(false);
+      setVideoProgress(0);
+    }
+  }, [currentPage, getImageUrl]);
+  
+  // Image component controls props
+  const imageControlsProps: ImageComponentControlsProps = {
+    onAudioClick: currentPage?.title ? handleAudioClick : undefined,
+    onVideoClick: getImageUrl?.(currentPage) && currentPage?.title ? handleVideoExport : undefined,
+    isAudioPlaying: isTTSPlaying,
+    isVideoExporting: isGeneratingVideo,
+  };
   
   // Save word learning state when page changes
   useEffect(() => {
@@ -466,7 +547,7 @@ export function UnifiedReadingView({
               onToggleOverlayVisibility={readingState.toggleOverlayVisibility}
               isPreferencesLoading={readingState.isPreferencesLoading}
               showDismissButton={false}
-              imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex, currentPageWords?.[readingState.currentWordIndex]) : undefined}
+              imageComponent={imageComponent ? imageComponent(currentPage, currentPageIndex, currentPageWords?.[readingState.currentWordIndex], imageControlsProps) : undefined}
               hideBottomOverlay={true}
             />
             </div>

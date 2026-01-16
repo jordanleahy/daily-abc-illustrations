@@ -15,7 +15,7 @@
  */
 
 import { useState } from 'react';
-import { Eye, EyeOff, BookOpen, Copy, Check } from 'lucide-react';
+import { Eye, EyeOff, BookOpen, Copy, Check, Volume2, Video } from 'lucide-react';
 import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 import { createImageLoadTracker } from '@/utils/performanceMonitoring';
 import { WordDetailView } from '@/components/reading/WordDetailView';
@@ -41,6 +41,14 @@ interface BookImageProps {
   interceptCopyAsImage?: boolean;
   /** Current word metadata for word detail view */
   currentWordData?: WordMetadata;
+  /** Callback for audio/TTS button */
+  onAudioClick?: () => void;
+  /** Callback for video/download button */
+  onVideoClick?: () => void;
+  /** Whether audio is currently playing */
+  isAudioPlaying?: boolean;
+  /** Whether video export is in progress */
+  isVideoExporting?: boolean;
 }
 
 /**
@@ -61,6 +69,10 @@ export function BookImage({
   enableCopyButton = false,
   interceptCopyAsImage = false,
   currentWordData,
+  onAudioClick,
+  onVideoClick,
+  isAudioPlaying = false,
+  isVideoExporting = false,
 }: BookImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasBeenTapped, setHasBeenTapped] = useState(false);
@@ -234,7 +246,7 @@ export function BookImage({
       )}
 
       {/* Control buttons - appear after first tap */}
-      {(enableVisibilityToggle || enableCopyButton) && hasBeenTapped && imageLoaded && (
+      {(enableVisibilityToggle || enableCopyButton || onAudioClick || onVideoClick) && hasBeenTapped && imageLoaded && (
         <div className="absolute top-3 right-3 flex flex-col gap-2 z-10">
           {/* Copy button */}
           {enableCopyButton && (
@@ -275,6 +287,35 @@ export function BookImage({
               aria-label={showWordDetail ? "Hide word details" : "Show word details"}
             >
               <BookOpen className="w-5 h-5" />
+            </button>
+          )}
+          {/* Audio/TTS button */}
+          {onAudioClick && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAudioClick();
+              }}
+              className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full backdrop-blur-sm text-white shadow-lg transition-all duration-200 active:scale-95 ${
+                isAudioPlaying ? 'bg-primary/70 hover:bg-primary/80' : 'bg-black/50 hover:bg-black/70'
+              }`}
+              aria-label={isAudioPlaying ? "Stop audio" : "Play audio"}
+            >
+              <Volume2 className="w-5 h-5" />
+            </button>
+          )}
+          {/* Video/Download button */}
+          {onVideoClick && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onVideoClick();
+              }}
+              disabled={isVideoExporting}
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 disabled:opacity-50"
+              aria-label="Export video"
+            >
+              <Video className="w-5 h-5" />
             </button>
           )}
         </div>

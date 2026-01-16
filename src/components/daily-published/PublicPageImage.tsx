@@ -24,8 +24,8 @@ interface PublicPageImageProps {
   currentWordData?: WordMetadata;
   /** Callback for audio/TTS button */
   onAudioClick?: () => void;
-  /** Callback for video/download button */
-  onVideoClick?: () => void;
+  /** Callback for video/download button with aspect ratio */
+  onVideoClick?: (aspectRatio: 'portrait' | 'landscape' | 'square') => void;
   /** Whether audio is currently playing */
   isAudioPlaying?: boolean;
   /** Whether video export is in progress */

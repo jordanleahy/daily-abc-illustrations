@@ -79,10 +79,13 @@ import type { Page } from '@/types/book';
 import { isContentPage } from '@/types/book';
 import type { SEOMetadata } from '@/types/openGraph';
 
+/** Aspect ratio options for video export */
+export type VideoAspectRatio = 'portrait' | 'landscape' | 'square';
+
 /** Props passed to image component for overlay controls */
 export interface ImageComponentControlsProps {
   onAudioClick?: () => void;
-  onVideoClick?: () => void;
+  onVideoClick?: (aspectRatio: VideoAspectRatio) => void;
   isAudioPlaying?: boolean;
   isVideoExporting?: boolean;
 }
@@ -307,8 +310,8 @@ export function UnifiedReadingView({
     }
   }, [isTTSPlaying, stop, speak, currentPage?.title]);
   
-  // Video export handler for image overlay
-  const handleVideoExport = useCallback(async () => {
+  // Video export handler for image overlay - now accepts aspect ratio
+  const handleVideoExport = useCallback(async (aspectRatio: VideoAspectRatio = 'portrait') => {
     const imageUrl = getImageUrl?.(currentPage);
     const overlayText = currentPage?.title;
     
@@ -324,12 +327,12 @@ export function UnifiedReadingView({
       const result = await generatePageVideo({
         imageUrl,
         text: overlayText,
-        aspectRatio: 'portrait',
+        aspectRatio,
         onProgress: setVideoProgress,
       });
 
       const extension = result.format === 'mp4' ? 'mp4' : 'webm';
-      const filename = `${currentPage?.letter || 'page'}-${overlayText.toLowerCase().replace(/\s+/g, '-')}.${extension}`;
+      const filename = `${currentPage?.letter || 'page'}-${overlayText.toLowerCase().replace(/\s+/g, '-')}-${aspectRatio}.${extension}`;
       downloadBlob(result.blob, filename);
       toast.success(`Video exported as ${extension.toUpperCase()}!`);
     } catch (error) {

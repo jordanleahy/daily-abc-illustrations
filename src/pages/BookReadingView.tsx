@@ -15,6 +15,7 @@
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { useBook } from '@/hooks/useBook';
 import { useBookPages } from '@/hooks/useBookPages';
+import { useBookPageImages } from '@/hooks/useBookPageImages';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { UnifiedReadingView } from '@/components/reading';
@@ -31,6 +32,8 @@ export default function BookReadingView() {
   
   const { data: book, isLoading: isLoadingBook, error: bookError } = useBook(safeId);
   const { pages = [], loading: isLoadingPages } = useBookPages(safeId);
+  const { data: bookPageData } = useBookPageImages(safeId);
+  const imageMap = bookPageData?.images ?? {};
   
   // Get starting page index from location state
   const startingPageIndex = location.state?.startingPageIndex ?? 0;
@@ -137,6 +140,7 @@ export default function BookReadingView() {
       showUploadButton={false}
       showSwipeDrawer={false}
       entryPoint={entryPoint}
+      getImageUrl={(page) => imageMap[page.page_number]}
       imageComponent={(page, pageIndex, currentWordData) => (
         <PublicPageImage 
           pageId={page.id}

@@ -1,10 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight, Volume2, Loader2, Video } from 'lucide-react';
+import { ThumbsDown, ThumbsUp, ChevronLeft, ChevronRight } from 'lucide-react';
 import { WordCarousel } from './WordCarousel';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
-import { generatePageVideo, downloadBlob } from '@/services/pageVideoGenerator';
-import { toast } from 'sonner';
 import type { PageType } from '@/types/book';
 
 interface UnifiedReadingControlsProps {
@@ -45,9 +43,6 @@ interface UnifiedReadingControlsProps {
   // Word sync callback - called when TTS is speaking a word
   onTTSWordChange?: (wordIndex: number) => void;
   
-  // Video export props
-  imageUrl?: string;
-  pageLetter?: string;
 }
 
 export function UnifiedReadingControls({
@@ -74,12 +69,7 @@ export function UnifiedReadingControls({
   pageType,
   speakText,
   onTTSWordChange,
-  imageUrl,
-  pageLetter,
 }: UnifiedReadingControlsProps) {
-  // Video export state
-  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
-  const [videoProgress, setVideoProgress] = useState(0);
   // Handle word change from TTS - maps TTS word index to overlay word index
   const handleTTSWordChange = useCallback((ttsWordIndex: number, word: string) => {
     if (!overlayWords || !onTTSWordChange) return;
@@ -115,45 +105,6 @@ export function UnifiedReadingControls({
       }
     }
   }, [isPlaying, ttsWordIndex, onTTSWordChange, overlayWords]);
-
-  const handleSpeakClick = () => {
-    if (isPlaying) {
-      stop();
-    } else if (speakText) {
-      speak(speakText, true); // Enable word sync
-    }
-  };
-
-  const handleExportVideo = async () => {
-    if (!imageUrl || !overlayText) {
-      toast.error('No image or text available for video');
-      return;
-    }
-
-    setIsGeneratingVideo(true);
-    setVideoProgress(0);
-
-    try {
-      const result = await generatePageVideo({
-        imageUrl,
-        text: overlayText,
-        aspectRatio: 'portrait',
-        onProgress: setVideoProgress,
-      });
-
-      // Use correct extension based on format
-      const extension = result.format === 'mp4' ? 'mp4' : 'webm';
-      const filename = `${pageLetter || 'page'}-${overlayText.toLowerCase().replace(/\s+/g, '-')}.${extension}`;
-      downloadBlob(result.blob, filename);
-      toast.success(`Video exported as ${extension.toUpperCase()}!`);
-    } catch (error) {
-      console.error('Video export failed:', error);
-      toast.error('Failed to generate video. Your browser may not support video recording.');
-    } finally {
-      setIsGeneratingVideo(false);
-      setVideoProgress(0);
-    }
-  };
 
   return (
     <div 
@@ -304,48 +255,6 @@ export function UnifiedReadingControls({
           </button>
         </div>
 
-        {/* TTS Audio Button */}
-        {speakText && (
-          <button
-            onClick={handleSpeakClick}
-            disabled={isLoading}
-            className={`flex items-center justify-center h-14 w-14 rounded-full transition-all active:scale-[0.98] shrink-0 ${
-              isLoading
-                ? 'opacity-50 cursor-not-allowed bg-muted/30'
-                : isPlaying
-                  ? 'bg-primary/20 hover:bg-primary/30 cursor-pointer'
-                  : 'bg-muted/30 hover:bg-muted/50 cursor-pointer'
-            }`}
-            aria-label={isPlaying ? "Stop reading" : "Read aloud"}
-          >
-            {isLoading ? (
-              <Loader2 className="w-6 h-6 text-foreground animate-spin" />
-            ) : (
-              <Volume2 className={`w-6 h-6 ${isPlaying ? 'text-primary animate-pulse' : 'text-foreground'}`} />
-            )}
-          </button>
-        )}
-
-        {/* Video Export Button */}
-        {imageUrl && overlayText && (
-          <button
-            onClick={handleExportVideo}
-            disabled={isGeneratingVideo}
-            className={`flex items-center justify-center h-14 w-14 rounded-full transition-all active:scale-[0.98] shrink-0 ${
-              isGeneratingVideo
-                ? 'opacity-50 cursor-not-allowed bg-muted/30'
-                : 'bg-muted/30 hover:bg-muted/50 cursor-pointer'
-            }`}
-            aria-label={isGeneratingVideo ? `Generating video ${videoProgress}%` : "Export video"}
-            title={isGeneratingVideo ? `Generating video ${videoProgress}%` : "Export video with audio"}
-          >
-            {isGeneratingVideo ? (
-              <Loader2 className="w-6 h-6 text-foreground animate-spin" />
-            ) : (
-              <Video className="w-6 h-6 text-foreground" />
-            )}
-          </button>
-        )}
       </div>
     </div>
   );

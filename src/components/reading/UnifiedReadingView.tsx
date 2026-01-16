@@ -581,8 +581,6 @@ export function UnifiedReadingView({
           isLastWord={readingState.currentWordIndex === currentPageWords.length - 1}
           hasReachedLastWord={readingState.hasReachedLastWord}
           speakText={currentPage.title}
-          imageUrl={getImageUrl?.(currentPage)}
-          pageLetter={currentPage.letter}
         />
     </div>
   );

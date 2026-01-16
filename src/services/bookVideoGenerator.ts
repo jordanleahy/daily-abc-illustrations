@@ -70,7 +70,7 @@ const DIMENSIONS = {
   square: { width: 1080, height: 1080 },
 };
 
-const DEFAULT_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb';
+const DEFAULT_VOICE_ID = 'XrExE9yKIg1WjnnlVkGX'; // Matilda - warm, nurturing voice for toddlers
 
 function yieldToBrowser(): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, 0));

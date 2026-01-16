@@ -24,7 +24,7 @@ class TTSManager {
   private callbacks: PlaybackCallbacks = {};
   private currentWordIndex: number = -1;
 
-  private static readonly DEFAULT_VOICE_ID = 'pFZP5JQG7iQjIQuC4Bku';
+  private static readonly DEFAULT_VOICE_ID = 'XrExE9yKIg1WjnnlVkGX'; // Matilda - warm, nurturing voice for toddlers
 
   /**
    * Play text with word synchronization

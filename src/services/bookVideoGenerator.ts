@@ -2,17 +2,14 @@
  * Book Video Generator Service
  * 
  * Generates a complete book video by:
- * 1. Processing each page sequentially using generatePageVideo
- * 2. Concatenating all page video blobs into a single video
- * 3. Providing detailed progress feedback throughout
+ * 1. Setting up a single MediaRecorder session
+ * 2. Processing each page sequentially (drawing frames + playing audio)
+ * 3. Recording everything into one continuous video
  * 
- * Performance optimizations:
- * - Yields between pages to prevent browser freezing
- * - Prefetches next page's image and TTS while current page processes
- * - Sequential processing to manage memory (~50-100MB peak)
+ * Key: We use ONE MediaRecorder for the entire book to avoid
+ * concatenation issues (video files can't be merged by joining bytes)
  */
 
-import { generatePageVideo, downloadBlob, type VideoResult } from './pageVideoGenerator';
 import type { Page } from '@/types/book';
 import { isContentPage } from '@/types/book';
 import { ttsRequestQueue } from '@/utils/ttsRequestQueue';
@@ -29,42 +26,87 @@ export interface BookVideoConfig {
 }
 
 export interface BookVideoProgress {
-  phase: 'preparing' | 'prefetching' | 'generating' | 'concatenating' | 'complete' | 'error' | 'cancelled';
+  phase: 'preparing' | 'prefetching' | 'generating' | 'complete' | 'error' | 'cancelled';
   currentPage: number;
   totalPages: number;
   currentLetter?: string;
   currentPageTitle?: string;
-  pageProgress: number;      // 0-100 for current page
-  overallProgress: number;   // 0-100 for entire book
-  estimatedTimeRemaining?: number; // seconds
+  pageProgress: number;
+  overallProgress: number;
+  estimatedTimeRemaining?: number;
   error?: string;
 }
 
-interface PrefetchedData {
-  imageUrl: string;
-  image: HTMLImageElement | null;
-  ttsData: TTSData | null;
-  error?: string;
+export interface VideoResult {
+  blob: Blob;
+  format: 'mp4' | 'webm';
+  mimeType: string;
+}
+
+interface WordTiming {
+  word: string;
+  startTime: number;
+  endTime: number;
 }
 
 interface TTSData {
   audio_base64: string;
-  wordTimings: Array<{ word: string; startTime: number; endTime: number }>;
+  wordTimings: WordTiming[];
   originalText: string;
 }
 
-const DEFAULT_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb'; // George
+interface PageData {
+  page: Page;
+  imageUrl: string;
+  image: HTMLImageElement;
+  text: string;
+  ttsData: TTSData;
+  audioBuffer: AudioBuffer;
+}
 
-/**
- * Yield to browser event loop to prevent freezing
- */
+const DIMENSIONS = {
+  portrait: { width: 1080, height: 1920 },
+  landscape: { width: 1920, height: 1080 },
+  square: { width: 1080, height: 1080 },
+};
+
+const DEFAULT_VOICE_ID = 'JBFqnCBsd6RMkjVDRZzb';
+
 function yieldToBrowser(): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, 0));
 }
 
-/**
- * Load an image from URL
- */
+function isIOSOrSafari(): boolean {
+  const ua = navigator.userAgent;
+  const isIOS = /iPad|iPhone|iPod/.test(ua) || 
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  const isSafari = /^((?!chrome|android).)*safari/i.test(ua);
+  return isIOS || isSafari;
+}
+
+function getBestMimeType(): { mimeType: string; format: 'mp4' | 'webm' } {
+  if (isIOSOrSafari()) {
+    const mp4Types = [
+      'video/mp4;codecs=avc1.42E01E,mp4a.40.2',
+      'video/mp4;codecs=avc1.4d002a',
+      'video/mp4',
+    ];
+    for (const type of mp4Types) {
+      if (MediaRecorder.isTypeSupported(type)) {
+        return { mimeType: type, format: 'mp4' };
+      }
+    }
+  }
+  
+  if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
+    return { mimeType: 'video/webm;codecs=vp9,opus', format: 'webm' };
+  }
+  if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
+    return { mimeType: 'video/webm;codecs=vp8,opus', format: 'webm' };
+  }
+  return { mimeType: 'video/webm', format: 'webm' };
+}
+
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -75,9 +117,6 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-/**
- * Fetch TTS audio with word timings from ElevenLabs edge function
- */
 async function fetchTTSWithTimings(text: string, voiceId: string): Promise<TTSData> {
   const response = await fetch(
     `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/elevenlabs-tts`,
@@ -103,51 +142,132 @@ async function fetchTTSWithTimings(text: string, voiceId: string): Promise<TTSDa
   return response.json();
 }
 
-/**
- * Get narration text from a page
- * Uses page.title (e.g., "A is for Apple") or falls back to mainConcept
- */
+async function base64ToAudioBuffer(
+  base64: string,
+  audioContext: AudioContext
+): Promise<AudioBuffer> {
+  const binaryString = atob(base64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return audioContext.decodeAudioData(bytes.buffer);
+}
+
 function getPageNarrationText(page: Page): string {
   if (page.title) {
     return page.title;
   }
-  
-  // Fallback to mainConcept from content if available
   const content = page.content as { mainConcept?: string } | undefined;
   if (content?.mainConcept) {
     return content.mainConcept;
   }
-  
-  // Last resort: use letter
   return `Letter ${page.letter}`;
 }
 
-/**
- * Prefetch image and TTS for a page
- */
-async function prefetchPageData(
-  page: Page,
-  imageUrl: string,
-  voiceId: string
-): Promise<PrefetchedData> {
-  const text = getPageNarrationText(page);
+function drawFrame(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  words: string[],
+  wordTimings: WordTiming[],
+  currentTime: number
+) {
+  const { width, height } = ctx.canvas;
+
+  ctx.clearRect(0, 0, width, height);
+
+  // Draw background image (cover)
+  const imgRatio = image.width / image.height;
+  const canvasRatio = width / height;
   
-  try {
-    // Load image and TTS in parallel
-    const [image, ttsData] = await Promise.all([
-      loadImage(imageUrl),
-      ttsRequestQueue.enqueue(() => fetchTTSWithTimings(text, voiceId)),
-    ]);
-    
-    return { imageUrl, image, ttsData };
-  } catch (error) {
-    console.warn(`Prefetch failed for page ${page.letter}:`, error);
-    return { imageUrl, image: null, ttsData: null, error: String(error) };
+  let drawWidth, drawHeight, drawX, drawY;
+  
+  if (imgRatio > canvasRatio) {
+    drawHeight = height;
+    drawWidth = height * imgRatio;
+    drawX = (width - drawWidth) / 2;
+    drawY = 0;
+  } else {
+    drawWidth = width;
+    drawHeight = width / imgRatio;
+    drawX = 0;
+    drawY = (height - drawHeight) / 2;
   }
+  
+  ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+
+  const safePadding = Math.max(16, Math.round(width * 0.03));
+  const barHeight = Math.round(height * 0.1);
+  const barY = height - barHeight - safePadding;
+  
+  ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+  ctx.fillRect(safePadding, barY, width - safePadding * 2, barHeight);
+
+  // Find current word index
+  let currentWordIndex = -1;
+  for (let i = 0; i < wordTimings.length; i++) {
+    if (currentTime >= wordTimings[i].startTime && currentTime <= wordTimings[i].endTime) {
+      currentWordIndex = i;
+      break;
+    }
+  }
+
+  const maxTextWidth = width - safePadding * 4;
+  let fontSize = Math.round(height * 0.04);
+  ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`;
+  ctx.textBaseline = 'middle';
+
+  const getTextMetrics = () => {
+    const wordWidths = words.map(w => ctx.measureText(w).width);
+    const spaceWidth = ctx.measureText(' ').width;
+    const totalWidth = wordWidths.reduce((sum, w) => sum + w, 0) + spaceWidth * (words.length - 1);
+    return { wordWidths, spaceWidth, totalWidth };
+  };
+
+  let metrics = getTextMetrics();
+  
+  while (metrics.totalWidth > maxTextWidth && fontSize > 12) {
+    fontSize -= 2;
+    ctx.font = `bold ${fontSize}px system-ui, -apple-system, sans-serif`;
+    metrics = getTextMetrics();
+  }
+
+  const { wordWidths, spaceWidth, totalWidth } = metrics;
+
+  let x = Math.max(safePadding * 2, (width - totalWidth) / 2);
+  const y = barY + barHeight / 2;
+
+  words.forEach((word, i) => {
+    const wordWidth = wordWidths[i];
+    const isHighlighted = i === currentWordIndex;
+
+    if (isHighlighted) {
+      const padding = fontSize * 0.3;
+      const pillHeight = fontSize * 1.4;
+      
+      ctx.fillStyle = 'rgba(250, 204, 21, 0.9)';
+      ctx.beginPath();
+      ctx.roundRect(
+        x - padding,
+        y - pillHeight / 2,
+        wordWidth + padding * 2,
+        pillHeight,
+        8
+      );
+      ctx.fill();
+      
+      ctx.fillStyle = '#1f2937';
+    } else {
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    }
+
+    ctx.fillText(word, x, y);
+    x += wordWidth + spaceWidth;
+  });
 }
 
 /**
- * Generate a complete book video from all pages
+ * Generate a complete book video using a single recording session
  */
 export async function generateBookVideo(config: BookVideoConfig): Promise<VideoResult> {
   const {
@@ -160,7 +280,6 @@ export async function generateBookVideo(config: BookVideoConfig): Promise<VideoR
     abortSignal,
   } = config;
 
-  // Filter to content pages only (skip cover, educational pages, etc.)
   const contentPages = pages.filter(isContentPage);
   const totalPages = contentPages.length;
 
@@ -168,11 +287,6 @@ export async function generateBookVideo(config: BookVideoConfig): Promise<VideoR
     throw new Error('No content pages found in book');
   }
 
-  // Track timing for estimates
-  const pageTimings: number[] = [];
-  let mimeType: string | null = null;
-
-  // Preparation phase (0-5%)
   onProgress?.({
     phase: 'preparing',
     currentPage: 0,
@@ -183,190 +297,240 @@ export async function generateBookVideo(config: BookVideoConfig): Promise<VideoR
 
   // Validate all pages have images
   const pageImageUrls: string[] = [];
-  for (let i = 0; i < contentPages.length; i++) {
-    const page = contentPages[i];
+  for (const page of contentPages) {
     const imageUrl = getImageUrl(page);
-    
     if (!imageUrl) {
       throw new Error(`Page ${page.letter} (${page.title}) is missing an image`);
     }
     pageImageUrls.push(imageUrl);
   }
 
-  // Yield to browser after validation
   await yieldToBrowser();
 
+  // Prefetch all page data upfront
   onProgress?.({
     phase: 'prefetching',
-    currentPage: 0,
-    totalPages,
-    pageProgress: 0,
-    overallProgress: 3,
-  });
-
-  // Prefetch first 2 pages to get started
-  const prefetchCache = new Map<number, Promise<PrefetchedData>>();
-  const PREFETCH_AHEAD = 2;
-  
-  const startPrefetch = (pageIndex: number) => {
-    if (pageIndex < contentPages.length && !prefetchCache.has(pageIndex)) {
-      const page = contentPages[pageIndex];
-      const imageUrl = pageImageUrls[pageIndex];
-      prefetchCache.set(pageIndex, prefetchPageData(page, imageUrl, voiceId));
-    }
-  };
-
-  // Start prefetching first few pages
-  for (let i = 0; i < Math.min(PREFETCH_AHEAD, contentPages.length); i++) {
-    startPrefetch(i);
-  }
-
-  onProgress?.({
-    phase: 'preparing',
     currentPage: 0,
     totalPages,
     pageProgress: 0,
     overallProgress: 5,
   });
 
-  // Generation phase (5-90%)
-  const videoBlobs: Blob[] = [];
-  const generationProgressRange = 85; // 5% to 90%
-  const progressPerPage = generationProgressRange / totalPages;
+  const audioContext = new AudioContext();
+  const pagesData: PageData[] = [];
 
-  for (let i = 0; i < contentPages.length; i++) {
-    // Check for cancellation
-    if (abortSignal?.aborted) {
+  try {
+    // Load all resources in parallel batches
+    const BATCH_SIZE = 3;
+    for (let batchStart = 0; batchStart < contentPages.length; batchStart += BATCH_SIZE) {
+      if (abortSignal?.aborted) {
+        throw new Error('Video generation cancelled');
+      }
+
+      const batchEnd = Math.min(batchStart + BATCH_SIZE, contentPages.length);
+      const batchPromises: Promise<PageData>[] = [];
+
+      for (let i = batchStart; i < batchEnd; i++) {
+        const page = contentPages[i];
+        const imageUrl = pageImageUrls[i];
+        const text = getPageNarrationText(page);
+
+        batchPromises.push(
+          (async (): Promise<PageData> => {
+            const [image, ttsData] = await Promise.all([
+              loadImage(imageUrl),
+              ttsRequestQueue.enqueue(() => fetchTTSWithTimings(text, voiceId)),
+            ]);
+            const audioBuffer = await base64ToAudioBuffer(ttsData.audio_base64, audioContext);
+            return { page, imageUrl, image, text, ttsData, audioBuffer };
+          })()
+        );
+      }
+
+      const batchResults = await Promise.all(batchPromises);
+      pagesData.push(...batchResults);
+
+      const prefetchProgress = 5 + ((batchEnd / contentPages.length) * 15);
       onProgress?.({
-        phase: 'cancelled',
-        currentPage: i,
+        phase: 'prefetching',
+        currentPage: batchEnd,
         totalPages,
-        pageProgress: 0,
-        overallProgress: 5 + (i * progressPerPage),
+        pageProgress: Math.round((batchEnd / contentPages.length) * 100),
+        overallProgress: Math.round(prefetchProgress),
       });
-      throw new Error('Video generation cancelled');
+
+      await yieldToBrowser();
     }
 
-    const page = contentPages[i];
-    const imageUrl = pageImageUrls[i];
-    const text = getPageNarrationText(page);
-    const pageStartTime = Date.now();
+    // Set up canvas
+    const { width, height } = DIMENSIONS[aspectRatio];
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d')!;
 
-    // Start prefetching next pages while processing current
-    for (let j = i + 1; j <= i + PREFETCH_AHEAD && j < contentPages.length; j++) {
-      startPrefetch(j);
+    // Set up recording
+    const audioDestination = audioContext.createMediaStreamDestination();
+    const canvasStream = canvas.captureStream(60);
+    audioDestination.stream.getAudioTracks().forEach(track => {
+      canvasStream.addTrack(track);
+    });
+
+    const { mimeType, format } = getBestMimeType();
+    const mediaRecorder = new MediaRecorder(canvasStream, {
+      mimeType,
+      videoBitsPerSecond: 5000000,
+    });
+
+    const chunks: Blob[] = [];
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) {
+        chunks.push(e.data);
+      }
+    };
+
+    // Calculate total duration
+    const INTRO_HOLD = 1.0;
+    const OUTRO_HOLD = 1.0;
+    const PAGE_GAP = 0.5;
+
+    let totalDuration = 0;
+    const pageStartTimes: number[] = [];
+    
+    for (let i = 0; i < pagesData.length; i++) {
+      pageStartTimes.push(totalDuration);
+      const pageDuration = INTRO_HOLD + pagesData[i].audioBuffer.duration + OUTRO_HOLD;
+      totalDuration += pageDuration + (i < pagesData.length - 1 ? PAGE_GAP : 0);
     }
 
     onProgress?.({
       phase: 'generating',
-      currentPage: i + 1,
+      currentPage: 1,
       totalPages,
-      currentLetter: page.letter,
-      currentPageTitle: page.title,
       pageProgress: 0,
-      overallProgress: 5 + (i * progressPerPage),
-      estimatedTimeRemaining: calculateEstimatedTime(pageTimings, totalPages - i),
+      overallProgress: 20,
     });
 
-    try {
-      const result = await generatePageVideo({
-        imageUrl: imageUrl!,
-        text,
-        aspectRatio,
-        onProgress: (pageProgress) => {
+    // Start recording and schedule all audio
+    return new Promise((resolve, reject) => {
+      if (abortSignal?.aborted) {
+        reject(new Error('Video generation cancelled'));
+        return;
+      }
+
+      mediaRecorder.onstop = () => {
+        const blob = new Blob(chunks, { type: mimeType });
+        audioContext.close();
+        resolve({ blob, format, mimeType });
+      };
+
+      mediaRecorder.onerror = (e) => {
+        audioContext.close();
+        reject(e);
+      };
+
+      mediaRecorder.start();
+
+      // Schedule all audio playback
+      const recordingStartTime = audioContext.currentTime;
+      const audioSources: AudioBufferSourceNode[] = [];
+
+      for (let i = 0; i < pagesData.length; i++) {
+        const pageData = pagesData[i];
+        const audioSource = audioContext.createBufferSource();
+        audioSource.buffer = pageData.audioBuffer;
+        audioSource.connect(audioDestination);
+        
+        const audioStartTime = recordingStartTime + pageStartTimes[i] + INTRO_HOLD;
+        audioSource.start(audioStartTime);
+        audioSources.push(audioSource);
+      }
+
+      const animationStartTime = performance.now();
+      let animationId: number;
+      let lastPageIndex = -1;
+
+      const animate = () => {
+        if (abortSignal?.aborted) {
+          cancelAnimationFrame(animationId);
+          audioSources.forEach(s => { try { s.stop(); } catch {} });
+          mediaRecorder.stop();
+          reject(new Error('Video generation cancelled'));
+          return;
+        }
+
+        const elapsed = (performance.now() - animationStartTime) / 1000;
+
+        // Find current page
+        let currentPageIndex = 0;
+        for (let i = pagesData.length - 1; i >= 0; i--) {
+          if (elapsed >= pageStartTimes[i]) {
+            currentPageIndex = i;
+            break;
+          }
+        }
+
+        const pageData = pagesData[currentPageIndex];
+        const pageElapsed = elapsed - pageStartTimes[currentPageIndex];
+        const audioTime = pageElapsed - INTRO_HOLD;
+        const words = pageData.text.split(/\s+/).filter(Boolean);
+
+        drawFrame(ctx, pageData.image, words, pageData.ttsData.wordTimings, audioTime);
+
+        // Update progress
+        if (currentPageIndex !== lastPageIndex) {
+          lastPageIndex = currentPageIndex;
+        }
+
+        const overallProgress = 20 + ((elapsed / totalDuration) * 75);
+        const pageDuration = INTRO_HOLD + pageData.audioBuffer.duration + OUTRO_HOLD;
+        const pageProgress = Math.min(100, (pageElapsed / pageDuration) * 100);
+
+        onProgress?.({
+          phase: 'generating',
+          currentPage: currentPageIndex + 1,
+          totalPages,
+          currentLetter: pageData.page.letter,
+          currentPageTitle: pageData.page.title,
+          pageProgress: Math.round(pageProgress),
+          overallProgress: Math.round(Math.min(95, overallProgress)),
+          estimatedTimeRemaining: Math.max(0, Math.round(totalDuration - elapsed)),
+        });
+
+        if (elapsed < totalDuration) {
+          animationId = requestAnimationFrame(animate);
+        } else {
+          cancelAnimationFrame(animationId);
+          mediaRecorder.stop();
           onProgress?.({
-            phase: 'generating',
-            currentPage: i + 1,
+            phase: 'complete',
+            currentPage: totalPages,
             totalPages,
-            currentLetter: page.letter,
-            currentPageTitle: page.title,
-            pageProgress,
-            overallProgress: 5 + (i * progressPerPage) + (pageProgress / 100 * progressPerPage),
-            estimatedTimeRemaining: calculateEstimatedTime(pageTimings, totalPages - i - (pageProgress / 100)),
+            pageProgress: 100,
+            overallProgress: 100,
           });
-        },
-      });
+        }
+      };
 
-      videoBlobs.push(result.blob);
-      mimeType = result.mimeType;
-      
-      // Track timing for better estimates
-      const pageTime = (Date.now() - pageStartTime) / 1000;
-      pageTimings.push(pageTime);
-
-      // Clean up prefetch cache for completed pages
-      prefetchCache.delete(i);
-
-      // Yield to browser between pages to prevent freezing
-      await yieldToBrowser();
-
-    } catch (error) {
-      console.error(`Failed to generate video for page ${page.letter}:`, error);
-      throw new Error(`Failed to generate video for page ${page.letter}: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    }
+      animationId = requestAnimationFrame(animate);
+    });
+  } catch (error) {
+    audioContext.close();
+    throw error;
   }
-
-  // Check for cancellation before concatenation
-  if (abortSignal?.aborted) {
-    throw new Error('Video generation cancelled');
-  }
-
-  // Concatenation phase (90-100%)
-  onProgress?.({
-    phase: 'concatenating',
-    currentPage: totalPages,
-    totalPages,
-    pageProgress: 100,
-    overallProgress: 92,
-  });
-
-  // Yield before concatenation
-  await yieldToBrowser();
-
-  // Combine all video blobs
-  // For WebM format, we can concatenate the blobs directly
-  const combinedBlob = new Blob(videoBlobs, { type: mimeType || 'video/webm' });
-
-  onProgress?.({
-    phase: 'complete',
-    currentPage: totalPages,
-    totalPages,
-    pageProgress: 100,
-    overallProgress: 100,
-  });
-
-  const format = mimeType?.includes('mp4') ? 'mp4' : 'webm';
-
-  return {
-    blob: combinedBlob,
-    format,
-    mimeType: mimeType || 'video/webm',
-  };
 }
 
-/**
- * Calculate estimated time remaining based on page timings
- */
-function calculateEstimatedTime(pageTimings: number[], remainingPages: number): number {
-  if (pageTimings.length === 0) {
-    // Default estimate: 10 seconds per page
-    return remainingPages * 10;
-  }
-  
-  // Use rolling average of last 3 pages for better accuracy
-  const recentTimings = pageTimings.slice(-3);
-  const avgTime = recentTimings.reduce((a, b) => a + b, 0) / recentTimings.length;
-  
-  return Math.round(avgTime * remainingPages);
-}
-
-/**
- * Download the generated book video
- */
 export function downloadBookVideo(result: VideoResult, bookName: string, aspectRatio: string): void {
   const sanitizedName = bookName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const extension = result.format === 'mp4' ? 'mp4' : 'webm';
   const filename = `${sanitizedName}-${aspectRatio}.${extension}`;
   
-  downloadBlob(result.blob, filename);
+  const url = URL.createObjectURL(result.blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
 }

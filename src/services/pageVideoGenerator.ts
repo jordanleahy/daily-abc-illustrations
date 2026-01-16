@@ -10,6 +10,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { saveAndOpenVideo, type VideoUploadResult } from './videoStorageService';
 
 interface WordTiming {
   word: string;
@@ -411,22 +412,33 @@ export async function generatePageVideo(config: PageVideoConfig): Promise<VideoR
 }
 
 /**
- * Open a blob in a new tab for playback (user can save from there)
+ * Save video to Supabase storage and open in new tab
  */
-export function downloadBlob(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  // Open in new tab - user can play and save from browser
-  const newTab = window.open(url, '_blank');
+export async function downloadBlob(
+  blob: Blob, 
+  filename: string,
+  bookId?: string
+): Promise<VideoUploadResult> {
+  const result = await saveAndOpenVideo(blob, filename, bookId);
   
-  // If popup was blocked, fall back to download
-  if (!newTab) {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // If storage failed, fall back to local download
+  if (!result.success) {
+    console.warn('Storage upload failed, falling back to local:', result.error);
+    const url = URL.createObjectURL(blob);
+    const newTab = window.open(url, '_blank');
+    
+    if (!newTab) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   }
-  // Note: Don't revoke URL immediately for new tab - browser needs it for playback
+  
+  return result;
 }
+
+export { type VideoUploadResult };

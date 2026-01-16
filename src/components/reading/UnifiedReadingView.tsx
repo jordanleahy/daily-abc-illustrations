@@ -341,8 +341,9 @@ export function UnifiedReadingView({
 
       const extension = result.format === 'mp4' ? 'mp4' : 'webm';
       const filename = `${currentPage?.letter || 'page'}-${overlayText.toLowerCase().replace(/\s+/g, '-')}-${aspectRatio}.${extension}`;
-      downloadBlob(result.blob, filename);
-      toast.success(`Video exported as ${extension.toUpperCase()}!`);
+      const bookId = book?.book_id || book?.id;
+      await downloadBlob(result.blob, filename, bookId);
+      toast.success(`Video saved to cloud!`);
     } catch (error) {
       console.error('Video export failed:', error);
       toast.error('Failed to generate video. Your browser may not support video recording.');
@@ -385,8 +386,9 @@ export function UnifiedReadingView({
         abortSignal: bookVideoAbortController.current.signal,
       });
 
-      downloadBookVideo(result, bookName, aspectRatio);
-      toast.success('Book video exported successfully!');
+      const bookId = book.book_id || book.id;
+      await downloadBookVideo(result, bookName, aspectRatio, bookId);
+      toast.success('Book video saved to cloud!');
     } catch (error) {
       console.error('Book video export failed:', error);
       if (error instanceof Error && error.message === 'Video generation cancelled') {

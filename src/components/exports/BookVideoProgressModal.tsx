@@ -20,16 +20,14 @@ function formatTime(seconds: number): string {
   return `${minutes}m ${remainingSeconds}s`;
 }
 
-function getPhaseLabel(phase: BookVideoProgress['phase']): string {
+function getPhaseLabel(phase: BookVideoProgress['phase'], progress?: BookVideoProgress | null): string {
   switch (phase) {
     case 'preparing':
       return 'Preparing...';
     case 'prefetching':
-      return 'Loading assets...';
+      return `Loading resources (${progress?.currentPage ?? 0}/${progress?.totalPages ?? 0})...`;
     case 'generating':
-      return 'Generating Pages';
-    case 'concatenating':
-      return 'Finalizing Video';
+      return `Recording page ${progress?.currentPage ?? 0} of ${progress?.totalPages ?? 0}`;
     case 'complete':
       return 'Complete!';
     case 'cancelled':
@@ -82,7 +80,7 @@ export function BookVideoProgressModal({
         <div className="space-y-4 py-4">
           {/* Phase indicator */}
           <div className="text-sm text-muted-foreground text-center">
-            {progress && getPhaseLabel(progress.phase)}
+            {progress && getPhaseLabel(progress.phase, progress)}
           </div>
 
           {/* Current page info */}

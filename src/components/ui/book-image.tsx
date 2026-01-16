@@ -15,13 +15,15 @@
  */
 
 import { useState } from 'react';
-import { Eye, EyeOff, BookOpen, Copy, Check, Volume2, Video, Smartphone, Monitor, Square } from 'lucide-react';
+import { Eye, EyeOff, BookOpen, Copy, Check, Volume2, Video, Smartphone, Monitor, Square, ArrowLeft, Infinity } from 'lucide-react';
 import { optimizeImageUrl, generateSrcSet } from '@/utils/imageOptimization';
 import { createImageLoadTracker } from '@/utils/performanceMonitoring';
 import { WordDetailView } from '@/components/reading/WordDetailView';
 import { copyImageToClipboard } from '@/utils/clipboardHelpers';
 import { useToast } from '@/hooks/use-toast';
 import type { WordMetadata } from '@/utils/wordParser';
+
+type AspectRatio = 'portrait' | 'landscape' | 'square';
 
 interface BookImageProps {
   src: string | undefined;
@@ -43,12 +45,16 @@ interface BookImageProps {
   currentWordData?: WordMetadata;
   /** Callback for audio/TTS button */
   onAudioClick?: () => void;
-  /** Callback for video/download button with aspect ratio selection */
-  onVideoClick?: (aspectRatio: 'portrait' | 'landscape' | 'square') => void;
+  /** Callback for video/download button with aspect ratio selection (single page) */
+  onVideoClick?: (aspectRatio: AspectRatio) => void;
+  /** Callback for full book video export with aspect ratio selection */
+  onBookVideoClick?: (aspectRatio: AspectRatio) => void;
   /** Whether audio is currently playing */
   isAudioPlaying?: boolean;
-  /** Whether video export is in progress */
+  /** Whether video export is in progress (single page) */
   isVideoExporting?: boolean;
+  /** Whether book video export is in progress */
+  isBookVideoExporting?: boolean;
 }
 
 /**
@@ -71,8 +77,10 @@ export function BookImage({
   currentWordData,
   onAudioClick,
   onVideoClick,
+  onBookVideoClick,
   isAudioPlaying = false,
   isVideoExporting = false,
+  isBookVideoExporting = false,
 }: BookImageProps) {
   const [imageLoaded, setImageLoaded] = useState(false);
   const [hasBeenTapped, setHasBeenTapped] = useState(false);
@@ -81,6 +89,7 @@ export function BookImage({
   const [isCopyingImage, setIsCopyingImage] = useState(false);
   const [imageCopied, setImageCopied] = useState(false);
   const [showAspectRatioOptions, setShowAspectRatioOptions] = useState(false);
+  const [selectedAspectRatio, setSelectedAspectRatio] = useState<AspectRatio | null>(null);
   const { toast } = useToast();
   
   // Runtime validation (development only)
@@ -312,29 +321,34 @@ export function BookImage({
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  setShowAspectRatioOptions(prev => !prev);
+                  if (selectedAspectRatio) {
+                    // Reset to aspect ratio selection
+                    setSelectedAspectRatio(null);
+                  } else {
+                    setShowAspectRatioOptions(prev => !prev);
+                  }
                 }}
-                disabled={isVideoExporting}
+                disabled={isVideoExporting || isBookVideoExporting}
                 className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full backdrop-blur-sm text-white shadow-lg transition-all duration-200 active:scale-95 disabled:opacity-50 ${
-                  showAspectRatioOptions ? 'bg-primary/70 hover:bg-primary/80' : 'bg-black/50 hover:bg-black/70'
+                  showAspectRatioOptions || selectedAspectRatio ? 'bg-primary/70 hover:bg-primary/80' : 'bg-black/50 hover:bg-black/70'
                 }`}
                 aria-label="Export video options"
               >
                 <Video className="w-5 h-5" />
               </button>
               
-              {/* Aspect ratio options - shown when video button is clicked */}
-              {showAspectRatioOptions && !isVideoExporting && (
+              {/* Step 1: Aspect ratio options - shown when video button is clicked */}
+              {showAspectRatioOptions && !isVideoExporting && !isBookVideoExporting && !selectedAspectRatio && (
                 <div className="flex flex-col gap-1.5 animate-in slide-in-from-top-2 duration-200">
                   {/* Portrait 9:16 */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowAspectRatioOptions(false);
-                      onVideoClick('portrait');
+                      setSelectedAspectRatio('portrait');
                     }}
                     className="flex items-center gap-2 px-3 py-2 rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 text-xs font-medium"
-                    aria-label="Export 9:16 portrait video"
+                    aria-label="Select 9:16 portrait"
                   >
                     <Smartphone className="w-4 h-4" />
                     <span>9:16</span>
@@ -345,10 +359,10 @@ export function BookImage({
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowAspectRatioOptions(false);
-                      onVideoClick('landscape');
+                      setSelectedAspectRatio('landscape');
                     }}
                     className="flex items-center gap-2 px-3 py-2 rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 text-xs font-medium"
-                    aria-label="Export 16:9 landscape video"
+                    aria-label="Select 16:9 landscape"
                   >
                     <Monitor className="w-4 h-4" />
                     <span>16:9</span>
@@ -359,14 +373,72 @@ export function BookImage({
                     onClick={(e) => {
                       e.stopPropagation();
                       setShowAspectRatioOptions(false);
-                      onVideoClick('square');
+                      setSelectedAspectRatio('square');
                     }}
                     className="flex items-center gap-2 px-3 py-2 rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 text-xs font-medium"
-                    aria-label="Export 1:1 square video"
+                    aria-label="Select 1:1 square"
                   >
                     <Square className="w-4 h-4" />
                     <span>1:1</span>
                   </button>
+                </div>
+              )}
+
+              {/* Step 2: Export scope options - shown after aspect ratio is selected */}
+              {selectedAspectRatio && !isVideoExporting && !isBookVideoExporting && (
+                <div className="flex flex-col gap-1.5 animate-in slide-in-from-top-2 duration-200">
+                  {/* Back button to re-select aspect ratio */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedAspectRatio(null);
+                      setShowAspectRatioOptions(true);
+                    }}
+                    className="flex items-center gap-2 px-3 py-2 rounded-full bg-black/30 backdrop-blur-sm text-white/70 shadow-lg transition-all duration-200 hover:bg-black/50 active:scale-95 text-xs font-medium"
+                    aria-label="Back to aspect ratio selection"
+                  >
+                    <ArrowLeft className="w-3 h-3" />
+                    <span>
+                      {selectedAspectRatio === 'portrait' ? '9:16' : selectedAspectRatio === 'landscape' ? '16:9' : '1:1'}
+                    </span>
+                  </button>
+
+                  {/* Single page export */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onVideoClick(selectedAspectRatio);
+                      setSelectedAspectRatio(null);
+                    }}
+                    className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95 font-bold text-lg"
+                    aria-label="Export single page video"
+                    title="Export this page"
+                  >
+                    1
+                  </button>
+                  
+                  {/* Full book export */}
+                  {onBookVideoClick && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onBookVideoClick(selectedAspectRatio);
+                        setSelectedAspectRatio(null);
+                      }}
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-black/50 backdrop-blur-sm text-white shadow-lg transition-all duration-200 hover:bg-black/70 active:scale-95"
+                      aria-label="Export full book video"
+                      title="Export entire book"
+                    >
+                      <Infinity className="w-5 h-5" />
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Loading state for video export */}
+              {(isVideoExporting || isBookVideoExporting) && (
+                <div className="flex items-center gap-2 px-3 py-2 rounded-full bg-primary/70 backdrop-blur-sm text-white shadow-lg text-xs font-medium animate-pulse">
+                  {isBookVideoExporting ? 'Generating book...' : 'Generating...'}
                 </div>
               )}
             </div>

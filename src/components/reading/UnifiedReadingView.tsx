@@ -56,7 +56,7 @@
  * ============================================================================
  */
 
-import { useState, useEffect, useMemo, ReactNode, useCallback } from 'react';
+import { useState, useEffect, useMemo, ReactNode, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { reorderPagesFromStartingLetter } from '@/utils/pageNavigation';
 import { useReadingSessionAnalytics } from '@/hooks/useReadingSessionAnalytics';
@@ -69,6 +69,8 @@ import { useFeatureAccess } from '@/hooks/useFeatureAccess';
 import { useTTSPrefetch } from '@/hooks/useTTSPrefetch';
 import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { generatePageVideo, downloadBlob } from '@/services/pageVideoGenerator';
+import { generateBookVideo, downloadBookVideo, type BookVideoProgress } from '@/services/bookVideoGenerator';
+import { BookVideoProgressModal } from '@/components/exports/BookVideoProgressModal';
 import { toast } from 'sonner';
 // Toast notifications removed
 import { MetaHead } from '@/components/common';
@@ -86,8 +88,10 @@ export type VideoAspectRatio = 'portrait' | 'landscape' | 'square';
 export interface ImageComponentControlsProps {
   onAudioClick?: () => void;
   onVideoClick?: (aspectRatio: VideoAspectRatio) => void;
+  onBookVideoClick?: (aspectRatio: VideoAspectRatio) => void;
   isAudioPlaying?: boolean;
   isVideoExporting?: boolean;
+  isBookVideoExporting?: boolean;
 }
 
 /**
@@ -248,6 +252,10 @@ export function UnifiedReadingView({
   const [selectedKidId, setSelectedKidId] = useState<string | undefined>(undefined);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
   const [videoProgress, setVideoProgress] = useState(0);
+  const [isGeneratingBookVideo, setIsGeneratingBookVideo] = useState(false);
+  const [bookVideoProgress, setBookVideoProgress] = useState<BookVideoProgress | null>(null);
+  const [showBookVideoModal, setShowBookVideoModal] = useState(false);
+  const bookVideoAbortController = useRef<AbortController | null>(null);
   
   // Prefetch TTS audio for upcoming pages (improves audio playback performance)
   useTTSPrefetch(reorderedPages, currentPageIndex, { enabled: reorderedPages.length > 0 });
@@ -343,13 +351,78 @@ export function UnifiedReadingView({
       setVideoProgress(0);
     }
   }, [currentPage, getImageUrl]);
+
+  // Book video export handler
+  const handleBookVideoExport = useCallback(async (aspectRatio: VideoAspectRatio = 'landscape') => {
+    if (!book || !reorderedPages.length || !getImageUrl) {
+      toast.error('No book data available for video export');
+      return;
+    }
+
+    // Create abort controller for cancellation
+    bookVideoAbortController.current = new AbortController();
+    
+    setIsGeneratingBookVideo(true);
+    setShowBookVideoModal(true);
+    setBookVideoProgress({
+      phase: 'preparing',
+      currentPage: 0,
+      totalPages: reorderedPages.length,
+      pageProgress: 0,
+      overallProgress: 0,
+    });
+
+    try {
+      const bookName = book.book_name || book.name || book.title || 'book';
+      
+      const result = await generateBookVideo({
+        bookId: book.book_id || book.id,
+        bookName,
+        pages: reorderedPages,
+        getImageUrl,
+        aspectRatio,
+        onProgress: setBookVideoProgress,
+        abortSignal: bookVideoAbortController.current.signal,
+      });
+
+      downloadBookVideo(result, bookName, aspectRatio);
+      toast.success('Book video exported successfully!');
+    } catch (error) {
+      console.error('Book video export failed:', error);
+      if (error instanceof Error && error.message === 'Video generation cancelled') {
+        toast.info('Video generation cancelled');
+      } else {
+        toast.error('Failed to generate book video');
+        setBookVideoProgress(prev => prev ? { ...prev, phase: 'error', error: error instanceof Error ? error.message : 'Unknown error' } : null);
+      }
+    } finally {
+      setIsGeneratingBookVideo(false);
+      bookVideoAbortController.current = null;
+    }
+  }, [book, reorderedPages, getImageUrl]);
+
+  // Cancel book video export
+  const handleCancelBookVideo = useCallback(() => {
+    bookVideoAbortController.current?.abort();
+    setShowBookVideoModal(false);
+    setIsGeneratingBookVideo(false);
+    setBookVideoProgress(null);
+  }, []);
+
+  // Close book video modal
+  const handleCloseBookVideoModal = useCallback(() => {
+    setShowBookVideoModal(false);
+    setBookVideoProgress(null);
+  }, []);
   
   // Image component controls props
   const imageControlsProps: ImageComponentControlsProps = {
     onAudioClick: currentPage?.title ? handleAudioClick : undefined,
     onVideoClick: getImageUrl?.(currentPage) && currentPage?.title ? handleVideoExport : undefined,
+    onBookVideoClick: getImageUrl && reorderedPages.length > 1 ? handleBookVideoExport : undefined,
     isAudioPlaying: isTTSPlaying,
     isVideoExporting: isGeneratingVideo,
+    isBookVideoExporting: isGeneratingBookVideo,
   };
   
   // Save word learning state when page changes
@@ -585,6 +658,14 @@ export function UnifiedReadingView({
           hasReachedLastWord={readingState.hasReachedLastWord}
           speakText={currentPage.title}
         />
+
+      {/* Book Video Progress Modal */}
+      <BookVideoProgressModal
+        isOpen={showBookVideoModal}
+        onClose={handleCloseBookVideoModal}
+        onCancel={handleCancelBookVideo}
+        progress={bookVideoProgress}
+      />
     </div>
   );
 }

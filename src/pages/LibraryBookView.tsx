@@ -147,11 +147,8 @@ export default function LibraryBookView() {
           enableVisibilityToggle={true}
           currentWordData={currentWordData}
           onAudioClick={controlsProps?.onAudioClick}
-          onVideoClick={controlsProps?.onVideoClick}
-          onBookVideoClick={controlsProps?.onBookVideoClick}
           isAudioPlaying={controlsProps?.isAudioPlaying}
-          isVideoExporting={controlsProps?.isVideoExporting}
-          isBookVideoExporting={controlsProps?.isBookVideoExporting}
+          // Video export disabled for library books - only available in My Books
         />
       )}
     />

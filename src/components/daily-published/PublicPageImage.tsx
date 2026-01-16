@@ -26,10 +26,14 @@ interface PublicPageImageProps {
   onAudioClick?: () => void;
   /** Callback for video/download button with aspect ratio */
   onVideoClick?: (aspectRatio: 'portrait' | 'landscape' | 'square') => void;
+  /** Callback for full book video export with aspect ratio */
+  onBookVideoClick?: (aspectRatio: 'portrait' | 'landscape' | 'square') => void;
   /** Whether audio is currently playing */
   isAudioPlaying?: boolean;
   /** Whether video export is in progress */
   isVideoExporting?: boolean;
+  /** Whether book video export is in progress */
+  isBookVideoExporting?: boolean;
 }
 
 export function PublicPageImage({ 
@@ -44,8 +48,10 @@ export function PublicPageImage({
   currentWordData,
   onAudioClick,
   onVideoClick,
+  onBookVideoClick,
   isAudioPlaying,
   isVideoExporting,
+  isBookVideoExporting,
 }: PublicPageImageProps) {
   const { data: imageData, isLoading } = usePublicPageImage(pageId);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -80,8 +86,10 @@ export function PublicPageImage({
           currentWordData={currentWordData}
           onAudioClick={onAudioClick}
           onVideoClick={onVideoClick}
+          onBookVideoClick={onBookVideoClick}
           isAudioPlaying={isAudioPlaying}
           isVideoExporting={isVideoExporting}
+          isBookVideoExporting={isBookVideoExporting}
         />
       </div>
       

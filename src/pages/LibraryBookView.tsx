@@ -148,8 +148,10 @@ export default function LibraryBookView() {
           currentWordData={currentWordData}
           onAudioClick={controlsProps?.onAudioClick}
           onVideoClick={controlsProps?.onVideoClick}
+          onBookVideoClick={controlsProps?.onBookVideoClick}
           isAudioPlaying={controlsProps?.isAudioPlaying}
           isVideoExporting={controlsProps?.isVideoExporting}
+          isBookVideoExporting={controlsProps?.isBookVideoExporting}
         />
       )}
     />

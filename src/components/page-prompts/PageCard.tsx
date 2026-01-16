@@ -245,8 +245,8 @@ export function PageCard({ page, bookId, preloadedImageUrl, onInsertBefore, onIn
 
       const extension = result.format === 'mp4' ? 'mp4' : 'webm';
       const filename = `${page.letter || page.page_number}-${page.title.toLowerCase().replace(/\s+/g, '-')}.${extension}`;
-      downloadBlob(result.blob, filename);
-      toast.success(`Video exported as ${extension.toUpperCase()}!`);
+      await downloadBlob(result.blob, filename, bookId);
+      toast.success(`Video saved to cloud!`);
     } catch (error) {
       console.error('Video export failed:', error);
       toast.error('Failed to generate video. Your browser may not support video recording.');

@@ -13,6 +13,8 @@
 import type { Page } from '@/types/book';
 import { isContentPage } from '@/types/book';
 import { ttsRequestQueue } from '@/utils/ttsRequestQueue';
+import { saveAndOpenVideo, type VideoUploadResult } from './videoStorageService';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface BookVideoConfig {
   bookId: string;
@@ -539,24 +541,36 @@ export async function generateBookVideo(config: BookVideoConfig): Promise<VideoR
   }
 }
 
-export function downloadBookVideo(result: VideoResult, bookName: string, aspectRatio: string): void {
+export async function downloadBookVideo(
+  result: VideoResult, 
+  bookName: string, 
+  aspectRatio: string,
+  bookId?: string
+): Promise<VideoUploadResult> {
   const sanitizedName = bookName.toLowerCase().replace(/[^a-z0-9]+/g, '-');
   const extension = result.format === 'mp4' ? 'mp4' : 'webm';
   const filename = `${sanitizedName}-${aspectRatio}.${extension}`;
   
-  const url = URL.createObjectURL(result.blob);
-  // Open in new tab - user can play and save from browser
-  const newTab = window.open(url, '_blank');
+  const uploadResult = await saveAndOpenVideo(result.blob, filename, bookId);
   
-  // If popup was blocked, fall back to download
-  if (!newTab) {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
+  // If storage failed, fall back to local download
+  if (!uploadResult.success) {
+    console.warn('Storage upload failed, falling back to local:', uploadResult.error);
+    const url = URL.createObjectURL(result.blob);
+    const newTab = window.open(url, '_blank');
+    
+    if (!newTab) {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
   }
-  // Note: Don't revoke URL immediately for new tab - browser needs it for playback
+  
+  return uploadResult;
 }
+
+export { type VideoUploadResult };

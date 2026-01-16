@@ -16,6 +16,7 @@ interface VideoExportButtonProps {
   text: string;
   pageLetter: string;
   pageTitle?: string;
+  bookId?: string;
 }
 
 type AspectRatio = 'portrait' | 'landscape' | 'square';
@@ -31,6 +32,7 @@ export function VideoExportButton({
   text,
   pageLetter,
   pageTitle,
+  bookId,
 }: VideoExportButtonProps) {
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -58,8 +60,8 @@ export function VideoExportButton({
         ? `${pageLetter}-is-for-${pageTitle.toLowerCase().replace(/\s+/g, '-')}.${extension}`
         : `${pageLetter}-page.${extension}`;
 
-      downloadBlob(result.blob, filename);
-      toast.success(`Video exported as ${extension.toUpperCase()}!`);
+      await downloadBlob(result.blob, filename, bookId);
+      toast.success(`Video saved to cloud!`);
     } catch (error) {
       console.error('Video export failed:', error);
       toast.error('Failed to generate video. Your browser may not support video recording.');

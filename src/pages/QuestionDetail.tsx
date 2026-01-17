@@ -1,12 +1,34 @@
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, HelpCircle, Check, X, Database, List } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Check, X, Database, List, Plus, Trash2 } from 'lucide-react';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
+import { useAddCity, useDeleteCity } from '@/hooks/useCityOptions';
 import type { Question } from '@/hooks/useQuestions';
 
 interface QuestionOption {
@@ -17,6 +39,16 @@ interface QuestionOption {
 const QuestionDetail = () => {
   const navigate = useNavigate();
   const { questionId } = useParams<{ questionId: string }>();
+  
+  // State for dialogs
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [deleteOption, setDeleteOption] = useState<QuestionOption | null>(null);
+  const [newCityLabel, setNewCityLabel] = useState('');
+  const [newCityId, setNewCityId] = useState('');
+  
+  // Mutations for cities table
+  const addCity = useAddCity();
+  const deleteCity = useDeleteCity();
 
   // Fetch the question
   const { data: question, isLoading: isLoadingQuestion } = useQuery({
@@ -198,11 +230,25 @@ const QuestionDetail = () => {
         {/* Options List */}
         {question.options_table && (
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0">
               <CardTitle className="flex items-center gap-2 text-lg">
                 <List className="h-5 w-5 text-primary" />
                 Available Options ({options?.length || 0})
               </CardTitle>
+              {question.options_table === 'cities' && (
+                <Button 
+                  size="sm" 
+                  onClick={() => {
+                    setNewCityLabel('');
+                    setNewCityId('');
+                    setIsAddDialogOpen(true);
+                  }}
+                  className="gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  Add City
+                </Button>
+              )}
             </CardHeader>
             <CardContent>
               {isLoadingOptions ? (
@@ -216,12 +262,22 @@ const QuestionDetail = () => {
                   {options.map((option) => (
                     <div 
                       key={option.value}
-                      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors group"
                     >
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{option.label}</p>
                         <p className="text-xs text-muted-foreground font-mono truncate">{option.value}</p>
                       </div>
+                      {question.options_table === 'cities' && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => setDeleteOption(option)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -232,6 +288,96 @@ const QuestionDetail = () => {
           </Card>
         )}
       </div>
+
+      {/* Add City Dialog */}
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New City</DialogTitle>
+            <DialogDescription>
+              Add a new city to the available options. The ID should be unique and use UPPER_SNAKE_CASE.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="cityLabel">City Name</Label>
+              <Input
+                id="cityLabel"
+                placeholder="e.g., San Francisco"
+                value={newCityLabel}
+                onChange={(e) => {
+                  setNewCityLabel(e.target.value);
+                  // Auto-generate ID from label
+                  const generatedId = e.target.value
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9\s]/g, '')
+                    .replace(/\s+/g, '_')
+                    .trim();
+                  setNewCityId(generatedId);
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="cityId">City ID</Label>
+              <Input
+                id="cityId"
+                placeholder="e.g., SAN_FRANCISCO"
+                value={newCityId}
+                onChange={(e) => setNewCityId(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
+                className="font-mono"
+              />
+              <p className="text-xs text-muted-foreground">
+                Unique identifier used in the system
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={() => {
+                if (newCityLabel && newCityId) {
+                  addCity.mutate(
+                    { id: newCityId, label: newCityLabel },
+                    { onSuccess: () => setIsAddDialogOpen(false) }
+                  );
+                }
+              }}
+              disabled={!newCityLabel || !newCityId || addCity.isPending}
+            >
+              {addCity.isPending ? 'Adding...' : 'Add City'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteOption} onOpenChange={(open) => !open && setDeleteOption(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove "{deleteOption?.label}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will hide the city from the available options. The data is preserved and can be restored later by an administrator.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (deleteOption) {
+                  deleteCity.mutate(deleteOption.value, {
+                    onSuccess: () => setDeleteOption(null),
+                  });
+                }
+              }}
+            >
+              {deleteCity.isPending ? 'Removing...' : 'Remove'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </StandardPageLayout>
   );
 };

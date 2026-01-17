@@ -14,11 +14,10 @@ import { useCities } from '@/hooks/useCities';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { 
-  Database, Plus, Settings, MapPin, Palette, GraduationCap, Users, Type, 
-  ChevronDown, ChevronRight, Pencil, Trash2, Mountain, Sun, Shirt, Sparkles,
+  Database, Plus, MapPin, Palette, GraduationCap, Users, Type, 
+  ChevronRight, Mountain, Sun, Shirt, Sparkles,
   List, X, HelpCircle
 } from 'lucide-react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
   Dialog,
   DialogContent,
@@ -132,25 +131,12 @@ export function QuestionsRegistryManager() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { data: questions, isLoading } = useQuestions();
-  const [expandedQuestions, setExpandedQuestions] = useState<Set<string>>(new Set());
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [deleteQuestion, setDeleteQuestion] = useState<Question | null>(null);
   const [formData, setFormData] = useState<QuestionFormData>(emptyFormData);
   const [newOptionLabel, setNewOptionLabel] = useState('');
   const [newOptionValue, setNewOptionValue] = useState('');
-
-  const toggleExpanded = (id: string) => {
-    setExpandedQuestions(prev => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
-  };
 
   // Create mutation
   const createMutation = useMutation({
@@ -354,148 +340,52 @@ export function QuestionsRegistryManager() {
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
-            {(questions || []).map(question => {
-              const isExpanded = expandedQuestions.has(question.id);
-              
-              return (
-                <Collapsible key={question.id} open={isExpanded} onOpenChange={() => toggleExpanded(question.id)}>
-                  <div className="border rounded-lg overflow-hidden">
-                    <CollapsibleTrigger asChild>
-                      <button className="w-full flex items-center justify-between p-4 hover:bg-accent/5 transition-colors text-left">
-                        <div className="flex items-center gap-3">
-                          <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
-                            {getQuestionIcon(question.icon_name)}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{question.label}</span>
-                              <Badge variant={question.is_active ? 'default' : 'secondary'} className="text-xs">
-                                {question.is_active ? 'Active' : 'Inactive'}
-                              </Badge>
-                            </div>
-                            {question.description && (
-                              <p className="text-sm text-muted-foreground">
-                                {question.description}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {question.options_table && (
-                            <Badge variant="outline" className="text-xs gap-1">
-                              <Database className="h-3 w-3" />
-                              {question.options_table}
-                            </Badge>
-                          )}
-                          {question.static_options && question.static_options.length > 0 && (
-                            <Badge variant="outline" className="text-xs gap-1">
-                              <List className="h-3 w-3" />
-                              {question.static_options.length} options
-                            </Badge>
-                          )}
-                          {isExpanded ? (
-                            <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                          ) : (
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                          )}
-                        </div>
-                      </button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="px-4 pb-4 pt-0 border-t bg-muted/30">
-                        <div className="pt-3 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                Placeholder Key
-                              </span>
-                              <code className="block mt-1 text-sm font-mono bg-background px-2 py-1 rounded border">
-                                {question.placeholder_key}
-                              </code>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  navigate(`/agents/questions/${question.id}`);
-                                }}
-                              >
-                                <Settings className="h-4 w-4 mr-1" />
-                                Manage Options
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  openEditDialog(question);
-                                }}
-                              >
-                                <Pencil className="h-4 w-4 mr-1" />
-                                Edit
-                              </Button>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-destructive hover:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setDeleteQuestion(question);
-                                }}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </div>
-                          
-                          {question.options_table && (
-                            <div>
-                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                Current Options
-                              </span>
-                              <OptionPreview tableName={question.options_table} />
-                            </div>
-                          )}
-
-                          {question.static_options && question.static_options.length > 0 && (
-                            <div>
-                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                Static Options
-                              </span>
-                              <div className="flex flex-wrap gap-1.5 mt-2">
-                                {question.static_options.slice(0, 8).map((opt, i) => (
-                                  <Badge key={i} variant="secondary" className="text-xs">
-                                    {opt.label}
-                                  </Badge>
-                                ))}
-                                {question.static_options.length > 8 && (
-                                  <Badge variant="outline" className="text-xs">
-                                    +{question.static_options.length - 8} more
-                                  </Badge>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {!question.options_table && (!question.static_options || question.static_options.length === 0) && (
-                            <div>
-                              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                                Free Text
-                              </span>
-                              <p className="text-sm text-muted-foreground mt-1">
-                                This question accepts free-form text input.
-                              </p>
-                            </div>
-                          )}
-                        </div>
+            {(questions || []).map(question => (
+              <div 
+                key={question.id}
+                className="border rounded-lg overflow-hidden cursor-pointer hover:bg-accent/5 transition-colors"
+                onClick={() => navigate(`/agents/questions/${question.id}`)}
+              >
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+                      {getQuestionIcon(question.icon_name)}
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{question.label}</span>
+                        <Badge variant={question.is_active ? 'default' : 'secondary'} className="text-xs">
+                          {question.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
                       </div>
-                    </CollapsibleContent>
+                      {question.description && (
+                        <p className="text-sm text-muted-foreground">
+                          {question.description}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </Collapsible>
-              );
-            })}
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="text-xs font-mono">
+                      {question.placeholder_key}
+                    </Badge>
+                    {question.options_table && (
+                      <Badge variant="secondary" className="text-xs gap-1">
+                        <Database className="h-3 w-3" />
+                        Dynamic: {question.options_table}
+                      </Badge>
+                    )}
+                    {question.static_options && question.static_options.length > 0 && (
+                      <Badge variant="secondary" className="text-xs gap-1">
+                        <List className="h-3 w-3" />
+                        {question.static_options.length} options
+                      </Badge>
+                    )}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
 
           {(!questions || questions.length === 0) && (

@@ -200,20 +200,18 @@ const AgentDetail = () => {
         </div>
 
         {/* Agent Questions Section */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <h2 className="text-base font-semibold flex items-center gap-2">
               <Bot className="h-4 w-4" />
               Enabled Questions
-            </CardTitle>
+            </h2>
             <p className="text-sm text-muted-foreground">
               Toggle which questions this agent will ask during book creation
             </p>
-          </CardHeader>
-          <CardContent>
-            <AgentQuestionsManager agentType={derivedAgentType} embedded />
-          </CardContent>
-        </Card>
+          </div>
+          <AgentQuestionsManager agentType={derivedAgentType} embedded />
+        </div>
 
         {/* Agent Identity & Configuration */}
         <AgentIdentityCard

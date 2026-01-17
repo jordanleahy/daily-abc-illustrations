@@ -103,7 +103,7 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
         return (
           <div
             key={question.id}
-            className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
+            className="flex items-center justify-between p-3 sm:p-4 rounded-lg bg-card hover:bg-accent/5 transition-colors"
           >
             {/* Reorder buttons */}
             <div className="flex flex-col gap-0.5 mr-3">

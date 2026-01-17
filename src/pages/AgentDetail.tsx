@@ -112,59 +112,65 @@ const AgentDetail = () => {
     <StandardPageLayout showHeader={true} containerSize="xl" containerClassName="py-8">
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-4">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => navigate('/agents')}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div 
-              className={cn(
-                "flex items-center justify-center w-12 h-12 rounded-xl",
-                isChat ? "bg-primary/10" : "bg-primary/10",
-                bookType?.color
-              )}
-            >
-              <Icon className="h-6 w-6" />
-            </div>
-            <div>
-              <div className="flex items-center gap-3">
+        <div className="space-y-4">
+          {/* Back button row */}
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="gap-2 -ml-2"
+            onClick={() => navigate('/agents')}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Agents
+          </Button>
+
+          {/* Title row */}
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div 
+                className={cn(
+                  "flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10",
+                  bookType?.color
+                )}
+              >
+                <Icon className="h-6 w-6" />
+              </div>
+              <div>
                 <h1 className="text-2xl font-bold tracking-tight">
                   {isChat ? 'Chat Agent' : bookType?.label || 'Book Agent'}
                 </h1>
-                {bookType && (
-                  <Badge variant="secondary">
+                <p className="text-muted-foreground text-sm max-w-lg">
+                  {isChat 
+                    ? 'Universal conversational agent for book creation' 
+                    : bookType?.description || 'Book creation agent configuration'
+                  }
+                </p>
+              </div>
+            </div>
+
+            {/* Right side: badges and toggle */}
+            <div className="flex items-center gap-4 shrink-0">
+              {bookType && (
+                <>
+                  <Badge variant="secondary" className="text-sm">
                     {bookType.expected_page_count || 12} pages
                   </Badge>
-                )}
-              </div>
-              <p className="text-muted-foreground text-sm">
-                {isChat 
-                  ? 'Universal conversational agent for book creation' 
-                  : bookType?.description || 'Book creation agent configuration'
-                }
-              </p>
+                  <div className="flex items-center gap-2">
+                    <Label htmlFor="active-toggle" className="text-sm font-medium">
+                      {bookType.is_active ? 'Active' : 'Inactive'}
+                    </Label>
+                    <Switch
+                      id="active-toggle"
+                      checked={bookType.is_active}
+                      onCheckedChange={(checked) => {
+                        toggleActiveMutation.mutate({ id: bookType.id, is_active: checked });
+                      }}
+                    />
+                  </div>
+                </>
+              )}
             </div>
           </div>
-
-          {/* Active Toggle for Book Types */}
-          {bookType && (
-            <div className="flex items-center gap-3">
-              <Label htmlFor="active-toggle" className="text-sm text-muted-foreground">
-                Active
-              </Label>
-              <Switch
-                id="active-toggle"
-                checked={bookType.is_active}
-                onCheckedChange={(checked) => {
-                  toggleActiveMutation.mutate({ id: bookType.id, is_active: checked });
-                }}
-              />
-            </div>
-          )}
         </div>
 
         {/* Agent Questions Section */}

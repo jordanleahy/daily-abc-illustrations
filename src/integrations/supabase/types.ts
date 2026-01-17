@@ -2383,54 +2383,6 @@ export type Database = {
         }
         Relationships: []
       }
-      type_specific_discoveries: {
-        Row: {
-          agent_type: string
-          context_value_key: string | null
-          created_at: string
-          frontend_state_key: string | null
-          id: string
-          is_active: boolean
-          is_skippable: boolean | null
-          options: Json
-          question_key: string
-          question_text: string
-          sort_order: number
-          step_number: number | null
-          updated_at: string
-        }
-        Insert: {
-          agent_type: string
-          context_value_key?: string | null
-          created_at?: string
-          frontend_state_key?: string | null
-          id?: string
-          is_active?: boolean
-          is_skippable?: boolean | null
-          options?: Json
-          question_key: string
-          question_text: string
-          sort_order?: number
-          step_number?: number | null
-          updated_at?: string
-        }
-        Update: {
-          agent_type?: string
-          context_value_key?: string | null
-          created_at?: string
-          frontend_state_key?: string | null
-          id?: string
-          is_active?: boolean
-          is_skippable?: boolean | null
-          options?: Json
-          question_key?: string
-          question_text?: string
-          sort_order?: number
-          step_number?: number | null
-          updated_at?: string
-        }
-        Relationships: []
-      }
       user_book_activity: {
         Row: {
           book_id: string | null

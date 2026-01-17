@@ -3,14 +3,14 @@ import { AgentIdentityCard } from '@/components/agents/AgentIdentityCard';
 import { ConfigurationTabs } from '@/components/agents/ConfigurationTabs';
 import { AgentDocumentation } from '@/components/agents/AgentDocumentation';
 import { AgeGroupsManager } from '@/components/agents/AgeGroupsManager';
-import { TypeDiscoveriesManager } from '@/components/agents/TypeDiscoveriesManager';
+
 import { CharacterThemesManager } from '@/components/agents/CharacterThemesManager';
 import { BookAgentsManager } from '@/components/agents/BookAgentsManager';
 import { useAgentConfig } from '@/hooks/useAgentConfig';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BookOpen, MessageCircle, AlertTriangle, FileText, Users, ListChecks, Sparkles, Plus } from 'lucide-react';
+import { BookOpen, MessageCircle, AlertTriangle, FileText, Users, Sparkles, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState } from 'react';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -100,10 +100,6 @@ const Agents = () => {
               <Sparkles className="h-3.5 w-3.5" />
               Themes
             </TabsTrigger>
-            <TabsTrigger value="discoveries" className="flex items-center gap-1.5 flex-shrink-0 px-3 text-xs min-h-[44px] whitespace-nowrap">
-              <ListChecks className="h-3.5 w-3.5" />
-              Questions
-            </TabsTrigger>
             <TabsTrigger value="documentation" className="flex items-center gap-1.5 flex-shrink-0 px-3 text-xs min-h-[44px] whitespace-nowrap">
               <FileText className="h-3.5 w-3.5" />
               Docs
@@ -157,9 +153,6 @@ const Agents = () => {
             <CharacterThemesManager />
           </TabsContent>
 
-          <TabsContent value="discoveries" className="mt-6">
-            <TypeDiscoveriesManager />
-          </TabsContent>
 
           <TabsContent value="documentation" className="mt-6">
             <AgentDocumentation />

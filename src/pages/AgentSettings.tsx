@@ -1,12 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { StandardPageLayout } from '@/components/layout';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AgeGroupsManager } from '@/components/agents/AgeGroupsManager';
-import { CharacterThemesManager } from '@/components/agents/CharacterThemesManager';
-import { QuestionsRegistryManager } from '@/components/agents/QuestionsRegistryManager';
 import { AgentDocumentation } from '@/components/agents/AgentDocumentation';
-import { ArrowLeft, Users, Sparkles, HelpCircle, FileText } from 'lucide-react';
+import { ArrowLeft, FileText } from 'lucide-react';
 
 const AgentSettings = () => {
   const navigate = useNavigate();
@@ -24,50 +20,18 @@ const AgentSettings = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Shared Settings</h1>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <FileText className="h-6 w-6 text-primary" />
+              Agent Documentation
+            </h1>
             <p className="text-muted-foreground text-sm">
-              Configure age groups, themes, questions, and view documentation
+              View documentation for agent configuration and usage
             </p>
           </div>
         </div>
 
-        {/* Settings Tabs */}
-        <Tabs defaultValue="ages" className="w-full">
-          <TabsList className="w-full max-w-xl">
-            <TabsTrigger value="ages" className="flex items-center gap-1.5 flex-1">
-              <Users className="h-4 w-4" />
-              Ages
-            </TabsTrigger>
-            <TabsTrigger value="themes" className="flex items-center gap-1.5 flex-1">
-              <Sparkles className="h-4 w-4" />
-              Themes
-            </TabsTrigger>
-            <TabsTrigger value="questions" className="flex items-center gap-1.5 flex-1">
-              <HelpCircle className="h-4 w-4" />
-              Questions
-            </TabsTrigger>
-            <TabsTrigger value="docs" className="flex items-center gap-1.5 flex-1">
-              <FileText className="h-4 w-4" />
-              Docs
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="ages" className="mt-6">
-            <AgeGroupsManager />
-          </TabsContent>
-
-          <TabsContent value="themes" className="mt-6">
-            <CharacterThemesManager />
-          </TabsContent>
-
-          <TabsContent value="questions" className="mt-6">
-            <QuestionsRegistryManager />
-          </TabsContent>
-
-          <TabsContent value="docs" className="mt-6">
-            <AgentDocumentation />
-          </TabsContent>
-        </Tabs>
+        {/* Documentation */}
+        <AgentDocumentation />
       </div>
     </StandardPageLayout>
   );

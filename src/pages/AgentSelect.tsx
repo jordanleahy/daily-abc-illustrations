@@ -52,7 +52,7 @@ const AgentSelect = () => {
   });
 
   // Fetch chat agent
-  const { data: chatAgent } = useQuery({
+  const { data: chatAgent, isLoading: isLoadingChatAgent } = useQuery({
     queryKey: ['agents-chat'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -60,9 +60,13 @@ const AgentSelect = () => {
         .select('id, name, type, operational_status')
         .eq('is_latest', true)
         .eq('type', 'chat')
-        .single();
-      if (error) return null;
-      return data as AgentData;
+        .maybeSingle();
+      if (error) {
+        console.error('Error fetching chat agent:', error);
+        return null;
+      }
+      console.log('Chat agent fetched:', data);
+      return data as AgentData | null;
     },
   });
 

@@ -2064,6 +2064,7 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
+          icon_name: string | null
           id: string
           is_active: boolean | null
           label: string
@@ -2072,11 +2073,13 @@ export type Database = {
           options_value_column: string | null
           placeholder_key: string
           sort_order: number | null
+          static_options: Json | null
           updated_at: string | null
         }
         Insert: {
           created_at?: string | null
           description?: string | null
+          icon_name?: string | null
           id: string
           is_active?: boolean | null
           label: string
@@ -2085,11 +2088,13 @@ export type Database = {
           options_value_column?: string | null
           placeholder_key: string
           sort_order?: number | null
+          static_options?: Json | null
           updated_at?: string | null
         }
         Update: {
           created_at?: string | null
           description?: string | null
+          icon_name?: string | null
           id?: string
           is_active?: boolean | null
           label?: string
@@ -2098,6 +2103,7 @@ export type Database = {
           options_value_column?: string | null
           placeholder_key?: string
           sort_order?: number | null
+          static_options?: Json | null
           updated_at?: string | null
         }
         Relationships: []

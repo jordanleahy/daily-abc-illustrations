@@ -105,34 +105,13 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
             key={question.id}
             className="flex items-center justify-between p-3 sm:p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
           >
-            {/* Reorder buttons */}
-            <div className="flex flex-col gap-0.5 mr-3">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                disabled={isFirst || isReordering}
-                onClick={() => handleReorder(question.id, 'up')}
-              >
-                <ChevronUp className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6"
-                disabled={isLast || isReordering}
-                onClick={() => handleReorder(question.id, 'down')}
-              >
-                <ChevronDown className="h-4 w-4" />
-              </Button>
-            </div>
-
-            <div className="flex items-center gap-3 flex-1">
-              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
+            {/* Left side: icon and content */}
+            <div className="flex items-center gap-3 flex-1 min-w-0">
+              <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary shrink-0">
                 {questionIcons[question.id] || <HelpCircle className="h-4 w-4" />}
               </div>
-              <div>
-                <div className="flex items-center gap-2">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium">{question.label}</span>
                   {question.options_table && (
                     <TooltipProvider>
@@ -160,12 +139,34 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
                 </code>
               </div>
             </div>
-            <Switch
-              checked={question.isEnabled}
-              onCheckedChange={() => handleToggle(question.id, question.isEnabled)}
-              disabled={isPending}
-              aria-label={`Toggle ${question.label}`}
-            />
+
+            {/* Right side: toggle and reorder buttons in column */}
+            <div className="flex flex-col items-center gap-1 ml-3 shrink-0">
+              <Switch
+                checked={question.isEnabled}
+                onCheckedChange={() => handleToggle(question.id, question.isEnabled)}
+                disabled={isPending}
+                aria-label={`Toggle ${question.label}`}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                disabled={isFirst || isReordering}
+                onClick={() => handleReorder(question.id, 'up')}
+              >
+                <ChevronUp className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                disabled={isLast || isReordering}
+                onClick={() => handleReorder(question.id, 'down')}
+              >
+                <ChevronDown className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         );
       })}

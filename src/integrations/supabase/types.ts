@@ -690,6 +690,51 @@ export type Database = {
           },
         ]
       }
+      brands: {
+        Row: {
+          category: string | null
+          color_palette: string | null
+          created_at: string | null
+          description: string | null
+          emoji: string | null
+          id: string
+          is_active: boolean | null
+          label: string
+          logo_url: string | null
+          sort_order: number | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          category?: string | null
+          color_palette?: string | null
+          created_at?: string | null
+          description?: string | null
+          emoji?: string | null
+          id: string
+          is_active?: boolean | null
+          label: string
+          logo_url?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          category?: string | null
+          color_palette?: string | null
+          created_at?: string | null
+          description?: string | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          logo_url?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: []
+      }
       character_themes: {
         Row: {
           alt_text: string

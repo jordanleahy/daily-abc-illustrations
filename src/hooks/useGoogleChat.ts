@@ -339,9 +339,6 @@ export const useGoogleChat = (
         }
 
 
-        // Discovery questions are now handled by frontend discovery flow (useDiscoveryFlow)
-        // AI-generated [SUGGEST] blocks are suppressed when discovery flow is active
-        
         if (!match) {
           return { cleanContent: cleanedText, suggestedActions: undefined };
         }

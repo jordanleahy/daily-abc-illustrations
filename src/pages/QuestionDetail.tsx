@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, HelpCircle, Check, X, Database, List, Plus, Trash2 } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Check, X, Database, List, Plus, Trash2, MapPin, Loader2 } from 'lucide-react';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { useAddCity, useDeleteCity } from '@/hooks/useCityOptions';
+import { useAddCity, useDeleteCity, usePlacesAutocomplete, PlaceDetails } from '@/hooks/useCityOptions';
 import type { Question } from '@/hooks/useQuestions';
 
 interface QuestionOption {
@@ -43,12 +43,58 @@ const QuestionDetail = () => {
   // State for dialogs
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [deleteOption, setDeleteOption] = useState<QuestionOption | null>(null);
-  const [newCityLabel, setNewCityLabel] = useState('');
-  const [newCityId, setNewCityId] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [selectedPlace, setSelectedPlace] = useState<PlaceDetails | null>(null);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout>();
+  
+  // Google Places autocomplete
+  const { predictions, isLoading: isSearching, searchPlaces, getPlaceDetails, clearPredictions } = usePlacesAutocomplete();
   
   // Mutations for cities table
   const addCity = useAddCity();
   const deleteCity = useDeleteCity();
+
+  // Debounced search
+  useEffect(() => {
+    if (debounceRef.current) {
+      clearTimeout(debounceRef.current);
+    }
+    
+    if (searchInput.length >= 2) {
+      debounceRef.current = setTimeout(() => {
+        searchPlaces(searchInput);
+      }, 300);
+    } else {
+      clearPredictions();
+    }
+    
+    return () => {
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, [searchInput, searchPlaces, clearPredictions]);
+
+  // Handle place selection
+  const handleSelectPlace = async (placeId: string) => {
+    setIsLoadingDetails(true);
+    clearPredictions();
+    
+    const details = await getPlaceDetails(placeId);
+    if (details) {
+      setSelectedPlace(details);
+      setSearchInput(details.name);
+    }
+    setIsLoadingDetails(false);
+  };
+
+  // Reset dialog state
+  const resetDialog = () => {
+    setSearchInput('');
+    setSelectedPlace(null);
+    clearPredictions();
+  };
 
   // Fetch the question
   const { data: question, isLoading: isLoadingQuestion } = useQuery({
@@ -239,8 +285,7 @@ const QuestionDetail = () => {
                 <Button 
                   size="sm" 
                   onClick={() => {
-                    setNewCityLabel('');
-                    setNewCityId('');
+                    resetDialog();
                     setIsAddDialogOpen(true);
                   }}
                   className="gap-1"
@@ -290,61 +335,123 @@ const QuestionDetail = () => {
       </div>
 
       {/* Add City Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
+      <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+        setIsAddDialogOpen(open);
+        if (!open) resetDialog();
+      }}>
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Add New City</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5 text-primary" />
+              Add New City
+            </DialogTitle>
             <DialogDescription>
-              Add a new city to the available options. The ID should be unique and use UPPER_SNAKE_CASE.
+              Search for a city using Google Places to get accurate location data.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="cityLabel">City Name</Label>
-              <Input
-                id="cityLabel"
-                placeholder="e.g., San Francisco"
-                value={newCityLabel}
-                onChange={(e) => {
-                  setNewCityLabel(e.target.value);
-                  // Auto-generate ID from label
-                  const generatedId = e.target.value
-                    .toUpperCase()
-                    .replace(/[^A-Z0-9\s]/g, '')
-                    .replace(/\s+/g, '_')
-                    .trim();
-                  setNewCityId(generatedId);
-                }}
-              />
+              <Label htmlFor="citySearch">Search City</Label>
+              <div className="relative">
+                <Input
+                  id="citySearch"
+                  placeholder="Start typing a city name..."
+                  value={searchInput}
+                  onChange={(e) => {
+                    setSearchInput(e.target.value);
+                    setSelectedPlace(null);
+                  }}
+                  autoComplete="off"
+                />
+                {(isSearching || isLoadingDetails) && (
+                  <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+              </div>
+              
+              {/* Autocomplete dropdown */}
+              {predictions.length > 0 && !selectedPlace && (
+                <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
+                  {predictions.map((prediction) => (
+                    <button
+                      key={prediction.place_id}
+                      className="w-full px-3 py-2 text-left hover:bg-accent transition-colors flex items-start gap-2"
+                      onClick={() => handleSelectPlace(prediction.place_id)}
+                    >
+                      <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+                      <div>
+                        <p className="font-medium text-sm">{prediction.main_text}</p>
+                        <p className="text-xs text-muted-foreground">{prediction.secondary_text}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="cityId">City ID</Label>
-              <Input
-                id="cityId"
-                placeholder="e.g., SAN_FRANCISCO"
-                value={newCityId}
-                onChange={(e) => setNewCityId(e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, ''))}
-                className="font-mono"
-              />
-              <p className="text-xs text-muted-foreground">
-                Unique identifier used in the system
-              </p>
-            </div>
+
+            {/* Selected city details */}
+            {selectedPlace && (
+              <div className="p-4 bg-muted rounded-lg space-y-2">
+                <div className="flex items-center gap-2">
+                  <Check className="h-4 w-4 text-green-600" />
+                  <span className="font-medium">{selectedPlace.name}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
+                  {selectedPlace.state && (
+                    <div>
+                      <span className="text-xs font-medium">State:</span> {selectedPlace.state}
+                    </div>
+                  )}
+                  {selectedPlace.country && (
+                    <div>
+                      <span className="text-xs font-medium">Country:</span> {selectedPlace.country}
+                    </div>
+                  )}
+                  <div>
+                    <span className="text-xs font-medium">Lat:</span> {selectedPlace.latitude?.toFixed(4)}
+                  </div>
+                  <div>
+                    <span className="text-xs font-medium">Lng:</span> {selectedPlace.longitude?.toFixed(4)}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+            <Button variant="outline" onClick={() => {
+              setIsAddDialogOpen(false);
+              resetDialog();
+            }}>
               Cancel
             </Button>
             <Button 
               onClick={() => {
-                if (newCityLabel && newCityId) {
+                if (selectedPlace) {
+                  const cityId = selectedPlace.name
+                    .toUpperCase()
+                    .replace(/[^A-Z0-9\s]/g, '')
+                    .replace(/\s+/g, '_')
+                    .trim();
+                  
                   addCity.mutate(
-                    { id: newCityId, label: newCityLabel },
-                    { onSuccess: () => setIsAddDialogOpen(false) }
+                    {
+                      id: cityId,
+                      label: selectedPlace.name,
+                      place_id: selectedPlace.place_id,
+                      latitude: selectedPlace.latitude,
+                      longitude: selectedPlace.longitude,
+                      state: selectedPlace.state,
+                      country: selectedPlace.country,
+                    },
+                    { 
+                      onSuccess: () => {
+                        setIsAddDialogOpen(false);
+                        resetDialog();
+                      }
+                    }
                   );
                 }
               }}
-              disabled={!newCityLabel || !newCityId || addCity.isPending}
+              disabled={!selectedPlace || addCity.isPending}
             >
               {addCity.isPending ? 'Adding...' : 'Add City'}
             </Button>

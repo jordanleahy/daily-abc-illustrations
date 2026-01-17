@@ -1,18 +1,124 @@
+import { useState, useCallback } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export interface PlacePrediction {
+  place_id: string;
+  description: string;
+  main_text: string;
+  secondary_text: string;
+}
+
+export interface PlaceDetails {
+  place_id: string;
+  name: string;
+  formatted_address: string;
+  latitude: number;
+  longitude: number;
+  city: string;
+  state: string;
+  country: string;
+}
+
 interface AddCityParams {
   id: string;
   label: string;
+  place_id?: string;
+  latitude?: number;
+  longitude?: number;
+  state?: string;
+  country?: string;
   emoji?: string;
 }
+
+// Hook for Google Places autocomplete
+export const usePlacesAutocomplete = () => {
+  const [predictions, setPredictions] = useState<PlacePrediction[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const searchPlaces = useCallback(async (input: string) => {
+    if (!input || input.length < 2) {
+      setPredictions([]);
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('google-places-autocomplete', {
+        body: null,
+        method: 'GET',
+      });
+
+      // Use fetch directly since invoke doesn't support query params well
+      const response = await fetch(
+        `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/google-places-autocomplete?action=autocomplete&input=${encodeURIComponent(input)}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const result = await response.json();
+      
+      if (result.error) {
+        console.error('Places autocomplete error:', result.error);
+        setPredictions([]);
+      } else {
+        setPredictions(result.predictions || []);
+      }
+    } catch (error) {
+      console.error('Error searching places:', error);
+      setPredictions([]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  const getPlaceDetails = useCallback(async (placeId: string): Promise<PlaceDetails | null> => {
+    try {
+      const response = await fetch(
+        `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/google-places-autocomplete?action=details&place_id=${encodeURIComponent(placeId)}`,
+        {
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      const result = await response.json();
+      
+      if (result.error) {
+        console.error('Place details error:', result.error);
+        return null;
+      }
+      
+      return result.details;
+    } catch (error) {
+      console.error('Error fetching place details:', error);
+      return null;
+    }
+  }, []);
+
+  const clearPredictions = useCallback(() => {
+    setPredictions([]);
+  }, []);
+
+  return {
+    predictions,
+    isLoading,
+    searchPlaces,
+    getPlaceDetails,
+    clearPredictions,
+  };
+};
 
 export const useAddCity = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, label, emoji = '🏙️' }: AddCityParams) => {
+    mutationFn: async ({ id, label, place_id, latitude, longitude, state, country, emoji = '🏙️' }: AddCityParams) => {
       // Get the max sort_order
       const { data: maxSortData } = await supabase
         .from('cities')
@@ -29,6 +135,11 @@ export const useAddCity = () => {
           id,
           label,
           emoji,
+          place_id,
+          latitude,
+          longitude,
+          state,
+          country,
           is_active: true,
           sort_order: nextSortOrder,
         })

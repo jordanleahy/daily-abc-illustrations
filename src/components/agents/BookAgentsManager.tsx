@@ -179,68 +179,76 @@ export function BookAgentsManager() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-3">
+        <CardContent className="space-y-2">
           {bookAgentPairs.map((pair) => {
             const Icon = getIconComponent(pair.bookType.icon_name);
+            const isActive = pair.bookType.is_active;
             
             return (
               <div
                 key={pair.bookType.id}
                 className={cn(
-                  "flex items-center gap-4 p-4 rounded-lg border transition-colors",
-                  "hover:bg-muted/50 cursor-pointer"
+                  "group relative flex items-center gap-4 p-3 rounded-xl border transition-all duration-200",
+                  "hover:shadow-md hover:border-primary/20",
+                  isActive ? "bg-card" : "bg-muted/30 opacity-75"
                 )}
-                onClick={() => openEditDialog(pair)}
               >
-                {/* Icon & Book Type Info */}
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className={cn("p-2 rounded-lg bg-primary/10", pair.bookType.color)}>
-                    <Icon className="h-5 w-5" />
+                {/* Icon */}
+                <div 
+                  className={cn(
+                    "flex items-center justify-center w-12 h-12 rounded-xl transition-colors",
+                    isActive ? "bg-primary/10" : "bg-muted",
+                    pair.bookType.color
+                  )}
+                >
+                  <Icon className="h-6 w-6" />
+                </div>
+                
+                {/* Content */}
+                <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="font-semibold text-foreground">
+                      {pair.bookType.label}
+                    </h3>
+                    <Badge variant="secondary" className="text-xs font-normal">
+                      {pair.bookType.expected_page_count || 12} pages
+                    </Badge>
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium truncate">{pair.bookType.label}</span>
-                      <Badge variant="outline" className="text-xs shrink-0">
-                        {pair.bookType.expected_page_count || 12} pages
-                      </Badge>
-                    </div>
-                    
-                    {/* Linked Agent */}
-                    <div className="flex items-center gap-2 mt-1">
-                      <Link2 className="h-3 w-3 text-muted-foreground" />
-                      {pair.agent ? (
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm text-muted-foreground truncate">
-                            {pair.agent.name}
-                          </span>
-                          <div className={cn(
-                            "w-2 h-2 rounded-full shrink-0",
+                  
+                  {/* Agent Info Row */}
+                  <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                    {pair.agent ? (
+                      <>
+                        <Bot className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{pair.agent.name}</span>
+                        <div 
+                          className={cn(
+                            "w-1.5 h-1.5 rounded-full shrink-0 ml-1",
                             getStatusColor(pair.agent.operational_status)
-                          )} />
-                        </div>
-                      ) : (
-                        <span className="text-sm text-destructive">No agent linked</span>
-                      )}
-                    </div>
+                          )} 
+                          title={pair.agent.operational_status}
+                        />
+                      </>
+                    ) : (
+                      <span className="text-destructive/80 text-xs">No agent linked</span>
+                    )}
                   </div>
                 </div>
 
-                {/* Status & Actions */}
-                <div className="flex items-center gap-3 shrink-0">
+                {/* Actions */}
+                <div className="flex items-center gap-2 shrink-0">
                   <Switch
-                    checked={pair.bookType.is_active}
+                    checked={isActive}
                     onCheckedChange={(checked) => {
                       toggleActiveMutation.mutate({ id: pair.bookType.id, is_active: checked });
                     }}
-                    onClick={(e) => e.stopPropagation()}
+                    className="data-[state=checked]:bg-primary"
                   />
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      openEditDialog(pair);
-                    }}
+                    className="h-8 w-8 opacity-50 group-hover:opacity-100 transition-opacity"
+                    onClick={() => openEditDialog(pair)}
                   >
                     <Pencil className="h-4 w-4" />
                   </Button>

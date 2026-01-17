@@ -13,7 +13,9 @@ import GoogleChat from "./pages/GoogleChat";
 import Auth from "./pages/Auth";
 import AuthConfirm from "./pages/AuthConfirm";
 import ResetPassword from "./pages/ResetPassword";
-import Agents from "./pages/Agents";
+import AgentSelect from "./pages/AgentSelect";
+import AgentDetail from "./pages/AgentDetail";
+import AgentSettings from "./pages/AgentSettings";
 import AgentCreator from "./pages/AgentCreator";
 import AdminChat from "./pages/AdminChat";
 import AdminPersonas from "./pages/admin/Personas";
@@ -171,7 +173,10 @@ const App = () => {
           <Route path="/auth" element={<Auth />} />
           <Route path="/auth/confirm" element={<AuthConfirm />} />
           <Route path="/auth/reset-password" element={<ResetPassword />} />
-                <Route path="/agents" element={<Agents />} />
+                <Route path="/agents" element={<AgentSelect />} />
+                <Route path="/agents/chat" element={<AgentDetail />} />
+                <Route path="/agents/book/:bookTypeId" element={<AgentDetail />} />
+                <Route path="/agents/settings" element={<AgentSettings />} />
                 <Route path="/agents/create" element={<ProtectedRoute requireRole="admin"><AgentCreator /></ProtectedRoute>} />
                 <Route path="/admin-chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
                 <Route path="/admin/personas" element={<ProtectedRoute requireRole="admin"><AdminPersonas /></ProtectedRoute>} />

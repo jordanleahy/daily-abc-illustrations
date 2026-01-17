@@ -81,7 +81,10 @@ const AgentDetail = () => {
     },
   });
 
-  if (isInitialLoading || isLoadingBookType) {
+  // Show loading while any essential data is still loading
+  const isLoading = isInitialLoading || isLoadingBookType;
+  
+  if (isLoading) {
     return (
       <StandardPageLayout showHeader={true} containerSize="xl" containerClassName="py-8">
         <LoadingState text="Loading agent configuration..." />
@@ -89,7 +92,30 @@ const AgentDetail = () => {
     );
   }
 
-  if (!config) {
+  // Only show "not found" if we're definitely done loading AND there's no config
+  // For book types, we need the bookType data too
+  if (!config && !isChat) {
+    // If we have a bookTypeId but no config, the agent may not be set up yet
+    // Allow proceeding if bookType exists - the page can still show info
+    if (!bookType) {
+      return (
+        <StandardPageLayout showHeader={true} containerSize="xl" containerClassName="py-8">
+          <div className="text-center py-12">
+            <h2 className="text-xl font-semibold mb-2">Book Type Not Found</h2>
+            <p className="text-muted-foreground mb-4">
+              The requested book type could not be found.
+            </p>
+            <Button onClick={() => navigate('/agents')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Agents
+            </Button>
+          </div>
+        </StandardPageLayout>
+      );
+    }
+  }
+  
+  if (!config && isChat) {
     return (
       <StandardPageLayout showHeader={true} containerSize="xl" containerClassName="py-8">
         <div className="text-center py-12">

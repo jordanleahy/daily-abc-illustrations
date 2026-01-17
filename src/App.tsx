@@ -16,6 +16,8 @@ import ResetPassword from "./pages/ResetPassword";
 import AgentSelect from "./pages/AgentSelect";
 import AgentDetail from "./pages/AgentDetail";
 import AgentSettings from "./pages/AgentSettings";
+import QuestionsRegistry from "./pages/QuestionsRegistry";
+import QuestionDetail from "./pages/QuestionDetail";
 import AgentCreator from "./pages/AgentCreator";
 import AdminChat from "./pages/AdminChat";
 import AdminPersonas from "./pages/admin/Personas";
@@ -177,6 +179,8 @@ const App = () => {
                 <Route path="/agents/chat" element={<AgentDetail />} />
                 <Route path="/agents/book/:bookTypeId" element={<AgentDetail />} />
                 <Route path="/agents/settings" element={<AgentSettings />} />
+                <Route path="/agents/questions" element={<QuestionsRegistry />} />
+                <Route path="/agents/questions/:questionId" element={<QuestionDetail />} />
                 <Route path="/agents/create" element={<ProtectedRoute requireRole="admin"><AgentCreator /></ProtectedRoute>} />
                 <Route path="/admin-chat" element={<ProtectedRoute requireRole="admin"><AdminChat /></ProtectedRoute>} />
                 <Route path="/admin/personas" element={<ProtectedRoute requireRole="admin"><AdminPersonas /></ProtectedRoute>} />

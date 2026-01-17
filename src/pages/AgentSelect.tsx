@@ -10,7 +10,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { getIconComponent } from '@/utils/iconMapping';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '@/types/shared/agent';
 import { cn } from '@/lib/utils';
-import { Plus, Bot, MessageCircle, Settings } from 'lucide-react';
+import { Plus, Bot, MessageCircle, Settings, HelpCircle } from 'lucide-react';
 import type { DatabaseBookType } from '@/hooks/useBookTypes';
 
 interface AgentData {
@@ -126,40 +126,64 @@ const AgentSelect = () => {
           </div>
         </div>
 
-        {/* Orchestration Agent Card - Full Width */}
-        {chatAgent && (
-          <div>
-            <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-              <MessageCircle className="h-5 w-5 text-primary" />
-              Orchestration
-            </h2>
+        {/* Orchestration Section */}
+        <div>
+          <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
+            <MessageCircle className="h-5 w-5 text-primary" />
+            Orchestration
+          </h2>
+          <div className="space-y-3">
+            {/* Chat Agent Card */}
+            {chatAgent && (
+              <Card 
+                className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/30 group"
+                onClick={() => navigate('/agents/chat')}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
+                      <MessageCircle className="h-7 w-7 text-primary" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-semibold text-lg">{chatAgent.name}</h3>
+                        <div 
+                          className={cn("w-2 h-2 rounded-full", getStatusColor(chatAgent.operational_status))} 
+                          title={chatAgent.operational_status}
+                        />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Manages conversations, asks questions, coordinates with book agents
+                      </p>
+                    </div>
+                    <Badge variant="secondary" className="shrink-0">Orchestrator</Badge>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* All Questions Card */}
             <Card 
               className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/30 group"
-              onClick={() => navigate('/agents/chat')}
+              onClick={() => navigate('/agents/questions')}
             >
-              <CardContent className="p-6">
+              <CardContent className="p-5">
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center justify-center w-14 h-14 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
-                    <MessageCircle className="h-7 w-7 text-primary" />
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-accent/50 group-hover:bg-accent transition-colors">
+                    <HelpCircle className="h-6 w-6 text-primary" />
                   </div>
                   <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold text-lg">{chatAgent.name}</h3>
-                      <div 
-                        className={cn("w-2 h-2 rounded-full", getStatusColor(chatAgent.operational_status))} 
-                        title={chatAgent.operational_status}
-                      />
-                    </div>
+                    <h3 className="font-semibold">All Questions</h3>
                     <p className="text-sm text-muted-foreground">
-                      Manages conversations, asks questions, coordinates with book agents
+                      View and manage all discovery questions used by agents
                     </p>
                   </div>
-                  <Badge variant="secondary" className="shrink-0">Orchestrator</Badge>
+                  <Badge variant="outline" className="shrink-0">Registry</Badge>
                 </div>
               </CardContent>
             </Card>
           </div>
-        )}
+        </div>
 
         {/* Book Agents Grid */}
         <div>

@@ -202,10 +202,12 @@ serve(async (req) => {
       console.log(`[Nearby] Fetching landmarks near: ${lat}, ${lng}`);
 
       // Define place types to search for, mapped to our categories
+      // Note: Google Places API (New) only supports specific types
+      // See: https://developers.google.com/maps/documentation/places/web-service/place-types
       const searchConfigs = [
-        { types: ['park', 'national_park'], category: 'natural' },
-        { types: ['tourist_attraction', 'landmark', 'point_of_interest'], category: 'architectural' },
-        { types: ['museum', 'art_gallery', 'performing_arts_theater'], category: 'cultural' },
+        { types: ['park', 'national_park', 'hiking_area'], category: 'natural' },
+        { types: ['historical_landmark', 'monument', 'city_hall', 'library'], category: 'architectural' },
+        { types: ['museum', 'art_gallery', 'performing_arts_theater', 'cultural_center'], category: 'cultural' },
       ];
 
       const allLandmarks: any[] = [];

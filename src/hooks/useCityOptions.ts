@@ -45,12 +45,6 @@ export const usePlacesAutocomplete = () => {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke('google-places-autocomplete', {
-        body: null,
-        method: 'GET',
-      });
-
-      // Use fetch directly since invoke doesn't support query params well
       const response = await fetch(
         `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/google-places-autocomplete?action=autocomplete&input=${encodeURIComponent(input)}`,
         {

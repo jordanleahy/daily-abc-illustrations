@@ -859,39 +859,48 @@ export type Database = {
       }
       city_landmarks: {
         Row: {
+          category: Database["public"]["Enums"]["landmark_category"] | null
           city_id: string
           created_at: string | null
           description: string
+          google_place_id: string | null
           id: string
           is_active: boolean | null
           is_major: boolean | null
           name: string
+          prompt_snippet: string | null
           sort_order: number | null
           type: string
           updated_at: string | null
           visual_cues: string[] | null
         }
         Insert: {
+          category?: Database["public"]["Enums"]["landmark_category"] | null
           city_id: string
           created_at?: string | null
           description: string
+          google_place_id?: string | null
           id?: string
           is_active?: boolean | null
           is_major?: boolean | null
           name: string
+          prompt_snippet?: string | null
           sort_order?: number | null
           type?: string
           updated_at?: string | null
           visual_cues?: string[] | null
         }
         Update: {
+          category?: Database["public"]["Enums"]["landmark_category"] | null
           city_id?: string
           created_at?: string | null
           description?: string
+          google_place_id?: string | null
           id?: string
           is_active?: boolean | null
           is_major?: boolean | null
           name?: string
+          prompt_snippet?: string | null
           sort_order?: number | null
           type?: string
           updated_at?: string | null
@@ -3472,6 +3481,7 @@ export type Database = {
     }
     Enums: {
       app_role: "user" | "moderator" | "admin" | "teacher"
+      landmark_category: "natural" | "architectural" | "cultural"
       page_type: "cover" | "educational" | "content" | "worksheet"
       publication_status: "draft" | "published" | "archived"
     }
@@ -3602,6 +3612,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["user", "moderator", "admin", "teacher"],
+      landmark_category: ["natural", "architectural", "cultural"],
       page_type: ["cover", "educational", "content", "worksheet"],
       publication_status: ["draft", "published", "archived"],
     },

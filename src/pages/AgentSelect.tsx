@@ -126,12 +126,12 @@ const AgentSelect = () => {
           </div>
         </div>
 
-        {/* Chat Agent Card - Full Width */}
+        {/* Orchestration Agent Card - Full Width */}
         {chatAgent && (
           <div>
             <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
               <MessageCircle className="h-5 w-5 text-primary" />
-              Universal Agent
+              Orchestration
             </h2>
             <Card 
               className="cursor-pointer transition-all hover:shadow-lg hover:border-primary/30 group"
@@ -151,10 +151,10 @@ const AgentSelect = () => {
                       />
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Main conversational agent for all book creation interactions
+                      Manages conversations, asks questions, coordinates with book agents
                     </p>
                   </div>
-                  <Badge variant="secondary" className="shrink-0">Chat</Badge>
+                  <Badge variant="secondary" className="shrink-0">Orchestrator</Badge>
                 </div>
               </CardContent>
             </Card>

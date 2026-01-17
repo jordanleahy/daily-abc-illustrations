@@ -1,34 +1,12 @@
-import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, HelpCircle, Check, X, Database, List, Plus, Trash2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, HelpCircle, Check, X, Database, List } from 'lucide-react';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { useAddQuestionOption, useDeleteQuestionOption } from '@/hooks/useQuestionOptions';
 import type { Question } from '@/hooks/useQuestions';
 
 interface QuestionOption {
@@ -36,22 +14,9 @@ interface QuestionOption {
   label: string;
 }
 
-type SupportedTable = 'cities' | 'age_groups' | 'grade_levels' | 'character_themes';
-
 const QuestionDetail = () => {
   const navigate = useNavigate();
   const { questionId } = useParams<{ questionId: string }>();
-  const queryClient = useQueryClient();
-
-  // Dialog states
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [deleteOption, setDeleteOption] = useState<QuestionOption | null>(null);
-  const [newOptionId, setNewOptionId] = useState('');
-  const [newOptionLabel, setNewOptionLabel] = useState('');
-
-  // Mutations
-  const addMutation = useAddQuestionOption();
-  const deleteMutation = useDeleteQuestionOption();
 
   // Fetch the question
   const { data: question, isLoading: isLoadingQuestion } = useQuery({
@@ -84,7 +49,8 @@ const QuestionDetail = () => {
       const labelCol = question.options_label_column;
       const valueCol = question.options_value_column;
 
-      const tableName = question.options_table as SupportedTable;
+      // Dynamic query based on the options_table configuration
+      const tableName = question.options_table as 'cities' | 'age_groups' | 'grade_levels' | 'character_themes';
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
@@ -103,43 +69,6 @@ const QuestionDetail = () => {
     },
     enabled: !!question?.options_table && !!question?.options_label_column && !!question?.options_value_column,
   });
-
-  const handleAddOption = () => {
-    if (!question?.options_table || !newOptionId.trim() || !newOptionLabel.trim()) return;
-
-    const formattedId = newOptionId.trim().toUpperCase().replace(/\s+/g, '_');
-    
-    addMutation.mutate(
-      {
-        tableName: question.options_table as SupportedTable,
-        id: formattedId,
-        label: newOptionLabel.trim(),
-      },
-      {
-        onSuccess: () => {
-          setIsAddDialogOpen(false);
-          setNewOptionId('');
-          setNewOptionLabel('');
-        },
-      }
-    );
-  };
-
-  const handleDeleteOption = () => {
-    if (!question?.options_table || !deleteOption) return;
-
-    deleteMutation.mutate(
-      {
-        tableName: question.options_table as SupportedTable,
-        id: deleteOption.value,
-      },
-      {
-        onSuccess: () => {
-          setDeleteOption(null);
-        },
-      }
-    );
-  };
 
   if (isLoadingQuestion) {
     return (
@@ -165,8 +94,6 @@ const QuestionDetail = () => {
       </StandardPageLayout>
     );
   }
-
-  const canManageOptions = !!question.options_table;
 
   return (
     <StandardPageLayout showHeader={true} containerSize="xl" containerClassName="py-8">
@@ -271,21 +198,11 @@ const QuestionDetail = () => {
         {/* Options List */}
         {question.options_table && (
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <List className="h-5 w-5 text-primary" />
                 Available Options ({options?.length || 0})
               </CardTitle>
-              {canManageOptions && (
-                <Button 
-                  size="sm" 
-                  onClick={() => setIsAddDialogOpen(true)}
-                  className="gap-1.5"
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Option
-                </Button>
-              )}
             </CardHeader>
             <CardContent>
               {isLoadingOptions ? (
@@ -299,25 +216,12 @@ const QuestionDetail = () => {
                   {options.map((option) => (
                     <div 
                       key={option.value}
-                      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors group"
+                      className="flex items-center gap-3 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
                     >
                       <div className="flex-1 min-w-0">
                         <p className="font-medium truncate">{option.label}</p>
                         <p className="text-xs text-muted-foreground font-mono truncate">{option.value}</p>
                       </div>
-                      {canManageOptions && (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity text-destructive hover:text-destructive hover:bg-destructive/10"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setDeleteOption(option);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -328,75 +232,6 @@ const QuestionDetail = () => {
           </Card>
         )}
       </div>
-
-      {/* Add Option Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Option</DialogTitle>
-            <DialogDescription>
-              Add a new option to the {question?.options_table} table. This will be available to all agents using this question.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="optionLabel">Display Label</Label>
-              <Input
-                id="optionLabel"
-                placeholder="e.g., San Francisco"
-                value={newOptionLabel}
-                onChange={(e) => setNewOptionLabel(e.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="optionId">ID (auto-formatted to UPPER_SNAKE_CASE)</Label>
-              <Input
-                id="optionId"
-                placeholder="e.g., san_francisco"
-                value={newOptionId}
-                onChange={(e) => setNewOptionId(e.target.value)}
-              />
-              {newOptionId && (
-                <p className="text-xs text-muted-foreground">
-                  Will be saved as: <span className="font-mono">{newOptionId.trim().toUpperCase().replace(/\s+/g, '_')}</span>
-                </p>
-              )}
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancel
-            </Button>
-            <Button 
-              onClick={handleAddOption}
-              disabled={!newOptionId.trim() || !newOptionLabel.trim() || addMutation.isPending}
-            >
-              {addMutation.isPending ? 'Adding...' : 'Add Option'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deleteOption} onOpenChange={(open) => !open && setDeleteOption(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Option</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to remove "{deleteOption?.label}"? This will hide it from all agents using this question, but the data will be preserved.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteOption}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteMutation.isPending ? 'Removing...' : 'Remove'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
     </StandardPageLayout>
   );
 };

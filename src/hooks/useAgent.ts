@@ -19,7 +19,6 @@ export const useAgent = (agentType: AgentConfig['type']) => {
       const { data, error } = await supabase
         .from('agents')
         .select('*')
-        .eq('user_id', user.id)
         .eq('type', agentType)
         .eq('is_latest', true)
         .maybeSingle();

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowLeft, HelpCircle, Check, X, Database, List, Plus, Trash2, MapPin, Loader2 } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Check, X, Database, List, Plus, Trash2, MapPin, Loader2, Search } from 'lucide-react';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -350,9 +350,10 @@ const QuestionDetail = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
+            <div className="space-y-2 relative">
               <Label htmlFor="citySearch">Search City</Label>
               <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="citySearch"
                   placeholder="Start typing a city name..."
@@ -362,6 +363,7 @@ const QuestionDetail = () => {
                     setSelectedPlace(null);
                   }}
                   autoComplete="off"
+                  className="pl-9"
                 />
                 {(isSearching || isLoadingDetails) && (
                   <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
@@ -370,21 +372,29 @@ const QuestionDetail = () => {
               
               {/* Autocomplete dropdown */}
               {predictions.length > 0 && !selectedPlace && (
-                <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className="absolute left-0 right-0 top-full z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto">
                   {predictions.map((prediction) => (
                     <button
                       key={prediction.place_id}
-                      className="w-full px-3 py-2 text-left hover:bg-accent transition-colors flex items-start gap-2"
+                      className="w-full px-3 py-3 text-left hover:bg-accent focus:bg-accent focus:outline-none transition-colors flex items-start gap-3 border-b border-border/50 last:border-0"
                       onClick={() => handleSelectPlace(prediction.place_id)}
                     >
-                      <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
-                      <div>
-                        <p className="font-medium text-sm">{prediction.main_text}</p>
-                        <p className="text-xs text-muted-foreground">{prediction.secondary_text}</p>
+                      <MapPin className="h-4 w-4 mt-0.5 text-primary shrink-0" />
+                      <div className="min-w-0 flex-1">
+                        <p className="font-medium text-sm truncate">{prediction.main_text}</p>
+                        <p className="text-xs text-muted-foreground truncate">{prediction.secondary_text}</p>
                       </div>
                     </button>
                   ))}
                 </div>
+              )}
+              
+              {/* Empty state hint */}
+              {searchInput.length > 0 && searchInput.length < 2 && !selectedPlace && (
+                <p className="text-xs text-muted-foreground">Type at least 2 characters to search...</p>
+              )}
+              {searchInput.length >= 2 && predictions.length === 0 && !isSearching && !selectedPlace && (
+                <p className="text-xs text-muted-foreground">No cities found. Try a different search term.</p>
               )}
             </div>
 

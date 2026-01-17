@@ -240,12 +240,13 @@ export function useReorderAgentQuestion() {
       questionId: string;
       direction: 'up' | 'down';
     }) => {
-      // Get all agent questions sorted by sort_order
+      // Get all agent questions sorted by sort_order, then by created_at for stable ordering
       const { data: agentQuestions, error: fetchError } = await supabase
         .from('agent_questions')
         .select('id, question_id, sort_order')
         .eq('agent_type', agentType)
-        .order('sort_order', { ascending: true });
+        .order('sort_order', { ascending: true })
+        .order('created_at', { ascending: true });
 
       if (fetchError) throw fetchError;
       if (!agentQuestions || agentQuestions.length < 2) return;
@@ -258,30 +259,65 @@ export function useReorderAgentQuestion() {
       const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
       if (targetIndex < 0 || targetIndex >= agentQuestions.length) return;
 
-      // Swap sort_order values
-      const currentItem = agentQuestions[currentIndex];
-      const targetItem = agentQuestions[targetIndex];
+      // Reassign sort_order values based on current positions, then swap
+      // This ensures unique sort_order values even if they were all 0
+      const updates: { id: string; sort_order: number }[] = agentQuestions.map((q, idx) => ({
+        id: q.id,
+        sort_order: idx,
+      }));
 
-      const { error: updateError1 } = await supabase
-        .from('agent_questions')
-        .update({ sort_order: targetItem.sort_order })
-        .eq('id', currentItem.id);
+      // Swap the positions
+      const temp = updates[currentIndex].sort_order;
+      updates[currentIndex].sort_order = updates[targetIndex].sort_order;
+      updates[targetIndex].sort_order = temp;
 
-      if (updateError1) throw updateError1;
-
-      const { error: updateError2 } = await supabase
-        .from('agent_questions')
-        .update({ sort_order: currentItem.sort_order })
-        .eq('id', targetItem.id);
-
-      if (updateError2) throw updateError2;
+      // Update all items with their new sort_order
+      for (const update of updates) {
+        const { error } = await supabase
+          .from('agent_questions')
+          .update({ sort_order: update.sort_order })
+          .eq('id', update.id);
+        
+        if (error) throw error;
+      }
     },
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['agent-questions', variables.agentType] });
+    onMutate: async (variables) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['agent-questions', variables.agentType] });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData<AgentQuestionWithDetails[]>(['agent-questions', variables.agentType]);
+
+      // Optimistically update
+      if (previousData) {
+        const currentIndex = previousData.findIndex(q => q.question_id === variables.questionId);
+        if (currentIndex !== -1) {
+          const targetIndex = variables.direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+          if (targetIndex >= 0 && targetIndex < previousData.length) {
+            const newData = [...previousData];
+            // Swap items
+            [newData[currentIndex], newData[targetIndex]] = [newData[targetIndex], newData[currentIndex]];
+            // Update sort_order values
+            newData.forEach((item, idx) => {
+              item.sort_order = idx;
+            });
+            queryClient.setQueryData(['agent-questions', variables.agentType], newData);
+          }
+        }
+      }
+
+      return { previousData };
     },
-    onError: (error) => {
+    onError: (error, variables, context) => {
+      // Rollback on error
+      if (context?.previousData) {
+        queryClient.setQueryData(['agent-questions', variables.agentType], context.previousData);
+      }
       console.error('Error reordering question:', error);
       toast.error('Failed to reorder question');
+    },
+    onSettled: (_, __, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['agent-questions', variables.agentType] });
     },
   });
 }

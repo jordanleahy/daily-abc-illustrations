@@ -5,32 +5,6 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-interface PlacePrediction {
-  place_id: string;
-  description: string;
-  structured_formatting: {
-    main_text: string;
-    secondary_text: string;
-  };
-}
-
-interface PlaceDetails {
-  place_id: string;
-  name: string;
-  formatted_address: string;
-  geometry: {
-    location: {
-      lat: number;
-      lng: number;
-    };
-  };
-  address_components: Array<{
-    long_name: string;
-    short_name: string;
-    types: string[];
-  }>;
-}
-
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -62,26 +36,38 @@ serve(async (req) => {
 
       console.log(`[Autocomplete] Searching for: ${input}`);
 
+      // Use Places API (New) - Autocomplete endpoint
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/autocomplete/json?input=${encodeURIComponent(input)}&types=(cities)&key=${apiKey}`
+        'https://places.googleapis.com/v1/places:autocomplete',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': apiKey,
+          },
+          body: JSON.stringify({
+            input: input,
+            includedPrimaryTypes: ['locality', 'administrative_area_level_3'],
+          }),
+        }
       );
 
       const data = await response.json();
       
-      if (data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
-        console.error('[Autocomplete] Google API error:', data.status, data.error_message);
+      if (data.error) {
+        console.error('[Autocomplete] Google API error:', data.error);
         return new Response(
-          JSON.stringify({ error: data.error_message || data.status }),
+          JSON.stringify({ error: data.error.message || 'API error' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      const predictions = (data.predictions || []).map((p: PlacePrediction) => ({
-        place_id: p.place_id,
-        description: p.description,
-        main_text: p.structured_formatting?.main_text || p.description,
-        secondary_text: p.structured_formatting?.secondary_text || '',
-      }));
+      const predictions = (data.suggestions || []).map((s: any) => ({
+        place_id: s.placePrediction?.placeId || '',
+        description: s.placePrediction?.text?.text || '',
+        main_text: s.placePrediction?.structuredFormat?.mainText?.text || '',
+        secondary_text: s.placePrediction?.structuredFormat?.secondaryText?.text || '',
+      })).filter((p: any) => p.place_id);
 
       console.log(`[Autocomplete] Found ${predictions.length} results`);
 
@@ -103,45 +89,53 @@ serve(async (req) => {
 
       console.log(`[Details] Fetching details for place_id: ${placeId}`);
 
+      // Use Places API (New) - Place Details endpoint
       const response = await fetch(
-        `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&fields=place_id,name,formatted_address,geometry,address_components&key=${apiKey}`
+        `https://places.googleapis.com/v1/places/${placeId}?languageCode=en`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Goog-Api-Key': apiKey,
+            'X-Goog-FieldMask': 'id,displayName,formattedAddress,location,addressComponents',
+          },
+        }
       );
 
       const data = await response.json();
 
-      if (data.status !== 'OK') {
-        console.error('[Details] Google API error:', data.status, data.error_message);
+      if (data.error) {
+        console.error('[Details] Google API error:', data.error);
         return new Response(
-          JSON.stringify({ error: data.error_message || data.status }),
+          JSON.stringify({ error: data.error.message || 'API error' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
-      const result = data.result as PlaceDetails;
-      
-      // Extract city, state, country from address_components
-      let city = result.name;
+      // Extract city, state, country from addressComponents
+      let city = data.displayName?.text || '';
       let state = '';
       let country = '';
 
-      for (const component of result.address_components || []) {
-        if (component.types.includes('locality')) {
-          city = component.long_name;
+      for (const component of data.addressComponents || []) {
+        const types = component.types || [];
+        if (types.includes('locality')) {
+          city = component.longText || city;
         }
-        if (component.types.includes('administrative_area_level_1')) {
-          state = component.short_name; // Use short_name for states (e.g., "NJ" instead of "New Jersey")
+        if (types.includes('administrative_area_level_1')) {
+          state = component.shortText || ''; // Use shortText for states (e.g., "NJ")
         }
-        if (component.types.includes('country')) {
-          country = component.long_name;
+        if (types.includes('country')) {
+          country = component.longText || '';
         }
       }
 
       const details = {
-        place_id: result.place_id,
+        place_id: data.id || placeId,
         name: city,
-        formatted_address: result.formatted_address,
-        latitude: result.geometry?.location?.lat,
-        longitude: result.geometry?.location?.lng,
+        formatted_address: data.formattedAddress || '',
+        latitude: data.location?.latitude,
+        longitude: data.location?.longitude,
         city,
         state,
         country,

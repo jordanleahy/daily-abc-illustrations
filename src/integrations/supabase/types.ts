@@ -2132,6 +2132,63 @@ export type Database = {
         }
         Relationships: []
       }
+      resorts: {
+        Row: {
+          atmosphere: string | null
+          color_palette: string | null
+          country: string | null
+          created_at: string | null
+          description: string | null
+          difficulty_levels: string[] | null
+          emoji: string | null
+          id: string
+          is_active: boolean | null
+          label: string
+          location: string | null
+          signature_runs: string[] | null
+          sort_order: number | null
+          state: string | null
+          terrain: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          atmosphere?: string | null
+          color_palette?: string | null
+          country?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty_levels?: string[] | null
+          emoji?: string | null
+          id: string
+          is_active?: boolean | null
+          label: string
+          location?: string | null
+          signature_runs?: string[] | null
+          sort_order?: number | null
+          state?: string | null
+          terrain?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          atmosphere?: string | null
+          color_palette?: string | null
+          country?: string | null
+          created_at?: string | null
+          description?: string | null
+          difficulty_levels?: string[] | null
+          emoji?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          location?: string | null
+          signature_runs?: string[] | null
+          sort_order?: number | null
+          state?: string | null
+          terrain?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       screen_time_sessions: {
         Row: {
           created_at: string | null

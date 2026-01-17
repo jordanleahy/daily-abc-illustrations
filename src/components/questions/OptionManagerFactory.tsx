@@ -2,6 +2,7 @@ import { AgeGroupOptionManager } from './AgeGroupOptionManager';
 import { CharacterThemeOptionManager } from './CharacterThemeOptionManager';
 import { GradeLevelOptionManager } from './GradeLevelOptionManager';
 import { CityOptionManager } from './CityOptionManager';
+import { ResortOptionManager } from './ResortOptionManager';
 
 interface OptionManagerFactoryProps {
   tableName: string;
@@ -22,6 +23,8 @@ export function OptionManagerFactory({ tableName, questionId }: OptionManagerFac
       return <GradeLevelOptionManager questionId={questionId} />;
     case 'cities':
       return <CityOptionManager questionId={questionId} />;
+    case 'resorts':
+      return <ResortOptionManager questionId={questionId} />;
     default:
       return (
         <div className="p-4 text-center text-muted-foreground">

@@ -18,13 +18,6 @@ export interface City {
   sort_order: number;
 }
 
-export interface CityOption {
-  id: string;
-  label: string;
-  emoji: string;
-  description: string;
-}
-
 /**
  * Fetches active cities from the database
  * Uses 1-hour cache since cities rarely change
@@ -50,23 +43,6 @@ export function useCities() {
     gcTime: 2 * 60 * 60 * 1000, // 2 hours
   });
 }
-
-/**
- * Returns cities formatted for UI selection components
- */
-export function useCityOptions() {
-  const { data: cities, ...rest } = useCities();
-  
-  const options: CityOption[] = (cities || []).map(city => ({
-    id: city.id,
-    label: city.label,
-    emoji: city.emoji,
-    description: city.description || '',
-  }));
-
-  return { data: options, ...rest };
-}
-
 /**
  * Get a single city by ID
  */

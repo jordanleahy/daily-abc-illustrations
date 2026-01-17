@@ -28,7 +28,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
-import { useAddCity, useDeleteCity, usePlacesAutocomplete, PlaceDetails } from '@/hooks/useCityOptions';
+import { useAddCity, useDeleteCity, usePlacesAutocomplete, PlaceDetails } from '@/hooks/useCityMutations';
 import type { Question } from '@/hooks/useQuestions';
 
 interface QuestionOption {

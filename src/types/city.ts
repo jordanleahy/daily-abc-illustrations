@@ -8,4 +8,4 @@
 export type CityId = string;
 
 // Re-export interfaces from hook for convenience
-export type { City, CityOption } from '@/hooks/useCities';
+export type { City } from '@/hooks/useCities';

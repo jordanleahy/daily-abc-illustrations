@@ -94,33 +94,35 @@ const AgentSelect = () => {
     <StandardPageLayout showHeader={true} containerSize="xl" containerClassName="py-8">
       <div className="space-y-8">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Agent Configuration</h1>
-            <p className="text-muted-foreground mt-1">
-              Select an agent to configure its settings and questions
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/agents/settings')}
-              className="gap-2"
-            >
-              <Settings className="h-4 w-4" />
-              Settings
-            </Button>
-            {userRole?.isAdmin && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Agent Configuration</h1>
+              <p className="text-muted-foreground text-sm sm:text-base mt-1">
+                Select an agent to configure its settings and questions
+              </p>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
               <Button
-                onClick={() => navigate('/agents/create')}
+                variant="outline"
                 size="sm"
+                onClick={() => navigate('/agents/settings')}
                 className="gap-2"
               >
-                <Plus className="h-4 w-4" />
-                Create Agent
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Settings</span>
               </Button>
-            )}
+              {userRole?.isAdmin && (
+                <Button
+                  onClick={() => navigate('/agents/create')}
+                  size="sm"
+                  className="gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="hidden sm:inline">Create Agent</span>
+                </Button>
+              )}
+            </div>
           </div>
         </div>
 

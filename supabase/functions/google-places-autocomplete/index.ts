@@ -233,7 +233,7 @@ serve(async (req) => {
                       latitude: parseFloat(lat),
                       longitude: parseFloat(lng),
                     },
-                    radius: 15000, // 15km radius
+                    radius: 8000, // 8km radius - tighter for city-specific results
                   },
                 },
                 rankPreference: 'POPULARITY',

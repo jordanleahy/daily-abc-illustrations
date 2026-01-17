@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Pencil, Link2, BookOpen, Bot, Loader2 } from 'lucide-react';
+import { Pencil, Link2, BookOpen, Bot, Loader2, HelpCircle } from 'lucide-react';
+import { AgentQuestionsManager } from './AgentQuestionsManager';
 import { getIconComponent, getAvailableIconNames } from '@/utils/iconMapping';
 import { BOOK_TYPE_TO_AGENT_TYPE } from '@/types/shared/agent';
 import type { DatabaseBookType } from '@/hooks/useBookTypes';
@@ -534,6 +535,24 @@ function TwoPanelEditor({ pair, onSave, isSaving, onCancel }: TwoPanelEditorProp
           )}
         </div>
       </div>
+
+      {/* Questions Section - Full Width */}
+      {agentData && pair.agent && (
+        <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+          <div className="flex items-center gap-2 pb-2 border-b">
+            <HelpCircle className="h-4 w-4 text-primary" />
+            <h3 className="font-semibold">Discovery Questions</h3>
+            <span className="text-xs text-muted-foreground">
+              Enable questions the AI will ask during book creation
+            </span>
+          </div>
+          <AgentQuestionsManager 
+            agentType={pair.agent.type} 
+            agentName={pair.agent.name}
+            embedded
+          />
+        </div>
+      )}
 
       {/* Footer Actions */}
       <div className="flex justify-end gap-3 pt-4 border-t">

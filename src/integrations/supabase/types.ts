@@ -177,6 +177,44 @@ export type Database = {
           },
         ]
       }
+      agent_questions: {
+        Row: {
+          agent_type: string
+          created_at: string | null
+          id: string
+          is_enabled: boolean | null
+          question_id: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          agent_type: string
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          question_id: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          agent_type?: string
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          question_id?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_questions_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           created_at: string
@@ -1995,6 +2033,48 @@ export type Database = {
           last_name?: string
           trial_ends_at?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          label: string
+          options_label_column: string | null
+          options_table: string | null
+          options_value_column: string | null
+          placeholder_key: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id: string
+          is_active?: boolean | null
+          label: string
+          options_label_column?: string | null
+          options_table?: string | null
+          options_value_column?: string | null
+          placeholder_key: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          options_label_column?: string | null
+          options_table?: string | null
+          options_value_column?: string | null
+          placeholder_key?: string
+          sort_order?: number | null
+          updated_at?: string | null
         }
         Relationships: []
       }

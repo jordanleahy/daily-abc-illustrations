@@ -123,7 +123,8 @@ export const useAddCity = () => {
 
       const nextSortOrder = (maxSortData?.sort_order ?? 0) + 1;
 
-      const { data, error } = await supabase
+      // Insert the city
+      const { data: cityData, error: cityError } = await supabase
         .from('cities')
         .insert({
           id,
@@ -140,13 +141,76 @@ export const useAddCity = () => {
         .select()
         .single();
 
-      if (error) throw error;
-      return data;
+      if (cityError) throw cityError;
+
+      // If we have coordinates, fetch nearby landmarks
+      if (latitude && longitude) {
+        try {
+          console.log(`Fetching nearby landmarks for ${label}...`);
+          
+          const response = await fetch(
+            `https://foxdnspwzhjxjxuicute.supabase.co/functions/v1/google-places-autocomplete?action=nearby&lat=${latitude}&lng=${longitude}&city_id=${id}`,
+            {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+
+          const result = await response.json();
+
+          if (result.landmarks && result.landmarks.length > 0) {
+            console.log(`Found ${result.landmarks.length} landmarks, inserting...`);
+            
+            // Get max sort_order for landmarks in this city
+            const { data: maxLandmarkSort } = await supabase
+              .from('city_landmarks')
+              .select('sort_order')
+              .eq('city_id', id)
+              .order('sort_order', { ascending: false })
+              .limit(1)
+              .single();
+
+            let sortOrder = (maxLandmarkSort?.sort_order ?? 0) + 1;
+
+            // Prepare landmarks for insertion
+            const landmarksToInsert = result.landmarks.map((landmark: any) => ({
+              city_id: id,
+              name: landmark.name,
+              description: landmark.description || `A notable ${landmark.type} in ${label}`,
+              type: landmark.type,
+              category: landmark.category,
+              google_place_id: landmark.google_place_id,
+              visual_cues: landmark.visual_cues,
+              is_major: landmark.is_major,
+              is_active: true,
+              sort_order: sortOrder++,
+            }));
+
+            const { error: landmarksError } = await supabase
+              .from('city_landmarks')
+              .insert(landmarksToInsert);
+
+            if (landmarksError) {
+              console.error('Error inserting landmarks:', landmarksError);
+              // Don't throw - city was added successfully, landmarks are optional
+            } else {
+              console.log(`Successfully inserted ${landmarksToInsert.length} landmarks`);
+            }
+          }
+        } catch (err) {
+          console.error('Error fetching landmarks:', err);
+          // Don't throw - city was added successfully
+        }
+      }
+
+      return cityData;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['question-options'] });
       queryClient.invalidateQueries({ queryKey: ['cities'] });
-      toast.success('City added successfully');
+      queryClient.invalidateQueries({ queryKey: ['city-landmarks'] });
+      toast.success('City added with landmarks');
     },
     onError: (error: Error) => {
       console.error('Error adding city:', error);

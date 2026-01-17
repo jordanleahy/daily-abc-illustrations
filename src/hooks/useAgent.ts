@@ -89,7 +89,6 @@ export const useAgentMutations = (agentType: AgentConfig['type']) => {
       const { data: existingAgent } = await supabase
         .from('agents')
         .select('*')
-        .eq('user_id', user.id)
         .eq('type', agentType)
         .eq('is_latest', true)
         .maybeSingle();

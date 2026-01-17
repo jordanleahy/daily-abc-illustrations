@@ -123,10 +123,10 @@ export const useAddCity = () => {
 
       const nextSortOrder = (maxSortData?.sort_order ?? 0) + 1;
 
-      // Insert the city
+      // Upsert the city - reactivates if previously soft-deleted
       const { data: cityData, error: cityError } = await supabase
         .from('cities')
-        .insert({
+        .upsert({
           id,
           label,
           emoji,
@@ -137,7 +137,7 @@ export const useAddCity = () => {
           country,
           is_active: true,
           sort_order: nextSortOrder,
-        })
+        }, { onConflict: 'id' })
         .select()
         .single();
 

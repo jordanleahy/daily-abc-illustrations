@@ -2,9 +2,10 @@ import { useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useQuestions, useAgentQuestions, useToggleAgentQuestion, useInitializeAgentQuestions } from '@/hooks/useQuestions';
-import { HelpCircle, Database, MapPin, Palette, GraduationCap, Users, Type } from 'lucide-react';
+import { useQuestions, useAgentQuestions, useToggleAgentQuestion, useInitializeAgentQuestions, useReorderAgentQuestion } from '@/hooks/useQuestions';
+import { HelpCircle, Database, MapPin, Palette, GraduationCap, Users, Type, ChevronUp, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AgentQuestionsManagerProps {
@@ -27,6 +28,7 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
   const { data: agentQuestions, isLoading: agentQuestionsLoading } = useAgentQuestions(agentType);
   const toggleMutation = useToggleAgentQuestion();
   const initializeMutation = useInitializeAgentQuestions();
+  const reorderMutation = useReorderAgentQuestion();
 
   // Initialize mappings when component loads
   useEffect(() => {
@@ -37,16 +39,29 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
 
   const isLoading = questionsLoading || agentQuestionsLoading;
 
-  // Create a map of question states
-  const questionStates = new Map(
-    (agentQuestions || []).map(aq => [aq.question_id, aq.is_enabled])
-  );
+  // Build sorted list using agent_questions order, falling back to question order
+  const sortedQuestions = (agentQuestions || [])
+    .map(aq => ({
+      ...aq.question,
+      agentQuestionId: aq.id,
+      isEnabled: aq.is_enabled,
+      agentSortOrder: aq.sort_order,
+    }))
+    .sort((a, b) => (a.agentSortOrder ?? 0) - (b.agentSortOrder ?? 0));
 
   const handleToggle = (questionId: string, currentEnabled: boolean) => {
     toggleMutation.mutate({
       agentType,
       questionId,
       isEnabled: !currentEnabled,
+    });
+  };
+
+  const handleReorder = (questionId: string, direction: 'up' | 'down') => {
+    reorderMutation.mutate({
+      agentType,
+      questionId,
+      direction,
     });
   };
 
@@ -77,17 +92,42 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
 
   const questionsList = (
     <div className="space-y-3">
-      {(allQuestions || []).map(question => {
-        const isEnabled = questionStates.get(question.id) ?? false;
+      {sortedQuestions.map((question, index) => {
         const isPending = toggleMutation.isPending && 
           toggleMutation.variables?.questionId === question.id;
+        const isReordering = reorderMutation.isPending &&
+          reorderMutation.variables?.questionId === question.id;
+        const isFirst = index === 0;
+        const isLast = index === sortedQuestions.length - 1;
 
         return (
           <div
             key={question.id}
             className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/5 transition-colors"
           >
-            <div className="flex items-center gap-3">
+            {/* Reorder buttons */}
+            <div className="flex flex-col gap-0.5 mr-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                disabled={isFirst || isReordering}
+                onClick={() => handleReorder(question.id, 'up')}
+              >
+                <ChevronUp className="h-4 w-4" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6"
+                disabled={isLast || isReordering}
+                onClick={() => handleReorder(question.id, 'down')}
+              >
+                <ChevronDown className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="flex items-center gap-3 flex-1">
               <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/10 text-primary">
                 {questionIcons[question.id] || <HelpCircle className="h-4 w-4" />}
               </div>
@@ -121,8 +161,8 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
               </div>
             </div>
             <Switch
-              checked={isEnabled}
-              onCheckedChange={() => handleToggle(question.id, isEnabled)}
+              checked={question.isEnabled}
+              onCheckedChange={() => handleToggle(question.id, question.isEnabled)}
               disabled={isPending}
               aria-label={`Toggle ${question.label}`}
             />
@@ -130,7 +170,7 @@ export function AgentQuestionsManager({ agentType, agentName, embedded = false }
         );
       })}
 
-      {(!allQuestions || allQuestions.length === 0) && (
+      {sortedQuestions.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
           No questions configured in the registry.
         </div>

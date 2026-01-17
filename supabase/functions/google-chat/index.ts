@@ -149,6 +149,9 @@ serve(async (req) => {
     let systemPromptContent: string;
     let agentSource: string;
 
+    // Track enabled questions for this agent (will be populated if bookType is set)
+    let enabledQuestions: Set<string> = new Set();
+
     if (bookType) {
       // Book type selected - route to specialized agent
       const agentType = BOOK_TYPE_TO_AGENT_TYPE[bookType] || 'book-creation';
@@ -161,6 +164,21 @@ serve(async (req) => {
         .eq('type', agentType)
         .eq('is_latest', true)
         .single();
+      
+      // Fetch enabled questions for this agent type
+      const { data: agentQuestions } = await supabase
+        .from('agent_questions')
+        .select('question_id, is_enabled')
+        .eq('agent_type', agentType);
+      
+      if (agentQuestions) {
+        for (const aq of agentQuestions) {
+          if (aq.is_enabled) {
+            enabledQuestions.add(aq.question_id);
+          }
+        }
+        console.log(`📋 Enabled questions for ${agentType}:`, Array.from(enabledQuestions));
+      }
       
       if (agent?.instructions) {
         systemPromptContent = agent.instructions;
@@ -179,9 +197,12 @@ serve(async (req) => {
       console.log('🔍 No book type selected');
     }
 
-    // Add context about grade level if already provided
-    const gradeContext = gradeLevel
+    // Add context about grade level if already provided (only if grade_level question is enabled)
+    const isGradeLevelEnabled = enabledQuestions.has('grade_level');
+    const gradeContext = gradeLevel && isGradeLevelEnabled
       ? `\n\n⚠️ CRITICAL - GRADE STATUS:\n📚 GRADE ALREADY SELECTED: ${getGradeLabel(gradeLevel)}\n❌ DO NOT ask "What grade level?" - Step 2 is COMPLETE.\n✅ PROCEED to the next step in the flow.\nTailor all educational content, vocabulary, and complexity to ${getGradeLabel(gradeLevel)}.`
+      : !isGradeLevelEnabled
+      ? `\n\n📋 GRADE LEVEL QUESTION DISABLED: Do NOT ask about grade level. Use age-appropriate content for general children's educational books.`
       : '';
 
     // ABC-specific curated items context - only process if ABC book and subject theme selected
@@ -303,13 +324,17 @@ serve(async (req) => {
     }
 
 
-    const themeContext = characterTheme
-      ? characterTheme === 'custom'
-        ? `\n\n⚠️ CRITICAL - THEME STATUS:\n🎨 CUSTOM THEME REQUESTED - The user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.\n\n❌ DO NOT ask "What character theme would you like?" - this step is complete.`
-        : characterTheme === 'no-theme'
-        ? `\n\n⚠️ CRITICAL - THEME STATUS:\n📚 NO THEME - The user prefers an educational-only book without character themes. Focus purely on educational content with classic, simple illustrations. Do NOT integrate any character themes.\n\n❌ DO NOT ask about character themes - this step is complete. Proceed to grade level.`
-        : `\n\n⚠️ CRITICAL - THEME STATUS:\n🎨 THEME ALREADY SELECTED: "${characterTheme}"\n❌ DO NOT ask "What character theme would you like?" - Step 1 is COMPLETE.\n✅ PROCEED to Step 2 (Grade Level) or Step 3 if grade is also set.\nIntegrate "${characterTheme}" character throughout the book outline including cover page, educational focus page, and all content pages.`
-      : '';
+    // Character theme context (only if character_theme question is enabled)
+    const isCharacterThemeEnabled = enabledQuestions.has('character_theme');
+    const themeContext = isCharacterThemeEnabled
+      ? characterTheme
+        ? characterTheme === 'custom'
+          ? `\n\n⚠️ CRITICAL - THEME STATUS:\n🎨 CUSTOM THEME REQUESTED - The user wants a custom character theme but hasn't specified it yet. Ask them: "What character, style, or theme would you like? (e.g., dinosaurs, unicorns, superheroes, ocean animals)" Once they provide their custom theme, integrate it throughout the book outline.\n\n❌ DO NOT ask "What character theme would you like?" - this step is complete.`
+          : characterTheme === 'no-theme'
+          ? `\n\n⚠️ CRITICAL - THEME STATUS:\n📚 NO THEME - The user prefers an educational-only book without character themes. Focus purely on educational content with classic, simple illustrations. Do NOT integrate any character themes.\n\n❌ DO NOT ask about character themes - this step is complete. Proceed to grade level.`
+          : `\n\n⚠️ CRITICAL - THEME STATUS:\n🎨 THEME ALREADY SELECTED: "${characterTheme}"\n❌ DO NOT ask "What character theme would you like?" - Step 1 is COMPLETE.\n✅ PROCEED to Step 2 (Grade Level) or Step 3 if grade is also set.\nIntegrate "${characterTheme}" character throughout the book outline including cover page, educational focus page, and all content pages.`
+        : ''
+      : `\n\n📋 CHARACTER THEME QUESTION DISABLED: Do NOT ask about character themes. Proceed with educational content without themed characters.`;
 
     // Character constraints for selected characters - now fetched from database
     let characterConstraintsContext = '';
@@ -356,11 +381,14 @@ serve(async (req) => {
       ? `\n\n⚠️ CRITICAL - LOCATION STATUS:\n📍 LOCATION ALREADY SELECTED: ${getLocationDisplay(location)}${spellingGuide ? `\n📝 ${spellingGuide}` : ''}\n❌ DO NOT ask "Which resort/location?" - this step is COMPLETE.${visualPrompt || ''}`
       : '';
 
-    // City context - optional discovery question for urban setting (asked after resort)
+    // City context - optional discovery question for urban setting (only if city question is enabled)
+    const isCityEnabled = enabledQuestions.has('city');
     const cityVisualPrompt = city && isValidCity(city) ? getCityVisualPromptSync(city) : null;
-    const cityContext = city && isValidCity(city)
-      ? `\n\n⚠️ CRITICAL - CITY STATUS:\n🏙️ CITY ALREADY SELECTED: ${getCityDisplaySync(city)}\n❌ DO NOT ask "Which city?" - this step is COMPLETE.${cityVisualPrompt || ''}`
-      : '';
+    const cityContext = isCityEnabled
+      ? (city && isValidCity(city)
+          ? `\n\n⚠️ CRITICAL - CITY STATUS:\n🏙️ CITY ALREADY SELECTED: ${getCityDisplaySync(city)}\n❌ DO NOT ask "Which city?" - this step is COMPLETE.${cityVisualPrompt || ''}`
+          : '')
+      : `\n\n📋 CITY QUESTION DISABLED: Do NOT ask about city/location preferences.`;
 
     // Manner type context - for Manners book agent
     // Labels now fetched from database via frontend - only need context injection here

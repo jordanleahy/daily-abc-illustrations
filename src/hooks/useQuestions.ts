@@ -2,6 +2,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+export interface StaticOption {
+  value: string;
+  label: string;
+}
+
 export interface Question {
   id: string;
   label: string;
@@ -9,11 +14,27 @@ export interface Question {
   options_table: string | null;
   options_label_column: string | null;
   options_value_column: string | null;
+  static_options: StaticOption[] | null;
+  icon_name: string | null;
   placeholder_key: string;
   is_active: boolean;
   sort_order: number;
   created_at: string;
   updated_at: string;
+}
+
+export interface QuestionInput {
+  id: string;
+  label: string;
+  description?: string;
+  options_table?: string | null;
+  options_label_column?: string | null;
+  options_value_column?: string | null;
+  static_options?: StaticOption[] | null;
+  icon_name?: string;
+  placeholder_key: string;
+  is_active?: boolean;
+  sort_order?: number;
 }
 
 export interface AgentQuestion {
@@ -28,6 +49,18 @@ export interface AgentQuestion {
 
 export interface AgentQuestionWithDetails extends AgentQuestion {
   question: Question;
+}
+
+/**
+ * Convert database row to Question type with proper static_options parsing
+ */
+function parseQuestion(row: any): Question {
+  return {
+    ...row,
+    static_options: Array.isArray(row.static_options) 
+      ? row.static_options as StaticOption[]
+      : null,
+  };
 }
 
 /**
@@ -47,7 +80,7 @@ export function useQuestions() {
         throw error;
       }
 
-      return data || [];
+      return (data || []).map(parseQuestion);
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -78,7 +111,7 @@ export function useAgentQuestions(agentType: string | undefined) {
 
       return (data || []).map(item => ({
         ...item,
-        question: item.question as Question
+        question: parseQuestion(item.question)
       }));
     },
     enabled: !!agentType,

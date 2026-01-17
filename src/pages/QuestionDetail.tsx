@@ -29,7 +29,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAddCity, useDeleteCity, usePlacesAutocomplete, PlaceDetails } from '@/hooks/useCityMutations';
-import type { Question } from '@/hooks/useQuestions';
+import type { Question, StaticOption } from '@/hooks/useQuestions';
 
 interface QuestionOption {
   value: string;
@@ -111,7 +111,14 @@ const QuestionDetail = () => {
         console.error('Error fetching question:', error);
         return null;
       }
-      return data;
+      // Parse the static_options JSONB field
+      const staticOpts = Array.isArray(data.static_options) 
+        ? (data.static_options as unknown as StaticOption[])
+        : null;
+      return {
+        ...data,
+        static_options: staticOpts,
+      } as Question;
     },
     enabled: !!questionId,
   });

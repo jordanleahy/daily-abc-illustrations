@@ -145,6 +145,7 @@ export const useAddCity = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['question-options'] });
+      queryClient.invalidateQueries({ queryKey: ['cities'] });
       toast.success('City added successfully');
     },
     onError: (error: Error) => {
@@ -170,6 +171,7 @@ export const useDeleteCity = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['question-options'] });
+      queryClient.invalidateQueries({ queryKey: ['cities'] });
       toast.success('City removed from options');
     },
     onError: (error: Error) => {

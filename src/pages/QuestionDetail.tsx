@@ -10,13 +10,13 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+} from '@/components/ui/drawer';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -334,22 +334,22 @@ const QuestionDetail = () => {
         )}
       </div>
 
-      {/* Add City Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+      {/* Add City Bottom Sheet */}
+      <Drawer open={isAddDialogOpen} onOpenChange={(open) => {
         setIsAddDialogOpen(open);
         if (!open) resetDialog();
       }}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+        <DrawerContent className="max-h-[85vh]">
+          <DrawerHeader className="text-left">
+            <DrawerTitle className="flex items-center gap-2">
               <MapPin className="h-5 w-5 text-primary" />
               Add New City
-            </DialogTitle>
-            <DialogDescription>
+            </DrawerTitle>
+            <DrawerDescription>
               Search for a city using Google Places to get accurate location data.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
+            </DrawerDescription>
+          </DrawerHeader>
+          <div className="px-4 pb-4 space-y-4 overflow-y-auto">
             <div className="space-y-2 relative">
               <Label htmlFor="citySearch">Search City</Label>
               <div className="relative">
@@ -372,7 +372,7 @@ const QuestionDetail = () => {
               
               {/* Autocomplete dropdown */}
               {predictions.length > 0 && !selectedPlace && (
-                <div className="absolute left-0 right-0 top-full z-50 mt-1 bg-popover border border-border rounded-md shadow-lg max-h-60 overflow-auto">
+                <div className="bg-muted border border-border rounded-lg max-h-48 overflow-auto">
                   {predictions.map((prediction) => (
                     <button
                       key={prediction.place_id}
@@ -426,13 +426,7 @@ const QuestionDetail = () => {
               </div>
             )}
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => {
-              setIsAddDialogOpen(false);
-              resetDialog();
-            }}>
-              Cancel
-            </Button>
+          <DrawerFooter className="pt-2">
             <Button 
               onClick={() => {
                 if (selectedPlace) {
@@ -462,12 +456,19 @@ const QuestionDetail = () => {
                 }
               }}
               disabled={!selectedPlace || addCity.isPending}
+              className="w-full"
             >
               {addCity.isPending ? 'Adding...' : 'Add City'}
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <Button variant="outline" className="w-full" onClick={() => {
+              setIsAddDialogOpen(false);
+              resetDialog();
+            }}>
+              Cancel
+            </Button>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deleteOption} onOpenChange={(open) => !open && setDeleteOption(null)}>

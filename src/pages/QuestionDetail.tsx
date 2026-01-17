@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, HelpCircle, Check, X, Database, List, Plus, Trash2, MapPin } from 'lucide-react';
+import { ArrowLeft, HelpCircle, Check, X, Database, List, Plus, Trash2 } from 'lucide-react';
 import { StandardPageLayout } from '@/components/layout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,27 +29,14 @@ import {
 } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAddQuestionOption, useDeleteQuestionOption } from '@/hooks/useQuestionOptions';
-import { CityTypeahead } from '@/components/questions/CityTypeahead';
 import type { Question } from '@/hooks/useQuestions';
 
 interface QuestionOption {
   value: string;
   label: string;
-  state?: string;
-  country?: string;
 }
 
 type SupportedTable = 'cities' | 'age_groups' | 'grade_levels' | 'character_themes';
-
-interface CityDetails {
-  placeId: string;
-  formattedAddress: string;
-  city: string;
-  state: string;
-  country: string;
-  latitude: number;
-  longitude: number;
-}
 
 const QuestionDetail = () => {
   const navigate = useNavigate();
@@ -61,9 +48,6 @@ const QuestionDetail = () => {
   const [deleteOption, setDeleteOption] = useState<QuestionOption | null>(null);
   const [newOptionId, setNewOptionId] = useState('');
   const [newOptionLabel, setNewOptionLabel] = useState('');
-  
-  // City-specific state
-  const [selectedCity, setSelectedCity] = useState<CityDetails | null>(null);
 
   // Mutations
   const addMutation = useAddQuestionOption();
@@ -121,58 +105,24 @@ const QuestionDetail = () => {
   });
 
   const handleAddOption = () => {
-    if (!question?.options_table) return;
-    
-    // For cities, use the selected city from type-ahead
-    if (question.options_table === 'cities') {
-      if (!selectedCity) return;
-      
-      const formattedId = selectedCity.city.toUpperCase().replace(/\s+/g, '_');
-      const displayLabel = selectedCity.state 
-        ? `${selectedCity.city}, ${selectedCity.state}`
-        : selectedCity.city;
-      
-      addMutation.mutate(
-        {
-          tableName: 'cities',
-          id: formattedId,
-          label: displayLabel,
-          additionalFields: {
-            state: selectedCity.state,
-            country: selectedCity.country,
-            latitude: selectedCity.latitude,
-            longitude: selectedCity.longitude,
-            place_id: selectedCity.placeId,
-          },
-        },
-        {
-          onSuccess: () => {
-            setIsAddDialogOpen(false);
-            setSelectedCity(null);
-          },
-        }
-      );
-    } else {
-      // For other tables, use the manual input
-      if (!newOptionId.trim() || !newOptionLabel.trim()) return;
+    if (!question?.options_table || !newOptionId.trim() || !newOptionLabel.trim()) return;
 
-      const formattedId = newOptionId.trim().toUpperCase().replace(/\s+/g, '_');
-      
-      addMutation.mutate(
-        {
-          tableName: question.options_table as SupportedTable,
-          id: formattedId,
-          label: newOptionLabel.trim(),
+    const formattedId = newOptionId.trim().toUpperCase().replace(/\s+/g, '_');
+    
+    addMutation.mutate(
+      {
+        tableName: question.options_table as SupportedTable,
+        id: formattedId,
+        label: newOptionLabel.trim(),
+      },
+      {
+        onSuccess: () => {
+          setIsAddDialogOpen(false);
+          setNewOptionId('');
+          setNewOptionLabel('');
         },
-        {
-          onSuccess: () => {
-            setIsAddDialogOpen(false);
-            setNewOptionId('');
-            setNewOptionLabel('');
-          },
-        }
-      );
-    }
+      }
+    );
   };
 
   const handleDeleteOption = () => {
@@ -380,14 +330,7 @@ const QuestionDetail = () => {
       </div>
 
       {/* Add Option Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
-        setIsAddDialogOpen(open);
-        if (!open) {
-          setSelectedCity(null);
-          setNewOptionId('');
-          setNewOptionLabel('');
-        }
-      }}>
+      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Option</DialogTitle>
@@ -395,75 +338,38 @@ const QuestionDetail = () => {
               Add a new option to the {question?.options_table} table. This will be available to all agents using this question.
             </DialogDescription>
           </DialogHeader>
-          
-          {question?.options_table === 'cities' ? (
-            // City-specific: Google Places type-ahead
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Search for a City</Label>
-                <CityTypeahead
-                  onSelect={(details) => setSelectedCity(details)}
-                  placeholder="Start typing a city name..."
-                />
-              </div>
-              
-              {selectedCity && (
-                <div className="p-4 rounded-lg border bg-accent/30 space-y-2">
-                  <div className="flex items-start gap-3">
-                    <MapPin className="h-5 w-5 text-primary mt-0.5" />
-                    <div>
-                      <p className="font-semibold">{selectedCity.city}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedCity.state && `${selectedCity.state}, `}{selectedCity.country}
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1 font-mono">
-                        ID: {selectedCity.city.toUpperCase().replace(/\s+/g, '_')}
-                      </p>
-                    </div>
-                  </div>
-                </div>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="optionLabel">Display Label</Label>
+              <Input
+                id="optionLabel"
+                placeholder="e.g., San Francisco"
+                value={newOptionLabel}
+                onChange={(e) => setNewOptionLabel(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="optionId">ID (auto-formatted to UPPER_SNAKE_CASE)</Label>
+              <Input
+                id="optionId"
+                placeholder="e.g., san_francisco"
+                value={newOptionId}
+                onChange={(e) => setNewOptionId(e.target.value)}
+              />
+              {newOptionId && (
+                <p className="text-xs text-muted-foreground">
+                  Will be saved as: <span className="font-mono">{newOptionId.trim().toUpperCase().replace(/\s+/g, '_')}</span>
+                </p>
               )}
             </div>
-          ) : (
-            // Generic: manual input
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="optionLabel">Display Label</Label>
-                <Input
-                  id="optionLabel"
-                  placeholder="e.g., San Francisco"
-                  value={newOptionLabel}
-                  onChange={(e) => setNewOptionLabel(e.target.value)}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="optionId">ID (auto-formatted to UPPER_SNAKE_CASE)</Label>
-                <Input
-                  id="optionId"
-                  placeholder="e.g., san_francisco"
-                  value={newOptionId}
-                  onChange={(e) => setNewOptionId(e.target.value)}
-                />
-                {newOptionId && (
-                  <p className="text-xs text-muted-foreground">
-                    Will be saved as: <span className="font-mono">{newOptionId.trim().toUpperCase().replace(/\s+/g, '_')}</span>
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
-          
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
               Cancel
             </Button>
             <Button 
               onClick={handleAddOption}
-              disabled={
-                question?.options_table === 'cities'
-                  ? !selectedCity || addMutation.isPending
-                  : !newOptionId.trim() || !newOptionLabel.trim() || addMutation.isPending
-              }
+              disabled={!newOptionId.trim() || !newOptionLabel.trim() || addMutation.isPending}
             >
               {addMutation.isPending ? 'Adding...' : 'Add Option'}
             </Button>

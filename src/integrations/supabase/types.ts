@@ -790,7 +790,6 @@ export type Database = {
           architecture: string | null
           atmosphere: string | null
           color_palette: string | null
-          country: string | null
           created_at: string | null
           description: string | null
           emoji: string
@@ -798,14 +797,10 @@ export type Database = {
           is_active: boolean | null
           label: string
           landmarks: string[] | null
-          latitude: number | null
-          longitude: number | null
           og_image: string | null
-          place_id: string | null
           seo_description: string | null
           sort_order: number | null
           spelling_guide: string | null
-          state: string | null
           terrain: string | null
           updated_at: string | null
         }
@@ -813,7 +808,6 @@ export type Database = {
           architecture?: string | null
           atmosphere?: string | null
           color_palette?: string | null
-          country?: string | null
           created_at?: string | null
           description?: string | null
           emoji?: string
@@ -821,14 +815,10 @@ export type Database = {
           is_active?: boolean | null
           label: string
           landmarks?: string[] | null
-          latitude?: number | null
-          longitude?: number | null
           og_image?: string | null
-          place_id?: string | null
           seo_description?: string | null
           sort_order?: number | null
           spelling_guide?: string | null
-          state?: string | null
           terrain?: string | null
           updated_at?: string | null
         }
@@ -836,7 +826,6 @@ export type Database = {
           architecture?: string | null
           atmosphere?: string | null
           color_palette?: string | null
-          country?: string | null
           created_at?: string | null
           description?: string | null
           emoji?: string
@@ -844,14 +833,10 @@ export type Database = {
           is_active?: boolean | null
           label?: string
           landmarks?: string[] | null
-          latitude?: number | null
-          longitude?: number | null
           og_image?: string | null
-          place_id?: string | null
           seo_description?: string | null
           sort_order?: number | null
           spelling_guide?: string | null
-          state?: string | null
           terrain?: string | null
           updated_at?: string | null
         }

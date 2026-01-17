@@ -192,6 +192,68 @@ export function useInitializeAgentQuestions() {
 }
 
 /**
+ * Reorder a question by moving it up or down
+ */
+export function useReorderAgentQuestion() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({
+      agentType,
+      questionId,
+      direction,
+    }: {
+      agentType: string;
+      questionId: string;
+      direction: 'up' | 'down';
+    }) => {
+      // Get all agent questions sorted by sort_order
+      const { data: agentQuestions, error: fetchError } = await supabase
+        .from('agent_questions')
+        .select('id, question_id, sort_order')
+        .eq('agent_type', agentType)
+        .order('sort_order', { ascending: true });
+
+      if (fetchError) throw fetchError;
+      if (!agentQuestions || agentQuestions.length < 2) return;
+
+      // Find current index
+      const currentIndex = agentQuestions.findIndex(q => q.question_id === questionId);
+      if (currentIndex === -1) return;
+
+      // Calculate target index
+      const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      if (targetIndex < 0 || targetIndex >= agentQuestions.length) return;
+
+      // Swap sort_order values
+      const currentItem = agentQuestions[currentIndex];
+      const targetItem = agentQuestions[targetIndex];
+
+      const { error: updateError1 } = await supabase
+        .from('agent_questions')
+        .update({ sort_order: targetItem.sort_order })
+        .eq('id', currentItem.id);
+
+      if (updateError1) throw updateError1;
+
+      const { error: updateError2 } = await supabase
+        .from('agent_questions')
+        .update({ sort_order: currentItem.sort_order })
+        .eq('id', targetItem.id);
+
+      if (updateError2) throw updateError2;
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['agent-questions', variables.agentType] });
+    },
+    onError: (error) => {
+      console.error('Error reordering question:', error);
+      toast.error('Failed to reorder question');
+    },
+  });
+}
+
+/**
  * Get enabled questions for an agent as a formatted object for prompt injection
  */
 export async function getAgentEnabledQuestions(agentType: string): Promise<Record<string, boolean>> {
